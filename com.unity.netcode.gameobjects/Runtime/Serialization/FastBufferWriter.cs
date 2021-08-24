@@ -9,24 +9,24 @@ namespace Unity.Multiplayer.Netcode
 {
     public struct FastBufferWriter : IDisposable
     {
-        internal unsafe byte* m_BufferPointer;
-        internal int m_Position;
+        internal unsafe byte* BufferPointer;
+        internal int PositionInternal;
         private int m_Length;
-        internal int m_Capacity;
-        internal readonly int m_MaxCapacity;
+        internal int CapacityInternal;
+        internal readonly int MaxCapacityInternal;
         private readonly Allocator m_Allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        internal int m_AllowedWriteMark;
+        internal int AllowedWriteMark;
         private bool m_InBitwiseContext;
 #endif
-        
+
         /// <summary>
         /// The current write position
         /// </summary>
         public int Position
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position;
+            get => PositionInternal;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Unity.Multiplayer.Netcode
         public int Capacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Capacity;
+            get => CapacityInternal;
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Unity.Multiplayer.Netcode
         public int MaxCapacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_MaxCapacity;
+            get => MaxCapacityInternal;
         }
 
         /// <summary>
@@ -53,14 +53,14 @@ namespace Unity.Multiplayer.Netcode
         public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position > m_Length ? m_Position : m_Length;
+            get => PositionInternal > m_Length ? PositionInternal : m_Length;
         }
 
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void CommitBitwiseWrites(int amount)
         {
-            m_Position += amount;
+            PositionInternal += amount;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_InBitwiseContext = false;
 #endif
@@ -78,14 +78,14 @@ namespace Unity.Multiplayer.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, size);
 #endif
-            m_BufferPointer = (byte*)buffer;
-            m_Position = 0;
+            BufferPointer = (byte*)buffer;
+            PositionInternal = 0;
             m_Length = 0;
-            m_Capacity = size;
+            CapacityInternal = size;
             m_Allocator = allocator;
-            m_MaxCapacity = maxSize < size ? size : maxSize;
+            MaxCapacityInternal = maxSize < size ? size : maxSize;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedWriteMark = 0;
+            AllowedWriteMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
@@ -95,7 +95,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         public unsafe void Dispose()
         {
-            UnsafeUtility.Free(m_BufferPointer, m_Allocator);
+            UnsafeUtility.Free(BufferPointer, m_Allocator);
         }
 
         /// <summary>
@@ -116,12 +116,12 @@ namespace Unity.Multiplayer.Netcode
             // because position increases, and if we seek backward, length remembers
             // the position it was in.
             // Seeking forward will not update the length.
-            where = Math.Min(where, m_Capacity);
-            if (m_Position > m_Length && where < m_Position)
+            where = Math.Min(where, CapacityInternal);
+            if (PositionInternal > m_Length && where < PositionInternal)
             {
-                m_Length = m_Position;
+                m_Length = PositionInternal;
             }
-            m_Position = where;
+            PositionInternal = where;
         }
 
         /// <summary>
@@ -137,11 +137,11 @@ namespace Unity.Multiplayer.Netcode
                 where = Position;
             }
 
-            if (m_Position > where)
+            if (PositionInternal > where)
             {
-                m_Position = where;
+                PositionInternal = where;
             }
-            if(m_Length > where)
+            if (m_Length > where)
             {
                 m_Length = where;
             }
@@ -163,15 +163,15 @@ namespace Unity.Multiplayer.Netcode
 
         internal unsafe void Grow()
         {
-            var newSize = Math.Min(m_Capacity * 2, m_MaxCapacity);
+            var newSize = Math.Min(CapacityInternal * 2, MaxCapacityInternal);
             void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, newSize);
 #endif
-            UnsafeUtility.MemCpy(buffer, m_BufferPointer, Length);
-            UnsafeUtility.Free(m_BufferPointer, m_Allocator);
-            m_BufferPointer = (byte*)buffer;
-            m_Capacity = newSize;
+            UnsafeUtility.MemCpy(buffer, BufferPointer, Length);
+            UnsafeUtility.Free(BufferPointer, m_Allocator);
+            BufferPointer = (byte*)buffer;
+            CapacityInternal = newSize;
         }
 
         /// <summary>
@@ -198,9 +198,9 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_Position + bytes > m_Capacity)
+            if (PositionInternal + bytes > CapacityInternal)
             {
-                if (m_Capacity < m_MaxCapacity)
+                if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow();
                 }
@@ -210,11 +210,11 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedWriteMark = m_Position + bytes;
+            AllowedWriteMark = PositionInternal + bytes;
 #endif
             return true;
         }
-        
+
         /// <summary>
         /// Allows faster serialization by batching bounds checking.
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
@@ -240,9 +240,9 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             int len = sizeof(T);
-            if (m_Position + len > m_Capacity)
+            if (PositionInternal + len > CapacityInternal)
             {
-                if (m_Capacity < m_MaxCapacity)
+                if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow();
                 }
@@ -252,11 +252,11 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedWriteMark = m_Position + len;
+            AllowedWriteMark = PositionInternal + len;
 #endif
             return true;
         }
-        
+
         /// <summary>
         /// Internal version of VerifyCanWrite.
         /// Differs from VerifyCanWrite only in that it won't ever move the AllowedWriteMark backward.
@@ -274,9 +274,9 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_Position + bytes > m_Capacity)
+            if (PositionInternal + bytes > CapacityInternal)
             {
-                if (m_Capacity < m_MaxCapacity)
+                if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow();
                 }
@@ -286,9 +286,9 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_Position + bytes > m_AllowedWriteMark)
+            if (PositionInternal + bytes > AllowedWriteMark)
             {
-                m_AllowedWriteMark = m_Position + bytes;
+                AllowedWriteMark = PositionInternal + bytes;
             }
 #endif
             return true;
@@ -305,7 +305,7 @@ namespace Unity.Multiplayer.Netcode
             byte[] ret = new byte[Length];
             fixed (byte* b = ret)
             {
-                UnsafeUtility.MemCpy(b, m_BufferPointer, Length);
+                UnsafeUtility.MemCpy(b, BufferPointer, Length);
             }
             return ret;
         }
@@ -317,7 +317,7 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
-            return m_BufferPointer;
+            return BufferPointer;
         }
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
-            return m_BufferPointer + m_Position;
+            return BufferPointer + PositionInternal;
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace Unity.Multiplayer.Netcode
                     return;
                 }
             }
-            
+
             var type = value.GetType();
             var hasSerializer = SerializationTypeTable.Serializers.TryGetValue(type, out var serializer);
             if (hasSerializer)
@@ -360,7 +360,7 @@ namespace Unity.Multiplayer.Netcode
                 serializer(ref this, value);
                 return;
             }
-            
+
             if (value is Array array)
             {
                 WriteValueSafe(array.Length);
@@ -372,7 +372,7 @@ namespace Unity.Multiplayer.Netcode
 
                 return;
             }
-            
+
             if (value.GetType().IsEnum)
             {
                 switch (Convert.GetTypeCode(value))
@@ -443,7 +443,7 @@ namespace Unity.Multiplayer.Netcode
         {
             // TODO
         }
-        
+
         /// <summary>
         /// Get the required amount of space to write a GameObject
         /// </summary>
@@ -453,7 +453,7 @@ namespace Unity.Multiplayer.Netcode
         {
             return sizeof(ulong);
         }
-        
+
         /// <summary>
         /// Get the required amount of space to write a GameObject
         /// </summary>
@@ -462,7 +462,7 @@ namespace Unity.Multiplayer.Netcode
         {
             return sizeof(ulong);
         }
-        
+
         /// <summary>
         /// Write a GameObject
         /// </summary>
@@ -482,7 +482,7 @@ namespace Unity.Multiplayer.Netcode
 
             WriteValue(networkObject.NetworkObjectId);
         }
-        
+
         /// <summary>
         /// Write a GameObject
         ///
@@ -505,7 +505,7 @@ namespace Unity.Multiplayer.Netcode
 
             WriteValueSafe(networkObject.NetworkObjectId);
         }
-        
+
         /// <summary>
         /// Get the required size to write a NetworkObject
         /// </summary>
@@ -515,7 +515,7 @@ namespace Unity.Multiplayer.Netcode
         {
             return sizeof(ulong);
         }
-        
+
         /// <summary>
         /// Get the required size to write a NetworkObject
         /// </summary>
@@ -555,7 +555,7 @@ namespace Unity.Multiplayer.Netcode
             }
             WriteValueSafe(value.NetworkObjectId);
         }
-        
+
         /// <summary>
         /// Get the required size to write a NetworkBehaviour
         /// </summary>
@@ -565,8 +565,8 @@ namespace Unity.Multiplayer.Netcode
         {
             return sizeof(ulong) + sizeof(ushort);
         }
-        
-        
+
+
         /// <summary>
         /// Get the required size to write a NetworkBehaviour
         /// </summary>
@@ -627,7 +627,7 @@ namespace Unity.Multiplayer.Netcode
         {
             return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
         }
-        
+
         /// <summary>
         /// Writes a string
         /// </summary>
@@ -641,7 +641,7 @@ namespace Unity.Multiplayer.Netcode
             {
                 for (int i = 0; i < target; ++i)
                 {
-                    WriteByte((byte) s[i]);
+                    WriteByte((byte)s[i]);
                 }
             }
             else
@@ -670,21 +670,21 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             int sizeInBytes = GetWriteSize(s, oneByteChars);
-            
+
             if (!VerifyCanWriteInternal(sizeInBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            
+
             WriteValue((uint)s.Length);
             int target = s.Length;
             if (oneByteChars)
             {
                 for (int i = 0; i < target; ++i)
                 {
-                    WriteByte((byte) s[i]);
+                    WriteByte((byte)s[i]);
                 }
             }
             else
@@ -705,7 +705,7 @@ namespace Unity.Multiplayer.Netcode
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<T>(T[] array, int count = -1, int offset = 0) where T: unmanaged
+        public static unsafe int GetWriteSize<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -719,7 +719,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="count">The amount of elements to write</param>
         /// <param name="offset">Where in the array to start</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValue<T>(T[] array, int count = -1, int offset = 0) where T: unmanaged
+        public unsafe void WriteValue<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -741,7 +741,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="count">The amount of elements to write</param>
         /// <param name="offset">Where in the array to start</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValueSafe<T>(T[] array, int count = -1, int offset = 0) where T: unmanaged
+        public unsafe void WriteValueSafe<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -750,10 +750,10 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
-            
+
             if (!VerifyCanWriteInternal(sizeInBytes + sizeof(int)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
@@ -765,7 +765,7 @@ namespace Unity.Multiplayer.Netcode
                 WriteBytes(bytes, sizeInBytes);
             }
         }
-        
+
         /// <summary>
         /// Write a partial value. The specified number of bytes is written from the value and the rest is ignored.
         /// </summary>
@@ -776,7 +776,7 @@ namespace Unity.Multiplayer.Netcode
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T: unmanaged
+        public unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -784,17 +784,17 @@ namespace Unity.Multiplayer.Netcode
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + bytesToWrite > m_AllowedWriteMark)
+            if (PositionInternal + bytesToWrite > AllowedWriteMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
 
-            byte* ptr = ((byte*) &value) + offsetBytes;
-            byte* bufferPointer = m_BufferPointer + m_Position;
+            byte* ptr = ((byte*)&value) + offsetBytes;
+            byte* bufferPointer = BufferPointer + PositionInternal;
             UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
 
-            m_Position += bytesToWrite;
+            PositionInternal += bytesToWrite;
         }
 
         /// <summary>
@@ -803,19 +803,19 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteByte(byte value)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + 1 > m_AllowedWriteMark)
+            if (PositionInternal + 1 > AllowedWriteMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
-            m_BufferPointer[m_Position++] = value;
+            BufferPointer[PositionInternal++] = value;
         }
 
         /// <summary>
@@ -827,7 +827,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteByteSafe(byte value)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -835,12 +835,12 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanWriteInternal(1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            m_BufferPointer[m_Position++] = value;
+            BufferPointer[PositionInternal++] = value;
         }
 
         /// <summary>
@@ -851,22 +851,22 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytes(byte* value, int size, int offset = 0)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + size > m_AllowedWriteMark)
+            if (PositionInternal + size > AllowedWriteMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
-            UnsafeUtility.MemCpy((m_BufferPointer + m_Position), value + offset, size);
-            m_Position += size;
+            UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
+            PositionInternal += size;
         }
-        
+
         /// <summary>
         /// Write multiple bytes to the stream
         ///
@@ -878,7 +878,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytesSafe(byte* value, int size, int offset = 0)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -886,15 +886,15 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanWriteInternal(size))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            UnsafeUtility.MemCpy((m_BufferPointer + m_Position), value + offset, size);
-            m_Position += size;
+            UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
+            PositionInternal += size;
         }
-        
+
         /// <summary>
         /// Write multiple bytes to the stream
         /// </summary>
@@ -909,7 +909,7 @@ namespace Unity.Multiplayer.Netcode
                 WriteBytes(ptr, size, offset);
             }
         }
-        
+
         /// <summary>
         /// Write multiple bytes to the stream
         ///
@@ -927,7 +927,7 @@ namespace Unity.Multiplayer.Netcode
                 WriteBytesSafe(ptr, size, offset);
             }
         }
-        
+
         /// <summary>
         /// Copy the contents of this writer into another writer.
         /// The contents will be copied from the beginning of this writer to its current position.
@@ -937,9 +937,9 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void CopyTo(FastBufferWriter other)
         {
-            other.WriteBytes(m_BufferPointer, m_Position);
+            other.WriteBytes(BufferPointer, PositionInternal);
         }
-        
+
         /// <summary>
         /// Copy the contents of another writer into this writer.
         /// The contents will be copied from the beginning of the other writer to its current position.
@@ -949,9 +949,9 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void CopyFrom(FastBufferWriter other)
         {
-            WriteBytes(other.m_BufferPointer, other.m_Position);
+            WriteBytes(other.BufferPointer, other.PositionInternal);
         }
-        
+
         /// <summary>
         /// Get the size required to write an unmanaged value
         /// </summary>
@@ -985,26 +985,26 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void WriteValue<T>(in T value) where T : unmanaged
         {
             int len = sizeof(T);
-            
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + len > m_AllowedWriteMark)
+            if (PositionInternal + len > AllowedWriteMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
-            
+
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes(m_BufferPointer+m_Position, (byte*)ptr, len);
+                BytewiseUtility.FastCopyBytes(BufferPointer + PositionInternal, (byte*)ptr, len);
             }
-            m_Position += len;
+            PositionInternal += len;
         }
-        
+
         /// <summary>
         /// Write a value of any unmanaged type (including unmanaged structs) to the buffer.
         /// It will be copied into the buffer exactly as it exists in memory.
@@ -1018,7 +1018,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void WriteValueSafe<T>(in T value) where T : unmanaged
         {
             int len = sizeof(T);
-            
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -1026,7 +1026,7 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanWriteInternal(len))
             {
                 throw new OverflowException("Writing past the end of the buffer");
@@ -1034,9 +1034,9 @@ namespace Unity.Multiplayer.Netcode
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes(m_BufferPointer+m_Position, (byte*)ptr, len);
+                BytewiseUtility.FastCopyBytes(BufferPointer + PositionInternal, (byte*)ptr, len);
             }
-            m_Position += len;
+            PositionInternal += len;
         }
     }
 }

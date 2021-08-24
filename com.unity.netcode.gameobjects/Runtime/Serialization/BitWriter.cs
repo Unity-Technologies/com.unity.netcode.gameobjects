@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Multiplayer.Netcode
 {
@@ -18,7 +17,7 @@ namespace Unity.Multiplayer.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private int m_AllowedBitwiseWriteMark;
 #endif
-        private const int BITS_PER_BYTE = 8;
+        private const int k_BitsPerByte = 8;
 
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
@@ -28,15 +27,15 @@ namespace Unity.Multiplayer.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (m_BitPosition & 7) == 0;
         }
-        
+
         internal unsafe BitWriter(ref FastBufferWriter writer)
         {
             m_Writer = new Ref<FastBufferWriter>(ref writer);
-            m_BufferPointer = writer.m_BufferPointer + writer.m_Position;
-            m_Position = writer.m_Position;
+            m_BufferPointer = writer.BufferPointer + writer.PositionInternal;
+            m_Position = writer.PositionInternal;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseWriteMark = (m_Writer.Value.m_AllowedWriteMark - m_Writer.Value.Position) * BITS_PER_BYTE;
+            m_AllowedBitwiseWriteMark = (m_Writer.Value.AllowedWriteMark - m_Writer.Value.Position) * k_BitsPerByte;
 #endif
         }
 
@@ -54,7 +53,7 @@ namespace Unity.Multiplayer.Netcode
 
             m_Writer.Value.CommitBitwiseWrites(bytesWritten);
         }
-        
+
         /// <summary>
         /// Verifies the requested bit count can be written to the buffer.
         /// This exists as a separate method to allow multiple bit writes to be bounds checked with a single call.
@@ -74,12 +73,12 @@ namespace Unity.Multiplayer.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.m_Capacity)
+            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.CapacityInternal)
             {
-                if (m_Writer.Value.m_Capacity < m_Writer.Value.m_MaxCapacity)
+                if (m_Writer.Value.CapacityInternal < m_Writer.Value.MaxCapacityInternal)
                 {
                     m_Writer.Value.Grow();
-                    m_BufferPointer = m_Writer.Value.m_BufferPointer + m_Writer.Value.m_Position;
+                    m_BufferPointer = m_Writer.Value.BufferPointer + m_Writer.Value.PositionInternal;
                 }
                 else
                 {
@@ -109,7 +108,7 @@ namespace Unity.Multiplayer.Netcode
             {
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot write fewer than 0 bits!");
             }
-            
+
             int checkPos = (m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {
@@ -117,8 +116,8 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            int wholeBytes = bitCount / BITS_PER_BYTE;
-            byte* asBytes = (byte*) &value;
+            int wholeBytes = bitCount / k_BitsPerByte;
+            byte* asBytes = (byte*)&value;
             if (BitAligned)
             {
                 if (wholeBytes != 0)
@@ -133,13 +132,13 @@ namespace Unity.Multiplayer.Netcode
                     WriteMisaligned(asBytes[i]);
                 }
             }
-            
-            for (var count = wholeBytes * BITS_PER_BYTE; count < bitCount; ++count)
+
+            for (var count = wholeBytes * k_BitsPerByte; count < bitCount; ++count)
             {
                 WriteBit((value & (1UL << count)) != 0);
             }
         }
-        
+
         /// <summary>
         /// Write bits to stream.
         /// </summary>
@@ -154,7 +153,7 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Attempted to write without first calling FastBufferWriter.VerifyCanWriteBits()");
             }
 #endif
-            
+
             for (int i = 0; i < bitCount; ++i)
             {
                 WriteBit(((value >> i) & 1) != 0);
@@ -175,23 +174,23 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Attempted to write without first calling FastBufferWriter.VerifyCanWriteBits()");
             }
 #endif
-            
+
             int offset = m_BitPosition & 7;
             int pos = m_BitPosition >> 3;
             ++m_BitPosition;
             m_BufferPointer[pos] = (byte)(bit ? (m_BufferPointer[pos] & ~(1 << offset)) | (1 << offset) : (m_BufferPointer[pos] & ~(1 << offset)));
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T: unmanaged
+        private unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T : unmanaged
         {
-            byte* ptr = ((byte*) &value) + offsetBytes;
+            byte* ptr = ((byte*)&value) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
             BytewiseUtility.FastCopyBytes(bufferPointer, ptr, bytesToWrite);
 
-            m_BitPosition += bytesToWrite * BITS_PER_BYTE;
+            m_BitPosition += bytesToWrite * k_BitsPerByte;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void WriteMisaligned(byte value)
         {

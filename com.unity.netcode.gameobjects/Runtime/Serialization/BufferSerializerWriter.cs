@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
@@ -12,10 +12,10 @@ namespace Unity.Netcode.Serialization
         {
             m_Writer = new Ref<FastBufferWriter>(ref writer);
         }
-        
+
         public bool IsReader => false;
         public bool IsWriter => true;
-        
+
         public ref FastBufferReader GetFastBufferReader()
         {
             throw new InvalidOperationException("Cannot retrieve a FastBufferReader from a serializer where IsReader = false");

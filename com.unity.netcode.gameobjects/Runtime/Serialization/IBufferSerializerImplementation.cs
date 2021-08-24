@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
+using System;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
@@ -24,7 +21,7 @@ namespace Unity.Netcode.Serialization
         public void SerializeValue<T>(ref T[] array) where T : unmanaged;
         public void SerializeValue(ref byte value);
         public void SerializeValue<T>(ref T value) where T : unmanaged;
-        
+
         // Has to have a different name to avoid conflicting with "where T: unmananged"
         // Using SerializeValue(INetworkSerializable) will result in boxing on struct INetworkSerializables
         // So this is provided as an alternative to avoid boxing allocations.

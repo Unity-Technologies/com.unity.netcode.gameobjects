@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,9 +34,9 @@ namespace Unity.Multiplayer.Netcode
 
             [typeof(float)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((float)value),
             [typeof(double)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((double)value),
-            
+
             [typeof(string)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((string)value),
-            
+
             [typeof(Vector2)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Vector2)value),
             [typeof(Vector3)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Vector3)value),
             [typeof(Vector4)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Vector4)value),
@@ -45,12 +45,12 @@ namespace Unity.Multiplayer.Netcode
             [typeof(Ray)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Ray)value),
             [typeof(Ray2D)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Ray2D)value),
             [typeof(Quaternion)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Quaternion)value),
-            
+
             [typeof(char)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((char)value),
-            
+
             [typeof(bool)] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((bool)value),
-            
-            
+
+
             [typeof(byte[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((byte[])value),
             [typeof(sbyte[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((sbyte[])value),
 
@@ -72,12 +72,12 @@ namespace Unity.Multiplayer.Netcode
             [typeof(Ray[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Ray[])value),
             [typeof(Ray2D[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Ray2D[])value),
             [typeof(Quaternion[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((Quaternion[])value),
-            
+
             [typeof(char[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((char[])value),
-            
+
             [typeof(bool[])] = (ref FastBufferWriter writer, object value) => writer.WriteValueSafe((bool[])value),
         };
-        
+
         public static Dictionary<Type, Deserialize> Deserializers = new Dictionary<Type, Deserialize>
         {
             [typeof(byte)] = (ref FastBufferReader reader, out object value) =>
@@ -91,209 +91,209 @@ namespace Unity.Multiplayer.Netcode
                 value = (sbyte)tmp;
             },
 
-            [typeof(ushort)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ushort)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out ushort tmp);
                 value = tmp;
             },
-            [typeof(short)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(short)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out short tmp);
                 value = tmp;
             },
-            [typeof(uint)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(uint)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out uint tmp);
                 value = tmp;
             },
-            [typeof(int)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(int)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out int tmp);
                 value = tmp;
             },
-            [typeof(ulong)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ulong)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out ulong tmp);
                 value = tmp;
             },
-            [typeof(long)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(long)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out long tmp);
                 value = tmp;
             },
 
-            [typeof(float)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(float)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out float tmp);
                 value = tmp;
             },
-            [typeof(double)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(double)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out double tmp);
                 value = tmp;
             },
-            
-            [typeof(string)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(string)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out string tmp);
                 value = tmp;
             },
-            
-            [typeof(Vector2)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(Vector2)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector2 tmp);
                 value = tmp;
             },
-            [typeof(Vector3)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector3)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector3 tmp);
                 value = tmp;
             },
-            [typeof(Vector4)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector4)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector4 tmp);
                 value = tmp;
             },
-            [typeof(Color)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Color tmp);
                 value = tmp;
             },
-            [typeof(Color32)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color32)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Color32 tmp);
                 value = tmp;
             },
-            [typeof(Ray)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Ray tmp);
                 value = tmp;
             },
-            [typeof(Ray2D)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray2D)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Ray2D tmp);
                 value = tmp;
             },
-            [typeof(Quaternion)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Quaternion)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Quaternion tmp);
                 value = tmp;
             },
-            
-            [typeof(char)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(char)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out char tmp);
                 value = tmp;
             },
-            
-            [typeof(bool)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(bool)] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out bool tmp);
                 value = tmp;
             },
-            
-            
-            [typeof(byte[])] = (ref FastBufferReader reader, out object value) => 
+
+
+            [typeof(byte[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out byte[] tmp);
                 value = tmp;
             },
-            [typeof(sbyte[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(sbyte[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out sbyte[] tmp);
                 value = tmp;
             },
 
-            [typeof(ushort[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ushort[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out ushort[] tmp);
                 value = tmp;
             },
-            [typeof(short[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(short[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out short[] tmp);
                 value = tmp;
             },
-            [typeof(uint[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(uint[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out uint[] tmp);
                 value = tmp;
             },
-            [typeof(int[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(int[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out int[] tmp);
                 value = tmp;
             },
-            [typeof(ulong[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ulong[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out ulong[] tmp);
                 value = tmp;
             },
-            [typeof(long[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(long[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out long[] tmp);
                 value = tmp;
             },
 
-            [typeof(float[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(float[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out float[] tmp);
                 value = tmp;
             },
-            [typeof(double[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(double[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out double[] tmp);
                 value = tmp;
             },
 
-            [typeof(Vector2[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector2[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector2[] tmp);
                 value = tmp;
             },
-            [typeof(Vector3[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector3[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector3[] tmp);
                 value = tmp;
             },
-            [typeof(Vector4[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector4[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Vector4[] tmp);
                 value = tmp;
             },
-            [typeof(Color[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Color[] tmp);
                 value = tmp;
             },
-            [typeof(Color32[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color32[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Color32[] tmp);
                 value = tmp;
             },
-            [typeof(Ray[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Ray[] tmp);
                 value = tmp;
             },
-            [typeof(Ray2D[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray2D[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Ray2D[] tmp);
                 value = tmp;
             },
-            [typeof(Quaternion[])] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Quaternion[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out Quaternion[] tmp);
                 value = tmp;
             },
-            
-            [typeof(char[])] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(char[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out char[] tmp);
                 value = tmp;
             },
-            
-            [typeof(bool[])] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(bool[])] = (ref FastBufferReader reader, out object value) =>
             {
                 reader.ReadValueSafe(out bool[] tmp);
                 value = tmp;
@@ -314,9 +314,9 @@ namespace Unity.Multiplayer.Netcode
 
             [typeof(float)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (float)value),
             [typeof(double)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (double)value),
-            
+
             [typeof(string)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (string)value),
-            
+
             [typeof(Vector2)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Vector2)value),
             [typeof(Vector3)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Vector3)value),
             [typeof(Vector4)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Vector4)value),
@@ -325,12 +325,12 @@ namespace Unity.Multiplayer.Netcode
             [typeof(Ray)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Ray)value),
             [typeof(Ray2D)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Ray2D)value),
             [typeof(Quaternion)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (Quaternion)value),
-            
+
             [typeof(char)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (char)value),
-            
+
             [typeof(bool)] = (ref FastBufferWriter writer, object value) => BytePacker.WriteValuePacked(ref writer, (bool)value),
         };
-        
+
         public static Dictionary<Type, Deserialize> DeserializersPacked = new Dictionary<Type, Deserialize>
         {
             [typeof(byte)] = (ref FastBufferReader reader, out object value) =>
@@ -344,102 +344,102 @@ namespace Unity.Multiplayer.Netcode
                 value = (sbyte)tmp;
             },
 
-            [typeof(ushort)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ushort)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out ushort tmp);
                 value = tmp;
             },
-            [typeof(short)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(short)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out short tmp);
                 value = tmp;
             },
-            [typeof(uint)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(uint)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out uint tmp);
                 value = tmp;
             },
-            [typeof(int)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(int)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out int tmp);
                 value = tmp;
             },
-            [typeof(ulong)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(ulong)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out ulong tmp);
                 value = tmp;
             },
-            [typeof(long)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(long)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out long tmp);
                 value = tmp;
             },
 
-            [typeof(float)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(float)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out float tmp);
                 value = tmp;
             },
-            [typeof(double)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(double)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out double tmp);
                 value = tmp;
             },
-            
-            [typeof(string)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(string)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out string tmp);
                 value = tmp;
             },
-            
-            [typeof(Vector2)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(Vector2)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Vector2 tmp);
                 value = tmp;
             },
-            [typeof(Vector3)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector3)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Vector3 tmp);
                 value = tmp;
             },
-            [typeof(Vector4)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Vector4)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Vector4 tmp);
                 value = tmp;
             },
-            [typeof(Color)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Color tmp);
                 value = tmp;
             },
-            [typeof(Color32)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Color32)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Color32 tmp);
                 value = tmp;
             },
-            [typeof(Ray)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Ray tmp);
                 value = tmp;
             },
-            [typeof(Ray2D)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Ray2D)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Ray2D tmp);
                 value = tmp;
             },
-            [typeof(Quaternion)] = (ref FastBufferReader reader, out object value) => 
+            [typeof(Quaternion)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out Quaternion tmp);
                 value = tmp;
             },
-            
-            [typeof(char)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(char)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out char tmp);
                 value = tmp;
             },
-            
-            [typeof(bool)] = (ref FastBufferReader reader, out object value) => 
+
+            [typeof(bool)] = (ref FastBufferReader reader, out object value) =>
             {
                 ByteUnpacker.ReadValuePacked(ref reader, out bool tmp);
                 value = tmp;

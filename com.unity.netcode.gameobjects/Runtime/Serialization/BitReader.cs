@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 
 namespace Unity.Multiplayer.Netcode
@@ -15,11 +14,12 @@ namespace Unity.Multiplayer.Netcode
         private Ref<FastBufferReader> m_Reader;
         private readonly unsafe byte* m_BufferPointer;
         private readonly int m_Position;
-        private const int BITS_PER_BYTE = 8;
         private int m_BitPosition;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private int m_AllowedBitwiseReadMark;
 #endif
+
+        private const int k_BitsPerByte = 8;
 
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
@@ -34,11 +34,11 @@ namespace Unity.Multiplayer.Netcode
         {
             m_Reader = new Ref<FastBufferReader>(ref reader);
 
-            m_BufferPointer = m_Reader.Value.m_BufferPointer + m_Reader.Value.Position;
+            m_BufferPointer = m_Reader.Value.BufferPointer + m_Reader.Value.Position;
             m_Position = m_Reader.Value.Position;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseReadMark = (m_Reader.Value.m_AllowedReadMark - m_Position) * BITS_PER_BYTE;
+            m_AllowedBitwiseReadMark = (m_Reader.Value.AllowedReadMark - m_Position) * k_BitsPerByte;
 #endif
         }
 
@@ -75,7 +75,7 @@ namespace Unity.Multiplayer.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Reader.Value.m_Position + totalBytesWrittenInBitwiseContext > m_Reader.Value.m_Length)
+            if (m_Reader.Value.PositionInternal + totalBytesWrittenInBitwiseContext > m_Reader.Value.LengthInternal)
             {
                 return false;
             }
@@ -102,7 +102,7 @@ namespace Unity.Multiplayer.Netcode
             {
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             }
-            
+
             int checkPos = (m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
@@ -111,8 +111,8 @@ namespace Unity.Multiplayer.Netcode
 #endif
             ulong val = 0;
 
-            int wholeBytes = bitCount / BITS_PER_BYTE;
-            byte* asBytes = (byte*) &val;
+            int wholeBytes = bitCount / k_BitsPerByte;
+            byte* asBytes = (byte*)&val;
             if (BitAligned)
             {
                 if (wholeBytes != 0)
@@ -127,11 +127,11 @@ namespace Unity.Multiplayer.Netcode
                     ReadMisaligned(out asBytes[i]);
                 }
             }
-            
+
             val |= (ulong)ReadByteBits(bitCount & 7) << (bitCount & ~7);
             value = val;
         }
-        
+
         /// <summary>
         /// Read bits from stream.
         /// </summary>
@@ -163,25 +163,25 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
             }
 #endif
-            
+
             int offset = m_BitPosition & 7;
             int pos = m_BitPosition >> 3;
             bit = (m_BufferPointer[pos] & (1 << offset)) != 0;
             ++m_BitPosition;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T: unmanaged
+        private unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T : unmanaged
         {
-            T val = new T();
-            byte* ptr = ((byte*) &val) + offsetBytes;
+            var val = new T();
+            byte* ptr = ((byte*)&val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
             BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
 
-            m_BitPosition += bytesToRead * BITS_PER_BYTE;
+            m_BitPosition += bytesToRead * k_BitsPerByte;
             value = val;
         }
-        
+
         private byte ReadByteBits(int bitCount)
         {
             if (bitCount > 8)
@@ -211,7 +211,7 @@ namespace Unity.Multiplayer.Netcode
             int off = m_BitPosition & 7;
             int pos = m_BitPosition >> 3;
             int shift1 = 8 - off;
-            
+
             value = (byte)((m_BufferPointer[pos] >> shift1) | (m_BufferPointer[(m_BitPosition += 8) >> 3] << shift1));
         }
     }

@@ -9,12 +9,12 @@ namespace Unity.Multiplayer.Netcode
 {
     public struct FastBufferReader : IDisposable
     {
-        internal readonly unsafe byte* m_BufferPointer;
-        internal int m_Position;
-        internal readonly int m_Length;
+        internal readonly unsafe byte* BufferPointer;
+        internal int PositionInternal;
+        internal readonly int LengthInternal;
         private readonly Allocator m_Allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        internal int m_AllowedReadMark;
+        internal int AllowedReadMark;
         private bool m_InBitwiseContext;
 #endif
 
@@ -24,7 +24,7 @@ namespace Unity.Multiplayer.Netcode
         public int Position
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position;
+            get => PositionInternal;
         }
 
         /// <summary>
@@ -33,13 +33,13 @@ namespace Unity.Multiplayer.Netcode
         public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Length;
+            get => LengthInternal;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void CommitBitwiseReads(int amount)
         {
-            m_Position += amount;
+            PositionInternal += amount;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_InBitwiseContext = false;
 #endif
@@ -47,18 +47,18 @@ namespace Unity.Multiplayer.Netcode
 
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? buffer.Length : length);
-            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
-            UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr()+offset, m_Length);
-            m_BufferPointer = (byte*)bufferPtr;
-            m_Position = offset;
+            LengthInternal = Math.Max(1, length == -1 ? buffer.Length : length);
+            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+            UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr() + offset, LengthInternal);
+            BufferPointer = (byte*)bufferPtr;
+            PositionInternal = offset;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = 0;
+            AllowedReadMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
-        
+
         /// <summary>
         /// Create a FastBufferReader from an ArraySegment.
         /// A new buffer will be created using the given allocator and the value will be copied in.
@@ -70,21 +70,21 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? (buffer.Count - offset) : length);
-            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
+            LengthInternal = Math.Max(1, length == -1 ? (buffer.Count - offset) : length);
+            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
             fixed (byte* data = buffer.Array)
             {
-                UnsafeUtility.MemCpy(bufferPtr, data+offset, m_Length);
+                UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
             }
-            m_BufferPointer = (byte*) bufferPtr;
-            m_Position = 0;
+            BufferPointer = (byte*)bufferPtr;
+            PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = 0;
+            AllowedReadMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
-        
+
         /// <summary>
         /// Create a FastBufferReader from an existing byte array.
         /// A new buffer will be created using the given allocator and the value will be copied in.
@@ -96,21 +96,21 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? (buffer.Length - offset) : length);
-            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
+            LengthInternal = Math.Max(1, length == -1 ? (buffer.Length - offset) : length);
+            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
             fixed (byte* data = buffer)
             {
-                UnsafeUtility.MemCpy(bufferPtr, data+offset, m_Length);
+                UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
             }
-            m_BufferPointer = (byte*) bufferPtr;
-            m_Position = 0;
+            BufferPointer = (byte*)bufferPtr;
+            PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = 0;
+            AllowedReadMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
-        
+
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
         /// A new buffer will be created using the given allocator and the value will be copied in.
@@ -122,18 +122,18 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
-            m_Length = Math.Max(1, length);
-            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator); 
-            UnsafeUtility.MemCpy(bufferPtr, buffer + offset, m_Length);
-            m_BufferPointer = (byte*) bufferPtr;
-            m_Position = 0;
+            LengthInternal = Math.Max(1, length);
+            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+            UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
+            BufferPointer = (byte*)bufferPtr;
+            PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = 0;
+            AllowedReadMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
-        
+
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
         /// A new buffer will be created using the given allocator and the value will be copied in.
@@ -145,14 +145,14 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(ref FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? writer.Length : length);
-            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator); 
-            UnsafeUtility.MemCpy(bufferPtr, writer.GetUnsafePtr() + offset, m_Length);
-            m_BufferPointer = (byte*) bufferPtr;
-            m_Position = 0;
+            LengthInternal = Math.Max(1, length == -1 ? writer.Length : length);
+            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+            UnsafeUtility.MemCpy(bufferPtr, writer.GetUnsafePtr() + offset, LengthInternal);
+            BufferPointer = (byte*)bufferPtr;
+            PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = 0;
+            AllowedReadMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
@@ -162,7 +162,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         public unsafe void Dispose()
         {
-            UnsafeUtility.Free(m_BufferPointer, m_Allocator);
+            UnsafeUtility.Free(BufferPointer, m_Allocator);
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Seek(int where)
         {
-            m_Position = Math.Min(Length, where);
+            PositionInternal = Math.Min(Length, where);
         }
 
         /// <summary>
@@ -190,12 +190,12 @@ namespace Unity.Multiplayer.Netcode
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + amount > m_AllowedReadMark)
+            if (PositionInternal + amount > AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            m_Position += amount;
+            PositionInternal += amount;
         }
 
         /// <summary>
@@ -236,12 +236,12 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_Position + bytes > m_Length)
+            if (PositionInternal + bytes > LengthInternal)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = m_Position + bytes;
+            AllowedReadMark = PositionInternal + bytes;
 #endif
             return true;
         }
@@ -271,12 +271,12 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             int len = sizeof(T);
-            if (m_Position + len > m_Length)
+            if (PositionInternal + len > LengthInternal)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = m_Position + len;
+            AllowedReadMark = PositionInternal + len;
 #endif
             return true;
         }
@@ -298,14 +298,14 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_Position + bytes > m_Length)
+            if (PositionInternal + bytes > LengthInternal)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_Position + bytes > m_AllowedReadMark)
+            if (PositionInternal + bytes > AllowedReadMark)
             {
-                m_AllowedReadMark = m_Position + bytes;
+                AllowedReadMark = PositionInternal + bytes;
             }
 #endif
             return true;
@@ -322,7 +322,7 @@ namespace Unity.Multiplayer.Netcode
             byte[] ret = new byte[Length];
             fixed (byte* b = ret)
             {
-                UnsafeUtility.MemCpy(b, m_BufferPointer, Length);
+                UnsafeUtility.MemCpy(b, BufferPointer, Length);
             }
             return ret;
         }
@@ -334,7 +334,7 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
-            return m_BufferPointer;
+            return BufferPointer;
         }
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
-            return m_BufferPointer + m_Position;
+            return BufferPointer + PositionInternal;
         }
 
         /// <summary>
@@ -369,14 +369,14 @@ namespace Unity.Multiplayer.Netcode
                     return;
                 }
             }
-            
+
             var hasDeserializer = SerializationTypeTable.Deserializers.TryGetValue(type, out var deserializer);
             if (hasDeserializer)
             {
                 deserializer(ref this, out value);
                 return;
             }
-            
+
             if (type.IsArray && type.HasElementType)
             {
                 ReadValueSafe(out int length);
@@ -392,7 +392,7 @@ namespace Unity.Multiplayer.Netcode
                 value = arr;
                 return;
             }
-            
+
             if (type.IsEnum)
             {
                 switch (Type.GetTypeCode(type))
@@ -439,7 +439,7 @@ namespace Unity.Multiplayer.Netcode
                         return;
                 }
             }
-            
+
             if (type == typeof(GameObject))
             {
                 ReadValueSafe(out GameObject go);
@@ -487,7 +487,7 @@ namespace Unity.Multiplayer.Netcode
         public void ReadValue(out GameObject value)
         {
             ReadValue(out ulong networkObjectId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject.gameObject;
@@ -501,7 +501,7 @@ namespace Unity.Multiplayer.Netcode
 
             value = null;
         }
-        
+
         /// <summary>
         /// Read a GameObject
         ///
@@ -512,7 +512,7 @@ namespace Unity.Multiplayer.Netcode
         public void ReadValueSafe(out GameObject value)
         {
             ReadValueSafe(out ulong networkObjectId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject.gameObject;
@@ -534,7 +534,7 @@ namespace Unity.Multiplayer.Netcode
         public void ReadValue(out NetworkObject value)
         {
             ReadValue(out ulong networkObjectId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject;
@@ -559,7 +559,7 @@ namespace Unity.Multiplayer.Netcode
         public void ReadValueSafe(out NetworkObject value)
         {
             ReadValueSafe(out ulong networkObjectId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject;
@@ -582,7 +582,7 @@ namespace Unity.Multiplayer.Netcode
         {
             ReadValue(out ulong networkObjectId);
             ReadValue(out ushort networkBehaviourId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
@@ -608,7 +608,7 @@ namespace Unity.Multiplayer.Netcode
         {
             ReadValueSafe(out ulong networkObjectId);
             ReadValueSafe(out ushort networkBehaviourId);
-            
+
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
                 value = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
@@ -622,7 +622,7 @@ namespace Unity.Multiplayer.Netcode
 
             value = null;
         }
-        
+
         /// <summary>
         /// Reads a string
         /// NOTE: ALLOCATES
@@ -640,13 +640,13 @@ namespace Unity.Multiplayer.Netcode
                 {
                     for (int i = 0; i < target; ++i)
                     {
-                        ReadByte(out byte b); 
-                        native[i] = (char) b;
+                        ReadByte(out byte b);
+                        native[i] = (char)b;
                     }
                 }
                 else
                 {
-                    ReadBytes((byte*) native, target * sizeof(char));
+                    ReadBytes((byte*)native, target * sizeof(char));
                 }
             }
         }
@@ -669,14 +669,14 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanReadInternal(sizeof(uint)))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            
+
             ReadValue(out uint length);
-            
+
             if (!VerifyCanReadInternal((int)length * (oneByteChars ? 1 : sizeof(char))))
             {
                 throw new OverflowException("Reading past the end of the buffer");
@@ -689,13 +689,13 @@ namespace Unity.Multiplayer.Netcode
                 {
                     for (int i = 0; i < target; ++i)
                     {
-                        ReadByte(out byte b); 
-                        native[i] = (char) b;
+                        ReadByte(out byte b);
+                        native[i] = (char)b;
                     }
                 }
                 else
                 {
-                    ReadBytes((byte*) native, target * sizeof(char));
+                    ReadBytes((byte*)native, target * sizeof(char));
                 }
             }
         }
@@ -706,7 +706,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="array">Stores the read array</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<T>(out T[] array) where T: unmanaged
+        public unsafe void ReadValue<T>(out T[] array) where T : unmanaged
         {
             ReadValue(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -727,7 +727,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="array">Stores the read array</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out T[] array) where T: unmanaged
+        public unsafe void ReadValueSafe<T>(out T[] array) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -736,7 +736,7 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanReadInternal(sizeof(int)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
@@ -754,7 +754,7 @@ namespace Unity.Multiplayer.Netcode
                 ReadBytes(bytes, sizeInBytes);
             }
         }
-        
+
         /// <summary>
         /// Read a partial value. The value is zero-initialized and then the specified number of bytes is read into it.
         /// </summary>
@@ -765,7 +765,7 @@ namespace Unity.Multiplayer.Netcode
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T: unmanaged
+        public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -773,18 +773,18 @@ namespace Unity.Multiplayer.Netcode
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + bytesToRead > m_AllowedReadMark)
+            if (PositionInternal + bytesToRead > AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
 
-            T val = new T();
-            byte* ptr = ((byte*) &val) + offsetBytes;
-            byte* bufferPointer = m_BufferPointer + m_Position;
+            var val = new T();
+            byte* ptr = ((byte*)&val) + offsetBytes;
+            byte* bufferPointer = BufferPointer + PositionInternal;
             UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
-            m_Position += bytesToRead;
+            PositionInternal += bytesToRead;
             value = val;
         }
 
@@ -794,19 +794,19 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Stores the read value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadByte(out byte value)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + 1 > m_AllowedReadMark)
+            if (PositionInternal + 1 > AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            value = m_BufferPointer[m_Position++];
+            value = BufferPointer[PositionInternal++];
         }
 
         /// <summary>
@@ -818,7 +818,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Stores the read value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadByteSafe(out byte value)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -826,14 +826,14 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanReadInternal(1))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            value = m_BufferPointer[m_Position++];
+            value = BufferPointer[PositionInternal++];
         }
-        
+
         /// <summary>
         /// Read multiple bytes to the stream
         /// </summary>
@@ -842,22 +842,22 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">Offset of the byte buffer to store into</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadBytes(byte* value, int size, int offset = 0)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + size > m_AllowedReadMark)
+            if (PositionInternal + size > AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            UnsafeUtility.MemCpy(value + offset, (m_BufferPointer + m_Position), size);
-            m_Position += size;
+            UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
+            PositionInternal += size;
         }
-        
+
         /// <summary>
         /// Read multiple bytes to the stream
         ///
@@ -869,7 +869,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="offset">Offset of the byte buffer to store into</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadBytesSafe(byte* value, int size, int offset = 0)
-        {      
+        {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -877,15 +877,15 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanReadInternal(size))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            UnsafeUtility.MemCpy(value + offset, (m_BufferPointer + m_Position), size);
-            m_Position += size;
+            UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
+            PositionInternal += size;
         }
-        
+
         /// <summary>
         /// Read multiple bytes from the stream
         /// </summary>
@@ -900,7 +900,7 @@ namespace Unity.Multiplayer.Netcode
                 ReadBytes(ptr, size, offset);
             }
         }
-        
+
         /// <summary>
         /// Read multiple bytes from the stream
         ///
@@ -929,26 +929,26 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadValue<T>(out T value) where T : unmanaged
         {
             int len = sizeof(T);
-            
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_Position + len > m_AllowedReadMark)
+            if (PositionInternal + len > AllowedReadMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
-            
+
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, m_BufferPointer+m_Position, len);
+                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
             }
-            m_Position += len;
+            PositionInternal += len;
         }
-        
+
         /// <summary>
         /// Read a value of any unmanaged type to the buffer.
         /// It will be copied from the buffer exactly as it existed in memory on the writing end.
@@ -962,7 +962,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadValueSafe<T>(out T value) where T : unmanaged
         {
             int len = sizeof(T);
-            
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -970,18 +970,18 @@ namespace Unity.Multiplayer.Netcode
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            
+
             if (!VerifyCanReadInternal(len))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            
+
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, m_BufferPointer+m_Position, len);
+                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
             }
-            m_Position += len;
+            PositionInternal += len;
         }
     }
 }

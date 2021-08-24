@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
@@ -26,12 +26,12 @@ namespace Unity.Netcode.Serialization
     public ref struct BufferSerializer<TImplementation> where TImplementation : IBufferSerializerImplementation
     {
         private TImplementation m_Implementation;
-        
+
         /// <summary>
         /// Check if the contained implementation is a reader
         /// </summary>
         public bool IsReader => m_Implementation.IsReader;
-        
+
         /// <summary>
         /// Check if the contained implementation is a writer
         /// </summary>
@@ -51,7 +51,7 @@ namespace Unity.Netcode.Serialization
         {
             return ref m_Implementation.GetFastBufferReader();
         }
-        
+
         /// <summary>
         /// Retrieves the FastBufferWriter instance. Only valid if IsWriter = true, throws
         /// InvalidOperationException otherwise.
@@ -82,7 +82,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref value, type, isNullable);
         }
-        
+
         /// <summary>
         /// Serialize an INetworkSerializable
         /// If your INetworkSerializable is implemented by a struct, as opposed to a class, use this
@@ -101,7 +101,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeNetworkSerializable(ref value);
         }
-        
+
         /// <summary>
         /// Serialize an INetworkSerializable
         /// 
@@ -113,7 +113,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a GameObject
         /// 
@@ -125,7 +125,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a NetworkObject
         /// 
@@ -137,7 +137,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a NetworkBehaviour
         /// 
@@ -167,7 +167,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref s, oneByteChars);
         }
-        
+
         /// <summary>
         /// Serialize an array value.
         ///
@@ -187,7 +187,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref array);
         }
-        
+
         /// <summary>
         /// Serialize a single byte
         /// 
@@ -199,7 +199,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValue(ref value);
         }
-        
+
         /// <summary>
         /// Serialize an unmanaged type. Supports basic value types as well as structs.
         /// The provided type will be copied to/from the buffer as it exists in memory.
@@ -240,7 +240,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a NetworkObject
         /// </summary>
@@ -249,7 +249,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a NetworkBehaviour
         /// </summary>
@@ -258,7 +258,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref value);
         }
-        
+
         /// <summary>
         /// Serialize a string.
         /// 
@@ -273,7 +273,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref s, oneByteChars);
         }
-        
+
         /// <summary>
         /// Serialize an array value.
         ///
@@ -290,7 +290,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref array);
         }
-        
+
         /// <summary>
         /// Serialize a single byte
         /// </summary>
@@ -299,7 +299,7 @@ namespace Unity.Netcode.Serialization
         {
             m_Implementation.SerializeValuePreChecked(ref value);
         }
-        
+
         /// <summary>
         /// Serialize an unmanaged type. Supports basic value types as well as structs.
         /// The provided type will be copied to/from the buffer as it exists in memory.

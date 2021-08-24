@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
@@ -40,7 +40,7 @@ namespace Unity.Multiplayer.Netcode
                     return;
                 }
             }
-            
+
             var type = value.GetType();
             var hasSerializer = SerializationTypeTable.SerializersPacked.TryGetValue(type, out var serializer);
             if (hasSerializer)
@@ -48,7 +48,7 @@ namespace Unity.Multiplayer.Netcode
                 serializer(ref writer, value);
                 return;
             }
-            
+
             if (value is Array array)
             {
                 WriteValuePacked(ref writer, array.Length);
@@ -58,7 +58,7 @@ namespace Unity.Multiplayer.Netcode
                     WriteObjectPacked(ref writer, array.GetValue(i));
                 }
             }
-            
+
             if (value.GetType().IsEnum)
             {
                 switch (Convert.GetTypeCode(value))
@@ -142,9 +142,9 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
         #endregion
-        
+
         #region Unmanaged Type Packing
-        
+
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -176,7 +176,7 @@ namespace Unity.Multiplayer.Netcode
                     break;
             }
         }
-        
+
         /// <summary>
         /// Write single-precision floating point value to the buffer as a varint
         /// </summary>
@@ -198,7 +198,7 @@ namespace Unity.Multiplayer.Netcode
         {
             WriteUInt64Packed(ref writer, ToUlong(value));
         }
-        
+
         /// <summary>
         /// Write a byte to the buffer.
         /// </summary>
@@ -206,7 +206,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, byte value) => writer.WriteByteSafe(value);
-        
+
         /// <summary>
         /// Write a signed byte to the buffer.
         /// </summary>
@@ -214,7 +214,7 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, sbyte value) => writer.WriteByteSafe((byte)value);
-        
+
         /// <summary>
         /// Write a bool to the buffer.
         /// </summary>
@@ -411,7 +411,7 @@ namespace Unity.Multiplayer.Netcode
         }
 #endif
         #endregion
-        
+
         #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
@@ -430,7 +430,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(ref FastBufferWriter writer, short value) => WriteValueBitPacked(ref writer, (ushort) Arithmetic.ZigZagEncode(value));
+        public static void WriteValueBitPacked(ref FastBufferWriter writer, short value) => WriteValueBitPacked(ref writer, (ushort)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
         /// Writes a 15-bit unsigned short to the buffer in a bit-encoded packed format.
@@ -450,7 +450,7 @@ namespace Unity.Multiplayer.Netcode
                 throw new ArgumentException("BitPacked ushorts must be <= 15 bits");
             }
 #endif
-            
+
             if (value <= 0b0111_1111)
             {
                 if (!writer.VerifyCanWriteInternal(1))
@@ -460,7 +460,7 @@ namespace Unity.Multiplayer.Netcode
                 writer.WriteByte((byte)(value << 1));
                 return;
             }
-            
+
             if (!writer.VerifyCanWriteInternal(2))
             {
                 throw new OverflowException("Writing past the end of the buffer");
@@ -479,7 +479,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(ref FastBufferWriter writer, int value) => WriteValueBitPacked(ref writer, (uint) Arithmetic.ZigZagEncode(value));
+        public static void WriteValueBitPacked(ref FastBufferWriter writer, int value) => WriteValueBitPacked(ref writer, (uint)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
         /// Writes a 30-bit unsigned int to the buffer in a bit-encoded packed format.
@@ -565,15 +565,15 @@ namespace Unity.Multiplayer.Netcode
                 return;
             }
             var writeBytes = BitCounter.GetUsedByteCount(value);
-            
-            if (!writer.VerifyCanWriteInternal(writeBytes+1))
+
+            if (!writer.VerifyCanWriteInternal(writeBytes + 1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
             writer.WriteByte((byte)(247 + writeBytes));
             writer.WritePartialValue(value, writeBytes);
         }
-        
+
         // Looks like the same code as WriteUInt64Packed?
         // It's actually different because it will call the more efficient 32-bit version
         // of BytewiseUtility.GetUsedByteCount().
@@ -591,8 +591,8 @@ namespace Unity.Multiplayer.Netcode
                 return;
             }
             var writeBytes = BitCounter.GetUsedByteCount(value);
-            
-            if (!writer.VerifyCanWriteInternal(writeBytes+1))
+
+            if (!writer.VerifyCanWriteInternal(writeBytes + 1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -603,14 +603,14 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe uint ToUint<T>(T value) where T : unmanaged
         {
-            uint* asUint = (uint*) &value;
+            uint* asUint = (uint*)&value;
             return *asUint;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe ulong ToUlong<T>(T value) where T : unmanaged
         {
-            ulong* asUlong = (ulong*) &value;
+            ulong* asUlong = (ulong*)&value;
             return *asUlong;
         }
         #endregion

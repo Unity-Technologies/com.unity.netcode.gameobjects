@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -62,22 +61,22 @@ namespace Unity.Netcode.EditorTests
             B,
             C
         };
-        
+
         private struct TestStruct
         {
-            public byte a;
-            public short b;
-            public ushort c;
-            public int d;
-            public uint e;
-            public long f;
-            public ulong g;
-            public bool h;
-            public char i;
-            public float j;
-            public double k;
+            public byte A;
+            public short B;
+            public ushort C;
+            public int D;
+            public uint E;
+            public long F;
+            public ulong G;
+            public bool H;
+            public char I;
+            public float J;
+            public double K;
         }
-        
+
         public enum WriteType
         {
             WriteDirect,
@@ -87,35 +86,35 @@ namespace Unity.Netcode.EditorTests
         #endregion
 
         #region Common Checks
-        private void WriteCheckBytes(ref FastBufferWriter writer, int writeSize, string failMessage="")
+        private void WriteCheckBytes(ref FastBufferWriter writer, int writeSize, string failMessage = "")
         {
             Assert.IsTrue(writer.VerifyCanWrite(2), "Writer denied write permission");
             writer.WriteValue((byte)0x80);
-            Assert.AreEqual(writeSize+1, writer.Position, failMessage);
-            Assert.AreEqual(writeSize+1, writer.Length, failMessage);
+            Assert.AreEqual(writeSize + 1, writer.Position, failMessage);
+            Assert.AreEqual(writeSize + 1, writer.Length, failMessage);
             writer.WriteValue((byte)0xFF);
-            Assert.AreEqual(writeSize+2, writer.Position, failMessage);
-            Assert.AreEqual(writeSize+2, writer.Length, failMessage);
+            Assert.AreEqual(writeSize + 2, writer.Position, failMessage);
+            Assert.AreEqual(writeSize + 2, writer.Length, failMessage);
         }
 
         private void VerifyCheckBytes(byte[] underlyingArray, int writeSize, string failMessage = "")
         {
             Assert.AreEqual(0x80, underlyingArray[writeSize], failMessage);
-            Assert.AreEqual(0xFF, underlyingArray[writeSize+1], failMessage);
+            Assert.AreEqual(0xFF, underlyingArray[writeSize + 1], failMessage);
         }
 
-        private unsafe void VerifyBytewiseEquality<T>(T value, byte[] underlyingArray, int valueOffset, int bufferOffset, int size, string failMessage = "") where T: unmanaged
+        private unsafe void VerifyBytewiseEquality<T>(T value, byte[] underlyingArray, int valueOffset, int bufferOffset, int size, string failMessage = "") where T : unmanaged
         {
-            byte* asBytePointer = (byte*) &value;
+            byte* asBytePointer = (byte*)&value;
             for (var i = 0; i < size; ++i)
             {
-                Assert.AreEqual(asBytePointer[i+valueOffset], underlyingArray[i+bufferOffset], failMessage);
+                Assert.AreEqual(asBytePointer[i + valueOffset], underlyingArray[i + bufferOffset], failMessage);
             }
         }
 
-        private unsafe void VerifyTypedEquality<T>(T value, byte* unsafePtr) where T: unmanaged
+        private unsafe void VerifyTypedEquality<T>(T value, byte* unsafePtr) where T : unmanaged
         {
-            T* checkValue = (T*) unsafePtr;
+            var checkValue = (T*)unsafePtr;
             Assert.AreEqual(value, *checkValue);
         }
 
@@ -125,15 +124,15 @@ namespace Unity.Netcode.EditorTests
             Assert.AreEqual(position, writer.Length, failMessage);
         }
 
-        private unsafe void CommonChecks<T>(ref FastBufferWriter writer, T valueToTest, int writeSize, string failMessage = "") where T: unmanaged
+        private unsafe void CommonChecks<T>(ref FastBufferWriter writer, T valueToTest, int writeSize, string failMessage = "") where T : unmanaged
         {
-            
+
             VerifyPositionAndLength(ref writer, writeSize, failMessage);
-            
+
             WriteCheckBytes(ref writer, writeSize, failMessage);
-            
+
             var underlyingArray = writer.ToArray();
-            
+
             VerifyBytewiseEquality(valueToTest, underlyingArray, 0, 0, writeSize, failMessage);
 
             VerifyCheckBytes(underlyingArray, writeSize, failMessage);
@@ -141,7 +140,7 @@ namespace Unity.Netcode.EditorTests
             VerifyTypedEquality(valueToTest, writer.GetUnsafePtr());
         }
         #endregion
-        
+
         #region Generic Checks
         private unsafe void RunTypeTest<T>(T valueToTest) where T : unmanaged
         {
@@ -149,10 +148,10 @@ namespace Unity.Netcode.EditorTests
             var alternateWriteSize = FastBufferWriter.GetWriteSize<T>();
             Assert.AreEqual(sizeof(T), writeSize);
             Assert.AreEqual(sizeof(T), alternateWriteSize);
-            
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
 
-            using(writer)
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+
+            using (writer)
             {
 
                 Assert.IsTrue(writer.VerifyCanWrite(writeSize + 2), "Writer denied write permission");
@@ -167,9 +166,9 @@ namespace Unity.Netcode.EditorTests
         private unsafe void RunTypeTestSafe<T>(T valueToTest) where T : unmanaged
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
 
-            using(writer)
+            using (writer)
             {
                 Assert.AreEqual(sizeof(T), writeSize);
 
@@ -180,13 +179,13 @@ namespace Unity.Netcode.EditorTests
                 CommonChecks(ref writer, valueToTest, writeSize, failMessage);
             }
         }
-        
+
         private unsafe void RunObjectTypeTest<T>(T valueToTest) where T : unmanaged
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
 
-            using(writer)
+            using (writer)
             {
                 Assert.AreEqual(sizeof(T), writeSize);
 
@@ -197,14 +196,14 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void VerifyArrayEquality<T>(T[] value, byte* unsafePtr, int offset) where T: unmanaged
+        private unsafe void VerifyArrayEquality<T>(T[] value, byte* unsafePtr, int offset) where T : unmanaged
         {
             int* sizeValue = (int*)(unsafePtr + offset);
             Assert.AreEqual(value.Length, *sizeValue);
 
             fixed (T* asTPointer = value)
             {
-                T* underlyingTArray = (T*) (unsafePtr + sizeof(int) + offset);
+                var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
                 for (var i = 0; i < value.Length; ++i)
                 {
                     Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
@@ -215,7 +214,7 @@ namespace Unity.Netcode.EditorTests
         private unsafe void RunTypeArrayTest<T>(T[] valueToTest) where T : unmanaged
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
             using (writer)
             {
 
@@ -237,7 +236,7 @@ namespace Unity.Netcode.EditorTests
         private unsafe void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
             using (writer)
             {
 
@@ -259,10 +258,10 @@ namespace Unity.Netcode.EditorTests
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             // Extra byte for WriteObject adding isNull flag
-            FastBufferWriter writer = new FastBufferWriter(writeSize + 3, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(writeSize + 3, Allocator.Temp);
+            using (writer)
             {
-                
+
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
                 writer.WriteObject(valueToTest);
@@ -286,19 +285,19 @@ namespace Unity.Netcode.EditorTests
 
             var testStruct = new TestStruct
             {
-                a = (byte) random.Next(),
-                b = (short) random.Next(),
-                c = (ushort) random.Next(),
-                d = (int) random.Next(),
-                e = (uint) random.Next(),
-                f = ((long) random.Next() << 32) + random.Next(),
-                g = ((ulong) random.Next() << 32) + (ulong) random.Next(),
-                h = true,
-                i = '\u263a',
-                j = (float) random.NextDouble(),
-                k = random.NextDouble(),
+                A = (byte)random.Next(),
+                B = (short)random.Next(),
+                C = (ushort)random.Next(),
+                D = (int)random.Next(),
+                E = (uint)random.Next(),
+                F = ((long)random.Next() << 32) + random.Next(),
+                G = ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                H = true,
+                I = '\u263a',
+                J = (float)random.NextDouble(),
+                K = random.NextDouble(),
             };
-            
+
             return testStruct;
         }
         #endregion
@@ -318,7 +317,7 @@ namespace Unity.Netcode.EditorTests
 
             if (testType == typeof(byte))
             {
-                byte b = (byte) random.Next();
+                byte b = (byte)random.Next();
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(b);
@@ -334,7 +333,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(sbyte))
             {
-                sbyte sb = (sbyte) random.Next();
+                sbyte sb = (sbyte)random.Next();
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(sb);
@@ -748,7 +747,7 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(Ray))
             {
                 var v = new Ray(
-                    new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), 
+                    new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()));
                 if (writeType == WriteType.WriteDirect)
                 {
@@ -766,7 +765,7 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(Ray2D))
             {
                 var v = new Ray2D(
-                    new Vector2((float)random.NextDouble(), (float)random.NextDouble()), 
+                    new Vector2((float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble()));
                 if (writeType == WriteType.WriteDirect)
                 {
@@ -1467,7 +1466,7 @@ namespace Unity.Netcode.EditorTests
         {
             SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
             {
-                writer.WriteValueSafe((TestStruct) obj);
+                writer.WriteValueSafe((TestStruct)obj);
             };
             try
             {
@@ -1506,7 +1505,7 @@ namespace Unity.Netcode.EditorTests
         {
             SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
             {
-                writer.WriteValueSafe((TestStruct) obj);
+                writer.WriteValueSafe((TestStruct)obj);
             };
             try
             {
@@ -1530,8 +1529,8 @@ namespace Unity.Netcode.EditorTests
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
 
-            FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
+            using (writer)
             {
 
                 Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
@@ -1540,12 +1539,12 @@ namespace Unity.Netcode.EditorTests
                 VerifyPositionAndLength(ref writer, serializedValueSize);
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                int* sizeValue = (int*) writer.GetUnsafePtr();
+                int* sizeValue = (int*)writer.GetUnsafePtr();
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
                 {
-                    char* underlyingCharArray = (char*) (writer.GetUnsafePtr() + sizeof(int));
+                    char* underlyingCharArray = (char*)(writer.GetUnsafePtr() + sizeof(int));
                     for (var i = 0; i < valueToTest.Length; ++i)
                     {
                         Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
@@ -1564,8 +1563,8 @@ namespace Unity.Netcode.EditorTests
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
 
-            FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
+            using (writer)
             {
 
                 writer.WriteValueSafe(valueToTest);
@@ -1573,12 +1572,12 @@ namespace Unity.Netcode.EditorTests
                 VerifyPositionAndLength(ref writer, serializedValueSize);
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                int* sizeValue = (int*) writer.GetUnsafePtr();
+                int* sizeValue = (int*)writer.GetUnsafePtr();
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
                 {
-                    char* underlyingCharArray = (char*) ((byte*) writer.GetUnsafePtr() + sizeof(int));
+                    char* underlyingCharArray = (char*)((byte*)writer.GetUnsafePtr() + sizeof(int));
                     for (var i = 0; i < valueToTest.Length; ++i)
                     {
                         Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
@@ -1597,8 +1596,8 @@ namespace Unity.Netcode.EditorTests
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
 
-            FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
+            using (writer)
             {
 
                 writer.WriteObject(valueToTest);
@@ -1606,12 +1605,12 @@ namespace Unity.Netcode.EditorTests
                 VerifyPositionAndLength(ref writer, serializedValueSize + sizeof(byte));
                 WriteCheckBytes(ref writer, serializedValueSize + sizeof(byte));
 
-                int* sizeValue = (int*) (writer.GetUnsafePtr() + sizeof(byte));
+                int* sizeValue = (int*)(writer.GetUnsafePtr() + sizeof(byte));
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
                 {
-                    char* underlyingCharArray = (char*) (writer.GetUnsafePtr() + sizeof(int) + sizeof(byte));
+                    char* underlyingCharArray = (char*)(writer.GetUnsafePtr() + sizeof(int) + sizeof(byte));
                     for (var i = 0; i < valueToTest.Length; ++i)
                     {
                         Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
@@ -1629,8 +1628,8 @@ namespace Unity.Netcode.EditorTests
             string valueToTest = "Hello, I am a test string!";
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest, true);
-            FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
+            using (writer)
             {
 
                 Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
@@ -1639,7 +1638,7 @@ namespace Unity.Netcode.EditorTests
                 VerifyPositionAndLength(ref writer, serializedValueSize);
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                int* sizeValue = (int*) writer.GetUnsafePtr();
+                int* sizeValue = (int*)writer.GetUnsafePtr();
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
@@ -1647,7 +1646,7 @@ namespace Unity.Netcode.EditorTests
                     byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int);
                     for (var i = 0; i < valueToTest.Length; ++i)
                     {
-                        Assert.AreEqual((byte) asCharPointer[i], underlyingByteArray[i]);
+                        Assert.AreEqual((byte)asCharPointer[i], underlyingByteArray[i]);
                     }
                 }
 
@@ -1662,8 +1661,8 @@ namespace Unity.Netcode.EditorTests
             string valueToTest = "Hello, I am a test string!";
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest, true);
-            FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using(writer)
+            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
+            using (writer)
             {
 
                 writer.WriteValueSafe(valueToTest, true);
@@ -1671,7 +1670,7 @@ namespace Unity.Netcode.EditorTests
                 VerifyPositionAndLength(ref writer, serializedValueSize);
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                int* sizeValue = (int*) writer.GetUnsafePtr();
+                int* sizeValue = (int*)writer.GetUnsafePtr();
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
@@ -1679,7 +1678,7 @@ namespace Unity.Netcode.EditorTests
                     byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int);
                     for (var i = 0; i < valueToTest.Length; ++i)
                     {
-                        Assert.AreEqual((byte) asCharPointer[i], underlyingByteArray[i]);
+                        Assert.AreEqual((byte)asCharPointer[i], underlyingByteArray[i]);
                     }
                 }
 
@@ -1692,8 +1691,8 @@ namespace Unity.Netcode.EditorTests
         public unsafe void TestWritingPartialValues([NUnit.Framework.Range(1, sizeof(ulong))] int count)
         {
             var random = new Random();
-            var valueToTest = ((ulong) random.Next() << 32) + (ulong)random.Next();
-            FastBufferWriter writer = new FastBufferWriter(sizeof(ulong) + 2, Allocator.Temp);
+            var valueToTest = ((ulong)random.Next() << 32) + (ulong)random.Next();
+            var writer = new FastBufferWriter(sizeof(ulong) + 2, Allocator.Temp);
             using (writer)
             {
 
@@ -1713,18 +1712,18 @@ namespace Unity.Netcode.EditorTests
                     mask = (mask << 8) | 0b11111111;
                 }
 
-                ulong* checkValue = (ulong*) writer.GetUnsafePtr();
+                ulong* checkValue = (ulong*)writer.GetUnsafePtr();
                 Assert.AreEqual(valueToTest & mask, *checkValue & mask, failMessage);
             }
         }
 
         [Test]
-        public unsafe void TestWritingPartialValuesWithOffsets([NUnit.Framework.Range(1, sizeof(ulong)-2)] int count)
+        public unsafe void TestWritingPartialValuesWithOffsets([NUnit.Framework.Range(1, sizeof(ulong) - 2)] int count)
         {
             var random = new Random();
-            var valueToTest = ((ulong) random.Next() << 32) + (ulong)random.Next();
-            FastBufferWriter writer = new FastBufferWriter(sizeof(ulong) + 2, Allocator.Temp);
-            
+            var valueToTest = ((ulong)random.Next() << 32) + (ulong)random.Next();
+            var writer = new FastBufferWriter(sizeof(ulong) + 2, Allocator.Temp);
+
             using (writer)
             {
 
@@ -1744,7 +1743,7 @@ namespace Unity.Netcode.EditorTests
                     mask = (mask << 8) | 0b11111111;
                 }
 
-                ulong* checkValue = (ulong*) writer.GetUnsafePtr();
+                ulong* checkValue = (ulong*)writer.GetUnsafePtr();
                 Assert.AreEqual((valueToTest >> 16) & mask, *checkValue & mask);
             }
         }
@@ -1762,7 +1761,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(testStruct);
                 var array = writer.ToArray();
                 var underlyingArray = writer.ToArray();
-                for(var i = 0; i < array.Length; ++i)
+                for (var i = 0; i < array.Length; ++i)
                 {
                     Assert.AreEqual(array[i], underlyingArray[i]);
                 }
@@ -1777,7 +1776,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 Assert.Throws<OverflowException>(() => { writer.WriteByte(1); });
-                var bytes = new byte[] {0, 1, 2};
+                var bytes = new byte[] { 0, 1, 2 };
                 Assert.Throws<OverflowException>(() => { writer.WriteBytes(bytes, bytes.Length); });
                 int i = 1;
                 Assert.Throws<OverflowException>(() => { writer.WriteValue(i); });
@@ -1801,7 +1800,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 writer.VerifyCanWrite(100);
-                var bytes = new byte[] {0, 1, 2};
+                var bytes = new byte[] { 0, 1, 2 };
                 int i = 1;
                 using (var context = writer.EnterBitwiseContext())
                 {
@@ -1810,7 +1809,7 @@ namespace Unity.Netcode.EditorTests
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(i); });
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(bytes); });
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(""); });
-                    
+
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteByteSafe(1); });
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(i); });
@@ -1822,7 +1821,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(i);
                 writer.WriteValue(bytes);
                 writer.WriteValue("");
-            
+
                 writer.WriteByteSafe(1);
                 writer.WriteBytesSafe(bytes, bytes.Length);
                 writer.WriteValueSafe(i);
@@ -1880,7 +1879,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(writer.Position, 4);
                 Assert.AreEqual(writer.Length, 10);
 
-                var expected = new byte[] {1, 3, 2, 5, 4, 0};
+                var expected = new byte[] { 1, 3, 2, 5, 4, 0 };
                 var underlyingArray = writer.ToArray();
                 for (var i = 0; i < expected.Length; ++i)
                 {
@@ -1902,7 +1901,7 @@ namespace Unity.Netcode.EditorTests
                 writer.Seek(5);
                 Assert.AreEqual(writer.Position, 5);
                 Assert.AreEqual(writer.Length, 10);
-                
+
                 writer.Truncate(8);
                 Assert.AreEqual(writer.Position, 5);
                 Assert.AreEqual(writer.Length, 8);
@@ -1927,7 +1926,7 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(150, Allocator.Temp);
             var growingWriter = new FastBufferWriter(150, Allocator.Temp, 500);
             Assert.AreEqual(150, writer.Capacity);
-            using (writer) 
+            using (writer)
             using (growingWriter)
             {
                 var testStruct = GetTestStruct();
@@ -1935,7 +1934,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(testStruct);
                 growingWriter.VerifyCanWriteValue(testStruct);
                 growingWriter.WriteValue(testStruct);
-                
+
                 // Seek to exactly where the write would cross the buffer boundary
                 writer.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
                 growingWriter.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
@@ -1944,10 +1943,10 @@ namespace Unity.Netcode.EditorTests
                 // First writer isn't allowed to grow because it didn't specify a maxSize
                 Assert.IsFalse(writer.VerifyCanWriteValue(testStruct));
                 Assert.Throws<OverflowException>(() => writer.WriteValue(testStruct));
-                
+
                 // Second writer is allowed to grow
                 Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
-                
+
                 // First writer shouldn't have grown
                 Assert.AreEqual(150, writer.Capacity);
                 Assert.AreEqual(preGrowthLength, writer.ToArray().Length);
@@ -1955,28 +1954,28 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(300, growingWriter.Capacity);
                 Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
                 growingWriter.WriteValue(testStruct);
-                
+
                 // Write right up to the very end of the buffer, verify it doesn't grow
                 growingWriter.Seek(300 - FastBufferWriter.GetWriteSize(testStruct));
                 Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
                 Assert.AreEqual(300, growingWriter.Capacity);
                 Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
                 growingWriter.WriteValue(testStruct);
-                
+
                 // Go to the end of the buffer and grow again
                 growingWriter.Seek(300);
                 Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
                 growingWriter.WriteValue(testStruct);
-                
+
                 // Second growth caps it at maxSize
                 Assert.AreEqual(500, growingWriter.Capacity);
                 Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
-                
+
                 VerifyBytewiseEquality(testStruct, writer.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
                 // Verify the growth properly copied the existing data
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
-                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 150-FastBufferWriter.GetWriteSize(testStruct)+1, FastBufferWriter.GetWriteSize(testStruct));
-                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 300-FastBufferWriter.GetWriteSize(testStruct), FastBufferWriter.GetWriteSize(testStruct));
+                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 150 - FastBufferWriter.GetWriteSize(testStruct) + 1, FastBufferWriter.GetWriteSize(testStruct));
+                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 300 - FastBufferWriter.GetWriteSize(testStruct), FastBufferWriter.GetWriteSize(testStruct));
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 300, FastBufferWriter.GetWriteSize(testStruct));
             }
         }
@@ -2009,11 +2008,11 @@ namespace Unity.Netcode.EditorTests
             }
             finally
             {
-                GameObject.DestroyImmediate(obj);
+                UnityEngine.Object.DestroyImmediate(obj);
                 networkManager.StopHost();
             }
         }
-        
+
         [Test]
         public void TestNetworkBehaviour()
         {
@@ -2069,7 +2068,7 @@ namespace Unity.Netcode.EditorTests
                 }
             });
         }
-        
+
         [Test]
         public void TestNetworkBehaviourSafe()
         {
@@ -2119,7 +2118,7 @@ namespace Unity.Netcode.EditorTests
                 }
             });
         }
-        
+
         [Test]
         public void TestNetworkBehaviourAsObject()
         {
@@ -2135,7 +2134,7 @@ namespace Unity.Netcode.EditorTests
                     Assert.AreEqual(0, writer.ToArray()[0]);
                     VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 1, sizeof(ulong));
                     VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.ToArray(), 0,
-                        sizeof(ulong)+1, sizeof(ushort));
+                        sizeof(ulong) + 1, sizeof(ushort));
                 }
             });
         }
@@ -2184,7 +2183,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.VerifyCanWrite(25);
                 writer.VerifyCanWriteInternal(5);
-                Assert.AreEqual(writer.m_AllowedWriteMark, 25);
+                Assert.AreEqual(writer.AllowedWriteMark, 25);
             }
         }
         #endregion

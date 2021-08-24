@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
@@ -37,14 +37,14 @@ namespace Unity.Multiplayer.Netcode
                     return;
                 }
             }
-            
+
             var hasDeserializer = SerializationTypeTable.DeserializersPacked.TryGetValue(type, out var deserializer);
             if (hasDeserializer)
             {
                 deserializer(ref reader, out value);
                 return;
             }
-            
+
             if (type.IsArray && type.HasElementType)
             {
                 ReadValuePacked(ref reader, out int length);
@@ -60,7 +60,7 @@ namespace Unity.Multiplayer.Netcode
                 value = arr;
                 return;
             }
-            
+
             if (type.IsEnum)
             {
                 switch (Type.GetTypeCode(type))
@@ -107,7 +107,7 @@ namespace Unity.Multiplayer.Netcode
                         return;
                 }
             }
-            
+
             if (type == typeof(GameObject))
             {
                 reader.ReadValueSafe(out GameObject go);
@@ -137,9 +137,9 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
         }
         #endregion
-        
+
         #region Unmanaged Type Packing
-        
+
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -194,7 +194,7 @@ namespace Unity.Multiplayer.Netcode
             ReadUInt64Packed(ref reader, out ulong asULong);
             value = ToDouble(asULong);
         }
-        
+
         /// <summary>
         /// Read a byte from the stream.
         /// </summary>
@@ -212,7 +212,7 @@ namespace Unity.Multiplayer.Netcode
         public static void ReadValuePacked(ref FastBufferReader reader, out sbyte value)
         {
             reader.ReadByteSafe(out byte byteVal);
-            value = (sbyte) byteVal;
+            value = (sbyte)byteVal;
         }
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace Unity.Multiplayer.Netcode
             ReadUInt32Packed(ref reader, out uint readValue);
             value = (int)Arithmetic.ZigZagDecode(readValue);
         }
-        
+
         /// <summary>
         /// Read an unsigned int (UInt32) from the stream.
         /// </summary>
@@ -299,7 +299,7 @@ namespace Unity.Multiplayer.Netcode
             ReadUInt64Packed(ref reader, out ulong readValue);
             value = Arithmetic.ZigZagDecode(readValue);
         }
-        
+
         /// <summary>
         /// Convenience method that reads two packed Vector3 from the ray from the stream
         /// </summary>
@@ -434,7 +434,7 @@ namespace Unity.Multiplayer.Netcode
         }
 #endif
         #endregion
-        
+
         #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
@@ -463,7 +463,7 @@ namespace Unity.Multiplayer.Netcode
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out ushort value)
         {
             ushort returnValue = 0;
-            byte* ptr = ((byte*) &returnValue);
+            byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b1) + 1;
             if (!reader.VerifyCanReadInternal(numBytes))
@@ -478,7 +478,7 @@ namespace Unity.Multiplayer.Netcode
                     break;
                 case 2:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
+                    *(ptr + 1) = *(data + 1);
                     break;
                 default:
                     throw new InvalidOperationException("Could not read bit-packed value: impossible byte count");
@@ -498,7 +498,7 @@ namespace Unity.Multiplayer.Netcode
             ReadValueBitPacked(ref reader, out uint readValue);
             value = (int)Arithmetic.ZigZagDecode(readValue);
         }
-        
+
         /// <summary>
         /// Read a bit-packed 30-bit unsigned int from the stream.
         /// See BytePacker.cs for a description of the format.
@@ -508,7 +508,7 @@ namespace Unity.Multiplayer.Netcode
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out uint value)
         {
             uint returnValue = 0;
-            byte* ptr = ((byte*) &returnValue);
+            byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b11) + 1;
             if (!reader.VerifyCanReadInternal(numBytes))
@@ -523,18 +523,18 @@ namespace Unity.Multiplayer.Netcode
                     break;
                 case 2:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
+                    *(ptr + 1) = *(data + 1);
                     break;
                 case 3:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
                     break;
                 case 4:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
                     break;
             }
 
@@ -552,7 +552,7 @@ namespace Unity.Multiplayer.Netcode
             ReadValueBitPacked(ref reader, out ulong readValue);
             value = Arithmetic.ZigZagDecode(readValue);
         }
-        
+
         /// <summary>
         /// Read a bit-packed 61-bit signed long from the stream.
         /// See BytePacker.cs for a description of the format.
@@ -562,7 +562,7 @@ namespace Unity.Multiplayer.Netcode
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out ulong value)
         {
             ulong returnValue = 0;
-            byte* ptr = ((byte*) &returnValue);
+            byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b111) + 1;
             if (!reader.VerifyCanReadInternal(numBytes))
@@ -577,52 +577,52 @@ namespace Unity.Multiplayer.Netcode
                     break;
                 case 2:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
+                    *(ptr + 1) = *(data + 1);
                     break;
                 case 3:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
                     break;
                 case 4:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
                     break;
                 case 5:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
-                    *(ptr+4) = *(data+4);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
+                    *(ptr + 4) = *(data + 4);
                     break;
                 case 6:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
-                    *(ptr+4) = *(data+4);
-                    *(ptr+5) = *(data+5);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
+                    *(ptr + 4) = *(data + 4);
+                    *(ptr + 5) = *(data + 5);
                     break;
                 case 7:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
-                    *(ptr+4) = *(data+4);
-                    *(ptr+5) = *(data+5);
-                    *(ptr+6) = *(data+6);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
+                    *(ptr + 4) = *(data + 4);
+                    *(ptr + 5) = *(data + 5);
+                    *(ptr + 6) = *(data + 6);
                     break;
                 case 8:
                     *ptr = *data;
-                    *(ptr+1) = *(data+1);
-                    *(ptr+2) = *(data+2);
-                    *(ptr+3) = *(data+3);
-                    *(ptr+4) = *(data+4);
-                    *(ptr+5) = *(data+5);
-                    *(ptr+6) = *(data+6);
-                    *(ptr+7) = *(data+7);
+                    *(ptr + 1) = *(data + 1);
+                    *(ptr + 2) = *(data + 2);
+                    *(ptr + 3) = *(data + 3);
+                    *(ptr + 4) = *(data + 4);
+                    *(ptr + 5) = *(data + 5);
+                    *(ptr + 6) = *(data + 6);
+                    *(ptr + 7) = *(data + 7);
                     break;
             }
 
@@ -655,7 +655,7 @@ namespace Unity.Multiplayer.Netcode
             }
             reader.ReadPartialValue(out value, numBytes);
         }
-        
+
         private static void ReadUInt32Packed(ref FastBufferReader reader, out uint value)
         {
             reader.ReadByteSafe(out byte firstByte);
@@ -683,14 +683,14 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe float ToSingle<T>(T value) where T : unmanaged
         {
-            float* asFloat = (float*) &value;
+            float* asFloat = (float*)&value;
             return *asFloat;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe double ToDouble<T>(T value) where T : unmanaged
         {
-            double* asDouble = (double*) &value;
+            double* asDouble = (double*)&value;
             return *asDouble;
         }
         #endregion

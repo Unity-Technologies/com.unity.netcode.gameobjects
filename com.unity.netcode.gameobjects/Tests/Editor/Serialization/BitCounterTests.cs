@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Unity.Multiplayer.Netcode;
 
 namespace Unity.Netcode.EditorTests
@@ -15,10 +15,10 @@ namespace Unity.Netcode.EditorTests
             for (int i = 0; i < 64; ++i)
             {
                 value = 1UL << i;
-                Assert.AreEqual(i+1, BitCounter.GetUsedBitCount(value));
+                Assert.AreEqual(i + 1, BitCounter.GetUsedBitCount(value));
             }
         }
-        
+
         [Test]
         public void TestBitCounter32Bits()
         {
@@ -29,7 +29,7 @@ namespace Unity.Netcode.EditorTests
             for (int i = 0; i < 32; ++i)
             {
                 value = 1U << i;
-                Assert.AreEqual(i+1, BitCounter.GetUsedBitCount(value));
+                Assert.AreEqual(i + 1, BitCounter.GetUsedBitCount(value));
             }
         }
         [Test]
@@ -42,10 +42,10 @@ namespace Unity.Netcode.EditorTests
             for (int i = 0; i < 64; ++i)
             {
                 value = 1UL << i;
-                Assert.AreEqual(i/8+1, BitCounter.GetUsedByteCount(value));
+                Assert.AreEqual(i / 8 + 1, BitCounter.GetUsedByteCount(value));
             }
         }
-        
+
         [Test]
         public void TestByteCounter32Bits()
         {
@@ -56,7 +56,7 @@ namespace Unity.Netcode.EditorTests
             for (int i = 0; i < 32; ++i)
             {
                 value = 1U << i;
-                Assert.AreEqual(i/8+1, BitCounter.GetUsedByteCount(value));
+                Assert.AreEqual(i / 8 + 1, BitCounter.GetUsedByteCount(value));
             }
         }
     }
