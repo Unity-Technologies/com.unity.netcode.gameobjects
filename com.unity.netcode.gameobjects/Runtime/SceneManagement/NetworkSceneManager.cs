@@ -1053,8 +1053,16 @@ namespace Unity.Netcode
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
+                    if(!ValidateSceneBeforeLoading(sceneIndex, scene.name, LoadSceneMode.Single))
+                    {
+                        continue;
+                    }
                     ClientSynchEventData.SceneIndex = sceneIndex;
                     ClientSynchEventData.SceneHandle = scene.handle;
+                }
+                else if (!ValidateSceneBeforeLoading(sceneIndex, scene.name, LoadSceneMode.Additive))
+                {
+                    continue;
                 }
 
                 ClientSynchEventData.AddSceneToSynchronize(sceneIndex, scene.handle);
