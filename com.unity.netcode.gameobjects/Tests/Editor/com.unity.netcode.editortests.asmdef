@@ -4,30 +4,20 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [
+	"versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }
