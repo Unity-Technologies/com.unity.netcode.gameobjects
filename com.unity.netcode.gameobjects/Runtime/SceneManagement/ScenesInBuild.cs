@@ -18,27 +18,20 @@ namespace Unity.Netcode
     /// </summary>
     public class ScenesInBuild : ScriptableObject
     {
-
-
         [HideInInspector]
         [SerializeField]
         internal List<string> Scenes;
 
-
+#if UNITY_EDITOR
         private bool IsRunningUnitTest()
         {
-#if UNITY_EDITOR
             if (!EditorApplication.isPlaying)
             {
                 return false;
             }
-#endif
             // For scenes in build, we have to check whether we are running a unit test or not each time
             return SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
         }
-
-
-#if UNITY_EDITOR
 
         /// <summary>
         /// This will create a new ScenesInBuildList asset if one does not exist and will adjust the path to the ScenesInBuildList
