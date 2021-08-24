@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkPrefabHandlerTests
     {
 
-        private const string  k_TestPrefabObjectName = "NetworkPrefaTestObject";
+        private const string  k_TestPrefabObjectName = "NetworkPrefabTestObject";
         private uint m_GlobalObjectIdHashBase = 123456;
         private GameObject MakeValidNetworkPrefab()
         {
