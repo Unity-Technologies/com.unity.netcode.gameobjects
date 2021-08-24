@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
@@ -14,15 +15,25 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkPrefabHandlerTests
     {
+
+        private const string  k_TestPrefabObjectName = "NetworkPrefabTestObject";
+        private uint m_GlobalObjectIdHashBase = 123456;
+        private GameObject MakeValidNetworkPrefab()
+        {
+            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_GlobalObjectIdHashBase.ToString());
+            NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(validPrefab, m_GlobalObjectIdHashBase);
+            m_GlobalObjectIdHashBase++;
+            return validPrefab.gameObject;
+        }
+
         /// <summary>
-        /// Tests the NetwokConfig NetworkPrefabs initialization during NetworkManager's Init method
+        /// Tests the NetwokConfig NetworkPrefabs initialization during NetworkManager's Init method to make sure that
+        /// it will still initialize but remove the invalid prefabs
         /// </summary>
         [Test]
         public void NetworkConfigInvalidNetworkPrefabTest()
         {
-            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
-            NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
 
             // Add null entry
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(null);
@@ -30,11 +41,30 @@ namespace Unity.Netcode.RuntimeTests
             // Add a NetworkPrefab with no prefab
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab());
 
-            var validNetworkPrefab = new NetworkPrefab();
-            validNetworkPrefab.Prefab = baseObject.gameObject;
+            // Add a NetworkPrefab override with an invalid hash
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 0 });
+            
+            // Add a NetworkPrefab override with a valid hash but an invalid target prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
 
-            //Add a valid prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            // Add a NetworkPrefab override with a valid hash to override but an invalid target prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
+
+            // Add a NetworkPrefab override with an invalid source prefab to override
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = null });
+
+            // Add a NetworkPrefab override with a valid source prefab to override but an invalid target prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = MakeValidNetworkPrefab(), OverridingTargetPrefab = null });
+
+            // Add a valid prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = MakeValidNetworkPrefab() });
+
+            // Add a NetworkPrefab override with a valid hash and valid target prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 11111111, OverridingTargetPrefab = MakeValidNetworkPrefab() });
+
+            // Add a NetworkPrefab override with a valid prefab and valid target prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = MakeValidNetworkPrefab(), OverridingTargetPrefab = MakeValidNetworkPrefab() });
+
             var exceptionOccurred = false;
             try
             {
@@ -46,14 +76,18 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Assert.False(exceptionOccurred);
+
+            // In the end we should only have 3 valid registered network prefabs
+            Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabOverrideLinks.Count == 3);
         }
 
+        private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
         [Test]
         public void NetworkPrefabHandlerClass()
         {
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
+            var testPrefabObjectName = k_PrefabObjectName;
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
@@ -150,6 +184,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             //Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
+
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
+            foreach (var networkObject in networkObjectsList)
+            {
+                UnityEngine.Object.DestroyImmediate(networkObject);
+            }
         }
     }
 

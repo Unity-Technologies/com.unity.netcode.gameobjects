@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -12,6 +13,8 @@ namespace Unity.Netcode.RuntimeTests
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
+
+        internal static uint DefaultPayerGlobalObjectIdHashValue = 7777777;
 
         protected abstract int NbClients { get; }
 
@@ -39,6 +42,15 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
+            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
+            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
+            foreach (var networkObject in networkObjectsList)
+            {
+                Object.DestroyImmediate(networkObject);
+            }
+
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
             int nextFrameNumber = Time.frameCount + 1;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -53,6 +65,16 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
         {
+            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
+            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
+            foreach (var netObject in networkObjects)
+            {
+                Object.DestroyImmediate(netObject);
+            }
+
+
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
@@ -66,7 +88,6 @@ namespace Unity.Netcode.RuntimeTests
             // Create playerPrefab
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-
             /*
              * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
              * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
@@ -75,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
 
             updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
 
