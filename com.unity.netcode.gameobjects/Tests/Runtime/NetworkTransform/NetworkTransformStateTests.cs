@@ -162,7 +162,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            Object.DestroyImmediate(networkTransform);
+            Object.DestroyImmediate(gameObject);
         }
 
         [Test]
@@ -343,7 +343,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            Object.DestroyImmediate(networkTransform);
+            Object.DestroyImmediate(gameObject);
         }
     }
 }
