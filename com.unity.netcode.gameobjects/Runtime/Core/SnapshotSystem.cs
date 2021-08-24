@@ -469,25 +469,6 @@ namespace Unity.Netcode
 
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
-            for (var i = 0; i < despawnCount; i++)
-            {
-                despawnCommand = ReadDespawn(reader);
-
-                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
-                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
-                {
-                    continue;
-                }
-
-                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
-
-                // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
-
-                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
-                    out NetworkObject networkObject);
-
-                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
-            }
         }
 
         internal void ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader, ConnectionRtt connection)
