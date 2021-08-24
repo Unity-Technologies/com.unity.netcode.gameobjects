@@ -1,8 +1,6 @@
-using System;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
+
 
 namespace Unity.Netcode
 {
@@ -52,22 +50,17 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Client Side: handles the connection approved message
+        /// </summary>
+        /// <param name="clientId">transport derived client identifier (currently not used)</param>
+        /// <param name="stream">incoming stream</param>
+        /// <param name="receiveTime">time this message was received (currently not used)</param>
         public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 NetworkManager.LocalClientId = reader.ReadUInt64Packed();
-
-                uint sceneIndex = 0;
-                var sceneSwitchProgressGuid = new Guid();
-
-                if (NetworkManager.NetworkConfig.EnableSceneManagement)
-                {
-                    sceneIndex = reader.ReadUInt32Packed();
-                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
-                }
-
-                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
                 int tick = reader.ReadInt32Packed();
                 var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
@@ -75,52 +68,17 @@ namespace Unity.Netcode
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
-                void DelayedSpawnAction(Stream continuationStream)
+                // Only if scene management is disabled do we handle NetworkObject synchronization at this point
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
+                    NetworkManager.SpawnManager.DestroySceneObjects();
+
+                    // is not packed!
+                    var objectCount = reader.ReadUInt16();
+                    for (ushort i = 0; i < objectCount; i++)
                     {
-                        if (!NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            NetworkManager.SpawnManager.DestroySceneObjects();
-                        }
-                        else
-                        {
-                            NetworkManager.SceneManager.PopulateScenePlacedObjects();
-                        }
-
-                        var objectCount = continuationReader.ReadUInt32Packed();
-                        for (int i = 0; i < objectCount; i++)
-                        {
-                            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
-                        }
-
-                        NetworkManager.IsConnectedClient = true;
-                        NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
+                        NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
                     }
-                }
-
-                if (sceneSwitch)
-                {
-                    UnityAction<Scene, Scene> onSceneLoaded = null;
-
-                    var continuationBuffer = new NetworkBuffer();
-                    continuationBuffer.CopyUnreadFrom(stream);
-                    continuationBuffer.Position = 0;
-
-                    void OnSceneLoadComplete()
-                    {
-                        SceneManager.activeSceneChanged -= onSceneLoaded;
-                        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
-                        DelayedSpawnAction(continuationBuffer);
-                    }
-
-                    onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
-                    SceneManager.activeSceneChanged += onSceneLoaded;
-                    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
-                }
-                else
-                {
-                    DelayedSpawnAction(stream);
                 }
             }
         }
@@ -177,28 +135,16 @@ namespace Unity.Netcode
             }
         }
 
-        public void HandleSwitchScene(ulong clientId, Stream stream)
+        /// <summary>
+        /// Called for all Scene Management related events
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="stream"></param>
+        public void HandleSceneEvent(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                uint sceneIndex = reader.ReadUInt32Packed();
-                var switchSceneGuid = new Guid(reader.ReadByteArray());
-
-                var objectBuffer = new NetworkBuffer();
-                objectBuffer.CopyUnreadFrom(stream);
-                objectBuffer.Position = 0;
-
-                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
-            }
+            NetworkManager.SceneManager.HandleSceneEvent(clientId, stream);
         }
 
-        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                m_NetworkManager.SceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
-            }
-        }
 
         public void HandleChangeOwner(ulong clientId, Stream stream)
         {
@@ -317,29 +263,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (messageType == MessageQueueContainer.MessageType.ClientRpc ||
-                messageType == MessageQueueContainer.MessageType.ServerRpc)
-            {
-                ProfilerStatManager.RpcsRcvd.Record();
-                PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
-            }
-
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
             messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveChannel);
         }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
-            ProfilerStatManager.UnnamedMessage.Record();
             NetworkManager.CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
         }
 
         public void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
-            ProfilerStatManager.NamedMessage.Record();
-
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
@@ -375,16 +309,6 @@ namespace Unity.Netcode
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
-        }
-
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                var clientIds = reader.ReadULongArray();
-                var timedOutClientIds = reader.ReadULongArray();
-                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
-            }
         }
     }
 }

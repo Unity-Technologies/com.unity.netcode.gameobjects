@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Unity.Netcode;
+
 
 namespace TestProject.ManualTests
 {
@@ -10,6 +12,15 @@ namespace TestProject.ManualTests
     {
         [SerializeField]
         private GameObject m_ClientServerToggle;
+
+        [Tooltip("When enabled, this will display all scene events in the display window.")]
+        [SerializeField]
+        private bool m_TrackSceneEvents;
+
+        [Tooltip("When enabled, this will log all messages to the console.")]
+        [SerializeField]
+        private bool m_LogSceneEventsToConsole;
+
         private bool m_ClientMode = true;
         private Rect m_Stats;
         private string m_LastStatsDump;
@@ -18,9 +29,10 @@ namespace TestProject.ManualTests
 
         private bool m_IsServer;
 
+        private SceneEventNotificationQueue m_SceneEventNotificationQueue;
+
         private void Start()
         {
-            m_Stats = new Rect(5, 10, 175, 300);
             GUI.contentColor = new Color(196, 196, 196, 196);
             GUI.backgroundColor = new Color(96, 96, 96, 96);
             if (m_ClientServerToggle != null)
@@ -50,6 +62,12 @@ namespace TestProject.ManualTests
                 m_ClientServerToggle.SetActive(true);
                 UpdateButton();
             }
+
+            if (m_TrackSceneEvents)
+            {
+                m_SceneEventNotificationQueue = NetworkManager.gameObject.GetComponent<SceneEventNotificationQueue>();
+            }
+
             StartCoroutine("UpdateTextStatus");
         }
 
@@ -66,6 +84,17 @@ namespace TestProject.ManualTests
                 {
                     networkObject.SpawnWithOwnership(clientId, true);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Remove our OnClientConnectedCallback registration when we are destroyed
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (NetworkManager != null)
+            {
+                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             }
         }
 
@@ -89,10 +118,12 @@ namespace TestProject.ManualTests
         {
             if (NetworkManager && NetworkManager.IsListening)
             {
+                var width = 0.25f * Screen.width;
+                var height = 0.50f * Screen.height;
+                m_Stats = new Rect(5, 10, width, height);
                 GUI.TextArea(m_Stats, m_LastStatsDump);
             }
         }
-
 
         /// <summary>
         /// Updates the text of the button for switching between server and client stats
@@ -113,24 +144,8 @@ namespace TestProject.ManualTests
         private void ReceiveStatsClientRpc(StatsInfoContainer statsinfo)
         {
             m_LastStatsDump = "Server Stats";
-            m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-            /* if (ProfilerStatManager.AllStats.Count != statsinfo.StatValues.Count)
-            {
-                Debug.LogError("[StatsDisplay-Error][Mismatch] Recieved " + statsinfo.StatValues.Count.ToString() + " values and have " + ProfilerStatManager.AllStats.Count.ToString() + " profiler stats entries!");
-            }
-            else
-            {
-                var statsCounter = 0;
-                foreach (ProfilerStat p in ProfilerStatManager.AllStats)
-                {
-                    if (m_LastStatsDump != string.Empty)
-                    {
-                        m_LastStatsDump += "\n";
-                    }
-                    m_LastStatsDump += p.PrettyPrintName + ": " + statsinfo.StatValues[statsCounter].ToString(("0.0"));
-                    statsCounter++;
-                }
-            } */
+            m_LastStatsDump += "\ndeltaTime: [" + statsinfo.StatValues[0] + "]";
+            m_LastStatsDump += $"\nActive Scene: {SceneManager.GetActiveScene().name}";
         }
 
         /// <summary>
@@ -164,23 +179,23 @@ namespace TestProject.ManualTests
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                        m_LastStatsDump += "\n";
+                        m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
+                        if (m_SceneEventNotificationQueue != null)
                         {
-                            if (m_LastStatsDump != string.Empty)
+                            var sceneEvents = m_SceneEventNotificationQueue.GetCurrentNotifications();
+                            m_LastStatsDump += $"Scene Events {sceneEvents.Count}:\n";
+                            foreach (var sceneEventEntry in sceneEvents)
                             {
-                                m_LastStatsDump += "\n";
+                                m_LastStatsDump += sceneEventEntry + "\n";
                             }
-                            m_LastStatsDump += p.PrettyPrintName + ": " + p.SampleRate().ToString("0.0");
-                        } */
+                        }
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {
                         var statsInfoContainer = new StatsInfoContainer();
                         statsInfoContainer.StatValues = new List<float>();
-                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
-                        {
-                            statsInfoContainer.StatValues.Add(p.SampleRate());
-                        } */
+                        statsInfoContainer.StatValues.Add(Time.deltaTime);
                         ReceiveStatsClientRpc(statsInfoContainer);
                     }
                 }

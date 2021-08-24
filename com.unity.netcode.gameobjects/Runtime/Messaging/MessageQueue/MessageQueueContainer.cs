@@ -32,9 +32,7 @@ namespace Unity.Netcode
             ServerLog,
             SnapshotData,
             NetworkVariableDelta,
-            SwitchScene,
-            ClientSwitchSceneCompleted,
-            AllClientsLoadedScene,
+            SceneEvent,
             ParentSync,
 
             None //Indicates end of frame
@@ -127,7 +125,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
+            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, NetworkManager.LocalClientId,
                 clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             writer.WriteByte((byte)messageType);

@@ -67,6 +67,14 @@ namespace Unity.Netcode
         private T m_InternalValue;
 
         /// <summary>
+        /// The temporary accessor to enable struct element access until [MTT-1020] complete
+        /// </summary>
+        public ref T ValueRef
+        {
+            get => ref m_InternalValue;
+        }
+
+        /// <summary>
         /// The value of the NetworkVariable container
         /// </summary>
         public T Value

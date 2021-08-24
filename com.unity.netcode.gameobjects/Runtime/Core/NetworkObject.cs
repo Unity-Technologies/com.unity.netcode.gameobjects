@@ -234,6 +234,11 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            {
+                SnapshotSpawn(clientId);
+            }
+
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
@@ -310,23 +315,30 @@ namespace Unity.Netcode
             }
 
 
-            // Send destroy call
             Observers.Remove(clientId);
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
-            if (context != null)
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                SnapshotDespawn(clientId);
+            }
+            else
+            {
+                // Send destroy call
+                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                    new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
+                if (context != null)
                 {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
+                    using (var nonNullContext = (InternalCommandContext)context)
+                    {
+                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                        bufferSizeCapture.StartMeasureSegment();
 
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
 
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
+                        var size = bufferSizeCapture.StopMeasureSegment();
+                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
+                    }
                 }
             }
         }
@@ -382,7 +394,8 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned)
+            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
+                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
@@ -391,6 +404,74 @@ namespace Unity.Netcode
             {
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
             }
+        }
+
+        private SnapshotDespawnCommand GetDespawnCommand()
+        {
+            SnapshotDespawnCommand command;
+            command.NetworkObjectId = NetworkObjectId;
+            command.TickWritten = default; // value will be set internally by SnapshotSystem
+            command.TargetClientIds = default;
+
+            return command;
+        }
+
+        private SnapshotSpawnCommand GetSpawnCommand()
+        {
+            SnapshotSpawnCommand command;
+            command.NetworkObjectId = NetworkObjectId;
+            command.OwnerClientId = OwnerClientId;
+            command.IsPlayerObject = IsPlayerObject;
+            command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+
+            ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
+            if (parent != null)
+            {
+                command.ParentNetworkId = parent.Value;
+            }
+            else
+            {
+                // write own network id, when no parents. todo: optimize this.
+                command.ParentNetworkId = command.NetworkObjectId;
+            }
+
+            command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
+            // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
+            command.ObjectPosition = transform.position;
+            command.ObjectRotation = transform.rotation;
+            command.ObjectScale = transform.localScale;
+            command.TickWritten = default; // value will be set internally by SnapshotSystem
+            command.TargetClientIds = default;
+
+            return command;
+        }
+
+        private void SnapshotSpawn()
+        {
+            var command = GetSpawnCommand();
+            NetworkManager.SnapshotSystem.Spawn(command);
+        }
+
+        private void SnapshotSpawn(ulong clientId)
+        {
+            var command = GetSpawnCommand();
+            command.TargetClientIds = new List<ulong>();
+            command.TargetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Spawn(command);
+        }
+
+        internal void SnapshotDespawn()
+        {
+            var command = GetDespawnCommand();
+            NetworkManager.SnapshotSystem.Despawn(command);
+        }
+
+        internal void SnapshotDespawn(ulong clientId)
+        {
+            var command = GetDespawnCommand();
+            command.TargetClientIds = new List<ulong>();
+            command.TargetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Despawn(command);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -410,32 +491,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                SnapshotSpawnCommand command;
-                command.NetworkObjectId = NetworkObjectId;
-                command.OwnerClientId = OwnerClientId;
-                command.IsPlayerObject = IsPlayerObject;
-                command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
-
-                ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
-                if (parent != null)
-                {
-                    command.ParentNetworkId = parent.Value;
-                }
-                else
-                {
-                    // write own network id, when no parents. todo: optimize this.
-                    command.ParentNetworkId = command.NetworkObjectId;
-                }
-
-                command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
-                // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
-                command.ObjectPosition = transform.position;
-                command.ObjectRotation = transform.rotation;
-                command.ObjectScale = transform.localScale;
-                command.TickWritten = 0; // will be reset in Spawn
-                command.TargetClientIds = default;
-
-                NetworkManager.SnapshotSystem.Spawn(command);
+                SnapshotSpawn();
             }
 
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
@@ -478,13 +534,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Despawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
+        /// Despawns the <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
         /// </summary>
+        /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = false)
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
-
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server

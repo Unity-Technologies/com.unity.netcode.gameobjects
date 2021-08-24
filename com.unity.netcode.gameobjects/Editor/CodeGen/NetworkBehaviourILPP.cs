@@ -592,6 +592,27 @@ namespace Unity.Netcode.Editor.CodeGen
                 instructions.Reverse();
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
             }
+
+            // override NetworkBehaviour.__getTypeName() method to return concrete type
+            {
+                var networkBehaviour_TypeDef = m_NetworkBehaviour_TypeRef.Resolve();
+                var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));
+
+                var newGetTypeNameMethod = new MethodDefinition(
+                    nameof(NetworkBehaviour.__getTypeName),
+                    (baseGetTypeNameMethod.Attributes & ~MethodAttributes.NewSlot) | MethodAttributes.ReuseSlot,
+                    baseGetTypeNameMethod.ReturnType)
+                {
+                    ImplAttributes = baseGetTypeNameMethod.ImplAttributes,
+                    SemanticsAttributes = baseGetTypeNameMethod.SemanticsAttributes
+                };
+
+                var processor = newGetTypeNameMethod.Body.GetILProcessor();
+                processor.Body.Instructions.Add(processor.Create(OpCodes.Ldstr, typeDefinition.Name));
+                processor.Body.Instructions.Add(processor.Create(OpCodes.Ret));
+
+                typeDefinition.Methods.Add(newGetTypeNameMethod);
+            }
         }
 
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)

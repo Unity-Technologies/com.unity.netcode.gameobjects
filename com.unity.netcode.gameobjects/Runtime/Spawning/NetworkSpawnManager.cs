@@ -267,7 +267,9 @@ namespace Unity.Netcode
             }
             else
             {
-                if (!NetworkManager.SceneManager.ScenePlacedObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+
+                if (networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -275,10 +277,6 @@ namespace Unity.Netcode
                     }
 
                     return null;
-                }
-                else
-                {
-                    NetworkManager.SceneManager.ScenePlacedObjects.Remove(globalObjectIdHash);
                 }
 
                 if (parentNetworkObject != null)
@@ -310,6 +308,7 @@ namespace Unity.Netcode
 
             if (SpawnedObjects.ContainsKey(networkId))
             {
+                Debug.LogWarning($"Trying to spawn {nameof(NetworkObject.NetworkObjectId)} {networkId} that already exists!");
                 return;
             }
 
@@ -501,21 +500,10 @@ namespace Unity.Netcode
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
+                if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value)
                 {
-                    // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
-                    // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects
-                    // within the NetworkSceneManager.SwitchScene method.
-
-                    if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
-                    {
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
-                    }
-                    else
-                    {
-                        SpawnedObjectsList.Remove(sobj);
-                        UnityEngine.Object.Destroy(sobj.gameObject);
-                    }
+                    SpawnedObjectsList.Remove(sobj);
+                    UnityEngine.Object.Destroy(sobj.gameObject);
                 }
             }
         }
@@ -533,11 +521,7 @@ namespace Unity.Netcode
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-
-                            if (SpawnedObjects.ContainsKey(networkObjects[i].NetworkObjectId))
-                            {
-                                OnDespawnObject(networkObjects[i], false);
-                            }
+                            OnDespawnObject(networkObjects[i], false);
                         }
                         else
                         {
@@ -654,30 +638,37 @@ namespace Unity.Netcode
                     });
                 }
 
-                var messageQueueContainer = NetworkManager.MessageQueueContainer;
-                if (messageQueueContainer != null)
+                if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
                 {
-                    if (networkObject != null)
+                    networkObject.SnapshotDespawn();
+                }
+                else
+                {
+                    var messageQueueContainer = NetworkManager.MessageQueueContainer;
+                    if (messageQueueContainer != null)
                     {
-                        // As long as we have any remaining clients, then notify of the object being destroy.
-                        if (NetworkManager.ConnectedClientsList.Count > 0)
+                        if (networkObject != null)
                         {
-
-                            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-                            var context = messageQueueContainer.EnterInternalCommandContext(
-                                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                clientIds, NetworkUpdateStage.PostLateUpdate);
-                            if (context != null)
+                            // As long as we have any remaining clients, then notify of the object being destroy.
+                            if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
-                                using (var nonNullContext = (InternalCommandContext)context)
+
+                                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                                var context = messageQueueContainer.EnterInternalCommandContext(
+                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                                    clientIds, NetworkUpdateStage.PostLateUpdate);
+                                if (context != null)
                                 {
-                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                    bufferSizeCapture.StartMeasureSegment();
+                                    using (var nonNullContext = (InternalCommandContext)context)
+                                    {
+                                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                                        bufferSizeCapture.StartMeasureSegment();
 
-                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
-                                    var size = bufferSizeCapture.StopMeasureSegment();
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                        var size = bufferSizeCapture.StopMeasureSegment();
+                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                    }
                                 }
                             }
                         }
@@ -685,8 +676,12 @@ namespace Unity.Netcode
                 }
             }
 
-            var gobj = networkObject.gameObject;
+            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+            {
+                SpawnedObjectsList.Remove(networkObject);
+            }
 
+            var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
@@ -698,13 +693,70 @@ namespace Unity.Netcode
                     UnityEngine.Object.Destroy(gobj);
                 }
             }
+        }
 
-            // for some reason, we can get down here and SpawnedObjects for this
-            //  networkId will no longer be here, even as we check this at the start
-            //  of the function
-            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+        /// <summary>
+        /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also
+        /// adding the client to each <see cref="NetworkObject">'s <see cref="NetworkObject.Observers"/> list only if
+        /// observable to the client.
+        /// Maximum number of objects that could theoretically be serialized is 65536 for now
+        /// </summary>
+        /// <param name="clientId"> the client identifier used to determine if a spawned NetworkObject is observable</param>
+        /// <param name="internalCommandContext"> contains the writer used for serialization </param>
+        internal void SerializeObservedNetworkObjects(ulong clientId, NetworkWriter writer)
+        {
+            var stream = writer.GetStream();
+            var headPosition = stream.Position;
+            var numberOfObjects = (ushort)0;
+
+            // Write our count place holder(must not be packed!)
+            writer.WriteUInt16(0);
+
+            foreach (var sobj in SpawnedObjectsList)
             {
-                SpawnedObjectsList.Remove(networkObject);
+                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
+                {
+                    sobj.Observers.Add(clientId);
+                    sobj.SerializeSceneObject(writer, clientId);
+                    numberOfObjects++;
+                }
+            }
+
+            var tailPosition = stream.Position;
+            // Reposition to our count position to the head before we wrote our object count
+            stream.Position = headPosition;
+            // Write number of NetworkObjects serialized (must not be packed!)
+            writer.WriteUInt16(numberOfObjects);
+            // Set our position back to the tail
+            stream.Position = tailPosition;
+        }
+
+        /// <summary>
+        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified client
+        /// Note: if the clientId is the server then it is observable to all spawned <see cref="NetworkObject"/>'s
+        /// </summary>
+        internal void UpdateObservedNetworkObjects(ulong clientId)
+        {
+            foreach (var sobj in SpawnedObjectsList)
+            {
+                if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
+                {
+                    if (!sobj.Observers.Contains(clientId))
+                    {
+                        sobj.Observers.Add(clientId);
+                    }
+                }
+                else
+                {
+                    if (sobj.CheckObjectVisibility(clientId))
+                    {
+                        sobj.Observers.Add(clientId);
+                    }
+                    else if (sobj.Observers.Contains(clientId))
+                    {
+                        sobj.Observers.Remove(clientId);
+                    }
+                }
             }
         }
     }
