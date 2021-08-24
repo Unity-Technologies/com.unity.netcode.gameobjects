@@ -7,6 +7,11 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class INetworkVariable
     {
+        /// <summary>
+        /// The name of the channel to be used for syncing
+        /// </summary>
+        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
+
         protected INetworkVariable() { }
 
         protected INetworkVariable(NetworkVariableSettings settings)
@@ -30,15 +35,6 @@ namespace Unity.Netcode
         /// The settings for this var
         /// </summary>
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
-
-        /// <summary>
-        /// Returns the name of the channel to be used for syncing
-        /// </summary>
-        /// <returns>The name of the channel to be used for syncing</returns>
-        public virtual NetworkChannel GetChannel()
-        {
-            return Settings.SendNetworkChannel;
-        }
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced

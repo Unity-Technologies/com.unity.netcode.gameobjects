@@ -442,7 +442,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    NetworkChannel networkChannel = NetworkVariableFields[i].GetChannel();
+                    NetworkChannel networkChannel = INetworkVariable.NetworkVariableChannel;
 
                     if (!firstLevelIndex.ContainsKey(networkChannel))
                     {

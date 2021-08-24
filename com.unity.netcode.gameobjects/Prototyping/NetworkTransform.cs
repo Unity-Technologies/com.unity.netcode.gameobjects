@@ -129,12 +129,6 @@ namespace Unity.Netcode.Prototyping
         }
 
         /// <summary>
-        /// The network channel to use send updates
-        /// </summary>
-        [Tooltip("The network channel to use send updates")]
-        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
-
-        /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
         /// This is important to set since reparenting this transform could have issues,
         /// if using world position (depending on who gets synced first: the parent or the child)
@@ -365,10 +359,6 @@ namespace Unity.Netcode.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-
-            ReplNetworkState.Settings.SendNetworkChannel = Channel;
-            ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
-
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 

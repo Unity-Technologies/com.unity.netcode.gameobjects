@@ -25,10 +25,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return Dirty;
             }
-            public override NetworkChannel GetChannel()
-            {
-                return NetworkChannel.NetworkVariable;
-            }
 
             public override void WriteDelta(Stream stream)
             {
