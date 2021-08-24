@@ -261,7 +261,7 @@ namespace TestProject.RuntimeTests
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName,m_CurrentSceneName);
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
@@ -331,7 +331,7 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(m_ExpectedSceneIndex == sceneIndex);
             Assert.IsTrue(m_ExpectedSceneName == sceneName);
             Assert.IsTrue(m_ExpectedLoadMode == loadSceneMode);
-            if(!m_ClientVerifyScene)
+            if (!m_ClientVerifyScene)
             {
                 m_ClientsThatFailedVerification++;
             }
