@@ -477,7 +477,8 @@ namespace Unity.Multiplayer.Netcode
                     *ptr = *data;
                     break;
                 case 2:
-                    *(ushort*) ptr = *(ushort*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
                     break;
                 default:
                     throw new InvalidOperationException("Could not read bit-packed value: impossible byte count");
@@ -521,14 +522,19 @@ namespace Unity.Multiplayer.Netcode
                     *ptr = *data;
                     break;
                 case 2:
-                    *(ushort*) ptr = *(ushort*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
                     break;
                 case 3:
-                    *(ushort*) ptr = *(ushort*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
                     *(ptr+2) = *(data+2);
                     break;
                 case 4:
-                    *(uint*) ptr = *(uint*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
                     break;
             }
 
@@ -570,30 +576,53 @@ namespace Unity.Multiplayer.Netcode
                     *ptr = *data;
                     break;
                 case 2:
-                    *(ushort*) ptr = *(ushort*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
                     break;
                 case 3:
-                    *(ushort*) ptr = *(ushort*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
                     *(ptr+2) = *(data+2);
                     break;
                 case 4:
-                    *(uint*) ptr = *(uint*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
                     break;
                 case 5:
-                    *(uint*) ptr = *(uint*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
                     *(ptr+4) = *(data+4);
                     break;
                 case 6:
-                    *(uint*) ptr = *(uint*)data;
-                    *(ushort*) (ptr+4) = *(ushort*)(data+4);
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
+                    *(ptr+4) = *(data+4);
+                    *(ptr+5) = *(data+5);
                     break;
                 case 7:
-                    *(uint*) ptr = *(uint*)data;
-                    *(ushort*) (ptr+4) = *(ushort*)(data+4);
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
+                    *(ptr+4) = *(data+4);
+                    *(ptr+5) = *(data+5);
                     *(ptr+6) = *(data+6);
                     break;
                 case 8:
-                    *(ulong*) ptr = *(ulong*)data;
+                    *ptr = *data;
+                    *(ptr+1) = *(data+1);
+                    *(ptr+2) = *(data+2);
+                    *(ptr+3) = *(data+3);
+                    *(ptr+4) = *(data+4);
+                    *(ptr+5) = *(data+5);
+                    *(ptr+6) = *(data+6);
+                    *(ptr+7) = *(data+7);
                     break;
             }
 

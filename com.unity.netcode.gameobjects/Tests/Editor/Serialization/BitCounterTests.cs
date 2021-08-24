@@ -1,5 +1,8 @@
-﻿using NUnit.Framework;
+﻿using System.Diagnostics;
+using NUnit.Framework;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Multiplayer.Netcode;
+using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.EditorTests
 {

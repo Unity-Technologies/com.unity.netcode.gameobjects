@@ -187,7 +187,7 @@ namespace Unity.Multiplayer.Netcode
         {
             byte* ptr = ((byte*) &value) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
+            BytewiseUtility.FastCopyBytes(bufferPointer, ptr, bytesToWrite);
 
             m_BitPosition += bytesToWrite * BITS_PER_BYTE;
         }

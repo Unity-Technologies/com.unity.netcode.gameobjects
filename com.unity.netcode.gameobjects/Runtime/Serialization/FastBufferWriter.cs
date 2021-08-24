@@ -998,8 +998,10 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             
-            T* pointer = (T*)(m_BufferPointer+m_Position);
-            *pointer = value;
+            fixed (T* ptr = &value)
+            {
+                BytewiseUtility.FastCopyBytes(m_BufferPointer+m_Position, (byte*)ptr, len);
+            }
             m_Position += len;
         }
         
@@ -1032,7 +1034,7 @@ namespace Unity.Multiplayer.Netcode
 
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy(m_BufferPointer+m_Position, ptr, len);
+                BytewiseUtility.FastCopyBytes(m_BufferPointer+m_Position, (byte*)ptr, len);
             }
             m_Position += len;
         }
