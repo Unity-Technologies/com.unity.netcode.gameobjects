@@ -121,4 +121,38 @@ public class MultiprocessOrchestration
             throw;
         }
     }
+
+    public static bool IsMultiprocessTestPlayerAvailable()
+    {
+        bool answer = false;
+        try
+        {
+            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
+            FileInfo buildPathFileInfo = null;
+            switch (Application.platform)
+            {
+                case RuntimePlatform.OSXEditor:
+                    buildPathFileInfo = new FileInfo($"{buildPath}.app/Contents/MacOS/testproject");
+                    break;
+                case RuntimePlatform.WindowsEditor:
+                    buildPathFileInfo = new FileInfo($"{buildPath}.exe");
+                    break;
+                case RuntimePlatform.LinuxEditor:
+                    buildPathFileInfo = new FileInfo($"{buildPath}");
+                    break;
+            }
+
+            if (buildPathFileInfo != null && buildPathFileInfo.Exists)
+            {
+                answer = true;
+            }
+
+        } catch (Exception e)
+        {
+            Debug.LogError(e.Message);
+            answer = false;
+        }
+        
+        return answer;
+    }
 }

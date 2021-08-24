@@ -25,7 +25,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private bool m_SceneHasLoaded;
 
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor;
+        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || !MultiprocessOrchestration.IsMultiprocessTestPlayerAvailable();
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
