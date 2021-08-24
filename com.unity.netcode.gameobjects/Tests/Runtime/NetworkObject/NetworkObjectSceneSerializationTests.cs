@@ -132,6 +132,7 @@ namespace Unity.Netcode.RuntimeTests
                     invalidNetworkObjectCount++;
                 }
 
+
                 NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
                 var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
