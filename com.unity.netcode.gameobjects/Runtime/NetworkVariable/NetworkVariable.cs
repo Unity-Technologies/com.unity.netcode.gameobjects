@@ -65,7 +65,10 @@ namespace Unity.Netcode
             {
                 // this could be improved. The Networking Manager is not always initialized here
                 //  Good place to decouple network manager from the network variable
-                if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkManager.IsClient)
+
+                // Also, note this is not really very water-tight, if you are running as a host
+                //  we cannot tell if a NetworkVariable write is happening inside client-ish code
+                if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
                 {
                     throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }

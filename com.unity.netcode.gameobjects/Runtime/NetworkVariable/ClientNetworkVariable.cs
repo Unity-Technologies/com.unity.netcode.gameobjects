@@ -33,8 +33,11 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                // this could be improved. The Networking Manager is not always initialized here.
+                // this could be improved. The Networking Manager is not always initialized here
                 //  Good place to decouple network manager from the network variable
+
+                // Also, note this is not really very water-tight, if you are running as a host
+                //  we cannot tell if a ClientNetworkVariable write is happening inside server-ish code
                 if (m_NetworkBehaviour.NetworkManager.IsServer)
                 {
                     throw new InvalidOperationException("Server not allowed to write to ClientNetworkVariables");

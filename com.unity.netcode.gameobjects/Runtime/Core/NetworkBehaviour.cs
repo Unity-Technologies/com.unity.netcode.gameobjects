@@ -523,7 +523,7 @@ namespace Unity.Netcode
                             var writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
-                            // could skip up here if not client, etc
+                                // could skip up here if not client, etc
                                 if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                                 {
                                     // This var does not belong to the currently iterating channel group.

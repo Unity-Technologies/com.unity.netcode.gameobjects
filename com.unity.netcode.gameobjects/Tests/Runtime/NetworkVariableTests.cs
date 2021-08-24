@@ -71,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariableTest m_ClientComp;
         private NetworkVariableTest m_ClientComp2;
 
-        private readonly bool m_TestWithHost = false;
+        private bool m_TestWithHost = false;
 
         [UnitySetUp]
         public override IEnumerator Setup()
@@ -131,8 +131,10 @@ namespace Unity.Netcode.RuntimeTests
         /// Runs generalized tests on all predefined NetworkVariable types
         /// </summary>
         [UnityTest]
-        public IEnumerator AllNetworkVariableTypes()
+        public IEnumerator AllNetworkVariableTypes([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
             //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
@@ -174,22 +176,28 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void ClientWritePermissionTest()
+        public void ClientWritePermissionTest([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // server must not be allowed to write to a client auth variable
             Assert.Throws<InvalidOperationException>(() =>  m_ClientComp.TheScalar.Value = k_TestVal1);
         }
 
         [Test]
-        public void ServerWritePermissionTest()
+        public void ServerWritePermissionTest([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // server must not be allowed to write to a client auth variable
             Assert.Throws<InvalidOperationException>(() =>  m_ServersPlayer1Comp.ClientVar.Value = k_TestVal1);
         }
 
         [UnityTest]
-        public IEnumerator ClientNetvarTest()
+        public IEnumerator ClientNetvarTest([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -209,8 +217,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkListAdd()
+        public IEnumerator NetworkListAdd([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -232,10 +241,11 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkListRemove()
+        public IEnumerator NetworkListRemove([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
             // first put some stuff in; re-use the add test
-            yield return NetworkListAdd();
+            yield return NetworkListAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () => m_ServersPlayer1Comp.TheList.RemoveAt(0),
@@ -252,10 +262,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkListClear()
+        public IEnumerator NetworkListClear([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // first put some stuff in; re-use the add test
-            yield return NetworkListAdd();
+            yield return NetworkListAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () => m_ServersPlayer1Comp.TheList.Clear(),
@@ -271,8 +283,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkSetAdd()
+        public IEnumerator NetworkSetAdd([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -294,10 +308,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkSetRemove()
+        public IEnumerator NetworkSetRemove([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // first put some stuff in; re-use the add test
-            yield return NetworkSetAdd();
+            yield return NetworkSetAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -317,10 +333,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkSetClear()
+        public IEnumerator NetworkSetClear([Values(true, false)] bool useHost)
         {
             // first put some stuff in; re-use the add test
-            yield return NetworkSetAdd();
+            yield return NetworkSetAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -338,8 +354,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkDictionaryAdd()
+        public IEnumerator NetworkDictionaryAdd([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -364,10 +382,12 @@ namespace Unity.Netcode.RuntimeTests
          *  this in the next PR
          */
         [UnityTest]
-        public IEnumerator NetworkDictionaryRemoveByKey()
+        public IEnumerator NetworkDictionaryRemoveByKey([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // first put some stuff in; re-use the add test
-            yield return NetworkDictionaryAdd();
+            yield return NetworkDictionaryAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -387,10 +407,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkDictionaryChangeValue()
+        public IEnumerator NetworkDictionaryChangeValue([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // first put some stuff in; re-use the add test
-            yield return NetworkDictionaryAdd();
+            yield return NetworkDictionaryAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -410,10 +432,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkDictionaryClear()
+        public IEnumerator NetworkDictionaryClear([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
+
             // first put some stuff in; re-use the add test
-            yield return NetworkDictionaryAdd();
+            yield return NetworkDictionaryAdd(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -431,8 +455,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestNetworkVariableStruct()
+        public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
+            m_TestWithHost = useHost;
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
