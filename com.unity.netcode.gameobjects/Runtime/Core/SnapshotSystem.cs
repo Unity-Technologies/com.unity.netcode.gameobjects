@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Unity.Netcode
 {
@@ -437,6 +438,7 @@ namespace Unity.Netcode
                 }
 
                 TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+
                 // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
@@ -476,17 +478,20 @@ namespace Unity.Netcode
             ushort ackSequence = reader.ReadUInt16();
             ushort seqMask = reader.ReadUInt16();
 
+            // process the latest acknowledgment
             ProcessSingleAck(ackSequence, clientId, clientData, connection);
 
+            // for each bit in the mask, acknowledge one message before
             while (seqMask != 0)
             {
                 ackSequence--;
+                // extract least bit
                 if (seqMask % 2 == 1)
                 {
                     ProcessSingleAck(ackSequence, clientId, clientData, connection);
                 }
-
-                seqMask /= 2;
+                // move to next bit
+                seqMask >>= 1;
             }
         }
 
@@ -581,7 +586,7 @@ namespace Unity.Netcode
 
         internal ushort SequenceNumber = 0; // the next sequence number to use for this client
         internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
-        internal ushort ReceivedSequenceMask = 0;
+        internal ushort ReceivedSequenceMask = 0; // bitmask of the messages before the last one that we received.
 
         internal int NextSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
         internal int NextDespawnIndex = 0; // same as above, but for despawns.
@@ -645,6 +650,16 @@ namespace Unity.Netcode
             this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
+        internal bool SkipSend()
+        {
+            return Random.Range(0, 10) > 5;
+        }
+
+        internal bool SkipReceive()
+        {
+            return Random.Range(0, 10) > 5;
+        }
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
@@ -659,6 +674,12 @@ namespace Unity.Netcode
                 if (tick != m_CurrentTick)
                 {
                     m_CurrentTick = tick;
+
+                    if (SkipSend())
+                    {
+                        return;
+                    }
+
                     if (m_NetworkManager.IsServer)
                     {
                         for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
@@ -792,6 +813,7 @@ namespace Unity.Netcode
                     }
                     clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
                 }
+
 
                 for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
                 {
@@ -935,11 +957,10 @@ namespace Unity.Netcode
         /// <param name="snapshotStream">The stream to read from</param>
         internal void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
-            // poor man packet loss simulation
-            //if (Random.Range(0, 10) > 5)
-            //{
-            //    return;
-            //}
+            if (SkipReceive())
+            {
+                return;
+            }
 
             // todo: temporary hack around bug
             if (!m_NetworkManager.IsServer)
