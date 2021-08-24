@@ -663,7 +663,6 @@ namespace Unity.Netcode
                 if (tick != m_CurrentTick)
                 {
                     m_CurrentTick = tick;
-
                     if (m_NetworkManager.IsServer)
                     {
                         for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
