@@ -127,6 +127,12 @@ public class MultiprocessOrchestration
         bool answer = false;
         try
         {
+            var buildInfoPath = Path.Combine(Application.streamingAssetsPath, BuildMultiprocessTestPlayer.BuildInfoFileName);
+            var buildInfoFileInfo = new FileInfo(buildInfoPath);
+            if (!buildInfoFileInfo.Exists)
+            {
+                return false;
+            }
             var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
             FileInfo buildPathFileInfo = null;
             switch (Application.platform)
