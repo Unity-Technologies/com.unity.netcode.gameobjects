@@ -392,21 +392,10 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_ApplicationQuitting = false;
-
-        private void OnApplicationQuit()
-        {
-            m_ApplicationQuitting = true;
-        }
-
         private void OnDestroy()
         {
-            if (m_ApplicationQuitting)
-            {
-                return;
-            }
-
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned)
+            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
+                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
@@ -545,13 +534,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Despawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
+        /// Despawns the <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
         /// </summary>
+        /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = false)
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
-
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
