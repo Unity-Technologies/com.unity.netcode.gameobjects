@@ -309,10 +309,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    if (m_NetworkBehaviour.NetworkManager.IsServer)
-                    {
-                        m_Set.Add(value);
-                    }
+                    m_Set.Add(value);
 
                     var setEvent = new NetworkSetEvent<T>()
                     {
@@ -321,7 +318,7 @@ namespace Unity.Netcode
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    if (OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -338,10 +335,7 @@ namespace Unity.Netcode
             {
                 if (!m_Set.Contains(value))
                 {
-                    if (m_NetworkBehaviour.NetworkManager.IsServer)
-                    {
-                        m_Set.Add(value);
-                    }
+                    m_Set.Add(value);
 
                     var setEvent = new NetworkSetEvent<T>()
                     {
@@ -350,7 +344,7 @@ namespace Unity.Netcode
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    if (OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -361,11 +355,7 @@ namespace Unity.Netcode
         public bool Add(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Add(item);
-            }
+            m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -374,7 +364,7 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -389,11 +379,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Clear();
-            }
+            m_Set.Clear();
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -401,7 +387,7 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -423,11 +409,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Remove(item);
-            }
+            m_Set.Remove(item);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -436,7 +418,7 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }

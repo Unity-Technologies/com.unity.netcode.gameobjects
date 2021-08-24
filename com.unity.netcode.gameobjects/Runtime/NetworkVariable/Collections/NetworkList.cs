@@ -339,11 +339,7 @@ namespace Unity.Netcode
         public void Add(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_List.Add(item);
-            }
+            m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -359,11 +355,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_List.Clear();
-            }
+            m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -389,11 +381,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_List.Remove(item);
-            }
+            m_List.Remove(item);
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -421,11 +409,7 @@ namespace Unity.Netcode
         public void Insert(int index, T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_List.Insert(index, item);
-            }
+            m_List.Insert(index, item);
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -441,11 +425,7 @@ namespace Unity.Netcode
         public void RemoveAt(int index)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_List.RemoveAt(index);
-            }
+            m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -464,11 +444,7 @@ namespace Unity.Netcode
             set
             {
                 EnsureInitialized();
-
-                if (m_NetworkBehaviour.NetworkManager.IsServer)
-                {
-                    m_List[index] = value;
-                }
+                m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
                 {
@@ -483,19 +459,12 @@ namespace Unity.Netcode
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-                {
-                    m_DirtyEvents.Add(listEvent);
-                }
-
-                OnListChanged?.Invoke(listEvent);
-            }
-            else
+            if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
             {
                 m_DirtyEvents.Add(listEvent);
             }
+
+            OnListChanged?.Invoke(listEvent);
         }
 
         public int LastModifiedTick

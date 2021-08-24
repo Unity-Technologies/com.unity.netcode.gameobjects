@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using Unity.Netcode.Prototyping;
-using UnityEditor.AssetImporters;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests

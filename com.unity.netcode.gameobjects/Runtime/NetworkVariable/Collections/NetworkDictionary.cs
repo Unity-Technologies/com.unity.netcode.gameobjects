@@ -12,11 +12,6 @@ namespace Unity.Netcode
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
     public class NetworkDictionary<TKey, TValue> : INetworkVariable, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
     {
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
-
         private readonly IDictionary<TKey, TValue> m_Dictionary = new Dictionary<TKey, TValue>();
         private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();
 
@@ -66,7 +61,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -311,10 +305,7 @@ namespace Unity.Netcode
             {
                 EnsureInitialized();
 
-                if (m_NetworkBehaviour.NetworkManager.IsServer)
-                {
-                    m_Dictionary[key] = value;
-                }
+                m_Dictionary[key] = value;
 
                 var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
                 {
@@ -343,11 +334,7 @@ namespace Unity.Netcode
         public void Add(TKey key, TValue value)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Add(key, value);
-            }
+            m_Dictionary.Add(key, value);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -363,11 +350,7 @@ namespace Unity.Netcode
         public void Add(KeyValuePair<TKey, TValue> item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Add(item);
-            }
+            m_Dictionary.Add(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -383,11 +366,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Clear();
-            }
+            m_Dictionary.Clear();
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -425,11 +404,7 @@ namespace Unity.Netcode
         public bool Remove(TKey key)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Remove(key);
-            }
+            m_Dictionary.Remove(key);
 
             TValue value;
             m_Dictionary.TryGetValue(key, out value);
@@ -451,11 +426,7 @@ namespace Unity.Netcode
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Remove(item);
-            }
+            m_Dictionary.Remove(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -476,19 +447,12 @@ namespace Unity.Netcode
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-                {
-                    m_DirtyEvents.Add(dictionaryEvent);
-                }
+             if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
+             {
+                 m_DirtyEvents.Add(dictionaryEvent);
+             }
 
-                OnDictionaryChanged?.Invoke(dictionaryEvent);
-            }
-            else
-            {
-                m_DirtyEvents.Add(dictionaryEvent);
-            }
+             OnDictionaryChanged?.Invoke(dictionaryEvent);
         }
 
         public int LastModifiedTick
