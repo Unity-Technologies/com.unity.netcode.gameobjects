@@ -53,54 +53,74 @@ namespace Unity.Multiplayer.Netcode
             14+1, 27+1,  9+1,  5+1, 26+1,  8+1, 25+1, 24+1,
         };
 
+        /// <summary>
+        /// Get the minimum number of bytes required to represent the given value
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The number of bytes required</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetUsedByteCount(uint b)
+        public static int GetUsedByteCount(uint value)
         {
-            b |= b >> 1;
-            b |= b >> 2;
-            b |= b >> 4;
-            b |= b >> 8;
-            b |= b >> 16;
-            b = b & ~(b >> 1);
-            return k_deBruijnTableBytes32[b*k_DeBruijnMagic32 >> 27];
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value = value & ~(value >> 1);
+            return k_deBruijnTableBytes32[value*k_DeBruijnMagic32 >> 27];
         }
 
+        /// <summary>
+        /// Get the minimum number of bytes required to represent the given value
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The number of bytes required</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetUsedByteCount(ulong b)
+        public static int GetUsedByteCount(ulong value)
         {
-            b |= b >> 1;
-            b |= b >> 2;
-            b |= b >> 4;
-            b |= b >> 8;
-            b |= b >> 16;
-            b |= b >> 32;
-            b = b & ~(b >> 1);
-            return k_deBruijnTableBytes64[b*k_DeBruijnMagic64 >> 58];
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value |= value >> 32;
+            value = value & ~(value >> 1);
+            return k_deBruijnTableBytes64[value*k_DeBruijnMagic64 >> 58];
         }
 
+        /// <summary>
+        /// Get the minimum number of bits required to represent the given value
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The number of bits required</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetUsedBitCount(uint b)
+        public static int GetUsedBitCount(uint value)
         {
-            b |= b >> 1;
-            b |= b >> 2;
-            b |= b >> 4;
-            b |= b >> 8;
-            b |= b >> 16;
-            b = b & ~(b >> 1);
-            return k_deBruijnTableBits32[b*k_DeBruijnMagic32 >> 27];
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value = value & ~(value >> 1);
+            return k_deBruijnTableBits32[value*k_DeBruijnMagic32 >> 27];
         }
 
+        /// <summary>
+        /// Get the minimum number of bits required to represent the given value
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The number of bits required</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetUsedBitCount(ulong b)
+        public static int GetUsedBitCount(ulong value)
         {
-            b |= b >> 1;
-            b |= b >> 2;
-            b |= b >> 4;
-            b |= b >> 8;
-            b |= b >> 16;
-            b |= b >> 32;
-            b = b & ~(b >> 1);
-            return k_deBruijnTableBits64[b*k_DeBruijnMagic64 >> 58];
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value |= value >> 32;
+            value = value & ~(value >> 1);
+            return k_deBruijnTableBits64[value*k_DeBruijnMagic64 >> 58];
         }
     }
 }

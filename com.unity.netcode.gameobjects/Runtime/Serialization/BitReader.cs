@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Mono.Cecil;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 
 namespace Unity.Multiplayer.Netcode
 {
+    /// <summary>
+    /// Helper class for doing bitwise reads for a FastBufferReader.
+    /// Ensures all bitwise reads end on proper byte alignment so FastBufferReader doesn't have to be concerned
+    /// with misaligned reads.
+    /// </summary>
     public ref struct BitReader
     {
         private Ref<FastBufferReader> m_Reader;
-        private unsafe byte* m_BufferPointer;
-        private int m_Position;
+        private readonly unsafe byte* m_BufferPointer;
+        private readonly int m_Position;
         private const int BITS_PER_BYTE = 8;
         private int m_BitPosition;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -38,7 +41,10 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
 
-        public unsafe void Dispose()
+        /// <summary>
+        /// Pads the read bit count to byte alignment and commits the read back to the reader
+        /// </summary>
+        public void Dispose()
         {
             var bytesWritten = m_BitPosition >> 3;
             if (!BitAligned)
@@ -50,7 +56,15 @@ namespace Unity.Multiplayer.Netcode
             m_Reader.Value.CommitBitwiseReads(bytesWritten);
         }
 
-        public unsafe bool VerifyCanReadBits(int bitCount)
+        /// <summary>
+        /// Verifies the requested bit count can be read from the buffer.
+        /// This exists as a separate method to allow multiple bit reads to be bounds checked with a single call.
+        /// If it returns false, you may not read, and in editor and development builds, attempting to do so will
+        /// throw an exception. In release builds, attempting to do so will read junk memory.
+        /// </summary>
+        /// <param name="bitCount">Number of bits you want to read, in total</param>
+        /// <returns>True if you can read, false if that would exceed buffer bounds</returns>
+        public bool VerifyCanReadBits(int bitCount)
         {
             var newBitPosition = m_BitPosition + bitCount;
             var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
@@ -122,7 +136,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to store bits into.</param>
         /// <param name="bitCount">Amount of bits to read.</param>
-        public unsafe void ReadBits(out byte value, int bitCount)
+        public void ReadBits(out byte value, int bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             int checkPos = (m_BitPosition + bitCount);
@@ -156,59 +170,17 @@ namespace Unity.Multiplayer.Netcode
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T: unmanaged
+        private unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T: unmanaged
         {
-            // Switch statement to read small values with assignments
-            // is considerably faster than calling UnsafeUtility.MemCpy
-            // in all builds - editor, mono, and ILCPP
             T val = new T();
             byte* ptr = ((byte*) &val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            switch (bytesToRead)
-            {
-                case 1:
-                    ptr[0] = *bufferPointer;
-                    break;
-                case 2:
-                    *(ushort*) ptr = *(ushort*)bufferPointer;
-                    break;
-                case 3:
-                    *(ushort*) ptr = *(ushort*)bufferPointer;
-                    *(ptr+2) = *(bufferPointer+2);
-                    break;
-                case 4:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    break;
-                case 5:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ptr+4) = *(bufferPointer+4);
-                    break;
-                case 6:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
-                    break;
-                case 7:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
-                    *(ptr+6) = *(bufferPointer+6);
-                    break;
-                case 8:
-                    *(ulong*) ptr = *(ulong*)bufferPointer;
-                    break;
-                default:
-                    UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
-                    break;
-            }
+            BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
 
             m_BitPosition += bytesToRead * BITS_PER_BYTE;
             value = val;
         }
         
-        /// <summary>
-        /// Read a certain amount of bits from the stream.
-        /// </summary>
-        /// <param name="bitCount">How many bits to read. Minimum 0, maximum 64.</param>
-        /// <returns>The bits that were read</returns>
         private byte ReadByteBits(int bitCount)
         {
             if (bitCount > 8)
@@ -235,11 +207,11 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void ReadMisaligned(out byte value)
         {
-            int off = (int)(m_BitPosition & 7);
+            int off = m_BitPosition & 7;
             int pos = m_BitPosition >> 3;
             int shift1 = 8 - off;
             
-            value = (byte)((m_BufferPointer[(int)pos] >> shift1) | (m_BufferPointer[(int)(m_BitPosition += 8) >> 3] << shift1));
+            value = (byte)((m_BufferPointer[pos] >> shift1) | (m_BufferPointer[(m_BitPosition += 8) >> 3] << shift1));
         }
     }
 }

@@ -11,14 +11,50 @@ namespace Unity.Multiplayer.Netcode
     {
         internal unsafe byte* m_BufferPointer;
         internal int m_Position;
-        internal int m_Length;
+        private int m_Length;
         internal int m_Capacity;
-        internal int m_MaxCapacity;
-        internal Allocator m_Allocator;
+        internal readonly int m_MaxCapacity;
+        private readonly Allocator m_Allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         internal int m_AllowedWriteMark;
-        internal bool m_InBitwiseContext;
+        private bool m_InBitwiseContext;
 #endif
+        
+        /// <summary>
+        /// The current write position
+        /// </summary>
+        public int Position
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position;
+        }
+
+        /// <summary>
+        /// The current total buffer size
+        /// </summary>
+        public int Capacity
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Capacity;
+        }
+
+        /// <summary>
+        /// The maximum possible total buffer size
+        /// </summary>
+        public int MaxCapacity
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_MaxCapacity;
+        }
+
+        /// <summary>
+        /// The total amount of bytes that have been written to the stream
+        /// </summary>
+        public int Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position > m_Length ? m_Position : m_Length;
+        }
 
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -30,6 +66,12 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
 
+        /// <summary>
+        /// Create a FastBufferWriter.
+        /// </summary>
+        /// <param name="size">Size of the buffer to create</param>
+        /// <param name="allocator">Allocator to use in creating it</param>
+        /// <param name="maxSize">Maximum size the buffer can grow to. If less than size, buffer cannot grow.</param>
         public unsafe FastBufferWriter(int size, Allocator allocator, int maxSize = -1)
         {
             void* buffer = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<byte>(), allocator);
@@ -41,18 +83,26 @@ namespace Unity.Multiplayer.Netcode
             m_Length = 0;
             m_Capacity = size;
             m_Allocator = allocator;
-            m_MaxCapacity = maxSize == -1 ? size : maxSize;
+            m_MaxCapacity = maxSize < size ? size : maxSize;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_AllowedWriteMark = 0;
             m_InBitwiseContext = false;
 #endif
         }
 
+        /// <summary>
+        /// Frees the allocated buffer
+        /// </summary>
         public unsafe void Dispose()
         {
             UnsafeUtility.Free(m_BufferPointer, m_Allocator);
         }
 
+        /// <summary>
+        /// Move the write position in the stream.
+        /// Note that moving forward past the current length will extend the buffer's Length value even if you don't write.
+        /// </summary>
+        /// <param name="where">Absolute value to move the position to, truncated to Capacity</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Seek(int where)
         {
@@ -74,6 +124,11 @@ namespace Unity.Multiplayer.Netcode
             m_Position = where;
         }
 
+        /// <summary>
+        /// Truncate the stream by setting Length to the specified value.
+        /// If Position is greater than the specified value, it will be moved as well.
+        /// </summary>
+        /// <param name="where">The value to truncate to. If -1, the current position will be used.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Truncate(int where = -1)
         {
@@ -92,31 +147,18 @@ namespace Unity.Multiplayer.Netcode
             }
         }
 
+        /// <summary>
+        /// Retrieve a BitWriter to be able to perform bitwise operations on the buffer.
+        /// No bytewise operations can be performed on the buffer until bitWriter.Dispose() has been called.
+        /// At the end of the operation, FastBufferWriter will remain byte-aligned.
+        /// </summary>
+        /// <returns>A BitWriter</returns>
         public BitWriter EnterBitwiseContext()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_InBitwiseContext = true;
 #endif
             return new BitWriter(ref this);
-        }
-        
-
-        public int Position
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position;
-        }
-
-        public int Capacity
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Capacity;
-        }
-
-        public int Length
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position > m_Length ? m_Position : m_Length;
         }
 
         internal unsafe void Grow()
@@ -132,6 +174,20 @@ namespace Unity.Multiplayer.Netcode
             m_Capacity = newSize;
         }
 
+        /// <summary>
+        /// Allows faster serialization by batching bounds checking.
+        /// When you know you will be writing multiple fields back-to-back and you know the total size,
+        /// you can call VerifyCanWrite() once on the total size, and then follow it with calls to
+        /// WriteValue() instead of WriteValueSafe() for faster serialization.
+        /// 
+        /// Unsafe write operations will throw OverflowException in editor and development builds if you
+        /// go past the point you've marked using VerifyCanWrite(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using VerifyCanWrite is to avoid bounds checking in the following
+        /// operations in release builds.
+        /// </summary>
+        /// <param name="bytes">Amount of bytes to write</param>
+        /// <returns>True if the write is allowed, false otherwise</returns>
+        /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool VerifyCanWrite(int bytes)
         {
@@ -158,7 +214,56 @@ namespace Unity.Multiplayer.Netcode
 #endif
             return true;
         }
-
+        
+        /// <summary>
+        /// Allows faster serialization by batching bounds checking.
+        /// When you know you will be writing multiple fields back-to-back and you know the total size,
+        /// you can call VerifyCanWrite() once on the total size, and then follow it with calls to
+        /// WriteValue() instead of WriteValueSafe() for faster serialization.
+        /// 
+        /// Unsafe write operations will throw OverflowException in editor and development builds if you
+        /// go past the point you've marked using VerifyCanWrite(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using VerifyCanWrite is to avoid bounds checking in the following
+        /// operations in release builds.
+        /// </summary>
+        /// <param name="value">The value you want to write</param>
+        /// <returns>True if the write is allowed, false otherwise</returns>
+        /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool VerifyCanWriteValue<T>(in T value) where T : unmanaged
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
+            }
+#endif
+            int len = sizeof(T);
+            if (m_Position + len > m_Capacity)
+            {
+                if (m_Capacity < m_MaxCapacity)
+                {
+                    Grow();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedWriteMark = m_Position + len;
+#endif
+            return true;
+        }
+        
+        /// <summary>
+        /// Internal version of VerifyCanWrite.
+        /// Differs from VerifyCanWrite only in that it won't ever move the AllowedWriteMark backward.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool VerifyCanWriteInternal(int bytes)
         {
@@ -189,34 +294,11 @@ namespace Unity.Multiplayer.Netcode
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool VerifyCanWriteValue<T>(in T value) where T : unmanaged
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-#endif
-            int len = sizeof(T);
-            if (m_Position + len > m_Capacity)
-            {
-                if (m_Capacity < m_MaxCapacity)
-                {
-                    Grow();
-                }
-                else
-                {
-                    return false;
-                }
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedWriteMark = m_Position + len;
-#endif
-            return true;
-        }
-
+        /// <summary>
+        /// Returns an array representation of the underlying byte buffer.
+        /// !!Allocates a new array!!
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte[] ToArray()
         {
@@ -228,12 +310,20 @@ namespace Unity.Multiplayer.Netcode
             return ret;
         }
 
+        /// <summary>
+        /// Gets a direct pointer to the underlying buffer
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
             return m_BufferPointer;
         }
 
+        /// <summary>
+        /// Gets a direct pointer to the underlying buffer at the current read position
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
@@ -245,11 +335,15 @@ namespace Unity.Multiplayer.Netcode
         /// Named differently from other WriteValue methods to avoid accidental boxing
         /// </summary>
         /// <param name="value">The object to write</param>
+        /// <param name="isNullable">
+        /// If true, an extra byte will be written to indicate whether or not the value is null.
+        /// Some types will always write this.
+        /// </param>
         public void WriteObject(object value, bool isNullable = false)
         {
             if (isNullable || value.GetType().IsNullable())
             {
-                bool isNull = value == null || (value is UnityEngine.Object && ((UnityEngine.Object)value) == null);
+                bool isNull = value == null || (value is UnityEngine.Object o && o == null);
 
                 WriteValueSafe(isNull);
 
@@ -340,48 +434,102 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
+        /// <summary>
+        /// Write an INetworkSerializable
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="T"></typeparam>
         public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
         {
             // TODO
         }
-
+        
+        /// <summary>
+        /// Get the required amount of space to write a GameObject
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int GetWriteSize(GameObject value)
+        {
+            return sizeof(ulong);
+        }
+        
+        /// <summary>
+        /// Get the required amount of space to write a GameObject
+        /// </summary>
+        /// <returns></returns>
+        public static int GetGameObjectWriteSize()
+        {
+            return sizeof(ulong);
+        }
+        
+        /// <summary>
+        /// Write a GameObject
+        /// </summary>
+        /// <param name="value">The value to write</param>
         public void WriteValue(GameObject value)
         {
-            var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
+            var networkObject = (value).GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {(value).name}");
             }
 
             if (!networkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {(value).name}");
             }
 
             WriteValue(networkObject.NetworkObjectId);
         }
         
+        /// <summary>
+        /// Write a GameObject
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
         public void WriteValueSafe(GameObject value)
         {
-            var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
+            var networkObject = (value).GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {(value).name}");
             }
 
             if (!networkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {(value).name}");
             }
 
             WriteValueSafe(networkObject.NetworkObjectId);
         }
         
-        public static int GetWriteSize(GameObject value)
+        /// <summary>
+        /// Get the required size to write a NetworkObject
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int GetWriteSize(NetworkObject value)
+        {
+            return sizeof(ulong);
+        }
+        
+        /// <summary>
+        /// Get the required size to write a NetworkObject
+        /// </summary>
+        /// <returns></returns>
+        public static int GetNetworkObjectWriteSize()
         {
             return sizeof(ulong);
         }
 
+
+        /// <summary>
+        /// Write a NetworkObject
+        /// </summary>
+        /// <param name="value">The value to write</param>
         public void WriteValue(in NetworkObject value)
         {
             if (!value.IsSpawned)
@@ -392,6 +540,13 @@ namespace Unity.Multiplayer.Netcode
             WriteValue(value.NetworkObjectId);
         }
 
+        /// <summary>
+        /// Write a NetworkObject
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
         public void WriteValueSafe(NetworkObject value)
         {
             if (!value.IsSpawned)
@@ -401,27 +556,56 @@ namespace Unity.Multiplayer.Netcode
             WriteValueSafe(value.NetworkObjectId);
         }
         
-        public static int GetWriteSize(NetworkObject value)
+        /// <summary>
+        /// Get the required size to write a NetworkBehaviour
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int GetWriteSize(NetworkBehaviour value)
         {
-            return sizeof(ulong);
+            return sizeof(ulong) + sizeof(ushort);
+        }
+        
+        
+        /// <summary>
+        /// Get the required size to write a NetworkBehaviour
+        /// </summary>
+        /// <returns></returns>
+        public static int GetNetworkBehaviourWriteSize()
+        {
+            return sizeof(ulong) + sizeof(ushort);
         }
 
+
+        /// <summary>
+        /// Write a NetworkBehaviour
+        /// </summary>
+        /// <param name="value">The value to write</param>
         public void WriteValue(NetworkBehaviour value)
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {(value).gameObject.name}");
             }
 
             WriteValue(value.NetworkObjectId);
             WriteValue(value.NetworkBehaviourId);
         }
 
+        /// <summary>
+        /// Write a NetworkBehaviour
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
         public void WriteValueSafe(NetworkBehaviour value)
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {(value).gameObject.name}");
             }
 
             if (!VerifyCanWriteInternal(sizeof(ulong) + sizeof(ushort)))
@@ -431,10 +615,17 @@ namespace Unity.Multiplayer.Netcode
             WriteValue(value.NetworkObjectId);
             WriteValue(value.NetworkBehaviourId);
         }
-        
-        public static int GetWriteSize(NetworkBehaviour value)
+
+        /// <summary>
+        /// Get the required size to write a string
+        /// </summary>
+        /// <param name="s">The string to write</param>
+        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetWriteSize(string s, bool oneByteChars = false)
         {
-            return sizeof(ulong) + sizeof(ushort);
+            return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
         }
         
         /// <summary>
@@ -464,6 +655,9 @@ namespace Unity.Multiplayer.Netcode
 
         /// <summary>
         /// Writes a string
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="s">The string to write</param>
         /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
@@ -502,10 +696,20 @@ namespace Unity.Multiplayer.Netcode
             }
         }
 
+        /// <summary>
+        /// Get the required size to write an unmanaged array
+        /// </summary>
+        /// <param name="array">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
+        /// <param name="offset">Where in the array to start</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetWriteSize(string s, bool oneByteChars = false)
+        public static unsafe int GetWriteSize<T>(T[] array, int count = -1, int offset = 0) where T: unmanaged
         {
-            return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            int sizeInBytes = sizeInTs * sizeof(T);
+            return sizeof(int) + sizeInBytes;
         }
 
         /// <summary>
@@ -529,6 +733,9 @@ namespace Unity.Multiplayer.Netcode
 
         /// <summary>
         /// Writes an unmanaged array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="array">The array to write</param>
         /// <param name="count">The amount of elements to write</param>
@@ -558,22 +765,19 @@ namespace Unity.Multiplayer.Netcode
                 WriteBytes(bytes, sizeInBytes);
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<T>(T[] array, int count = -1, int offset = 0) where T: unmanaged
-        {
-            int sizeInTs = count != -1 ? count : array.Length - offset;
-            int sizeInBytes = sizeInTs * sizeof(T);
-            return sizeof(int) + sizeInBytes;
-        }
-
+        
+        /// <summary>
+        /// Write a partial value. The specified number of bytes is written from the value and the rest is ignored.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="bytesToWrite">Number of bytes</param>
+        /// <param name="offsetBytes">Offset into the value to begin reading the bytes</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T: unmanaged
         {
-            // Switch statement to write small values with assignments
-            // is considerably faster than calling UnsafeUtility.MemCpy
-            // in all builds - editor, mono, and ILCPP
-            
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -588,41 +792,7 @@ namespace Unity.Multiplayer.Netcode
 
             byte* ptr = ((byte*) &value) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            switch (bytesToWrite)
-            {
-                case 1:
-                    bufferPointer[0] = *ptr;
-                    break;
-                case 2:
-                    *(ushort*) bufferPointer = *(ushort*)ptr;
-                    break;
-                case 3:
-                    *(ushort*) bufferPointer = *(ushort*)ptr;
-                    *(bufferPointer+2) = *(ptr+2);
-                    break;
-                case 4:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    break;
-                case 5:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(bufferPointer+4) = *(ptr+4);
-                    break;
-                case 6:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(ushort*) (bufferPointer+4) = *(ushort*)(ptr+4);
-                    break;
-                case 7:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(ushort*) (bufferPointer+4) = *(ushort*)(ptr+4);
-                    *(bufferPointer+6) = *(ptr+6);
-                    break;
-                case 8:
-                    *(ulong*) bufferPointer = *(ulong*)ptr;
-                    break;
-                default:
-                    UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
-                    break;
-            }
+            BytewiseUtility.FastCopyBytes(bufferPointer, ptr, bytesToWrite);
 
             m_Position += bytesToWrite;
         }
@@ -650,6 +820,9 @@ namespace Unity.Multiplayer.Netcode
 
         /// <summary>
         /// Write a byte to the stream.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -669,12 +842,13 @@ namespace Unity.Multiplayer.Netcode
             }
             m_BufferPointer[m_Position++] = value;
         }
-        
+
         /// <summary>
         /// Write multiple bytes to the stream
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytes(byte* value, int size, int offset = 0)
         {      
@@ -695,9 +869,13 @@ namespace Unity.Multiplayer.Netcode
         
         /// <summary>
         /// Write multiple bytes to the stream
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytesSafe(byte* value, int size, int offset = 0)
         {      
@@ -722,6 +900,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytes(byte[] value, int size, int offset = 0)
         {
@@ -733,9 +912,13 @@ namespace Unity.Multiplayer.Netcode
         
         /// <summary>
         /// Write multiple bytes to the stream
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
+        /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytesSafe(byte[] value, int size, int offset = 0)
         {
@@ -768,9 +951,32 @@ namespace Unity.Multiplayer.Netcode
         {
             WriteBytes(other.m_BufferPointer, other.m_Position);
         }
+        
+        /// <summary>
+        /// Get the size required to write an unmanaged value
+        /// </summary>
+        /// <param name="value"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int GetWriteSize<T>(in T value) where T : unmanaged
+        {
+            return sizeof(T);
+        }
 
         /// <summary>
-        /// Write a value of any unmanaged type to the buffer.
+        /// Get the size required to write an unmanaged value of type T
+        /// </summary>
+        /// <param name="value"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static unsafe int GetWriteSize<T>() where T : unmanaged
+        {
+            return sizeof(T);
+        }
+
+        /// <summary>
+        /// Write a value of any unmanaged type (including unmanaged structs) to the buffer.
         /// It will be copied into the buffer exactly as it exists in memory.
         /// </summary>
         /// <param name="value">The value to copy</param>
@@ -798,8 +1004,11 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Write a value of any unmanaged type to the buffer.
+        /// Write a value of any unmanaged type (including unmanaged structs) to the buffer.
         /// It will be copied into the buffer exactly as it exists in memory.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling VerifyCanWrite.
         /// </summary>
         /// <param name="value">The value to copy</param>
         /// <typeparam name="T">Any unmanaged type</typeparam>
@@ -824,32 +1033,6 @@ namespace Unity.Multiplayer.Netcode
             T* pointer = (T*)(m_BufferPointer+m_Position);
             *pointer = value;
             m_Position += len;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<T>(in T value) where T : unmanaged
-        {
-            return sizeof(T);
-        }
-
-        public static unsafe int GetWriteSize<T>() where T : unmanaged
-        {
-            return sizeof(T);
-        }
-        
-        public static int GetNetworkObjectWriteSize()
-        {
-            return sizeof(ulong);
-        }
-        
-        public static int GetGameObjectWriteSize()
-        {
-            return sizeof(ulong);
-        }
-        
-        public static int GetNetworkBehaviourWriteSize()
-        {
-            return sizeof(ulong) + sizeof(ushort);
         }
     }
 }

@@ -5,14 +5,24 @@ using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode
 {
+    /// <summary>
+    /// Utility class for packing values in serialization.
+    /// </summary>
     public static class BytePacker
     {
         #region Managed TypePacking
+
         /// <summary>
         /// Writes a boxed object in a packed format
-        /// Named differently from other WriteValuePacked methods to avoid accidental boxing
+        /// Named differently from other WriteValuePacked methods to avoid accidental boxing.
+        /// Don't use this method unless you have no other choice.
         /// </summary>
+        /// <param name="writer">Writer to write to</param>
         /// <param name="value">The object to write</param>
+        /// <param name="isNullable">
+        /// If true, an extra byte will be written to indicate whether or not the value is null.
+        /// Some types will always write this.
+        /// </param>
         public static void WriteObjectPacked(ref FastBufferWriter writer, object value, bool isNullable = false)
         {
 #if UNITY_NETCODE_DEBUG_NO_PACKING
@@ -21,7 +31,7 @@ namespace Unity.Multiplayer.Netcode
 #endif
             if (isNullable || value.GetType().IsNullable())
             {
-                bool isNull = value == null || (value is UnityEngine.Object && ((UnityEngine.Object)value) == null);
+                bool isNull = value == null || (value is UnityEngine.Object o && o == null);
 
                 WriteValuePacked(ref writer, isNull);
 
@@ -140,6 +150,12 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValuePacked<T>(ref FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
+        /// <summary>
+        /// Write a packed enum value.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="TEnum">An enum type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void WriteValuePacked<TEnum>(ref FastBufferWriter writer, TEnum value) where TEnum : unmanaged, Enum
         {
@@ -162,8 +178,9 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Write single-precision floating point value to the stream as a varint
+        /// Write single-precision floating point value to the buffer as a varint
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, float value)
@@ -172,8 +189,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write double-precision floating point value to the stream as a varint
+        /// Write double-precision floating point value to the buffer as a varint
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, double value)
@@ -182,97 +200,99 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Write a byte to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, byte value) => writer.WriteByteSafe(value);
         
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Write a signed byte to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, sbyte value) => writer.WriteByteSafe((byte)value);
         
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Write a bool to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, bool value) => writer.WriteValueSafe(value);
 
 
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
+        /// Write a signed short (Int16) as a ZigZag encoded varint to the buffer.
         /// WARNING: If the value you're writing is > 2287, this will use MORE space
         /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
         /// Only use this if you're certain your value will be small.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, short value) => WriteUInt32Packed(ref writer, (ushort)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
-        /// Write an unsigned short (UInt16) as a varint to the stream.
+        /// Write an unsigned short (UInt16) as a varint to the buffer.
         /// WARNING: If the value you're writing is > 2287, this will use MORE space
         /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
         /// Only use this if you're certain your value will be small.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, ushort value) => WriteUInt32Packed(ref writer, value);
 
         /// <summary>
-        /// Write a two-byte character as a varint to the stream.
+        /// Write a two-byte character as a varint to the buffer.
         /// WARNING: If the value you're writing is > 2287, this will use MORE space
         /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
         /// Only use this if you're certain your value will be small.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="c">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, char c) => WriteUInt32Packed(ref writer, c);
 
         /// <summary>
-        /// Write a signed int (Int32) as a ZigZag encoded varint to the stream.
+        /// Write a signed int (Int32) as a ZigZag encoded varint to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, int value) => WriteUInt32Packed(ref writer, (uint)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
-        /// Write an unsigned int (UInt32) to the stream.
+        /// Write an unsigned int (UInt32) to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, uint value) => WriteUInt32Packed(ref writer, value);
 
         /// <summary>
-        /// Write an unsigned long (UInt64) to the stream.
+        /// Write an unsigned long (UInt64) to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, ulong value) => WriteUInt64Packed(ref writer, value);
 
         /// <summary>
-        /// Write a signed long (Int64) as a ZigZag encoded varint to the stream.
+        /// Write a signed long (Int64) as a ZigZag encoded varint to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(ref FastBufferWriter writer, long value) => WriteUInt64Packed(ref writer, (ulong)Arithmetic.ZigZagEncode(value));
+        public static void WriteValuePacked(ref FastBufferWriter writer, long value) => WriteUInt64Packed(ref writer, Arithmetic.ZigZagEncode(value));
 
         /// <summary>
-        /// Convenience method that writes two packed Vector3 from the ray to the stream
+        /// Convenience method that writes two packed Vector3 from the ray to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="ray">Ray to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Ray ray)
@@ -282,8 +302,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes two packed Vector2 from the ray to the stream
+        /// Convenience method that writes two packed Vector2 from the ray to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="ray2d">Ray2D to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Ray2D ray2d)
@@ -293,8 +314,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the color to the stream
+        /// Convenience method that writes four varint floats from the color to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="color">Color to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Color color)
@@ -306,8 +328,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the color to the stream
+        /// Convenience method that writes four varint floats from the color to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="color">Color to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Color32 color)
@@ -319,8 +342,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes two varint floats from the vector to the stream
+        /// Convenience method that writes two varint floats from the vector to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="vector2">Vector to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Vector2 vector2)
@@ -330,8 +354,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes three varint floats from the vector to the stream
+        /// Convenience method that writes three varint floats from the vector to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="vector3">Vector to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Vector3 vector3)
@@ -342,8 +367,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the vector to the stream
+        /// Convenience method that writes four varint floats from the vector to the buffer
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="vector4">Vector to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Vector4 vector4)
@@ -355,8 +381,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Writes the rotation to the stream.
+        /// Writes the rotation to the buffer.
         /// </summary>
+        /// <param name="writer">The writer to write to</param>
         /// <param name="rotation">Rotation to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Quaternion rotation)
@@ -370,7 +397,8 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Writes a string in a packed format
         /// </summary>
-        /// <param name="s"></param>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="s">The value to pack</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, string s)
         {
@@ -391,8 +419,29 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueBitPacked<T>(ref FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
+        /// <summary>
+        /// Writes a 14-bit signed short to the buffer in a bit-encoded packed format.
+        /// The first bit indicates whether the value is 1 byte or 2.
+        /// The sign bit takes up another bit.
+        /// That leaves 14 bits for the value.
+        /// A value greater than 2^14-1 or less than -2^14 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its two
+        /// most significant bits after zig-zag encoding.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(ref FastBufferWriter writer, short value) => WriteValueBitPacked(ref writer, (ushort) Arithmetic.ZigZagEncode(value));
 
+        /// <summary>
+        /// Writes a 15-bit unsigned short to the buffer in a bit-encoded packed format.
+        /// The first bit indicates whether the value is 1 byte or 2.
+        /// That leaves 15 bits for the value.
+        /// A value greater than 2^15-1 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its
+        /// most significant bit.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(ref FastBufferWriter writer, ushort value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -419,8 +468,29 @@ namespace Unity.Multiplayer.Netcode
             writer.WriteValue((ushort)((value << 1) | 0b1));
         }
 
+        /// <summary>
+        /// Writes a 29-bit signed int to the buffer in a bit-encoded packed format.
+        /// The first two bits indicate whether the value is 1, 2, 3, or 4 bytes.
+        /// The sign bit takes up another bit.
+        /// That leaves 29 bits for the value.
+        /// A value greater than 2^29-1 or less than -2^29 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its three
+        /// most significant bits after zig-zag encoding.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(ref FastBufferWriter writer, int value) => WriteValueBitPacked(ref writer, (uint) Arithmetic.ZigZagEncode(value));
 
+        /// <summary>
+        /// Writes a 30-bit unsigned int to the buffer in a bit-encoded packed format.
+        /// The first two bits indicate whether the value is 1, 2, 3, or 4 bytes.
+        /// That leaves 30 bits for the value.
+        /// A value greater than 2^30-1 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its two
+        /// most significant bits.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(ref FastBufferWriter writer, uint value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -438,8 +508,29 @@ namespace Unity.Multiplayer.Netcode
             writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
         }
 
-        public static void WriteValueBitPacked(ref FastBufferWriter writer, long value) => WriteValueBitPacked(ref writer, (ulong) Arithmetic.ZigZagEncode(value));
+        /// <summary>
+        /// Writes a 60-bit signed long to the buffer in a bit-encoded packed format.
+        /// The first three bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, or 8 bytes.
+        /// The sign bit takes up another bit.
+        /// That leaves 60 bits for the value.
+        /// A value greater than 2^60-1 or less than -2^60 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its four
+        /// most significant bits after zig-zag encoding.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
+        public static void WriteValueBitPacked(ref FastBufferWriter writer, long value) => WriteValueBitPacked(ref writer, Arithmetic.ZigZagEncode(value));
 
+        /// <summary>
+        /// Writes a 61-bit unsigned long to the buffer in a bit-encoded packed format.
+        /// The first three bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, or 8 bytes.
+        /// That leaves 31 bits for the value.
+        /// A value greater than 2^61-1 will throw an exception in editor and development builds.
+        /// In release builds builds the exception is not thrown and the value is truncated by losing its three
+        /// most significant bits.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(ref FastBufferWriter writer, ulong value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -521,20 +612,6 @@ namespace Unity.Multiplayer.Netcode
         {
             ulong* asUlong = (ulong*) &value;
             return *asUlong;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe float ToSingle<T>(T value) where T : unmanaged
-        {
-            float* asFloat = (float*) &value;
-            return *asFloat;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe double ToDouble<T>(T value) where T : unmanaged
-        {
-            double* asDouble = (double*) &value;
-            return *asDouble;
         }
         #endregion
     }

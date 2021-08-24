@@ -8,11 +8,19 @@ namespace Unity.Multiplayer.Netcode
     public static class ByteUnpacker
     {
         #region Managed TypePacking
+
         /// <summary>
-        /// Writes a boxed object in a packed format
+        /// Reads a boxed object in a packed format
         /// Named differently from other ReadValuePacked methods to avoid accidental boxing
+        /// Don't use this method unless you have no other choice.
         /// </summary>
-        /// <param name="value">The object to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The object to read</param>
+        /// <param name="type">The type of the object to read (i.e., typeof(int))</param>
+        /// <param name="isNullable">
+        /// If true, reads a byte indicating whether or not the object is null.
+        /// Should match the way the object was written.
+        /// </param>
         public static void ReadObjectPacked(ref FastBufferReader reader, out object value, Type type, bool isNullable = false)
         {
 #if UNITY_NETCODE_DEBUG_NO_PACKING
@@ -162,11 +170,12 @@ namespace Unity.Multiplayer.Netcode
                     throw new InvalidOperationException("Enum is a size that cannot exist?!");
             }
         }
-        
+
         /// <summary>
-        /// Write single-precision floating point value to the stream as a varint
+        /// Read single-precision floating point value from the stream as a varint
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out float value)
         {
@@ -175,9 +184,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write double-precision floating point value to the stream as a varint
+        /// Read double-precision floating point value from the stream as a varint
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out double value)
         {
@@ -186,22 +196,18 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read a byte from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out byte value) => reader.ReadByteSafe(out value);
 
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read a signed byte from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out sbyte value)
         {
@@ -210,23 +216,19 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read a boolean from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out bool value) => reader.ReadValueSafe(out value);
 
 
         /// <summary>
-        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read an usigned short (Int16) as a varint from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out short value)
         {
@@ -235,12 +237,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write an unsigned short (UInt16) as a varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read an unsigned short (UInt16) as a varint from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out ushort value)
         {
@@ -249,12 +249,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write a two-byte character as a varint to the stream.
-        /// WARNING: If the value you're writing is > 2287, this will use MORE space
-        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
-        /// Only use this if you're certain your value will be small.
+        /// Read a two-byte character as a varint from the stream.
         /// </summary>
-        /// <param name="c">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="c">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out char c)
         {
@@ -263,9 +261,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Write a signed int (Int32) as a ZigZag encoded varint to the stream.
+        /// Read a signed int (Int32) as a ZigZag encoded varint from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out int value)
         {
@@ -274,23 +273,26 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Write an unsigned int (UInt32) to the stream.
+        /// Read an unsigned int (UInt32) from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out uint value) => ReadUInt32Packed(ref reader, out value);
 
         /// <summary>
-        /// Write an unsigned long (UInt64) to the stream.
+        /// Read an unsigned long (UInt64) from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out ulong value) => ReadUInt64Packed(ref reader, out value);
 
         /// <summary>
-        /// Write a signed long (Int64) as a ZigZag encoded varint to the stream.
+        /// Read a signed long (Int64) as a ZigZag encoded varint from the stream.
         /// </summary>
-        /// <param name="value">Value to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out long value)
         {
@@ -299,9 +301,10 @@ namespace Unity.Multiplayer.Netcode
         }
         
         /// <summary>
-        /// Convenience method that writes two packed Vector3 from the ray to the stream
+        /// Convenience method that reads two packed Vector3 from the ray from the stream
         /// </summary>
-        /// <param name="ray">Ray to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="ray">Ray to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Ray ray)
         {
@@ -311,9 +314,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes two packed Vector2 from the ray to the stream
+        /// Convenience method that reads two packed Vector2 from the ray from the stream
         /// </summary>
-        /// <param name="ray2d">Ray2D to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="ray2d">Ray2D to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Ray2D ray2d)
         {
@@ -323,9 +327,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the color to the stream
+        /// Convenience method that reads four varint floats from the color from the stream
         /// </summary>
-        /// <param name="color">Color to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="color">Color to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Color color)
         {
@@ -337,9 +342,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the color to the stream
+        /// Convenience method that reads four varint floats from the color from the stream
         /// </summary>
-        /// <param name="color">Color to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="color">Color to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Color32 color)
         {
@@ -351,9 +357,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes two varint floats from the vector to the stream
+        /// Convenience method that reads two varint floats from the vector from the stream
         /// </summary>
-        /// <param name="vector2">Vector to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="vector2">Vector to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Vector2 vector2)
         {
@@ -363,9 +370,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes three varint floats from the vector to the stream
+        /// Convenience method that reads three varint floats from the vector from the stream
         /// </summary>
-        /// <param name="vector3">Vector to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="vector3">Vector to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Vector3 vector3)
         {
@@ -376,9 +384,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Convenience method that writes four varint floats from the vector to the stream
+        /// Convenience method that reads four varint floats from the vector from the stream
         /// </summary>
-        /// <param name="vector4">Vector to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="vector4">Vector to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Vector4 vector4)
         {
@@ -390,9 +399,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Writes the rotation to the stream.
+        /// Reads the rotation from the stream.
         /// </summary>
-        /// <param name="rotation">Rotation to write</param>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="rotation">Rotation to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(ref FastBufferReader reader, out Quaternion rotation)
         {
@@ -404,8 +414,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Writes a string in a packed format
+        /// Reads a string in a packed format
         /// </summary>
+        /// <param name="reader">The reader to read from</param>
         /// <param name="s"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void ReadValuePacked(ref FastBufferReader reader, out string s)
@@ -431,12 +442,24 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueBitPacked<T>(ref FastBufferReader reader, T value) where T: unmanaged => reader.ReadValueSafe(out value);
 #else
+        /// <summary>
+        /// Read a bit-packed 14-bit signed short from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static void ReadValueBitPacked(ref FastBufferReader reader, out short value)
         {
             ReadValueBitPacked(ref reader, out ushort readValue);
             value = (short)Arithmetic.ZigZagDecode(readValue);
         }
 
+        /// <summary>
+        /// Read a bit-packed 15-bit unsigned short from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out ushort value)
         {
             ushort returnValue = 0;
@@ -463,11 +486,24 @@ namespace Unity.Multiplayer.Netcode
             value = (ushort)(returnValue >> 1);
         }
 
+        /// <summary>
+        /// Read a bit-packed 29-bit signed int from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static void ReadValueBitPacked(ref FastBufferReader reader, out int value)
         {
             ReadValueBitPacked(ref reader, out uint readValue);
             value = (int)Arithmetic.ZigZagDecode(readValue);
         }
+        
+        /// <summary>
+        /// Read a bit-packed 30-bit unsigned int from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out uint value)
         {
             uint returnValue = 0;
@@ -499,11 +535,24 @@ namespace Unity.Multiplayer.Netcode
             value = returnValue >> 2;
         }
 
+        /// <summary>
+        /// Read a bit-packed 60-bit signed long from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static void ReadValueBitPacked(ref FastBufferReader reader, out long value)
         {
             ReadValueBitPacked(ref reader, out ulong readValue);
             value = Arithmetic.ZigZagDecode(readValue);
         }
+        
+        /// <summary>
+        /// Read a bit-packed 61-bit signed long from the stream.
+        /// See BytePacker.cs for a description of the format.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value to read</param>
         public static unsafe void ReadValueBitPacked(ref FastBufferReader reader, out ulong value)
         {
             ulong returnValue = 0;
@@ -600,20 +649,6 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Reading past the end of the buffer");
             }
             reader.ReadPartialValue(out value, numBytes);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe uint ToUint<T>(T value) where T : unmanaged
-        {
-            uint* asUint = (uint*) &value;
-            return *asUint;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe ulong ToUlong<T>(T value) where T : unmanaged
-        {
-            ulong* asUlong = (ulong*) &value;
-            return *asUlong;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

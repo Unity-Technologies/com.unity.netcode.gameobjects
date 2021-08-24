@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Multiplayer.Netcode
 {
+    /// <summary>
+    /// Helper class for doing bitwise writes for a FastBufferWriter.
+    /// Ensures all bitwise writes end on proper byte alignment so FastBufferWriter doesn't have to be concerned
+    /// with misaligned writes.
+    /// </summary>
     public ref struct BitWriter
     {
         private Ref<FastBufferWriter> m_Writer;
         private unsafe byte* m_BufferPointer;
-        private int m_Position;
-        internal int m_BitPosition;
+        private readonly int m_Position;
+        private int m_BitPosition;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        internal int m_AllowedBitwiseWriteMark;
+        private int m_AllowedBitwiseWriteMark;
 #endif
         private const int BITS_PER_BYTE = 8;
 
@@ -23,8 +27,7 @@ namespace Unity.Multiplayer.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (m_BitPosition & 7) == 0;
         }
-
-
+        
         internal unsafe BitWriter(ref FastBufferWriter writer)
         {
             m_Writer = new Ref<FastBufferWriter>(ref writer);
@@ -35,7 +38,31 @@ namespace Unity.Multiplayer.Netcode
             m_AllowedBitwiseWriteMark = (m_Writer.Value.m_AllowedWriteMark - m_Writer.Value.Position) * BITS_PER_BYTE;
 #endif
         }
+
+        /// <summary>
+        /// Pads the written bit count to byte alignment and commits the write back to the writer
+        /// </summary>
+        public void Dispose()
+        {
+            var bytesWritten = m_BitPosition >> 3;
+            if (!BitAligned)
+            {
+                // Accounting for the partial write
+                ++bytesWritten;
+            }
+
+            m_Writer.Value.CommitBitwiseWrites(bytesWritten);
+        }
         
+        /// <summary>
+        /// Verifies the requested bit count can be written to the buffer.
+        /// This exists as a separate method to allow multiple bit writes to be bounds checked with a single call.
+        /// If it returns false, you may not write, and in editor and development builds, attempting to do so will
+        /// throw an exception. In release builds, attempting to do so will write to random memory addresses and cause
+        /// Bad Things(TM).
+        /// </summary>
+        /// <param name="bitCount">Number of bits you want to write, in total</param>
+        /// <returns>True if you can write, false if that would exceed buffer bounds</returns>
         public unsafe bool VerifyCanWriteBits(int bitCount)
         {
             var newBitPosition = m_BitPosition + bitCount;
@@ -62,18 +89,6 @@ namespace Unity.Multiplayer.Netcode
             m_AllowedBitwiseWriteMark = newBitPosition;
 #endif
             return true;
-        }
-
-        public unsafe void Dispose()
-        {
-            var bytesWritten = m_BitPosition >> 3;
-            if (!BitAligned)
-            {
-                // Accounting for the partial write
-                ++bytesWritten;
-            }
-
-            m_Writer.Value.CommitBitwiseWrites(bytesWritten);
         }
 
         /// <summary>
@@ -169,47 +184,9 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T: unmanaged
         {
-            // Switch statement to write small values with assignments
-            // is considerably faster than calling UnsafeUtility.MemCpy
-            // in all builds - editor, mono, and ILCPP
-            
             byte* ptr = ((byte*) &value) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            switch (bytesToWrite)
-            {
-                case 1:
-                    bufferPointer[0] = *ptr;
-                    break;
-                case 2:
-                    *(ushort*) bufferPointer = *(ushort*)ptr;
-                    break;
-                case 3:
-                    *(ushort*) bufferPointer = *(ushort*)ptr;
-                    *(bufferPointer+2) = *(ptr+2);
-                    break;
-                case 4:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    break;
-                case 5:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(bufferPointer+4) = *(ptr+4);
-                    break;
-                case 6:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(ushort*) (bufferPointer+4) = *(ushort*)(ptr+4);
-                    break;
-                case 7:
-                    *(uint*) bufferPointer = *(uint*)ptr;
-                    *(ushort*) (bufferPointer+4) = *(ushort*)(ptr+4);
-                    *(bufferPointer+6) = *(ptr+6);
-                    break;
-                case 8:
-                    *(ulong*) bufferPointer = *(ulong*)ptr;
-                    break;
-                default:
-                    UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
-                    break;
-            }
+            BytewiseUtility.FastCopyBytes(bufferPointer, ptr, bytesToWrite);
 
             m_BitPosition += bytesToWrite * BITS_PER_BYTE;
         }

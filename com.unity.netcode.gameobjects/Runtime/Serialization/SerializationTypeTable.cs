@@ -4,6 +4,17 @@ using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode
 {
+    /// <summary>
+    /// Registry for telling FastBufferWriter and FastBufferReader how to read types when passed to
+    /// WriteObject and ReadObject, as well as telling BytePacker and ByteUnpacker how to do it when passed to
+    /// WriteObjectPacked and ReadObjectPacked.
+    ///
+    /// These object-based serialization functions shouldn't be used if at all possible, but if they're required,
+    /// and you need to serialize a type that's not natively supported, you can register it with the dictionaries here:
+    ///
+    /// Serializers and Deserializers for FastBufferWriter and FasteBufferReader
+    /// SerializersPacked and DeserializersPacked for BytePacker and ByteUnpacker
+    /// </summary>
     public static class SerializationTypeTable
     {
         public delegate void Serialize(ref FastBufferWriter writer, object value);

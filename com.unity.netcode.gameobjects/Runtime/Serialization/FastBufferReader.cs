@@ -9,14 +9,32 @@ namespace Unity.Multiplayer.Netcode
 {
     public struct FastBufferReader : IDisposable
     {
-        internal unsafe byte* m_BufferPointer;
+        internal readonly unsafe byte* m_BufferPointer;
         internal int m_Position;
-        internal int m_Length;
-        internal Allocator m_Allocator;
+        internal readonly int m_Length;
+        private readonly Allocator m_Allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         internal int m_AllowedReadMark;
-        internal bool m_InBitwiseContext;
+        private bool m_InBitwiseContext;
 #endif
+
+        /// <summary>
+        /// Get the current read position
+        /// </summary>
+        public int Position
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position;
+        }
+
+        /// <summary>
+        /// Get the total length of the buffer
+        /// </summary>
+        public int Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Length;
+        }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void CommitBitwiseReads(int amount)
@@ -41,9 +59,18 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
         
+        /// <summary>
+        /// Create a FastBufferReader from an ArraySegment.
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? buffer.Count : length);
+            m_Length = Math.Max(1, length == -1 ? (buffer.Count - offset) : length);
             void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
             fixed (byte* data = buffer.Array)
             {
@@ -58,9 +85,18 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
         
+        /// <summary>
+        /// Create a FastBufferReader from an existing byte array.
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_Length = Math.Max(1, length == -1 ? buffer.Length : length);
+            m_Length = Math.Max(1, length == -1 ? (buffer.Length - offset) : length);
             void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
             fixed (byte* data = buffer)
             {
@@ -75,6 +111,15 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
         
+        /// <summary>
+        /// Create a FastBufferReader from an existing byte buffer.
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
             m_Length = Math.Max(1, length);
@@ -89,6 +134,15 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
         
+        /// <summary>
+        /// Create a FastBufferReader from a FastBufferWriter.
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        /// </summary>
+        /// <param name="writer">The writer to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(ref FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
         {
             m_Length = Math.Max(1, length == -1 ? writer.Length : length);
@@ -103,17 +157,30 @@ namespace Unity.Multiplayer.Netcode
 #endif
         }
 
+        /// <summary>
+        /// Frees the allocated buffer
+        /// </summary>
         public unsafe void Dispose()
         {
             UnsafeUtility.Free(m_BufferPointer, m_Allocator);
         }
 
+        /// <summary>
+        /// Move the read position in the stream
+        /// </summary>
+        /// <param name="where">Absolute value to move the position to, truncated to Length</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Seek(int where)
         {
             m_Position = Math.Min(Length, where);
         }
 
+        /// <summary>
+        /// Mark that some bytes are going to be read via GetUnsafePtr().
+        /// </summary>
+        /// <param name="amount">Amount that will be read</param>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void MarkBytesRead(int amount)
         {
@@ -131,6 +198,12 @@ namespace Unity.Multiplayer.Netcode
             m_Position += amount;
         }
 
+        /// <summary>
+        /// Retrieve a BitReader to be able to perform bitwise operations on the buffer.
+        /// No bytewise operations can be performed on the buffer until bitReader.Dispose() has been called.
+        /// At the end of the operation, FastBufferReader will remain byte-aligned.
+        /// </summary>
+        /// <returns>A BitReader</returns>
         public BitReader EnterBitwiseContext()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -139,19 +212,82 @@ namespace Unity.Multiplayer.Netcode
             return new BitReader(ref this);
         }
 
-        public int Position
+        /// <summary>
+        /// Allows faster serialization by batching bounds checking.
+        /// When you know you will be reading multiple fields back-to-back and you know the total size,
+        /// you can call VerifyCanRead() once on the total size, and then follow it with calls to
+        /// ReadValue() instead of ReadValueSafe() for faster serialization.
+        /// 
+        /// Unsafe read operations will throw OverflowException in editor and development builds if you
+        /// go past the point you've marked using VerifyCanRead(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using VerifyCanRead is to avoid bounds checking in the following
+        /// operations in release builds.
+        /// </summary>
+        /// <param name="bytes">Amount of bytes to read</param>
+        /// <returns>True if the read is allowed, false otherwise</returns>
+        /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool VerifyCanRead(int bytes)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Position;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
+            }
+#endif
+            if (m_Position + bytes > m_Length)
+            {
+                return false;
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = m_Position + bytes;
+#endif
+            return true;
         }
 
-        public int Length
+        /// <summary>
+        /// Allows faster serialization by batching bounds checking.
+        /// When you know you will be reading multiple fields back-to-back and you know the total size,
+        /// you can call VerifyCanRead() once on the total size, and then follow it with calls to
+        /// ReadValue() instead of ReadValueSafe() for faster serialization.
+        /// 
+        /// Unsafe read operations will throw OverflowException in editor and development builds if you
+        /// go past the point you've marked using VerifyCanRead(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using VerifyCanRead is to avoid bounds checking in the following
+        /// operations in release builds.
+        /// </summary>
+        /// <param name="value">The value you want to read</param>
+        /// <returns>True if the read is allowed, false otherwise</returns>
+        /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool VerifyCanReadValue<T>(in T value) where T : unmanaged
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => m_Length;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
+            }
+#endif
+            int len = sizeof(T);
+            if (m_Position + len > m_Length)
+            {
+                return false;
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = m_Position + len;
+#endif
+            return true;
         }
 
-
+        /// <summary>
+        /// Internal version of VerifyCanRead.
+        /// Differs from VerifyCanRead only in that it won't ever move the AllowedReadMark backward.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool VerifyCanReadInternal(int bytes)
         {
@@ -175,47 +311,11 @@ namespace Unity.Multiplayer.Netcode
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool VerifyCanRead(int bytes)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-            if (m_Position + bytes > m_Length)
-            {
-                return false;
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = m_Position + bytes;
-#endif
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool VerifyCanReadValue<T>(in T value) where T : unmanaged
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-            int len = sizeof(T);
-            if (m_Position + len > m_Length)
-            {
-                return false;
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedReadMark = m_Position + len;
-#endif
-            return true;
-        }
-
+        /// <summary>
+        /// Returns an array representation of the underlying byte buffer.
+        /// !!Allocates a new array!!
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte[] ToArray()
         {
@@ -227,12 +327,20 @@ namespace Unity.Multiplayer.Netcode
             return ret;
         }
 
+        /// <summary>
+        /// Gets a direct pointer to the underlying buffer
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
             return m_BufferPointer;
         }
 
+        /// <summary>
+        /// Gets a direct pointer to the underlying buffer at the current read position
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
@@ -245,7 +353,10 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">The object to read</param>
         /// <param name="type">The type to be read</param>
-        /// <param name="isNullable">Should a null value be encoded? Any type for which type.IsNullable() returns true will always encode it.</param>
+        /// <param name="isNullable">
+        /// If true, reads a byte indicating whether or not the object is null.
+        /// Should match the way the object was written.
+        /// </param>
         public void ReadObject(out object value, Type type, bool isNullable = false)
         {
             if (isNullable || type.IsNullable())
@@ -358,11 +469,21 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
+        /// <summary>
+        /// Read an INetworkSerializable
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="NotImplementedException"></exception>
         public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Read a GameObject
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValue(out GameObject value)
         {
             ReadValue(out ulong networkObjectId);
@@ -381,6 +502,13 @@ namespace Unity.Multiplayer.Netcode
             value = null;
         }
         
+        /// <summary>
+        /// Read a GameObject
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling VerifyCanRead.
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValueSafe(out GameObject value)
         {
             ReadValueSafe(out ulong networkObjectId);
@@ -399,6 +527,10 @@ namespace Unity.Multiplayer.Netcode
             value = null;
         }
 
+        /// <summary>
+        /// Read a NetworkObject
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValue(out NetworkObject value)
         {
             ReadValue(out ulong networkObjectId);
@@ -417,6 +549,13 @@ namespace Unity.Multiplayer.Netcode
             value = null;
         }
 
+        /// <summary>
+        /// Read a NetworkObject
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling VerifyCanRead.
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValueSafe(out NetworkObject value)
         {
             ReadValueSafe(out ulong networkObjectId);
@@ -435,6 +574,10 @@ namespace Unity.Multiplayer.Netcode
             value = null;
         }
 
+        /// <summary>
+        /// Read a NetworkBehaviour
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValue(out NetworkBehaviour value)
         {
             ReadValue(out ulong networkObjectId);
@@ -454,6 +597,13 @@ namespace Unity.Multiplayer.Netcode
             value = null;
         }
 
+        /// <summary>
+        /// Read a NetworkBehaviour
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling VerifyCanRead.
+        /// </summary>
+        /// <param name="value">value to read</param>
         public void ReadValueSafe(out NetworkBehaviour value)
         {
             ReadValueSafe(out ulong networkObjectId);
@@ -605,13 +755,18 @@ namespace Unity.Multiplayer.Netcode
             }
         }
         
+        /// <summary>
+        /// Read a partial value. The value is zero-initialized and then the specified number of bytes is read into it.
+        /// </summary>
+        /// <param name="value">Value to read</param>
+        /// <param name="bytesToRead">Number of bytes</param>
+        /// <param name="offsetBytes">Offset into the value to write the bytes</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T: unmanaged
         {
-            // Switch statement to read small values with assignments
-            // is considerably faster than calling UnsafeUtility.MemCpy
-            // in all builds - editor, mono, and ILCPP
-            
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
             {
@@ -627,41 +782,7 @@ namespace Unity.Multiplayer.Netcode
             T val = new T();
             byte* ptr = ((byte*) &val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            switch (bytesToRead)
-            {
-                case 1:
-                    ptr[0] = *bufferPointer;
-                    break;
-                case 2:
-                    *(ushort*) ptr = *(ushort*)bufferPointer;
-                    break;
-                case 3:
-                    *(ushort*) ptr = *(ushort*)bufferPointer;
-                    *(ptr+2) = *(bufferPointer+2);
-                    break;
-                case 4:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    break;
-                case 5:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ptr+4) = *(bufferPointer+4);
-                    break;
-                case 6:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
-                    break;
-                case 7:
-                    *(uint*) ptr = *(uint*)bufferPointer;
-                    *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
-                    *(ptr+6) = *(bufferPointer+6);
-                    break;
-                case 8:
-                    *(ulong*) ptr = *(ulong*)bufferPointer;
-                    break;
-                default:
-                    UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
-                    break;
-            }
+            BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
 
             m_Position += bytesToRead;
             value = val;

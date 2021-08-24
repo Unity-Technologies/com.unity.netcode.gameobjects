@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.Serialization
 {
-    public struct BufferSerializerWriter : IBufferSerializerImplementation
+    internal struct BufferSerializerWriter : IBufferSerializerImplementation
     {
         private Ref<FastBufferWriter> m_Writer;
 
