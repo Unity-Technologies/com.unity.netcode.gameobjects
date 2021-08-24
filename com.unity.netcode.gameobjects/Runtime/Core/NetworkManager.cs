@@ -564,7 +564,7 @@ namespace Unity.Netcode
                                 }
                             case NetworkPrefabOverride.Prefab:
                                 {
-                                    Debug.LogWarning($"{nameof(NetworkPrefab)} override entry (\"{NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}\") will be removed and ignored.");
+                                    Debug.LogWarning($"{nameof(NetworkPrefab)} override entry ({NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}) will be removed and ignored.");
                                     break;
                                 }
                         }
