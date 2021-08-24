@@ -58,7 +58,7 @@ namespace Unity.Netcode.Editor
             if (value == null)
             {
                 var fieldType = m_NetworkVariableFields[m_NetworkVariableNames[index]].FieldType;
-                var networkVariable = (INetworkVariable)Activator.CreateInstance(fieldType, true);
+                var networkVariable = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
                 m_NetworkVariableFields[m_NetworkVariableNames[index]].SetValue(target, networkVariable);
             }
 

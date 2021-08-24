@@ -5,16 +5,16 @@ namespace Unity.Netcode
     /// <summary>
     /// Interface for network value containers
     /// </summary>
-    public abstract class INetworkVariable
+    public abstract class NetworkVariableBase
     {
         /// <summary>
         /// The name of the channel to be used for syncing
         /// </summary>
         public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
 
-        protected INetworkVariable() { }
+        protected NetworkVariableBase() { }
 
-        protected INetworkVariable(NetworkVariableSettings settings)
+        protected NetworkVariableBase(NetworkVariableSettings settings)
         {
             Settings = settings;
         }

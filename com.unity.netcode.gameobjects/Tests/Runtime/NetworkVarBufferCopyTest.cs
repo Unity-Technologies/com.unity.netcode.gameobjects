@@ -7,7 +7,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkVarBufferCopyTest : BaseMultiInstanceTest
     {
-        public class DummyNetVar : INetworkVariable
+        public class DummyNetVar : NetworkVariableBase
         {
             private const int k_DummyValue = 0x13579BDF;
             public bool DeltaWritten;

@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : INetworkVariable, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
+    public class NetworkDictionary<TKey, TValue> : NetworkVariableBase, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
     {
         private readonly IDictionary<TKey, TValue> m_Dictionary = new Dictionary<TKey, TValue>();
         private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();

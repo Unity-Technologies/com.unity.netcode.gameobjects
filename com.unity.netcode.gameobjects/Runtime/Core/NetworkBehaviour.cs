@@ -366,7 +366,7 @@ namespace Unity.Netcode
 
         private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
         private readonly List<NetworkChannel> m_ChannelsForNetworkVariableGroups = new List<NetworkChannel>();
-        internal readonly List<INetworkVariable> NetworkVariableFields = new List<INetworkVariable>();
+        internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 
         private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
 
@@ -415,19 +415,19 @@ namespace Unity.Netcode
             {
                 Type fieldType = sortedFields[i].FieldType;
 
-                if (fieldType.IsSubclassOf(typeof(INetworkVariable)))
+                if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
                 {
-                    var instance = (INetworkVariable)sortedFields[i].GetValue(this);
+                    var instance = (NetworkVariableBase)sortedFields[i].GetValue(this);
 
                     if (instance == null)
                     {
-                        instance = (INetworkVariable)Activator.CreateInstance(fieldType, true);
+                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
 
                     instance.SetNetworkBehaviour(this);
 
-                    var instanceNameProperty = fieldType.GetProperty(nameof(INetworkVariable.Name));
+                    var instanceNameProperty = fieldType.GetProperty(nameof(NetworkVariableBase.Name));
                     var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
                     instanceNameProperty?.SetValue(instance, sanitizedVariableName);
 
@@ -442,7 +442,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    NetworkChannel networkChannel = INetworkVariable.NetworkVariableChannel;
+                    NetworkChannel networkChannel = NetworkVariableBase.NetworkVariableChannel;
 
                     if (!firstLevelIndex.ContainsKey(networkChannel))
                     {
@@ -625,7 +625,7 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal static void HandleNetworkVariableDeltas(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance, NetworkManager networkManager)
+        internal static void HandleNetworkVariableDeltas(List<NetworkVariableBase> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance, NetworkManager networkManager)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -719,7 +719,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkManager networkManager)
+        internal static void WriteNetworkVariableData(List<NetworkVariableBase> networkVariableList, Stream stream, ulong clientId, NetworkManager networkManager)
         {
             if (networkVariableList.Count == 0)
             {
@@ -767,7 +767,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, NetworkManager networkManager)
+        internal static void SetNetworkVariableData(List<NetworkVariableBase> networkVariableList, Stream stream, NetworkManager networkManager)
         {
             if (networkVariableList.Count == 0)
             {
