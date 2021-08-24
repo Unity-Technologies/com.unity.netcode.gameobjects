@@ -15,6 +15,10 @@ namespace Unity.Netcode
     [Serializable]
     public class ClientNetworkVariable<T> : NetworkVariable<T> where T : unmanaged
     {
+        public ClientNetworkVariable() { }
+
+        public ClientNetworkVariable(NetworkVariableSettings settings) : base(settings) { }
+
         public override bool CanClientWrite(ulong clientId)
         {
             return m_NetworkBehaviour.OwnerClientId == clientId;
@@ -22,7 +26,7 @@ namespace Unity.Netcode
 
         public override bool ShouldWrite(ulong clientId, bool isServer)
         {
-            return m_IsDirty && !isServer && CanClientRead(clientId) && m_NetworkBehaviour.IsOwner;
+            return m_IsDirty && !isServer && m_NetworkBehaviour.IsOwner;
         }
 
         /// <summary>
