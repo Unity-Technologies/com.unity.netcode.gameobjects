@@ -15,10 +15,10 @@ namespace Unity.Netcode.RuntimeTests
             public bool DeltaRead;
             public bool FieldRead;
 
-//hrm            public override NetworkChannel GetChannel()
-//hrm            {
-//hrm                return NetworkChannel.NetworkVariable;
-//hrm            }
+            public override NetworkChannel GetChannel()
+            {
+                return NetworkChannel.NetworkVariable;
+            }
 
             public override void WriteDelta(Stream stream)
             {

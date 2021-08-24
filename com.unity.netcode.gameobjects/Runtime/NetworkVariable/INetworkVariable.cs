@@ -35,7 +35,7 @@ namespace Unity.Netcode
         /// Returns the name of the channel to be used for syncing
         /// </summary>
         /// <returns>The name of the channel to be used for syncing</returns>
-        public NetworkChannel GetChannel()
+        public virtual NetworkChannel GetChannel()
         {
             return Settings.SendNetworkChannel;
         }
