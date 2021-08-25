@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Multiplayer.Tools;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -395,6 +396,11 @@ namespace Unity.Netcode
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
             }
+
+            NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
+            {
+                NetworkObjectProvider = new NetworkObjectProvider(this)
+            });
 
             if (NetworkConfig.NetworkTransport == null)
             {
