@@ -291,6 +291,12 @@ namespace Unity.Netcode
         // Ran on both server and client
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readNetworkVariable, bool destroyWithScene)
         {
+            networkObject.IsSceneObject = sceneObject;
+            networkObject.NetworkObjectId = networkId;
+            networkObject.DestroyWithScene = sceneObject || destroyWithScene;
+            networkObject.OwnerClientIdInternal = ownerClientId;
+            networkObject.IsPlayerObject = playerObject;
+
             if (networkObject == null)
             {
                 throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
@@ -313,14 +319,6 @@ namespace Unity.Netcode
             }
 
             networkObject.IsSpawned = true;
-
-            networkObject.IsSceneObject = sceneObject;
-            networkObject.NetworkObjectId = networkId;
-
-            networkObject.DestroyWithScene = sceneObject || destroyWithScene;
-
-            networkObject.OwnerClientIdInternal = ownerClientId;
-            networkObject.IsPlayerObject = playerObject;
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);

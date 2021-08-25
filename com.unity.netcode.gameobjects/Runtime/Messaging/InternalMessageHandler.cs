@@ -222,7 +222,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance, NetworkManager);
+                        instance.HandleNetworkVariableDeltas(stream, clientId, instance);
                     }
                 }
                 else if (NetworkManager.IsServer)

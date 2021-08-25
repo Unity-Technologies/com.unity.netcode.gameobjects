@@ -15,11 +15,6 @@ namespace Unity.Netcode
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
 
         /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
-
-        /// <summary>
         /// Delegate type for list changed event
         /// </summary>
         /// <param name="changeEvent">Struct containing information about the change event</param>
@@ -38,15 +33,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings) : base(settings) { }
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
+        public NetworkList(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkList with a custom value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
         /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings, IList<T> value) : base(settings)
+        public NetworkList(NetworkVariableReadPermission readPerm, IList<T> value) : base(readPerm)
         {
             m_List = value;
         }
@@ -65,7 +60,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -459,11 +453,7 @@ namespace Unity.Netcode
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-            {
-                m_DirtyEvents.Add(listEvent);
-            }
-
+            m_DirtyEvents.Add(listEvent);
             OnListChanged?.Invoke(listEvent);
         }
 
@@ -473,14 +463,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkList
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkList<T>) + " before it's initialized");
             }
         }
     }

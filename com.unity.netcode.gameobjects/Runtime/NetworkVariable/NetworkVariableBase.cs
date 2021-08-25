@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using UnityEditor.SceneManagement;
 
 namespace Unity.Netcode
 {
@@ -7,23 +9,31 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class NetworkVariableBase
     {
+        private protected NetworkBehaviour m_NetworkBehaviour;
+
+        public void Initialize(NetworkBehaviour networkBehaviour)
+        {
+            m_NetworkBehaviour = networkBehaviour;
+        }
         /// <summary>
         /// The name of the channel to be used for syncing
         /// </summary>
         public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
 
-        protected NetworkVariableBase() { }
-
-        protected NetworkVariableBase(NetworkVariableSettings settings)
+        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {
-            Settings = settings;
+            ReadPerm = readPermIn;
         }
 
-        // demolish me
-        // or better setter?
-        internal protected NetworkBehaviour NetworkBehaviour { get; internal set; }
+        private protected void EnsureInitialized()
+        {
+            if (!m_NetworkBehaviour)
+            {
+                throw new InvalidOperationException("Cannot access NetworkVariable before it's initialized");
+            }
+        }
 
-        private protected bool m_IsDirty = false;
+        private protected bool m_IsDirty;
 
         /// <summary>
         /// Gets or sets the name of the network variable's instance
@@ -32,9 +42,9 @@ namespace Unity.Netcode
         public string Name { get; internal set; }
 
         /// <summary>
-        /// The settings for this var
+        /// The read permission for this var
         /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
+        public readonly NetworkVariableReadPermission ReadPerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -73,12 +83,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client can read to the variable</returns>
         public bool CanClientRead(ulong clientId)
         {
-            switch (Settings.ReadPermission)
+            switch (ReadPerm)
             {
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.OwnerOnly:
-                    return NetworkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
         }
@@ -109,8 +119,6 @@ namespace Unity.Netcode
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the state from</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         public abstract void ReadField(Stream stream);
 
         /// <summary>
@@ -118,8 +126,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="stream">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
     }
 }

@@ -16,11 +16,6 @@ namespace Unity.Netcode
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
 
         /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
-
-        /// <summary>
         /// Delegate type for set changed event
         /// </summary>
         /// <param name="changeEvent">Struct containing information about the change event</param>
@@ -40,14 +35,14 @@ namespace Unity.Netcode
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkSet(NetworkVariableSettings settings) : base(settings) { }
+        public NetworkSet(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkSet with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkSet</param>
         /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableSettings settings, ISet<T> value) : base(settings)
+        public NetworkSet(NetworkVariableReadPermission readPerm, ISet<T> value) : base(readPerm)
         {
             m_Set = value;
         }
@@ -66,7 +61,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -438,14 +432,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }
