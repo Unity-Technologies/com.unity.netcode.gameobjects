@@ -10,20 +10,9 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkVariable
+    public class NetworkDictionary<TKey, TValue> : NetworkVariableBase, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
     {
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
-
-        /// <summary>
-        /// The settings for this container
-        /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
-
         private readonly IDictionary<TKey, TValue> m_Dictionary = new Dictionary<TKey, TValue>();
-        private NetworkBehaviour m_NetworkBehaviour;
         private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();
 
         /// <summary>
@@ -37,7 +26,6 @@ namespace Unity.Netcode
         /// </summary>
         public event OnDictionaryChangedDelegate OnDictionaryChanged;
 
-
         /// <summary>
         /// Creates a NetworkDictionary with the default value and settings
         /// </summary>
@@ -47,19 +35,15 @@ namespace Unity.Netcode
         /// Creates a NetworkDictionary with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableSettings settings)
-        {
-            Settings = settings;
-        }
+        public NetworkDictionary(NetworkVariableSettings settings) : base(settings) { }
 
         /// <summary>
         /// Creates a NetworkDictionary with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkDictionary</param>
         /// <param name="value">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableSettings settings, IDictionary<TKey, TValue> value)
+        public NetworkDictionary(NetworkVariableSettings settings, IDictionary<TKey, TValue> value) : base(settings)
         {
-            Settings = settings;
             m_Dictionary = value;
         }
 
@@ -72,27 +56,15 @@ namespace Unity.Netcode
             m_Dictionary = value;
         }
 
-        /// <summary>
-        /// Gets or sets the name of the network variable's instance
-        /// (MemberInfo) where it was declared.
-        /// </summary>
-        public string Name { get; internal set; }
-
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
+            base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
-        public NetworkChannel GetChannel()
-        {
-            return Settings.SendNetworkChannel;
-        }
-
-        /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -240,7 +212,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -256,19 +228,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-        {
-            m_NetworkBehaviour = behaviour;
-        }
-
-        /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value)
         {
             return m_Dictionary.TryGetValue(key, out value);
         }
 
         /// <inheritdoc />
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -312,7 +278,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -326,81 +292,10 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
+        public override bool IsDirty()
         {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
+            return base.IsDirty() || m_DirtyEvents.Count > 0;
         }
-
-        /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
-        {
-            switch (Settings.ReadPermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
-        public bool IsDirty()
-        {
-            if (m_DirtyEvents.Count == 0)
-            {
-                return false;
-            }
-
-            if (Settings.SendTickrate == 0)
-            {
-                return true;
-            }
-
-            if (Settings.SendTickrate < 0)
-            {
-                return false;
-            }
-
-            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1.0 / Settings.SendTickrate))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
 
         /// <inheritdoc />
         public TValue this[TKey key]
@@ -410,10 +305,7 @@ namespace Unity.Netcode
             {
                 EnsureInitialized();
 
-                if (m_NetworkBehaviour.NetworkManager.IsServer)
-                {
-                    m_Dictionary[key] = value;
-                }
+                m_Dictionary[key] = value;
 
                 var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
                 {
@@ -436,17 +328,14 @@ namespace Unity.Netcode
         public int Count => m_Dictionary.Count;
 
         /// <inheritdoc />
+        // TODO: remove w/ native containers
         public bool IsReadOnly => m_Dictionary.IsReadOnly;
 
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Add(key, value);
-            }
+            m_Dictionary.Add(key, value);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -462,11 +351,7 @@ namespace Unity.Netcode
         public void Add(KeyValuePair<TKey, TValue> item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Add(item);
-            }
+            m_Dictionary.Add(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -482,11 +367,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Clear();
-            }
+            m_Dictionary.Clear();
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -524,11 +405,7 @@ namespace Unity.Netcode
         public bool Remove(TKey key)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Remove(key);
-            }
+            m_Dictionary.Remove(key);
 
             TValue value;
             m_Dictionary.TryGetValue(key, out value);
@@ -550,11 +427,7 @@ namespace Unity.Netcode
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Dictionary.Remove(item);
-            }
+            m_Dictionary.Remove(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -575,19 +448,12 @@ namespace Unity.Netcode
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-                {
-                    m_DirtyEvents.Add(dictionaryEvent);
-                }
+             if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
+             {
+                 m_DirtyEvents.Add(dictionaryEvent);
+             }
 
-                OnDictionaryChanged?.Invoke(dictionaryEvent);
-            }
-            else
-            {
-                m_DirtyEvents.Add(dictionaryEvent);
-            }
+             OnDictionaryChanged?.Invoke(dictionaryEvent);
         }
 
         public int LastModifiedTick
@@ -601,7 +467,7 @@ namespace Unity.Netcode
 
         private void EnsureInitialized()
         {
-            if (m_NetworkBehaviour == null)
+            if (NetworkBehaviour == null)
             {
                 throw new InvalidOperationException("Cannot access " + nameof(NetworkDictionary<TKey, TValue>) + " before it's initialized");
             }
