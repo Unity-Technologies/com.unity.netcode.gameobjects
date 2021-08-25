@@ -983,7 +983,7 @@ namespace Unity.Netcode
                         var shift = (ushort)(sequence - 1 - m_ClientData[clientId].LastReceivedSequence);
                         if (shift < sizeof(ushort) * 8)
                         {
-                            m_ClientData[clientId].ReceivedSequenceMask |= (ushort) (1 << shift);
+                            m_ClientData[clientId].ReceivedSequenceMask |= (ushort)(1 << shift);
                         }
                     }
 
