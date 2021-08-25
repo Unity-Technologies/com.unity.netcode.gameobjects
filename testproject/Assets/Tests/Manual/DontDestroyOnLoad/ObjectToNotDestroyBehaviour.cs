@@ -12,6 +12,14 @@ namespace TestProject.ManualTests
         private bool m_ContinueSendingPing;
         private uint m_PingCounter;
 
+        public uint CurrentPing
+        {
+            get
+            {
+                return m_PingCounter;
+            }
+        }
+
         /// <summary>
         /// When enabled, we move ourself to the DontDestroyOnLoad scene
         /// </summary>
@@ -35,6 +43,7 @@ namespace TestProject.ManualTests
             else if (IsClient)
             {
                 Debug.Log($"Receiving ping number ({pingNumber}) from server");
+                m_PingCounter = pingNumber;
             }
         }
 
