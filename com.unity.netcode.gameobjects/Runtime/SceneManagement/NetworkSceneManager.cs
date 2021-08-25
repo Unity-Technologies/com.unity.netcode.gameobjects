@@ -289,15 +289,43 @@ namespace Unity.Netcode
                 // If the scene was not found (invalid) or was not loaded then throw an exception
                 if (!SceneBeingSynchronized.IsValid() || !SceneBeingSynchronized.isLoaded)
                 {
-                    throw new Exception($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized!");
+                    // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
+                    SceneBeingSynchronized = SceneManager.GetActiveScene();
+
+                    // Otherwise, there is some other scenario we are not handling.
+                    Debug.LogWarning($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized! Using the currently active scene.");
                 }
             }
             else
             {
-                // This should never happen, but in the event it does...
-                throw new Exception($"[{nameof(SceneEventData)}- Scene Handle Mismatch] {nameof(serverSceneHandle)} could not be found in {nameof(ServerSceneHandleToClientSceneHandle)}!");
+                // Most common scenario for DontDestroyOnLoad is when NetworkManager is set to not be destroyed
+                if (m_NetworkManager.DontDestroy)
+                {
+                    if (serverSceneHandle == m_NetworkManager.gameObject.scene.handle)
+                    {
+                        SceneBeingSynchronized = m_NetworkManager.gameObject.scene;
+                        return;
+                    }
+                }
+                else
+                {
+                    // The next scenario is if a user intentionally moves NetworkObjects into a DontDestroyOnLoad scene
+                    var dontDestroyOnLoadScene = SceneManager.GetSceneByBuildIndex(-1);
+                    if (dontDestroyOnLoadScene.IsValid() && dontDestroyOnLoadScene.isLoaded && dontDestroyOnLoadScene.handle == serverSceneHandle)
+                    {
+                        SceneBeingSynchronized = dontDestroyOnLoadScene;
+                        return;
+                    }
+
+                    // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
+                    SceneBeingSynchronized = SceneManager.GetActiveScene();
+
+                    // Otherwise, there is some other scenario we are not handling.
+                    Debug.LogWarning($"[{nameof(SceneEventData)}- Scene Handle Mismatch] {nameof(serverSceneHandle)} could not be found in {nameof(ServerSceneHandleToClientSceneHandle)}. Using the currently active scene.");
+                }
             }
         }
+
 
         /// <summary>
         /// During soft synchronization of in-scene placed NetworkObjects, this is now used by NetworkSpawnManager.CreateLocalNetworkObject
