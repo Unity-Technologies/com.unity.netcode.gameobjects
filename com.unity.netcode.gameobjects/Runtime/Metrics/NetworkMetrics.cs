@@ -5,7 +5,6 @@ using Unity.Multiplayer.MetricTypes;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetStatsReporting;
-using UnityEngine.Profiling;
 
 namespace Unity.Netcode
 {
