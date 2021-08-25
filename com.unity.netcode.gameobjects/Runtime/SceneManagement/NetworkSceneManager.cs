@@ -242,13 +242,12 @@ namespace Unity.Netcode
                 // Get the scene currently being synchronized
                 SceneBeingSynchronized = ScenesLoaded.ContainsKey(clientSceneHandle) ? ScenesLoaded[clientSceneHandle] : new Scene();
 
-                // If the scene was not found (invalid) or was not loaded then throw an exception
                 if (!SceneBeingSynchronized.IsValid() || !SceneBeingSynchronized.isLoaded)
                 {
                     // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
                     SceneBeingSynchronized = SceneManager.GetActiveScene();
 
-                    // Otherwise, there is some other scenario we are not handling.
+                    // Keeping the warning here in the event we cannot find the scene being synchronized
                     Debug.LogWarning($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized! Using the currently active scene.");
                 }
             }
@@ -277,7 +276,8 @@ namespace Unity.Netcode
                     // or the NetworkObject has yet to be moved to that specific scene (i.e. no DontDestroyOnLoad scene exists yet).
                     SceneBeingSynchronized = SceneManager.GetActiveScene();
 
-                    // Otherwise, there is some other scenario we are not handling.
+                    // This could be the scenario where NetworkManager.DontDestroy is false and we are creating the first NetworkObject (client side) to be in the DontDestroyOnLoad scene
+                    // Otherwise, this is some other specific scenario that we might not be handling currently.
                     Debug.LogWarning($"[{nameof(SceneEventData)}- Scene Handle Mismatch] {nameof(serverSceneHandle)} could not be found in {nameof(ServerSceneHandleToClientSceneHandle)}. Using the currently active scene.");
                 }
             }
