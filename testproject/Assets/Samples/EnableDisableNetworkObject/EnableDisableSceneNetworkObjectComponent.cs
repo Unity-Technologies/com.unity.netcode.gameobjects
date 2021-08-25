@@ -13,35 +13,40 @@ public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
     [SerializeField]
     private Button m_ActivateObjectButton;
 
-    private bool m_CurrentActiveState;
+    private Text m_ButtonText;
 
+    private bool m_CurrentActiveState = true;
 
     private void Start()
     {
-        //For this example, hide the button until NetworkStart is invoked.
-        if (m_ActivateObjectButton)
+        if(m_ActivateObjectButton != null)
         {
+            m_ButtonText = m_ActivateObjectButton.GetComponentInChildren<Text>();
+            if (m_ButtonText != null)
+            {
+                m_ButtonText.text = "Hide";
+            }
+
             m_ActivateObjectButton.gameObject.SetActive(false);
         }
     }
 
     public override void OnNetworkSpawn()
     {
-        //For this example, the server controls whether the mesh is visible and can collide or not
-        if (IsServer && IsHost)
+        if (IsServer)
         {
-            if (m_ActivateObjectButton)
-            {
-                m_ActivateObjectButton.gameObject.SetActive(true);
-            }
+            m_ActivateObjectButton.gameObject.SetActive(true);
         }
         base.OnNetworkSpawn();
     }
 
     public void ButtonActivateToggle()
     {
-        m_CurrentActiveState = !m_CurrentActiveState;
-        StartActivation(m_CurrentActiveState);
+        if (NetworkManager != null && NetworkManager.IsListening && IsServer)
+        {
+            m_CurrentActiveState = !m_CurrentActiveState;
+            StartActivation(m_CurrentActiveState);
+        }
     }
 
     public void StartActivation(bool isActive)
@@ -63,6 +68,18 @@ public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
         if (m_MyBoxCollider)
         {
             m_MyBoxCollider.enabled = isActive;
+        }
+
+        if (m_ButtonText != null)
+        {
+            if (isActive)
+            {
+                m_ButtonText.text = "Hide";
+            }
+            else
+            {
+                m_ButtonText.text = "Show";
+            }
         }
     }
 
