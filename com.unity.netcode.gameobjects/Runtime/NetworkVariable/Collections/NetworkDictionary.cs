@@ -34,15 +34,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkDictionary with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableSettings settings) : base(settings) { }
+        /// <param name="readPerm">The read permission to use for this NetworkDictionary</param>
+        public NetworkDictionary(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkDictionary with a custom value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkDictionary</param>
+        /// <param name="readPerm">The read permission to use for this NetworkDictionary</param>
         /// <param name="value">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableSettings settings, IDictionary<TKey, TValue> value) : base(settings)
+        public NetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> value) : base(readPerm)
         {
             m_Dictionary = value;
         }
@@ -448,11 +448,7 @@ namespace Unity.Netcode
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-             if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-             {
-                 m_DirtyEvents.Add(dictionaryEvent);
-             }
-
+             m_DirtyEvents.Add(dictionaryEvent);
              OnDictionaryChanged?.Invoke(dictionaryEvent);
         }
 
@@ -462,14 +458,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkDictionary
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkDictionary<TKey, TValue>) + " before it's initialized");
             }
         }
     }

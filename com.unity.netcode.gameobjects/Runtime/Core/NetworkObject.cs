@@ -872,8 +872,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId, NetworkManager);
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.InitializeVariables();
+                behavior.WriteNetworkVariableData(stream, clientId);
             }
         }
 
@@ -881,8 +882,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, NetworkManager);
+                var behaviour = ChildNetworkBehaviours[i];
+                behaviour.InitializeVariables();
+                behaviour.SetNetworkVariableData(stream);
             }
         }
 
