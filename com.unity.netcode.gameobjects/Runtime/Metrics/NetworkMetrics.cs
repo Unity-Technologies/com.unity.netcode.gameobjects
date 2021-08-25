@@ -1,5 +1,4 @@
 #if MULTIPLAYER_TOOLS
-using System;
 using System.Collections.Generic;
 using Unity.Multiplayer.MetricTypes;
 using Unity.Multiplayer.NetStats.Dispatch;
