@@ -76,7 +76,7 @@ namespace Unity.Netcode
 
                 // Also, note this is not really very water-tight, if you are running as a host
                 //  we cannot tell if a NetworkVariable write is happening inside client-ish code
-                if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
+                if (NetworkBehaviour && (NetworkBehaviour.NetworkManager.IsClient && !NetworkBehaviour.NetworkManager.IsHost))
                 {
                     throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }

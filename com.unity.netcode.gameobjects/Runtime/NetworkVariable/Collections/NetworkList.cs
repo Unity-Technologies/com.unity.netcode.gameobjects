@@ -65,7 +65,7 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
+            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -459,7 +459,7 @@ namespace Unity.Netcode
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
+            if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
             {
                 m_DirtyEvents.Add(listEvent);
             }
@@ -478,7 +478,7 @@ namespace Unity.Netcode
 
         private void EnsureInitialized()
         {
-            if (m_NetworkBehaviour == null)
+            if (NetworkBehaviour == null)
             {
                 throw new InvalidOperationException("Cannot access " + nameof(NetworkList<T>) + " before it's initialized");
             }

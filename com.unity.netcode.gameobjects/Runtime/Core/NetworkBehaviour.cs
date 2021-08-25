@@ -425,7 +425,7 @@ namespace Unity.Netcode
                         sortedFields[i].SetValue(this, instance);
                     }
 
-                    instance.SetNetworkBehaviour(this);
+                    instance.NetworkBehaviour = this;
 
                     var instanceNameProperty = fieldType.GetProperty(nameof(NetworkVariableBase.Name));
                     var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);

@@ -66,7 +66,7 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
+            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -443,7 +443,7 @@ namespace Unity.Netcode
 
         private void EnsureInitialized()
         {
-            if (m_NetworkBehaviour == null)
+            if (NetworkBehaviour == null)
             {
                 throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }

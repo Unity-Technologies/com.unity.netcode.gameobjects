@@ -19,12 +19,12 @@ namespace Unity.Netcode
 
         public override bool CanClientWrite(ulong clientId)
         {
-            return m_NetworkBehaviour.OwnerClientId == clientId;
+            return NetworkBehaviour.OwnerClientId == clientId;
         }
 
         public override bool ShouldWrite(ulong clientId, bool isServer)
         {
-            return m_IsDirty && !isServer && m_NetworkBehaviour.IsOwner;
+            return m_IsDirty && !isServer && NetworkBehaviour.IsOwner;
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Unity.Netcode
 
                 // Also, note this is not really very water-tight, if you are running as a host
                 //  we cannot tell if a ClientNetworkVariable write is happening inside server-ish code
-                if (m_NetworkBehaviour.NetworkManager.IsServer)
+                if (NetworkBehaviour.NetworkManager.IsServer)
                 {
                     throw new InvalidOperationException("Server not allowed to write to ClientNetworkVariables");
                 }

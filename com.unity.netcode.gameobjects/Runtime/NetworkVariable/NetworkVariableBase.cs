@@ -21,7 +21,7 @@ namespace Unity.Netcode
 
         // demolish me
         // or better setter?
-        private protected NetworkBehaviour m_NetworkBehaviour;
+        internal protected NetworkBehaviour NetworkBehaviour { get; internal set; }
 
         private protected bool m_IsDirty = false;
 
@@ -78,7 +78,7 @@ namespace Unity.Netcode
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
+                    return NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
         }
@@ -121,15 +121,5 @@ namespace Unity.Netcode
         /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
         /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
-
-        /// <summary>
-        /// Sets NetworkBehaviour the container belongs to.
-        /// </summary>
-        /// <param name="behaviour">The behaviour the container behaves to</param>
-        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-        {
-            m_NetworkBehaviour = behaviour;
-        }
-
     }
 }

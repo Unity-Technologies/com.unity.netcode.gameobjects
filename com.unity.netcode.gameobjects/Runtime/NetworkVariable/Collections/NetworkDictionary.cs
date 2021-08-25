@@ -448,7 +448,7 @@ namespace Unity.Netcode
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-             if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
+             if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
              {
                  m_DirtyEvents.Add(dictionaryEvent);
              }
@@ -467,7 +467,7 @@ namespace Unity.Netcode
 
         private void EnsureInitialized()
         {
-            if (m_NetworkBehaviour == null)
+            if (NetworkBehaviour == null)
             {
                 throw new InvalidOperationException("Cannot access " + nameof(NetworkDictionary<TKey, TValue>) + " before it's initialized");
             }
