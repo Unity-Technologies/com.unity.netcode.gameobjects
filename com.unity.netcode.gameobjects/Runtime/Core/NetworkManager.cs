@@ -397,10 +397,12 @@ namespace Unity.Netcode
 #endif
             }
 
+#if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
                 NetworkObjectProvider = new NetworkObjectProvider(this)
             });
+#endif
 
             if (NetworkConfig.NetworkTransport == null)
             {
