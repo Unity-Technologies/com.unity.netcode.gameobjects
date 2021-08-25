@@ -9,13 +9,8 @@ namespace Unity.Netcode
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkVariable<T> : INetworkVariable
+    public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
     {
-        /// <summary>
-        /// The settings for this var
-        /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
-
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -27,8 +22,6 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
-        private NetworkBehaviour m_NetworkBehaviour;
-
         /// <summary>
         /// Creates a NetworkVariable with the default value and settings
         /// </summary>
@@ -38,19 +31,15 @@ namespace Unity.Netcode
         /// Creates a NetworkVariable with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableSettings settings)
-        {
-            Settings = settings;
-        }
+        public NetworkVariable(NetworkVariableSettings settings) : base(settings) { }
 
         /// <summary>
         /// Creates a NetworkVariable with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkVariable</param>
         /// <param name="value">The initial value to use for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableSettings settings, T value)
+        public NetworkVariable(NetworkVariableSettings settings, T value) : base(settings)
         {
-            Settings = settings;
             m_InternalValue = value;
         }
 
@@ -64,7 +53,7 @@ namespace Unity.Netcode
         }
 
         [SerializeField]
-        private T m_InternalValue;
+        private protected T m_InternalValue;
 
         /// <summary>
         /// The temporary accessor to enable struct element access until [MTT-1020] complete
@@ -77,107 +66,44 @@ namespace Unity.Netcode
         /// <summary>
         /// The value of the NetworkVariable container
         /// </summary>
-        public T Value
+        public virtual T Value
         {
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                // this could be improved. The Networking Manager is not always initialized here
+                //  Good place to decouple network manager from the network variable
+
+                // Also, note this is not really very water-tight, if you are running as a host
+                //  we cannot tell if a NetworkVariable write is happening inside client-ish code
+                if (NetworkBehaviour && (NetworkBehaviour.NetworkManager.IsClient && !NetworkBehaviour.NetworkManager.IsHost))
                 {
-                    return;
+                    throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }
-
-                m_IsDirty = true;
-                T previousValue = m_InternalValue;
-                m_InternalValue = value;
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                Set(value);
             }
         }
 
-        private bool m_IsDirty = false;
-
-        /// <summary>
-        /// Gets or sets the name of the network variable's instance
-        /// (MemberInfo) where it was declared.
-        /// </summary>
-        public string Name { get; internal set; }
-
-        /// <summary>
-        /// Sets whether or not the variable needs to be delta synced
-        /// </summary>
-        public void SetDirty(bool isDirty)
+        private protected void Set(T value)
         {
-            m_IsDirty = isDirty;
-        }
-
-        /// <inheritdoc />
-        public bool IsDirty()
-        {
-            return m_IsDirty;
-        }
-
-        /// <inheritdoc />
-        public void ResetDirty()
-        {
-            m_IsDirty = false;
-        }
-
-        /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
-        {
-            switch (Settings.ReadPermission)
+            if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
             {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
+                return;
             }
-            return true;
+
+            m_IsDirty = true;
+            T previousValue = m_InternalValue;
+            m_InternalValue = value;
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
         }
 
         /// <summary>
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             WriteField(stream);
-        }
-
-        /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
-        {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -185,7 +111,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -202,50 +128,19 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-        {
-            m_NetworkBehaviour = behaviour;
-        }
-
-        /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             ReadDelta(stream, false);
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX
             }
         }
-
-        /// <inheritdoc />
-        public NetworkChannel GetChannel()
-        {
-            return Settings.SendNetworkChannel;
-        }
-    }
-
-    /// <summary>
-    /// A NetworkVariable that holds strings and support serialization
-    /// </summary>
-    [Serializable]
-    public class NetworkVariableString : NetworkVariable<string>
-    {
-        /// <inheritdoc />
-        public NetworkVariableString() : base(string.Empty) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(NetworkVariableSettings settings) : base(settings, string.Empty) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(string value) : base(value) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(NetworkVariableSettings settings, string value) : base(settings, value) { }
     }
 
     /// <summary>

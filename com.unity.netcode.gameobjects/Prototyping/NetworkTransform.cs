@@ -129,12 +129,6 @@ namespace Unity.Netcode.Prototyping
         }
 
         /// <summary>
-        /// The network channel to use send updates
-        /// </summary>
-        [Tooltip("The network channel to use send updates")]
-        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
-
-        /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
         /// This is important to set since reparenting this transform could have issues,
         /// if using world position (depending on who gets synced first: the parent or the child)
@@ -156,6 +150,7 @@ namespace Unity.Netcode.Prototyping
         public float FixedSendsPerSecond = 30f;
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+        internal NetworkState LocalNetworkState;
         internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
         internal NetworkState PrevNetworkState;
 
@@ -364,10 +359,6 @@ namespace Unity.Netcode.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-
-            ReplNetworkState.Settings.SendNetworkChannel = Channel;
-            ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
-
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
@@ -385,7 +376,13 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                ReplNetworkState.SetDirty(UpdateNetworkState(ref ReplNetworkState.ValueRef));
+                // try to update local NetworkState
+                if (UpdateNetworkState(ref LocalNetworkState))
+                {
+                    // if updated (dirty), change NetVar, mark it dirty
+                    ReplNetworkState.Value = LocalNetworkState;
+                    ReplNetworkState.SetDirty(true);
+                }
             }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
