@@ -24,7 +24,8 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        var userprofile_di = new DirectoryInfo(userprofile);
+        Debug.Log($"userprofile is {userprofile}");
+        
         var multiprocess_di = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
         var jobid_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "jobid"));
         var resources_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "resources"));

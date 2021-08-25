@@ -48,8 +48,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            string port = "3076";
-            var ushortport = ushort.Parse(port);
+            var ushortport = ushort.Parse(m_Port);
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
             switch (transport)
             {
@@ -61,6 +60,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             for (int i = 0; i < WorkerCount; i++)
             {
+                Debug.Log($"Starting worker {i} out of {WorkerCount}");
                 MultiprocessOrchestration.StartWorkerOnNodes(); // will automatically start built player as clients remotely, if available, otherwise locally
             }
 
@@ -75,7 +75,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
-                yield return new WaitForSeconds(10.0f);
+                yield return new WaitForSeconds(1.0f);
 
                 if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
