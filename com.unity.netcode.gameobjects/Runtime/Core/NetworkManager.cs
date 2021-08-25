@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Multiplayer.Tools;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -398,7 +397,7 @@ namespace Unity.Netcode
             }
 
 #if MULTIPLAYER_TOOLS
-            NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
+            Unity.Multiplayer.Tools.NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
                 NetworkObjectProvider = new NetworkObjectProvider(this)
             });
