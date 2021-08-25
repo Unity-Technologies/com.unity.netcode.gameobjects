@@ -1,7 +1,38 @@
 # Changelog
-This file documents all notable changes to this package. Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
 ## [Unreleased]
+
+### Added
+
+- something
+
+### Changed
+
+- something
+
+### Deprecated
+
+- something
+
+### Removed
+
+- something
+
+### Fixed
+
+- something
+
+### Security
+
+- something
+
+### TODO
 
 - [4c166a64] (2021-08-24) M. Fatih MAR / test: NetworkTransformStateTests no longer uses ReplNetworkState (#1084)
 - [904552fc] (2021-08-24) Noel Stephens / fix: networkmanager prefab validation and no scene management manual test (#1073)
@@ -272,7 +303,7 @@ WIP version increment to pass package validation checks. Changelog & final versi
 
 This is hotfix v0.1.1 for the initial experimental Unity MLAPI Package.
 
-### Changes
+### Changed
 
 * Fixed issue with the Unity Registry package version missing some fixes from the v0.1.0 release.
 
@@ -280,7 +311,7 @@ This is hotfix v0.1.1 for the initial experimental Unity MLAPI Package.
 
 This is the initial experimental Unity MLAPI Package, v0.1.0.
 
-### New Features
+### Added
 
 - Refactored a new standard for Remote Procedure Call (RPC) in MLAPI which provides increased performance, significantly reduced boilerplate code, and extensibility for future-proofed code. MLAPI RPC includes `ServerRpc` and `ClientRpc` to execute logic on the server and client-side. This provides a single performant unified RPC solution, replacing MLAPI Convenience and Performance RPC (see [here](#removed-features)).
 - Added standarized serialization types, including built-in and custom serialization flows. See [RFC #2](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0002-serializable-types.md) for details.
@@ -302,7 +333,7 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject). 
 - Added a [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) new GitHub repository to accept extensions from the MLAPI community. Current extensions include moved MLAPI features for lag compensation (useful for Server Authoritative actions) and `TrackedObject`.
 
-### Changes
+### Changed
 
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): MLAPI now uses the Unity Package Manager for installation management.
 - Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s. 
@@ -337,7 +368,7 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 | `MLAPIConstants` | `NetworkConstants` |
 | `UnetTransport` | `UNetTransport` |
 
-### Fixes
+### Fixed
 
 - [GitHub 460](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/460): Fixed an issue for RPC where the host-server was not receiving RPCs from the host-client and vice versa without the loopback flag set in `NetworkingManager`. 
 - Fixed an issue where data in the Profiler was incorrectly aggregated and drawn, which caused the profiler data to increment indefinitely instead of resetting each frame.
@@ -347,7 +378,7 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 - [GitHub 438](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/438): Fixed booleans by reaching or writing bytes instead of bits.
 - [GitHub 519](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/519): Fixed an issue where calling `Shutdown()` before making `NetworkManager.Singleton = null` is null on `NetworkManager.OnDestroy()`.
 
-### Removed features
+### Removed
 
 With a new release of MLAPI in Unity, some features have been removed:
 
@@ -364,7 +395,7 @@ With a new release of MLAPI in Unity, some features have been removed:
 * Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
 * [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
 
-## Known issues
+### Known Issues
 
 * `NetworkNavMeshAgent` does not synchronize mesh data, Agent Size, Steering, Obstacle Avoidance, or Path Finding settings. It only synchronizes the destination and velocity, not the path to the destination.
 * For `RPC`, methods with a `ClientRpc` or `ServerRpc` suffix which are not marked with [ServerRpc] or [ClientRpc] will cause a compiler error.
@@ -380,4 +411,5 @@ With a new release of MLAPI in Unity, some features have been removed:
 * For `NetworkManager`, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
 
 ## [0.0.1-preview.1] - 2020-12-20
+
 This was an internally-only-used version of the Unity MLAPI Package
