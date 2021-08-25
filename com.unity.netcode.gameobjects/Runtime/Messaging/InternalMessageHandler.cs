@@ -120,19 +120,23 @@ namespace Unity.Netcode
 
         public void HandleDestroyObject(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ulong networkObjectId = reader.ReadUInt64Packed();
+
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var networkObject))
             {
-                ulong networkId = reader.ReadUInt64Packed();
-                if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject))
+                // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
+                // while we still have access to the network ID, otherwise the log message will be less useful.
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
-                    // while we still have access to the network ID, otherwise the log message will be less useful.
-                    Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
-                    return;
+                    NetworkLog.LogWarning($"Trying to destroy {nameof(NetworkObject)} #{networkObjectId} but it does not exist in {nameof(NetworkSpawnManager.SpawnedObjects)} anymore!");
                 }
-                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, stream.Length);
-                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+
+                return;
             }
+
+            m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkObjectId, networkObject.name, stream.Length);
+            NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
         }
 
         /// <summary>
@@ -145,31 +149,37 @@ namespace Unity.Netcode
             NetworkManager.SceneManager.HandleSceneEvent(clientId, stream);
         }
 
-
         public void HandleChangeOwner(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ulong networkObjectId = reader.ReadUInt64Packed();
+            ulong ownerClientId = reader.ReadUInt64Packed();
+
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var networkObject))
             {
-                ulong networkId = reader.ReadUInt64Packed();
-                ulong ownerClientId = reader.ReadUInt64Packed();
-
-                var networkObject = NetworkManager.SpawnManager.SpawnedObjects[networkId];
-                if (networkObject.OwnerClientId == NetworkManager.LocalClientId)
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    //We are current owner.
-                    networkObject.InvokeBehaviourOnLostOwnership();
+                    NetworkLog.LogWarning($"Trying to handle owner change but {nameof(NetworkObject)} #{networkObjectId} does not exist in {nameof(NetworkSpawnManager.SpawnedObjects)} anymore!");
                 }
 
-                if (ownerClientId == NetworkManager.LocalClientId)
-                {
-                    //We are new owner.
-                    networkObject.InvokeBehaviourOnGainedOwnership();
-                }
-
-                networkObject.OwnerClientId = ownerClientId;
-
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
+                return;
             }
+
+            if (networkObject.OwnerClientId == NetworkManager.LocalClientId)
+            {
+                //We are current owner.
+                networkObject.InvokeBehaviourOnLostOwnership();
+            }
+
+            networkObject.OwnerClientId = ownerClientId;
+
+            if (ownerClientId == NetworkManager.LocalClientId)
+            {
+                //We are new owner.
+                networkObject.InvokeBehaviourOnGainedOwnership();
+            }
+
+            NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
         }
 
         public void HandleTimeSync(ulong clientId, Stream stream)
