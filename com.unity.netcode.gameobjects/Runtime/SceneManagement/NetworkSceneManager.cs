@@ -274,7 +274,7 @@ namespace Unity.Netcode
                     }
 
                     // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
-                    // or the NetworkObject has yet to be moved to that specific scene.
+                    // or the NetworkObject has yet to be moved to that specific scene (i.e. no DontDestroyOnLoad scene exists yet).
                     SceneBeingSynchronized = SceneManager.GetActiveScene();
 
                     // Otherwise, there is some other scenario we are not handling.

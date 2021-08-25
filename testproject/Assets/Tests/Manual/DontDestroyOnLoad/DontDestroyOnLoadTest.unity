@@ -795,7 +795,7 @@ GameObject:
   - component: {fileID: 1230519281}
   - component: {fileID: 1230519282}
   m_Layer: 0
-  m_Name: DontDestroyObject
+  m_Name: DontDestroySpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -829,7 +829,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3dc8672a04c03b4fa86b0481437d674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MoveToDontDestroyOnLoad: {fileID: 7407724687236213415, guid: 34d19b37edcb93543a205fbed288d013,
+  NetworkPrefabToCreate: {fileID: 7407724687236213415, guid: 34d19b37edcb93543a205fbed288d013,
     type: 3}
 --- !u!4 &1230519283
 Transform:

@@ -3,15 +3,18 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
-    public class DontDestroyOnLoadTestor : NetworkBehaviour
+    /// <summary>
+    /// Spawns a single NetworkPrefab
+    /// </summary>
+    public class DontDestroyOnLoadSpawnHandler : NetworkBehaviour
     {
-        public GameObject MoveToDontDestroyOnLoad;
+        public GameObject NetworkPrefabToCreate;
 
         public override void OnNetworkSpawn()
         {
-            if (MoveToDontDestroyOnLoad != null && IsServer)
+            if (NetworkPrefabToCreate != null && IsServer)
             {
-                var newGameObject = Instantiate(MoveToDontDestroyOnLoad);
+                var newGameObject = Instantiate(NetworkPrefabToCreate);
                 var networkObject = newGameObject.GetComponent<NetworkObject>();
                 networkObject.Spawn();
             }

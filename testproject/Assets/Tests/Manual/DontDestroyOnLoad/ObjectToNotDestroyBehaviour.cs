@@ -4,13 +4,27 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
+    /// <summary>
+    /// This will move itself into the DontDestroyOnLoadScene when instantiated
+    /// </summary>
     public class ObjectToNotDestroyBehaviour : NetworkBehaviour
     {
+        private bool m_ContinueSendingPing;
+        private uint m_PingCounter;
+
+        /// <summary>
+        /// When enabled, we move ourself to the DontDestroyOnLoad scene
+        /// </summary>
         private void OnEnable()
         {
             DontDestroyOnLoad(this);
         }
 
+        /// <summary>
+        /// This is to visually verify this NetworkObject was synchronized and is working
+        /// (i.e. receiving RPCs )
+        /// </summary>
+        /// <param name="pingNumber"></param>
         [ClientRpc]
         private void PingUpdateClientRpc(uint pingNumber)
         {
@@ -24,6 +38,10 @@ namespace TestProject.ManualTests
             }
         }
 
+        /// <summary>
+        /// For the server it starts the coroutine to generate a RPC ping
+        /// every second
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             if (IsServer)
@@ -34,8 +52,9 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
-        private bool m_ContinueSendingPing;
-        private uint m_PingCounter;
+        /// <summary>
+        /// Server will stop the coroutine when we are despawning
+        /// </summary>
         public override void OnNetworkDespawn()
         {
             if (IsServer)
@@ -47,9 +66,13 @@ namespace TestProject.ManualTests
             base.OnNetworkDespawn();
         }
 
+        /// <summary>
+        /// Coroutine to send the ping message every second
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator SendContinualPing()
         {
-            while(m_ContinueSendingPing)
+            while (m_ContinueSendingPing)
             {
                 m_PingCounter++;
                 PingUpdateClientRpc(m_PingCounter);
