@@ -37,6 +37,8 @@ public class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    private string m_ConnectAddress = "127.0.0.1";
+    private string m_Port = "3076";
 
     private void Awake()
     {
@@ -52,20 +54,26 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        string connectAddress = "127.0.0.1";
+        
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         foreach (string arg in args)
         {
             if (arg.StartsWith("-ip="))
             {
-                connectAddress = arg.Replace("-ip=", "");
-                Debug.Log($"connectAddress is {connectAddress}");
+                m_ConnectAddress = arg.Replace("-ip=", "");
+                
+            }
+
+            if (arg.StartsWith("-port="))
+            {
+                m_Port = arg.Replace("-port=", "");
+                
             }
         }
 
-        string port = "3076";
-        var ushortport = ushort.Parse(port);
+        
+        var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         Debug.Log($"Transport is {transport.ToString()}");
         switch (transport)
@@ -76,8 +84,8 @@ public class TestCoordinator : NetworkBehaviour
                 unetTransport.ServerListenPort = ushortport;
                 if (isClient)
                 {
-					Debug.Log($"Setting ConnectAddress to {connectAddress}");
-                    unetTransport.ConnectAddress = connectAddress;
+					Debug.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
                 }
                 break;
         }

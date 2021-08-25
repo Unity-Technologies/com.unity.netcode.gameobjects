@@ -5,10 +5,5 @@
 .Editor
 .bin
 .download
-build.log
 upm-ci~/
-testproject/.vsconfig
-MonoBleedingEdge
-testproject/tp
-UnityCrashHandler64.exe
 
