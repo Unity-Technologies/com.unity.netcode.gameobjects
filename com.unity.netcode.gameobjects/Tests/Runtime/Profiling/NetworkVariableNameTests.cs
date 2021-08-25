@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 
 namespace Unity.Netcode.RuntimeTests
@@ -27,7 +27,6 @@ namespace Unity.Netcode.RuntimeTests
         public void VerifyNetworkVariableNameInitialization()
         {
             // Properties have the following name format: "<PropertyName>k__BackingField"
-            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarString), m_NetworkVariableNameComponent.NetworkVarString.Name);
             StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarSet), m_NetworkVariableNameComponent.NetworkVarSet.Name);
 
             // Fields have regular naming
@@ -37,8 +36,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private class NetworkVariableNameComponent : NetworkBehaviour
         {
-            public NetworkVariableString NetworkVarString { get; } = new NetworkVariableString();
-
             public NetworkSet<ulong> NetworkVarSet { get; } = new NetworkSet<ulong>();
 
             public NetworkList<ulong> NetworkVarList = new NetworkList<ulong>();

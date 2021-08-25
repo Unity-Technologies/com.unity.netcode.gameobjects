@@ -472,10 +472,30 @@ namespace Unity.Netcode
             }
         }
 
-        internal ushort ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader)
+        internal void ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader, ConnectionRtt connection)
         {
             ushort ackSequence = reader.ReadUInt16();
+            ushort seqMask = reader.ReadUInt16();
 
+            // process the latest acknowledgment
+            ProcessSingleAck(ackSequence, clientId, clientData, connection);
+
+            // for each bit in the mask, acknowledge one message before
+            while (seqMask != 0)
+            {
+                ackSequence--;
+                // extract least bit
+                if (seqMask % 2 == 1)
+                {
+                    ProcessSingleAck(ackSequence, clientId, clientData, connection);
+                }
+                // move to next bit
+                seqMask >>= 1;
+            }
+        }
+
+        internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
+        {
             // look through the spawns sent
             foreach (var sent in clientData.SentSpawns)
             {
@@ -529,7 +549,8 @@ namespace Unity.Netcode
                 }
             }
 
-            return ackSequence;
+            // keep track of RTTs, using the sequence number acknowledgement as a marker
+            connection.NotifyAck(ackSequence, Time.unscaledTime);
         }
 
         /// <summary>
@@ -537,7 +558,7 @@ namespace Unity.Netcode
         /// This will look into all spawned objects
         /// </summary>
         /// <param name="key">The key to search for</param>
-        private INetworkVariable FindNetworkVar(VariableKey key)
+        private NetworkVariableBase FindNetworkVar(VariableKey key)
         {
             var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
 
@@ -564,6 +585,7 @@ namespace Unity.Netcode
 
         internal ushort SequenceNumber = 0; // the next sequence number to use for this client
         internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
+        internal ushort ReceivedSequenceMask = 0; // bitmask of the messages before the last one that we received.
 
         internal int NextSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
         internal int NextDespawnIndex = 0; // same as above, but for despawns.
@@ -686,8 +708,6 @@ namespace Unity.Netcode
 
             m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
-            // Send the entry index and the buffer where the variables are serialized
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
@@ -698,6 +718,7 @@ namespace Unity.Netcode
                 {
                     var sequence = m_ClientData[clientId].SequenceNumber;
 
+                    // write the tick and sequence header
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
                     nonNullContext.NetworkWriter.WriteUInt16(sequence);
 
@@ -705,6 +726,7 @@ namespace Unity.Netcode
 
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
+                        // write the snapshot: buffer, index, spawns, despawns
                         writer.WriteUInt16(SentinelBefore);
                         WriteBuffer(buffer);
                         WriteIndex(buffer);
@@ -712,6 +734,11 @@ namespace Unity.Netcode
                         WriteAcks(buffer, clientId);
                         writer.WriteUInt16(SentinelAfter);
 
+                        m_ClientData[clientId].LastReceivedSequence = 0;
+
+                        // todo: this is incorrect (well, sub-optimal)
+                        // we should still continue ack'ing past messages, in case this one is dropped
+                        m_ClientData[clientId].ReceivedSequenceMask = 0;
                         m_ClientData[clientId].SequenceNumber++;
                     }
                 }
@@ -806,7 +833,9 @@ namespace Unity.Netcode
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
+                // todo: revisit whether 16-bit is enough for LastReceivedSequence
                 writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
+                writer.WriteUInt16(m_ClientData[clientId].ReceivedSequenceMask);
             }
         }
 
@@ -866,7 +895,7 @@ namespace Unity.Netcode
         /// Might not happen for all variable on every frame. Might even happen more than once.
         /// </summary>
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
-        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
+        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
         {
             VariableKey k;
             k.NetworkObjectId = networkObjectId;
@@ -885,7 +914,7 @@ namespace Unity.Netcode
             WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
         }
 
-        private void WriteVariableToSnapshot(Snapshot snapshot, INetworkVariable networkVariable, int index)
+        private void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
@@ -911,12 +940,6 @@ namespace Unity.Netcode
         /// <param name="snapshotStream">The stream to read from</param>
         internal void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
-            // poor man packet loss simulation
-            //if (Random.Range(0, 10) > 5)
-            //{
-            //    return;
-            //}
-
             // todo: temporary hack around bug
             if (!m_NetworkManager.IsServer)
             {
@@ -937,6 +960,23 @@ namespace Unity.Netcode
                 var sequence = reader.ReadUInt16();
 
                 // todo: check we didn't miss any and deal with gaps
+
+                if (m_ClientData[clientId].ReceivedSequenceMask != 0)
+                {
+                    // since each bit in ReceivedSequenceMask is relative to the last received sequence
+                    // we need to shift all the bits by the difference in sequence
+                    m_ClientData[clientId].ReceivedSequenceMask <<=
+                        (sequence - m_ClientData[clientId].LastReceivedSequence);
+                }
+
+                if (m_ClientData[clientId].LastReceivedSequence != 0)
+                {
+                    // because the bit we're adding for the previous ReceivedSequenceMask
+                    // was implicit, it needs to be shift by one less
+                    m_ClientData[clientId].ReceivedSequenceMask +=
+                        (ushort)(1 << (ushort)((sequence - 1) - m_ClientData[clientId].LastReceivedSequence));
+                }
+
                 m_ClientData[clientId].LastReceivedSequence = sequence;
 
                 var sentinel = reader.ReadUInt16();
@@ -948,10 +988,7 @@ namespace Unity.Netcode
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
                 m_Snapshot.ReadSpawns(reader);
-                var ackSequence = m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
-
-                // keep track of RTTs, using the sequence number acknowledgement as a marker
-                GetConnectionRtt(clientId).NotifyAck(ackSequence, Time.unscaledTime);
+                m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
 
                 sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelAfter)
