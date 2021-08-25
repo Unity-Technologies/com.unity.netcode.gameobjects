@@ -67,6 +67,11 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
+        public void ShouldMoveRandomly(bool shouldMoveRandomly)
+        {
+            m_MoveRandomly = shouldMoveRandomly;
+        }
+
         /// <summary>
         /// Sets the object's direction and velocity
         /// </summary>
@@ -104,28 +109,31 @@ namespace TestProject.ManualTests
                     {
                         Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
                     }
-
-                    if (NetworkObject != null && !NetworkObject.IsSpawned)
-                    {
-                        Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
-                        gameObject.SetActive(false);
-                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Tells us that we are registered with a NetworkPefab pool
+        /// This is primarily for late joining clients and object synchronization.
+        /// </summary>
+        public bool IsRegisteredPoolObject;
+
+        /// <summary>
+        /// This tells us that the NetworkObject has been removed from a pool
+        /// This is primarily to handle NetworkPrefab pool that was loaded in an additive scene and the
+        /// additive scene was unloaded but the NetworkObject persisted (i.e. was spawned in a different scene)
+        /// </summary>
+        public bool IsRemovedFromPool;
 
         private void Update()
         {
             if (IsOwner && m_ShouldDespawn && NetworkObject != null)
             {
                 m_ShouldDespawn = false;
-
-                NetworkObject.Despawn(HasHandler);
-                if (!HasHandler)
+                if (NetworkObject.NetworkManager != null)
                 {
-                    NetworkObject.gameObject.SetActive(false);
-                    NetworkObject.gameObject.transform.position = Vector3.zero;
+                    NetworkObject.Despawn(true);
                 }
             }
             else if (!IsServer)
@@ -141,7 +149,6 @@ namespace TestProject.ManualTests
                     }
                 }
             }
-
         }
 
         [HideInInspector]
@@ -151,7 +158,7 @@ namespace TestProject.ManualTests
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOwner && gameObject.activeInHierarchy)
+            if (IsOwner && !m_ShouldDespawn)
             {
                 if (other.CompareTag("GenericObject") || other.CompareTag("Floor"))
                 {

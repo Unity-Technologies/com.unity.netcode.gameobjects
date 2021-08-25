@@ -7,16 +7,13 @@ using UnityEngine.Networking;
 
 namespace Unity.Netcode.Transports.UNET
 {
-    public class UNetTransport : NetworkTransport, ITransportProfilerData
+    public class UNetTransport : NetworkTransport
     {
         public enum SendMode
         {
             Immediately,
             Queued
         }
-
-        private static ProfilingDataStore s_TransportProfilerData = new ProfilingDataStore();
-        public static bool ProfilerEnabled;
 
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
@@ -26,8 +23,6 @@ namespace Unity.Netcode.Transports.UNET
         public string ConnectAddress = "127.0.0.1";
         public int ConnectPort = 7777;
         public int ServerListenPort = 7777;
-        public int ServerWebsocketListenPort = 8887;
-        public bool SupportWebsocket = false;
 
         // user-definable channels.  To add your own channel, do something of the form:
         //  #define MY_CHANNEL 0
@@ -40,11 +35,6 @@ namespace Unity.Netcode.Transports.UNET
         //       }
         //  );
         public List<UNetChannel> Channels = new List<UNetChannel>();
-
-        // Relay
-        public bool UseNetcodeRelay = false;
-        public string NetcodeRelayAddress = "127.0.0.1";
-        public int NetcodeRelayPort = 8888;
 
         public SendMode MessageSendMode = SendMode.Immediately;
 
@@ -96,11 +86,6 @@ namespace Unity.Netcode.Transports.UNET
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
-            if (ProfilerEnabled)
-            {
-                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
-            }
-
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             int channelId = 0;
@@ -150,32 +135,27 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_WEBGL
                 Debug.LogError("Cannot use queued sending mode for WebGL");
 #else
-                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                UnityEngine.Networking.NetworkTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
 #endif
             }
             else
             {
-                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
             }
         }
 
 #if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
-            if (ProfilerEnabled)
-            {
-                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
-            }
-
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 #endif
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
+            var eventType = UnityEngine.Networking.NetworkTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
             receiveTime = Time.realtimeSinceStartup;
@@ -195,7 +175,7 @@ namespace Unity.Netcode.Transports.UNET
                     m_TemporaryBufferReference = new WeakReference(tempBuffer);
                 }
 
-                eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
+                eventType = UnityEngine.Networking.NetworkTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
                 payload = new ArraySegment<byte>(tempBuffer, 0, receivedSize);
             }
             else
@@ -270,8 +250,8 @@ namespace Unity.Netcode.Transports.UNET
         {
             var socketTask = SocketTask.Working;
 
-            m_ServerHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            m_ServerHostId = UnityEngine.Networking.NetworkTransport.AddHost(new HostTopology(GetConfig(), 1), 0, null);
+            m_ServerConnectionId = UnityEngine.Networking.NetworkTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
 
             var connectError = (NetworkError)error;
 
@@ -301,22 +281,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var topology = new HostTopology(GetConfig(), MaxConnections);
 
-            if (SupportWebsocket)
-            {
-                if (!UseNetcodeRelay)
-                {
-                    int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
-                }
-                else
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError("Cannot create websocket host when using Unity.Netcode relay");
-                    }
-                }
-            }
-
-            int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+            int normalHostId = UnityEngine.Networking.NetworkTransport.AddHost(topology, ServerListenPort, null);
 
             return SocketTask.Done.AsTasks();
         }
@@ -325,26 +290,19 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
         {
-            RelayTransport.Disconnect(m_ServerHostId, m_ServerConnectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect(m_ServerHostId, m_ServerConnectionId, out byte error);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            if (UseNetcodeRelay)
-            {
-                return 0;
-            }
-            else
-            {
-                return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
-            }
+            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
         }
 
         public override void Shutdown()
@@ -356,11 +314,7 @@ namespace Unity.Netcode.Transports.UNET
 
         public override void Init()
         {
-            UpdateRelay();
-
             m_MessageBuffer = new byte[MessageBufferSize];
-
-            s_TransportProfilerData.Clear();
 
             UnityEngine.Networking.NetworkTransport.Init();
         }
@@ -471,23 +425,6 @@ namespace Unity.Netcode.Transports.UNET
             }
 
             return 0;
-        }
-
-        private void UpdateRelay()
-        {
-            RelayTransport.Enabled = UseNetcodeRelay;
-            RelayTransport.RelayAddress = NetcodeRelayAddress;
-            RelayTransport.RelayPort = (ushort)NetcodeRelayPort;
-        }
-
-        public void BeginNewTick()
-        {
-            s_TransportProfilerData.Clear();
-        }
-
-        public IReadOnlyDictionary<string, int> GetTransportProfilerData()
-        {
-            return s_TransportProfilerData.GetReadonly();
         }
     }
 }

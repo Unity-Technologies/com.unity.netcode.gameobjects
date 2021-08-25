@@ -35,13 +35,18 @@ namespace Unity.Netcode
             }
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
+        internal virtual string __getTypeName() => nameof(NetworkBehaviour);
+#pragma warning restore IDE1006 // restore naming rule violation check
+
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore 414 // restore assigned but its value is never used
-#pragma warning restore IDE1006 // restore naming rule violation
+#pragma warning restore IDE1006 // restore naming rule violation check
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -99,10 +104,17 @@ namespace Unity.Netcode
                 ? NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage)
                 : NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ServerClientId,
+                    NetworkObjectId,
+                    rpcMethodName,
+                    __getTypeName(),
+                    rpcMessageSize);
             }
+#endif
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -207,10 +219,17 @@ namespace Unity.Netcode
 
             var messageSize = NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(),
+                    NetworkObjectId,
+                    rpcMethodName,
+                    __getTypeName(),
+                    messageSize);
             }
+#endif
         }
 
         /// <summary>
@@ -566,7 +585,13 @@ namespace Unity.Netcode
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                                        clientId,
+                                        NetworkObjectId,
+                                        name,
+                                        NetworkVariableFields[k].Name,
+                                        __getTypeName(),
+                                        bufferSizeCapture.Flush());
                                 }
                             }
 
@@ -662,9 +687,13 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
-                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
+                        clientId,
+                        logInstance.NetworkObjectId,
+                        logInstance.name,
+                        networkVariableList[i].Name,
+                        logInstance.__getTypeName(),
+                        stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
 
@@ -749,8 +778,6 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

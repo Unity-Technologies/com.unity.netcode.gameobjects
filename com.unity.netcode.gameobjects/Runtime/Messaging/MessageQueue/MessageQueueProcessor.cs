@@ -109,30 +109,8 @@ namespace Unity.Netcode
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
                         break;
-                    case MessageQueueContainer.MessageType.SwitchScene:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleSwitchScene(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.ClientSwitchSceneCompleted:
-                        if (m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            m_NetworkManager.MessageHandler.HandleClientSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
-                        }
-                        else if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            NetworkLog.LogWarning($"Server received {MessageQueueContainer.MessageType.ClientSwitchSceneCompleted} from client id {item.NetworkId.ToString()}");
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.AllClientsLoadedScene:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleAllClientsSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
-                        }
-
+                    case MessageQueueContainer.MessageType.SceneEvent:
+                        m_NetworkManager.MessageHandler.HandleSceneEvent(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.ParentSync:
                         if (m_NetworkManager.IsClient)
@@ -330,31 +308,13 @@ namespace Unity.Netcode
                     // TODO: Can we remove this special case for server RPCs?
                     {
                         m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
-
-                        //For each packet sent, we want to record how much data we have sent
-
-                        PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
-                        ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
-                        ProfilerStatManager.RpcsSent.Record();
                         break;
                     }
-                case MessageQueueContainer.MessageType.ClientRpc:
-
-                    //For each client we send to, we want to record how many messages we have sent
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent, item.ClientNetworkIds.Length);
-                    ProfilerStatManager.RpcsSent.Record(item.ClientNetworkIds.Length);
-                    // Falls through
-                    goto default;
                 default:
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {
                             m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
-
-                            //For each packet sent, we want to record how much data we have sent
-                            PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                            ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
                         }
 
                         break;
