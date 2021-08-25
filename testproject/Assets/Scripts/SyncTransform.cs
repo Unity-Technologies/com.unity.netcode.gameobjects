@@ -12,7 +12,7 @@ namespace Unity.Netcode
     public class SyncTransform : NetworkBehaviour
     {
         private NetworkVariable<Vector3> m_VarPos = new NetworkVariable<Vector3>();
-        private NetworkVariableQuaternion m_VarRot = new NetworkVariableQuaternion();
+        private NetworkVariable<Quaternion> m_VarRot = new NetworkVariable<Quaternion>();
         private const float k_Epsilon = 0.001f;
 
         private bool m_Interpolate = true;
