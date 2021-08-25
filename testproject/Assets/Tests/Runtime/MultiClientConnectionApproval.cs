@@ -77,6 +77,12 @@ namespace TestProject.RuntimeTests
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
                 MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
+
+                server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                foreach (var client in clients)
+                {
+                    client.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                }
             }
             else
             {
