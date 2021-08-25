@@ -10,21 +10,31 @@ namespace Unity.Netcode
     // Might include tick in a future milestone, to address past variable value
     internal struct VariableKey
     {
-        public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
-        public ushort BehaviourIndex; // the index of the behaviour in this GameObject
-        public ushort VariableIndex; // the index of the variable in this NetworkBehaviour
-        public int TickWritten; // the network tick at which this variable was set
+        internal ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
+        internal ushort BehaviourIndex; // the index of the behaviour in this GameObject
+        internal ushort VariableIndex; // the index of the variable in this NetworkBehaviour
+        internal int TickWritten; // the network tick at which this variable was set
     }
 
     // Index for a NetworkVariable in our table of variables
     // Store when a variable was written and where the variable is serialized
     internal struct Entry
     {
-        public VariableKey Key;
-        public ushort Position; // the offset in our Buffer
-        public ushort Length; // the Length of the data in Buffer
+        internal VariableKey Key;
+        internal ushort Position; // the offset in our Buffer
+        internal ushort Length; // the Length of the data in Buffer
 
-        public const int NotFound = -1;
+        internal const int NotFound = -1;
+    }
+
+    internal struct SnapshotDespawnCommand
+    {
+        // identity
+        internal ulong NetworkObjectId;
+
+        // snapshot internal
+        internal int TickWritten;
+        internal List<ulong> TargetClientIds;
     }
 
     internal struct SnapshotSpawnCommand
@@ -44,8 +54,8 @@ namespace Unity.Netcode
         internal Quaternion ObjectRotation;
         internal Vector3 ObjectScale;
 
-        internal ushort TickWritten;
-
+        // snapshot internal
+        internal int TickWritten;
         internal List<ulong> TargetClientIds;
     }
 
@@ -58,26 +68,31 @@ namespace Unity.Netcode
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
-        private const int k_MaxSpawns = 100;
+        private int m_MaxSpawns = 100;
+        private int m_MaxDespawns = 100;
+
         private const int k_BufferSize = 30000;
 
-        public byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
-        public byte[] RecvBuffer = new byte[k_BufferSize]; // buffer holding the received snapshot message
+        internal byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
+        internal byte[] RecvBuffer = new byte[k_BufferSize]; // buffer holding the received snapshot message
 
         internal IndexAllocator Allocator;
 
-        public Entry[] Entries = new Entry[k_MaxVariables];
-        public int LastEntry = 0;
+        internal Entry[] Entries = new Entry[k_MaxVariables];
+        internal int LastEntry = 0;
 
-        public SnapshotSpawnCommand[] Spawns = new SnapshotSpawnCommand[k_MaxSpawns];
-        public int NumSpawns = 0;
+        internal SnapshotSpawnCommand[] Spawns;
+        internal int NumSpawns = 0;
+
+        internal SnapshotDespawnCommand[] Despawns;
+        internal int NumDespawns = 0;
 
         private MemoryStream m_BufferStream;
-        private NetworkManager m_NetworkManager;
-        private bool m_TickIndex;
+        internal NetworkManager NetworkManager;
 
         // indexed by ObjectId
-        internal Dictionary<ulong, ushort> TickApplied = new Dictionary<ulong, ushort>();
+        internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
+        internal Dictionary<ulong, int> TickAppliedDespawn = new Dictionary<ulong, int>();
 
         /// <summary>
         /// Constructor
@@ -85,16 +100,16 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkManager">The NetworkManaher this Snapshot uses. Needed upon receive to set Variables</param>
         /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
-        public Snapshot(NetworkManager networkManager, bool tickIndex)
+        internal Snapshot()
         {
             m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
-            m_NetworkManager = networkManager;
-            m_TickIndex = tickIndex;
+            Spawns = new SnapshotSpawnCommand[m_MaxSpawns];
+            Despawns = new SnapshotDespawnCommand[m_MaxDespawns];
         }
 
-        public void Clear()
+        internal void Clear()
         {
             LastEntry = 0;
             Allocator.Reset();
@@ -104,7 +119,7 @@ namespace Unity.Netcode
         /// Finds the position of a given NetworkVariable, given its key
         /// </summary>
         /// <param name="key">The key we're looking for</param>
-        public int Find(VariableKey key)
+        internal int Find(VariableKey key)
         {
             // todo: Add a IEquatable interface for VariableKey. Rely on that instead.
             for (int i = 0; i < LastEntry; i++)
@@ -124,7 +139,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Adds an entry in the table for a new key
         /// </summary>
-        public int AddEntry(in VariableKey k)
+        internal int AddEntry(in VariableKey k)
         {
             var pos = LastEntry++;
             var entry = Entries[pos];
@@ -137,24 +152,43 @@ namespace Unity.Netcode
             return pos;
         }
 
+        internal List<ulong> GetClientList()
+        {
+            List<ulong> clientList;
+            clientList = new List<ulong>();
+
+            if (!NetworkManager.IsServer)
+            {
+                clientList.Add(NetworkManager.ServerClientId);
+            }
+            else
+            {
+                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                {
+                    if (clientId != NetworkManager.ServerClientId)
+                    {
+                        clientList.Add(clientId);
+                    }
+                }
+            }
+
+            return clientList;
+        }
+
         internal void AddSpawn(SnapshotSpawnCommand command)
         {
-            if (NumSpawns < k_MaxSpawns)
+            if (NumSpawns >= m_MaxSpawns)
             {
-                command.TargetClientIds = new List<ulong>();
-                if (!m_NetworkManager.IsServer)
+                Array.Resize(ref Spawns, 2 * m_MaxSpawns);
+                m_MaxSpawns = m_MaxSpawns * 2;
+                // Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
+            }
+
+            if (NumSpawns < m_MaxSpawns)
+            {
+                if (command.TargetClientIds == default)
                 {
-                    command.TargetClientIds.Add(m_NetworkManager.ServerClientId);
-                }
-                else
-                {
-                    foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
-                    {
-                        if (clientId != m_NetworkManager.ServerClientId)
-                        {
-                            command.TargetClientIds.Add(clientId);
-                        }
-                    }
+                    command.TargetClientIds = GetClientList();
                 }
 
                 // todo:
@@ -164,6 +198,29 @@ namespace Unity.Netcode
                 {
                     Spawns[NumSpawns] = command;
                     NumSpawns++;
+                }
+            }
+        }
+
+        internal void AddDespawn(SnapshotDespawnCommand command)
+        {
+            if (NumDespawns >= m_MaxDespawns)
+            {
+                Array.Resize(ref Despawns, 2 * m_MaxDespawns);
+                m_MaxDespawns = m_MaxDespawns * 2;
+                // Debug.Log($"[JEFF] despawn size is now {m_MaxDespawns}");
+            }
+
+            if (NumDespawns < m_MaxDespawns)
+            {
+                if (command.TargetClientIds == default)
+                {
+                    command.TargetClientIds = GetClientList();
+                }
+                if (command.TargetClientIds.Count > 0)
+                {
+                    Despawns[NumDespawns] = command;
+                    NumDespawns++;
                 }
             }
         }
@@ -178,7 +235,7 @@ namespace Unity.Netcode
             //todo: major refactor.
             // use blittable types and copy variable in memory locally
             // only serialize when put on the wire for network transfer
-            writer.WriteUInt64(entry.Key.NetworkObjectId);
+            writer.WriteUInt64Packed(entry.Key.NetworkObjectId);
             writer.WriteUInt16(entry.Key.BehaviourIndex);
             writer.WriteUInt16(entry.Key.VariableIndex);
             writer.WriteInt32Packed(entry.Key.TickWritten);
@@ -196,20 +253,33 @@ namespace Unity.Netcode
             s.SequenceNumber = clientData.SequenceNumber;
             clientData.SentSpawns.Add(s);
 
-            writer.WriteUInt64(spawn.NetworkObjectId);
-            writer.WriteUInt64(spawn.GlobalObjectIdHash);
+            writer.WriteUInt64Packed(spawn.NetworkObjectId);
+            writer.WriteUInt64Packed(spawn.GlobalObjectIdHash);
             writer.WriteBool(spawn.IsSceneObject);
 
             writer.WriteBool(spawn.IsPlayerObject);
-            writer.WriteUInt64(spawn.OwnerClientId);
-            writer.WriteUInt64(spawn.ParentNetworkId);
+            writer.WriteUInt64Packed(spawn.OwnerClientId);
+            writer.WriteUInt64Packed(spawn.ParentNetworkId);
             writer.WriteVector3(spawn.ObjectPosition);
             writer.WriteRotation(spawn.ObjectRotation);
             writer.WriteVector3(spawn.ObjectScale);
 
-            writer.WriteUInt16(spawn.TickWritten);
+            writer.WriteInt32Packed(spawn.TickWritten);
         }
 
+        internal void WriteDespawn(ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
+        {
+            // remember which spawn we sent this connection with which sequence number
+            // that way, upon ack, we can track what is being ack'ed
+            ClientData.SentSpawn s;
+            s.ObjectId = despawn.NetworkObjectId;
+            s.Tick = despawn.TickWritten;
+            s.SequenceNumber = clientData.SequenceNumber;
+            clientData.SentSpawns.Add(s);
+
+            writer.WriteUInt64Packed(despawn.NetworkObjectId);
+            writer.WriteInt32Packed(despawn.TickWritten);
+        }
         /// <summary>
         /// Read a received Entry
         /// Must match WriteEntry
@@ -218,7 +288,7 @@ namespace Unity.Netcode
         internal Entry ReadEntry(NetworkReader reader)
         {
             Entry entry;
-            entry.Key.NetworkObjectId = reader.ReadUInt64();
+            entry.Key.NetworkObjectId = reader.ReadUInt64Packed();
             entry.Key.BehaviourIndex = reader.ReadUInt16();
             entry.Key.VariableIndex = reader.ReadUInt16();
             entry.Key.TickWritten = reader.ReadInt32Packed();
@@ -232,29 +302,39 @@ namespace Unity.Netcode
         {
             SnapshotSpawnCommand command;
 
-            command.NetworkObjectId = reader.ReadUInt64();
-            command.GlobalObjectIdHash = (uint)reader.ReadUInt64();
+            command.NetworkObjectId = reader.ReadUInt64Packed();
+            command.GlobalObjectIdHash = (uint)reader.ReadUInt64Packed();
             command.IsSceneObject = reader.ReadBool();
             command.IsPlayerObject = reader.ReadBool();
-            command.OwnerClientId = reader.ReadUInt64();
-            command.ParentNetworkId = reader.ReadUInt64();
+            command.OwnerClientId = reader.ReadUInt64Packed();
+            command.ParentNetworkId = reader.ReadUInt64Packed();
             command.ObjectPosition = reader.ReadVector3();
             command.ObjectRotation = reader.ReadRotation();
             command.ObjectScale = reader.ReadVector3();
 
-            command.TickWritten = reader.ReadUInt16();
+            command.TickWritten = reader.ReadInt32Packed();
             command.TargetClientIds = default;
 
             return command;
         }
 
+        internal SnapshotDespawnCommand ReadDespawn(NetworkReader reader)
+        {
+            SnapshotDespawnCommand command;
+
+            command.NetworkObjectId = reader.ReadUInt64Packed();
+            command.TickWritten = reader.ReadInt32Packed();
+            command.TargetClientIds = default;
+
+            return command;
+        }
 
         /// <summary>
         /// Allocate memory from the buffer for the Entry and update it to point to the right location
         /// </summary>
         /// <param name="entry">The entry to allocate for</param>
         /// <param name="size">The need size in bytes</param>
-        public void AllocateEntry(ref Entry entry, int index, int size)
+        internal void AllocateEntry(ref Entry entry, int index, int size)
         {
             // todo: deal with full buffer
 
@@ -340,40 +420,82 @@ namespace Unity.Netcode
 
         internal void ReadSpawns(NetworkReader reader)
         {
-            SnapshotSpawnCommand command;
-            short count = reader.ReadInt16();
+            SnapshotSpawnCommand spawnCommand;
+            SnapshotDespawnCommand despawnCommand;
 
-            for (var i = 0; i < count; i++)
+            short spawnCount = reader.ReadInt16();
+            short despawnCount = reader.ReadInt16();
+
+            for (var i = 0; i < spawnCount; i++)
             {
-                command = ReadSpawn(reader);
+                spawnCommand = ReadSpawn(reader);
 
-                if (TickApplied.ContainsKey(command.NetworkObjectId) &&
-                    command.TickWritten <= TickApplied[command.NetworkObjectId])
+                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
                 {
                     continue;
                 }
 
-                TickApplied[command.NetworkObjectId] = command.TickWritten;
+                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
 
-                // what is a soft sync ?
-                // what are spawn payloads ?
-                if (command.ParentNetworkId == command.NetworkObjectId)
+                // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
+
+                if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
-                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, null, command.ObjectPosition, command.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, false);
+                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
                 }
                 else
                 {
-                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition, command.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, false);
+                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
                 }
+            }
+            for (var i = 0; i < despawnCount; i++)
+            {
+                despawnCommand = ReadDespawn(reader);
+
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+
+                // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
+
+                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                    out NetworkObject networkObject);
+
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
-        internal ushort ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader)
+        internal void ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader, ConnectionRtt connection)
         {
             ushort ackSequence = reader.ReadUInt16();
+            ushort seqMask = reader.ReadUInt16();
 
+            // process the latest acknowledgment
+            ProcessSingleAck(ackSequence, clientId, clientData, connection);
+
+            // for each bit in the mask, acknowledge one message before
+            while (seqMask != 0)
+            {
+                ackSequence--;
+                // extract least bit
+                if (seqMask % 2 == 1)
+                {
+                    ProcessSingleAck(ackSequence, clientId, clientData, connection);
+                }
+                // move to next bit
+                seqMask >>= 1;
+            }
+        }
+
+        internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
+        {
             // look through the spawns sent
             foreach (var sent in clientData.SentSpawns)
             {
@@ -390,8 +512,8 @@ namespace Unity.Netcode
                         clientData.SpawnAck[sent.ObjectId] = sent.Tick;
                     }
 
-                    // check the spawn commands, find it, and if this is the last connection
-                    // to ack, let's remove it
+                    // check the spawn and despawn commands, find them, and if this is the last connection
+                    // to ack, let's remove them
                     for (var i = 0; i < NumSpawns; i++)
                     {
                         if (Spawns[i].TickWritten == sent.Tick &&
@@ -408,10 +530,27 @@ namespace Unity.Netcode
                             }
                         }
                     }
+                    for (var i = 0; i < NumDespawns; i++)
+                    {
+                        if (Despawns[i].TickWritten == sent.Tick &&
+                            Despawns[i].NetworkObjectId == sent.ObjectId)
+                        {
+                            Despawns[i].TargetClientIds.Remove(clientId);
+
+                            if (Despawns[i].TargetClientIds.Count == 0)
+                            {
+                                // remove by moving the last spawn over
+                                Despawns[i] = Despawns[NumDespawns - 1];
+                                NumDespawns--;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
-            return ackSequence;
+            // keep track of RTTs, using the sequence number acknowledgement as a marker
+            connection.NotifyAck(ackSequence, Time.unscaledTime);
         }
 
         /// <summary>
@@ -421,7 +560,7 @@ namespace Unity.Netcode
         /// <param name="key">The key to search for</param>
         private INetworkVariable FindNetworkVar(VariableKey key)
         {
-            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
+            var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
 
             if (spawnedObjects.ContainsKey(key.NetworkObjectId))
             {
@@ -437,7 +576,7 @@ namespace Unity.Netcode
 
     internal class ClientData
     {
-        internal struct SentSpawn
+        internal struct SentSpawn // this struct also stores Despawns, not just Spawns
         {
             internal ulong SequenceNumber;
             internal ulong ObjectId;
@@ -446,30 +585,50 @@ namespace Unity.Netcode
 
         internal ushort SequenceNumber = 0; // the next sequence number to use for this client
         internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
+        internal ushort ReceivedSequenceMask = 0; // bitmask of the messages before the last one that we received.
+
+        internal int NextSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
+        internal int NextDespawnIndex = 0; // same as above, but for despawns.
 
         // by objectId
-        // which spawns did this connection ack'ed ?
+        // which spawns and despawns did this connection ack'ed ?
         internal Dictionary<ulong, int> SpawnAck = new Dictionary<ulong, int>();
 
-        // list of spawn commands we sent, with sequence number
+        // list of spawn and despawns commands we sent, with sequence number
         // need to manage acknowledgements
         internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
-    public class SnapshotSystem : INetworkUpdateSystem, IDisposable
+    internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         // temporary, debugging sentinels
         internal const ushort SentinelBefore = 0x4246;
         internal const ushort SentinelAfter = 0x89CE;
 
-        private NetworkManager m_NetworkManager = NetworkManager.Singleton;
-        private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
+        private const int k_MaxSpawnUsage = 1000; // max bytes to use for the spawn/despawn part
+
+        private NetworkManager m_NetworkManager = default;
+        private Snapshot m_Snapshot = default;
 
         // by clientId
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
         private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
         private int m_CurrentTick = NetworkTickSystem.NoTick;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// Registers the snapshot system for early updates, keeps reference to the NetworkManager
+        internal SnapshotSystem(NetworkManager networkManager)
+        {
+            m_Snapshot = new Snapshot();
+
+            m_NetworkManager = networkManager;
+            m_Snapshot.NetworkManager = networkManager;
+
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+        }
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
@@ -479,15 +638,6 @@ namespace Unity.Netcode
             }
 
             return m_ConnectionRtts[clientId];
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// Registers the snapshot system for early updates
-        public SnapshotSystem()
-        {
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         /// <summary>
@@ -501,8 +651,6 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            //TODO: here, make sure we check both path, vars and spawns.
-
             if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 return;
@@ -560,8 +708,6 @@ namespace Unity.Netcode
 
             m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
-            // Send the entry index and the buffer where the variables are serialized
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
@@ -572,6 +718,7 @@ namespace Unity.Netcode
                 {
                     var sequence = m_ClientData[clientId].SequenceNumber;
 
+                    // write the tick and sequence header
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
                     nonNullContext.NetworkWriter.WriteUInt16(sequence);
 
@@ -579,6 +726,7 @@ namespace Unity.Netcode
 
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
+                        // write the snapshot: buffer, index, spawns, despawns
                         writer.WriteUInt16(SentinelBefore);
                         WriteBuffer(buffer);
                         WriteIndex(buffer);
@@ -586,6 +734,11 @@ namespace Unity.Netcode
                         WriteAcks(buffer, clientId);
                         writer.WriteUInt16(SentinelAfter);
 
+                        m_ClientData[clientId].LastReceivedSequence = 0;
+
+                        // todo: this is incorrect (well, sub-optimal)
+                        // we should still continue ack'ing past messages, in case this one is dropped
+                        m_ClientData[clientId].ReceivedSequenceMask = 0;
                         m_ClientData[clientId].SequenceNumber++;
                     }
                 }
@@ -595,41 +748,83 @@ namespace Unity.Netcode
         private void WriteSpawns(NetworkBuffer buffer, ulong clientId)
         {
             var spawnWritten = 0;
+            var despawnWritten = 0;
+
+            bool overSize = false;
+            ClientData clientData = m_ClientData[clientId];
+
+            // this is needed because spawns being removed may have reduce the size below LRU position
+            if (m_Snapshot.NumSpawns > 0)
+            {
+                clientData.NextSpawnIndex %= m_Snapshot.NumSpawns;
+            }
+            else
+            {
+                clientData.NextSpawnIndex = 0;
+            }
+
+            if (m_Snapshot.NumDespawns > 0)
+            {
+                clientData.NextDespawnIndex %= m_Snapshot.NumDespawns;
+            }
+            else
+            {
+                clientData.NextDespawnIndex = 0;
+            }
 
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                var positionBefore = writer.GetStream().Position;
+                var positionSpawns = writer.GetStream().Position;
                 writer.WriteInt16((short)m_Snapshot.NumSpawns);
+                var positionDespawns = writer.GetStream().Position;
+                writer.WriteInt16((short)m_Snapshot.NumDespawns);
 
-                for (var i = 0; i < m_Snapshot.NumSpawns; i++)
+                for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
                 {
-                    bool skip = false;
+                    var index = clientData.NextSpawnIndex;
 
-                    // todo : check that this condition is the same as the clientId one, then remove id :-)
-                    if (m_ClientData[clientId].SpawnAck.ContainsKey(m_Snapshot.Spawns[i].NetworkObjectId))
+                    if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
                     {
-                        if (m_ClientData[clientId].SpawnAck[m_Snapshot.Spawns[i].NetworkObjectId] ==
-                            m_Snapshot.Spawns[i].TickWritten)
-                        {
-                            skip = true;
-                        }
-                    }
-
-                    if (!m_Snapshot.Spawns[i].TargetClientIds.Contains(clientId))
-                    {
-                        skip = true;
-                    }
-
-                    if (!skip)
-                    {
-                        m_Snapshot.WriteSpawn(m_ClientData[clientId], writer, in m_Snapshot.Spawns[i]);
+                        m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
                         spawnWritten++;
                     }
+
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    {
+                        overSize = true;
+                    }
+                    clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
                 }
 
-                var positionAfter = writer.GetStream().Position;
-                writer.GetStream().Position = positionBefore;
+
+                for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
+                {
+                    var index = clientData.NextDespawnIndex;
+
+                    if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
+                    {
+                        m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
+                        despawnWritten++;
+                    }
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    {
+                        overSize = true;
+                    }
+                    clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % m_Snapshot.NumDespawns;
+                }
+
+                long positionAfter = 0;
+
+                positionAfter = writer.GetStream().Position;
+                writer.GetStream().Position = positionSpawns;
                 writer.WriteInt16((short)spawnWritten);
+                writer.GetStream().Position = positionAfter;
+
+                positionAfter = writer.GetStream().Position;
+                writer.GetStream().Position = positionDespawns;
+                writer.WriteInt16((short)despawnWritten);
                 writer.GetStream().Position = positionAfter;
             }
         }
@@ -638,7 +833,9 @@ namespace Unity.Netcode
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
+                // todo: revisit whether 16-bit is enough for LastReceivedSequence
                 writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
+                writer.WriteUInt16(m_ClientData[clientId].ReceivedSequenceMask);
             }
         }
 
@@ -678,8 +875,18 @@ namespace Unity.Netcode
 
         internal void Spawn(SnapshotSpawnCommand command)
         {
-            command.TickWritten = (ushort)m_CurrentTick;
+            command.TickWritten = m_CurrentTick;
             m_Snapshot.AddSpawn(command);
+
+            // Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
+        }
+
+        internal void Despawn(SnapshotDespawnCommand command)
+        {
+            command.TickWritten = m_CurrentTick;
+            m_Snapshot.AddDespawn(command);
+
+            // Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -688,7 +895,7 @@ namespace Unity.Netcode
         /// Might not happen for all variable on every frame. Might even happen more than once.
         /// </summary>
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
-        public void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
+        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
         {
             VariableKey k;
             k.NetworkObjectId = networkObjectId;
@@ -731,7 +938,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">
         /// <param name="snapshotStream">The stream to read from</param>
-        public void ReadSnapshot(ulong clientId, Stream snapshotStream)
+        internal void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
             // todo: temporary hack around bug
             if (!m_NetworkManager.IsServer)
@@ -753,26 +960,40 @@ namespace Unity.Netcode
                 var sequence = reader.ReadUInt16();
 
                 // todo: check we didn't miss any and deal with gaps
+
+                if (m_ClientData[clientId].ReceivedSequenceMask != 0)
+                {
+                    // since each bit in ReceivedSequenceMask is relative to the last received sequence
+                    // we need to shift all the bits by the difference in sequence
+                    m_ClientData[clientId].ReceivedSequenceMask <<=
+                        (sequence - m_ClientData[clientId].LastReceivedSequence);
+                }
+
+                if (m_ClientData[clientId].LastReceivedSequence != 0)
+                {
+                    // because the bit we're adding for the previous ReceivedSequenceMask
+                    // was implicit, it needs to be shift by one less
+                    m_ClientData[clientId].ReceivedSequenceMask +=
+                        (ushort)(1 << (ushort)((sequence - 1) - m_ClientData[clientId].LastReceivedSequence));
+                }
+
                 m_ClientData[clientId].LastReceivedSequence = sequence;
 
                 var sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelBefore)
                 {
-                    Debug.Log("JEFF Critical : snapshot integrity (before)");
+                    Debug.Log("Critical : snapshot integrity (before)");
                 }
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
                 m_Snapshot.ReadSpawns(reader);
-                var ackSequence = m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
-
-                // keep track of RTTs, using the sequence number acknowledgement as a marker
-                m_ConnectionRtts[clientId].NotifyAck(ackSequence, Time.unscaledTime);
+                m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
 
                 sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelAfter)
                 {
-                    Debug.Log("JEFF Critical : snapshot integrity (after)");
+                    Debug.Log("Critical : snapshot integrity (after)");
                 }
             }
         }

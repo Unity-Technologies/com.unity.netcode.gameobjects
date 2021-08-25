@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using System.Linq;
 
 namespace Unity.Netcode
@@ -24,10 +27,15 @@ namespace Unity.Netcode
         public NetworkTransport NetworkTransport = null;
 
         /// <summary>
-        /// A list of SceneNames that can be used during networked games.
+        /// The list of SceneNames built from the RegisteredSceneAssets list
         /// </summary>
-        [Tooltip("The Scenes that can be switched to by the server")]
+        [HideInInspector]
         public List<string> RegisteredScenes = new List<string>();
+
+#if UNITY_EDITOR
+        [Tooltip("The Scenes that can be switched to by the server")]
+        public List<SceneAsset> RegisteredSceneAssets = new List<SceneAsset>();
+#endif
 
         /// <summary>
         /// Whether or not runtime scene changes should be allowed and expected.
@@ -44,7 +52,7 @@ namespace Unity.Netcode
         public GameObject PlayerPrefab;
 
         /// <summary>
-        /// A list of spawnable prefabs
+        /// A list of prefabs that can be dynamically spawned.
         /// </summary>
         [SerializeField]
         [Tooltip("The prefabs that can be spawned across the network")]
@@ -142,9 +150,9 @@ namespace Unity.Netcode
         public HashSize RpcHashSize = HashSize.VarIntFourBytes;
 
         /// <summary>
-        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// The amount of seconds to wait for all clients to load or unload a requested scene
         /// </summary>
-        [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
+        [Tooltip("The amount of seconds to wait for all clients to load or unload a requested scene (only when EnableSceneManagement is enabled)")]
         public int LoadSceneTimeOut = 120;
 
         /// <summary>
@@ -160,8 +168,8 @@ namespace Unity.Netcode
 
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
-        public bool UseSnapshotDelta = false;
-        public bool UseSnapshotSpawn = false;
+        public bool UseSnapshotDelta { get; } = false;
+        public bool UseSnapshotSpawn { get; } = false;
 
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
@@ -315,3 +323,4 @@ namespace Unity.Netcode
         }
     }
 }
+

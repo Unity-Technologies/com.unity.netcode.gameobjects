@@ -1,4 +1,4 @@
-﻿#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS
 using System;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utlity

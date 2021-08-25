@@ -9,7 +9,7 @@ namespace Unity.Netcode.Prototyping
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     public class NetworkTransform : NetworkBehaviour
     {
-        internal class NetworkState : INetworkSerializable
+        internal struct NetworkState : INetworkSerializable
         {
             internal const int InLocalSpaceBit = 0;
             internal const int PositionXBit = 1;
@@ -161,13 +161,8 @@ namespace Unity.Netcode.Prototyping
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
-        internal bool UpdateNetworkState(NetworkState networkState)
+        internal bool UpdateNetworkState(ref NetworkState networkState)
         {
-            if (networkState == null)
-            {
-                return false;
-            }
-
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
@@ -376,11 +371,6 @@ namespace Unity.Netcode.Prototyping
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
-        public override void OnNetworkSpawn()
-        {
-            PrevNetworkState = null;
-        }
-
         private void OnDestroy()
         {
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
@@ -395,12 +385,12 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                ReplNetworkState.SetDirty(UpdateNetworkState(ReplNetworkState.Value));
+                ReplNetworkState.SetDirty(UpdateNetworkState(ref ReplNetworkState.ValueRef));
             }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
             // we apply the latest ReplNetworkState again to revert our changes
-            else if (UpdateNetworkState(PrevNetworkState))
+            else if (UpdateNetworkState(ref PrevNetworkState))
             {
                 ApplyNetworkState(ReplNetworkState.Value);
             }

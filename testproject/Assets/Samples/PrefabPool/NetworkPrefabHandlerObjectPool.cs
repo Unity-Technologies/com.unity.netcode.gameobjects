@@ -76,6 +76,14 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         return gameObject.GetComponent<NetworkObject>();
     }
 
+    private void OnDisable()
+    {
+        if (NetworkManager && NetworkManager.PrefabHandler != null)
+        {
+            NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToPool);
+        }
+    }
+
     public void Destroy(NetworkObject networkObject)
     {
         if (m_ObjectsPool.Contains(networkObject.gameObject))
