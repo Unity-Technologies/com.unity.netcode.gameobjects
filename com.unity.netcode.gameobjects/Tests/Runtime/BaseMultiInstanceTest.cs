@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
 
             updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
 

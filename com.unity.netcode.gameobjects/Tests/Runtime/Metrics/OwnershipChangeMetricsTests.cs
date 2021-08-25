@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var gameObject = new GameObject(Guid.NewGuid().ToString());
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();
 
@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var gameObject = new GameObject(Guid.NewGuid().ToString());
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();
 

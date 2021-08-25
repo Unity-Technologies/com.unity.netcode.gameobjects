@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
             AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
             AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {

@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var gameObject = new GameObject(NewNetworkObjectName);
             m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
             m_NewNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_NewNetworkObject);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkObject);
             var networkPrefab = new NetworkPrefab { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
 
