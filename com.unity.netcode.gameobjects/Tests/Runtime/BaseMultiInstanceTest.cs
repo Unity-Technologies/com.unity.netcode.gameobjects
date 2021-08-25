@@ -14,8 +14,6 @@ namespace Unity.Netcode.RuntimeTests
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
-        internal static uint DefaultPayerGlobalObjectIdHashValue = 7777777;
-
         protected abstract int NbClients { get; }
 
         [UnitySetUp]
@@ -96,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
 
