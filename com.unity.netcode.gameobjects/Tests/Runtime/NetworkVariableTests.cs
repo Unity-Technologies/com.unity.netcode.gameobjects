@@ -33,14 +33,17 @@ namespace Unity.Netcode.RuntimeTests
         {
             ListDelegateTriggered = true;
         }
+
         private void SetChanged(NetworkSetEvent<int> e)
         {
             SetDelegateTriggered = true;
         }
+
         private void DictionaryChanged(NetworkDictionaryEvent<int, int> e)
         {
             DictionaryDelegateTriggered = true;
         }
+
         public void Awake()
         {
             TheList.OnListChanged += ListChanged;
@@ -48,7 +51,7 @@ namespace Unity.Netcode.RuntimeTests
             TheDictionary.OnDictionaryChanged += DictionaryChanged;
         }
 
-    public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
+        public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
 
         public bool ListDelegateTriggered;
         public bool SetDelegateTriggered;
@@ -127,7 +130,7 @@ namespace Unity.Netcode.RuntimeTests
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[1], result));
 
-//            var client2client1 = result.Result;
+            //            var client2client1 = result.Result;
             m_Player1FromClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();
@@ -198,7 +201,7 @@ namespace Unity.Netcode.RuntimeTests
             m_TestWithHost = useHost;
 
             // client must not be allowed to write to a server auth variable
-            Assert.Throws<InvalidOperationException>(() =>  m_Player1OnClient1.TheScalar.Value = k_TestVal1);
+            Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
         }
 
         [Test]
@@ -207,7 +210,7 @@ namespace Unity.Netcode.RuntimeTests
             m_TestWithHost = useHost;
 
             // server must not be allowed to write to a client auth variable
-            Assert.Throws<InvalidOperationException>(() =>  m_Player1OnServer.ClientVar.Value = k_TestVal1);
+            Assert.Throws<InvalidOperationException>(() => m_Player1OnServer.ClientVar.Value = k_TestVal1);
         }
 
         [UnityTest]
@@ -223,7 +226,7 @@ namespace Unity.Netcode.RuntimeTests
                 },
                 () =>
                 {
-            // the client's values should win on the objects it owns
+                    // the client's values should win on the objects it owns
                     return
                         m_Player1OnServer.ClientVar.Value == k_TestVal2 &&
                         m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
@@ -522,7 +525,7 @@ namespace Unity.Netcode.RuntimeTests
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            UnityEngine.Object.Destroy(m_PlayerPrefab);
+            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
         }
     }
 }

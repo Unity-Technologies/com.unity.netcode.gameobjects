@@ -1,16 +1,14 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A Client NetworkVariable is special in that
+    /// A ClientNetworkVariable is special in that:
     ///  - only the owner of the variable can write to it
     ///  - not even the server can write to it
     ///  - it is not snapshotted
     ///
-    /// This class may be removed in the future
+    /// (This class may be removed in the future when integrated into NetworkVariable natively)
     /// </summary>
     [Serializable]
     public class ClientNetworkVariable<T> : NetworkVariable<T> where T : unmanaged
@@ -46,6 +44,7 @@ namespace Unity.Netcode
                 {
                     throw new InvalidOperationException("Server not allowed to write to ClientNetworkVariables");
                 }
+
                 Set(value);
             }
         }

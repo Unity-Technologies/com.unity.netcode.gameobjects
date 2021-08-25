@@ -442,7 +442,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    NetworkChannel networkChannel = NetworkVariableBase.NetworkVariableChannel;
+                    var networkChannel = NetworkVariableBase.NetworkVariableChannel;
 
                     if (!firstLevelIndex.ContainsKey(networkChannel))
                     {
@@ -651,8 +651,7 @@ namespace Unity.Netcode
 
                     if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
-                        // we are choosing not to fire an exception here, because otherwise a malicious client could use
-                        //  this to crash the server
+                        // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

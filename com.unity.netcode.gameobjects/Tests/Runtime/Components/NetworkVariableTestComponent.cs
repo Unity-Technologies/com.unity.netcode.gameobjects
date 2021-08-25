@@ -176,7 +176,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         public bool DidAllValuesChange()
         {
-            if (BaseNetworkVariableHelper.VarChangedCount == BaseNetworkVariableHelper.InstanceCount)
+            if (NetworkVariableBaseHelper.VarChangedCount == NetworkVariableBaseHelper.InstanceCount)
             {
                 return true;
             }
