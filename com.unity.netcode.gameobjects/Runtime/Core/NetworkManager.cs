@@ -6,6 +6,9 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+#if MULTIPLAYER_TOOLS
+using Unity.Multiplayer.Tools;
+#endif
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -397,7 +400,7 @@ namespace Unity.Netcode
             }
 
 #if MULTIPLAYER_TOOLS
-            Unity.Multiplayer.Tools.NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
+            NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
                 NetworkObjectProvider = new NetworkObjectProvider(this)
             });
