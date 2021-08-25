@@ -296,7 +296,13 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(targetClientIds, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                 }
                 return;
             }
@@ -435,7 +441,14 @@ namespace Unity.Netcode
                     ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
                     ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
                     ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
+
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ConnectedClientsIds, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                 }
             }
 
@@ -875,7 +888,13 @@ namespace Unity.Netcode
 
                         using (var nonNullContext = (InternalCommandContext)context)
                         {
+                            var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                            bufferSizeCapture.StartMeasureSegment();
+
                             SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+
+                            var size = bufferSizeCapture.StopMeasureSegment();
+                            m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                         }
                     }
                     else
@@ -975,7 +994,13 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ConnectedClientsIds, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                 }
             }
 
