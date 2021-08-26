@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_GlobalObjectIdHashBase.ToString());
             NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(validPrefab, m_GlobalObjectIdHashBase);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(validPrefab, m_GlobalObjectIdHashBase);
             m_GlobalObjectIdHashBase++;
             return validPrefab.gameObject;
         }

@@ -558,7 +558,7 @@ namespace Unity.Netcode
         /// This will look into all spawned objects
         /// </summary>
         /// <param name="key">The key to search for</param>
-        private INetworkVariable FindNetworkVar(VariableKey key)
+        private NetworkVariableBase FindNetworkVar(VariableKey key)
         {
             var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
 
@@ -895,7 +895,7 @@ namespace Unity.Netcode
         /// Might not happen for all variable on every frame. Might even happen more than once.
         /// </summary>
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
-        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
+        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
         {
             VariableKey k;
             k.NetworkObjectId = networkObjectId;
@@ -914,7 +914,7 @@ namespace Unity.Netcode
             WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
         }
 
-        private void WriteVariableToSnapshot(Snapshot snapshot, INetworkVariable networkVariable, int index)
+        private void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
