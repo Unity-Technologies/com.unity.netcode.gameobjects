@@ -30,13 +30,13 @@ namespace TestProject.RuntimeTests
             var playerNetworkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(playerNetworkObject, 8888888);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(playerNetworkObject);
 
             m_DontDestroyOnLoadObject = new GameObject("DontDestroyOnLoadObject");
             var dontDestroyOnLoadNetworkObject = m_DontDestroyOnLoadObject.AddComponent<NetworkObject>();
             m_DontDestroyOnLoadObject.AddComponent<ObjectToNotDestroyBehaviour>();
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(dontDestroyOnLoadNetworkObject, 2222222);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(dontDestroyOnLoadNetworkObject);
 
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
