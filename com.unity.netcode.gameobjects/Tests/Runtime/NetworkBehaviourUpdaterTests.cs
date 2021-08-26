@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
             AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
             AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
 
             // gathering netvars to test on
-            var serverNetVarsToUpdate = new List<NetworkVariableInt>();
+            var serverNetVarsToUpdate = new List<NetworkVariable<int>>();
             for (int i = 0; i < nbSpawnedObjects; i++)
             {
                 var spawnedObject = Object.Instantiate(prefabToSpawn);
@@ -138,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         foreach (var networkVariable in behaviour.NetworkVariableFields)
                         {
-                            var varInt = networkVariable as NetworkVariableInt;
+                            var varInt = networkVariable as NetworkVariable<int>;
                             var varUpdateResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
                             yield return MultiInstanceHelpers.WaitForCondition(() => varInt.Value == updatedValue, varUpdateResult);
                             Assert.That(varUpdateResult.Result, Is.True);
@@ -155,24 +155,24 @@ namespace Unity.Netcode.RuntimeTests
 
     public interface INetVarInfo
     {
-        public List<NetworkVariableInt> AllNetVars { get; }
+        public List<NetworkVariable<int>> AllNetVars { get; }
     }
 
     public class ZeroNetVar : NetworkBehaviour, INetVarInfo
     {
-        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>(); // Needed to be independant from NetworkBehaviour's list of fields. This way, if that changes, we can still do this validation in this test
+        public List<NetworkVariable<int>> AllNetVars => new List<NetworkVariable<int>>(); // Needed to be independant from NetworkBehaviour's list of fields. This way, if that changes, we can still do this validation in this test
     }
 
     public class OneNetVar : NetworkBehaviour, INetVarInfo
     {
-        private NetworkVariableInt m_SomeValue = new NetworkVariableInt();
-        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>() { m_SomeValue };
+        private NetworkVariable<int> m_SomeValue = new NetworkVariable<int>();
+        public List<NetworkVariable<int>> AllNetVars => new List<NetworkVariable<int>>() { m_SomeValue };
     }
 
     public class TwoNetVar : NetworkBehaviour, INetVarInfo
     {
-        private NetworkVariableInt m_SomeValue = new NetworkVariableInt();
-        private NetworkVariableInt m_SomeOtherValue = new NetworkVariableInt();
-        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>() { m_SomeValue, m_SomeOtherValue };
+        private NetworkVariable<int> m_SomeValue = new NetworkVariable<int>();
+        private NetworkVariable<int> m_SomeOtherValue = new NetworkVariable<int>();
+        public List<NetworkVariable<int>> AllNetVars => new List<NetworkVariable<int>>() { m_SomeValue, m_SomeOtherValue };
     }
 }
