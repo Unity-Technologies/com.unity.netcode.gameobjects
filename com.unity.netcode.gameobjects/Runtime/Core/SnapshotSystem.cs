@@ -558,7 +558,7 @@ namespace Unity.Netcode
         /// This will look into all spawned objects
         /// </summary>
         /// <param name="key">The key to search for</param>
-        private INetworkVariable FindNetworkVar(VariableKey key)
+        private NetworkVariableBase FindNetworkVar(VariableKey key)
         {
             var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
 
@@ -895,7 +895,7 @@ namespace Unity.Netcode
         /// Might not happen for all variable on every frame. Might even happen more than once.
         /// </summary>
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
-        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
+        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
         {
             VariableKey k;
             k.NetworkObjectId = networkObjectId;
@@ -914,7 +914,7 @@ namespace Unity.Netcode
             WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
         }
 
-        private void WriteVariableToSnapshot(Snapshot snapshot, INetworkVariable networkVariable, int index)
+        private void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
@@ -959,25 +959,44 @@ namespace Unity.Netcode
                 snapshotTick = reader.ReadInt32Packed();
                 var sequence = reader.ReadUInt16();
 
-                // todo: check we didn't miss any and deal with gaps
-
-                if (m_ClientData[clientId].ReceivedSequenceMask != 0)
+                if (sequence >= m_ClientData[clientId].LastReceivedSequence)
                 {
-                    // since each bit in ReceivedSequenceMask is relative to the last received sequence
-                    // we need to shift all the bits by the difference in sequence
-                    m_ClientData[clientId].ReceivedSequenceMask <<=
-                        (sequence - m_ClientData[clientId].LastReceivedSequence);
-                }
+                    if (m_ClientData[clientId].ReceivedSequenceMask != 0)
+                    {
+                        // since each bit in ReceivedSequenceMask is relative to the last received sequence
+                        // we need to shift all the bits by the difference in sequence
+                        var shift = sequence - m_ClientData[clientId].LastReceivedSequence;
+                        if (shift < sizeof(ushort) * 8)
+                        {
+                            m_ClientData[clientId].ReceivedSequenceMask <<= shift;
+                        }
+                        else
+                        {
+                            m_ClientData[clientId].ReceivedSequenceMask = 0;
+                        }
+                    }
 
-                if (m_ClientData[clientId].LastReceivedSequence != 0)
+                    if (m_ClientData[clientId].LastReceivedSequence != 0)
+                    {
+                        // because the bit we're adding for the previous ReceivedSequenceMask
+                        // was implicit, it needs to be shift by one less
+                        var shift = sequence - 1 - m_ClientData[clientId].LastReceivedSequence;
+                        if (shift < sizeof(ushort) * 8)
+                        {
+                            m_ClientData[clientId].ReceivedSequenceMask |= (ushort)(1 << shift);
+                        }
+                    }
+
+                    m_ClientData[clientId].LastReceivedSequence = sequence;
+                }
+                else
                 {
-                    // because the bit we're adding for the previous ReceivedSequenceMask
-                    // was implicit, it needs to be shift by one less
-                    m_ClientData[clientId].ReceivedSequenceMask +=
-                        (ushort)(1 << (ushort)((sequence - 1) - m_ClientData[clientId].LastReceivedSequence));
+                    // todo: Missing: dealing with out-of-order message acknowledgments
+                    // we should set m_ClientData[clientId].ReceivedSequenceMask accordingly
+                    // testing this will require a way to reorder SnapshotMessages, which we lack at the moment
+                    //
+                    // without this, we incur extra retransmit, not a catastrophic failure
                 }
-
-                m_ClientData[clientId].LastReceivedSequence = sequence;
 
                 var sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelBefore)

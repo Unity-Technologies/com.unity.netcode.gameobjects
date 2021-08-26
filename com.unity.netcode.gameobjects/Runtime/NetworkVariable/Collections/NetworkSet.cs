@@ -10,21 +10,15 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : ISet<T>, INetworkVariable
+    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T: unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
-        private NetworkBehaviour m_NetworkBehaviour;
 
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
         public NetworkTime LastSyncedTime { get; internal set; }
-
-        /// <summary>
-        /// The settings for this container
-        /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
         /// <summary>
         /// Delegate type for set changed event
@@ -46,19 +40,15 @@ namespace Unity.Netcode
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkSet(NetworkVariableSettings settings)
-        {
-            Settings = settings;
-        }
+        public NetworkSet(NetworkVariableSettings settings) : base(settings) { }
 
         /// <summary>
         /// Creates a NetworkSet with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkSet</param>
         /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableSettings settings, ISet<T> value)
+        public NetworkSet(NetworkVariableSettings settings, ISet<T> value) : base(settings)
         {
-            Settings = settings;
             m_Set = value;
         }
 
@@ -71,103 +61,22 @@ namespace Unity.Netcode
             m_Set = value;
         }
 
-        /// <summary>
-        /// Gets or sets the name of the network variable's instance
-        /// (MemberInfo) where it was declared.
-        /// </summary>
-        public string Name { get; internal set; }
-
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
+            base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
+            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public override bool IsDirty()
         {
-            if (m_DirtyEvents.Count == 0)
-            {
-                return false;
-            }
-
-            if (Settings.SendTickrate == 0)
-            {
-                return true;
-            }
-
-            if (Settings.SendTickrate < 0)
-            {
-                return false;
-            }
-
-            if ((m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime) >= (1.0 / Settings.SendTickrate))
-            {
-                return true;
-            }
-
-            return false;
+            return base.IsDirty() || m_DirtyEvents.Count > 0;
         }
 
         /// <inheritdoc />
-        public NetworkChannel GetChannel()
-        {
-            return Settings.SendNetworkChannel;
-        }
-
-        /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
-        {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
-        {
-            switch (Settings.ReadPermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -199,7 +108,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -213,7 +122,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -228,7 +137,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -311,12 +220,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-        }
-
-        /// <inheritdoc />
-        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-        {
-            m_NetworkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
@@ -406,10 +309,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    if (m_NetworkBehaviour.NetworkManager.IsServer)
-                    {
-                        m_Set.Add(value);
-                    }
+                    m_Set.Add(value);
 
                     var setEvent = new NetworkSetEvent<T>()
                     {
@@ -418,7 +318,7 @@ namespace Unity.Netcode
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    if (OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -435,10 +335,7 @@ namespace Unity.Netcode
             {
                 if (!m_Set.Contains(value))
                 {
-                    if (m_NetworkBehaviour.NetworkManager.IsServer)
-                    {
-                        m_Set.Add(value);
-                    }
+                    m_Set.Add(value);
 
                     var setEvent = new NetworkSetEvent<T>()
                     {
@@ -447,7 +344,7 @@ namespace Unity.Netcode
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    if (OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -455,14 +352,10 @@ namespace Unity.Netcode
             }
         }
 
-        public void Add(T item)
+        public bool Add(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Add(item);
-            }
+            m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -471,34 +364,22 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
-        }
 
-        /// <inheritdoc />
-        bool ISet<T>.Add(T item)
-        {
-            Add(item);
             return true;
         }
 
         /// <inheritdoc />
-        void ICollection<T>.Add(T item)
-        {
-            Add(item);
-        }
+        void ICollection<T>.Add(T item) => Add(item);
 
         /// <inheritdoc />
         public void Clear()
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Clear();
-            }
+            m_Set.Clear();
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -506,7 +387,7 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -528,11 +409,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Remove(item);
-            }
+            m_Set.Remove(item);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -541,7 +418,7 @@ namespace Unity.Netcode
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            if (OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -566,7 +443,7 @@ namespace Unity.Netcode
 
         private void EnsureInitialized()
         {
-            if (m_NetworkBehaviour == null)
+            if (NetworkBehaviour == null)
             {
                 throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }

@@ -34,6 +34,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override int NbClients => 2;
 
         private ulong m_ClientId0;
+        private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_NetSpawnedObject1;
         private NetworkObject m_NetSpawnedObject2;
@@ -49,6 +50,7 @@ namespace Unity.Netcode.RuntimeTests
                 updatePlayerPrefab: playerPrefab =>
                 {
                     var networkTransform = playerPrefab.AddComponent<NetworkShowHideTest>();
+                    m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
                 });
         }
 
@@ -57,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabToSpawn = new GameObject();
             prefabToSpawn.AddComponent(type);
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -171,10 +173,10 @@ namespace Unity.Netcode.RuntimeTests
 
             // create 3 objects
 
-            var prefabToSpawn = PreparePrefab(typeof(ShowHideObject));
-            var spawnedObject1 = UnityEngine.Object.Instantiate(prefabToSpawn);
-            var spawnedObject2 = UnityEngine.Object.Instantiate(prefabToSpawn);
-            var spawnedObject3 = UnityEngine.Object.Instantiate(prefabToSpawn);
+
+            var spawnedObject1 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject2 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject3 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
             m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
             m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();

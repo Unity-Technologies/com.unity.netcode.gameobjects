@@ -67,7 +67,7 @@ namespace TestProject.RuntimeTests
             var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             // Create the player prefab override if set
             if (prefabOverride)
@@ -75,8 +75,14 @@ namespace TestProject.RuntimeTests
                 // Create a default player GameObject to use
                 m_PlayerPrefabOverride = new GameObject("PlayerPrefabOverride");
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
-                MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectOverride);
+                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
+
+                server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                foreach (var client in clients)
+                {
+                    client.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                }
             }
             else
             {

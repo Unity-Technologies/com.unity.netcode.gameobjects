@@ -53,9 +53,12 @@ namespace Unity.Netcode
                     // when client updates the server, it tells it about all its objects
                     foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        if (sobj.IsOwner)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            }
                         }
                     }
 
