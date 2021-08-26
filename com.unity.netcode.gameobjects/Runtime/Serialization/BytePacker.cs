@@ -1,9 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
-using Unity.Netcode;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Utility class for packing values in serialization.

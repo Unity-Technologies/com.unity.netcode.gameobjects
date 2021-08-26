@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public static class BitCounter
     {

@@ -1,7 +1,6 @@
 using System;
 using NUnit.Framework;
 using Unity.Collections;
-using Unity.Multiplayer.Netcode;
 
 namespace Unity.Netcode.EditorTests
 {

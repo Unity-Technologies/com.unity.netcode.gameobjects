@@ -1,8 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
-using Unity.Netcode;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Helper class for doing bitwise reads for a FastBufferReader.

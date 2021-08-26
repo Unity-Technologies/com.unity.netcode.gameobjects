@@ -1,6 +1,6 @@
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public static class BytewiseUtility
     {

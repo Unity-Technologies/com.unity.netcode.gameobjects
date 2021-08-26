@@ -1,5 +1,4 @@
 using NUnit.Framework;
-using Unity.Multiplayer.Netcode;
 
 namespace Unity.Netcode.EditorTests
 {

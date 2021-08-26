@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public struct Ref<T> where T : unmanaged
     {

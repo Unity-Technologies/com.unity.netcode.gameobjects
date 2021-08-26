@@ -1,8 +1,7 @@
 using System;
-using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
-namespace Unity.Netcode.Serialization
+namespace Unity.Netcode
 {
     public interface IBufferSerializerImplementation
     {

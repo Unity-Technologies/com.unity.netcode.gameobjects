@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Multiplayer.Netcode;
 using Unity.Netcode.EditorTests;
 using UnityEngine;
 using UnityEngine.SceneManagement;

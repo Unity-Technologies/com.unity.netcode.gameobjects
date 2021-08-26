@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public struct FastBufferWriter : IDisposable
     {

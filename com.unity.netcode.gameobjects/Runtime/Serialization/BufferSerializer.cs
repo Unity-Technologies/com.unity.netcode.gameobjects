@@ -1,8 +1,7 @@
 using System;
-using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
-namespace Unity.Netcode.Serialization
+namespace Unity.Netcode
 {
     /// <summary>
     /// Two-way serializer wrapping FastBufferReader or FastBufferWriter.

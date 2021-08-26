@@ -1,9 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
-using Unity.Netcode;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public static class ByteUnpacker
     {

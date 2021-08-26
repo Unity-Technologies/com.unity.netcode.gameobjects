@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public ref struct RefArray<T> where T : unmanaged
     {
