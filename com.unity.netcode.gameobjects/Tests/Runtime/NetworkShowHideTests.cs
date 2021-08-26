@@ -14,15 +14,15 @@ namespace Unity.Netcode.RuntimeTests
 
     public class ShowHideObject : NetworkBehaviour
     {
-        public NetworkVariable<int> networkVariable;
+        public NetworkVariable<int> MyNetworkVariable;
 
         private void Start()
         {
-            networkVariable = new NetworkVariable<int>();
-            networkVariable.OnValueChanged += Changed;
+            MyNetworkVariable = new NetworkVariable<int>();
+            MyNetworkVariable.OnValueChanged += Changed;
         }
 
-        void Changed(int before, int after)
+        public void Changed(int before, int after)
         {
             Debug.Log($"Value changed from {before} to {after}");
         }
@@ -199,7 +199,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 yield return new WaitForSeconds(1.0f);
 
-                m_NetSpawnedObject1.GetComponent<ShowHideObject>().networkVariable.Value = 3;
+                m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value = 3;
 
                 yield return new WaitForSeconds(1.0f);
 

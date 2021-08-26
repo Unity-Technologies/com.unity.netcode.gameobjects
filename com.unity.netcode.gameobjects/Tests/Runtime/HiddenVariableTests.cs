@@ -11,24 +11,24 @@ namespace Unity.Netcode.RuntimeTests
 
     public class HiddenVariableObject : NetworkBehaviour
     {
-        public NetworkVariable<int> networkVariable = new NetworkVariable<int>();
-        public static int changeCount = 0;
+        public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
+        public static int ChangeCount = 0;
 
         public override void OnNetworkSpawn()
         {
             Debug.Log($"HiddenVariableObject.OnNetworkSpawn()");
 
-            networkVariable.Settings.SendNetworkChannel = NetworkChannel.NetworkVariable;
-            networkVariable.Settings.SendTickrate = 10;
-            networkVariable.OnValueChanged += Changed;
+            MyNetworkVariable.Settings.SendNetworkChannel = NetworkChannel.NetworkVariable;
+            MyNetworkVariable.Settings.SendTickrate = 10;
+            MyNetworkVariable.OnValueChanged += Changed;
 
             base.OnNetworkSpawn();
         }
 
-        void Changed(int before, int after)
+        public void Changed(int before, int after)
         {
             Debug.Log($"Value changed from {before} to {after} on {NetworkManager.LocalClientId}");
-            changeCount++;
+            ChangeCount++;
         }
     }
 
@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             return prefabToSpawn;
         }
 
-        IEnumerator WaitForConnectedCount(int targetCount)
+        public IEnumerator WaitForConnectedCount(int targetCount)
         {
             var endTime = Time.realtimeSinceStartup + 1.0;
             while (m_ServerNetworkManager.ConnectedClientsList.Count < targetCount && Time.realtimeSinceStartup < endTime)
@@ -74,10 +74,10 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        IEnumerator WaitForChangeCount(int targetCount)
+        public IEnumerator WaitForChangeCount(int targetCount)
         {
             var endTime = Time.realtimeSinceStartup + 1.0;
-            while (HiddenVariableObject.changeCount != targetCount && Time.realtimeSinceStartup < endTime)
+            while (HiddenVariableObject.ChangeCount != targetCount && Time.realtimeSinceStartup < endTime)
             {
                 yield return new WaitForSeconds(0.01f);
             }
@@ -88,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             Debug.Log("Running test");
 
-            var spawnedObject = UnityEngine.Object.Instantiate(m_TestNetworkPrefab);
+            var spawnedObject = Object.Instantiate(m_TestNetworkPrefab);
             m_NetSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
             m_NetSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
             yield return WaitForConnectedCount(NbClients);
@@ -99,30 +99,30 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject.SpawnWithOwnership(client.ClientId);
 
             // Set the NetworkVariable value to 2
-            HiddenVariableObject.changeCount = 0;
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().networkVariable.Value = 2;
+            HiddenVariableObject.ChangeCount = 0;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 2;
             yield return WaitForChangeCount(NbClients + 1);
-            Debug.Assert(HiddenVariableObject.changeCount == NbClients + 1);
+            Debug.Assert(HiddenVariableObject.ChangeCount == NbClients + 1);
 
             // Hide our object to a different client
-            HiddenVariableObject.changeCount = 0;
+            HiddenVariableObject.ChangeCount = 0;
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);
 
             // Change the NetworkVariable value
             // we should get one less notification of value changing and no errors or exception
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().networkVariable.Value = 3;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 3;
             yield return new WaitForSeconds(1.0f);
-            Debug.Assert(HiddenVariableObject.changeCount == NbClients);
+            Debug.Assert(HiddenVariableObject.ChangeCount == NbClients);
 
             // Show our object again to this client
-            HiddenVariableObject.changeCount = 0;
+            HiddenVariableObject.ChangeCount = 0;
             m_NetSpawnedObject.NetworkShow(otherClient.ClientId);
 
             // Change the NetworkVariable value
             // we should get all notifications of value changing and no errors or exception
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().networkVariable.Value = 4;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 4;
             yield return WaitForChangeCount(NbClients + 1);
-            Debug.Assert(HiddenVariableObject.changeCount == NbClients + 1);
+            Debug.Assert(HiddenVariableObject.ChangeCount == NbClients + 1);
 
             // Hide our object to that different client again, and then destroy it
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);
