@@ -11,7 +11,7 @@ using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
-    public class NetworkSceneManagerTests : BaseMultiInstanceTest
+    public class NetworkSceneManagerTests: BaseMultiInstanceTest
     {
         protected override int NbClients => 9;
 
@@ -224,15 +224,15 @@ namespace TestProject.RuntimeTests
         private bool ContainsAllClients(List<ulong> clients)
         {
             // First, make sure we have the expected client count
-            if (clients.Count != m_ShouldWaitList.Count)
+            if(clients.Count != m_ShouldWaitList.Count)
             {
                 return false;
             }
 
             // Next, make sure we have all client identifiers
-            foreach (var sceneTestInfo in m_ShouldWaitList)
+            foreach(var sceneTestInfo in m_ShouldWaitList)
             {
-                if (!clients.Contains(sceneTestInfo.ClientId))
+                if(!clients.Contains(sceneTestInfo.ClientId))
                 {
                     return false;
                 }
@@ -248,12 +248,12 @@ namespace TestProject.RuntimeTests
         /// <param name="sceneEvent"></param>
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch (sceneEvent.SceneEventType)
+            switch(sceneEvent.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.AreEqual(sceneEvent.SceneName,m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;

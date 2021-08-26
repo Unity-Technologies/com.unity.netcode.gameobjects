@@ -55,15 +55,20 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Verifies the requested bit count can be written to the buffer.
-        /// This exists as a separate method to allow multiple bit writes to be bounds checked with a single call.
-        /// If it returns false, you may not write, and in editor and development builds, attempting to do so will
-        /// throw an exception. In release builds, attempting to do so will write to random memory addresses and cause
-        /// Bad Things(TM).
+        /// Allows faster serialization by batching bounds checking.
+        /// When you know you will be writing multiple fields back-to-back and you know the total size,
+        /// you can call TryBeginWriteBits() once on the total size, and then follow it with calls to
+        /// WriteBit() or WriteBits().
+        /// 
+        /// Bitwise write operations will throw OverflowException in editor and development builds if you
+        /// go past the point you've marked using TryBeginWriteBits(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
+        /// operations in release builds. Instead, attempting to write past the marked position in release builds
+        /// will write to random memory and cause undefined behavior, likely including instability and crashes.
         /// </summary>
         /// <param name="bitCount">Number of bits you want to write, in total</param>
         /// <returns>True if you can write, false if that would exceed buffer bounds</returns>
-        public unsafe bool VerifyCanWriteBits(int bitCount)
+        public unsafe bool TryBeginWriteBits(int bitCount)
         {
             var newBitPosition = m_BitPosition + bitCount;
             var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
@@ -96,7 +101,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to get bits from.</param>
         /// <param name="bitCount">Amount of bits to write</param>
-        public unsafe void WriteBits(ulong value, int bitCount)
+        public unsafe void WriteBits(ulong value, uint bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (bitCount > 64)
@@ -104,19 +109,14 @@ namespace Unity.Multiplayer.Netcode
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot write more than 64 bits from a 64-bit value!");
             }
 
-            if (bitCount < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot write fewer than 0 bits!");
-            }
-
-            int checkPos = (m_BitPosition + bitCount);
+            int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling FastBufferWriter.VerifyCanWriteBits()");
+                throw new OverflowException("Attempted to write without first calling FastBufferWriter.TryBeginWriteBits()");
             }
 #endif
 
-            int wholeBytes = bitCount / k_BitsPerByte;
+            int wholeBytes = (int)bitCount / k_BitsPerByte;
             byte* asBytes = (byte*)&value;
             if (BitAligned)
             {
@@ -144,13 +144,13 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to get bits from.</param>
         /// <param name="bitCount">Amount of bits to write.</param>
-        public void WriteBits(byte value, int bitCount)
+        public void WriteBits(byte value, uint bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            int checkPos = (m_BitPosition + bitCount);
+            int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling FastBufferWriter.VerifyCanWriteBits()");
+                throw new OverflowException("Attempted to write without first calling FastBufferWriter.TryBeginWriteBits()");
             }
 #endif
 
@@ -171,7 +171,7 @@ namespace Unity.Multiplayer.Netcode
             int checkPos = (m_BitPosition + 1);
             if (checkPos > m_AllowedBitwiseWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling FastBufferWriter.VerifyCanWriteBits()");
+                throw new OverflowException("Attempted to write without first calling FastBufferWriter.TryBeginWriteBits()");
             }
 #endif
 

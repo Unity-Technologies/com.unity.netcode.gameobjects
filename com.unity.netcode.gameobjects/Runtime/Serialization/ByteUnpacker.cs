@@ -466,7 +466,7 @@ namespace Unity.Multiplayer.Netcode
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b1) + 1;
-            if (!reader.VerifyCanReadInternal(numBytes))
+            if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -511,7 +511,7 @@ namespace Unity.Multiplayer.Netcode
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b11) + 1;
-            if (!reader.VerifyCanReadInternal(numBytes))
+            if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -565,7 +565,7 @@ namespace Unity.Multiplayer.Netcode
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
             int numBytes = (data[0] & 0b111) + 1;
-            if (!reader.VerifyCanReadInternal(numBytes))
+            if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -649,7 +649,7 @@ namespace Unity.Multiplayer.Netcode
             }
 
             var numBytes = firstByte - 247;
-            if (!reader.VerifyCanReadInternal(numBytes))
+            if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -673,7 +673,7 @@ namespace Unity.Multiplayer.Netcode
             }
 
             var numBytes = firstByte - 247;
-            if (!reader.VerifyCanReadInternal(numBytes))
+            if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }

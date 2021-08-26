@@ -98,7 +98,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (value is GameObject)
             {
-                var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
+                ((GameObject)value).TryGetComponent<NetworkObject>(out var networkObject);
                 if (networkObject == null)
                 {
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
@@ -453,7 +453,7 @@ namespace Unity.Multiplayer.Netcode
 
             if (value <= 0b0111_1111)
             {
-                if (!writer.VerifyCanWriteInternal(1))
+                if (!writer.TryBeginWriteInternal(1))
                 {
                     throw new OverflowException("Writing past the end of the buffer");
                 }
@@ -461,7 +461,7 @@ namespace Unity.Multiplayer.Netcode
                 return;
             }
 
-            if (!writer.VerifyCanWriteInternal(2))
+            if (!writer.TryBeginWriteInternal(2))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -501,7 +501,7 @@ namespace Unity.Multiplayer.Netcode
 #endif
             value <<= 2;
             var numBytes = BitCounter.GetUsedByteCount(value);
-            if (!writer.VerifyCanWriteInternal(numBytes))
+            if (!writer.TryBeginWriteInternal(numBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -541,7 +541,7 @@ namespace Unity.Multiplayer.Netcode
 #endif
             value <<= 3;
             var numBytes = BitCounter.GetUsedByteCount(value);
-            if (!writer.VerifyCanWriteInternal(numBytes))
+            if (!writer.TryBeginWriteInternal(numBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -566,7 +566,7 @@ namespace Unity.Multiplayer.Netcode
             }
             var writeBytes = BitCounter.GetUsedByteCount(value);
 
-            if (!writer.VerifyCanWriteInternal(writeBytes + 1))
+            if (!writer.TryBeginWriteInternal(writeBytes + 1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -592,7 +592,7 @@ namespace Unity.Multiplayer.Netcode
             }
             var writeBytes = BitCounter.GetUsedByteCount(value);
 
-            if (!writer.VerifyCanWriteInternal(writeBytes + 1))
+            if (!writer.TryBeginWriteInternal(writeBytes + 1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }

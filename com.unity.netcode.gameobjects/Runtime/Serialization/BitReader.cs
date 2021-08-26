@@ -65,7 +65,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="bitCount">Number of bits you want to read, in total</param>
         /// <returns>True if you can read, false if that would exceed buffer bounds</returns>
-        public bool VerifyCanReadBits(int bitCount)
+        public bool TryBeginReadBits(uint bitCount)
         {
             var newBitPosition = m_BitPosition + bitCount;
             var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
@@ -80,7 +80,7 @@ namespace Unity.Multiplayer.Netcode
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseReadMark = newBitPosition;
+            m_AllowedBitwiseReadMark = (int)newBitPosition;
 #endif
             return true;
         }
@@ -90,7 +90,7 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to store bits into.</param>
         /// <param name="bitCount">Amount of bits to read</param>
-        public unsafe void ReadBits(out ulong value, int bitCount)
+        public unsafe void ReadBits(out ulong value, uint bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (bitCount > 64)
@@ -103,15 +103,15 @@ namespace Unity.Multiplayer.Netcode
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             }
 
-            int checkPos = (m_BitPosition + bitCount);
+            int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
+                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
             }
 #endif
             ulong val = 0;
 
-            int wholeBytes = bitCount / k_BitsPerByte;
+            int wholeBytes = (int)bitCount / k_BitsPerByte;
             byte* asBytes = (byte*)&val;
             if (BitAligned)
             {
@@ -128,7 +128,7 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 
-            val |= (ulong)ReadByteBits(bitCount & 7) << (bitCount & ~7);
+            val |= (ulong)ReadByteBits((int)bitCount & 7) << ((int)bitCount & ~7);
             value = val;
         }
 
@@ -137,16 +137,16 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to store bits into.</param>
         /// <param name="bitCount">Amount of bits to read.</param>
-        public void ReadBits(out byte value, int bitCount)
+        public void ReadBits(out byte value, uint bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            int checkPos = (m_BitPosition + bitCount);
+            int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
+                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
             }
 #endif
-            value = ReadByteBits(bitCount);
+            value = ReadByteBits((int)bitCount);
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace Unity.Multiplayer.Netcode
             int checkPos = (m_BitPosition + 1);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
+                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
             }
 #endif
 

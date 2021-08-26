@@ -78,7 +78,7 @@ namespace Unity.Netcode.Serialization
 
         public bool PreCheck(int amount)
         {
-            return m_Writer.Value.VerifyCanWrite(amount);
+            return m_Writer.Value.TryBeginWrite(amount);
         }
 
         public void SerializeValuePreChecked(ref GameObject value)

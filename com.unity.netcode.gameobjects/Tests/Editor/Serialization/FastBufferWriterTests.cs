@@ -1,94 +1,19 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 using Unity.Collections;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class FastBufferWriterTests
+    public class FastBufferWriterTests : BaseFastBufferReaderWriterTest
     {
-        #region Test Types
-        private enum ByteEnum : byte
-        {
-            A,
-            B,
-            C
-        };
-        private enum SByteEnum : sbyte
-        {
-            A,
-            B,
-            C
-        };
-        private enum ShortEnum : short
-        {
-            A,
-            B,
-            C
-        };
-        private enum UShortEnum : ushort
-        {
-            A,
-            B,
-            C
-        };
-        private enum IntEnum : int
-        {
-            A,
-            B,
-            C
-        };
-        private enum UIntEnum : uint
-        {
-            A,
-            B,
-            C
-        };
-        private enum LongEnum : long
-        {
-            A,
-            B,
-            C
-        };
-        private enum ULongEnum : ulong
-        {
-            A,
-            B,
-            C
-        };
-
-        private struct TestStruct
-        {
-            public byte A;
-            public short B;
-            public ushort C;
-            public int D;
-            public uint E;
-            public long F;
-            public ulong G;
-            public bool H;
-            public char I;
-            public float J;
-            public double K;
-        }
-
-        public enum WriteType
-        {
-            WriteDirect,
-            WriteSafe,
-            WriteAsObject
-        }
-        #endregion
 
         #region Common Checks
         private void WriteCheckBytes(ref FastBufferWriter writer, int writeSize, string failMessage = "")
         {
-            Assert.IsTrue(writer.VerifyCanWrite(2), "Writer denied write permission");
+            Assert.IsTrue(writer.TryBeginWrite(2), "Writer denied write permission");
             writer.WriteValue((byte)0x80);
             Assert.AreEqual(writeSize + 1, writer.Position, failMessage);
             Assert.AreEqual(writeSize + 1, writer.Length, failMessage);
@@ -142,7 +67,7 @@ namespace Unity.Netcode.EditorTests
         #endregion
 
         #region Generic Checks
-        private unsafe void RunTypeTest<T>(T valueToTest) where T : unmanaged
+        protected override unsafe void RunTypeTest<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var alternateWriteSize = FastBufferWriter.GetWriteSize<T>();
@@ -154,7 +79,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
 
-                Assert.IsTrue(writer.VerifyCanWrite(writeSize + 2), "Writer denied write permission");
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
 
                 var failMessage = $"RunTypeTest failed with type {typeof(T)} and value {valueToTest}";
 
@@ -163,7 +88,7 @@ namespace Unity.Netcode.EditorTests
                 CommonChecks(ref writer, valueToTest, writeSize, failMessage);
             }
         }
-        private unsafe void RunTypeTestSafe<T>(T valueToTest) where T : unmanaged
+        protected override unsafe void RunTypeTestSafe<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
@@ -180,7 +105,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void RunObjectTypeTest<T>(T valueToTest) where T : unmanaged
+        protected override unsafe void RunObjectTypeTest<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
@@ -196,7 +121,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void VerifyArrayEquality<T>(T[] value, byte* unsafePtr, int offset) where T : unmanaged
+        private unsafe void VerifyArrayEquality<T>(T[] value, byte* unsafePtr, int offset) where T: unmanaged
         {
             int* sizeValue = (int*)(unsafePtr + offset);
             Assert.AreEqual(value.Length, *sizeValue);
@@ -211,7 +136,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void RunTypeArrayTest<T>(T[] valueToTest) where T : unmanaged
+        protected override unsafe void RunTypeArrayTest<T>(T[] valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
@@ -219,7 +144,7 @@ namespace Unity.Netcode.EditorTests
             {
 
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
-                Assert.IsTrue(writer.VerifyCanWrite(writeSize + 2), "Writer denied write permission");
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
 
                 writer.WriteValue(valueToTest);
                 VerifyPositionAndLength(ref writer, writeSize);
@@ -233,7 +158,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged
+        protected override unsafe void RunTypeArrayTestSafe<T>(T[] valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
@@ -254,7 +179,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void RunObjectTypeArrayTest<T>(T[] valueToTest) where T : unmanaged
+        protected override unsafe void RunObjectTypeArrayTest<T>(T[] valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             // Extra byte for WriteObject adding isNull flag
@@ -278,1417 +203,142 @@ namespace Unity.Netcode.EditorTests
         }
         #endregion
 
-        #region Helpers
-        private TestStruct GetTestStruct()
-        {
-            var random = new Random();
-
-            var testStruct = new TestStruct
-            {
-                A = (byte)random.Next(),
-                B = (short)random.Next(),
-                C = (ushort)random.Next(),
-                D = (int)random.Next(),
-                E = (uint)random.Next(),
-                F = ((long)random.Next() << 32) + random.Next(),
-                G = ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                H = true,
-                I = '\u263a',
-                J = (float)random.NextDouble(),
-                K = random.NextDouble(),
-            };
-
-            return testStruct;
-        }
-        #endregion
 
         #region Tests
-        [Test]
-        public void TestWritingBasicTypes(
+        [Test, Description("Tests ")]
+        public void WhenWritingUnmanagedType_ValueIsWrittenCorrectly(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D))]
+                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {
-            var random = new Random();
-
-            if (testType == typeof(byte))
-            {
-                byte b = (byte)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(b);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(b);
-                }
-                else
-                {
-                    RunObjectTypeTest(b);
-                }
-            }
-            else if (testType == typeof(sbyte))
-            {
-                sbyte sb = (sbyte)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(sb);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(sb);
-                }
-                else
-                {
-                    RunObjectTypeTest(sb);
-                }
-            }
-            else if (testType == typeof(short))
-            {
-                short s = (short)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(s);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(s);
-                }
-                else
-                {
-                    RunObjectTypeTest(s);
-                }
-            }
-            else if (testType == typeof(ushort))
-            {
-                ushort us = (ushort)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(us);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(us);
-                }
-                else
-                {
-                    RunObjectTypeTest(us);
-                }
-            }
-            else if (testType == typeof(int))
-            {
-                int i = (int)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(i);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(i);
-                }
-                else
-                {
-                    RunObjectTypeTest(i);
-                }
-            }
-            else if (testType == typeof(uint))
-            {
-                uint ui = (uint)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(ui);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(ui);
-                }
-                else
-                {
-                    RunObjectTypeTest(ui);
-                }
-            }
-            else if (testType == typeof(long))
-            {
-                long l = ((long)random.Next() << 32) + random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(l);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(l);
-                }
-                else
-                {
-                    RunObjectTypeTest(l);
-                }
-            }
-            else if (testType == typeof(ulong))
-            {
-                ulong ul = ((ulong)random.Next() << 32) + (ulong)random.Next();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(ul);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(ul);
-                }
-                else
-                {
-                    RunObjectTypeTest(ul);
-                }
-            }
-            else if (testType == typeof(bool))
-            {
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(true);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(true);
-                }
-                else
-                {
-                    RunObjectTypeTest(true);
-                }
-            }
-            else if (testType == typeof(char))
-            {
-                char c = 'a';
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(c);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(c);
-                }
-                else
-                {
-                    RunObjectTypeTest(c);
-                }
-
-                c = '\u263a';
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(c);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(c);
-                }
-                else
-                {
-                    RunObjectTypeTest(c);
-                }
-            }
-            else if (testType == typeof(float))
-            {
-                float f = (float)random.NextDouble();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(f);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(f);
-                }
-                else
-                {
-                    RunObjectTypeTest(f);
-                }
-            }
-            else if (testType == typeof(double))
-            {
-                double d = random.NextDouble();
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(d);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(d);
-                }
-                else
-                {
-                    RunObjectTypeTest(d);
-                }
-            }
-            else if (testType == typeof(ByteEnum))
-            {
-                ByteEnum e = ByteEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(SByteEnum))
-            {
-                SByteEnum e = SByteEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(ShortEnum))
-            {
-                ShortEnum e = ShortEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(UShortEnum))
-            {
-                UShortEnum e = UShortEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(IntEnum))
-            {
-                IntEnum e = IntEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(UIntEnum))
-            {
-                UIntEnum e = UIntEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(LongEnum))
-            {
-                LongEnum e = LongEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(ULongEnum))
-            {
-                ULongEnum e = ULongEnum.C;
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
-            }
-            else if (testType == typeof(Vector2))
-            {
-                var v = new Vector2((float)random.NextDouble(), (float)random.NextDouble());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Vector3))
-            {
-                var v = new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Vector4))
-            {
-                var v = new Vector4((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Quaternion))
-            {
-                var v = new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Color))
-            {
-                var v = new Color((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Color32))
-            {
-                var v = new Color32((byte)random.Next(), (byte)random.Next(), (byte)random.Next(), (byte)random.Next());
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Ray))
-            {
-                var v = new Ray(
-                    new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()),
-                    new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()));
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else if (testType == typeof(Ray2D))
-            {
-                var v = new Ray2D(
-                    new Vector2((float)random.NextDouble(), (float)random.NextDouble()),
-                    new Vector2((float)random.NextDouble(), (float)random.NextDouble()));
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
-            }
-            else
-            {
-                Assert.Fail("No type handler was provided for this type in the test!");
-            }
+            BaseTypeTest(testType, writeType);
         }
 
         [Test]
-        public void TestWritingBasicArrays(
+        public void WhenWritingArrayOfUnmanagedElementType_ArrayIsWrittenCorrectly(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D))]
+                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {
-            var random = new Random();
-
-            if (testType == typeof(byte))
-            {
-                byte[] b = {
-                    (byte) random.Next(),
-                    (byte) random.Next(),
-                    (byte) random.Next(),
-                    (byte) random.Next(),
-                    (byte) random.Next(),
-                    (byte) random.Next(),
-                    (byte) random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(b);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(b);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(b);
-                }
-            }
-            else if (testType == typeof(sbyte))
-            {
-                sbyte[] sb = {
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next(),
-                    (sbyte) random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(sb);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(sb);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(sb);
-                }
-            }
-            else if (testType == typeof(short))
-            {
-                short[] s = {
-                    (short) random.Next(),
-                    (short) random.Next(),
-                    (short) random.Next(),
-                    (short) random.Next(),
-                    (short) random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(s);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(s);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(s);
-                }
-            }
-            else if (testType == typeof(ushort))
-            {
-                ushort[] us = {
-                    (ushort) random.Next(),
-                    (ushort) random.Next(),
-                    (ushort) random.Next(),
-                    (ushort) random.Next(),
-                    (ushort) random.Next(),
-                    (ushort) random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(us);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(us);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(us);
-                }
-            }
-            else if (testType == typeof(int))
-            {
-                int[] i = {
-                    random.Next(),
-                    random.Next(),
-                    random.Next(),
-                    random.Next(),
-                    random.Next(),
-                    random.Next(),
-                    random.Next(),
-                    random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(i);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(i);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(i);
-                }
-            }
-            else if (testType == typeof(uint))
-            {
-                uint[] ui = {
-                    (uint) random.Next(),
-                    (uint) random.Next(),
-                    (uint) random.Next(),
-                    (uint) random.Next(),
-                    (uint) random.Next(),
-                    (uint) random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(ui);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(ui);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(ui);
-                }
-            }
-            else if (testType == typeof(long))
-            {
-                long[] l = {
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(l);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(l);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(l);
-                }
-            }
-            else if (testType == typeof(ulong))
-            {
-                ulong[] ul = {
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
-                    ((ulong)random.Next() << 32) + (ulong)random.Next()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(ul);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(ul);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(ul);
-                }
-            }
-            else if (testType == typeof(bool))
-            {
-                bool[] b = {
-                    true,
-                    false,
-                    true,
-                    true,
-                    false,
-                    false,
-                    true,
-                    false,
-                    true
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(b);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(b);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(b);
-                }
-            }
-            else if (testType == typeof(char))
-            {
-                char[] c = {
-                    'a',
-                    '\u263a',
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(c);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(c);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(c);
-                }
-            }
-            else if (testType == typeof(float))
-            {
-                float[] f = {
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble(),
-                    (float)random.NextDouble()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(f);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(f);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(f);
-                }
-            }
-            else if (testType == typeof(double))
-            {
-                double[] d = {
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble(),
-                    random.NextDouble()
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(d);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(d);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(d);
-                }
-            }
-            else if (testType == typeof(ByteEnum))
-            {
-                ByteEnum[] e = {
-                    ByteEnum.C,
-                    ByteEnum.A,
-                    ByteEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(SByteEnum))
-            {
-                SByteEnum[] e = {
-                    SByteEnum.C,
-                    SByteEnum.A,
-                    SByteEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(ShortEnum))
-            {
-                ShortEnum[] e = {
-                    ShortEnum.C,
-                    ShortEnum.A,
-                    ShortEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(UShortEnum))
-            {
-                UShortEnum[] e = {
-                    UShortEnum.C,
-                    UShortEnum.A,
-                    UShortEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(IntEnum))
-            {
-                IntEnum[] e = {
-                    IntEnum.C,
-                    IntEnum.A,
-                    IntEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(UIntEnum))
-            {
-                UIntEnum[] e = {
-                    UIntEnum.C,
-                    UIntEnum.A,
-                    UIntEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(LongEnum))
-            {
-                LongEnum[] e = {
-                    LongEnum.C,
-                    LongEnum.A,
-                    LongEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(ULongEnum))
-            {
-                ULongEnum[] e = {
-                    ULongEnum.C,
-                    ULongEnum.A,
-                    ULongEnum.B
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(e);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(e);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(e);
-                }
-            }
-            else if (testType == typeof(Vector2))
-            {
-                var v = new[]
-                {
-                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Vector3))
-            {
-                var v = new[]
-                {
-                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
-                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
-                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Vector4))
-            {
-                var v = new[]
-                {
-                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                };
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Quaternion))
-            {
-                var v = new[]
-                {
-                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble(), (float) random.NextDouble()),
-                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble(), (float) random.NextDouble()),
-                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble(), (float) random.NextDouble()),
-                };
-
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Color))
-            {
-                var v = new[]
-                {
-                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
-                        (float) random.NextDouble()),
-                };
-
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Color32))
-            {
-                var v = new[]
-                {
-                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
-                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
-                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
-                };
-
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Ray))
-            {
-                var v = new[]
-                {
-                    new Ray(
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble()),
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble())),
-                    new Ray(
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble()),
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble())),
-                    new Ray(
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble()),
-                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
-                            (float) random.NextDouble())),
-                };
-
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else if (testType == typeof(Ray2D))
-            {
-                var v = new[]
-                {
-                    new Ray2D(
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
-                    new Ray2D(
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
-                    new Ray2D(
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
-                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
-                };
-
-                if (writeType == WriteType.WriteDirect)
-                {
-                    RunTypeArrayTest(v);
-                }
-                else if (writeType == WriteType.WriteSafe)
-                {
-                    RunTypeArrayTestSafe(v);
-                }
-                else
-                {
-                    RunObjectTypeArrayTest(v);
-                }
-            }
-            else
-            {
-                Assert.Fail("No type handler was provided for this type in the test!");
-            }
+            BaseArrayTypeTest(testType, writeType);
         }
 
-        [Test]
-        public void TestWritingStruct()
-        {
-            RunTypeTest(GetTestStruct());
-        }
-
-        [Test]
-        public void TestWritingStructSafe()
-        {
-            RunTypeTestSafe(GetTestStruct());
-        }
-
-        [Test]
-        public void TestWritingStructAsObjectWithRegisteredTypeTableSerializer()
-        {
-            SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
-            {
-                writer.WriteValueSafe((TestStruct)obj);
-            };
-            try
-            {
-                RunObjectTypeTest(GetTestStruct());
-            }
-            finally
-            {
-                SerializationTypeTable.Serializers.Remove(typeof(TestStruct));
-            }
-        }
-
-        [Test]
-        public void TestWritingStructArray()
-        {
-            TestStruct[] arr = {
-                GetTestStruct(),
-                GetTestStruct(),
-                GetTestStruct(),
-            };
-            RunTypeArrayTest(arr);
-        }
-
-        [Test]
-        public void TestWritingStructArraySafe()
-        {
-            TestStruct[] arr = {
-                GetTestStruct(),
-                GetTestStruct(),
-                GetTestStruct(),
-            };
-            RunTypeArrayTestSafe(arr);
-        }
-
-        [Test]
-        public void TestWritingStructArrayAsObjectWithRegisteredTypeTableSerializer()
-        {
-            SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
-            {
-                writer.WriteValueSafe((TestStruct)obj);
-            };
-            try
-            {
-                TestStruct[] arr = {
-                    GetTestStruct(),
-                    GetTestStruct(),
-                    GetTestStruct(),
-                };
-                RunObjectTypeArrayTest(arr);
-            }
-            finally
-            {
-                SerializationTypeTable.Serializers.Remove(typeof(TestStruct));
-            }
-        }
-
-        [Test]
-        public unsafe void TestWritingString()
+        [TestCase(false, WriteType.WriteDirect)]
+        [TestCase(false, WriteType.WriteSafe)]
+        [TestCase(false, WriteType.WriteAsObject)]
+        [TestCase(true, WriteType.WriteDirect)]
+        [TestCase(true, WriteType.WriteSafe)]
+        public unsafe void WhenWritingString_ValueIsWrittenCorrectly(bool oneByteChars, WriteType writeType)
         {
             string valueToTest = "Hello, I am a test string!";
 
-            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
-
-            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using (writer)
-            {
-
-                Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
-                writer.WriteValue(valueToTest);
-
-                VerifyPositionAndLength(ref writer, serializedValueSize);
-                WriteCheckBytes(ref writer, serializedValueSize);
-
-                int* sizeValue = (int*)writer.GetUnsafePtr();
-                Assert.AreEqual(valueToTest.Length, *sizeValue);
-
-                fixed (char* asCharPointer = valueToTest)
-                {
-                    char* underlyingCharArray = (char*)(writer.GetUnsafePtr() + sizeof(int));
-                    for (var i = 0; i < valueToTest.Length; ++i)
-                    {
-                        Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
-                    }
-                }
-
-                var underlyingArray = writer.ToArray();
-                VerifyCheckBytes(underlyingArray, serializedValueSize);
-            }
-        }
-
-        [Test]
-        public unsafe void TestWritingStringSafe()
-        {
-            string valueToTest = "Hello, I am a test string!";
-
-            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
-
-            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using (writer)
-            {
-
-                writer.WriteValueSafe(valueToTest);
-
-                VerifyPositionAndLength(ref writer, serializedValueSize);
-                WriteCheckBytes(ref writer, serializedValueSize);
-
-                int* sizeValue = (int*)writer.GetUnsafePtr();
-                Assert.AreEqual(valueToTest.Length, *sizeValue);
-
-                fixed (char* asCharPointer = valueToTest)
-                {
-                    char* underlyingCharArray = (char*)((byte*)writer.GetUnsafePtr() + sizeof(int));
-                    for (var i = 0; i < valueToTest.Length; ++i)
-                    {
-                        Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
-                    }
-                }
-
-                var underlyingArray = writer.ToArray();
-                VerifyCheckBytes(underlyingArray, serializedValueSize);
-            }
-        }
-
-        [Test]
-        public unsafe void TestWritingStringAsObject()
-        {
-            string valueToTest = "Hello, I am a test string!";
-
-            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest, oneByteChars);
 
             var writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
             using (writer)
             {
+                var offset = 0;
+                switch (writeType)
+                {
+                    case WriteType.WriteDirect:
+                        Assert.IsTrue(writer.TryBeginWrite(serializedValueSize + 2), "Writer denied write permission");
+                        writer.WriteValue(valueToTest, oneByteChars);
+                        break;
+                    case WriteType.WriteSafe:
+                        writer.WriteValueSafe(valueToTest, oneByteChars);
+                        break;
+                    case WriteType.WriteAsObject:
+                        writer.WriteObject(valueToTest);
+                        // account for isNull byte
+                        offset = sizeof(byte);
+                        break;
+                        
+                }
 
-                writer.WriteObject(valueToTest);
+                VerifyPositionAndLength(ref writer, serializedValueSize+offset);
+                WriteCheckBytes(ref writer, serializedValueSize+offset);
 
-                VerifyPositionAndLength(ref writer, serializedValueSize + sizeof(byte));
-                WriteCheckBytes(ref writer, serializedValueSize + sizeof(byte));
-
-                int* sizeValue = (int*)(writer.GetUnsafePtr() + sizeof(byte));
+                int* sizeValue = (int*)(writer.GetUnsafePtr() + offset);
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
 
                 fixed (char* asCharPointer = valueToTest)
                 {
-                    char* underlyingCharArray = (char*)(writer.GetUnsafePtr() + sizeof(int) + sizeof(byte));
-                    for (var i = 0; i < valueToTest.Length; ++i)
+                    if(oneByteChars)
                     {
-                        Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
+                        byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int) + offset;
+                        for (var i = 0; i < valueToTest.Length; ++i)
+                        {
+                            Assert.AreEqual((byte)asCharPointer[i], underlyingByteArray[i]);
+                        }
+                    
+                    }
+                    else
+                    {
+                        char* underlyingCharArray = (char*)(writer.GetUnsafePtr() + sizeof(int) + offset);
+                        for (var i = 0; i < valueToTest.Length; ++i)
+                        {
+                            Assert.AreEqual(asCharPointer[i], underlyingCharArray[i]);
+                        }
                     }
                 }
 
                 var underlyingArray = writer.ToArray();
-                VerifyCheckBytes(underlyingArray, serializedValueSize + sizeof(byte));
+                VerifyCheckBytes(underlyingArray, serializedValueSize+offset);
             }
         }
 
-        [Test]
-        public unsafe void TestWritingOneByteString()
-        {
-            string valueToTest = "Hello, I am a test string!";
-
-            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest, true);
-            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using (writer)
-            {
-
-                Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
-                writer.WriteValue(valueToTest, true);
-
-                VerifyPositionAndLength(ref writer, serializedValueSize);
-                WriteCheckBytes(ref writer, serializedValueSize);
-
-                int* sizeValue = (int*)writer.GetUnsafePtr();
-                Assert.AreEqual(valueToTest.Length, *sizeValue);
-
-                fixed (char* asCharPointer = valueToTest)
-                {
-                    byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int);
-                    for (var i = 0; i < valueToTest.Length; ++i)
-                    {
-                        Assert.AreEqual((byte)asCharPointer[i], underlyingByteArray[i]);
-                    }
-                }
-
-                var underlyingArray = writer.ToArray();
-                VerifyCheckBytes(underlyingArray, serializedValueSize);
-            }
-        }
-
-        [Test]
-        public unsafe void TestWritingOneByteStringSafe()
-        {
-            string valueToTest = "Hello, I am a test string!";
-
-            var serializedValueSize = FastBufferWriter.GetWriteSize(valueToTest, true);
-            var writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
-            using (writer)
-            {
-
-                writer.WriteValueSafe(valueToTest, true);
-
-                VerifyPositionAndLength(ref writer, serializedValueSize);
-                WriteCheckBytes(ref writer, serializedValueSize);
-
-                int* sizeValue = (int*)writer.GetUnsafePtr();
-                Assert.AreEqual(valueToTest.Length, *sizeValue);
-
-                fixed (char* asCharPointer = valueToTest)
-                {
-                    byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int);
-                    for (var i = 0; i < valueToTest.Length; ++i)
-                    {
-                        Assert.AreEqual((byte)asCharPointer[i], underlyingByteArray[i]);
-                    }
-                }
-
-                var underlyingArray = writer.ToArray();
-                VerifyCheckBytes(underlyingArray, serializedValueSize);
-            }
-        }
-
-        [Test]
-        public unsafe void TestWritingPartialValues([NUnit.Framework.Range(1, sizeof(ulong))] int count)
+        [TestCase(1, 0)]
+        [TestCase(2, 0)]
+        [TestCase(3, 0)]
+        [TestCase(4, 0)]
+        [TestCase(5, 0)]
+        [TestCase(6, 0)]
+        [TestCase(7, 0)]
+        [TestCase(8, 0)]
+        
+        [TestCase(1, 1)]
+        [TestCase(2, 1)]
+        [TestCase(3, 1)]
+        [TestCase(4, 1)]
+        [TestCase(5, 1)]
+        [TestCase(6, 1)]
+        [TestCase(7, 1)]
+        
+        [TestCase(1, 2)]
+        [TestCase(2, 2)]
+        [TestCase(3, 2)]
+        [TestCase(4, 2)]
+        [TestCase(5, 2)]
+        [TestCase(6, 2)]
+        
+        [TestCase(1, 3)]
+        [TestCase(2, 3)]
+        [TestCase(3, 3)]
+        [TestCase(4, 3)]
+        [TestCase(5, 3)]
+        
+        [TestCase(1, 4)]
+        [TestCase(2, 4)]
+        [TestCase(3, 4)]
+        [TestCase(4, 4)]
+        
+        [TestCase(1, 5)]
+        [TestCase(2, 5)]
+        [TestCase(3, 5)]
+        
+        [TestCase(1, 6)]
+        [TestCase(2, 6)]
+        
+        [TestCase(1, 7)]
+        public unsafe void WhenWritingPartialValueWithCountAndOffset_ValueIsWrittenCorrectly(int count, int offset)
         {
             var random = new Random();
             var valueToTest = ((ulong)random.Next() << 32) + (ulong)random.Next();
@@ -1696,14 +346,14 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
 
-                Assert.IsTrue(writer.VerifyCanWrite(count + 2), "Writer denied write permission");
-                writer.WritePartialValue(valueToTest, count);
+                Assert.IsTrue(writer.TryBeginWrite(count + 2), "Writer denied write permission");
+                writer.WritePartialValue(valueToTest, count, offset);
 
                 var failMessage = $"TestWritingPartialValues failed with value {valueToTest}";
                 VerifyPositionAndLength(ref writer, count, failMessage);
                 WriteCheckBytes(ref writer, count, failMessage);
                 var underlyingArray = writer.ToArray();
-                VerifyBytewiseEquality(valueToTest, underlyingArray, 0, 0, count, failMessage);
+                VerifyBytewiseEquality(valueToTest, underlyingArray, offset, 0, count, failMessage);
                 VerifyCheckBytes(underlyingArray, count, failMessage);
 
                 ulong mask = 0;
@@ -1713,43 +363,12 @@ namespace Unity.Netcode.EditorTests
                 }
 
                 ulong* checkValue = (ulong*)writer.GetUnsafePtr();
-                Assert.AreEqual(valueToTest & mask, *checkValue & mask, failMessage);
+                Assert.AreEqual((valueToTest >> (offset * 8)) & mask, *checkValue & mask);
             }
         }
 
         [Test]
-        public unsafe void TestWritingPartialValuesWithOffsets([NUnit.Framework.Range(1, sizeof(ulong) - 2)] int count)
-        {
-            var random = new Random();
-            var valueToTest = ((ulong)random.Next() << 32) + (ulong)random.Next();
-            var writer = new FastBufferWriter(sizeof(ulong) + 2, Allocator.Temp);
-
-            using (writer)
-            {
-
-                Assert.IsTrue(writer.VerifyCanWrite(count + 2), "Writer denied write permission");
-                writer.WritePartialValue(valueToTest, count, 2);
-                var failMessage = $"TestWritingPartialValuesWithOffsets failed with value {valueToTest}";
-
-                VerifyPositionAndLength(ref writer, count, failMessage);
-                WriteCheckBytes(ref writer, count, failMessage);
-                var underlyingArray = writer.ToArray();
-                VerifyBytewiseEquality(valueToTest, underlyingArray, 2, 0, count, failMessage);
-                VerifyCheckBytes(underlyingArray, count, failMessage);
-
-                ulong mask = 0;
-                for (var i = 0; i < count; ++i)
-                {
-                    mask = (mask << 8) | 0b11111111;
-                }
-
-                ulong* checkValue = (ulong*)writer.GetUnsafePtr();
-                Assert.AreEqual((valueToTest >> 16) & mask, *checkValue & mask);
-            }
-        }
-
-        [Test]
-        public void TestToArray()
+        public void WhenCallingToArray_ReturnedArrayContainsCorrectData()
         {
             var testStruct = GetTestStruct();
             var requiredSize = FastBufferWriter.GetWriteSize(testStruct);
@@ -1757,7 +376,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(requiredSize);
+                writer.TryBeginWrite(requiredSize);
                 writer.WriteValue(testStruct);
                 var array = writer.ToArray();
                 var underlyingArray = writer.ToArray();
@@ -1769,22 +388,84 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void TestThrowingIfBoundsCheckingSkipped()
+        public void WhenCallingWriteByteWithoutCallingTryBeingWriteFirst_OverflowExceptionIsThrown()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
 
             using (writer)
             {
                 Assert.Throws<OverflowException>(() => { writer.WriteByte(1); });
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytesWithoutCallingTryBeingWriteFirst_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
                 var bytes = new byte[] { 0, 1, 2 };
                 Assert.Throws<OverflowException>(() => { writer.WriteBytes(bytes, bytes.Length); });
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithUnmanagedTypeWithoutCallingTryBeingWriteFirst_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
                 int i = 1;
                 Assert.Throws<OverflowException>(() => { writer.WriteValue(i); });
-                Assert.Throws<OverflowException>(() => { writer.WriteValue(bytes); });
-                Assert.Throws<OverflowException>(() => { writer.WriteValue(""); });
+            }
+        }
 
-                writer.VerifyCanWrite(sizeof(int) - 1);
+        [Test]
+        public void WhenCallingWriteValueWithByteArrayWithoutCallingTryBeingWriteFirst_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                var bytes = new byte[] { 0, 1, 2 };
+                Assert.Throws<OverflowException>(() => { writer.WriteValue(bytes); });
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithStringWithoutCallingTryBeingWriteFirst_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                Assert.Throws<OverflowException>(() => { writer.WriteValue(""); });
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueAfterCallingTryBeginWriteWithTooFewBytes_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                int i = 0;
+                writer.TryBeginWrite(sizeof(int) - 1);
                 Assert.Throws<OverflowException>(() => { writer.WriteValue(i); });
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytePastBoundaryMarkedByTryBeginWrite_OverflowExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(sizeof(int) - 1);
                 writer.WriteByte(1);
                 writer.WriteByte(2);
                 writer.WriteByte(3);
@@ -1793,59 +474,349 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void TestThrowingIfDoingBytewiseWritesDuringBitwiseContext()
+        public void WhenCallingWriteByteDuringBitwiseContext_InvalidOperationExceptionIsThrown()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
 
             using (writer)
             {
-                writer.VerifyCanWrite(100);
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    Assert.Throws<InvalidOperationException>(() => { writer.WriteByte(1); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytesDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithUnmanagedTypeDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(i); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithByteArrayDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithStringDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
                 int i = 1;
                 using (var context = writer.EnterBitwiseContext())
                 {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteByte(1); });
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(i); });
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(bytes); });
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(""); });
+                }
+            }
+        }
 
+        [Test]
+        public void WhenCallingWriteByteSafeDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteByteSafe(1); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytesSafeDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithUnmanagedTypeDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(i); });
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(bytes); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithByteArrayDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
+                }
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithStringDuringBitwiseContext_InvalidOperationExceptionIsThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
                     Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(""); });
                 }
-                writer.WriteByte(1);
-                writer.WriteBytes(bytes, bytes.Length);
-                writer.WriteValue(i);
-                writer.WriteValue(bytes);
-                writer.WriteValue("");
+            }
+        }
 
+        [Test]
+        public void WhenCallingWriteByteAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
+                writer.WriteByte(1);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytesAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
+                writer.WriteBytes(bytes, bytes.Length);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithUnmanagedTypeAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
+                writer.WriteValue(i);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithByteArrayAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
+                writer.WriteValue(bytes);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueWithStringAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
+                writer.WriteValue("");
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteByteSafeAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
                 writer.WriteByteSafe(1);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteBytesSafeAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
                 writer.WriteBytesSafe(bytes, bytes.Length);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithUnmanagedTypeAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
                 writer.WriteValueSafe(i);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithByteArrayAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                var bytes = new byte[] { 0, 1, 2 };
+                int i = 1;
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
                 writer.WriteValueSafe(bytes);
+            }
+        }
+
+        [Test]
+        public void WhenCallingWriteValueSafeWithStringAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.TryBeginWrite(100);
+                using (var context = writer.EnterBitwiseContext())
+                {
+                    context.WriteBit(true);
+                }
                 writer.WriteValueSafe("");
             }
         }
 
         [Test]
-        public void TestVerifyCanWriteIsRelativeToPositionAndNotAllowedWritePosition()
+        public void WhenCallingTryBeginWrite_TheAllowedWritePositionIsMarkedRelativeToCurrentPosition()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             using (writer)
             {
-                writer.VerifyCanWrite(100);
+                writer.TryBeginWrite(100);
                 writer.WriteByte(1);
-                writer.VerifyCanWrite(1);
+                writer.TryBeginWrite(1);
                 writer.WriteByte(1);
                 Assert.Throws<OverflowException>(() => { writer.WriteByte(1); });
             }
         }
 
         [Test]
-        public void TestSeeking()
+        public void WhenWritingAfterSeeking_TheNewWriteGoesToTheCorrectPosition()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             using (writer)
@@ -1853,16 +824,13 @@ namespace Unity.Netcode.EditorTests
                 writer.Seek(5);
                 writer.WriteByteSafe(0);
                 Assert.AreEqual(writer.Position, 6);
-                Assert.AreEqual(writer.Length, 6);
 
                 writer.Seek(0);
                 writer.WriteByteSafe(1);
                 Assert.AreEqual(writer.Position, 1);
-                Assert.AreEqual(writer.Length, 6);
 
                 writer.Seek(10);
                 Assert.AreEqual(writer.Position, 10);
-                Assert.AreEqual(writer.Length, 10);
 
                 writer.Seek(2);
                 writer.WriteByteSafe(2);
@@ -1877,7 +845,6 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteByteSafe(5);
 
                 Assert.AreEqual(writer.Position, 4);
-                Assert.AreEqual(writer.Length, 10);
 
                 var expected = new byte[] { 1, 3, 2, 5, 4, 0 };
                 var underlyingArray = writer.ToArray();
@@ -1889,7 +856,35 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void TestTruncate()
+        public void WhenSeekingForward_LengthUpdatesToNewPosition()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(writer.Length, 0);
+                writer.Seek(5);
+                Assert.AreEqual(writer.Length, 5);
+                writer.Seek(10);
+                Assert.AreEqual(writer.Length, 10);
+            }
+        }
+
+        [Test]
+        public void WhenSeekingBackward_LengthDoesNotChange()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(writer.Length, 0);
+                writer.Seek(5);
+                Assert.AreEqual(writer.Length, 5);
+                writer.Seek(0);
+                Assert.AreEqual(writer.Length, 5);
+            }
+        }
+
+        [Test]
+        public void WhenTruncatingToSpecificPositionAheadOfWritePosition_LengthIsUpdatedAndPositionIsNot()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             using (writer)
@@ -1905,7 +900,36 @@ namespace Unity.Netcode.EditorTests
                 writer.Truncate(8);
                 Assert.AreEqual(writer.Position, 5);
                 Assert.AreEqual(writer.Length, 8);
+            }
+        }
 
+        [Test]
+        public void WhenTruncatingToSpecificPositionBehindWritePosition_BothLengthAndPositionAreUpdated()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            using (writer)
+            {
+                writer.Seek(10);
+                Assert.AreEqual(writer.Position, 10);
+                Assert.AreEqual(writer.Length, 10);
+
+                writer.Truncate(8);
+                Assert.AreEqual(writer.Position, 8);
+                Assert.AreEqual(writer.Length, 8);
+            }
+        }
+
+        [Test]
+        public void WhenTruncatingToCurrentPosition_LengthIsUpdated()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            using (writer)
+            {
+                writer.Seek(10);
+                Assert.AreEqual(writer.Position, 10);
+                Assert.AreEqual(writer.Length, 10);
+
+                writer.Seek(5);
                 writer.Truncate();
                 Assert.AreEqual(writer.Position, 5);
                 Assert.AreEqual(writer.Length, 5);
@@ -1913,276 +937,263 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void TestCapacity()
+        public void WhenCreatingNewFastBufferWriter_CapacityIsCorrect()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             Assert.AreEqual(100, writer.Capacity);
             writer.Dispose();
+            
+            writer = new FastBufferWriter(200, Allocator.Temp);
+            Assert.AreEqual(200, writer.Capacity);
+            writer.Dispose();
         }
 
         [Test]
-        public void TestGrowth()
+        public void WhenCreatingNewFastBufferWriter_MaxCapacityIsCorrect()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            Assert.AreEqual(100, writer.MaxCapacity);
+            writer.Dispose();
+            
+            writer = new FastBufferWriter(100, Allocator.Temp, 200);
+            Assert.AreEqual(200, writer.MaxCapacity);
+            writer.Dispose();
+        }
+
+        [Test]
+        public void WhenRequestingWritePastBoundsForNonGrowingWriter_TryBeginWriteReturnsFalse()
         {
             var writer = new FastBufferWriter(150, Allocator.Temp);
-            var growingWriter = new FastBufferWriter(150, Allocator.Temp, 500);
-            Assert.AreEqual(150, writer.Capacity);
             using (writer)
+            {
+                var testStruct = GetTestStruct();
+                writer.TryBeginWriteValue(testStruct);
+                writer.WriteValue(testStruct);
+                
+                // Seek to exactly where the write would cross the buffer boundary
+                writer.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
+                
+                // Writer isn't allowed to grow because it didn't specify a maxSize
+                Assert.IsFalse(writer.TryBeginWriteValue(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenTryBeginWriteReturnsFalse_WritingThrowsOverflowException()
+        {
+            var writer = new FastBufferWriter(150, Allocator.Temp);
+            using (writer)
+            {
+                var testStruct = GetTestStruct();
+                writer.TryBeginWriteValue(testStruct);
+                writer.WriteValue(testStruct);
+                
+                // Seek to exactly where the write would cross the buffer boundary
+                writer.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
+                
+                // Writer isn't allowed to grow because it didn't specify a maxSize
+                Assert.IsFalse(writer.TryBeginWriteValue(testStruct));
+                Assert.Throws<OverflowException>(() => writer.WriteValue(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenTryBeginWriteReturnsFalseAndOverflowExceptionIsThrown_DataIsNotAffected()
+        {
+            var writer = new FastBufferWriter(150, Allocator.Temp);
+            using (writer)
+            {
+                var testStruct = GetTestStruct();
+                writer.TryBeginWriteValue(testStruct);
+                writer.WriteValue(testStruct);
+                
+                // Seek to exactly where the write would cross the buffer boundary
+                writer.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
+                
+                // Writer isn't allowed to grow because it didn't specify a maxSize
+                Assert.IsFalse(writer.TryBeginWriteValue(testStruct));
+                Assert.Throws<OverflowException>(() => writer.WriteValue(testStruct));
+                VerifyBytewiseEquality(testStruct, writer.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenRequestingWritePastBoundsForGrowingWriter_BufferGrowsWithoutLosingData()
+        {
+            var growingWriter = new FastBufferWriter(150, Allocator.Temp, 500);
             using (growingWriter)
             {
                 var testStruct = GetTestStruct();
-                writer.VerifyCanWriteValue(testStruct);
-                writer.WriteValue(testStruct);
-                growingWriter.VerifyCanWriteValue(testStruct);
+                growingWriter.TryBeginWriteValue(testStruct);
                 growingWriter.WriteValue(testStruct);
 
                 // Seek to exactly where the write would cross the buffer boundary
-                writer.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
                 growingWriter.Seek(150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
-                var preGrowthLength = writer.Position;
 
-                // First writer isn't allowed to grow because it didn't specify a maxSize
-                Assert.IsFalse(writer.VerifyCanWriteValue(testStruct));
-                Assert.Throws<OverflowException>(() => writer.WriteValue(testStruct));
+                Assert.IsTrue(growingWriter.TryBeginWriteValue(testStruct));
 
-                // Second writer is allowed to grow
-                Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
-
-                // First writer shouldn't have grown
-                Assert.AreEqual(150, writer.Capacity);
-                Assert.AreEqual(preGrowthLength, writer.ToArray().Length);
-                // First growth doubles the size
+                // Growth doubles the size
                 Assert.AreEqual(300, growingWriter.Capacity);
-                Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
+                Assert.AreEqual(growingWriter.Position, 150 - FastBufferWriter.GetWriteSize(testStruct) + 1);
                 growingWriter.WriteValue(testStruct);
 
-                // Write right up to the very end of the buffer, verify it doesn't grow
-                growingWriter.Seek(300 - FastBufferWriter.GetWriteSize(testStruct));
-                Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
-                Assert.AreEqual(300, growingWriter.Capacity);
-                Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
-                growingWriter.WriteValue(testStruct);
-
-                // Go to the end of the buffer and grow again
-                growingWriter.Seek(300);
-                Assert.IsTrue(growingWriter.VerifyCanWriteValue(testStruct));
-                growingWriter.WriteValue(testStruct);
-
-                // Second growth caps it at maxSize
-                Assert.AreEqual(500, growingWriter.Capacity);
-                Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
-
-                VerifyBytewiseEquality(testStruct, writer.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
                 // Verify the growth properly copied the existing data
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 150 - FastBufferWriter.GetWriteSize(testStruct) + 1, FastBufferWriter.GetWriteSize(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenRequestingWriteExactlyAtBoundsForGrowingWriter_BufferDoesntGrow()
+        {
+            var growingWriter = new FastBufferWriter(300, Allocator.Temp, 500);
+            using (growingWriter)
+            {
+                var testStruct = GetTestStruct();
+                growingWriter.TryBeginWriteValue(testStruct);
+                growingWriter.WriteValue(testStruct);
+
+                growingWriter.Seek(300 - FastBufferWriter.GetWriteSize(testStruct));
+                Assert.IsTrue(growingWriter.TryBeginWriteValue(testStruct));
+                Assert.AreEqual(300, growingWriter.Capacity);
+                Assert.AreEqual(growingWriter.Position, growingWriter.ToArray().Length);
+                growingWriter.WriteValue(testStruct);
+                Assert.AreEqual(300, growingWriter.Position);
+
+                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 300 - FastBufferWriter.GetWriteSize(testStruct), FastBufferWriter.GetWriteSize(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenBufferGrows_MaxCapacityIsNotExceeded()
+        {
+            var growingWriter = new FastBufferWriter(300, Allocator.Temp, 500);
+            using (growingWriter)
+            {
+                var testStruct = GetTestStruct();
+                growingWriter.TryBeginWriteValue(testStruct);
+                growingWriter.WriteValue(testStruct);
+
+                growingWriter.Seek(300);
+                Assert.IsTrue(growingWriter.TryBeginWriteValue(testStruct));
+
+                Assert.AreEqual(500, growingWriter.Capacity);
+                Assert.AreEqual(growingWriter.Position, 300);
+                
+                growingWriter.WriteValue(testStruct);
+
+                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
                 VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 300, FastBufferWriter.GetWriteSize(testStruct));
             }
         }
 
-        private delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
-            NetworkObject networkObject);
-        private void RunGameObjectTest(GameObjectTestDelegate testCode)
-        {
-            var obj = new GameObject("Object");
-            var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
-            var networkObject = obj.AddComponent<NetworkObject>();
-            // Create networkManager component
-            var networkManager = obj.AddComponent<NetworkManager>();
-            networkObject.NetworkManagerOwner = networkManager;
-
-            // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                // Set transport
-                NetworkTransport = obj.AddComponent<DummyTransport>()
-            };
-
-            networkManager.StartHost();
-
-            try
-            {
-                testCode(obj, networkBehaviour, networkObject);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(obj);
-                networkManager.StopHost();
-            }
-        }
-
         [Test]
-        public void TestNetworkBehaviour()
+        public void WhenWritingNetworkBehaviour_ObjectIdAndBehaviourIdAreWritten([Values] WriteType writeType)
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour), Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)+1, Allocator.Temp);
                 using (writer)
                 {
-                    Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(networkBehaviour)));
+                    Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)));
 
-                    writer.WriteValue(networkBehaviour);
+                    var offset = 0;
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            writer.WriteValue(networkBehaviour);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(networkBehaviour);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(networkBehaviour);
+                            // account for isNull byte
+                            offset = 1;
+                            break;
+                    }
 
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
+                    Assert.AreEqual(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)+offset, writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, offset, sizeof(ulong));
                     VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.ToArray(), 0,
-                        sizeof(ulong), sizeof(ushort));
+                        sizeof(ulong) + offset, sizeof(ushort));
                 }
             });
         }
 
         [Test]
-        public void TestNetworkObject()
+        public void WhenWritingNetworkObject_NetworkObjectIdIsWritten([Values] WriteType writeType)
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject), Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkObject)+1, Allocator.Temp);
                 using (writer)
                 {
-                    Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(networkObject)));
+                    Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(networkObject)));
 
-                    writer.WriteValue(networkObject);
+                    var offset = 0;
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            writer.WriteValue(networkObject);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(networkObject);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(networkObject);
+                            // account for isNull byte
+                            offset = 1;
+                            break;
+                    }
 
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
+                    Assert.AreEqual(FastBufferWriterExtensions.GetWriteSize(networkObject)+offset, writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, offset, sizeof(ulong));
                 }
             });
         }
 
         [Test]
-        public void TestGameObject()
+        public void WhenWritingGameObject_NetworkObjectIdIsWritten([Values] WriteType writeType)
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj), Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(obj)+1, Allocator.Temp);
                 using (writer)
                 {
-                    Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(obj)));
+                    Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(obj)));
 
-                    writer.WriteValue(obj);
+                    var offset = 0;
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            writer.WriteValue(obj);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(obj);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(obj);
+                            // account for isNull byte
+                            offset = 1;
+                            break;
+                    }
 
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
+                    Assert.AreEqual(FastBufferWriterExtensions.GetWriteSize(obj)+offset, writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, offset, sizeof(ulong));
                 }
             });
         }
 
         [Test]
-        public void TestNetworkBehaviourSafe()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour), Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteValueSafe(networkBehaviour);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
-                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.ToArray(), 0,
-                        sizeof(ulong), sizeof(ushort));
-                }
-            });
-        }
-
-        [Test]
-        public void TestNetworkObjectSafe()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject), Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteValueSafe(networkObject);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
-                }
-            });
-        }
-
-        [Test]
-        public void TestGameObjectSafe()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj), Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteValueSafe(obj);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 0, sizeof(ulong));
-                }
-            });
-        }
-
-        [Test]
-        public void TestNetworkBehaviourAsObject()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                // +1 for extra isNull added by WriteObject
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour) + 1, Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteObject(networkBehaviour);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour) + 1, writer.Position);
-                    Assert.AreEqual(0, writer.ToArray()[0]);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 1, sizeof(ulong));
-                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.ToArray(), 0,
-                        sizeof(ulong) + 1, sizeof(ushort));
-                }
-            });
-        }
-
-        [Test]
-        public void TestNetworkObjectAsObject()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                // +1 for extra isNull added by WriteObject
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject) + 1, Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteObject(networkObject);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject) + 1, writer.Position);
-                    Assert.AreEqual(0, writer.ToArray()[0]);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 1, sizeof(ulong));
-                }
-            });
-        }
-
-        [Test]
-        public void TestGameObjectAsObject()
-        {
-            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
-            {
-                // +1 for extra isNull added by WriteObject
-                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj) + 1, Allocator.Temp);
-                using (writer)
-                {
-                    writer.WriteObject(obj);
-
-                    Assert.AreEqual(FastBufferWriter.GetWriteSize(obj) + 1, writer.Position);
-                    Assert.AreEqual(0, writer.ToArray()[0]);
-                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.ToArray(), 0, 1, sizeof(ulong));
-                }
-            });
-        }
-
-        [Test]
-        public void TestVerifyInternalDoesntReduceAllowedWritePoint()
+        public void WhenCallingTryBeginWriteInternal_AllowedWritePositionDoesNotMoveBackward()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             using (writer)
             {
-                writer.VerifyCanWrite(25);
-                writer.VerifyCanWriteInternal(5);
+                writer.TryBeginWrite(25);
+                writer.TryBeginWriteInternal(5);
                 Assert.AreEqual(writer.AllowedWriteMark, 25);
             }
         }

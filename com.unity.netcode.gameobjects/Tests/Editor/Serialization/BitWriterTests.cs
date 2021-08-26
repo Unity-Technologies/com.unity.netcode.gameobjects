@@ -17,7 +17,7 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.AreEqual(0, *asInt);
 
-                Assert.IsTrue(writer.VerifyCanWrite(3));
+                Assert.IsTrue(writer.TryBeginWrite(3));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBit(true);
@@ -51,7 +51,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
         [Test]
-        public unsafe void TestVerifyCanWriteBits()
+        public unsafe void TestTryBeginWriteBits()
         {
             var writer = new FastBufferWriter(4, Allocator.Temp);
             using (writer)
@@ -62,9 +62,9 @@ namespace Unity.Netcode.EditorTests
 
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    Assert.Throws<InvalidOperationException>(() => writer.VerifyCanWrite(1));
-                    Assert.Throws<InvalidOperationException>(() => writer.VerifyCanWriteValue(1));
-                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(1));
+                    Assert.Throws<InvalidOperationException>(() => writer.TryBeginWrite(1));
+                    Assert.Throws<InvalidOperationException>(() => writer.TryBeginWriteValue(1));
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(1));
                     bitWriter.WriteBit(true);
                     Assert.AreEqual(0b1, *asInt);
 
@@ -81,7 +81,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(3));
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(3));
                     bitWriter.WriteBit(true);
                     Assert.AreEqual(0b11, *asInt);
 
@@ -114,7 +114,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(3));
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(3));
 
                     try
                     {
@@ -128,13 +128,13 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(4));
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(4));
 
                     bitWriter.WriteBits(0b11111010, 3);
 
                     Assert.AreEqual(0b00101011, *asInt);
 
-                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(5));
+                    Assert.IsTrue(bitWriter.TryBeginWriteBits(5));
 
                     bitWriter.WriteBits(0b11110101, 5);
                     Assert.AreEqual(0b1010_10101011, *asInt);
@@ -143,18 +143,18 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(2, writer.Position);
                 Assert.AreEqual(0b1010_10101011, *asInt);
 
-                Assert.IsTrue(writer.VerifyCanWrite(1));
+                Assert.IsTrue(writer.TryBeginWrite(1));
                 writer.WriteByte(0b11111111);
                 Assert.AreEqual(0b11111111_00001010_10101011, *asInt);
 
-                Assert.IsTrue(writer.VerifyCanWrite(1));
+                Assert.IsTrue(writer.TryBeginWrite(1));
                 writer.WriteByte(0b00000000);
                 Assert.AreEqual(0b11111111_00001010_10101011, *asInt);
 
-                Assert.IsFalse(writer.VerifyCanWrite(1));
+                Assert.IsFalse(writer.TryBeginWrite(1));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    Assert.IsFalse(bitWriter.VerifyCanWriteBits(1));
+                    Assert.IsFalse(bitWriter.TryBeginWriteBits(1));
                 }
             }
         }
@@ -169,7 +169,7 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.AreEqual(0, *asInt);
 
-                Assert.IsTrue(writer.VerifyCanWrite(3));
+                Assert.IsTrue(writer.TryBeginWrite(3));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBits(0b11111111, 1);
@@ -206,7 +206,7 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.AreEqual(0, *asInt);
 
-                Assert.IsTrue(writer.VerifyCanWrite(3));
+                Assert.IsTrue(writer.TryBeginWrite(3));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBits(0b11111111UL, 1);
@@ -234,7 +234,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public unsafe void TestWritingMultipleBytesFromLongs([Range(1, 64)] int numBits)
+        public unsafe void TestWritingMultipleBytesFromLongs([Range(1U, 64U)] uint numBits)
         {
             var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
             using (writer)
@@ -250,7 +250,7 @@ namespace Unity.Netcode.EditorTests
 
                 ulong value = 0xFFFFFFFFFFFFFFFF;
 
-                Assert.IsTrue(writer.VerifyCanWrite(sizeof(ulong)));
+                Assert.IsTrue(writer.TryBeginWrite(sizeof(ulong)));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBits(value, numBits);
@@ -260,7 +260,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public unsafe void TestWritingBitsThrowsIfVerifyCanWriteNotCalled()
+        public unsafe void TestWritingBitsThrowsIfTryBeginWriteNotCalled()
         {
             var writer = new FastBufferWriter(4, Allocator.Temp);
             using (writer)
@@ -310,7 +310,7 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    Assert.IsTrue(writer.VerifyCanWrite(1));
+                    Assert.IsTrue(writer.TryBeginWrite(1));
                     using (var bitWriter = writer.EnterBitwiseContext())
                     {
                         try

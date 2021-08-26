@@ -6,34 +6,34 @@ namespace Unity.Netcode.Serialization
 {
     public interface IBufferSerializerImplementation
     {
-        public bool IsReader { get; }
-        public bool IsWriter { get; }
+        bool IsReader { get; }
+        bool IsWriter { get; }
 
-        public ref FastBufferReader GetFastBufferReader();
-        public ref FastBufferWriter GetFastBufferWriter();
+        ref FastBufferReader GetFastBufferReader();
+        ref FastBufferWriter GetFastBufferWriter();
 
-        public void SerializeValue(ref object value, Type type, bool isNullable = false);
-        public void SerializeValue(ref INetworkSerializable value);
-        public void SerializeValue(ref GameObject value);
-        public void SerializeValue(ref NetworkObject value);
-        public void SerializeValue(ref NetworkBehaviour value);
-        public void SerializeValue(ref string s, bool oneByteChars = false);
-        public void SerializeValue<T>(ref T[] array) where T : unmanaged;
-        public void SerializeValue(ref byte value);
-        public void SerializeValue<T>(ref T value) where T : unmanaged;
+        void SerializeValue(ref object value, Type type, bool isNullable = false);
+        void SerializeValue(ref INetworkSerializable value);
+        void SerializeValue(ref GameObject value);
+        void SerializeValue(ref NetworkObject value);
+        void SerializeValue(ref NetworkBehaviour value);
+        void SerializeValue(ref string s, bool oneByteChars = false);
+        void SerializeValue<T>(ref T[] array) where T : unmanaged;
+        void SerializeValue(ref byte value);
+        void SerializeValue<T>(ref T value) where T : unmanaged;
 
         // Has to have a different name to avoid conflicting with "where T: unmananged"
         // Using SerializeValue(INetworkSerializable) will result in boxing on struct INetworkSerializables
         // So this is provided as an alternative to avoid boxing allocations.
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable;
+        void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable;
 
-        public bool PreCheck(int amount);
-        public void SerializeValuePreChecked(ref GameObject value);
-        public void SerializeValuePreChecked(ref NetworkObject value);
-        public void SerializeValuePreChecked(ref NetworkBehaviour value);
-        public void SerializeValuePreChecked(ref string s, bool oneByteChars = false);
-        public void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged;
-        public void SerializeValuePreChecked(ref byte value);
-        public void SerializeValuePreChecked<T>(ref T value) where T : unmanaged;
+        bool PreCheck(int amount);
+        void SerializeValuePreChecked(ref GameObject value);
+        void SerializeValuePreChecked(ref NetworkObject value);
+        void SerializeValuePreChecked(ref NetworkBehaviour value);
+        void SerializeValuePreChecked(ref string s, bool oneByteChars = false);
+        void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged;
+        void SerializeValuePreChecked(ref byte value);
+        void SerializeValuePreChecked<T>(ref T value) where T : unmanaged;
     }
 }

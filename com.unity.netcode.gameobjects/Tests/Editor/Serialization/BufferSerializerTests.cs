@@ -525,7 +525,7 @@ namespace Unity.Netcode.EditorTests
                             // Pass
                         }
 
-                        Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(obj)));
+                        Assert.IsTrue(serializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(obj)));
                         serializer.SerializeValuePreChecked(ref obj);
 
                         var reader = new FastBufferReader(ref writer, Allocator.Temp);
@@ -543,7 +543,7 @@ namespace Unity.Netcode.EditorTests
                                 // Pass
                             }
 
-                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriter.GetWriteSize(readValue)));
+                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(readValue)));
                             deserializer.SerializeValuePreChecked(ref readValue);
 
                             Assert.AreEqual(obj, readValue);
@@ -572,7 +572,7 @@ namespace Unity.Netcode.EditorTests
                             // Pass
                         }
 
-                        Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(networkObject)));
+                        Assert.IsTrue(serializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(networkObject)));
                         serializer.SerializeValuePreChecked(ref networkObject);
 
                         var reader = new FastBufferReader(ref writer, Allocator.Temp);
@@ -590,7 +590,7 @@ namespace Unity.Netcode.EditorTests
                                 // Pass
                             }
 
-                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriter.GetWriteSize(readValue)));
+                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(readValue)));
                             deserializer.SerializeValuePreChecked(ref readValue);
 
                             Assert.AreEqual(networkObject, readValue);
@@ -619,7 +619,7 @@ namespace Unity.Netcode.EditorTests
                             // Pass
                         }
 
-                        Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(networkBehaviour)));
+                        Assert.IsTrue(serializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)));
                         serializer.SerializeValuePreChecked(ref networkBehaviour);
 
                         var reader = new FastBufferReader(ref writer, Allocator.Temp);
@@ -637,7 +637,7 @@ namespace Unity.Netcode.EditorTests
                                 // Pass
                             }
 
-                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriter.GetWriteSize(readValue)));
+                            Assert.IsTrue(deserializer.PreCheck(FastBufferWriterExtensions.GetWriteSize(readValue)));
                             deserializer.SerializeValuePreChecked(ref readValue);
 
                             Assert.AreEqual(networkBehaviour, readValue);

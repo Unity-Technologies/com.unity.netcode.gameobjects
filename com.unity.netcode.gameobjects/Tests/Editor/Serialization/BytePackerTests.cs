@@ -256,7 +256,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(9);
+                writer.TryBeginWrite(9);
                 ulong value = 0;
                 BytePacker.WriteValuePacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -289,7 +289,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(9);
+                writer.TryBeginWrite(9);
                 uint value = 0;
                 BytePacker.WriteValuePacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -322,7 +322,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(9);
+                writer.TryBeginWrite(9);
                 long value = 0;
                 BytePacker.WriteValuePacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -367,7 +367,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(5);
+                writer.TryBeginWrite(5);
                 int value = 0;
                 BytePacker.WriteValuePacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -545,7 +545,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(8);
+                writer.TryBeginWrite(8);
                 ulong value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -585,7 +585,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(8);
+                writer.TryBeginWrite(8);
                 long value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -645,7 +645,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(4);
+                writer.TryBeginWrite(4);
                 uint value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -685,7 +685,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(4);
+                writer.TryBeginWrite(4);
                 int value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -743,7 +743,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(2);
+                writer.TryBeginWrite(2);
                 ushort value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);
@@ -782,7 +782,7 @@ namespace Unity.Netcode.EditorTests
 
             using (writer)
             {
-                writer.VerifyCanWrite(2);
+                writer.TryBeginWrite(2);
                 short value = 0;
                 BytePacker.WriteValueBitPacked(ref writer, value);
                 Assert.AreEqual(1, writer.Position);

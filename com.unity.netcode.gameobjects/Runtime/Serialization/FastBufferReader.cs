@@ -192,7 +192,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + amount > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
+                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
             PositionInternal += amount;
@@ -215,19 +215,19 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Allows faster serialization by batching bounds checking.
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
-        /// you can call VerifyCanRead() once on the total size, and then follow it with calls to
+        /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
         /// 
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
-        /// go past the point you've marked using VerifyCanRead(). In release builds, OverflowException will not be thrown
-        /// for performance reasons, since the point of using VerifyCanRead is to avoid bounds checking in the following
+        /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
         /// operations in release builds.
         /// </summary>
         /// <param name="bytes">Amount of bytes to read</param>
         /// <returns>True if the read is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool VerifyCanRead(int bytes)
+        public bool TryBeginRead(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -249,19 +249,19 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Allows faster serialization by batching bounds checking.
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
-        /// you can call VerifyCanRead() once on the total size, and then follow it with calls to
+        /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
         /// 
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
-        /// go past the point you've marked using VerifyCanRead(). In release builds, OverflowException will not be thrown
-        /// for performance reasons, since the point of using VerifyCanRead is to avoid bounds checking in the following
+        /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
         /// operations in release builds.
         /// </summary>
         /// <param name="value">The value you want to read</param>
         /// <returns>True if the read is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool VerifyCanReadValue<T>(in T value) where T : unmanaged
+        public unsafe bool TryBeginReadValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -282,14 +282,14 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Internal version of VerifyCanRead.
-        /// Differs from VerifyCanRead only in that it won't ever move the AllowedReadMark backward.
+        /// Internal version of TryBeginRead.
+        /// Differs from TryBeginRead only in that it won't ever move the AllowedReadMark backward.
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool VerifyCanReadInternal(int bytes)
+        internal bool TryBeginReadInternal(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -348,282 +348,6 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Reads a boxed object in a standard format
-        /// Named differently from other ReadValue methods to avoid accidental boxing
-        /// </summary>
-        /// <param name="value">The object to read</param>
-        /// <param name="type">The type to be read</param>
-        /// <param name="isNullable">
-        /// If true, reads a byte indicating whether or not the object is null.
-        /// Should match the way the object was written.
-        /// </param>
-        public void ReadObject(out object value, Type type, bool isNullable = false)
-        {
-            if (isNullable || type.IsNullable())
-            {
-                ReadValueSafe(out bool isNull);
-
-                if (isNull)
-                {
-                    value = null;
-                    return;
-                }
-            }
-
-            var hasDeserializer = SerializationTypeTable.Deserializers.TryGetValue(type, out var deserializer);
-            if (hasDeserializer)
-            {
-                deserializer(ref this, out value);
-                return;
-            }
-
-            if (type.IsArray && type.HasElementType)
-            {
-                ReadValueSafe(out int length);
-
-                var arr = Array.CreateInstance(type.GetElementType(), length);
-
-                for (int i = 0; i < length; i++)
-                {
-                    ReadObject(out object item, type.GetElementType());
-                    arr.SetValue(item, i);
-                }
-
-                value = arr;
-                return;
-            }
-
-            if (type.IsEnum)
-            {
-                switch (Type.GetTypeCode(type))
-                {
-                    case TypeCode.Boolean:
-                        ReadValueSafe(out byte boolVal);
-                        value = Enum.ToObject(type, boolVal != 0);
-                        return;
-                    case TypeCode.Char:
-                        ReadValueSafe(out char charVal);
-                        value = Enum.ToObject(type, charVal);
-                        return;
-                    case TypeCode.SByte:
-                        ReadValueSafe(out sbyte sbyteVal);
-                        value = Enum.ToObject(type, sbyteVal);
-                        return;
-                    case TypeCode.Byte:
-                        ReadValueSafe(out byte byteVal);
-                        value = Enum.ToObject(type, byteVal);
-                        return;
-                    case TypeCode.Int16:
-                        ReadValueSafe(out short shortVal);
-                        value = Enum.ToObject(type, shortVal);
-                        return;
-                    case TypeCode.UInt16:
-                        ReadValueSafe(out ushort ushortVal);
-                        value = Enum.ToObject(type, ushortVal);
-                        return;
-                    case TypeCode.Int32:
-                        ReadValueSafe(out int intVal);
-                        value = Enum.ToObject(type, intVal);
-                        return;
-                    case TypeCode.UInt32:
-                        ReadValueSafe(out uint uintVal);
-                        value = Enum.ToObject(type, uintVal);
-                        return;
-                    case TypeCode.Int64:
-                        ReadValueSafe(out long longVal);
-                        value = Enum.ToObject(type, longVal);
-                        return;
-                    case TypeCode.UInt64:
-                        ReadValueSafe(out ulong ulongVal);
-                        value = Enum.ToObject(type, ulongVal);
-                        return;
-                }
-            }
-
-            if (type == typeof(GameObject))
-            {
-                ReadValueSafe(out GameObject go);
-                value = go;
-                return;
-            }
-
-            if (type == typeof(NetworkObject))
-            {
-                ReadValueSafe(out NetworkObject no);
-                value = no;
-                return;
-            }
-
-            if (typeof(NetworkBehaviour).IsAssignableFrom(type))
-            {
-                ReadValueSafe(out NetworkBehaviour nb);
-                value = nb;
-                return;
-            }
-            /*if (value is INetworkSerializable)
-            {
-                //TODO ((INetworkSerializable)value).NetworkSerialize(new NetworkSerializer(this));
-                return;
-            }*/
-
-            throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
-        }
-
-        /// <summary>
-        /// Read an INetworkSerializable
-        /// </summary>
-        /// <param name="value">INetworkSerializable instance</param>
-        /// <typeparam name="T"></typeparam>
-        /// <exception cref="NotImplementedException"></exception>
-        public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Read a GameObject
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValue(out GameObject value)
-        {
-            ReadValue(out ulong networkObjectId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject.gameObject;
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
-        /// Read a GameObject
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValueSafe(out GameObject value)
-        {
-            ReadValueSafe(out ulong networkObjectId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject.gameObject;
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
-        /// Read a NetworkObject
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValue(out NetworkObject value)
-        {
-            ReadValue(out ulong networkObjectId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject;
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
-        /// Read a NetworkObject
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValueSafe(out NetworkObject value)
-        {
-            ReadValueSafe(out ulong networkObjectId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject;
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
-        /// Read a NetworkBehaviour
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValue(out NetworkBehaviour value)
-        {
-            ReadValue(out ulong networkObjectId);
-            ReadValue(out ushort networkBehaviourId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(NetworkBehaviour)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
-        /// Read a NetworkBehaviour
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
-        /// </summary>
-        /// <param name="value">value to read</param>
-        public void ReadValueSafe(out NetworkBehaviour value)
-        {
-            ReadValueSafe(out ulong networkObjectId);
-            ReadValueSafe(out ushort networkBehaviourId);
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-            {
-                value = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                return;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            {
-                NetworkLog.LogWarning($"{nameof(FastBufferReader)} cannot find the {nameof(NetworkBehaviour)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
-            }
-
-            value = null;
-        }
-
-        /// <summary>
         /// Reads a string
         /// NOTE: ALLOCATES
         /// </summary>
@@ -656,7 +380,7 @@ namespace Unity.Multiplayer.Netcode
         /// NOTE: ALLOCATES
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="s">Stores the read string</param>
         /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
@@ -670,14 +394,14 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanReadInternal(sizeof(uint)))
+            if (!TryBeginReadInternal(sizeof(uint)))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
 
             ReadValue(out uint length);
 
-            if (!VerifyCanReadInternal((int)length * (oneByteChars ? 1 : sizeof(char))))
+            if (!TryBeginReadInternal((int)length * (oneByteChars ? 1 : sizeof(char))))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -723,7 +447,7 @@ namespace Unity.Multiplayer.Netcode
         /// NOTE: ALLOCATES
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="array">Stores the read array</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -737,13 +461,13 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanReadInternal(sizeof(int)))
+            if (!TryBeginReadInternal(sizeof(int)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
             ReadValue(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
-            if (!VerifyCanReadInternal(sizeInBytes))
+            if (!TryBeginReadInternal(sizeInBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -775,7 +499,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + bytesToRead > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
+                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
 
@@ -803,7 +527,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + 1 > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
+                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
             value = BufferPointer[PositionInternal++];
@@ -813,7 +537,7 @@ namespace Unity.Multiplayer.Netcode
         /// Read a byte to the stream.
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">Stores the read value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -827,7 +551,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanReadInternal(1))
+            if (!TryBeginReadInternal(1))
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
@@ -851,7 +575,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + size > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
+                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
             UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
@@ -862,7 +586,7 @@ namespace Unity.Multiplayer.Netcode
         /// Read multiple bytes to the stream
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">Pointer to the destination buffer</param>
         /// <param name="size">Number of bytes to read - MUST BE &lt;= BUFFER SIZE</param>
@@ -878,7 +602,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanReadInternal(size))
+            if (!TryBeginReadInternal(size))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -905,7 +629,7 @@ namespace Unity.Multiplayer.Netcode
         /// Read multiple bytes from the stream
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">Pointer to the destination buffer</param>
         /// <param name="size">Number of bytes to read - MUST BE &lt;= BUFFER SIZE</param>
@@ -938,7 +662,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + len > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
             }
 #endif
 
@@ -954,7 +678,7 @@ namespace Unity.Multiplayer.Netcode
         /// It will be copied from the buffer exactly as it existed in memory on the writing end.
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling VerifyCanRead.
+        /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">The read value</param>
         /// <typeparam name="T">Any unmanaged type</typeparam>
@@ -971,7 +695,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanReadInternal(len))
+            if (!TryBeginReadInternal(len))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }

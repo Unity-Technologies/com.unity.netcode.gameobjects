@@ -177,19 +177,19 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Allows faster serialization by batching bounds checking.
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
-        /// you can call VerifyCanWrite() once on the total size, and then follow it with calls to
+        /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
         /// 
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
-        /// go past the point you've marked using VerifyCanWrite(). In release builds, OverflowException will not be thrown
-        /// for performance reasons, since the point of using VerifyCanWrite is to avoid bounds checking in the following
+        /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
         /// operations in release builds.
         /// </summary>
         /// <param name="bytes">Amount of bytes to write</param>
         /// <returns>True if the write is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool VerifyCanWrite(int bytes)
+        public bool TryBeginWrite(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -218,19 +218,20 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Allows faster serialization by batching bounds checking.
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
-        /// you can call VerifyCanWrite() once on the total size, and then follow it with calls to
+        /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
         /// 
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
-        /// go past the point you've marked using VerifyCanWrite(). In release builds, OverflowException will not be thrown
-        /// for performance reasons, since the point of using VerifyCanWrite is to avoid bounds checking in the following
-        /// operations in release builds.
+        /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
+        /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
+        /// operations in release builds. Instead, attempting to write past the marked position in release builds
+        /// will write to random memory and cause undefined behavior, likely including instability and crashes.
         /// </summary>
         /// <param name="value">The value you want to write</param>
         /// <returns>True if the write is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool VerifyCanWriteValue<T>(in T value) where T : unmanaged
+        public unsafe bool TryBeginWriteValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -258,14 +259,14 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Internal version of VerifyCanWrite.
-        /// Differs from VerifyCanWrite only in that it won't ever move the AllowedWriteMark backward.
+        /// Internal version of TryBeginWrite.
+        /// Differs from TryBeginWrite only in that it won't ever move the AllowedWriteMark backward.
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool VerifyCanWriteInternal(int bytes)
+        public bool TryBeginWriteInternal(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (m_InBitwiseContext)
@@ -331,292 +332,6 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// Writes a boxed object in a standard format
-        /// Named differently from other WriteValue methods to avoid accidental boxing
-        /// </summary>
-        /// <param name="value">The object to write</param>
-        /// <param name="isNullable">
-        /// If true, an extra byte will be written to indicate whether or not the value is null.
-        /// Some types will always write this.
-        /// </param>
-        public void WriteObject(object value, bool isNullable = false)
-        {
-            if (isNullable || value.GetType().IsNullable())
-            {
-                bool isNull = value == null || (value is UnityEngine.Object o && o == null);
-
-                WriteValueSafe(isNull);
-
-                if (isNull)
-                {
-                    return;
-                }
-            }
-
-            var type = value.GetType();
-            var hasSerializer = SerializationTypeTable.Serializers.TryGetValue(type, out var serializer);
-            if (hasSerializer)
-            {
-                serializer(ref this, value);
-                return;
-            }
-
-            if (value is Array array)
-            {
-                WriteValueSafe(array.Length);
-
-                for (int i = 0; i < array.Length; i++)
-                {
-                    WriteObject(array.GetValue(i));
-                }
-
-                return;
-            }
-
-            if (value.GetType().IsEnum)
-            {
-                switch (Convert.GetTypeCode(value))
-                {
-                    case TypeCode.Boolean:
-                        WriteValueSafe((byte)value);
-                        break;
-                    case TypeCode.Char:
-                        WriteValueSafe((char)value);
-                        break;
-                    case TypeCode.SByte:
-                        WriteValueSafe((sbyte)value);
-                        break;
-                    case TypeCode.Byte:
-                        WriteValueSafe((byte)value);
-                        break;
-                    case TypeCode.Int16:
-                        WriteValueSafe((short)value);
-                        break;
-                    case TypeCode.UInt16:
-                        WriteValueSafe((ushort)value);
-                        break;
-                    case TypeCode.Int32:
-                        WriteValueSafe((int)value);
-                        break;
-                    case TypeCode.UInt32:
-                        WriteValueSafe((uint)value);
-                        break;
-                    case TypeCode.Int64:
-                        WriteValueSafe((long)value);
-                        break;
-                    case TypeCode.UInt64:
-                        WriteValueSafe((ulong)value);
-                        break;
-                }
-                return;
-            }
-            if (value is GameObject)
-            {
-                WriteValueSafe((GameObject)value);
-                return;
-            }
-            if (value is NetworkObject)
-            {
-                WriteValueSafe((NetworkObject)value);
-                return;
-            }
-            if (value is NetworkBehaviour)
-            {
-                WriteValueSafe((NetworkBehaviour)value);
-                return;
-            }
-            if (value is INetworkSerializable)
-            {
-                //TODO ((INetworkSerializable)value).NetworkSerialize(new NetworkSerializer(this));
-                return;
-            }
-
-            throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
-        }
-
-        /// <summary>
-        /// Write an INetworkSerializable
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
-        {
-            // TODO
-        }
-
-        /// <summary>
-        /// Get the required amount of space to write a GameObject
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static int GetWriteSize(GameObject value)
-        {
-            return sizeof(ulong);
-        }
-
-        /// <summary>
-        /// Get the required amount of space to write a GameObject
-        /// </summary>
-        /// <returns></returns>
-        public static int GetGameObjectWriteSize()
-        {
-            return sizeof(ulong);
-        }
-
-        /// <summary>
-        /// Write a GameObject
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteValue(GameObject value)
-        {
-            var networkObject = (value).GetComponent<NetworkObject>();
-            if (networkObject == null)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {(value).name}");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {(value).name}");
-            }
-
-            WriteValue(networkObject.NetworkObjectId);
-        }
-
-        /// <summary>
-        /// Write a GameObject
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteValueSafe(GameObject value)
-        {
-            var networkObject = (value).GetComponent<NetworkObject>();
-            if (networkObject == null)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {(value).name}");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {(value).name}");
-            }
-
-            WriteValueSafe(networkObject.NetworkObjectId);
-        }
-
-        /// <summary>
-        /// Get the required size to write a NetworkObject
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static int GetWriteSize(NetworkObject value)
-        {
-            return sizeof(ulong);
-        }
-
-        /// <summary>
-        /// Get the required size to write a NetworkObject
-        /// </summary>
-        /// <returns></returns>
-        public static int GetNetworkObjectWriteSize()
-        {
-            return sizeof(ulong);
-        }
-
-
-        /// <summary>
-        /// Write a NetworkObject
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteValue(in NetworkObject value)
-        {
-            if (!value.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
-            }
-
-            WriteValue(value.NetworkObjectId);
-        }
-
-        /// <summary>
-        /// Write a NetworkObject
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteValueSafe(NetworkObject value)
-        {
-            if (!value.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
-            }
-            WriteValueSafe(value.NetworkObjectId);
-        }
-
-        /// <summary>
-        /// Get the required size to write a NetworkBehaviour
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static int GetWriteSize(NetworkBehaviour value)
-        {
-            return sizeof(ulong) + sizeof(ushort);
-        }
-
-
-        /// <summary>
-        /// Get the required size to write a NetworkBehaviour
-        /// </summary>
-        /// <returns></returns>
-        public static int GetNetworkBehaviourWriteSize()
-        {
-            return sizeof(ulong) + sizeof(ushort);
-        }
-
-
-        /// <summary>
-        /// Write a NetworkBehaviour
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void WriteValue(NetworkBehaviour value)
-        {
-            if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {(value).gameObject.name}");
-            }
-
-            WriteValue(value.NetworkObjectId);
-            WriteValue(value.NetworkBehaviourId);
-        }
-
-        /// <summary>
-        /// Write a NetworkBehaviour
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OverflowException"></exception>
-        public void WriteValueSafe(NetworkBehaviour value)
-        {
-            if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
-            {
-                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {(value).gameObject.name}");
-            }
-
-            if (!VerifyCanWriteInternal(sizeof(ulong) + sizeof(ushort)))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-            WriteValue(value.NetworkObjectId);
-            WriteValue(value.NetworkBehaviourId);
-        }
-
-        /// <summary>
         /// Get the required size to write a string
         /// </summary>
         /// <param name="s">The string to write</param>
@@ -657,7 +372,7 @@ namespace Unity.Multiplayer.Netcode
         /// Writes a string
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="s">The string to write</param>
         /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
@@ -673,7 +388,7 @@ namespace Unity.Multiplayer.Netcode
 
             int sizeInBytes = GetWriteSize(s, oneByteChars);
 
-            if (!VerifyCanWriteInternal(sizeInBytes))
+            if (!TryBeginWriteInternal(sizeInBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -735,7 +450,7 @@ namespace Unity.Multiplayer.Netcode
         /// Writes an unmanaged array
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="array">The array to write</param>
         /// <param name="count">The amount of elements to write</param>
@@ -754,7 +469,7 @@ namespace Unity.Multiplayer.Netcode
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
 
-            if (!VerifyCanWriteInternal(sizeInBytes + sizeof(int)))
+            if (!TryBeginWriteInternal(sizeInBytes + sizeof(int)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -786,7 +501,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + bytesToWrite > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
             }
 #endif
 
@@ -812,7 +527,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + 1 > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
             }
 #endif
             BufferPointer[PositionInternal++] = value;
@@ -822,7 +537,7 @@ namespace Unity.Multiplayer.Netcode
         /// Write a byte to the stream.
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -836,7 +551,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanWriteInternal(1))
+            if (!TryBeginWriteInternal(1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -860,7 +575,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + size > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
             }
 #endif
             UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
@@ -871,7 +586,7 @@ namespace Unity.Multiplayer.Netcode
         /// Write multiple bytes to the stream
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
@@ -887,7 +602,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanWriteInternal(size))
+            if (!TryBeginWriteInternal(size))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -914,7 +629,7 @@ namespace Unity.Multiplayer.Netcode
         /// Write multiple bytes to the stream
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <param name="size">Number of bytes to write</param>
@@ -994,7 +709,7 @@ namespace Unity.Multiplayer.Netcode
             }
             if (PositionInternal + len > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
             }
 #endif
 
@@ -1010,7 +725,7 @@ namespace Unity.Multiplayer.Netcode
         /// It will be copied into the buffer exactly as it exists in memory.
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling VerifyCanWrite.
+        /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">The value to copy</param>
         /// <typeparam name="T">Any unmanaged type</typeparam>
@@ -1027,7 +742,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
 
-            if (!VerifyCanWriteInternal(len))
+            if (!TryBeginWriteInternal(len))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
