@@ -18,8 +18,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             Debug.Log($"HiddenVariableObject.OnNetworkSpawn()");
 
-            MyNetworkVariable.Settings.SendNetworkChannel = NetworkChannel.NetworkVariable;
-            MyNetworkVariable.Settings.SendTickrate = 10;
             MyNetworkVariable.OnValueChanged += Changed;
 
             base.OnNetworkSpawn();
@@ -54,7 +52,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var prefabToSpawn = new GameObject("MyTestObject");
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             prefabToSpawn.AddComponent<HiddenVariableObject>();
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
