@@ -62,8 +62,13 @@ namespace Unity.Netcode
         {
         }
 
+        public void Awake()
+        {
+        }
+
         public void OnNetworkSpawn()
         {
+            Update(0);
         }
 
         private void TryConsumeFromBuffer()
@@ -169,6 +174,18 @@ namespace Unity.Netcode
         }
 
         public BufferedLinearInterpolatorFloat()
+        {
+        }
+    }
+
+    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    {
+        public override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
+        {
+            return Quaternion.Slerp(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorQuaternion()
         {
         }
     }

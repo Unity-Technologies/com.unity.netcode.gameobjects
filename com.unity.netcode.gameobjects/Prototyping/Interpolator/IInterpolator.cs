@@ -4,6 +4,7 @@ namespace Unity.Netcode
 {
     public interface IInterpolator<T>
     {
+        public void Awake();
         public void OnNetworkSpawn();
         public void Start();
         public void OnEnable();

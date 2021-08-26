@@ -12,6 +12,11 @@ namespace Unity.Netcode
 
         private const float k_MaxLerpTime = 0.1f;
 
+        public void Awake()
+        {
+            Update(0);
+        }
+
         public void OnNetworkSpawn()
         {
         }
