@@ -211,9 +211,9 @@ namespace Unity.Netcode
 
                 if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    NetworkBehaviour instance = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    NetworkBehaviour behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
-                    if (instance == null)
+                    if (behaviour == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
@@ -222,7 +222,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        instance.HandleNetworkVariableDeltas(stream, clientId, instance);
+                        behaviour.HandleNetworkVariableDeltas(stream, clientId);
                     }
                 }
                 else if (NetworkManager.IsServer)

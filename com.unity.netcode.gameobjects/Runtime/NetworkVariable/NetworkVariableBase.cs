@@ -25,14 +25,6 @@ namespace Unity.Netcode
             ReadPerm = readPermIn;
         }
 
-        private protected void EnsureInitialized()
-        {
-            if (!m_NetworkBehaviour)
-            {
-                throw new InvalidOperationException("Cannot access NetworkVariable before it's initialized");
-            }
-        }
-
         private protected bool m_IsDirty;
 
         /// <summary>

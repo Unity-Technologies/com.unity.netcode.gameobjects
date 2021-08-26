@@ -303,8 +303,6 @@ namespace Unity.Netcode
             get => m_Dictionary[key];
             set
             {
-                EnsureInitialized();
-
                 m_Dictionary[key] = value;
 
                 var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
@@ -334,7 +332,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            EnsureInitialized();
             m_Dictionary.Add(key, value);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
@@ -350,7 +347,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            EnsureInitialized();
             m_Dictionary.Add(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
@@ -366,7 +362,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_Dictionary.Clear();
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
@@ -404,7 +399,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            EnsureInitialized();
             m_Dictionary.Remove(key);
 
             TValue value;
@@ -426,7 +420,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            EnsureInitialized();
             m_Dictionary.Remove(item);
 
             var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
