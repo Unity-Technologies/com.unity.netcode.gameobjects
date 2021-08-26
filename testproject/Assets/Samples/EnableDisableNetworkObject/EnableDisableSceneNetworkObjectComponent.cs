@@ -19,7 +19,7 @@ public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
 
     private void Start()
     {
-        if(m_ActivateObjectButton != null)
+        if (m_ActivateObjectButton != null)
         {
             m_ButtonText = m_ActivateObjectButton.GetComponentInChildren<Text>();
             if (m_ButtonText != null)

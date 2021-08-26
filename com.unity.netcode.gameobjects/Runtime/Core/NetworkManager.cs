@@ -6,6 +6,9 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+#if MULTIPLAYER_TOOLS
+using Unity.Multiplayer.Tools;
+#endif
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -423,6 +426,13 @@ namespace Unity.Netcode
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
             }
+
+#if MULTIPLAYER_TOOLS
+            NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
+            {
+                NetworkObjectProvider = new NetworkObjectProvider(this)
+            });
+#endif
 
             if (NetworkConfig.NetworkTransport == null)
             {

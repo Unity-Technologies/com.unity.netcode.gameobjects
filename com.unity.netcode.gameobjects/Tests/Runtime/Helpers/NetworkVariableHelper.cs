@@ -13,12 +13,11 @@ namespace Unity.Netcode.RuntimeTests
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class NetworkVariableHelper<T> : BaseNetworkVariableHelper
+    internal class NetworkVariableHelper<T> : NetworkVariableBaseHelper where T : unmanaged
     {
-        private NetworkVariable<T> m_NetworkVariable;
+        private readonly NetworkVariable<T> m_NetworkVariable;
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);
         public event OnMyValueChangedDelegateHandler OnValueChanged;
-
 
         /// <summary>
         /// IEquatable<T> Equals Check
@@ -49,10 +48,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="next"></param>
         private void OnVariableChanged(T previous, T next)
         {
-            var testValueType = previous as ValueType;
-            if (testValueType != null)
+            if (previous is ValueType testValueType)
             {
-                CheckVariableChanged(previous as ValueType, next as ValueType);
+                CheckVariableChanged(previous, next);
             }
             else
             {
@@ -62,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             OnValueChanged?.Invoke(previous, next);
         }
 
-        public NetworkVariableHelper(INetworkVariable networkVariable) : base(networkVariable)
+        public NetworkVariableHelper(NetworkVariableBase networkVariable) : base(networkVariable)
         {
             m_NetworkVariable = networkVariable as NetworkVariable<T>;
             m_NetworkVariable.OnValueChanged = OnVariableChanged;
@@ -75,10 +73,10 @@ namespace Unity.Netcode.RuntimeTests
     /// The number of times a specific NetworkVariable instance had its value changed (i.e. !Equal)
     /// Note: This could be expanded for future tests focuses around NetworkVariables
     /// </summary>
-    internal class BaseNetworkVariableHelper
+    internal class NetworkVariableBaseHelper
     {
-        private static Dictionary<BaseNetworkVariableHelper, INetworkVariable> s_Instances;
-        private static Dictionary<INetworkVariable, int> s_InstanceChangedCount;
+        private static Dictionary<NetworkVariableBaseHelper, NetworkVariableBase> s_Instances;
+        private static Dictionary<NetworkVariableBase, int> s_InstanceChangedCount;
 
         /// <summary>
         /// Returns the total number of registered INetworkVariables
@@ -129,16 +127,16 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public BaseNetworkVariableHelper(INetworkVariable networkVariable)
+        public NetworkVariableBaseHelper(NetworkVariableBase networkVariable)
         {
             if (s_Instances == null)
             {
-                s_Instances = new Dictionary<BaseNetworkVariableHelper, INetworkVariable>();
+                s_Instances = new Dictionary<NetworkVariableBaseHelper, NetworkVariableBase>();
             }
 
             if (s_InstanceChangedCount == null)
             {
-                s_InstanceChangedCount = new Dictionary<INetworkVariable, int>();
+                s_InstanceChangedCount = new Dictionary<NetworkVariableBase, int>();
             }
 
             // Register new instance and associated INetworkVariable

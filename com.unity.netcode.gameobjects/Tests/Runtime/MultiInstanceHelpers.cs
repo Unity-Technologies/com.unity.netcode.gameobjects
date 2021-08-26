@@ -209,6 +209,7 @@ namespace Unity.Netcode.RuntimeTests
             public T Result;
         }
 
+        private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
 
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
@@ -219,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="networkObject">The networkObject to be treated as Prefab</param>
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
-        public static void MakeNetworkedObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
+        public static void MakeNetworkObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
         {
             // Set a globalObjectId for prefab
             if (globalObjectIdHash != default)
@@ -229,6 +230,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Force generation
             networkObject.GenerateGlobalObjectIdHash();
+
+            // Fallback to auto-increment if generation fails
+            if (networkObject.GlobalObjectIdHash == default)
+            {
+                networkObject.GlobalObjectIdHash = ++s_AutoIncrementGlobalObjectIdHashCounter;
+            }
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
