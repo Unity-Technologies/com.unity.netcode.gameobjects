@@ -61,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests
             m_DummyPrefab = new GameObject("DummyPrefabPrototype");
             m_DummyPrefab.AddComponent<NetworkObject>();
             m_DummyPrefab.AddComponent<NetworkObjectOwnershipComponent>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_DummyPrefab.GetComponent<NetworkObject>());
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_DummyPrefab.GetComponent<NetworkObject>());
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
