@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -137,6 +138,15 @@ public class TestCoordinator : NetworkBehaviour
     public void TestRunTeardown()
     {
         m_TestResultsLocal.Clear();
+        Debug.Log($"{MultiprocessOrchestration.Processes.Count} processes found");
+        foreach (Process p in MultiprocessOrchestration.Processes)
+        {
+            if (!p.HasExited)
+            {
+                Debug.Log("Found a running process spawned from MultiprocessOrchestration");
+                // p.Kill();
+            }
+        }
     }
 
     public void OnDestroy()

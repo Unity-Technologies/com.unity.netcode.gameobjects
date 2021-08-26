@@ -93,6 +93,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!ShouldIgnoreTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
+
             }
         }
 

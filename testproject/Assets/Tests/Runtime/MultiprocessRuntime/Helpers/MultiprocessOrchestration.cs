@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -10,9 +11,15 @@ using Debug = UnityEngine.Debug;
 public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
+    public static List<Process> Processes = new List<Process>();
+    private static DirectoryInfo m_MultiprocessDirInfo;
 
     public static void StartWorkerOnNodes()
     {
+        if (Processes == null)
+        {
+            Processes = new List<Process>();
+        }
         Debug.Log("Determine whether to start on local or remote nodes");
         string userprofile = "";
 
@@ -25,11 +32,16 @@ public class MultiprocessOrchestration
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
         Debug.Log($"userprofile is {userprofile}");
-        
-        var multiprocess_di = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
-        var jobid_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "jobid"));
-        var resources_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "resources"));
-        var rootdir_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "rootdir"));
+
+        m_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+        var jobid_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "jobid"));
+        var resources_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "resources"));
+        var rootdir_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "rootdir"));
+
+        if (!m_MultiprocessDirInfo.Exists)
+        {
+            m_MultiprocessDirInfo.Create();
+        }
 
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
         {
@@ -38,7 +50,7 @@ public class MultiprocessOrchestration
         }
         else
         {
-            Debug.Log("Run on local nodes");
+            Debug.Log($"Run on local nodes: current count is {Processes.Count}");
             StartWorkerNode();
         }
     }
@@ -73,8 +85,15 @@ public class MultiprocessOrchestration
 
     public static void StartWorkerNode()
     {
-        var workerProcess = new Process();
+        Debug.Log($"Run on local nodes: current count is {Processes.Count}");
+        foreach (Process p in Processes)
+        {
+            Debug.Log($"Has the process exited? {p.HasExited} {p.Id} {p.ProcessName} is responding? {p.Responding}");
+        }
 
+        var workerProcess = new Process();
+        Processes.Add(workerProcess);
+        
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
         // run performance tests with more realistic conditions.
@@ -103,10 +122,12 @@ public class MultiprocessOrchestration
             throw;
         }
 
+        string logPath = Path.Combine(m_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
+
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
@@ -156,7 +177,7 @@ public class MultiprocessOrchestration
 
         } catch (Exception e)
         {
-            Debug.LogError(e.Message);
+            Debug.LogException(e);
             answer = false;
         }
         
