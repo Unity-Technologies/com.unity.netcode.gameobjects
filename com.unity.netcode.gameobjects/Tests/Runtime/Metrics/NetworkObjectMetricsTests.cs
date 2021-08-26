@@ -14,18 +14,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     public class NetworkObjectMetricsTests : SingleClientMetricTestBase
     {
         private const string k_NewNetworkObjectName = "TestNetworkObjectToSpawn";
-
         private NetworkObject m_NewNetworkPrefab;
 
         protected override Action<GameObject> UpdatePlayerPrefab => _ =>
         {
             var gameObject = new GameObject(k_NewNetworkObjectName);
             m_NewNetworkPrefab = gameObject.AddComponent<NetworkObject>();
-            m_NewNetworkPrefab.NetworkManagerOwner = m_ServerNetworkManager;
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkPrefab);
+
             var networkPrefab = new NetworkPrefab { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
