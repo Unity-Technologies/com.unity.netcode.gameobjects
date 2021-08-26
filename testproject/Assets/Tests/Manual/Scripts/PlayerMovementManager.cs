@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
 
-
 namespace TestProject.ManualTests
 {
     /// <summary>
@@ -11,7 +10,7 @@ namespace TestProject.ManualTests
     {
         public int MoveSpeed = 10;
 
-        private NetworkObject m_NetworkedObject;
+        private NetworkObject m_NetworkObject;
 
         private RandomMovement m_RandomMovement;
 
@@ -21,7 +20,7 @@ namespace TestProject.ManualTests
         // Start is called before the first frame update
         private void Start()
         {
-            m_NetworkedObject = GetComponent<NetworkObject>();
+            m_NetworkObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
 
         }
@@ -37,7 +36,7 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if (m_NetworkedObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
+            if (m_NetworkObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
             {
                 if (m_RandomMovement)
                 {
@@ -45,7 +44,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (m_NetworkedObject && m_NetworkedObject.NetworkManager && m_NetworkedObject.NetworkManager.IsListening)
+            if (m_NetworkObject && m_NetworkObject.NetworkManager && m_NetworkObject.NetworkManager.IsListening)
             {
                 if (m_RandomMovement.enabled)
                 {
