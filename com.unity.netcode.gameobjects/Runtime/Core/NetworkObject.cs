@@ -179,6 +179,8 @@ namespace Unity.Netcode
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
+        internal bool IsHidden = false;
+
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
@@ -238,7 +240,7 @@ namespace Unity.Netcode
             {
                 SnapshotSpawn(clientId);
             }
-
+            IsHidden = false;
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
@@ -314,7 +316,7 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-
+            IsHidden = true;
             Observers.Remove(clientId);
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)

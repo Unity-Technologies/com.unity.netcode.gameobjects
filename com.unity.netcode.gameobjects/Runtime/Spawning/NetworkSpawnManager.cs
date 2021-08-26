@@ -647,7 +647,7 @@ namespace Unity.Netcode
                     var messageQueueContainer = NetworkManager.MessageQueueContainer;
                     if (messageQueueContainer != null)
                     {
-                        if (networkObject != null)
+                        if (networkObject != null && !networkObject.IsHidden)
                         {
                             // As long as we have any remaining clients, then notify of the object being destroy.
                             if (NetworkManager.ConnectedClientsList.Count > 0)
