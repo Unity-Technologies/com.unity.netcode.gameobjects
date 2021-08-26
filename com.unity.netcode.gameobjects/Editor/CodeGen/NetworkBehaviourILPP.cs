@@ -595,8 +595,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
             // override NetworkBehaviour.__getTypeName() method to return concrete type
             {
-                var baseType = typeDefinition.BaseType.Resolve();
-                var baseGetTypeNameMethod = baseType.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));
+                var networkBehaviour_TypeDef = m_NetworkBehaviour_TypeRef.Resolve();
+                var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));
 
                 var newGetTypeNameMethod = new MethodDefinition(
                     nameof(NetworkBehaviour.__getTypeName),
