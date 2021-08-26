@@ -624,7 +624,7 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal void HandleNetworkVariableDeltas(Stream stream, ulong clientId, NetworkBehaviour logInstance)
+        internal void HandleNetworkVariableDeltas(Stream stream, ulong clientId)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -656,7 +656,7 @@ namespace Unity.Netcode
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {NetworkObject.GetNetworkBehaviourOrderIndex(this)} - VariableIndex: {i}");
                                 NetworkLog.LogError($"[{NetworkVariableFields[i].GetType().Name}]");
                             }
 
@@ -673,7 +673,7 @@ namespace Unity.Netcode
                         // - TwoTen
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {NetworkObject.GetNetworkBehaviourOrderIndex(this)} - VariableIndex: {i}");
                             NetworkLog.LogError($"[{NetworkVariableFields[i].GetType().Name}]");
                         }
 
@@ -684,10 +684,10 @@ namespace Unity.Netcode
                     NetworkVariableFields[i].ReadDelta(stream, NetworkManager.IsServer);
                     NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                         clientId,
-                        logInstance.NetworkObjectId,
-                        logInstance.name,
+                        NetworkObjectId,
+                        name,
                         NetworkVariableFields[i].Name,
-                        logInstance.__getTypeName(),
+                        __getTypeName(),
                         stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
@@ -698,7 +698,8 @@ namespace Unity.Netcode
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Var delta read too far. {stream.Position - (readStartPos + varSize)} bytes. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning(
+                                    $"Var delta read too far. {stream.Position - (readStartPos + varSize)} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {NetworkObject.GetNetworkBehaviourOrderIndex(this)} - VariableIndex: {i}");
                             }
 
                             stream.Position = readStartPos + varSize;
@@ -707,7 +708,8 @@ namespace Unity.Netcode
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Var delta read too little. {(readStartPos + varSize) - stream.Position} bytes. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning(
+                                    $"Var delta read too little. {(readStartPos + varSize) - stream.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {NetworkObject.GetNetworkBehaviourOrderIndex(this)} - VariableIndex: {i}");
                             }
 
                             stream.Position = readStartPos + varSize;

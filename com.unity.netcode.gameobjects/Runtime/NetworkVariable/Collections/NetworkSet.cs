@@ -293,8 +293,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -323,8 +321,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
@@ -348,7 +344,6 @@ namespace Unity.Netcode
 
         public bool Add(T item)
         {
-            EnsureInitialized();
             m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
@@ -372,7 +367,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_Set.Clear();
 
             var setEvent = new NetworkSetEvent<T>()
@@ -402,7 +396,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_Set.Remove(item);
 
             var setEvent = new NetworkSetEvent<T>()

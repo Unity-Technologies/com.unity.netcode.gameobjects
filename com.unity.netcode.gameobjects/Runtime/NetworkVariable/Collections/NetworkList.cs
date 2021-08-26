@@ -332,7 +332,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(T item)
         {
-            EnsureInitialized();
             m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -348,7 +347,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
@@ -374,7 +372,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_List.Remove(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -402,7 +399,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            EnsureInitialized();
             m_List.Insert(index, item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -418,7 +414,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            EnsureInitialized();
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
@@ -437,7 +432,6 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
-                EnsureInitialized();
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
