@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkPrefabHandlerTests
     {
 
-        private const string  k_TestPrefabObjectName = "NetworkPrefabTestObject";
+        private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
         private uint m_GlobalObjectIdHashBase = 123456;
         private GameObject MakeValidNetworkPrefab()
         {
@@ -43,7 +43,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Add a NetworkPrefab override with an invalid hash
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 0 });
-            
+
             // Add a NetworkPrefab override with a valid hash but an invalid target prefab
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Hash, SourceHashToOverride = 654321, OverridingTargetPrefab = null });
 
