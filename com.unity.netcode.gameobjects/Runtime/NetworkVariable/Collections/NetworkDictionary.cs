@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -441,8 +440,8 @@ namespace Unity.Netcode
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-             m_DirtyEvents.Add(dictionaryEvent);
-             OnDictionaryChanged?.Invoke(dictionaryEvent);
+            m_DirtyEvents.Add(dictionaryEvent);
+            OnDictionaryChanged?.Invoke(dictionaryEvent);
         }
 
         public int LastModifiedTick

@@ -26,13 +26,17 @@ namespace Unity.Netcode
         /// Creates a NetworkVariable with the default value and custom read permission
         /// </summary>
         /// <param name="readPerm">The read permission for the NetworkVariable</param>
-        public NetworkVariable() {}
+        public NetworkVariable()
+        {
+        }
 
         /// <summary>
         /// Creates a NetworkVariable with the default value and custom read permission
         /// </summary>
         /// <param name="readPerm">The read permission for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm) {}
+        public NetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm)
+        {
+        }
 
         /// <summary>
         /// Creates a NetworkVariable with a custom value and custom settings
