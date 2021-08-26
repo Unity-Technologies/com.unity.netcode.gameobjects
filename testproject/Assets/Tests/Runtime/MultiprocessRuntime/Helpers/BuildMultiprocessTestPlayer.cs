@@ -118,5 +118,51 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var buildInfoJson = JsonUtility.ToJson(toSave);
             File.WriteAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName), buildInfoJson);
         }
+
+        /// <summary>
+        /// Determine if the MultiprocessTestPlayer has been built so we can decide how to
+        /// let the test runner know
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsMultiprocessTestPlayerAvailable()
+        {
+            bool answer = false;
+            try
+            {
+                var buildInfoPath = Path.Combine(Application.streamingAssetsPath, BuildInfoFileName);
+                var buildInfoFileInfo = new FileInfo(buildInfoPath);
+                if (!buildInfoFileInfo.Exists)
+                {
+                    return false;
+                }
+                var buildPath = ReadBuildInfo().BuildPath;
+                FileInfo buildPathFileInfo = null;
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.OSXEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.app/Contents/MacOS/testproject");
+                        break;
+                    case RuntimePlatform.WindowsEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.exe");
+                        break;
+                    case RuntimePlatform.LinuxEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}");
+                        break;
+                }
+
+                if (buildPathFileInfo != null && buildPathFileInfo.Exists)
+                {
+                    answer = true;
+                }
+
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                answer = false;
+            }
+
+            return answer;
+        }
     }
 }

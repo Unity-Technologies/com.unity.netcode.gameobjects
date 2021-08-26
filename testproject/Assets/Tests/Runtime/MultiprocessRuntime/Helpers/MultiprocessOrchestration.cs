@@ -12,7 +12,7 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
     public static List<Process> Processes = new List<Process>();
-    private static DirectoryInfo m_MultiprocessDirInfo;
+    private static DirectoryInfo s_MultiprocessDirInfo;
 
     public static void StartWorkerOnNodes()
     {
@@ -33,14 +33,14 @@ public class MultiprocessOrchestration
         }
         Debug.Log($"userprofile is {userprofile}");
 
-        m_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
-        var jobid_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "jobid"));
-        var resources_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "resources"));
-        var rootdir_fileinfo = new FileInfo(Path.Combine(m_MultiprocessDirInfo.FullName, "rootdir"));
+        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
+        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
+        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
 
-        if (!m_MultiprocessDirInfo.Exists)
+        if (!s_MultiprocessDirInfo.Exists)
         {
-            m_MultiprocessDirInfo.Create();
+            s_MultiprocessDirInfo.Create();
         }
 
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
@@ -122,7 +122,7 @@ public class MultiprocessOrchestration
             throw;
         }
 
-        string logPath = Path.Combine(m_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
+        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
 
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
@@ -142,45 +142,5 @@ public class MultiprocessOrchestration
             Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw;
         }
-    }
-
-    public static bool IsMultiprocessTestPlayerAvailable()
-    {
-        bool answer = false;
-        try
-        {
-            var buildInfoPath = Path.Combine(Application.streamingAssetsPath, BuildMultiprocessTestPlayer.BuildInfoFileName);
-            var buildInfoFileInfo = new FileInfo(buildInfoPath);
-            if (!buildInfoFileInfo.Exists)
-            {
-                return false;
-            }
-            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
-            FileInfo buildPathFileInfo = null;
-            switch (Application.platform)
-            {
-                case RuntimePlatform.OSXEditor:
-                    buildPathFileInfo = new FileInfo($"{buildPath}.app/Contents/MacOS/testproject");
-                    break;
-                case RuntimePlatform.WindowsEditor:
-                    buildPathFileInfo = new FileInfo($"{buildPath}.exe");
-                    break;
-                case RuntimePlatform.LinuxEditor:
-                    buildPathFileInfo = new FileInfo($"{buildPath}");
-                    break;
-            }
-
-            if (buildPathFileInfo != null && buildPathFileInfo.Exists)
-            {
-                answer = true;
-            }
-
-        } catch (Exception e)
-        {
-            Debug.LogException(e);
-            answer = false;
-        }
-        
-        return answer;
     }
 }
