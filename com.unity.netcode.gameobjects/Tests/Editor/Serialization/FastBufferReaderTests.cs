@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 using Unity.Collections;
 using Unity.Multiplayer.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
@@ -292,7 +290,7 @@ namespace Unity.Netcode.EditorTests
                             break;
                         case WriteType.WriteAsObject:
                             reader.ReadObject(out object resultObj, typeof(string), oneByteChars);
-                            result = (string) resultObj;
+                            result = (string)resultObj;
                             break;
                     }
                     Assert.AreEqual(valueToTest, result);
@@ -311,7 +309,7 @@ namespace Unity.Netcode.EditorTests
         [TestCase(6, 0)]
         [TestCase(7, 0)]
         [TestCase(8, 0)]
-        
+
         [TestCase(1, 1)]
         [TestCase(2, 1)]
         [TestCase(3, 1)]
@@ -319,32 +317,32 @@ namespace Unity.Netcode.EditorTests
         [TestCase(5, 1)]
         [TestCase(6, 1)]
         [TestCase(7, 1)]
-        
+
         [TestCase(1, 2)]
         [TestCase(2, 2)]
         [TestCase(3, 2)]
         [TestCase(4, 2)]
         [TestCase(5, 2)]
         [TestCase(6, 2)]
-        
+
         [TestCase(1, 3)]
         [TestCase(2, 3)]
         [TestCase(3, 3)]
         [TestCase(4, 3)]
         [TestCase(5, 3)]
-        
+
         [TestCase(1, 4)]
         [TestCase(2, 4)]
         [TestCase(3, 4)]
         [TestCase(4, 4)]
-        
+
         [TestCase(1, 5)]
         [TestCase(2, 5)]
         [TestCase(3, 5)]
-        
+
         [TestCase(1, 6)]
         [TestCase(2, 6)]
-        
+
         [TestCase(1, 7)]
         public void GivenFastBufferWriterContainingValue_WhenReadingPartialValue_ValueMatchesWhatWasWritten(int count, int offset)
         {
@@ -425,7 +423,7 @@ namespace Unity.Netcode.EditorTests
             var nativeArray = new NativeArray<byte>(100, Allocator.Temp);
             var emptyReader = new FastBufferReader(nativeArray, Allocator.Temp);
 
-            byte[] b = {0, 1, 2};
+            byte[] b = { 0, 1, 2 };
             using (emptyReader)
             {
                 Assert.Throws<OverflowException>(() => { emptyReader.ReadBytes(ref b, 3); });
@@ -522,7 +520,7 @@ namespace Unity.Netcode.EditorTests
             {
                 using (var context = emptyReader.EnterBitwiseContext())
                 {
-                    byte[] b = {0, 1, 2};
+                    byte[] b = { 0, 1, 2 };
                     Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytes(ref b, 3); });
                 }
             }
@@ -598,7 +596,7 @@ namespace Unity.Netcode.EditorTests
             {
                 using (var context = emptyReader.EnterBitwiseContext())
                 {
-                    byte[] b = {0, 1, 2};
+                    byte[] b = { 0, 1, 2 };
                     Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytesSafe(ref b, 3); });
                 }
             }
@@ -648,7 +646,7 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
-        
+
         [Test]
         public void WhenCallingReadByteAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
         {
@@ -680,7 +678,7 @@ namespace Unity.Netcode.EditorTests
                     context.ReadBit(out bool theBit);
                 }
 
-                byte[] theBytes = {0, 1, 2};
+                byte[] theBytes = { 0, 1, 2 };
                 emptyReader.ReadBytes(ref theBytes, 3);
             }
         }
@@ -735,7 +733,7 @@ namespace Unity.Netcode.EditorTests
                 emptyReader.ReadValue(out string s);
             }
         }
-        
+
         [Test]
         public void WhenCallingReadByteSafeAfterExitingBitwiseContext_InvalidOperationExceptionIsNotThrown()
         {
@@ -767,7 +765,7 @@ namespace Unity.Netcode.EditorTests
                     context.ReadBit(out bool theBit);
                 }
 
-                byte[] theBytes = {0, 1, 2};
+                byte[] theBytes = { 0, 1, 2 };
                 emptyReader.ReadBytesSafe(ref theBytes, 3);
             }
         }
@@ -898,7 +896,7 @@ namespace Unity.Netcode.EditorTests
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkObject)+1, Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkObject) + 1, Allocator.Temp);
                 using (writer)
                 {
                     switch (writeType)
@@ -931,7 +929,7 @@ namespace Unity.Netcode.EditorTests
                                 break;
                             case WriteType.WriteAsObject:
                                 reader.ReadObject(out object resultObj, typeof(NetworkObject));
-                                result = (NetworkObject) resultObj;
+                                result = (NetworkObject)resultObj;
                                 break;
                         }
                         Assert.AreSame(result, networkObject);
@@ -945,7 +943,7 @@ namespace Unity.Netcode.EditorTests
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(obj)+1, Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(obj) + 1, Allocator.Temp);
                 using (writer)
                 {
                     switch (writeType)
@@ -978,7 +976,7 @@ namespace Unity.Netcode.EditorTests
                                 break;
                             case WriteType.WriteAsObject:
                                 reader.ReadObject(out object resultObj, typeof(GameObject));
-                                result = (GameObject) resultObj;
+                                result = (GameObject)resultObj;
                                 break;
                         }
                         Assert.AreSame(result, obj);
@@ -992,7 +990,7 @@ namespace Unity.Netcode.EditorTests
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)+1, Allocator.Temp);
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkBehaviour) + 1, Allocator.Temp);
                 using (writer)
                 {
                     switch (writeType)
@@ -1025,7 +1023,7 @@ namespace Unity.Netcode.EditorTests
                                 break;
                             case WriteType.WriteAsObject:
                                 reader.ReadObject(out object resultObj, typeof(NetworkBehaviour));
-                                result = (NetworkBehaviour) resultObj;
+                                result = (NetworkBehaviour)resultObj;
                                 break;
                         }
                         Assert.AreSame(result, networkBehaviour);

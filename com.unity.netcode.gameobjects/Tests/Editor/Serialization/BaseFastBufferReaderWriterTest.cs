@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Multiplayer.Netcode;
@@ -11,7 +11,7 @@ namespace Unity.Netcode
 {
     public abstract class BaseFastBufferReaderWriterTest
     {
-        
+
         #region Test Types
         protected enum ByteEnum : byte
         {
@@ -97,7 +97,7 @@ namespace Unity.Netcode
         protected abstract void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged;
 
         protected abstract void RunObjectTypeArrayTest<T>(T[] valueToTest) where T : unmanaged;
-        
+
         #region Helpers
         protected TestStruct GetTestStruct()
         {
@@ -120,7 +120,7 @@ namespace Unity.Netcode
 
             return testStruct;
         }
-        
+
         protected delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
             NetworkObject networkObject);
         protected void RunGameObjectTest(GameObjectTestDelegate testCode)
@@ -155,11 +155,11 @@ namespace Unity.Netcode
             }
         }
         #endregion
-        
+
         public void BaseTypeTest(Type testType, WriteType writeType)
         {
             var random = new Random();
-            
+
             void RunTypeTestLocal<T>(T val, WriteType wt) where T : unmanaged
             {
                 switch (wt)

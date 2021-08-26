@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,7 +7,7 @@ namespace Unity.Multiplayer.Netcode
 {
     public static class FastBufferWriterExtensions
     {
-        
+
         /// <summary>
         /// Writes a boxed object in a standard format
         /// Named differently from other WriteValue methods to avoid accidental boxing

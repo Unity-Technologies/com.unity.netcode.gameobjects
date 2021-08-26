@@ -36,7 +36,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(highBit + 1, BitCounter.GetUsedBitCount(value));
             }
         }
-        
+
         [Test]
         public void WhenCountingUsedBytesIn64BitValue_ResultMatchesHighBitSetOver8PlusOne([Range(0, 63)] int highBit)
         {
@@ -49,10 +49,10 @@ namespace Unity.Netcode.EditorTests
             else
             {
                 ulong value = 1UL << highBit;
-                Assert.AreEqual(highBit/8 + 1, BitCounter.GetUsedByteCount(value));
+                Assert.AreEqual(highBit / 8 + 1, BitCounter.GetUsedByteCount(value));
             }
         }
-        
+
         [Test]
         public void WhenCountingUsedBytesIn32BitValue_ResultMatchesHighBitSetOver8PlusOne([Range(0, 31)] int highBit)
         {
@@ -65,7 +65,7 @@ namespace Unity.Netcode.EditorTests
             else
             {
                 uint value = 1U << highBit;
-                Assert.AreEqual(highBit/8 + 1, BitCounter.GetUsedByteCount(value));
+                Assert.AreEqual(highBit / 8 + 1, BitCounter.GetUsedByteCount(value));
             }
         }
     }

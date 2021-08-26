@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,7 +7,7 @@ namespace Unity.Multiplayer.Netcode
 {
     public static class FastBufferReaderExtensions
     {
-        
+
         /// <summary>
         /// Reads a boxed object in a standard format
         /// Named differently from other ReadValue methods to avoid accidental boxing
