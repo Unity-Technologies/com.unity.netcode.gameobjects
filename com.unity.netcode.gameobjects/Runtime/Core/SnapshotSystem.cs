@@ -980,7 +980,7 @@ namespace Unity.Netcode
                     {
                         // because the bit we're adding for the previous ReceivedSequenceMask
                         // was implicit, it needs to be shift by one less
-                        var shift = (ushort)(sequence - 1 - m_ClientData[clientId].LastReceivedSequence);
+                        var shift = sequence - 1 - m_ClientData[clientId].LastReceivedSequence;
                         if (shift < sizeof(ushort) * 8)
                         {
                             m_ClientData[clientId].ReceivedSequenceMask |= (ushort)(1 << shift);
