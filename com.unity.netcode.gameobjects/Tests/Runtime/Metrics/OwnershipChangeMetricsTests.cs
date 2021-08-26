@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
+using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine;
 using UnityEngine.TestTools;
