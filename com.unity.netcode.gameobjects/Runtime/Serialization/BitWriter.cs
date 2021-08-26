@@ -80,9 +80,13 @@ namespace Unity.Netcode
 
             if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.CapacityInternal)
             {
+                if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.MaxCapacityInternal)
+                {
+                    return false;
+                }
                 if (m_Writer.Value.CapacityInternal < m_Writer.Value.MaxCapacityInternal)
                 {
-                    m_Writer.Value.Grow();
+                    m_Writer.Value.Grow(totalBytesWrittenInBitwiseContext);
                     m_BufferPointer = m_Writer.Value.BufferPointer + m_Writer.Value.PositionInternal;
                 }
                 else

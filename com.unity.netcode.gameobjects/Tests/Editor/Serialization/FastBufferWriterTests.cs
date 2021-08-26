@@ -1088,6 +1088,37 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenBufferGrowthRequiredIsMoreThanDouble_BufferGrowsEnoughToContainRequestedValue()
+        {
+            var growingWriter = new FastBufferWriter(1, Allocator.Temp, 500);
+            using (growingWriter)
+            {
+                var testStruct = GetTestStruct();
+                Assert.IsTrue(growingWriter.TryBeginWriteValue(testStruct));
+
+                Assert.AreEqual(FastBufferWriter.GetWriteSize(testStruct)*2, growingWriter.Capacity);
+                Assert.AreEqual(growingWriter.Position, 0);
+
+                growingWriter.WriteValue(testStruct);
+
+                VerifyBytewiseEquality(testStruct, growingWriter.ToArray(), 0, 0, FastBufferWriter.GetWriteSize(testStruct));
+            }
+        }
+
+        [Test]
+        public void WhenTryingToWritePastMaxCapacity_GrowthDoesNotOccurAndTryBeginWriteReturnsFalse()
+        {
+            var growingWriter = new FastBufferWriter(300, Allocator.Temp, 500);
+            using (growingWriter)
+            {
+                Assert.IsFalse(growingWriter.TryBeginWrite(501));
+
+                Assert.AreEqual(300, growingWriter.Capacity);
+                Assert.AreEqual(growingWriter.Position, 0);
+            }
+        }
+
+        [Test]
         public void WhenWritingNetworkBehaviour_ObjectIdAndBehaviourIdAreWritten([Values] WriteType writeType)
         {
             RunGameObjectTest((obj, networkBehaviour, networkObject) =>

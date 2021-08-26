@@ -46,9 +46,16 @@ namespace Unity.Netcode
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
             LengthInternal = Math.Max(1, length == -1 ? buffer.Length : length);
-            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-            UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr() + offset, LengthInternal);
-            BufferPointer = (byte*)bufferPtr;
+            if (allocator == Allocator.None)
+            {
+                BufferPointer = (byte*) buffer.GetUnsafePtr() + offset;
+            }
+            else
+            {
+                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+                UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr() + offset, LengthInternal);
+                BufferPointer = (byte*)bufferPtr;
+            }
             PositionInternal = offset;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -69,12 +76,21 @@ namespace Unity.Netcode
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
             LengthInternal = Math.Max(1, length == -1 ? (buffer.Count - offset) : length);
-            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-            fixed (byte* data = buffer.Array)
+            if (allocator == Allocator.None)
             {
-                UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
+                throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
-            BufferPointer = (byte*)bufferPtr;
+            else
+            {
+                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+                fixed (byte* data = buffer.Array)
+                {
+                    UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
+                }
+
+                BufferPointer = (byte*) bufferPtr;
+            }
+
             PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -95,12 +111,21 @@ namespace Unity.Netcode
         public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
         {
             LengthInternal = Math.Max(1, length == -1 ? (buffer.Length - offset) : length);
-            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-            fixed (byte* data = buffer)
+            if (allocator == Allocator.None)
             {
-                UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
+                throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
-            BufferPointer = (byte*)bufferPtr;
+            else
+            {
+                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+                fixed (byte* data = buffer)
+                {
+                    UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
+                }
+
+                BufferPointer = (byte*) bufferPtr;
+            }
+
             PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -121,9 +146,17 @@ namespace Unity.Netcode
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
             LengthInternal = Math.Max(1, length);
-            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-            UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
-            BufferPointer = (byte*)bufferPtr;
+            if (allocator == Allocator.None)
+            {
+                    BufferPointer = buffer + offset;
+            }
+            else
+            {
+                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
+                UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
+                BufferPointer = (byte*) bufferPtr;
+            }
+
             PositionInternal = 0;
             m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

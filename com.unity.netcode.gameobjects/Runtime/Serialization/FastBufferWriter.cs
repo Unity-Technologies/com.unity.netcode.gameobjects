@@ -159,9 +159,9 @@ namespace Unity.Netcode
             return new BitWriter(ref this);
         }
 
-        internal unsafe void Grow()
+        internal unsafe void Grow(int additionalSizeRequired)
         {
-            var newSize = Math.Min(CapacityInternal * 2, MaxCapacityInternal);
+            var newSize = Math.Min(Math.Max(CapacityInternal * 2, (Position + additionalSizeRequired) * 2), MaxCapacityInternal);
             void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, newSize);
@@ -198,9 +198,13 @@ namespace Unity.Netcode
 #endif
             if (PositionInternal + bytes > CapacityInternal)
             {
+                if (PositionInternal + bytes > MaxCapacityInternal)
+                {
+                    return false;
+                }
                 if (CapacityInternal < MaxCapacityInternal)
                 {
-                    Grow();
+                    Grow(bytes);
                 }
                 else
                 {
@@ -241,9 +245,13 @@ namespace Unity.Netcode
             int len = sizeof(T);
             if (PositionInternal + len > CapacityInternal)
             {
+                if (PositionInternal + len > MaxCapacityInternal)
+                {
+                    return false;
+                }
                 if (CapacityInternal < MaxCapacityInternal)
                 {
-                    Grow();
+                    Grow(len);
                 }
                 else
                 {
@@ -275,9 +283,13 @@ namespace Unity.Netcode
 #endif
             if (PositionInternal + bytes > CapacityInternal)
             {
+                if (PositionInternal + bytes > MaxCapacityInternal)
+                {
+                    return false;
+                }
                 if (CapacityInternal < MaxCapacityInternal)
                 {
-                    Grow();
+                    Grow(bytes);
                 }
                 else
                 {
