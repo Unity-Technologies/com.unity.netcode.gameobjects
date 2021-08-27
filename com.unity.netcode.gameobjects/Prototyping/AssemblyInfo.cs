@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
 [assembly: InternalsVisibleTo("Unity.Netcode.EditorTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+#if UNITY_EDITOR
 using Unity.Netcode.Editor;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -261,7 +263,9 @@ namespace Unity.Netcode.EditorTests
     }
 
     // Should probably have one of these for more files? In the future we could use the SIPTransport?
+#if UNITY_EDITOR
     [DontShowInTransportDropdown]
+#endif
     internal class DummyTransport : NetworkTransport
     {
         public override ulong ServerClientId { get; } = 0;
