@@ -178,6 +178,9 @@ namespace Unity.Netcode
         private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
         private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
 
+
+        internal Scene DontDestroyOnLoadScene;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -187,6 +190,19 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+            if (networkManager.DontDestroy)
+            {
+                DontDestroyOnLoadScene = networkManager.gameObject.scene;
+            }
+            else
+            {
+                var ddolObject = new GameObject("DDOL_SM");
+                UnityEngine.Object.DontDestroyOnLoad(ddolObject);
+                DontDestroyOnLoadScene = ddolObject.scene;
+            }
+
+            ServerSceneHandleToClientSceneHandle.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle);
+            ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
         }
 
         /// <summary>
@@ -254,24 +270,13 @@ namespace Unity.Netcode
             else
             {
                 // Most common scenario for DontDestroyOnLoad is when NetworkManager is set to not be destroyed
-                if (m_NetworkManager.DontDestroy)
+                if (serverSceneHandle == DontDestroyOnLoadScene.handle)
                 {
-                    if (serverSceneHandle == m_NetworkManager.gameObject.scene.handle)
-                    {
-                        SceneBeingSynchronized = m_NetworkManager.gameObject.scene;
-                        return;
-                    }
+                    SceneBeingSynchronized = m_NetworkManager.gameObject.scene;
+                    return;
                 }
                 else
                 {
-                    // The next scenario is if a user intentionally moves NetworkObjects into a DontDestroyOnLoad scene
-                    var dontDestroyOnLoadScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
-                    if (dontDestroyOnLoadScene.IsValid() && dontDestroyOnLoadScene.isLoaded && dontDestroyOnLoadScene.handle == serverSceneHandle)
-                    {
-                        SceneBeingSynchronized = dontDestroyOnLoadScene;
-                        return;
-                    }
-
                     // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
                     // or the NetworkObject has yet to be moved to that specific scene (i.e. no DontDestroyOnLoad scene exists yet).
                     SceneBeingSynchronized = SceneManager.GetActiveScene();
@@ -1186,6 +1191,8 @@ namespace Unity.Netcode
                         }
                         else
                         {
+                            // Include anything in the DDOL scene
+                            PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
                             // Synchronize the NetworkObjects for this scene
                             SceneEventData.SynchronizeSceneNetworkObjects(m_NetworkManager);
 
@@ -1369,7 +1376,7 @@ namespace Unity.Netcode
                     sobj.gameObject.transform.parent = null;
                 }
 
-                if (!sobj.DestroyWithScene)
+                if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
                 {
                     UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
                 }
@@ -1444,6 +1451,11 @@ namespace Unity.Netcode
                 if (sobj.gameObject.transform.parent != null)
                 {
                     sobj.gameObject.transform.parent = null;
+                }
+
+                if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
+                {
+                    continue;
                 }
 
                 SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
