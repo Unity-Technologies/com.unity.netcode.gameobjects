@@ -487,7 +487,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3dc8672a04c03b4fa86b0481437d674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MoveToDontDestroyOnLoad: {fileID: 7407724687236213415, guid: 34d19b37edcb93543a205fbed288d013,
+  NetworkPrefabToCreate: {fileID: 7407724687236213415, guid: 34d19b37edcb93543a205fbed288d013,
     type: 3}
 --- !u!4 &1230519283
 Transform:
