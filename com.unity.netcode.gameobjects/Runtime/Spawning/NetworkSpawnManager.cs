@@ -35,6 +35,9 @@ namespace Unity.Netcode
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private ulong m_NetworkObjectIdCounter;
 
+        // A list of target ClientId, use when sending despawn commands. Kept as a member to reduce memory allocations
+        private List<ulong> m_TargetClientIds = new List<ulong>();
+
         internal ulong GetNetworkObjectId()
         {
             if (ReleasedNetworkObjectIds.Count > 0 && NetworkManager.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - ReleasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkManager.NetworkConfig.NetworkIdRecycleDelay)
@@ -659,7 +662,7 @@ namespace Unity.Netcode
                             // As long as we have any remaining clients, then notify of the object being destroy.
                             if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
-                                var targetClientIds = new List<ulong>();
+                                m_TargetClientIds.Clear();
 
                                 // We keep only the client for which the object is visible
                                 // as the other clients have them already despawned
@@ -667,14 +670,14 @@ namespace Unity.Netcode
                                 {
                                     if (networkObject.IsSpawned && networkObject.IsNetworkVisibleTo(clientId))
                                     {
-                                        targetClientIds.Add(clientId);
+                                        m_TargetClientIds.Add(clientId);
                                     }
                                 }
 
                                 ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                                 var context = messageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                    targetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
+                                    m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)
@@ -685,7 +688,7 @@ namespace Unity.Netcode
                                         nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
                                         var size = bufferSizeCapture.StopMeasureSegment();
-                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                     }
                                 }
                             }
