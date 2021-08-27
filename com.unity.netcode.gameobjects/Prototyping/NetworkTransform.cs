@@ -128,6 +128,12 @@ namespace Unity.Netcode.Prototyping
             }
         }
 
+        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
+        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
+        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
+
+        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
         /// This is important to set since reparenting this transform could have issues,
@@ -137,11 +143,8 @@ namespace Unity.Netcode.Prototyping
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
-        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
-        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
-
-        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+        // todo: revisit after MTT-876
+        public bool Interpolate = true;
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
