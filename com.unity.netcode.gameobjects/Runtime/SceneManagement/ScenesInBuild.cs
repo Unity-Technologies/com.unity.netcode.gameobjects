@@ -22,7 +22,7 @@ namespace Unity.Netcode
         [SerializeField]
         internal List<string> Scenes;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
 
         /// <summary>
         /// Determines if we are running a unit test
