@@ -329,16 +329,14 @@ namespace Unity.Netcode
                     new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
 
-                        var size = bufferSizeCapture.StopMeasureSegment();
-                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
-                    }
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
                 }
             }
         }
@@ -744,11 +742,9 @@ namespace Unity.Netcode
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
-                    WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
             }
         }
 

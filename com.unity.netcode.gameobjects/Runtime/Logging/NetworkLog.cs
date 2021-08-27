@@ -61,16 +61,14 @@ namespace Unity.Netcode
                     new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
-                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
-                        nonNullContext.NetworkWriter.WriteStringPacked(message);
-                        var size = bufferSizeCapture.StopMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+                    nonNullContext.NetworkWriter.WriteByte((byte)logType);
+                    nonNullContext.NetworkWriter.WriteStringPacked(message);
+                    var size = bufferSizeCapture.StopMeasureSegment();
 
-                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
-                    }
+                    NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
                 }
             }
         }
