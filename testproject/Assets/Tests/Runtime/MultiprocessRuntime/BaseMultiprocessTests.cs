@@ -75,7 +75,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
-                yield return new WaitForSeconds(1.0f);
+                yield return new WaitForSeconds(0.2f);
 
                 if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
