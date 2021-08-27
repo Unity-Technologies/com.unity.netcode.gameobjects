@@ -7,9 +7,6 @@ namespace Unity.Netcode.Editor
     [CustomEditor(typeof(NetworkTransform))]
     public class NetworkTransformEditor : UnityEditor.Editor
     {
-        private NetworkTransform m_NetworkTransform;
-
-        private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_SyncPositionXProperty;
         private SerializedProperty m_SyncPositionYProperty;
         private SerializedProperty m_SyncPositionZProperty;
@@ -22,6 +19,8 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_PositionThresholdProperty;
         private SerializedProperty m_RotAngleThresholdProperty;
         private SerializedProperty m_ScaleThresholdProperty;
+        private SerializedProperty m_InLocalSpaceProperty;
+        private SerializedProperty m_InterpolateProperty;
 
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
@@ -31,9 +30,6 @@ namespace Unity.Netcode.Editor
 
         public void OnEnable()
         {
-            m_NetworkTransform = target as NetworkTransform;
-
-            m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
             m_SyncPositionYProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionY));
             m_SyncPositionZProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionZ));
@@ -46,13 +42,12 @@ namespace Unity.Netcode.Editor
             m_PositionThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionThreshold));
             m_RotAngleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotAngleThreshold));
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
+            m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
+            m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
         }
 
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
-
-            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Syncing", EditorStyles.boldLabel);
             {
                 GUILayout.BeginHorizontal();
@@ -111,6 +106,11 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_PositionThresholdProperty);
             EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
             EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            EditorGUILayout.PropertyField(m_InterpolateProperty);
 
             serializedObject.ApplyModifiedProperties();
         }
