@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
-            Debug.Log($"HiddenVariableObject.OnNetworkSpawn()");
+            Debug.Log($"{nameof(HiddenVariableObject)}.{nameof(OnNetworkSpawn)}()");
 
             MyNetworkVariable.OnValueChanged += Changed;
             MyNetworkList.OnListChanged += ListChanged;
