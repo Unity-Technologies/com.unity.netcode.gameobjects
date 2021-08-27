@@ -652,7 +652,7 @@ namespace Unity.Netcode
                             // As long as we have any remaining clients, then notify of the object being destroy.
                             if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
-                                List<ulong> targetClientIds = new List<ulong>();
+                                var targetClientIds = new List<ulong>();
 
                                 // We keep only the client for which the object is visible
                                 // as the other clients have them already despawned
