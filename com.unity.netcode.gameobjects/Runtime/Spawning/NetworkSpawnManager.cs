@@ -312,8 +312,15 @@ namespace Unity.Netcode
                 return;
             }
 
+            // this initialization really should be at the bottom of the function
             networkObject.IsSpawned = true;
 
+            // this initialization really should be at the top of this function.  If and when we break the
+            //  NetworkVariable dependency on NetworkBehaviour, this otherwise creates problems because
+            //  SetNetworkVariableData above calls InitializeVariables, and the 'baked out' data isn't ready there;
+            //  the current design banks on getting the network behaviour set and then only reading from it
+            //  after the below initialization code.  However cowardice compels me to hold off on moving this until
+            //  that commit
             networkObject.IsSceneObject = sceneObject;
             networkObject.NetworkObjectId = networkId;
 
@@ -363,7 +370,7 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkSpawn();
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject)
+        internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
         {
             if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
