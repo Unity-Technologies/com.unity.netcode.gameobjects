@@ -84,14 +84,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // NetworkVariable Value Type Constructor Test Coverage
             m_NetworkVariableBool = new NetworkVariable<bool>(true);
-            m_NetworkVariableByte = new NetworkVariable<byte>(0);
+            m_NetworkVariableByte = new NetworkVariable<byte>((byte)0);
             m_NetworkVariableColor = new NetworkVariable<Color>(new Color(1, 1, 1, 1));
             m_NetworkVariableColor32 = new NetworkVariable<Color32>(new Color32(1, 1, 1, 1));
             m_NetworkVariableDouble = new NetworkVariable<double>(1.0);
             m_NetworkVariableFloat = new NetworkVariable<float>(1.0f);
             m_NetworkVariableInt = new NetworkVariable<int>(1);
             m_NetworkVariableLong = new NetworkVariable<long>(1);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>(0);
+            m_NetworkVariableSByte = new NetworkVariable<sbyte>((sbyte)0);
             m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(Quaternion.identity);
             m_NetworkVariableShort = new NetworkVariable<short>(256);
             m_NetworkVariableVector4 = new NetworkVariable<Vector4>(new Vector4(1, 1, 1, 1));
@@ -102,49 +102,45 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableUInt = new NetworkVariable<uint>(1);
             m_NetworkVariableUShort = new NetworkVariable<ushort>(1);
 
-
-            // NetworkVariable NetworkVariableSettings Constructor Test Coverage
-            var settings = new NetworkVariableSettings();
-            settings.ReadPermission = NetworkVariableReadPermission.Everyone;
-            m_NetworkVariableBool = new NetworkVariable<bool>(settings);
-            m_NetworkVariableByte = new NetworkVariable<byte>(settings);
-            m_NetworkVariableColor = new NetworkVariable<Color>(settings);
-            m_NetworkVariableColor32 = new NetworkVariable<Color32>(settings);
-            m_NetworkVariableDouble = new NetworkVariable<double>(settings);
-            m_NetworkVariableFloat = new NetworkVariable<float>(settings);
-            m_NetworkVariableInt = new NetworkVariable<int>(settings);
-            m_NetworkVariableLong = new NetworkVariable<long>(settings);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>(settings);
-            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(settings);
-            m_NetworkVariableShort = new NetworkVariable<short>(settings);
-            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(settings);
-            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(settings);
-            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(settings);
-            m_NetworkVariableRay = new NetworkVariable<Ray>(settings);
-            m_NetworkVariableULong = new NetworkVariable<ulong>(settings);
-            m_NetworkVariableUInt = new NetworkVariable<uint>(settings);
-            m_NetworkVariableUShort = new NetworkVariable<ushort>(settings);
+            m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableByte = new NetworkVariable<byte>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableColor = new NetworkVariable<Color>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableColor32 = new NetworkVariable<Color32>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableDouble = new NetworkVariable<double>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableFloat = new NetworkVariable<float>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableInt = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableLong = new NetworkVariable<long>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableSByte = new NetworkVariable<sbyte>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableShort = new NetworkVariable<short>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableRay = new NetworkVariable<Ray>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableULong = new NetworkVariable<ulong>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableUInt = new NetworkVariable<uint>(NetworkVariableReadPermission.Everyone);
+            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone);
 
 
             // NetworkVariable Value Type and NetworkVariableSettings Constructor Test Coverage
-            m_NetworkVariableBool = new NetworkVariable<bool>(settings, true);
-            m_NetworkVariableByte = new NetworkVariable<byte>(settings, 0);
-            m_NetworkVariableColor = new NetworkVariable<Color>(settings, new Color(1, 1, 1, 1));
-            m_NetworkVariableColor32 = new NetworkVariable<Color32>(settings, new Color32(1, 1, 1, 1));
-            m_NetworkVariableDouble = new NetworkVariable<double>(settings, 1.0);
-            m_NetworkVariableFloat = new NetworkVariable<float>(settings, 1.0f);
-            m_NetworkVariableInt = new NetworkVariable<int>(settings, 1);
-            m_NetworkVariableLong = new NetworkVariable<long>(settings, 1);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>(settings, 0);
-            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(settings, Quaternion.identity);
-            m_NetworkVariableShort = new NetworkVariable<short>(settings, 1);
-            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(settings, new Vector4(1, 1, 1, 1));
-            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(settings, new Vector3(1, 1, 1));
-            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(settings, new Vector2(1, 1));
-            m_NetworkVariableRay = new NetworkVariable<Ray>(settings, new Ray());
-            m_NetworkVariableULong = new NetworkVariable<ulong>(settings, 1);
-            m_NetworkVariableUInt = new NetworkVariable<uint>(settings, 1);
-            m_NetworkVariableUShort = new NetworkVariable<ushort>(settings, 1);
+            m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, true);
+            m_NetworkVariableByte = new NetworkVariable<byte>(NetworkVariableReadPermission.Everyone, 0);
+            m_NetworkVariableColor = new NetworkVariable<Color>(NetworkVariableReadPermission.Everyone, new Color(1, 1, 1, 1));
+            m_NetworkVariableColor32 = new NetworkVariable<Color32>(NetworkVariableReadPermission.Everyone, new Color32(1, 1, 1, 1));
+            m_NetworkVariableDouble = new NetworkVariable<double>(NetworkVariableReadPermission.Everyone, 1.0);
+            m_NetworkVariableFloat = new NetworkVariable<float>(NetworkVariableReadPermission.Everyone, 1.0f);
+            m_NetworkVariableInt = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableLong = new NetworkVariable<long>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableSByte = new NetworkVariable<sbyte>(NetworkVariableReadPermission.Everyone, 0);
+            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone, Quaternion.identity);
+            m_NetworkVariableShort = new NetworkVariable<short>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(NetworkVariableReadPermission.Everyone, new Vector4(1, 1, 1, 1));
+            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone, new Vector3(1, 1, 1));
+            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(NetworkVariableReadPermission.Everyone, new Vector2(1, 1));
+            m_NetworkVariableRay = new NetworkVariable<Ray>(NetworkVariableReadPermission.Everyone, new Ray());
+            m_NetworkVariableULong = new NetworkVariable<ulong>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableUInt = new NetworkVariable<uint>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone, 1);
 
             // Use this nifty class: NetworkVariableHelper
             // Tracks if NetworkVariable changed invokes the OnValueChanged callback for the given instance type
