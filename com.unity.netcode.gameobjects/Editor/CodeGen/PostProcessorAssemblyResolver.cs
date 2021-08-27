@@ -97,10 +97,10 @@ namespace Unity.Netcode.Editor.CodeGen
             return Retry(10, TimeSpan.FromSeconds(1), () =>
             {
                 byte[] byteArray;
-                var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                byteArray = new byte[fs.Length];
-                var readLength = fs.Read(byteArray, 0, (int)fs.Length);
-                if (readLength != fs.Length)
+                using var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                byteArray = new byte[fileStream.Length];
+                var readLength = fileStream.Read(byteArray, 0, (int)fileStream.Length);
+                if (readLength != fileStream.Length)
                 {
                     throw new InvalidOperationException("File read length is not full length of file.");
                 }
