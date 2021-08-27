@@ -338,10 +338,8 @@ namespace Unity.Netcode
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                SceneEventData.OnWrite(nonNullContext.NetworkWriter);
                 return;
             }
 
@@ -506,15 +504,13 @@ namespace Unity.Netcode
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
-                    ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(sceneEventProgress.SceneName);
-                    ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
-                    ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
-                    ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
-                    ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-                }
+                using var nonNullContext = (InternalCommandContext)context);
+                ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
+                ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(sceneEventProgress.SceneName);
+                ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
+                ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
+                ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
+                ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
             }
 
             // Send a local notification to the server that all clients are done loading or unloading
@@ -965,10 +961,8 @@ namespace Unity.Netcode
                         // Set the target client id that will be used during in scene NetworkObject serialization
                         SceneEventData.TargetClientId = clientId;
 
-                        using (var nonNullContext = (InternalCommandContext)context)
-                        {
-                            SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                        }
+                        using var nonNullContext = (InternalCommandContext)context;
+                        SceneEventData.OnWrite(nonNullContext.NetworkWriter);
                     }
                     else
                     {
@@ -1073,10 +1067,8 @@ namespace Unity.Netcode
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, new ulong[] { clientId }, k_NetworkUpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
             }
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
@@ -1217,10 +1209,8 @@ namespace Unity.Netcode
                 new ulong[] { m_NetworkManager.ServerClientId }, k_NetworkUpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
             }
 
             // Send notification to local client that the scene has finished loading
