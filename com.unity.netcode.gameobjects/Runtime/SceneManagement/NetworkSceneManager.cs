@@ -85,7 +85,7 @@ namespace Unity.Netcode
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
     /// Uses the <see cref="MessageQueueContainer.MessageType.SceneEvent"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
-    public class NetworkSceneManager
+    public class NetworkSceneManager:IDisposable
     {
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
@@ -180,6 +180,8 @@ namespace Unity.Netcode
 
 
         internal Scene DontDestroyOnLoadScene;
+        private GameObject m_DDOLObject;
+
 
         /// <summary>
         /// Constructor
@@ -196,13 +198,25 @@ namespace Unity.Netcode
             }
             else
             {
-                var ddolObject = new GameObject("DDOL_SM");
-                UnityEngine.Object.DontDestroyOnLoad(ddolObject);
-                DontDestroyOnLoadScene = ddolObject.scene;
+                m_DDOLObject = new GameObject("DDOL_SM");
+                UnityEngine.Object.DontDestroyOnLoad(m_DDOLObject);
+                DontDestroyOnLoadScene = m_DDOLObject.scene;
             }
 
             ServerSceneHandleToClientSceneHandle.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle);
             ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
+        }
+
+        /// <summary>
+        /// Handle cleaning up the DDOL GameObject
+        /// </summary>
+        public void Dispose()
+        {
+            if(m_DDOLObject != null)
+            {
+                UnityEngine.Object.DestroyImmediate(m_DDOLObject);
+            }
+            m_DDOLObject = null;
         }
 
         /// <summary>
