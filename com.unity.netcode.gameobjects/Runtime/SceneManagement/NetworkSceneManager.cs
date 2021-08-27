@@ -504,7 +504,7 @@ namespace Unity.Netcode
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
             if (context != null)
             {
-                using var nonNullContext = (InternalCommandContext)context);
+                using var nonNullContext = (InternalCommandContext)context;
                 ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
                 ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(sceneEventProgress.SceneName);
                 ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
