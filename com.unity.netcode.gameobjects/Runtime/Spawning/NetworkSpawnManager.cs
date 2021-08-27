@@ -647,16 +647,27 @@ namespace Unity.Netcode
                     var messageQueueContainer = NetworkManager.MessageQueueContainer;
                     if (messageQueueContainer != null)
                     {
-                        if (networkObject != null && !networkObject.IsHidden)
+                        if (networkObject != null)
                         {
                             // As long as we have any remaining clients, then notify of the object being destroy.
                             if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
+                                List<ulong> targetClientIds = new List<ulong>();
+
+                                // We keep only the client for which the object is visible
+                                // as the other clients have them already despawned
+                                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                                {
+                                    if (networkObject.IsSpawned && networkObject.IsNetworkVisibleTo(clientId))
+                                    {
+                                        targetClientIds.Add(clientId);
+                                    }
+                                }
 
                                 ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                                 var context = messageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                    clientIds, NetworkUpdateStage.PostLateUpdate);
+                                    targetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)
