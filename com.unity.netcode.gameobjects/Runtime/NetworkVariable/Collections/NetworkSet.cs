@@ -1,5 +1,4 @@
 #if !NET35
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,15 +9,10 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T: unmanaged
+    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T : unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
-
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// Delegate type for set changed event
@@ -40,14 +34,14 @@ namespace Unity.Netcode
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkSet(NetworkVariableSettings settings) : base(settings) { }
+        public NetworkSet(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkSet with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkSet</param>
         /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableSettings settings, ISet<T> value) : base(settings)
+        public NetworkSet(NetworkVariableReadPermission readPerm, ISet<T> value) : base(readPerm)
         {
             m_Set = value;
         }
@@ -66,7 +60,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -299,8 +292,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -329,8 +320,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
@@ -354,7 +343,6 @@ namespace Unity.Netcode
 
         public bool Add(T item)
         {
-            EnsureInitialized();
             m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
@@ -378,7 +366,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_Set.Clear();
 
             var setEvent = new NetworkSetEvent<T>()
@@ -408,7 +395,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_Set.Remove(item);
 
             var setEvent = new NetworkSetEvent<T>()
@@ -438,14 +424,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }

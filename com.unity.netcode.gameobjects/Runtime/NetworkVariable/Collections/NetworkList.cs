@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,11 +12,6 @@ namespace Unity.Netcode
     {
         private readonly IList<T> m_List = new List<T>();
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
-
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// Delegate type for list changed event
@@ -38,15 +32,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings) : base(settings) { }
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
+        public NetworkList(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkList with a custom value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
         /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings, IList<T> value) : base(settings)
+        public NetworkList(NetworkVariableReadPermission readPerm, IList<T> value) : base(readPerm)
         {
             m_List = value;
         }
@@ -65,7 +59,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -338,7 +331,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(T item)
         {
-            EnsureInitialized();
             m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -354,7 +346,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
@@ -380,7 +371,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_List.Remove(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -408,7 +398,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            EnsureInitialized();
             m_List.Insert(index, item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -424,7 +413,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            EnsureInitialized();
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
@@ -443,7 +431,6 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
-                EnsureInitialized();
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
@@ -459,11 +446,7 @@ namespace Unity.Netcode
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-            {
-                m_DirtyEvents.Add(listEvent);
-            }
-
+            m_DirtyEvents.Add(listEvent);
             OnListChanged?.Invoke(listEvent);
         }
 
@@ -473,14 +456,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkList
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkList<T>) + " before it's initialized");
             }
         }
     }
