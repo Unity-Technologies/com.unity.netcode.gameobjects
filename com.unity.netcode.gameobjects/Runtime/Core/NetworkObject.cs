@@ -238,6 +238,7 @@ namespace Unity.Netcode
             {
                 SnapshotSpawn(clientId);
             }
+
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
@@ -312,6 +313,7 @@ namespace Unity.Netcode
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
+
 
             Observers.Remove(clientId);
 
