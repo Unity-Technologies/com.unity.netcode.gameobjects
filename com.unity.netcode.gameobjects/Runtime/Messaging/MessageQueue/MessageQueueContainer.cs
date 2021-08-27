@@ -806,7 +806,7 @@ namespace Unity.Netcode
         }
 
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_INCLUDE_TESTS
         /// <summary>
         /// Enables testing of the MessageQueueContainer
         /// </summary>

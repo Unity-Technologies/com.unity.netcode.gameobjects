@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
@@ -7,6 +8,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.EditorTests
 {
+
     public class BuildTests
     {
         public const string DefaultBuildScenePath = "Tests/Editor/Build/BuildTestScene.unity";
@@ -26,3 +28,4 @@ namespace Unity.Netcode.EditorTests
         }
     }
 }
+#endif
