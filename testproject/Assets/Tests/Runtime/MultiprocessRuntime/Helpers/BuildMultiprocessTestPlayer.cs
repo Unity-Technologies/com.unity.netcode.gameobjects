@@ -109,6 +109,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static BuildInfo ReadBuildInfo()
         {
+            //TODO: For mobile platforms, determine if this is the right way to get the BuildInfoFile, currently this fails on android
             var jsonString = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));
             return JsonUtility.FromJson<BuildInfo>(jsonString);
         }
@@ -118,5 +119,47 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var buildInfoJson = JsonUtility.ToJson(toSave);
             File.WriteAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName), buildInfoJson);
         }
+
+        public static bool IsMultiprocessTestPlayerAvailable()
+        {
+            bool answer = false;
+            try
+            {
+                var buildInfoPath = Path.Combine(Application.streamingAssetsPath, BuildInfoFileName);
+                var buildInfoFileInfo = new FileInfo(buildInfoPath);
+                if (!buildInfoFileInfo.Exists)
+                {
+                    return false;
+                }
+                var buildPath = ReadBuildInfo().BuildPath;
+                FileInfo buildPathFileInfo = null;
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.OSXEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.app/Contents/MacOS/testproject");
+                        break;
+                    case RuntimePlatform.WindowsEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.exe");
+                        break;
+                    case RuntimePlatform.LinuxEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}");
+                        break;
+                }
+
+                if (buildPathFileInfo != null && buildPathFileInfo.Exists)
+                {
+                    answer = true;
+                }
+
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                answer = false;
+            }
+
+            return answer;
+        }
+
     }
 }
