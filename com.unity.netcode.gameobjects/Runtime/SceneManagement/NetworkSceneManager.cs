@@ -192,13 +192,29 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+
+            // If NetworkManager has this set to true, then we can get the DDOL (DontDestroyOnLoad) from its GaemObject
             if (networkManager.DontDestroy)
             {
                 DontDestroyOnLoadScene = networkManager.gameObject.scene;
             }
-            else
+            else // Otherwise, we have to create a GameObject and move it into the DDOL to get the scene
             {
-                m_DDOLObject = new GameObject("DDOL_SM");
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // During unit and integration tests, we could initialize and then enable scene management
+                // which would make this generate an extra GameObject per instance. The DontDestroyOnLoadScene
+                // is internal so tests that are using multiInstance and that are moving NetworkObjects into
+                // the DDOL scene will have to manually set this. Otherwise, we can exclude DDOL stuff completely
+                // during unit testing.
+                if (m_IsRunningUnitTest)
+                {
+                    return;
+                }
+#endif
+                // Create our DDOL GameObject and move it into the DDOL scene so we can register the DDOL with
+                // the NetworkSceneManager.
+                m_DDOLObject = new GameObject("DDOL-NWSM");
                 UnityEngine.Object.DontDestroyOnLoad(m_DDOLObject);
                 DontDestroyOnLoadScene = m_DDOLObject.scene;
             }
