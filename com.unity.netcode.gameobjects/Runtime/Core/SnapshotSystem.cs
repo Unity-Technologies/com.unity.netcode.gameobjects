@@ -714,34 +714,30 @@ namespace Unity.Netcode
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    var sequence = m_ClientData[clientId].SequenceNumber;
+                using var nonNullContext = (InternalCommandContext)context;
+                var sequence = m_ClientData[clientId].SequenceNumber;
 
-                    // write the tick and sequence header
-                    nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
-                    nonNullContext.NetworkWriter.WriteUInt16(sequence);
+                // write the tick and sequence header
+                nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
+                nonNullContext.NetworkWriter.WriteUInt16(sequence);
 
-                    var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
+                var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
 
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        // write the snapshot: buffer, index, spawns, despawns
-                        writer.WriteUInt16(SentinelBefore);
-                        WriteBuffer(buffer);
-                        WriteIndex(buffer);
-                        WriteSpawns(buffer, clientId);
-                        WriteAcks(buffer, clientId);
-                        writer.WriteUInt16(SentinelAfter);
+                using var writer = PooledNetworkWriter.Get(buffer);
+                // write the snapshot: buffer, index, spawns, despawns
+                writer.WriteUInt16(SentinelBefore);
+                WriteBuffer(buffer);
+                WriteIndex(buffer);
+                WriteSpawns(buffer, clientId);
+                WriteAcks(buffer, clientId);
+                writer.WriteUInt16(SentinelAfter);
 
-                        m_ClientData[clientId].LastReceivedSequence = 0;
+                m_ClientData[clientId].LastReceivedSequence = 0;
 
-                        // todo: this is incorrect (well, sub-optimal)
-                        // we should still continue ack'ing past messages, in case this one is dropped
-                        m_ClientData[clientId].ReceivedSequenceMask = 0;
-                        m_ClientData[clientId].SequenceNumber++;
-                    }
-                }
+                // todo: this is incorrect (well, sub-optimal)
+                // we should still continue ack'ing past messages, in case this one is dropped
+                m_ClientData[clientId].ReceivedSequenceMask = 0;
+                m_ClientData[clientId].SequenceNumber++;
             }
         }
 
@@ -772,71 +768,67 @@ namespace Unity.Netcode
                 clientData.NextDespawnIndex = 0;
             }
 
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using var writer = PooledNetworkWriter.Get(buffer);
+            var positionSpawns = writer.GetStream().Position;
+            writer.WriteInt16((short)m_Snapshot.NumSpawns);
+            var positionDespawns = writer.GetStream().Position;
+            writer.WriteInt16((short)m_Snapshot.NumDespawns);
+
+            for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
             {
-                var positionSpawns = writer.GetStream().Position;
-                writer.WriteInt16((short)m_Snapshot.NumSpawns);
-                var positionDespawns = writer.GetStream().Position;
-                writer.WriteInt16((short)m_Snapshot.NumDespawns);
+                var index = clientData.NextSpawnIndex;
 
-                for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
+                if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
                 {
-                    var index = clientData.NextSpawnIndex;
-
-                    if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
-                    {
-                        m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
-                        spawnWritten++;
-                    }
-
-                    // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
-                    {
-                        overSize = true;
-                    }
-                    clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
+                    m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
+                    spawnWritten++;
                 }
 
-
-                for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
+                // limit spawn sizes, compare current pos to very first position we wrote to
+                if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
                 {
-                    var index = clientData.NextDespawnIndex;
-
-                    if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
-                    {
-                        m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
-                        despawnWritten++;
-                    }
-                    // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
-                    {
-                        overSize = true;
-                    }
-                    clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % m_Snapshot.NumDespawns;
+                    overSize = true;
                 }
-
-                long positionAfter = 0;
-
-                positionAfter = writer.GetStream().Position;
-                writer.GetStream().Position = positionSpawns;
-                writer.WriteInt16((short)spawnWritten);
-                writer.GetStream().Position = positionAfter;
-
-                positionAfter = writer.GetStream().Position;
-                writer.GetStream().Position = positionDespawns;
-                writer.WriteInt16((short)despawnWritten);
-                writer.GetStream().Position = positionAfter;
+                clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
             }
+
+
+            for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
+            {
+                var index = clientData.NextDespawnIndex;
+
+                if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
+                {
+                    m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
+                    despawnWritten++;
+                }
+                // limit spawn sizes, compare current pos to very first position we wrote to
+                if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                {
+                    overSize = true;
+                }
+                clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % m_Snapshot.NumDespawns;
+            }
+
+            long positionAfter = 0;
+
+            positionAfter = writer.GetStream().Position;
+            writer.GetStream().Position = positionSpawns;
+            writer.WriteInt16((short)spawnWritten);
+            writer.GetStream().Position = positionAfter;
+
+            positionAfter = writer.GetStream().Position;
+            writer.GetStream().Position = positionDespawns;
+            writer.WriteInt16((short)despawnWritten);
+            writer.GetStream().Position = positionAfter;
         }
 
         private void WriteAcks(NetworkBuffer buffer, ulong clientId)
         {
-            using (var writer = PooledNetworkWriter.Get(buffer))
-            {
-                // todo: revisit whether 16-bit is enough for LastReceivedSequence
-                writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
-                writer.WriteUInt16(m_ClientData[clientId].ReceivedSequenceMask);
-            }
+            using var writer = PooledNetworkWriter.Get(buffer);
+            // todo: revisit whether 16-bit is enough for LastReceivedSequence
+            writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
+            writer.WriteUInt16(m_ClientData[clientId].ReceivedSequenceMask);
         }
 
         /// <summary>
@@ -845,13 +837,11 @@ namespace Unity.Netcode
         /// <param name="buffer">The buffer to write the index to</param>
         private void WriteIndex(NetworkBuffer buffer)
         {
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using var writer = PooledNetworkWriter.Get(buffer);
+            writer.WriteInt16((short)m_Snapshot.LastEntry);
+            for (var i = 0; i < m_Snapshot.LastEntry; i++)
             {
-                writer.WriteInt16((short)m_Snapshot.LastEntry);
-                for (var i = 0; i < m_Snapshot.LastEntry; i++)
-                {
-                    m_Snapshot.WriteEntry(writer, in m_Snapshot.Entries[i]);
-                }
+                m_Snapshot.WriteEntry(writer, in m_Snapshot.Entries[i]);
             }
         }
 
@@ -862,10 +852,8 @@ namespace Unity.Netcode
         /// <param name="buffer">The NetworkBuffer to write our buffer of variables to</param>
         private void WriteBuffer(NetworkBuffer buffer)
         {
-            using (var writer = PooledNetworkWriter.Get(buffer))
-            {
-                writer.WriteUInt16((ushort)m_Snapshot.Allocator.Range);
-            }
+            using var writer = PooledNetworkWriter.Get(buffer);
+            writer.WriteUInt16((ushort)m_Snapshot.Allocator.Range);
 
             // todo --M1--
             // this sends the whole buffer
@@ -917,18 +905,16 @@ namespace Unity.Netcode
         private void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
-            using (var varBuffer = PooledNetworkBuffer.Get())
+            using var varBuffer = PooledNetworkBuffer.Get();
+            networkVariable.WriteDelta(varBuffer);
+            if (varBuffer.Length > snapshot.Entries[index].Length)
             {
-                networkVariable.WriteDelta(varBuffer);
-                if (varBuffer.Length > snapshot.Entries[index].Length)
-                {
-                    // allocate this Entry's buffer
-                    snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
-                }
-
-                // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.MainBuffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
+                // allocate this Entry's buffer
+                snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
             }
+
+            // Copy the serialized NetworkVariable into our buffer
+            Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.MainBuffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
         }
 
 
@@ -948,53 +934,70 @@ namespace Unity.Netcode
 
             int snapshotTick = default;
 
-            using (var reader = PooledNetworkReader.Get(snapshotStream))
+            using var reader = PooledNetworkReader.Get(snapshotStream);
+            // make sure we have a ClientData entry for each client
+            if (!m_ClientData.ContainsKey(clientId))
             {
-                // make sure we have a ClientData entry for each client
-                if (!m_ClientData.ContainsKey(clientId))
-                {
-                    m_ClientData.Add(clientId, new ClientData());
-                }
+                m_ClientData.Add(clientId, new ClientData());
+            }
 
-                snapshotTick = reader.ReadInt32Packed();
-                var sequence = reader.ReadUInt16();
+            snapshotTick = reader.ReadInt32Packed();
+            var sequence = reader.ReadUInt16();
 
-                // todo: check we didn't miss any and deal with gaps
-
+            if (sequence >= m_ClientData[clientId].LastReceivedSequence)
+            {
                 if (m_ClientData[clientId].ReceivedSequenceMask != 0)
                 {
                     // since each bit in ReceivedSequenceMask is relative to the last received sequence
                     // we need to shift all the bits by the difference in sequence
-                    m_ClientData[clientId].ReceivedSequenceMask <<=
-                        (sequence - m_ClientData[clientId].LastReceivedSequence);
+                    var shift = sequence - m_ClientData[clientId].LastReceivedSequence;
+                    if (shift < sizeof(ushort) * 8)
+                    {
+                        m_ClientData[clientId].ReceivedSequenceMask <<= shift;
+                    }
+                    else
+                    {
+                        m_ClientData[clientId].ReceivedSequenceMask = 0;
+                    }
                 }
 
                 if (m_ClientData[clientId].LastReceivedSequence != 0)
                 {
                     // because the bit we're adding for the previous ReceivedSequenceMask
                     // was implicit, it needs to be shift by one less
-                    m_ClientData[clientId].ReceivedSequenceMask +=
-                        (ushort)(1 << (ushort)((sequence - 1) - m_ClientData[clientId].LastReceivedSequence));
+                    var shift = sequence - 1 - m_ClientData[clientId].LastReceivedSequence;
+                    if (shift < sizeof(ushort) * 8)
+                    {
+                        m_ClientData[clientId].ReceivedSequenceMask |= (ushort)(1 << shift);
+                    }
                 }
 
                 m_ClientData[clientId].LastReceivedSequence = sequence;
+            }
+            else
+            {
+                // todo: Missing: dealing with out-of-order message acknowledgments
+                // we should set m_ClientData[clientId].ReceivedSequenceMask accordingly
+                // testing this will require a way to reorder SnapshotMessages, which we lack at the moment
+                //
+                // without this, we incur extra retransmit, not a catastrophic failure
+            }
 
-                var sentinel = reader.ReadUInt16();
-                if (sentinel != SentinelBefore)
-                {
-                    Debug.Log("Critical : snapshot integrity (before)");
-                }
+            var sentinel = reader.ReadUInt16();
+            if (sentinel != SentinelBefore)
+            {
+                Debug.Log("Critical : snapshot integrity (before)");
+            }
 
-                m_Snapshot.ReadBuffer(reader, snapshotStream);
-                m_Snapshot.ReadIndex(reader);
-                m_Snapshot.ReadSpawns(reader);
-                m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
+            m_Snapshot.ReadBuffer(reader, snapshotStream);
+            m_Snapshot.ReadIndex(reader);
+            m_Snapshot.ReadSpawns(reader);
+            m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
 
-                sentinel = reader.ReadUInt16();
-                if (sentinel != SentinelAfter)
-                {
-                    Debug.Log("Critical : snapshot integrity (after)");
-                }
+            sentinel = reader.ReadUInt16();
+            if (sentinel != SentinelAfter)
+            {
+                Debug.Log("Critical : snapshot integrity (after)");
             }
         }
 

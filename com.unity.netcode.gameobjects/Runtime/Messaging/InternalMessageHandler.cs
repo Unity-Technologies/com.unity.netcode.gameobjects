@@ -22,31 +22,29 @@ namespace Unity.Netcode
                 client.ConnectionState = PendingClient.State.PendingApproval;
             }
 
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ulong configHash = reader.ReadUInt64Packed();
+            if (!NetworkManager.NetworkConfig.CompareConfig(configHash))
             {
-                ulong configHash = reader.ReadUInt64Packed();
-                if (!NetworkManager.NetworkConfig.CompareConfig(configHash))
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
-                    }
-
-                    NetworkManager.DisconnectClient(clientId);
-                    return;
+                    NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
                 }
 
-                if (NetworkManager.NetworkConfig.ConnectionApproval)
-                {
-                    byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkManager.InvokeConnectionApproval(connectionBuffer, clientId,
-                        (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                            NetworkManager.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation));
-                }
-                else
-                {
-                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
-                }
+                NetworkManager.DisconnectClient(clientId);
+                return;
+            }
+
+            if (NetworkManager.NetworkConfig.ConnectionApproval)
+            {
+                byte[] connectionBuffer = reader.ReadByteArray();
+                NetworkManager.InvokeConnectionApproval(connectionBuffer, clientId,
+                    (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
+                        NetworkManager.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation));
+            }
+            else
+            {
+                NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
             }
         }
 
@@ -58,64 +56,60 @@ namespace Unity.Netcode
         /// <param name="receiveTime">time this message was received (currently not used)</param>
         public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            NetworkManager.LocalClientId = reader.ReadUInt64Packed();
+
+            int tick = reader.ReadInt32Packed();
+            var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+            NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
+
+            NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
+
+            // Only if scene management is disabled do we handle NetworkObject synchronization at this point
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement)
             {
-                NetworkManager.LocalClientId = reader.ReadUInt64Packed();
+                NetworkManager.SpawnManager.DestroySceneObjects();
 
-                int tick = reader.ReadInt32Packed();
-                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
-                NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
-
-                NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
-
-                // Only if scene management is disabled do we handle NetworkObject synchronization at this point
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement)
+                // is not packed!
+                var objectCount = reader.ReadUInt16();
+                for (ushort i = 0; i < objectCount; i++)
                 {
-                    NetworkManager.SpawnManager.DestroySceneObjects();
-
-                    // is not packed!
-                    var objectCount = reader.ReadUInt16();
-                    for (ushort i = 0; i < objectCount; i++)
-                    {
-                        NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
-                    }
+                    NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
                 }
             }
         }
 
         public void HandleAddObject(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            var isPlayerObject = reader.ReadBool();
+            var networkId = reader.ReadUInt64Packed();
+            var ownerClientId = reader.ReadUInt64Packed();
+            var hasParent = reader.ReadBool();
+            ulong? parentNetworkId = null;
+
+            if (hasParent)
             {
-                var isPlayerObject = reader.ReadBool();
-                var networkId = reader.ReadUInt64Packed();
-                var ownerClientId = reader.ReadUInt64Packed();
-                var hasParent = reader.ReadBool();
-                ulong? parentNetworkId = null;
-
-                if (hasParent)
-                {
-                    parentNetworkId = reader.ReadUInt64Packed();
-                }
-
-                var softSync = reader.ReadBool();
-                var prefabHash = reader.ReadUInt32Packed();
-
-                Vector3? pos = null;
-                Quaternion? rot = null;
-                if (reader.ReadBool())
-                {
-                    pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                    rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                }
-
-                var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
-
-                var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
-                networkObject.SetNetworkParenting(isReparented, latestParent);
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
-                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
+                parentNetworkId = reader.ReadUInt64Packed();
             }
+
+            var softSync = reader.ReadBool();
+            var prefabHash = reader.ReadUInt32Packed();
+
+            Vector3? pos = null;
+            Quaternion? rot = null;
+            if (reader.ReadBool())
+            {
+                pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+            }
+
+            var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+
+            var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
+            networkObject.SetNetworkParenting(isReparented, latestParent);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
+            m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
         }
 
         public void HandleDestroyObject(ulong clientId, Stream stream)
@@ -184,12 +178,10 @@ namespace Unity.Netcode
 
         public void HandleTimeSync(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                int tick = reader.ReadInt32Packed();
-                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
-                NetworkManager.NetworkTimeSystem.Sync(time.Time, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000d);
-            }
+            using var reader = PooledNetworkReader.Get(stream);
+            int tick = reader.ReadInt32Packed();
+            var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+            NetworkManager.NetworkTimeSystem.Sync(time.Time, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000d);
         }
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream)
@@ -204,33 +196,31 @@ namespace Unity.Netcode
                 return;
             }
 
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ulong networkObjectId = reader.ReadUInt64Packed();
+            ushort networkBehaviourIndex = reader.ReadUInt16Packed();
+
+            if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
             {
-                ulong networkObjectId = reader.ReadUInt64Packed();
-                ushort networkBehaviourIndex = reader.ReadUInt16Packed();
+                NetworkBehaviour behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
-                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-                {
-                    NetworkBehaviour instance = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
-
-                    if (instance == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"Network variable delta message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
-                        }
-                    }
-                    else
-                    {
-                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance, NetworkManager);
-                    }
-                }
-                else if (NetworkManager.IsServer)
+                if (behaviour == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"Network variable delta message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
+                        NetworkLog.LogWarning($"Network variable delta message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
                     }
+                }
+                else
+                {
+                    behaviour.HandleNetworkVariableDeltas(stream, clientId);
+                }
+            }
+            else if (NetworkManager.IsServer)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Network variable delta message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
                 }
             }
         }
@@ -284,35 +274,31 @@ namespace Unity.Netcode
 
         public void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                ulong hash = reader.ReadUInt64Packed();
+            using var reader = PooledNetworkReader.Get(stream);
+            ulong hash = reader.ReadUInt64Packed();
 
-                NetworkManager.CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
-            }
+            NetworkManager.CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
         }
 
         public void HandleNetworkLog(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                var length = stream.Length;
-                var logType = (NetworkLog.LogType)reader.ReadByte();
-                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, length);
-                string message = reader.ReadStringPacked();
+            using var reader = PooledNetworkReader.Get(stream);
+            var length = stream.Length;
+            var logType = (NetworkLog.LogType)reader.ReadByte();
+            m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, length);
+            string message = reader.ReadStringPacked();
 
-                switch (logType)
-                {
-                    case NetworkLog.LogType.Info:
-                        NetworkLog.LogInfoServerLocal(message, clientId);
-                        break;
-                    case NetworkLog.LogType.Warning:
-                        NetworkLog.LogWarningServerLocal(message, clientId);
-                        break;
-                    case NetworkLog.LogType.Error:
-                        NetworkLog.LogErrorServerLocal(message, clientId);
-                        break;
-                }
+            switch (logType)
+            {
+                case NetworkLog.LogType.Info:
+                    NetworkLog.LogInfoServerLocal(message, clientId);
+                    break;
+                case NetworkLog.LogType.Warning:
+                    NetworkLog.LogWarningServerLocal(message, clientId);
+                    break;
+                case NetworkLog.LogType.Error:
+                    NetworkLog.LogErrorServerLocal(message, clientId);
+                    break;
             }
         }
 

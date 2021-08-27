@@ -1,5 +1,4 @@
 #if !NET35
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,15 +9,10 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T: unmanaged
+    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T : unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
-
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// Delegate type for set changed event
@@ -40,14 +34,14 @@ namespace Unity.Netcode
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkSet(NetworkVariableSettings settings) : base(settings) { }
+        public NetworkSet(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkSet with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkSet</param>
         /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableSettings settings, ISet<T> value) : base(settings)
+        public NetworkSet(NetworkVariableReadPermission readPerm, ISet<T> value) : base(readPerm)
         {
             m_Set = value;
         }
@@ -66,7 +60,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -78,31 +71,29 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
+            for (int i = 0; i < m_DirtyEvents.Count; i++)
             {
-                writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
-                for (int i = 0; i < m_DirtyEvents.Count; i++)
-                {
-                    writer.WriteBits((byte)m_DirtyEvents[i].Type, 2);
+                writer.WriteBits((byte)m_DirtyEvents[i].Type, 2);
 
-                    switch (m_DirtyEvents[i].Type)
-                    {
-                        case NetworkSetEvent<T>.EventType.Add:
-                            {
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkSetEvent<T>.EventType.Remove:
-                            {
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkSetEvent<T>.EventType.Clear:
-                            {
-                                //Nothing has to be written
-                            }
-                            break;
-                    }
+                switch (m_DirtyEvents[i].Type)
+                {
+                    case NetworkSetEvent<T>.EventType.Add:
+                        {
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkSetEvent<T>.EventType.Remove:
+                        {
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkSetEvent<T>.EventType.Clear:
+                        {
+                            //Nothing has to be written
+                        }
+                        break;
                 }
             }
         }
@@ -110,114 +101,108 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
-            {
-                writer.WriteUInt16Packed((ushort)m_Set.Count);
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteUInt16Packed((ushort)m_Set.Count);
 
-                foreach (T value in m_Set)
-                {
-                    writer.WriteObjectPacked(value); //BOX
-                }
+            foreach (T value in m_Set)
+            {
+                writer.WriteObjectPacked(value); //BOX
             }
         }
 
         /// <inheritdoc />
         public override void ReadField(Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                m_Set.Clear();
-                ushort count = reader.ReadUInt16Packed();
+            using var reader = PooledNetworkReader.Get(stream);
+            m_Set.Clear();
+            ushort count = reader.ReadUInt16Packed();
 
-                for (int i = 0; i < count; i++)
-                {
-                    m_Set.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
-                }
+            for (int i = 0; i < count; i++)
+            {
+                m_Set.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
             }
         }
 
         /// <inheritdoc />
         public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ushort deltaCount = reader.ReadUInt16Packed();
+            for (int i = 0; i < deltaCount; i++)
             {
-                ushort deltaCount = reader.ReadUInt16Packed();
-                for (int i = 0; i < deltaCount; i++)
+                var eventType = (NetworkSetEvent<T>.EventType)reader.ReadBits(2);
+                switch (eventType)
                 {
-                    var eventType = (NetworkSetEvent<T>.EventType)reader.ReadBits(2);
-                    switch (eventType)
-                    {
-                        case NetworkSetEvent<T>.EventType.Add:
+                    case NetworkSetEvent<T>.EventType.Add:
+                        {
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            m_Set.Add(value);
+
+                            if (OnSetChanged != null)
                             {
-                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                                m_Set.Add(value);
-
-                                if (OnSetChanged != null)
+                                OnSetChanged(new NetworkSetEvent<T>
                                 {
-                                    OnSetChanged(new NetworkSetEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Value = value
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Value = value
-                                    });
-                                }
+                                    Type = eventType,
+                                    Value = value
+                                });
                             }
-                            break;
-                        case NetworkSetEvent<T>.EventType.Remove:
+
+                            if (keepDirtyDelta)
                             {
-                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                                m_Set.Remove(value);
-
-                                if (OnSetChanged != null)
+                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
                                 {
-                                    OnSetChanged(new NetworkSetEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Value = value
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Value = value
-                                    });
-                                }
+                                    Type = eventType,
+                                    Value = value
+                                });
                             }
-                            break;
-                        case NetworkSetEvent<T>.EventType.Clear:
+                        }
+                        break;
+                    case NetworkSetEvent<T>.EventType.Remove:
+                        {
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            m_Set.Remove(value);
+
+                            if (OnSetChanged != null)
                             {
-                                //Read nothing
-                                m_Set.Clear();
-
-                                if (OnSetChanged != null)
+                                OnSetChanged(new NetworkSetEvent<T>
                                 {
-                                    OnSetChanged(new NetworkSetEvent<T>
-                                    {
-                                        Type = eventType,
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
-                                    {
-                                        Type = eventType
-                                    });
-                                }
+                                    Type = eventType,
+                                    Value = value
+                                });
                             }
-                            break;
-                    }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                {
+                                    Type = eventType,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkSetEvent<T>.EventType.Clear:
+                        {
+                            //Read nothing
+                            m_Set.Clear();
+
+                            if (OnSetChanged != null)
+                            {
+                                OnSetChanged(new NetworkSetEvent<T>
+                                {
+                                    Type = eventType,
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                {
+                                    Type = eventType
+                                });
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -299,8 +284,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -329,8 +312,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
-            EnsureInitialized();
-
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
@@ -354,7 +335,6 @@ namespace Unity.Netcode
 
         public bool Add(T item)
         {
-            EnsureInitialized();
             m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
@@ -378,7 +358,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_Set.Clear();
 
             var setEvent = new NetworkSetEvent<T>()
@@ -408,7 +387,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_Set.Remove(item);
 
             var setEvent = new NetworkSetEvent<T>()
@@ -438,14 +416,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }

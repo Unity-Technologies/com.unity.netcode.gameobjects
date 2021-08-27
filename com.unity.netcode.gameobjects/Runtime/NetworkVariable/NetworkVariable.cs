@@ -23,28 +23,34 @@ namespace Unity.Netcode
         public OnValueChangedDelegate OnValueChanged;
 
         /// <summary>
-        /// Creates a NetworkVariable with the default value and settings
+        /// Creates a NetworkVariable with the default value and custom read permission
         /// </summary>
-        public NetworkVariable() { }
+        /// <param name="readPerm">The read permission for the NetworkVariable</param>
+
+        public NetworkVariable()
+        {
+        }
 
         /// <summary>
-        /// Creates a NetworkVariable with the default value and custom settings
+        /// Creates a NetworkVariable with the default value and custom read permission
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableSettings settings) : base(settings) { }
+        /// <param name="readPerm">The read permission for the NetworkVariable</param>
+        public NetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm)
+        {
+        }
 
         /// <summary>
         /// Creates a NetworkVariable with a custom value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkVariable</param>
+        /// <param name="readPerm">The read permission for the NetworkVariable</param>
         /// <param name="value">The initial value to use for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableSettings settings, T value) : base(settings)
+        public NetworkVariable(NetworkVariableReadPermission readPerm, T value) : base(readPerm)
         {
             m_InternalValue = value;
         }
 
         /// <summary>
-        /// Creates a NetworkVariable with a custom value and the default settings
+        /// Creates a NetworkVariable with a custom value and the default read permission
         /// </summary>
         /// <param name="value">The initial value to use for the NetworkVariable</param>
         public NetworkVariable(T value)
@@ -54,14 +60,6 @@ namespace Unity.Netcode
 
         [SerializeField]
         private protected T m_InternalValue;
-
-        /// <summary>
-        /// The temporary accessor to enable struct element access until [MTT-1020] complete
-        /// </summary>
-        public ref T ValueRef
-        {
-            get => ref m_InternalValue;
-        }
 
         /// <summary>
         /// The value of the NetworkVariable container
@@ -76,7 +74,7 @@ namespace Unity.Netcode
 
                 // Also, note this is not really very water-tight, if you are running as a host
                 //  we cannot tell if a NetworkVariable write is happening inside client-ish code
-                if (NetworkBehaviour && (NetworkBehaviour.NetworkManager.IsClient && !NetworkBehaviour.NetworkManager.IsHost))
+                if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
                 {
                     throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }
@@ -113,18 +111,16 @@ namespace Unity.Netcode
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            T previousValue = m_InternalValue;
+            m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
+
+            if (keepDirtyDelta)
             {
-                T previousValue = m_InternalValue;
-                m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
-
-                if (keepDirtyDelta)
-                {
-                    m_IsDirty = true;
-                }
-
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                m_IsDirty = true;
             }
+
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
         }
 
         /// <inheritdoc />
@@ -136,10 +132,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
-            {
-                writer.WriteObjectPacked(m_InternalValue); //BOX
-            }
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteObjectPacked(m_InternalValue); //BOX
         }
     }
 }

@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Dispatch;
-using Unity.Multiplayer.NetStats.Metrics;
+using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utlity

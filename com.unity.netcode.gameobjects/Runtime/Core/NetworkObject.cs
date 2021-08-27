@@ -241,7 +241,7 @@ namespace Unity.Netcode
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
         /// <summary>
@@ -329,16 +329,14 @@ namespace Unity.Netcode
                     new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
 
-                        var size = bufferSizeCapture.StopMeasureSegment();
-                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
-                    }
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
                 }
             }
         }
@@ -499,7 +497,7 @@ namespace Unity.Netcode
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
                 }
             }
         }
@@ -744,11 +742,9 @@ namespace Unity.Netcode
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
-                    WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
             }
         }
 
@@ -872,8 +868,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId, NetworkManager);
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.InitializeVariables();
+                behavior.WriteNetworkVariableData(stream, clientId);
             }
         }
 
@@ -881,8 +878,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, NetworkManager);
+                var behaviour = ChildNetworkBehaviours[i];
+                behaviour.InitializeVariables();
+                behaviour.SetNetworkVariableData(stream);
             }
         }
 

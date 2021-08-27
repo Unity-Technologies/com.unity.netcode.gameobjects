@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,11 +12,6 @@ namespace Unity.Netcode
     {
         private readonly IList<T> m_List = new List<T>();
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
-
-        /// <summary>
-        /// Gets the last time the variable was synced
-        /// </summary>
-        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// Delegate type for list changed event
@@ -38,15 +32,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings) : base(settings) { }
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
+        public NetworkList(NetworkVariableReadPermission readPerm) : base(readPerm) { }
 
         /// <summary>
         /// Creates a NetworkList with a custom value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
+        /// <param name="readPerm">The read permission to use for the NetworkList</param>
         /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableSettings settings, IList<T> value) : base(settings)
+        public NetworkList(NetworkVariableReadPermission readPerm, IList<T> value) : base(readPerm)
         {
             m_List = value;
         }
@@ -65,7 +59,6 @@ namespace Unity.Netcode
         {
             base.ResetDirty();
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -78,47 +71,45 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
+            for (int i = 0; i < m_DirtyEvents.Count; i++)
             {
-                writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
-                for (int i = 0; i < m_DirtyEvents.Count; i++)
+                writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
+                switch (m_DirtyEvents[i].Type)
                 {
-                    writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
-                    switch (m_DirtyEvents[i].Type)
-                    {
-                        case NetworkListEvent<T>.EventType.Add:
-                            {
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkListEvent<T>.EventType.Insert:
-                            {
-                                writer.WriteInt32Packed(m_DirtyEvents[i].Index);
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkListEvent<T>.EventType.Remove:
-                            {
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkListEvent<T>.EventType.RemoveAt:
-                            {
-                                writer.WriteInt32Packed(m_DirtyEvents[i].Index);
-                            }
-                            break;
-                        case NetworkListEvent<T>.EventType.Value:
-                            {
-                                writer.WriteInt32Packed(m_DirtyEvents[i].Index);
-                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                            }
-                            break;
-                        case NetworkListEvent<T>.EventType.Clear:
-                            {
-                                //Nothing has to be written
-                            }
-                            break;
-                    }
+                    case NetworkListEvent<T>.EventType.Add:
+                        {
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Insert:
+                        {
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Remove:
+                        {
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.RemoveAt:
+                        {
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Value:
+                        {
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Clear:
+                        {
+                            //Nothing has to be written
+                        }
+                        break;
                 }
             }
         }
@@ -126,199 +117,193 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteUInt16Packed((ushort)m_List.Count);
+            for (int i = 0; i < m_List.Count; i++)
             {
-                writer.WriteUInt16Packed((ushort)m_List.Count);
-                for (int i = 0; i < m_List.Count; i++)
-                {
-                    writer.WriteObjectPacked(m_List[i]); //BOX
-                }
+                writer.WriteObjectPacked(m_List[i]); //BOX
             }
         }
 
         /// <inheritdoc />
         public override void ReadField(Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            m_List.Clear();
+            ushort count = reader.ReadUInt16Packed();
+            for (int i = 0; i < count; i++)
             {
-                m_List.Clear();
-                ushort count = reader.ReadUInt16Packed();
-                for (int i = 0; i < count; i++)
-                {
-                    m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
-                }
+                m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
             }
         }
 
         /// <inheritdoc />
         public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            ushort deltaCount = reader.ReadUInt16Packed();
+            for (int i = 0; i < deltaCount; i++)
             {
-                ushort deltaCount = reader.ReadUInt16Packed();
-                for (int i = 0; i < deltaCount; i++)
+                var eventType = (NetworkListEvent<T>.EventType)reader.ReadBits(3);
+                switch (eventType)
                 {
-                    var eventType = (NetworkListEvent<T>.EventType)reader.ReadBits(3);
-                    switch (eventType)
-                    {
-                        case NetworkListEvent<T>.EventType.Add:
+                    case NetworkListEvent<T>.EventType.Add:
+                        {
+                            m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+
+                            if (OnListChanged != null)
                             {
-                                m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
-
-                                if (OnListChanged != null)
+                                OnListChanged(new NetworkListEvent<T>
                                 {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Index = m_List.Count - 1,
-                                        Value = m_List[m_List.Count - 1]
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Index = m_List.Count - 1,
-                                        Value = m_List[m_List.Count - 1]
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = m_List.Count - 1,
+                                    Value = m_List[m_List.Count - 1]
+                                });
                             }
-                            break;
-                        case NetworkListEvent<T>.EventType.Insert:
+
+                            if (keepDirtyDelta)
                             {
-                                int index = reader.ReadInt32Packed();
-                                m_List.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
-
-                                if (OnListChanged != null)
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = m_List[index]
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = m_List[index]
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = m_List.Count - 1,
+                                    Value = m_List[m_List.Count - 1]
+                                });
                             }
-                            break;
-                        case NetworkListEvent<T>.EventType.Remove:
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Insert:
+                        {
+                            int index = reader.ReadInt32Packed();
+                            m_List.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
+
+                            if (OnListChanged != null)
                             {
-                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                                int index = m_List.IndexOf(value);
-                                m_List.RemoveAt(index);
-
-                                if (OnListChanged != null)
+                                OnListChanged(new NetworkListEvent<T>
                                 {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = m_List[index]
+                                });
                             }
-                            break;
-                        case NetworkListEvent<T>.EventType.RemoveAt:
+
+                            if (keepDirtyDelta)
                             {
-                                int index = reader.ReadInt32Packed();
-                                T value = m_List[index];
-                                m_List.RemoveAt(index);
-
-                                if (OnListChanged != null)
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = m_List[index]
+                                });
                             }
-                            break;
-                        case NetworkListEvent<T>.EventType.Value:
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Remove:
+                        {
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            int index = m_List.IndexOf(value);
+                            m_List.RemoveAt(index);
+
+                            if (OnListChanged != null)
                             {
-                                int index = reader.ReadInt32Packed();
-                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                                if (index < m_List.Count)
+                                OnListChanged(new NetworkListEvent<T>
                                 {
-                                    m_List[index] = value;
-                                }
-
-                                if (OnListChanged != null)
-                                {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType,
-                                        Index = index,
-                                        Value = value
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
                             }
-                            break;
-                        case NetworkListEvent<T>.EventType.Clear:
+
+                            if (keepDirtyDelta)
                             {
-                                //Read nothing
-                                m_List.Clear();
-
-                                if (OnListChanged != null)
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    OnListChanged(new NetworkListEvent<T>
-                                    {
-                                        Type = eventType,
-                                    });
-                                }
-
-                                if (keepDirtyDelta)
-                                {
-                                    m_DirtyEvents.Add(new NetworkListEvent<T>()
-                                    {
-                                        Type = eventType
-                                    });
-                                }
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
                             }
-                            break;
-                    }
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.RemoveAt:
+                        {
+                            int index = reader.ReadInt32Packed();
+                            T value = m_List[index];
+                            m_List.RemoveAt(index);
+
+                            if (OnListChanged != null)
+                            {
+                                OnListChanged(new NetworkListEvent<T>
+                                {
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
+                                {
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Value:
+                        {
+                            int index = reader.ReadInt32Packed();
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            if (index < m_List.Count)
+                            {
+                                m_List[index] = value;
+                            }
+
+                            if (OnListChanged != null)
+                            {
+                                OnListChanged(new NetworkListEvent<T>
+                                {
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
+                                {
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Clear:
+                        {
+                            //Read nothing
+                            m_List.Clear();
+
+                            if (OnListChanged != null)
+                            {
+                                OnListChanged(new NetworkListEvent<T>
+                                {
+                                    Type = eventType,
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
+                                {
+                                    Type = eventType
+                                });
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -338,7 +323,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(T item)
         {
-            EnsureInitialized();
             m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -354,7 +338,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
-            EnsureInitialized();
             m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
@@ -380,7 +363,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            EnsureInitialized();
             m_List.Remove(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -408,7 +390,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            EnsureInitialized();
             m_List.Insert(index, item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -424,7 +405,6 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            EnsureInitialized();
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
@@ -443,7 +423,6 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
-                EnsureInitialized();
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
@@ -459,11 +438,7 @@ namespace Unity.Netcode
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
-            {
-                m_DirtyEvents.Add(listEvent);
-            }
-
+            m_DirtyEvents.Add(listEvent);
             OnListChanged?.Invoke(listEvent);
         }
 
@@ -473,14 +448,6 @@ namespace Unity.Netcode
             {
                 // todo: implement proper network tick for NetworkList
                 return NetworkTickSystem.NoTick;
-            }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (NetworkBehaviour == null)
-            {
-                throw new InvalidOperationException("Cannot access " + nameof(NetworkList<T>) + " before it's initialized");
             }
         }
     }
