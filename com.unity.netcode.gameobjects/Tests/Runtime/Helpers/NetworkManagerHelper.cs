@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UNET;
 
@@ -78,9 +77,7 @@ namespace Unity.Netcode.RuntimeTests
                         EnableSceneManagement = false,
                     };
                 }
-
-                NetworkManagerObject.PopulateScenesInBuild(true);
-                NetworkManagerObject.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+                ScenesInBuild.SynchronizeOrCreate(NetworkManagerObject);
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
 

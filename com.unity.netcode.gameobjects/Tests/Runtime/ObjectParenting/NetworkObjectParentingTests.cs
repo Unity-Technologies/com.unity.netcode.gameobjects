@@ -58,6 +58,13 @@ namespace Unity.Netcode.RuntimeTests
             // we are running a unit test or not. (it is this or manually setting a property)
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
+            ScenesInBuild.SynchronizeOrCreate(m_ServerNetworkManager);
+            foreach (var entry in m_ClientNetworkManagers)
+            {
+                ScenesInBuild.SynchronizeOrCreate(entry);
+            }
+
+
             var execAssembly = Assembly.GetExecutingAssembly();
             var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
             var scenePath = Path.Combine(packagePath, $"Tests/Runtime/ObjectParenting/{nameof(NetworkObjectParentingTests)}.unity");
@@ -72,12 +79,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
+
             m_ServerNetworkManager.ScenesInBuild.Scenes.Add(nameof(NetworkObjectParentingTests));
             foreach (var entry in m_ClientNetworkManagers)
             {
-                if(!m_ServerNetworkManager.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
+                if(!entry.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
                 {
-                    m_ServerNetworkManager.ScenesInBuild.Scenes.Add(nameof(NetworkObjectParentingTests));
+                    entry.ScenesInBuild.Scenes.Add(nameof(NetworkObjectParentingTests));
                 }
             }
 
@@ -217,6 +225,18 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator Teardown()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+
+            if (m_ServerNetworkManager.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
+            {
+                m_ServerNetworkManager.ScenesInBuild.Scenes.Remove(nameof(NetworkObjectParentingTests));
+            }
+            foreach (var entry in m_ClientNetworkManagers)
+            {
+                if (entry.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
+                {
+                    entry.ScenesInBuild.Scenes.Remove(nameof(NetworkObjectParentingTests));
+                }
+            }
 
             MultiInstanceHelpers.Destroy();
 

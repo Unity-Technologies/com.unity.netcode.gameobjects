@@ -46,8 +46,7 @@ namespace Unity.Netcode.RuntimeTests
                 // Set transport
                 NetworkTransport = go.AddComponent<SIPTransport>()
             };
-            server.PopulateScenesInBuild(true);
-            server.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            ScenesInBuild.SynchronizeOrCreate(server);
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
@@ -79,12 +78,7 @@ namespace Unity.Netcode.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
 
-                clients[i].PopulateScenesInBuild(true);
-
-                if (!clients[i].ScenesInBuild.Scenes.Contains(activeSceneName))
-                {
-                    clients[i].ScenesInBuild.Scenes.Add(activeSceneName);
-                }
+                ScenesInBuild.SynchronizeOrCreate(clients[i]);
             }
 
             NetworkManagerInstances.AddRange(clients);

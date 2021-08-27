@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -13,8 +12,7 @@ namespace Unity.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            networkManager.PopulateScenesInBuild(true);
-            networkManager.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            ScenesInBuild.SynchronizeOrCreate(networkManager);
             networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
