@@ -1096,7 +1096,10 @@ namespace Unity.Netcode.EditorTests
                 var testStruct = GetTestStruct();
                 Assert.IsTrue(growingWriter.TryBeginWriteValue(testStruct));
 
-                Assert.AreEqual(FastBufferWriter.GetWriteSize(testStruct)*2, growingWriter.Capacity);
+                // Buffer size doubles with each growth, so since we're starting with a size of 1, that means
+                // the resulting size should be the next power of 2 above the size of testStruct.
+                Assert.AreEqual(Math.Pow(2, Math.Ceiling(Mathf.Log(FastBufferWriter.GetWriteSize(testStruct), 2))),
+                    growingWriter.Capacity);
                 Assert.AreEqual(growingWriter.Position, 0);
 
                 growingWriter.WriteValue(testStruct);

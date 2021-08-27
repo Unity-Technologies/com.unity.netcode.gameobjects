@@ -161,7 +161,12 @@ namespace Unity.Netcode
 
         internal unsafe void Grow(int additionalSizeRequired)
         {
-            var newSize = Math.Min(Math.Max(CapacityInternal * 2, (Position + additionalSizeRequired) * 2), MaxCapacityInternal);
+            var desiredSize = CapacityInternal * 2;
+            while (desiredSize < Position + additionalSizeRequired)
+            {
+                desiredSize *= 2;
+            }
+            var newSize = Math.Min(desiredSize, MaxCapacityInternal);
             void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, newSize);
