@@ -1,9 +1,8 @@
 #if MULTIPLAYER_TOOLS
 using System.Collections.Generic;
-using Unity.Multiplayer.MetricTypes;
-using Unity.Multiplayer.NetStats.Dispatch;
-using Unity.Multiplayer.NetStats.Metrics;
-using Unity.Multiplayer.NetStatsReporting;
+using Unity.Multiplayer.Tools;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Multiplayer.Tools.NetStats;
 
 namespace Unity.Netcode
 {
@@ -222,12 +221,12 @@ namespace Unity.Netcode
 
         public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
         {
-            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (Unity.Multiplayer.MetricTypes.LogLevel)logType, bytesCount));
+            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
         }
 
         public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
-            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.MetricTypes.LogLevel)logType, bytesCount));
+            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
         }
 
         public void TrackSceneEventSent(ulong[] receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
