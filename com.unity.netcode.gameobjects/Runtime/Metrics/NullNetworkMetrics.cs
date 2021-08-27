@@ -4,6 +4,14 @@ namespace Unity.Netcode
 {
     internal class NullNetworkMetrics : INetworkMetrics
     {
+        public void TrackTransportBytesSent(long bytesCount)
+        {
+        }
+
+        public void TrackTransportBytesReceived(long bytesCount)
+        {
+        }
+
         public void TrackNetworkObject(NetworkObject networkObject)
         {
         }

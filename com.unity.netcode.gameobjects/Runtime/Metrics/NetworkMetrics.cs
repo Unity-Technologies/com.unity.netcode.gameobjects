@@ -8,6 +8,15 @@ namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
+        readonly Counter m_TransportBytesSent = new Counter(MetricNames.TransportBytesSent)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        readonly Counter m_TransportBytesReceived = new Counter(MetricNames.TransportBytesReceived)
+        {
+            ShouldResetOnDispatch = true,
+        };
+
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
@@ -30,6 +39,7 @@ namespace Unity.Netcode
         public NetworkMetrics()
         {
             Dispatcher = new MetricDispatcherBuilder()
+                .WithCounters(m_TransportBytesSent, m_TransportBytesReceived)
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
@@ -44,6 +54,16 @@ namespace Unity.Netcode
         }
 
         internal IMetricDispatcher Dispatcher { get; }
+
+        public void TrackTransportBytesSent(long bytesCount)
+        {
+            m_TransportBytesSent.Increment(bytesCount);
+        }
+
+        public void TrackTransportBytesReceived(long bytesCount)
+        {
+            m_TransportBytesReceived.Increment(bytesCount);
+        }
 
         public void TrackNetworkObject(NetworkObject networkObject)
         {

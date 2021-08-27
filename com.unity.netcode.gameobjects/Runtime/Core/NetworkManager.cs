@@ -1246,6 +1246,8 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
+            NetworkMetrics.TrackTransportBytesReceived(data.Count);
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo("Unwrapping Data Header");
