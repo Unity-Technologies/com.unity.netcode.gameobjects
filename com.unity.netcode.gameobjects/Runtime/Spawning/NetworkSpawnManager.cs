@@ -678,7 +678,7 @@ namespace Unity.Netcode
                                         nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
                                         var size = bufferSizeCapture.StopMeasureSegment();
-                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                     }
                                 }
                             }
