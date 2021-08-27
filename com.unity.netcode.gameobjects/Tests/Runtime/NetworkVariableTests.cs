@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly ClientNetworkVariable<int> ClientVar = new ClientNetworkVariable<int>();
 
         public readonly ClientNetworkVariable<int> ClientVarPrivate =
-            new ClientNetworkVariable<int>(new NetworkVariableSettings { ReadPermission = NetworkVariableReadPermission.OwnerOnly });
+            new ClientNetworkVariable<int>(NetworkVariableReadPermission.OwnerOnly);
 
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();

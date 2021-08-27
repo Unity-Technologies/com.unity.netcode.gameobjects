@@ -241,7 +241,7 @@ namespace Unity.Netcode
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
         /// <summary>
@@ -499,7 +499,7 @@ namespace Unity.Netcode
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
                 }
             }
         }
@@ -872,8 +872,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId, NetworkManager);
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.InitializeVariables();
+                behavior.WriteNetworkVariableData(stream, clientId);
             }
         }
 
@@ -881,8 +882,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, NetworkManager);
+                var behaviour = ChildNetworkBehaviours[i];
+                behaviour.InitializeVariables();
+                behaviour.SetNetworkVariableData(stream);
             }
         }
 
