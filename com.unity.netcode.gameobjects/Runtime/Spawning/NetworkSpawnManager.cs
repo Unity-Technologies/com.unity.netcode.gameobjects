@@ -634,7 +634,6 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.IsSpawned = false;
             networkObject.InvokeBehaviourNetworkDespawn();
 
             if (NetworkManager != null && NetworkManager.IsServer)
@@ -668,7 +667,7 @@ namespace Unity.Netcode
                                 // as the other clients have them already despawned
                                 foreach (var clientId in NetworkManager.ConnectedClientsIds)
                                 {
-                                    if (networkObject.IsSpawned && networkObject.IsNetworkVisibleTo(clientId))
+                                    if (networkObject.IsNetworkVisibleTo(clientId))
                                     {
                                         m_TargetClientIds.Add(clientId);
                                     }
@@ -696,6 +695,7 @@ namespace Unity.Netcode
                     }
                 }
             }
+            networkObject.IsSpawned = false;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
