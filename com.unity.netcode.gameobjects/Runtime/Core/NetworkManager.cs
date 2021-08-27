@@ -1054,8 +1054,6 @@ namespace Unity.Netcode
 
         private void OnNetworkEarlyUpdate()
         {
-            NetworkMetrics.DispatchFrame();
-
             if (IsListening)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1116,6 +1114,8 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
+
+            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
