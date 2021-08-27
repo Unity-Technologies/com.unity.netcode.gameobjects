@@ -216,16 +216,13 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
         public static void MakeNetworkObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
         {
-            // Set a globalObjectId for prefab
+            // Override `GlobalObjectIdHash` if `globalObjectIdHash` param is set
             if (globalObjectIdHash != default)
             {
-                networkObject.TempGlobalObjectIdHashOverride = globalObjectIdHash;
+                networkObject.GlobalObjectIdHash = globalObjectIdHash;
             }
 
-            // Force generation
-            networkObject.GenerateGlobalObjectIdHash();
-
-            // Fallback to auto-increment if generation fails
+            // Fallback to auto-increment if `GlobalObjectIdHash` was never set
             if (networkObject.GlobalObjectIdHash == default)
             {
                 networkObject.GlobalObjectIdHash = ++s_AutoIncrementGlobalObjectIdHashCounter;
