@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
+using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine;
 using UnityEngine.TestTools;
