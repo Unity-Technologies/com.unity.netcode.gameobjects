@@ -107,20 +107,18 @@ namespace Unity.Netcode
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
+
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+
+                var size = bufferSizeCapture.StopMeasureSegment();
+
+                foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-
-                    foreach (var client in NetworkManager.ConnectedClients)
-                    {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -159,19 +157,17 @@ namespace Unity.Netcode
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
+
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+
+                var size = bufferSizeCapture.StopMeasureSegment();
+                foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    foreach (var client in NetworkManager.ConnectedClients)
-                    {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -392,16 +388,14 @@ namespace Unity.Netcode
                     new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
 
-                        var size = bufferSizeCapture.StopMeasureSegment();
-                        NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -679,16 +673,14 @@ namespace Unity.Netcode
                                     m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
-                                    using (var nonNullContext = (InternalCommandContext)context)
-                                    {
-                                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                        bufferSizeCapture.StartMeasureSegment();
+                                    using var nonNullContext = (InternalCommandContext)context;
+                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                                    bufferSizeCapture.StartMeasureSegment();
 
-                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
-                                        var size = bufferSizeCapture.StopMeasureSegment();
-                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
-                                    }
+                                    var size = bufferSizeCapture.StopMeasureSegment();
+                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                 }
                             }
                         }
