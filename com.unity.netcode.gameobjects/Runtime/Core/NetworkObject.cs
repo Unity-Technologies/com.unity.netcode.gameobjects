@@ -130,7 +130,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
-        public bool DestroyWithScene { get; internal set; }
+        public bool DestroyWithScene { get; set; }
 
         /// <summary>
         /// Delegate type for checking visibility
