@@ -14,6 +14,18 @@ namespace Unity.Netcode.RuntimeTests
 
     public class ShowHideObject : NetworkBehaviour
     {
+        public NetworkVariable<int> MyNetworkVariable;
+
+        private void Start()
+        {
+            MyNetworkVariable = new NetworkVariable<int>();
+            MyNetworkVariable.OnValueChanged += Changed;
+        }
+
+        public void Changed(int before, int after)
+        {
+            Debug.Log($"Value changed from {before} to {after}");
+        }
 
     }
 
@@ -186,6 +198,12 @@ namespace Unity.Netcode.RuntimeTests
 
                 // hide them on one client
                 Show(mode == 0, false);
+
+                yield return new WaitForSeconds(1.0f);
+
+                m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value = 3;
+
+                yield return new WaitForSeconds(1.0f);
 
                 // verify they got hidden
                 yield return CheckVisible(false);
