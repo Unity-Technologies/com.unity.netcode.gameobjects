@@ -74,4 +74,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveSceneMultiInstance.unity
     guid: 0ae94f636016d3b40bfbecad57d99553
+  - enabled: 1
+    path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoadTest.unity
+    guid: ff98b91da4ee7ff44bc3aa8a57ad5c12
+  - enabled: 1
+    path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoad_DestroyNetworkManagerTest.unity
+    guid: 7dc1ab12373402546befc7d54e447258
   m_configObjects: {}

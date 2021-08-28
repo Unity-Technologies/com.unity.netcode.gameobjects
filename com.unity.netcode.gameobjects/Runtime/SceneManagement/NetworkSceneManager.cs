@@ -178,6 +178,9 @@ namespace Unity.Netcode
         private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
         private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
 
+
+        internal Scene DontDestroyOnLoadScene;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -187,6 +190,36 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+
+            // If NetworkManager has this set to true, then we can get the DDOL (DontDestroyOnLoad) from its GaemObject
+            if (networkManager.DontDestroy)
+            {
+                DontDestroyOnLoadScene = networkManager.gameObject.scene;
+            }
+            else // Otherwise, we have to create a GameObject and move it into the DDOL to get the scene
+            {
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // During unit and integration tests, we could initialize and then enable scene management
+                // which would make this generate an extra GameObject per instance. The DontDestroyOnLoadScene
+                // is internal so tests that are using multiInstance and that are moving NetworkObjects into
+                // the DDOL scene will have to manually set this. Otherwise, we can exclude DDOL stuff completely
+                // during unit testing.
+                if (m_IsRunningUnitTest)
+                {
+                    return;
+                }
+#endif
+                // Create our DDOL GameObject and move it into the DDOL scene so we can register the DDOL with
+                // the NetworkSceneManager and then destroy the DDOL GameObject
+                var myDDOLObject = new GameObject("DDOL-NWSM");
+                UnityEngine.Object.DontDestroyOnLoad(myDDOLObject);
+                DontDestroyOnLoadScene = myDDOLObject.scene;
+                UnityEngine.Object.Destroy(myDDOLObject);
+            }
+
+            ServerSceneHandleToClientSceneHandle.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle);
+            ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
         }
 
         /// <summary>
@@ -242,16 +275,33 @@ namespace Unity.Netcode
                 // Get the scene currently being synchronized
                 SceneBeingSynchronized = ScenesLoaded.ContainsKey(clientSceneHandle) ? ScenesLoaded[clientSceneHandle] : new Scene();
 
-                // If the scene was not found (invalid) or was not loaded then throw an exception
                 if (!SceneBeingSynchronized.IsValid() || !SceneBeingSynchronized.isLoaded)
                 {
-                    throw new Exception($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized!");
+                    // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
+                    SceneBeingSynchronized = SceneManager.GetActiveScene();
+
+                    // Keeping the warning here in the event we cannot find the scene being synchronized
+                    Debug.LogWarning($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized! Using the currently active scene.");
                 }
             }
             else
             {
-                // This should never happen, but in the event it does...
-                throw new Exception($"[{nameof(SceneEventData)}- Scene Handle Mismatch] {nameof(serverSceneHandle)} could not be found in {nameof(ServerSceneHandleToClientSceneHandle)}!");
+                // Most common scenario for DontDestroyOnLoad is when NetworkManager is set to not be destroyed
+                if (serverSceneHandle == DontDestroyOnLoadScene.handle)
+                {
+                    SceneBeingSynchronized = m_NetworkManager.gameObject.scene;
+                    return;
+                }
+                else
+                {
+                    // Let's go ahead and use the currently active scene under the scenario where a NetworkObject is determined to exist in a scene that the NetworkSceneManager is not aware of
+                    // or the NetworkObject has yet to be moved to that specific scene (i.e. no DontDestroyOnLoad scene exists yet).
+                    SceneBeingSynchronized = SceneManager.GetActiveScene();
+
+                    // This could be the scenario where NetworkManager.DontDestroy is false and we are creating the first NetworkObject (client side) to be in the DontDestroyOnLoad scene
+                    // Otherwise, this is some other specific scenario that we might not be handling currently.
+                    Debug.LogWarning($"[{nameof(SceneEventData)}- Scene Handle Mismatch] {nameof(serverSceneHandle)} could not be found in {nameof(ServerSceneHandleToClientSceneHandle)}. Using the currently active scene.");
+                }
             }
         }
 
@@ -1148,6 +1198,8 @@ namespace Unity.Netcode
                         }
                         else
                         {
+                            // Include anything in the DDOL scene
+                            PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
                             // Synchronize the NetworkObjects for this scene
                             SceneEventData.SynchronizeSceneNetworkObjects(m_NetworkManager);
 
@@ -1331,7 +1383,7 @@ namespace Unity.Netcode
                     sobj.gameObject.transform.parent = null;
                 }
 
-                if (!sobj.DestroyWithScene)
+                if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
                 {
                     UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
                 }
@@ -1406,6 +1458,11 @@ namespace Unity.Netcode
                 if (sobj.gameObject.transform.parent != null)
                 {
                     sobj.gameObject.transform.parent = null;
+                }
+
+                if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
+                {
+                    continue;
                 }
 
                 SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);

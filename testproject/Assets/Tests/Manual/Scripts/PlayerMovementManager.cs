@@ -10,8 +10,6 @@ namespace TestProject.ManualTests
     {
         public int MoveSpeed = 10;
 
-        private NetworkObject m_NetworkObject;
-
         private RandomMovement m_RandomMovement;
 
         private Rigidbody m_Rigidbody;
@@ -20,7 +18,6 @@ namespace TestProject.ManualTests
         // Start is called before the first frame update
         private void Start()
         {
-            m_NetworkObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
 
         }
@@ -36,7 +33,7 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if (m_NetworkObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
+            if (NetworkObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
             {
                 if (m_RandomMovement)
                 {
@@ -44,7 +41,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (m_NetworkObject && m_NetworkObject.NetworkManager && m_NetworkObject.NetworkManager.IsListening)
+            if (NetworkObject && NetworkObject.NetworkManager && NetworkObject.NetworkManager.IsListening)
             {
                 if (m_RandomMovement.enabled)
                 {
