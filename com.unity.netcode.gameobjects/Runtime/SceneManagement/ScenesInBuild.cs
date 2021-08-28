@@ -18,11 +18,11 @@ namespace Unity.Netcode
     /// </summary>
     public class ScenesInBuild : ScriptableObject
     {
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
         internal List<string> Scenes;
 
-#if UNITY_INCLUDE_TESTS
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 
         /// <summary>
         /// Determines if we are running a unit test
@@ -36,12 +36,8 @@ namespace Unity.Netcode
                 return false;
             }
 #endif
-
-            var isTesting = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
-
-
             // For scenes in build, we have to check whether we are running a unit test or not each time
-            return isTesting;
+            return SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
         }
 
         /// <summary>
@@ -89,7 +85,7 @@ namespace Unity.Netcode
 
 
 #if UNITY_EDITOR
-
+        private const string k_ScenesInBuildDefaultPath = "Assets/ScenesInBuildList.asset";
         private bool m_CheckHasBeenApplied;
 
         /// <summary>
@@ -128,6 +124,7 @@ namespace Unity.Netcode
         internal static ScenesInBuild InitializeScenesInBuild(NetworkManager networkManager)
         {
             var foundScenesInBuildList = AssetDatabase.FindAssets("ScenesInBuildList");
+            var currentAssetPath = k_ScenesInBuildDefaultPath;
             if (foundScenesInBuildList.Length > 0)
             {
                 if (foundScenesInBuildList.Length > 1)
@@ -141,13 +138,13 @@ namespace Unity.Netcode
                     message += "Using first entry.  Please remove one of the instances if that is not the right asset path!";
                     Debug.LogError(message);
                 }
-                networkManager.DefaultScenesInBuildAssetNameAndPath = AssetDatabase.GUIDToAssetPath(foundScenesInBuildList[0]);
+                currentAssetPath = AssetDatabase.GUIDToAssetPath(foundScenesInBuildList[0]);
             }
-            var scenesInBuild = (ScenesInBuild)AssetDatabase.LoadAssetAtPath(networkManager.DefaultScenesInBuildAssetNameAndPath, typeof(ScenesInBuild));
+            var scenesInBuild = (ScenesInBuild)AssetDatabase.LoadAssetAtPath(currentAssetPath, typeof(ScenesInBuild));
             if (scenesInBuild == null)
             {
                 scenesInBuild = CreateInstance<ScenesInBuild>();
-                AssetDatabase.CreateAsset(scenesInBuild, networkManager.DefaultScenesInBuildAssetNameAndPath);
+                AssetDatabase.CreateAsset(scenesInBuild, currentAssetPath);
             }
             return scenesInBuild;
         }

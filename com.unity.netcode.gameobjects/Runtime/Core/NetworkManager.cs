@@ -248,9 +248,6 @@ namespace Unity.Netcode
         [SerializeField]
         internal ScenesInBuild ScenesInBuild;
 
-        [HideInInspector]
-        [SerializeField]
-        internal string DefaultScenesInBuildAssetNameAndPath = "Assets/ScenesInBuildList.asset";
         /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
@@ -259,8 +256,6 @@ namespace Unity.Netcode
         internal INetworkMetrics NetworkMetrics { get; private set; }
 
         internal static event Action OnSingletonReady;
-
-
 
 #if UNITY_EDITOR
         private void OnValidate()
