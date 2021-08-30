@@ -1275,6 +1275,7 @@ namespace Unity.Netcode
             float receiveTime, NetworkChannel receiveChannel)
         {
             MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
+            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
         }
 
         /// <summary>
