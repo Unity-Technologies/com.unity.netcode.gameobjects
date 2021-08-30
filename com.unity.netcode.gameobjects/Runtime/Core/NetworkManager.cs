@@ -265,7 +265,7 @@ namespace Unity.Netcode
                 return; // May occur when the component is added
             }
 
-            ScenesInBuild.SynchronizeOrCreate(this);
+            ScenesInBuildHelper.SynchronizeOrCreate(this);
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {

@@ -8,27 +8,15 @@ using UnityEditor;
 
 namespace Unity.Netcode
 {
-    /// <summary>
-    /// This replaces the need to register scenes and contains the Scenes in Build list (as strings)
-    /// Scenes are ordered identically to the Scenes in Build list indices values
-    /// For refined control over which scenes can be loaded or unloaded during a netcode game session,
-    /// use the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> event to add additional
-    /// constraints over which scenes are considered valid.
-    /// In order for clients to get this notification you must subscribe to the <see cref="NetworkSceneManager.OnSceneVerificationFailed"/> event.
-    /// </summary>
-    public class ScenesInBuild : ScriptableObject
-    {
-        [HideInInspector]
-        [SerializeField]
-        internal List<string> Scenes;
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-
+    public static class ScenesInBuildHelper
+    {
+        private const string k_ScenesInBuildDefaultPath = "Assets/ScenesInBuildList.asset";
         /// <summary>
         /// Determines if we are running a unit test
         /// In DEVELOPMENT_BUILD we only check for the InitTestScene
         /// </summary>
-        private static bool IsRunningUnitTest()
+        internal static bool IsRunningUnitTest()
         {
 #if UNITY_EDITOR
             if (!EditorApplication.isPlaying)
@@ -52,8 +40,8 @@ namespace Unity.Netcode
             // Otherwise, there are special edge case scenarios where we might want to repopulate this list
             // The scenario with EditorApplication.isPlaying and ScenesInBuild being null is where we loaded a scene that did not have a NetworkManager but
             // we transition to a scene with a NetworkManager while playing in the editor.  Under this condition we have to assign and populate.
-            if ( (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isUnitTestRunning ||
-                ( (networkManager.ScenesInBuild == null || networkManager.ScenesInBuild != null && networkManager.ScenesInBuild.Scenes.Count == 0) && EditorApplication.isPlaying) )
+            if ((!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isUnitTestRunning ||
+                ((networkManager.ScenesInBuild == null || networkManager.ScenesInBuild != null && networkManager.ScenesInBuild.Scenes.Count == 0) && EditorApplication.isPlaying))
             {
                 if (networkManager.ScenesInBuild == null)
                 {
@@ -83,10 +71,70 @@ namespace Unity.Netcode
 #endif
         }
 
+        /// <summary>
+        /// This will create a new ScenesInBuildList asset if one does not exist and will adjust the path to the ScenesInBuildList
+        /// asset if the asset is moved.  This will also notify the user if more than one ScenesInBuildList asset exists.
+        /// </summary>
+        /// <param name="networkManager">The relative network manager instance</param>
+        /// <returns></returns>
+        private static ScenesInBuild InitializeScenesInBuild(NetworkManager networkManager)
+        {
+            var foundScenesInBuildList = AssetDatabase.FindAssets("ScenesInBuildList");
+            var currentAssetPath = k_ScenesInBuildDefaultPath;
+            if (foundScenesInBuildList.Length > 0)
+            {
+                if (foundScenesInBuildList.Length > 1)
+                {
+                    var message = "There are multiple instances of your ScenesInBuildList:\n";
 
+                    foreach (var entry in foundScenesInBuildList)
+                    {
+                        message += $"{AssetDatabase.GUIDToAssetPath(entry)}\n";
+                    }
+                    message += "Using first entry.  Please remove one of the instances if that is not the right asset path!";
+                    Debug.LogError(message);
+                }
+                currentAssetPath = AssetDatabase.GUIDToAssetPath(foundScenesInBuildList[0]);
+            }
+            var scenesInBuild = (ScenesInBuild)AssetDatabase.LoadAssetAtPath(currentAssetPath, typeof(ScenesInBuild));
+            if (scenesInBuild == null)
+            {
+                scenesInBuild = ScenesInBuild.Create(currentAssetPath);
+            }
+            return scenesInBuild;
+        }
+    }
+#endif
+
+    /// <summary>
+    /// This replaces the need to register scenes and contains the Scenes in Build list (as strings)
+    /// Scenes are ordered identically to the Scenes in Build list indices values
+    /// For refined control over which scenes can be loaded or unloaded during a netcode game session,
+    /// use the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> event to add additional
+    /// constraints over which scenes are considered valid.
+    /// In order for clients to get this notification you must subscribe to the <see cref="NetworkSceneManager.OnSceneVerificationFailed"/> event.
+    /// </summary>
+    public class ScenesInBuild : ScriptableObject
+    {
+        [HideInInspector]
+        [SerializeField]
+        internal List<string> Scenes;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 #if UNITY_EDITOR
-        private const string k_ScenesInBuildDefaultPath = "Assets/ScenesInBuildList.asset";
         private bool m_CheckHasBeenApplied;
+
+        /// <summary>
+        /// Creates a ScenesInBuild asset
+        /// </summary>
+        /// <param name="path">path where the asset is created</param>
+        /// <returns></returns>
+        internal static ScenesInBuild Create(string path)
+        {
+            var scenesInBuild = CreateInstance<ScenesInBuild>();
+            AssetDatabase.CreateAsset(scenesInBuild, path);
+            return scenesInBuild;
+        }
 
         /// <summary>
         /// This will add a play mode state change watch to determine when we are done with a unit test
@@ -116,47 +164,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This will create a new ScenesInBuildList asset if one does not exist and will adjust the path to the ScenesInBuildList
-        /// asset if the asset is moved.  This will also notify the user if more than one ScenesInBuildList asset exists.
-        /// </summary>
-        /// <param name="networkManager">The relative network manager instance</param>
-        /// <returns></returns>
-        internal static ScenesInBuild InitializeScenesInBuild(NetworkManager networkManager)
-        {
-            var foundScenesInBuildList = AssetDatabase.FindAssets("ScenesInBuildList");
-            var currentAssetPath = k_ScenesInBuildDefaultPath;
-            if (foundScenesInBuildList.Length > 0)
-            {
-                if (foundScenesInBuildList.Length > 1)
-                {
-                    var message = "There are multiple instances of your ScenesInBuildList:\n";
-
-                    foreach (var entry in foundScenesInBuildList)
-                    {
-                        message += $"{AssetDatabase.GUIDToAssetPath(entry)}\n";
-                    }
-                    message += "Using first entry.  Please remove one of the instances if that is not the right asset path!";
-                    Debug.LogError(message);
-                }
-                currentAssetPath = AssetDatabase.GUIDToAssetPath(foundScenesInBuildList[0]);
-            }
-            var scenesInBuild = (ScenesInBuild)AssetDatabase.LoadAssetAtPath(currentAssetPath, typeof(ScenesInBuild));
-            if (scenesInBuild == null)
-            {
-                scenesInBuild = CreateInstance<ScenesInBuild>();
-                AssetDatabase.CreateAsset(scenesInBuild, currentAssetPath);
-            }
-            return scenesInBuild;
-        }
-
-        /// <summary>
         /// Populates the scenes from the Scenes in Build list.
         /// If testing, then this is ignored (i.e. some tests require loading of scenes not in the Scenes in Build list)
         /// </summary>
         internal void PopulateScenesInBuild()
         {
             var shouldRebuild = false;
-            var isTesting = IsRunningUnitTest();
+            var isTesting = ScenesInBuildHelper.IsRunningUnitTest();
 
             // if we have no scenes registered or we have changed the scenes in the build we should rebuild
             if (Scenes == null)
@@ -239,7 +253,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnValidate()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || IsRunningUnitTest())
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || ScenesInBuildHelper.IsRunningUnitTest())
             {
                 PopulateScenesInBuild();
             }

@@ -46,7 +46,7 @@ namespace Unity.Netcode.RuntimeTests
                 // Set transport
                 NetworkTransport = go.AddComponent<SIPTransport>()
             };
-            ScenesInBuild.SynchronizeOrCreate(server);
+            ScenesInBuildHelper.SynchronizeOrCreate(server);
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
 
-                ScenesInBuild.SynchronizeOrCreate(clients[i]);
+                ScenesInBuildHelper.SynchronizeOrCreate(clients[i]);
             }
 
             NetworkManagerInstances.AddRange(clients);

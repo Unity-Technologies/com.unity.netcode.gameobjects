@@ -58,10 +58,10 @@ namespace Unity.Netcode.RuntimeTests
             // we are running a unit test or not. (it is this or manually setting a property)
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
-            ScenesInBuild.SynchronizeOrCreate(m_ServerNetworkManager);
+            ScenesInBuildHelper.SynchronizeOrCreate(m_ServerNetworkManager);
             foreach (var entry in m_ClientNetworkManagers)
             {
-                ScenesInBuild.SynchronizeOrCreate(entry);
+                ScenesInBuildHelper.SynchronizeOrCreate(entry);
             }
 
 
