@@ -17,13 +17,13 @@ namespace Unity.Netcode.RuntimeTests
     {
 
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
-        private uint m_GlobalObjectIdHashBase = 123456;
+        private uint m_ObjectId = 1;
         private GameObject MakeValidNetworkPrefab()
         {
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_GlobalObjectIdHashBase.ToString());
+            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_ObjectId.ToString());
             NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(validPrefab, m_GlobalObjectIdHashBase);
-            m_GlobalObjectIdHashBase++;
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(validPrefab);
+            m_ObjectId++;
             return validPrefab.gameObject;
         }
 
