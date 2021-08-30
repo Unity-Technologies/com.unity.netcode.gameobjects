@@ -24,10 +24,11 @@ namespace Unity.Netcode.EditorTests
             networkObject.NetworkManagerOwner = networkManager;
 
             Debug.Assert(networkObject.NetworkManager == networkManager);
-
+            Debug.Assert(singletonNetworkManager.NetworkConfig != null);
+            Debug.Assert(singletonNetworkManager.NetworkConfig.NetworkTransport != null);
             Object.DestroyImmediate(singletonNetworkManager.gameObject);
-            Object.DestroyImmediate(networkManager.gameObject);
-            Object.DestroyImmediate(gameObject);
+            // Object.DestroyImmediate(networkManager.gameObject);
+            // Object.DestroyImmediate(gameObject);
         }
 
         [Test]
