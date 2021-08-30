@@ -44,20 +44,22 @@ namespace Unity.Netcode
             Receive,
         }
 
-        static Dictionary<int, string> s_MessageTypeNames;
+        private static readonly IReadOnlyDictionary<int, string> k_MessageTypeNames;
 
         static MessageQueueContainer()
         {
-            s_MessageTypeNames = new Dictionary<int, string>();
+            var messageTypeNames = new Dictionary<int, string>();
             foreach(var messageType in Enum.GetValues(typeof(MessageType)))
             {
-                s_MessageTypeNames.Add((int)messageType, messageType.ToString());
+                messageTypeNames.Add((int)messageType, messageType.ToString());
             }
+
+            k_MessageTypeNames = messageTypeNames;
         }
 
         public static string GetMessageTypeName(MessageType messageType)
         {
-            if (!s_MessageTypeNames.TryGetValue((int)messageType, out var messageTypeName))
+            if (!k_MessageTypeNames.TryGetValue((int)messageType, out var messageTypeName))
             {
                 messageTypeName = string.Empty;
             }
