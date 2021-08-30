@@ -88,7 +88,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AreAllClientsDoneLoading { get; private set; }
 
-        internal string SceneName { get; set; }
+        internal uint SceneIndex { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 

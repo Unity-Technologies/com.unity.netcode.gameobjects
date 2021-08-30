@@ -539,7 +539,7 @@ namespace Unity.Netcode
             }
 
             var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
-            sceneEventProgress.SceneName = sceneName;
+            sceneEventProgress.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventProgressTracking.Add(sceneEventProgress.Guid, sceneEventProgress);
 
             if (!isUnloading)
@@ -573,7 +573,7 @@ namespace Unity.Netcode
             {
                 using var nonNullContext = (InternalCommandContext)context;
                 ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
-                ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(sceneEventProgress.SceneName);
+                ClientSynchEventData.SceneIndex = sceneEventProgress.SceneIndex;
                 ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
                 ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
                 ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
@@ -584,7 +584,7 @@ namespace Unity.Netcode
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 SceneEventType = sceneEventProgress.SceneEventType,
-                SceneName = sceneEventProgress.SceneName,
+                SceneName = ScenesInBuild[(int)sceneEventProgress.SceneIndex],
                 ClientId = m_NetworkManager.ServerClientId,
                 LoadSceneMode = sceneEventProgress.LoadSceneMode,
                 ClientsThatCompleted = sceneEventProgress.DoneClients,
