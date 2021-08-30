@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Unity.Netcode.MultiprocessRuntimeTests;
 using System.Linq;
 using UnityEngine;
@@ -10,10 +12,32 @@ using Debug = UnityEngine.Debug;
 public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
+    private static DirectoryInfo s_MultiprocessDirInfo;
+    public static List<Process> Processes = new List<Process>();
+
 
     public static void StartWorkerNode()
     {
+        if (Processes == null)
+        {
+            Processes = new List<Process>();
+        }
+        Debug.Log("Determine whether to start on local or remote nodes");
+        string userprofile = "";
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
+        }
+        else
+        {
+            userprofile = Environment.GetEnvironmentVariable("HOME");
+        }
+        Debug.Log($"userprofile is {userprofile}");
+        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+
         var workerProcess = new Process();
+        Processes.Add(workerProcess);
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
@@ -43,10 +67,13 @@ public class MultiprocessOrchestration
             throw;
         }
 
+        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
+
+
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
