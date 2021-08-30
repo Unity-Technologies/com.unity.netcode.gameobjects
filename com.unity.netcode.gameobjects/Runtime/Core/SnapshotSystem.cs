@@ -779,37 +779,58 @@ namespace Unity.Netcode
             for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
             {
                 var index = clientData.NextSpawnIndex;
+                var savedPosition = writer.GetStream().Position;
 
                 if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
                 {
                     var sentSpawn = m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
-                    clientData.SentSpawns.Add(sentSpawn);
-                    spawnWritten++;
-                }
 
-                // limit spawn sizes, compare current pos to very first position we wrote to
-                if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
-                {
-                    overSize = true;
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    {
+                        overSize = true;
+                        // revert back the position to undo the write
+                        writer.GetStream().Position = savedPosition;
+                    }
+                    else
+                    {
+                        clientData.SentSpawns.Add(sentSpawn);
+                        spawnWritten++;
+                    }
                 }
                 clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
             }
 
+            // even though we might have a spawn we could not fit, it's possible despawns will fit (they're smaller)
+
+            // todo: this next line is commented for now because there's no check for a spawn command to have been
+            // ack'ed before sending a despawn for the same object.
+            // Uncommenting this line would allow some despawn to be sent while spawns are pending.
+            // As-is it is overly restrictive but allows us to go forward without the spawn/despawn dependency check
+
+            // overSize = false;
 
             for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
             {
                 var index = clientData.NextDespawnIndex;
+                var savedPosition = writer.GetStream().Position;
 
                 if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
                 {
                     var sentDespawn = m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
-                    clientData.SentSpawns.Add(sentDespawn);
-                    despawnWritten++;
-                }
-                // limit spawn sizes, compare current pos to very first position we wrote to
-                if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
-                {
-                    overSize = true;
+
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    {
+                        overSize = true;
+                        // revert back the position to undo the write
+                        writer.GetStream().Position = savedPosition;
+                    }
+                    else
+                    {
+                        clientData.SentSpawns.Add(sentDespawn);
+                        despawnWritten++;
+                    }
                 }
                 clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % m_Snapshot.NumDespawns;
             }
