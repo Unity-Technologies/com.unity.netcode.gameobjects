@@ -749,94 +749,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Stops the running server
-        /// </summary>
-        public void StopServer()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StopServer));
-            }
-
-            var disconnectedIds = new HashSet<ulong>();
-
-            //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
-
-            // make sure all messages are flushed before transport disconnect clients
-            if (MessageQueueContainer != null)
-            {
-                MessageQueueContainer.ProcessAndFlushMessageQueue(
-                    queueType: MessageQueueContainer.MessageQueueProcessingTypes.Send,
-                    NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
-            }
-
-            foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
-            {
-                if (!disconnectedIds.Contains(pair.Key))
-                {
-                    disconnectedIds.Add(pair.Key);
-
-                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                    {
-                        continue;
-                    }
-
-                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
-                }
-            }
-
-            foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
-            {
-                if (!disconnectedIds.Contains(pair.Key))
-                {
-                    disconnectedIds.Add(pair.Key);
-                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                    {
-                        continue;
-                    }
-
-                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
-                }
-            }
-
-            IsServer = false;
-            Shutdown();
-        }
-
-        /// <summary>
-        /// Stops the running host
-        /// </summary>
-        public void StopHost()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StopHost));
-            }
-
-            IsServer = false;
-            IsClient = false;
-            StopServer();
-
-            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the netcode
-        }
-
-        /// <summary>
-        /// Stops the running client
-        /// </summary>
-        public void StopClient()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StopClient));
-            }
-
-            IsClient = false;
-            NetworkConfig.NetworkTransport.DisconnectLocalClient();
-            IsConnectedClient = false;
-            Shutdown();
-        }
-
-        /// <summary>
         /// Starts a Host
         /// </summary>
         public SocketTasks StartHost()
@@ -964,12 +876,68 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Global shtudown. Disconnects clients and stops server.
+        /// </summary>
         public void Shutdown()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Shutdown));
             }
+
+            if (IsServer)
+            {
+                var disconnectedIds = new HashSet<ulong>();
+
+                //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
+
+                // make sure all messages are flushed before transport disconnect clients
+                if (MessageQueueContainer != null)
+                {
+                    MessageQueueContainer.ProcessAndFlushMessageQueue(
+                        queueType: MessageQueueContainer.MessageQueueProcessingTypes.Send,
+                        NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
+                }
+
+                foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
+                {
+                    if (!disconnectedIds.Contains(pair.Key))
+                    {
+                        disconnectedIds.Add(pair.Key);
+
+                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                        {
+                            continue;
+                        }
+
+                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                    }
+                }
+
+                foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
+                {
+                    if (!disconnectedIds.Contains(pair.Key))
+                    {
+                        disconnectedIds.Add(pair.Key);
+                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                        {
+                            continue;
+                        }
+
+                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                    }
+                }
+            }
+            else
+            {
+                // Client only, send disconnect to server
+                NetworkConfig.NetworkTransport.DisconnectLocalClient();
+            }
+
+            IsConnectedClient = false;
+            IsServer = false;
+            IsClient = false;
 
             // Unregister INetworkUpdateSystem before shutting down the MessageQueueContainer
             this.UnregisterAllNetworkUpdates();
@@ -993,8 +961,6 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
-            IsServer = false;
-            IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
 
             if (SpawnManager != null)
@@ -1223,8 +1189,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        IsConnectedClient = false;
-                        StopClient();
+                        Shutdown();
                     }
 
                     OnClientDisconnectCallback?.Invoke(clientId);

@@ -93,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="clientToStop"></param>
         public static void StopOneClient(NetworkManager clientToStop)
         {
-            clientToStop.StopClient();
+            clientToStop.Shutdown();
             Object.Destroy(clientToStop.gameObject);
             NetworkManagerInstances.Remove(clientToStop);
         }
@@ -114,18 +114,7 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsHost)
-                {
-                    networkManager.StopHost();
-                }
-                else if (networkManager.IsServer)
-                {
-                    networkManager.StopServer();
-                }
-                else if (networkManager.IsClient)
-                {
-                    networkManager.StopClient();
-                }
+                networkManager.Shutdown();
             }
 
             // Destroy the network manager instances
