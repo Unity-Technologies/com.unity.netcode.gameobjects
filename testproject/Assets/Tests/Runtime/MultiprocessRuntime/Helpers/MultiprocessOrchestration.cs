@@ -15,7 +15,6 @@ public class MultiprocessOrchestration
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static List<Process> Processes = new List<Process>();
 
-
     public static void StartWorkerNode()
     {
         if (Processes == null)
@@ -73,7 +72,7 @@ public class MultiprocessOrchestration
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}";
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}"; // Let each process log to a different file
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
