@@ -243,15 +243,14 @@ namespace Unity.Netcode
             writer.WriteUInt16(entry.Length);
         }
 
-        internal void WriteSpawn(ClientData clientData, NetworkWriter writer, in SnapshotSpawnCommand spawn)
+        internal ClientData.SentSpawn WriteSpawn(in ClientData clientData, NetworkWriter writer, in SnapshotSpawnCommand spawn)
         {
             // remember which spawn we sent this connection with which sequence number
             // that way, upon ack, we can track what is being ack'ed
-            ClientData.SentSpawn s;
-            s.ObjectId = spawn.NetworkObjectId;
-            s.Tick = spawn.TickWritten;
-            s.SequenceNumber = clientData.SequenceNumber;
-            clientData.SentSpawns.Add(s);
+            ClientData.SentSpawn sentSpawn;
+            sentSpawn.ObjectId = spawn.NetworkObjectId;
+            sentSpawn.Tick = spawn.TickWritten;
+            sentSpawn.SequenceNumber = clientData.SequenceNumber;
 
             writer.WriteUInt64Packed(spawn.NetworkObjectId);
             writer.WriteUInt64Packed(spawn.GlobalObjectIdHash);
@@ -265,20 +264,23 @@ namespace Unity.Netcode
             writer.WriteVector3(spawn.ObjectScale);
 
             writer.WriteInt32Packed(spawn.TickWritten);
+
+            return sentSpawn;
         }
 
-        internal void WriteDespawn(ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
+        internal ClientData.SentSpawn WriteDespawn(ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
         {
             // remember which spawn we sent this connection with which sequence number
             // that way, upon ack, we can track what is being ack'ed
-            ClientData.SentSpawn s;
-            s.ObjectId = despawn.NetworkObjectId;
-            s.Tick = despawn.TickWritten;
-            s.SequenceNumber = clientData.SequenceNumber;
-            clientData.SentSpawns.Add(s);
+            ClientData.SentSpawn sentSpawn;
+            sentSpawn.ObjectId = despawn.NetworkObjectId;
+            sentSpawn.Tick = despawn.TickWritten;
+            sentSpawn.SequenceNumber = clientData.SequenceNumber;
 
             writer.WriteUInt64Packed(despawn.NetworkObjectId);
             writer.WriteInt32Packed(despawn.TickWritten);
+
+            return sentSpawn;
         }
         /// <summary>
         /// Read a received Entry
@@ -780,7 +782,8 @@ namespace Unity.Netcode
 
                 if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
                 {
-                    m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
+                    var sentSpawn = m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
+                    clientData.SentSpawns.Add(sentSpawn);
                     spawnWritten++;
                 }
 
@@ -799,7 +802,8 @@ namespace Unity.Netcode
 
                 if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
                 {
-                    m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
+                    var sentDespawn = m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
+                    clientData.SentSpawns.Add(sentDespawn);
                     despawnWritten++;
                 }
                 // limit spawn sizes, compare current pos to very first position we wrote to
