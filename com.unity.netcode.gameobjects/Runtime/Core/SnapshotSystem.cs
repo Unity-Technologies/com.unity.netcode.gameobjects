@@ -730,8 +730,8 @@ namespace Unity.Netcode
                 writer.WriteUInt16(SentinelBefore);
                 WriteBuffer(buffer);
                 WriteIndex(buffer);
-                WriteSpawns(buffer, clientId);
                 WriteAcks(buffer, clientId);
+                WriteSpawns(buffer, clientId);
                 writer.WriteUInt16(SentinelAfter);
 
                 m_ClientData[clientId].LastReceivedSequence = 0;
@@ -1016,8 +1016,8 @@ namespace Unity.Netcode
 
             m_Snapshot.ReadBuffer(reader, snapshotStream);
             m_Snapshot.ReadIndex(reader);
-            m_Snapshot.ReadSpawns(reader);
             m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
+            m_Snapshot.ReadSpawns(reader);
 
             sentinel = reader.ReadUInt16();
             if (sentinel != SentinelAfter)
