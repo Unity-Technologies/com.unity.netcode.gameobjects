@@ -269,7 +269,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// If the VerifySceneBeforeLoading delegate handler has been set by the user, this will provides
+        /// If the VerifySceneBeforeLoading delegate handler has been set by the user, this will provide
         /// an additional level of security and/or validation that the scene being loaded in the specified
         /// loading mode is "a valid scene to be loaded in the LoadSceneMode specified".
         /// </summary>
