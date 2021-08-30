@@ -8,6 +8,8 @@ namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
+        readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(MetricNames.NetworkMessageSent);
+        readonly EventMetric<NetworkMessageEvent> m_NetworkMessageReceivedEvent = new EventMetric<NetworkMessageEvent>(MetricNames.NetworkMessageReceived);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
@@ -30,6 +32,7 @@ namespace Unity.Netcode
         public NetworkMetrics()
         {
             Dispatcher = new MetricDispatcherBuilder()
+                .WithMetricEvents(m_NetworkMessageSentEvent, m_NetworkMessageReceivedEvent)
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
@@ -51,6 +54,16 @@ namespace Unity.Netcode
             {
                 m_NetworkGameObjects[networkObject.NetworkObjectId] = new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId);
             }
+        }
+
+        public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
+        {
+            m_NetworkMessageSentEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(receivedClientId), messageType, bytesCount));
+        }
+
+        public void TrackNetworkMessageReceived(ulong senderClientId, string messageType, long bytesCount)
+        {
+            m_NetworkMessageReceivedEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(senderClientId), messageType, bytesCount));
         }
 
         public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)

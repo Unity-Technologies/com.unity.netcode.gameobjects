@@ -44,6 +44,27 @@ namespace Unity.Netcode
             Receive,
         }
 
+        static Dictionary<int, string> s_MessageTypeNames;
+
+        static MessageQueueContainer()
+        {
+            s_MessageTypeNames = new Dictionary<int, string>();
+            foreach(var messageType in Enum.GetValues(typeof(MessageType)))
+            {
+                s_MessageTypeNames.Add((int)messageType, messageType.ToString());
+            }
+        }
+
+        public static string GetMessageTypeName(MessageType messageType)
+        {
+            if (!s_MessageTypeNames.TryGetValue((int)messageType, out var messageTypeName))
+            {
+                messageTypeName = string.Empty;
+            }
+
+            return messageTypeName;
+        }
+
         // Inbound and Outbound QueueHistoryFrames
         private readonly Dictionary<MessageQueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateStage, MessageQueueHistoryFrame>>> m_QueueHistory =
             new Dictionary<MessageQueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateStage, MessageQueueHistoryFrame>>>();

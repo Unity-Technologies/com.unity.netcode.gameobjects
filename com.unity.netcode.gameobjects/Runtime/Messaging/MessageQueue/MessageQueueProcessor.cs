@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Unity.Netcode
         private MessageQueueContainer m_MessageQueueContainer;
 
         private readonly NetworkManager m_NetworkManager;
+        private readonly List<ulong> m_TargetIdBuffer = new List<ulong>();
 
         public void Shutdown()
         {
@@ -218,6 +220,28 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// FillTargetList
+        /// Fills a list with the ClientId's an item is targeted to
+        /// </summary>
+        /// <param name="item">the MessageQueueItem we want targets for</param>
+        /// <param name="targetList">the list to fill</param>
+        private static void FillTargetList(in MessageFrameItem item, List<ulong> targetList)
+        {
+            switch (item.MessageType)
+            {
+                case MessageQueueContainer.MessageType.ServerRpc:
+                    targetList.Add(item.NetworkId);
+                    break;
+                default:
+                // todo: consider the implications of default usage of queueItem.clientIds
+                case MessageQueueContainer.MessageType.ClientRpc:
+                    // copy the list
+                    targetList.AddRange(item.ClientNetworkIds);
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Sends all message queue items in the current outbound frame
         /// </summary>
         /// <param name="isListening">if flase it will just process through the queue items but attempt to send</param>
@@ -235,13 +259,21 @@ namespace Unity.Netcode
                         advanceFrameHistory = true;
                         if (isListening)
                         {
+                            m_TargetIdBuffer.Clear();
+                            FillTargetList(currentQueueItem, m_TargetIdBuffer);
+
                             if (m_MessageQueueContainer.IsUsingBatching())
                             {
-                                m_MessageBatcher.QueueItem(currentQueueItem, k_BatchThreshold, SendCallback);
+                                m_MessageBatcher.QueueItem(m_TargetIdBuffer, currentQueueItem, k_BatchThreshold, SendCallback);
                             }
                             else
                             {
-                                SendFrameQueueItem(currentQueueItem);
+                                SendFrameQueueItem(m_TargetIdBuffer, currentQueueItem);
+                            }
+
+                            foreach (var target in m_TargetIdBuffer)
+                            {
+                                m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(target, MessageQueueContainer.GetMessageTypeName(currentQueueItem.MessageType), currentQueueItem.MessageData.Count);
                             }
                         }
 
@@ -291,7 +323,7 @@ namespace Unity.Netcode
         /// Sends the Message Queue Item to the specified destination
         /// </summary>
         /// <param name="item">Information on what to send</param>
-        private void SendFrameQueueItem(MessageFrameItem item)
+        private void SendFrameQueueItem(IReadOnlyCollection<ulong> targetIds, in MessageFrameItem item)
         {
             var channel = item.NetworkChannel;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
@@ -302,23 +334,10 @@ namespace Unity.Netcode
             {
                 channel = NetworkChannel.Fragmented;
             }
-            switch (item.MessageType)
-            {
-                case MessageQueueContainer.MessageType.ServerRpc:
-                    // TODO: Can we remove this special case for server RPCs?
-                    {
-                        m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
-                        break;
-                    }
-                default:
-                    {
-                        foreach (ulong clientid in item.ClientNetworkIds)
-                        {
-                            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
-                        }
 
-                        break;
-                    }
+            foreach (var clientId in targetIds)
+            {
+                m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, item.MessageData, channel);
             }
         }
 
