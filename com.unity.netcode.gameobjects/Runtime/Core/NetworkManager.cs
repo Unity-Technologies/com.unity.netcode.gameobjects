@@ -995,7 +995,10 @@ namespace Unity.Netcode
 
             IsServer = false;
             IsClient = false;
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            }
 
             if (SpawnManager != null)
             {
