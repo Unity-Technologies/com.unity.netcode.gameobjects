@@ -607,8 +607,6 @@ namespace Unity.Netcode
         internal const ushort SentinelBefore = 0x4246;
         internal const ushort SentinelAfter = 0x89CE;
 
-        private const int k_MaxSpawnUsage = 1000; // max bytes to use for the spawn/despawn part
-
         private NetworkManager m_NetworkManager = default;
         private Snapshot m_Snapshot = default;
 
@@ -747,8 +745,8 @@ namespace Unity.Netcode
         {
             var spawnWritten = 0;
             var despawnWritten = 0;
+            var overSize = false;
 
-            bool overSize = false;
             ClientData clientData = m_ClientData[clientId];
 
             // this is needed because spawns being removed may have reduce the size below LRU position
@@ -786,7 +784,7 @@ namespace Unity.Netcode
                     var sentSpawn = m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    if (writer.GetStream().Position - positionSpawns > m_NetworkManager.NetworkConfig.SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         // revert back the position to undo the write
@@ -820,7 +818,7 @@ namespace Unity.Netcode
                     var sentDespawn = m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
+                    if (writer.GetStream().Position - positionSpawns > m_NetworkManager.NetworkConfig.SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         // revert back the position to undo the write
