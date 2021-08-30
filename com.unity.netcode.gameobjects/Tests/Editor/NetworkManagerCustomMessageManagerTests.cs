@@ -12,7 +12,6 @@ namespace Unity.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            ScenesInBuildHelper.SynchronizeOrCreate(networkManager);
             networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;

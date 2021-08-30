@@ -168,6 +168,11 @@ namespace Unity.Netcode
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
 
         /// <summary>
+        /// The scenes in the build without their path
+        /// </summary>
+        internal List<string> ScenesInBuild = new List<string>();
+
+        /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         /// they need to be moved into the do not destroy temporary scene
         /// When it is set: Just before starting the asynchronous loading call
@@ -198,6 +203,29 @@ namespace Unity.Netcode
         internal Scene DontDestroyOnLoadScene;
 
         /// <summary>
+        /// Gets the scene name from full path to the scene
+        /// </summary>
+        /// <returns></returns>
+        internal string GetSceneNameFromPath(string scenePath)
+        {
+            var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
+            var end = scenePath.LastIndexOf(".", StringComparison.Ordinal);
+            return scenePath.Substring(begin, end - begin);
+        }
+
+        /// <summary>
+        /// Generates the scenes in build list
+        /// </summary>
+        internal void GenerateScenesInBuild()
+        {
+            ScenesInBuild.Clear();
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                ScenesInBuild.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
+            }
+        }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="networkManager"></param>
@@ -206,6 +234,8 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+
+            GenerateScenesInBuild();
 
             // If NetworkManager has this set to true, then we can get the DDOL (DontDestroyOnLoad) from its GaemObject
             if (networkManager.DontDestroy)
@@ -404,7 +434,7 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneNameValid(string sceneName)
         {
-            if (m_NetworkManager.ScenesInBuild.Scenes.Contains(sceneName))
+            if (ScenesInBuild.Contains(sceneName))
             {
                 return true;
             }
@@ -419,7 +449,7 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneIndexValid(uint index)
         {
-            return (index >= 0 && index < m_NetworkManager.ScenesInBuild.Scenes.Count);
+            return (index >= 0 && index < ScenesInBuild.Count);
         }
 
         /// <summary>
@@ -431,7 +461,7 @@ namespace Unity.Netcode
         {
             if (IsSceneNameValid(sceneName))
             {
-                return (uint)m_NetworkManager.ScenesInBuild.Scenes.IndexOf(sceneName);
+                return (uint)ScenesInBuild.IndexOf(sceneName);
             }
             return uint.MaxValue;
         }
@@ -445,7 +475,7 @@ namespace Unity.Netcode
         {
             if (IsSceneIndexValid(buildIndex))
             {
-                return m_NetworkManager.ScenesInBuild.Scenes[(int)buildIndex];
+                return ScenesInBuild[(int)buildIndex];
             }
             return string.Empty;
         }

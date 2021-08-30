@@ -242,13 +242,6 @@ namespace Unity.Netcode
         [HideInInspector] public NetworkConfig NetworkConfig;
 
         /// <summary>
-        /// Reference to the ScenesInBuild asset that contains a list of the scenes in the build list
-        /// </summary>
-        [HideInInspector]
-        [SerializeField]
-        internal ScenesInBuild ScenesInBuild;
-
-        /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname { get; private set; }
@@ -264,8 +257,6 @@ namespace Unity.Netcode
             {
                 return; // May occur when the component is added
             }
-
-            ScenesInBuildHelper.SynchronizeOrCreate(this);
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {

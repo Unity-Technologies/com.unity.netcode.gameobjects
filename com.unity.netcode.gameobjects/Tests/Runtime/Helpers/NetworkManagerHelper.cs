@@ -77,7 +77,6 @@ namespace Unity.Netcode.RuntimeTests
                         EnableSceneManagement = false,
                     };
                 }
-                ScenesInBuildHelper.SynchronizeOrCreate(NetworkManagerObject);
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
 

@@ -144,7 +144,6 @@ namespace TestProject.RuntimeTests
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = m_ServerNetworkManager.ServerClientId, ShouldWait = false });
             if (enableSceneVerification)
             {
-                ScenesInBuildHelper.SynchronizeOrCreate(m_ServerNetworkManager);
                 m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = ServerVerifySceneBeforeLoading;
             }
 
@@ -153,7 +152,6 @@ namespace TestProject.RuntimeTests
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
                 if (enableSceneVerification)
                 {
-                    ScenesInBuildHelper.SynchronizeOrCreate(manager);
                     manager.SceneManager.VerifySceneBeforeLoading = ClientVerifySceneBeforeLoading;
                 }
             }

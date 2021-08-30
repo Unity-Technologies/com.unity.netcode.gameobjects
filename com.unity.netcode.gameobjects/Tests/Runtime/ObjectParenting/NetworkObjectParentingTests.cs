@@ -58,13 +58,6 @@ namespace Unity.Netcode.RuntimeTests
             // we are running a unit test or not. (it is this or manually setting a property)
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
-            ScenesInBuildHelper.SynchronizeOrCreate(m_ServerNetworkManager);
-            foreach (var entry in m_ClientNetworkManagers)
-            {
-                ScenesInBuildHelper.SynchronizeOrCreate(entry);
-            }
-
-
             var execAssembly = Assembly.GetExecutingAssembly();
             var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
             var scenePath = Path.Combine(packagePath, $"Tests/Runtime/ObjectParenting/{nameof(NetworkObjectParentingTests)}.unity");
@@ -79,15 +72,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
-
-            m_ServerNetworkManager.ScenesInBuild.Scenes.Add(nameof(NetworkObjectParentingTests));
-            foreach (var entry in m_ClientNetworkManagers)
-            {
-                if(!entry.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
-                {
-                    entry.ScenesInBuild.Scenes.Add(nameof(NetworkObjectParentingTests));
-                }
-            }
 
             m_Dude_NetObjs = new Transform[setCount];
             m_Dude_LeftArm_NetObjs = new Transform[setCount];
@@ -114,6 +98,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start server and client NetworkManager instances
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            m_ServerNetworkManager.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
+            foreach (var entry in m_ClientNetworkManagers)
+            {
+                if (!entry.SceneManager.ScenesInBuild.Contains(nameof(NetworkObjectParentingTests)))
+                {
+                    entry.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
+                }
+            }
 
             // Register our scene verification delegate handler so we don't load the unit test scene
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
@@ -225,18 +217,6 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator Teardown()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-
-            if (m_ServerNetworkManager.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
-            {
-                m_ServerNetworkManager.ScenesInBuild.Scenes.Remove(nameof(NetworkObjectParentingTests));
-            }
-            foreach (var entry in m_ClientNetworkManagers)
-            {
-                if (entry.ScenesInBuild.Scenes.Contains(nameof(NetworkObjectParentingTests)))
-                {
-                    entry.ScenesInBuild.Scenes.Remove(nameof(NetworkObjectParentingTests));
-                }
-            }
 
             MultiInstanceHelpers.Destroy();
 
