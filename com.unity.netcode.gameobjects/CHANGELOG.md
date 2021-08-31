@@ -29,7 +29,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `MLAPI.Logging` → `Unity.Netcode`
     - `MLAPI.SceneManagement` → `Unity.Netcode`
     - and other `MLAPI.x` variants to `Unity.Netcode`
-  - All assembly definitions are renamed with `com.unity.netcode.x` variants
+  - All assembly definitions are renamed with `Unity.Netcode.x` variants
     - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
