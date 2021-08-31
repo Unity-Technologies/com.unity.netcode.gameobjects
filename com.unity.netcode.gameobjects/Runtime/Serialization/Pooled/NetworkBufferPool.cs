@@ -12,8 +12,11 @@ namespace Unity.Netcode
         private static Queue<WeakReference> s_OverflowBuffers = new Queue<WeakReference>();
         private static Queue<PooledNetworkBuffer> s_Buffers = new Queue<PooledNetworkBuffer>();
 
-        private const uint k_MaxBitPoolBuffers = 1024;
-        private const uint k_MaxCreatedDelta = 768;
+        // Increasing this value for various reasons:
+        // Some tests (i.e. MessageHandlerReceivedMessageServerClient) expect certain log messages and if we happen to hit the threshold it will cause those tests to fail
+        // This slows down tests having to log warnings repeatedly.
+        private const uint k_MaxBitPoolBuffers = 2048;
+        private const uint k_MaxCreatedDelta = 1512;
 
 
         /// <summary>
