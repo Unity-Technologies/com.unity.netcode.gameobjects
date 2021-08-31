@@ -103,7 +103,7 @@ namespace Unity.Netcode
             networkObject.OwnerClientIdInternal = null;
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
+                MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced,
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
@@ -153,7 +153,7 @@ namespace Unity.Netcode
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
             var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
+                MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced,
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
@@ -384,7 +384,7 @@ namespace Unity.Netcode
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
                 var context = messageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                    MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced,
                     new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
@@ -669,7 +669,7 @@ namespace Unity.Netcode
 
                                 ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                                 var context = messageQueueContainer.EnterInternalCommandContext(
-                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                                    MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced,
                                     m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {

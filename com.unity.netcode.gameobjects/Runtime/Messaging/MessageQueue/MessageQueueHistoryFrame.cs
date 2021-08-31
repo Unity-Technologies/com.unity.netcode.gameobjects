@@ -78,7 +78,7 @@ namespace Unity.Netcode
             m_CurrentItem.MessageType = (MessageQueueContainer.MessageType)QueueReader.ReadUInt16();
             m_CurrentItem.Timestamp = QueueReader.ReadSingle();
             m_CurrentItem.NetworkId = QueueReader.ReadUInt64();
-            m_CurrentItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
+            m_CurrentItem.NetworkDelivery = (NetworkDelivery)QueueReader.ReadByteDirect();
 
             //Clear out any current value for the client ids
             m_CurrentItem.ClientNetworkIds = new ulong[0];

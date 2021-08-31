@@ -22,7 +22,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     NetworkId = 123,
                     ClientNetworkIds = new ulong[] { 123 },
-                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    NetworkDelivery = NetworkDelivery.ReliableSequenced,
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
@@ -71,7 +71,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     NetworkId = 123,
                     ClientNetworkIds = new ulong[] { 123 },
-                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    NetworkDelivery = NetworkDelivery.ReliableSequenced,
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };

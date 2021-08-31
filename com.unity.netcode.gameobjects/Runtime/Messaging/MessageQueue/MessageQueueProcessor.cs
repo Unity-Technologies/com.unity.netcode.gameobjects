@@ -274,16 +274,16 @@ namespace Unity.Netcode
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            var channel = sendStream.NetworkChannel;
+            var delivery = sendStream.NetworkDelivery;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
             // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
             // if we have no other choice.
             if (length > k_FragmentationThreshold)
             {
-                channel = NetworkChannel.Fragmented;
+                delivery = NetworkDelivery.ReliableFragmentedSequenced;
             }
-            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, channel);
+            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, delivery);
         }
 
         /// <summary>
@@ -293,28 +293,28 @@ namespace Unity.Netcode
         /// <param name="item">Information on what to send</param>
         private void SendFrameQueueItem(MessageFrameItem item)
         {
-            var channel = item.NetworkChannel;
+            var delivery = item.NetworkDelivery;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
             // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
             // if we have no other choice.
             if (item.MessageData.Count > k_FragmentationThreshold)
             {
-                channel = NetworkChannel.Fragmented;
+                delivery = NetworkDelivery.ReliableFragmentedSequenced;
             }
             switch (item.MessageType)
             {
                 case MessageQueueContainer.MessageType.ServerRpc:
                     // TODO: Can we remove this special case for server RPCs?
                     {
-                        m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
+                        m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, delivery);
                         break;
                     }
                 default:
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {
-                            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
+                            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, delivery);
                         }
 
                         break;

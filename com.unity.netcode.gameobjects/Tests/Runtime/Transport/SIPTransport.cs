@@ -19,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests
             public NetworkEvent Type;
             public ulong ConnectionId;
             public ArraySegment<byte> Data;
-            public NetworkChannel Channel;
+            public NetworkDelivery Delivery;
         }
 
         private class Peer
@@ -46,7 +46,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_LocalConnection.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
+                    Delivery = NetworkDelivery.ReliableSequenced,
                     ConnectionId = m_LocalConnection.ConnectionId,
                     Data = new ArraySegment<byte>()
                 });
@@ -76,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Peers[clientId].IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
+                    Delivery = NetworkDelivery.ReliableSequenced,
                     ConnectionId = clientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_LocalConnection.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
+                    Delivery = NetworkDelivery.ReliableSequenced,
                     ConnectionId = clientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -122,7 +122,7 @@ namespace Unity.Netcode.RuntimeTests
                 onePeer.Value.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
+                    Delivery = NetworkDelivery.ReliableSequenced,
                     ConnectionId = LocalClientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -222,7 +222,7 @@ namespace Unity.Netcode.RuntimeTests
             return SocketTask.Done.AsTasks();
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery delivery)
         {
             if (m_LocalConnection != null)
             {
@@ -241,19 +241,19 @@ namespace Unity.Netcode.RuntimeTests
                     Type = NetworkEvent.Data,
                     ConnectionId = m_LocalConnection.ConnectionId,
                     Data = new ArraySegment<byte>(copy),
-                    Channel = channel
+                    Delivery = delivery
                 });
             }
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkDelivery delivery, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (m_LocalConnection != null)
             {
                 if (m_LocalConnection.IncomingBuffer.Count == 0)
                 {
                     clientId = 0;
-                    channel = NetworkChannel.Internal;
+                    delivery = NetworkDelivery.ReliableSequenced;
                     payload = new ArraySegment<byte>();
                     receiveTime = 0;
                     return NetworkEvent.Nothing;
@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
                 var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
 
                 clientId = peerEvent.ConnectionId;
-                channel = peerEvent.Channel;
+                delivery = peerEvent.Delivery;
                 payload = peerEvent.Data;
                 receiveTime = 0;
 
@@ -271,7 +271,7 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 clientId = 0;
-                channel = NetworkChannel.Internal;
+                delivery = NetworkDelivery.ReliableSequenced;
                 payload = new ArraySegment<byte>();
                 receiveTime = 0;
                 return NetworkEvent.Nothing;

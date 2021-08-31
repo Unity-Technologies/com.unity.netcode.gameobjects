@@ -137,8 +137,9 @@ namespace Unity.Netcode.RuntimeTests
                 // Increment our offset into our randomly generated data for next entry;
                 indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
-                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkChannel.DefaultMessage,
-                        senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup,
+                    NetworkDelivery.Reliable, senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound,
+                    NetworkUpdateStage.PostLateUpdate);
 
 
                 writer.WriteByteArray(randomGeneratedDataArray, messageChunkSize);
@@ -161,7 +162,7 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
                 Assert.AreEqual(currentQueueItem.MessageType, MessageQueueContainer.MessageType.ServerRpc);
                 Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
-                Assert.AreEqual(currentQueueItem.NetworkChannel, NetworkChannel.DefaultMessage);
+                Assert.AreEqual(currentQueueItem.NetworkDelivery, NetworkDelivery.Reliable);
 
                 // Validate the data in the queue
                 Assert.IsTrue(NetworkManagerHelper.BuffersMatch(currentQueueItem.MessageData.Offset, messageChunkSize, currentQueueItem.MessageData.Array, randomGeneratedDataArray));

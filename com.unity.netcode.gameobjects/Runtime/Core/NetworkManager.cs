@@ -1069,8 +1069,8 @@ namespace Unity.Netcode
                     do
                     {
                         processedEvents++;
-                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
-                        HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
+                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkDelivery networkDelivery, out ArraySegment<byte> payload, out float receiveTime);
+                        HandleRawTransportPoll(networkEvent, clientId, networkDelivery, payload, receiveTime);
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                     } while (IsListening && networkEvent != NetworkEvent.Nothing);
                 }
@@ -1122,7 +1122,7 @@ namespace Unity.Netcode
         {
             var clientIds = new[] { ServerClientId };
             var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ConnectionRequest, NetworkChannel.Internal,
+                MessageQueueContainer.MessageType.ConnectionRequest, NetworkDelivery.ReliableSequenced,
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
@@ -1158,7 +1158,7 @@ namespace Unity.Netcode
             }
         }
 
-        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel,
+        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkDelivery networkDelivery,
             ArraySegment<byte> payload, float receiveTime)
         {
             switch (networkEvent)
@@ -1204,7 +1204,7 @@ namespace Unity.Netcode
                             NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
                         }
 
-                        HandleIncomingData(clientId, networkChannel, payload, receiveTime);
+                        HandleIncomingData(clientId, networkDelivery, payload, receiveTime);
                         break;
                     }
                 case NetworkEvent.Disconnect:
@@ -1239,7 +1239,7 @@ namespace Unity.Netcode
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
 
-        internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime)
+        internal void HandleIncomingData(ulong clientId, NetworkDelivery networkDelivery, ArraySegment<byte> data, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
@@ -1258,12 +1258,12 @@ namespace Unity.Netcode
 
             if (MessageQueueContainer.IsUsingBatching())
             {
-                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
+                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkDelivery);
             }
             else
             {
                 var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
-                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
+                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkDelivery);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1271,9 +1271,9 @@ namespace Unity.Netcode
         }
 
         private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId,
-            float receiveTime, NetworkChannel receiveChannel)
+            float receiveTime, NetworkDelivery receiveDelivery)
         {
-            MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
+            MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveDelivery);
         }
 
         /// <summary>
@@ -1449,7 +1449,7 @@ namespace Unity.Netcode
 
             ulong[] clientIds = ConnectedClientsIds;
             var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.TimeSync, NetworkChannel.SyncChannel,
+                MessageQueueContainer.MessageType.TimeSync, NetworkDelivery.Unreliable,
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
@@ -1492,7 +1492,7 @@ namespace Unity.Netcode
                 // Server doesn't send itself the connection approved message
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkDelivery.ReliableSequenced,
                         new ulong[] { ownerClientId }, NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
@@ -1555,7 +1555,7 @@ namespace Unity.Netcode
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced,
                     new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {

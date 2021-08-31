@@ -709,7 +709,7 @@ namespace Unity.Netcode
             m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
+                MessageQueueContainer.MessageType.SnapshotData, NetworkDelivery.Unreliable,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
 
             if (context != null)

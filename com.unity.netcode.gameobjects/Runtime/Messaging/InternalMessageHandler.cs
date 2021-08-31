@@ -231,7 +231,7 @@ namespace Unity.Netcode
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkChannel receiveChannel)
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkDelivery receiveDelivery)
         {
             if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
             {
@@ -264,7 +264,7 @@ namespace Unity.Netcode
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveChannel);
+            messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveDelivery);
         }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream)

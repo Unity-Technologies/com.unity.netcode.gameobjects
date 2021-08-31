@@ -18,7 +18,7 @@ namespace Unity.Netcode
         /// Sender's network Identifier, or recipient identifier for server RPCs
         /// </summary>
         public ulong NetworkId;
-        public NetworkChannel NetworkChannel;
+        public NetworkDelivery NetworkDelivery;
         /// <summary>
         /// Everything other than server RPCs
         /// </summary>

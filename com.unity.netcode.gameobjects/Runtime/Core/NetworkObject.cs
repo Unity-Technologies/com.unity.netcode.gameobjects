@@ -313,7 +313,7 @@ namespace Unity.Netcode
             {
                 // Send destroy call
                 var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                    MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced,
                     new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
                 if (context != null)
                 {
@@ -724,7 +724,7 @@ namespace Unity.Netcode
             ApplyNetworkParenting();
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ParentSync, NetworkChannel.Internal,
+                MessageQueueContainer.MessageType.ParentSync, NetworkDelivery.ReliableSequenced,
                 NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
                 NetworkUpdateLoop.UpdateStage);
 

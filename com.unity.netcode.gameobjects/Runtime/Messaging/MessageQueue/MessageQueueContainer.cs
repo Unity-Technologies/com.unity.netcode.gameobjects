@@ -106,7 +106,7 @@ namespace Unity.Netcode
         /// <param name="clientIds">The destinations for this message</param>
         /// <param name="updateStage">The stage at which the message will be processed on the receiving side</param>
         /// <returns></returns>
-        internal InternalCommandContext? EnterInternalCommandContext(MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
+        internal InternalCommandContext? EnterInternalCommandContext(MessageType messageType, NetworkDelivery networkDelivery, ulong[] clientIds, NetworkUpdateStage updateStage)
         {
             PooledNetworkWriter writer;
             if (updateStage == NetworkUpdateStage.Initialization)
@@ -125,7 +125,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, NetworkManager.LocalClientId,
+            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, networkDelivery, NetworkManager.LocalClientId,
                 clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             writer.WriteByte((byte)messageType);
@@ -287,7 +287,7 @@ namespace Unity.Netcode
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the message</param>
         /// <param name="message">the message being received</param>
-        internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkChannel receiveChannel)
+        internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkDelivery receiveDelivery)
         {
             var updateStage = (NetworkUpdateStage)message.ReadByte();
 
@@ -300,7 +300,7 @@ namespace Unity.Netcode
             messageFrameItem.QueueWriter.WriteUInt16((ushort)qItemType);
             messageFrameItem.QueueWriter.WriteSingle(timeStamp);
             messageFrameItem.QueueWriter.WriteUInt64(sourceNetworkId);
-            messageFrameItem.QueueWriter.WriteByte((byte)receiveChannel);
+            messageFrameItem.QueueWriter.WriteByte((byte)receiveDelivery);
 
             //Inbound we copy the entire packet and store the position offset
             long streamSize = message.Length - message.Position;
@@ -360,13 +360,13 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="qItemType">type of the queue item</param>
         /// <param name="timeStamp">when queue item was submitted</param>
-        /// <param name="networkChannel">channel this queue item is being sent</param>
+        /// <param name="networkDelivery">channel this queue item is being sent</param>
         /// <param name="sourceNetworkId">source network id of the sender</param>
         /// <param name="targetNetworkIds">target network id(s)</param>
         /// <param name="queueFrameType">type of queue frame</param>
         /// <param name="updateStage">what update stage the RPC should be invoked on</param>
         /// <returns>PooledNetworkWriter</returns>
-        public PooledNetworkWriter BeginAddQueueItemToFrame(MessageType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        public PooledNetworkWriter BeginAddQueueItemToFrame(MessageType qItemType, float timeStamp, NetworkDelivery networkDelivery, ulong sourceNetworkId, ulong[] targetNetworkIds,
             MessageQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.IsHost && queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Inbound;
@@ -378,7 +378,7 @@ namespace Unity.Netcode
             messageQueueHistoryFrame.QueueWriter.WriteUInt16((ushort)qItemType);
             messageQueueHistoryFrame.QueueWriter.WriteSingle(timeStamp);
             messageQueueHistoryFrame.QueueWriter.WriteUInt64(sourceNetworkId);
-            messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkChannel);
+            messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkDelivery); // hrm watch
 
             if (queueFrameType != MessageQueueHistoryFrame.QueueFrameType.Inbound)
             {

@@ -43,8 +43,8 @@ namespace Unity.Netcode.Transports.UNET
         private WeakReference m_TemporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<NetworkChannel, int> m_ChannelNameToId = new Dictionary<NetworkChannel, int>();
-        private readonly Dictionary<int, NetworkChannel> m_ChannelIdToName = new Dictionary<int, NetworkChannel>();
+        private readonly Dictionary<NetworkDelivery, int> m_ChannelNameToId = new Dictionary<NetworkDelivery, int>();
+        private readonly Dictionary<int, NetworkDelivery> m_ChannelIdToName = new Dictionary<int, NetworkDelivery>();
         private int m_ServerConnectionId;
         private int m_ServerHostId;
 
@@ -54,11 +54,11 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            for (int i = 0; i < Channels.Count; i++)
-            {
-                // Set the channels to a incrementing value
-                Channels[i].Id = (byte)((byte)NetworkChannel.ChannelUnused + i);
-            }
+//hrm            for (int i = 0; i < Channels.Count; i++)
+//hrm            {
+//hrm                // Set the channels to a incrementing value
+//hrm                Channels[i].Id = (byte)((byte)NetworkDelivery.ChannelUnused + i);
+//hrm            }
         }
 #endif
 
@@ -84,19 +84,19 @@ namespace Unity.Netcode.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             int channelId = 0;
 
-            if (m_ChannelNameToId.TryGetValue(networkChannel, out int value))
+            if (m_ChannelNameToId.TryGetValue(networkDelivery, out int value))
             {
                 channelId = value;
             }
             else
             {
-                channelId = m_ChannelNameToId[NetworkChannel.Internal];
+                channelId = m_ChannelNameToId[NetworkDelivery.ReliableSequenced];
             }
 
             byte[] buffer;
@@ -153,7 +153,7 @@ namespace Unity.Netcode.Transports.UNET
         }
 #endif
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkDelivery networkDelivery, out ArraySegment<byte> payload, out float receiveTime)
         {
             var eventType = UnityEngine.Networking.NetworkTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
@@ -183,13 +183,13 @@ namespace Unity.Netcode.Transports.UNET
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
             }
 
-            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkChannel value))
+            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkDelivery value))
             {
-                networkChannel = value;
+                networkDelivery = value;
             }
             else
             {
-                networkChannel = NetworkChannel.Internal;
+                networkDelivery = NetworkDelivery.ReliableSequenced;
             }
 
             if (m_ConnectTask != null && hostId == m_ServerHostId && connectionId == m_ServerConnectionId)
@@ -349,28 +349,19 @@ namespace Unity.Netcode.Transports.UNET
         {
             var connectionConfig = new ConnectionConfig();
 
+            foreach (int i in Enum.GetValues(typeof(NetworkDelivery)))
+            {
+//                Console.WriteLine($" {i}" );
+            }
+
             // Built-in netcode channels
-            for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
-            {
-                int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);
-
-                m_ChannelIdToName.Add(channelId, NETCODE_CHANNELS[i].Channel);
-                m_ChannelNameToId.Add(NETCODE_CHANNELS[i].Channel, channelId);
-            }
-
-            // Custom user-added channels
-            for (int i = 0; i < Channels.Count; i++)
-            {
-                int channelId = AddUNETChannel(Channels[i].Type, connectionConfig);
-
-                if (m_ChannelNameToId.ContainsKey((NetworkChannel)Channels[i].Id))
-                {
-                    throw new InvalidChannelException($"Channel {channelId} already exists");
-                }
-
-                m_ChannelIdToName.Add(channelId, (NetworkChannel)Channels[i].Id);
-                m_ChannelNameToId.Add((NetworkChannel)Channels[i].Id, channelId);
-            }
+//!!            for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
+//!!            {
+//!!                int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);
+//!!
+//!!                m_ChannelIdToName.Add(channelId, NETCODE_CHANNELS[i].Delivery);
+//!!                m_ChannelNameToId.Add(NETCODE_CHANNELS[i].Delivery, channelId);
+//!!            }
 
             connectionConfig.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
 

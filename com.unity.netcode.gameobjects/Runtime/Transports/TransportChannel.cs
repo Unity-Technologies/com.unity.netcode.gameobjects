@@ -8,16 +8,10 @@ namespace Unity.Netcode
     [Serializable]
     public struct TransportChannel
     {
-        public TransportChannel(NetworkChannel channel, NetworkDelivery delivery)
+        public TransportChannel(NetworkDelivery delivery)
         {
-            Channel = channel;
             Delivery = delivery;
         }
-
-        /// <summary>
-        /// Channel identifier
-        /// </summary>
-        public NetworkChannel Channel;
 
         /// <summary>
         /// Delivery type

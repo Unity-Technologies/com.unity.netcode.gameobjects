@@ -64,16 +64,16 @@ namespace Unity.Netcode
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
+            var transportDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             if (IsHost)
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
@@ -133,7 +133,7 @@ namespace Unity.Netcode
             }
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
+            var transportDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
@@ -151,7 +151,7 @@ namespace Unity.Netcode
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
@@ -161,7 +161,7 @@ namespace Unity.Netcode
                     messageQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportDelivery, NetworkObjectId,
                         clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 }
                 else
@@ -171,7 +171,7 @@ namespace Unity.Netcode
             }
             else
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportDelivery, NetworkObjectId,
                     clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
 
@@ -365,7 +365,7 @@ namespace Unity.Netcode
         private bool m_VarInit = false;
 
         private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
-        private readonly List<NetworkChannel> m_ChannelsForNetworkVariableGroups = new List<NetworkChannel>();
+        private readonly List<NetworkDelivery> m_ChannelsForNetworkVariableGroups = new List<NetworkDelivery>();
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 
         private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
@@ -437,26 +437,26 @@ namespace Unity.Netcode
 
             {
                 // Create index map for channels
-                var firstLevelIndex = new Dictionary<NetworkChannel, int>();
+                var firstLevelIndex = new Dictionary<NetworkDelivery, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    var networkChannel = NetworkVariableBase.NetworkVariableChannel;
+                    var networkDelivery = NetworkVariableBase.NetworkVariableDelivery;
 
-                    if (!firstLevelIndex.ContainsKey(networkChannel))
+                    if (!firstLevelIndex.ContainsKey(networkDelivery))
                     {
-                        firstLevelIndex.Add(networkChannel, secondLevelCounter);
-                        m_ChannelsForNetworkVariableGroups.Add(networkChannel);
+                        firstLevelIndex.Add(networkDelivery, secondLevelCounter);
+                        m_ChannelsForNetworkVariableGroups.Add(networkDelivery);
                         secondLevelCounter++;
                     }
 
-                    if (firstLevelIndex[networkChannel] >= m_ChannelMappedNetworkVariableIndexes.Count)
+                    if (firstLevelIndex[networkDelivery] >= m_ChannelMappedNetworkVariableIndexes.Count)
                     {
                         m_ChannelMappedNetworkVariableIndexes.Add(new HashSet<int>());
                     }
 
-                    m_ChannelMappedNetworkVariableIndexes[firstLevelIndex[networkChannel]].Add(i);
+                    m_ChannelMappedNetworkVariableIndexes[firstLevelIndex[networkDelivery]].Add(i);
                 }
             }
         }

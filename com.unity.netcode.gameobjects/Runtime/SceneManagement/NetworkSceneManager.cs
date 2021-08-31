@@ -175,7 +175,7 @@ namespace Unity.Netcode
         private NetworkManager m_NetworkManager { get; }
 
         private const MessageQueueContainer.MessageType k_MessageType = MessageQueueContainer.MessageType.SceneEvent;
-        private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
+        private const NetworkDelivery k_ChannelType = NetworkDelivery.ReliableSequenced;
         private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
 
 

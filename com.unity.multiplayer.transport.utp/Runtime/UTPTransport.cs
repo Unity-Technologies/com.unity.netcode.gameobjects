@@ -260,14 +260,14 @@ public class UTPTransport : NetworkTransport
         }
     }
 
-    public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+    public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
     {
         var pipelineIndex = 0;
 
         GetUTPConnectionDetails(clientId, out uint peerId);
 
         var writer = new DataStreamWriter(data.Count + 1 + 4, Allocator.Temp);
-        writer.WriteByte((byte)networkChannel);
+        writer.WriteByte((byte)networkDelivery);
         writer.WriteInt(data.Count);
 
         fixed (byte* dataArrayPtr = data.Array)
@@ -278,10 +278,10 @@ public class UTPTransport : NetworkTransport
         SendToClient(writer.AsNativeArray(), peerId, pipelineIndex);
     }
 
-    public override NetcodeEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+    public override NetcodeEvent PollEvent(out ulong clientId, out NetworkDelivery networkDelivery, out ArraySegment<byte> payload, out float receiveTime)
     {
         clientId = 0;
-        networkChannel = NetworkChannel.ChannelUnused;
+        networkDelivery = NetworkDelivery.ReliableSequenced; //??
 
         payload = new ArraySegment<byte>(Array.Empty<byte>());
         receiveTime = 0;
@@ -315,20 +315,20 @@ public class UTPTransport : NetworkTransport
                         {
                             Marshal.Copy((IntPtr)message.Data, arr, 0, size);
                             var payload = new ArraySegment<byte>(arr);
-                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, (NetworkDelivery)message.ChannelId, payload, Time.realtimeSinceStartup);
                         }
 
                         break;
                     case NetcodeEvent.Connect:
                         {
-                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkDelivery.ReliableSequenced, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         }
                         break;
                     case NetcodeEvent.Disconnect:
-                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkDelivery.ReliableSequenced, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
                     case NetcodeEvent.Nothing:
-                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkDelivery.ReliableSequenced, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
                 }
             }

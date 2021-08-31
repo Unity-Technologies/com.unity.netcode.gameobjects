@@ -4,24 +4,6 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public enum NetworkChannel : byte
-    {
-        Internal,
-        TimeSync,
-        ReliableRpc,
-        UnreliableRpc,
-        SyncChannel,
-        DefaultMessage,
-        PositionUpdate,
-        AnimationUpdate,
-        NavAgentState,
-        NavAgentCorrection,
-        NetworkVariable, //todo: this channel will be used for snapshotting and should then go from reliable to unreliable
-        SnapshotExchange,
-        Fragmented,
-        ChannelUnused, // <<-- must be present, and must be last
-    };
-
     /// <summary>
     /// A network transport
     /// </summary>
@@ -57,62 +39,10 @@ namespace Unity.Netcode
             m_ChannelsCache = null;
         }
 
-        public TransportChannel[] NETCODE_CHANNELS
-        {
-            get
-            {
-                if (m_ChannelsCache == null)
-                {
-                    var transportChannels = new List<TransportChannel>();
-
-                    OnChannelRegistration?.Invoke(transportChannels);
-
-                    m_ChannelsCache = new TransportChannel[NETCODE_INTERNAL_CHANNELS.Length + transportChannels.Count];
-
-                    for (int i = 0; i < NETCODE_INTERNAL_CHANNELS.Length; i++)
-                    {
-                        m_ChannelsCache[i] = NETCODE_INTERNAL_CHANNELS[i];
-                    }
-
-                    for (int i = 0; i < transportChannels.Count; i++)
-                    {
-                        m_ChannelsCache[i + NETCODE_INTERNAL_CHANNELS.Length] = transportChannels[i];
-                    }
-                }
-
-                return m_ChannelsCache;
-            }
-        }
-
-        /// <summary>
-        /// The channels the Netcode will use when sending internal messages.
-        /// </summary>
-#pragma warning disable IDE1006 // disable naming rule violation check
-        private readonly TransportChannel[] NETCODE_INTERNAL_CHANNELS =
-#pragma warning restore IDE1006 // restore naming rule violation check
-        {
-            new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableSequenced),
-            new TransportChannel(NetworkChannel.ReliableRpc, NetworkDelivery.ReliableSequenced),
-            new TransportChannel(NetworkChannel.UnreliableRpc, NetworkDelivery.UnreliableSequenced),
-            new TransportChannel(NetworkChannel.TimeSync, NetworkDelivery.Unreliable),
-            new TransportChannel(NetworkChannel.SyncChannel, NetworkDelivery.Unreliable),
-            new TransportChannel(NetworkChannel.DefaultMessage, NetworkDelivery.Reliable),
-            new TransportChannel(NetworkChannel.PositionUpdate, NetworkDelivery.UnreliableSequenced),
-            new TransportChannel(NetworkChannel.AnimationUpdate, NetworkDelivery.ReliableSequenced),
-            new TransportChannel(NetworkChannel.NavAgentState, NetworkDelivery.ReliableSequenced),
-            new TransportChannel(NetworkChannel.NavAgentCorrection, NetworkDelivery.UnreliableSequenced),
-            // todo: Currently, fragmentation support needed to deal with oversize packets encounterable with current pre-snapshot code".
-            // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
-            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableSequenced),
-            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.Unreliable),
-            new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
-
-        };
-
         /// <summary>
         /// Delegate for transport events.
         /// </summary>
-        public delegate void TransportEventDelegate(NetworkEvent type, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime);
+        public delegate void TransportEventDelegate(NetworkEvent type, ulong clientId, NetworkDelivery networkDelivery, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
         /// Occurs when the transport has a new transport event. Can be used to make an event based transport instead of a poll based.
@@ -128,9 +58,9 @@ namespace Unity.Netcode
         /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
-        protected void InvokeOnTransportEvent(NetworkEvent type, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
+        protected void InvokeOnTransportEvent(NetworkEvent type, ulong clientId, NetworkDelivery networkDelivery, ArraySegment<byte> payload, float receiveTime)
         {
-            OnTransportEvent?.Invoke(type, clientId, networkChannel, payload, receiveTime);
+            OnTransportEvent?.Invoke(type, clientId, networkDelivery, payload, receiveTime);
         }
 
         /// <summary>
@@ -139,7 +69,7 @@ namespace Unity.Netcode
         /// <param name="clientId">The clientId to send to</param>
         /// <param name="data">The data to send</param>
         /// <param name="channelName">The channel to send data to</param>
-        public abstract void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel);
+        public abstract void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery);
 
         /// <summary>
         /// Polls for incoming events, with an extra output parameter to report the precise time the event was received.
@@ -149,7 +79,7 @@ namespace Unity.Netcode
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public abstract NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
+        public abstract NetworkEvent PollEvent(out ulong clientId, out NetworkDelivery networkDelivery, out ArraySegment<byte> payload, out float receiveTime);
 
         /// <summary>
         /// Connects client to server

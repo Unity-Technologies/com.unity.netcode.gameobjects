@@ -30,7 +30,7 @@ namespace Unity.Netcode.EditorTests
 
         public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime,
             MessageQueueContainer.MessageType messageType,
-            NetworkChannel receiveChannel)
+            NetworkDelivery receiveDelivery)
         {
             VerifyCalled(nameof(MessageReceiveQueueItem));
             if (NetworkManager)
@@ -41,7 +41,7 @@ namespace Unity.Netcode.EditorTests
                 // That's what will then call back into this for the others.
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
                 messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId,
-                    (NetworkBuffer)stream, receiveChannel);
+                    (NetworkBuffer)stream, receiveDelivery);
                 messageQueueContainer.ProcessAndFlushMessageQueue(
                     MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
                 messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);

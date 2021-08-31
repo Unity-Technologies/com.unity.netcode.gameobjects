@@ -40,8 +40,8 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="buffer">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="networkDelivery">The QoS to send the data with</param>
+        public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -49,7 +49,7 @@ namespace Unity.Netcode
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                MessageQueueContainer.MessageType.UnnamedMessage, networkDelivery,
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
@@ -66,11 +66,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="buffer">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel tos end the data on</param>
-        public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="networkDelivery">The channel tos end the data on</param>
+        public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                MessageQueueContainer.MessageType.UnnamedMessage, networkDelivery,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
@@ -173,8 +173,8 @@ namespace Unity.Netcode
         /// <param name="name">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="networkDelivery">The channel to send the data on</param>
+        public void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
@@ -188,7 +188,7 @@ namespace Unity.Netcode
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                MessageQueueContainer.MessageType.NamedMessage, networkDelivery,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
@@ -213,8 +213,8 @@ namespace Unity.Netcode
         /// <param name="name">The message name to send</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="networkDelivery">The channel to send the data on</param>
+        public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -233,7 +233,7 @@ namespace Unity.Netcode
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                MessageQueueContainer.MessageType.NamedMessage, networkDelivery,
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {

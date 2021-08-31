@@ -9,7 +9,7 @@ namespace Unity.Netcode
     {
         public class SendStream
         {
-            public NetworkChannel NetworkChannel;
+            public NetworkDelivery NetworkDelivery;
             public PooledNetworkBuffer Buffer;
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
@@ -131,19 +131,19 @@ namespace Unity.Netcode
                 if (sendStream.IsEmpty)
                 {
                     sendStream.IsEmpty = false;
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.NetworkDelivery = item.NetworkDelivery;
                 }
                 // If the item is a different channel we have to flush and change channels.
                 // This isn't great if channels are interleaved, but having a different stream
                 // per channel would create ordering issues.
-                else if (sendStream.NetworkChannel != item.NetworkChannel)
+                else if (sendStream.NetworkDelivery != item.NetworkDelivery)
                 {
                     sendCallback(clientId, sendStream);
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
 
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.NetworkDelivery = item.NetworkDelivery;
                 }
 
                 // write the amounts of bytes that are coming up
@@ -165,7 +165,7 @@ namespace Unity.Netcode
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
 
-        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime, NetworkChannel receiveChannel);
+        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime, NetworkDelivery receiveDelivery);
 
         /// <summary>
         /// SendItems
@@ -203,7 +203,7 @@ namespace Unity.Netcode
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkChannel receiveChannel)
+        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkDelivery receiveDelivery)
         {
             using var copy = PooledNetworkBuffer.Get();
             do
@@ -223,7 +223,7 @@ namespace Unity.Netcode
                 Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
                 var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
-                receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
+                receiveCallback(copy, messageType, clientId, receiveTime, receiveDelivery);
 
                 // seek over the message
                 // MessageReceiveQueueItem peeks at content, it doesn't advance

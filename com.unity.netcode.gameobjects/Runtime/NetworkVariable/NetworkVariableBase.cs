@@ -13,10 +13,11 @@ namespace Unity.Netcode
         {
             m_NetworkBehaviour = networkBehaviour;
         }
+
         /// <summary>
         /// The name of the channel to be used for syncing
         /// </summary>
-        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
+        public const NetworkDelivery NetworkVariableDelivery = NetworkDelivery.ReliableSequenced;
 
         protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {

@@ -84,7 +84,7 @@ namespace Unity.Netcode
             }
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkDelivery networkDelivery, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (m_LastProcessedTransportIndex >= Transports.Length - 1)
             {
@@ -97,7 +97,7 @@ namespace Unity.Netcode
 
                 if (Transports[i].IsSupported)
                 {
-                    var networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkChannel, out payload, out receiveTime);
+                    var networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkDelivery, out payload, out receiveTime);
 
                     if (networkEvent != NetworkEvent.Nothing)
                     {
@@ -109,18 +109,18 @@ namespace Unity.Netcode
             }
 
             clientId = 0;
-            networkChannel = 0;
+            networkDelivery = NetworkDelivery.ReliableSequenced;
             payload = new ArraySegment<byte>();
             receiveTime = 0;
 
             return NetworkEvent.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 
-            Transports[transportId].Send(connectionId, data, networkChannel);
+            Transports[transportId].Send(connectionId, data, networkDelivery);
         }
 
         public override void Shutdown()
