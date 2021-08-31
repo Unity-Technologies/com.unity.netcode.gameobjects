@@ -315,6 +315,8 @@ namespace Unity.Netcode
             {
                 channel = NetworkChannel.Fragmented;
             }
+
+            m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(length);
             m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, channel);
         }
 
@@ -337,6 +339,7 @@ namespace Unity.Netcode
 
             foreach (var clientId in targetIds)
             {
+            	m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(item.MessageData.Count);
                 m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, item.MessageData, channel);
             }
         }
