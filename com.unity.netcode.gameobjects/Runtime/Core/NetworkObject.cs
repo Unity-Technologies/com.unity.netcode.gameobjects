@@ -394,17 +394,15 @@ namespace Unity.Netcode
 
         private SnapshotDespawnCommand GetDespawnCommand()
         {
-            SnapshotDespawnCommand command;
+            SnapshotDespawnCommand command = SnapshotSystem.GetDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }
 
         private SnapshotSpawnCommand GetSpawnCommand()
         {
-            SnapshotSpawnCommand command;
+            SnapshotSpawnCommand command = SnapshotSystem.GetSpawnCommand();
             command.NetworkObjectId = NetworkObjectId;
             command.OwnerClientId = OwnerClientId;
             command.IsPlayerObject = IsPlayerObject;
@@ -426,8 +424,6 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }

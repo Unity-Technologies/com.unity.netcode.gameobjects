@@ -57,6 +57,7 @@ namespace Unity.Netcode
         // snapshot internal
         internal int TickWritten;
         internal List<ulong> TargetClientIds;
+        internal int TimesWritten;
     }
 
     // A table of NetworkVariables that constitutes a Snapshot.
@@ -302,7 +303,7 @@ namespace Unity.Netcode
 
         internal SnapshotSpawnCommand ReadSpawn(NetworkReader reader)
         {
-            SnapshotSpawnCommand command;
+            var command = SnapshotSystem.GetSpawnCommand();
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
             command.GlobalObjectIdHash = (uint)reader.ReadUInt64Packed();
@@ -315,18 +316,16 @@ namespace Unity.Netcode
             command.ObjectScale = reader.ReadVector3();
 
             command.TickWritten = reader.ReadInt32Packed();
-            command.TargetClientIds = default;
 
             return command;
         }
 
         internal SnapshotDespawnCommand ReadDespawn(NetworkReader reader)
         {
-            SnapshotDespawnCommand command;
+            SnapshotDespawnCommand command = SnapshotSystem.GetDespawnCommand();
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
             command.TickWritten = reader.ReadInt32Packed();
-            command.TargetClientIds = default;
 
             return command;
         }
@@ -741,6 +740,24 @@ namespace Unity.Netcode
             }
         }
 
+        // Checks if a given SpawnCommand should be written to a Snapshot Message
+        // Performs exponential back off. To write a spawn a second time
+        // two ticks must have gone by. To write it a third time, four ticks, etc...
+        // This prioritize commands that have been re-sent less than others
+        private bool ShouldWriteSpawn(in SnapshotSpawnCommand spawnCommand)
+        {
+            if (m_CurrentTick < spawnCommand.TickWritten)
+            {
+                return false;
+            }
+
+            // 63 as we can't shift more than that.
+            var diff = Math.Min(63, m_CurrentTick - spawnCommand.TickWritten);
+
+            // -1 to make the first resend immediate
+            return (1 << diff) > (spawnCommand.TimesWritten - 1);
+        }
+
         private void WriteSpawns(NetworkBuffer buffer, ulong clientId)
         {
             var spawnWritten = 0;
@@ -779,7 +796,7 @@ namespace Unity.Netcode
                 var index = clientData.NextSpawnIndex;
                 var savedPosition = writer.GetStream().Position;
 
-                if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
+                if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId) && ShouldWriteSpawn(m_Snapshot.Spawns[index]))
                 {
                     var sentSpawn = m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
 
@@ -792,6 +809,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        m_Snapshot.Spawns[index].TimesWritten++;
                         clientData.SentSpawns.Add(sentSpawn);
                         spawnWritten++;
                     }
@@ -955,8 +973,6 @@ namespace Unity.Netcode
                 clientId = m_NetworkManager.ServerClientId;
             }
 
-            int snapshotTick = default;
-
             using var reader = PooledNetworkReader.Get(snapshotStream);
             // make sure we have a ClientData entry for each client
             if (!m_ClientData.ContainsKey(clientId))
@@ -964,7 +980,7 @@ namespace Unity.Netcode
                 m_ClientData.Add(clientId, new ClientData());
             }
 
-            snapshotTick = reader.ReadInt32Packed();
+            var snapshotTick = reader.ReadInt32Packed();
             var sequence = reader.ReadUInt16();
 
             if (sequence >= m_ClientData[clientId].LastReceivedSequence)
@@ -1066,6 +1082,37 @@ namespace Unity.Netcode
 
             table += "======\n";
             Debug.Log(table);
+        }
+
+        static internal SnapshotDespawnCommand GetDespawnCommand()
+        {
+            var despawn = new SnapshotDespawnCommand();
+
+            despawn.NetworkObjectId = default;
+            despawn.TickWritten = default;
+            despawn.TargetClientIds = default;
+
+            return despawn;
+        }
+
+        static internal SnapshotSpawnCommand GetSpawnCommand()
+        {
+            var spawn = new SnapshotSpawnCommand();
+
+            spawn.NetworkObjectId = default;
+            spawn.GlobalObjectIdHash = default;
+            spawn.IsSceneObject = default;
+            spawn.IsPlayerObject = default;
+            spawn.OwnerClientId = default;
+            spawn.ParentNetworkId = default;
+            spawn.ObjectPosition = default;
+            spawn.ObjectRotation = default;
+            spawn.ObjectScale = default;
+            spawn.TickWritten = default;
+            spawn.TargetClientIds = default;
+            spawn.TimesWritten = default;
+
+            return spawn;
         }
     }
 }
