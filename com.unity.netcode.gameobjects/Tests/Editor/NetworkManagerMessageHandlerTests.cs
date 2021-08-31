@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -19,13 +17,7 @@ namespace Unity.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            // Netcode sets this in validate
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
-            };
-
+            networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
 

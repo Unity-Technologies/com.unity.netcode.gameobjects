@@ -51,8 +51,8 @@ namespace TestProject.RuntimeTests
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject, 1);
-            var handler = new SpawnRpcDespawnInstanceHandler(1);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
             foreach (var client in clients)
             {
                 client.PrefabHandler.AddHandler(networkObject, handler);
