@@ -4,8 +4,63 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
+
+
 namespace Unity.Netcode.RuntimeTests
 {
+    public unsafe struct FixedStringStruct : INetworkSerializable
+    {
+        public fixed char FixedString[6];
+
+        public void SetIt()
+        {
+            FixedString[0] = 'a';
+            FixedString[1] = 'b';
+            FixedString[2] = 'c';
+            FixedString[3] = 'd';
+            FixedString[4] = 'e';
+            FixedString[5] = 'f';
+        }
+
+        public string GetIt()
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append(FixedString[0]);
+            sb.Append(FixedString[1]);
+            sb.Append(FixedString[2]);
+            sb.Append(FixedString[3]);
+            sb.Append(FixedString[4]);
+            sb.Append(FixedString[5]);
+            return sb.ToString();
+        }
+
+        public void NetworkSerialize(NetworkSerializer serializer)
+        {
+            if (serializer.IsReading)
+            {
+                var t = new char[6];
+                serializer.Serialize(ref t);
+                FixedString[0] = t[0];
+                FixedString[1] = t[1];
+                FixedString[2] = t[2];
+                FixedString[3] = t[3];
+                FixedString[4] = t[4];
+                FixedString[5] = t[5];
+            }
+            else
+            {
+                var t = new char[6];
+                t[0] = FixedString[0];
+                t[1] = FixedString[1];
+                t[2] = FixedString[2];
+                t[3] = FixedString[3];
+                t[4] = FixedString[4];
+                t[5] = FixedString[5];
+                serializer.Serialize(ref t);
+            }
+        }
+    }
+
     public struct TestStruct : INetworkSerializable
     {
         public uint SomeInt;
@@ -28,6 +83,8 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
         public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
+
+        public readonly NetworkVariable<FixedStringStruct> TheString = new NetworkVariable<FixedStringStruct>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -232,6 +289,32 @@ namespace Unity.Netcode.RuntimeTests
                         m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
                         m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
                         m_Player1OnClient2.ClientVar.Value == k_TestVal3;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator FixedArrayStringTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    var tmp = m_Player1OnServer.TheString.Value;
+                    tmp.SetIt();
+                    m_Player1OnServer.TheString.Value = tmp;
+
+                    // we are writing to the private and public variables on player 1's object...
+                },
+                () =>
+                {
+                    var tmp = m_Player1OnClient1.TheString.Value;
+
+                    // ...and we should see the writes to the private var only on the server & the owner,
+                    //  but the public variable everywhere
+                    return
+                        m_Player1OnClient1.TheString.Value.GetIt() == "abcdef";
                 }
             );
         }
