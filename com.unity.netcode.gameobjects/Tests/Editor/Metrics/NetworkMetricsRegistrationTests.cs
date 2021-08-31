@@ -1,12 +1,10 @@
-﻿#if MULTIPLAYER_TOOLS
-
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
-using Unity.Multiplayer.NetStats.Dispatch;
-using Unity.Multiplayer.NetStats.Metrics;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Multiplayer.Tools.NetStats;
 
 namespace Unity.Netcode.EditorTests.Metrics
 {
@@ -16,7 +14,7 @@ namespace Unity.Netcode.EditorTests.Metrics
             .SelectMany(x => x.GetTypes())
             .Where(x => x.GetInterfaces().Contains(typeof(INetworkMetricEvent)))
             .ToArray();
-        
+
         [TestCaseSource(nameof(s_MetricTypes))]
         public void ValidateThatAllMetricTypesAreRegistered(Type metricType)
         {

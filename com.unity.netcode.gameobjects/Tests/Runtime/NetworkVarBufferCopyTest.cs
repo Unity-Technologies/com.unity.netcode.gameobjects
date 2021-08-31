@@ -7,7 +7,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkVarBufferCopyTest : BaseMultiInstanceTest
     {
-        public class DummyNetVar : INetworkVariable
+        public class DummyNetVar : NetworkVariableBase
         {
             private const int k_DummyValue = 0x13579BDF;
             public bool DeltaWritten;
@@ -16,80 +16,50 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldRead;
             public bool Dirty = true;
 
-            public string Name { get; internal set; }
-
-            public NetworkChannel GetChannel()
-            {
-                return NetworkChannel.NetworkVariable;
-            }
-
-            public void ResetDirty()
+            public override void ResetDirty()
             {
                 Dirty = false;
             }
 
-            public bool IsDirty()
+            public override bool IsDirty()
             {
                 return Dirty;
             }
 
-            public bool CanClientWrite(ulong clientId)
+            public override void WriteDelta(Stream stream)
             {
-                return true;
-            }
-
-            public bool CanClientRead(ulong clientId)
-            {
-                return true;
-            }
-
-            public void WriteDelta(Stream stream)
-            {
-                using (var writer = PooledNetworkWriter.Get(stream))
-                {
-                    writer.WriteBits((byte)1, 1);
-                    writer.WriteInt32(k_DummyValue);
-                }
+                using var writer = PooledNetworkWriter.Get(stream);
+                writer.WriteBits((byte)1, 1);
+                writer.WriteInt32(k_DummyValue);
 
                 DeltaWritten = true;
             }
 
-            public void WriteField(Stream stream)
+            public override void WriteField(Stream stream)
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
-                {
-                    writer.WriteBits((byte)1, 1);
-                    writer.WriteInt32(k_DummyValue);
-                }
+                using var writer = PooledNetworkWriter.Get(stream);
+                writer.WriteBits((byte)1, 1);
+                writer.WriteInt32(k_DummyValue);
 
                 FieldWritten = true;
             }
 
-            public void ReadField(Stream stream)
+            public override void ReadField(Stream stream)
             {
-                using (var reader = PooledNetworkReader.Get(stream))
-                {
-                    reader.ReadBits(1);
-                    Assert.AreEqual(k_DummyValue, reader.ReadInt32());
-                }
+                using var reader = PooledNetworkReader.Get(stream);
+                reader.ReadBits(1);
+                Assert.AreEqual(k_DummyValue, reader.ReadInt32());
 
                 FieldRead = true;
             }
 
-            public void ReadDelta(Stream stream, bool keepDirtyDelta)
+            public override void ReadDelta(Stream stream, bool keepDirtyDelta)
             {
-                using (var reader = PooledNetworkReader.Get(stream))
-                {
-                    reader.ReadBits(1);
-                    Assert.AreEqual(k_DummyValue, reader.ReadInt32());
-                }
+                using var reader = PooledNetworkReader.Get(stream);
+                reader.ReadBits(1);
+                Assert.AreEqual(k_DummyValue, reader.ReadInt32());
 
                 DeltaRead = true;
-            }
-
-            public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-            {
-                // nop
             }
         }
 

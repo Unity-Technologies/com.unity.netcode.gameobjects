@@ -246,7 +246,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RandomMovement: 0
   AutoSpawnEnable: 1
-  SpawnInSourceScene: 0
+  SpawnInSourceScene: 1
+  DestroyOnUnload: 0
   InitialSpawnDelay: 0.2
   SpawnsPerSecond: 1
   PoolSize: 32

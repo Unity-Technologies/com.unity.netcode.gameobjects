@@ -1,17 +1,17 @@
 #if MULTIPLAYER_TOOLS
-using System;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
 {
     public class NetworkVariableComponent : NetworkBehaviour
     {
-        public NetworkVariableString MyNetworkVariable { get; } = new NetworkVariableString();
+        public NetworkVariable<int> MyNetworkVariable { get; } = new NetworkVariable<int>();
 
-        void Update()
+        private void Update()
         {
             if (IsServer)
             {
-                MyNetworkVariable.Value = Guid.NewGuid().ToString();
+                MyNetworkVariable.Value = Random.Range(100, 999);
             }
         }
     }

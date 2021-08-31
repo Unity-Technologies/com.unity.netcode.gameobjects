@@ -12,7 +12,7 @@ namespace Unity.Netcode
     public class SyncTransform : NetworkBehaviour
     {
         private NetworkVariable<Vector3> m_VarPos = new NetworkVariable<Vector3>();
-        private NetworkVariableQuaternion m_VarRot = new NetworkVariableQuaternion();
+        private NetworkVariable<Quaternion> m_VarRot = new NetworkVariable<Quaternion>();
         private const float k_Epsilon = 0.001f;
 
         private bool m_Interpolate = true;
@@ -66,12 +66,6 @@ namespace Unity.Netcode
                     gameObject.transform.rotation = after;
                 }
             }
-        }
-
-        private void Start()
-        {
-            m_VarPos.Settings.WritePermission = NetworkVariablePermission.Everyone;
-            m_VarRot.Settings.WritePermission = NetworkVariablePermission.Everyone;
         }
 
         private void FixedUpdate()

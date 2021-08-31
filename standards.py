@@ -16,6 +16,7 @@ parser.add_argument("--check", action="store_true")
 parser.add_argument("--fix", action="store_true")
 parser.add_argument("--yamato", action="store_true")
 
+parser.add_argument("--verbosity", default="minimal")
 parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
 parser.add_argument("--project-glob", default="*.sln")
@@ -102,7 +103,7 @@ if args.check:
     any_error = False
     for project_file in glob_files:
         print(f"check: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check") or any_error
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check --verbosity {args.verbosity}") or any_error
 
     if any_error:
         exit("check: failed")
@@ -116,7 +117,7 @@ if args.fix:
     any_error = False
     for project_file in glob_files:
         print(f"fix: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error") or any_error
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --verbosity {args.verbosity}") or any_error
 
     if any_error:
         exit("fix: failed")
@@ -128,7 +129,7 @@ if args.yamato:
 
     for project_file in glob_files:
         print(f"yamato: project -> {project_file}")
-        yamato_exec = os.system(f"{args.tool_path} {project_file} --fix-style error --check")
+        yamato_exec = os.system(f"{args.tool_path} {project_file} --fix-style error --check --verbosity {args.verbosity}")
         if yamato_exec != 0:
             exit(f"yamato: failed, exit code -> {yamato_exec}")
 
