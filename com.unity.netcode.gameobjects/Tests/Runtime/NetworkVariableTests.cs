@@ -10,53 +10,66 @@ namespace Unity.Netcode.RuntimeTests
 {
     public unsafe struct FixedStringStruct : INetworkSerializable
     {
-        public fixed char FixedString[6];
+        private const int k_MaxSize = 128;
+        public fixed char FixedString[k_MaxSize];
+        public int StringSize;
 
-        public void SetIt()
+        public void SetIt(string valueToSet)
         {
-            FixedString[0] = 'a';
-            FixedString[1] = 'b';
-            FixedString[2] = 'c';
-            FixedString[3] = 'd';
-            FixedString[4] = 'e';
-            FixedString[5] = 'f';
+            Assert.False(valueToSet.Length >= k_MaxSize);
+            fixed(char* charPtr = FixedString)
+            {
+                for(int i = 0; i < valueToSet.Length; i++)
+                {
+                    charPtr[i] = valueToSet[i];
+                }
+            }
+            StringSize = valueToSet.Length;
         }
 
         public string GetIt()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append(FixedString[0]);
-            sb.Append(FixedString[1]);
-            sb.Append(FixedString[2]);
-            sb.Append(FixedString[3]);
-            sb.Append(FixedString[4]);
-            sb.Append(FixedString[5]);
-            return sb.ToString();
+            var retValue = string.Empty;
+            fixed (char* charPtr = FixedString)
+            {
+                for (int i = 0; i < StringSize; i++)
+                {
+                    retValue += FixedString[i];
+                }
+            }
+            return retValue;
         }
 
         public void NetworkSerialize(NetworkSerializer serializer)
         {
             if (serializer.IsReading)
             {
-                var t = new char[6];
-                serializer.Serialize(ref t);
-                FixedString[0] = t[0];
-                FixedString[1] = t[1];
-                FixedString[2] = t[2];
-                FixedString[3] = t[3];
-                FixedString[4] = t[4];
-                FixedString[5] = t[5];
+                serializer.Serialize(ref StringSize);
+
+                var charArray = new char[StringSize];
+                serializer.Serialize(ref charArray);
+
+                fixed (char* charPtr = FixedString)
+                {
+                    for (int i = 0; i < StringSize; i++)
+                    {
+                        charPtr[i] = charArray[i];
+                    }
+                }
             }
             else
             {
-                var t = new char[6];
-                t[0] = FixedString[0];
-                t[1] = FixedString[1];
-                t[2] = FixedString[2];
-                t[3] = FixedString[3];
-                t[4] = FixedString[4];
-                t[5] = FixedString[5];
-                serializer.Serialize(ref t);
+                serializer.Serialize(ref StringSize);
+
+                var charArray = new char[StringSize];
+                fixed (char* charPtr = FixedString)
+                {
+                    for (int i = 0; i < StringSize; i++)
+                    {
+                        charArray[i] = charPtr[i];
+                    }
+                }
+                serializer.Serialize(ref charArray);
             }
         }
     }
@@ -117,6 +130,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkVariableTests : BaseMultiInstanceTest
     {
+        private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
         protected override int NbClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
@@ -297,12 +311,11 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator FixedArrayStringTest([Values(true, false)] bool useHost)
         {
             m_TestWithHost = useHost;
-
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
                     var tmp = m_Player1OnServer.TheString.Value;
-                    tmp.SetIt();
+                    tmp.SetIt(k_FixedStringTestValue);
                     m_Player1OnServer.TheString.Value = tmp;
 
                     // we are writing to the private and public variables on player 1's object...
@@ -314,7 +327,7 @@ namespace Unity.Netcode.RuntimeTests
                     // ...and we should see the writes to the private var only on the server & the owner,
                     //  but the public variable everywhere
                     return
-                        m_Player1OnClient1.TheString.Value.GetIt() == "abcdef";
+                        m_Player1OnClient1.TheString.Value.GetIt() == k_FixedStringTestValue;
                 }
             );
         }
