@@ -16,7 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Replaced `MLAPI` namespace and its variants with `Unity.Netcode` namespace and per asm-def variants (#1007, #1009, #1015, #1017, #1019, #1025, #1026, #1065)
+- Renamed package as "Unity Netcode for GameObjects", replaced `MLAPI` namespace and its variants with `Unity.Netcode` namespace and per asm-def variants (#1007, #1009, #1015, #1017, #1019, #1025, #1026, #1065)
   - All `MLAPI.*` namespaces are replaced with `Unity.Netcode`
   - All assembly definitions are renamed with `com.unity.netcode.x` variants
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
