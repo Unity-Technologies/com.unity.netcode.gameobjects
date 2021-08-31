@@ -268,7 +268,7 @@ namespace Unity.Netcode
             return sentSpawn;
         }
 
-        internal ClientData.SentSpawn WriteDespawn(ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
+        internal ClientData.SentSpawn WriteDespawn(in ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
         {
             // remember which spawn we sent this connection with which sequence number
             // that way, upon ack, we can track what is being ack'ed
