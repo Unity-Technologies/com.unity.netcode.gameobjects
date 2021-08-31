@@ -1,10 +1,7 @@
 using System.Collections;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -58,9 +55,7 @@ namespace Unity.Netcode.RuntimeTests
             // we are running a unit test or not. (it is this or manually setting a property)
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
-            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/ObjectParenting/{nameof(NetworkObjectParentingTests)}.unity");
+            const string scenePath = "Assets/Tests/Runtime/ObjectParenting/" + nameof(NetworkObjectParentingTests) + ".unity";
 
             m_InitScene = SceneManager.GetActiveScene();
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
