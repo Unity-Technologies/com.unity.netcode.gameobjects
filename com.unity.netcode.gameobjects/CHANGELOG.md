@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Implemented `NetworkObject` transform parenting at runtime (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666 formatting, #670 naming rules)
 
 ### Changed
@@ -139,8 +140,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [fae7e8ce] (2021-06-29) Noel Stephens / refactor: decouple PendingSoftSyncObjects from NetworkSpawnManager (#913)
 - [27112250] (2021-06-29) Josie Messa / chore: Change function signature of OnDespawnObject to accept NetworkObject (#928)
 - [f14de778] (2021-06-28) James / fix: Empty prefab removal (#919)
-- [1a7c145e] (2021-06-18) M. Fatih MAR / feat: NetworkObject Parenting (#855)
-- [32da2f9f] (2021-06-17) M. Fatih MAR / refactor: move RpcMethodId serialization from ILPP to Core (#910)
 - [7e19026a] (2021-06-15) Noel Stephens / fix: NetworkPrefabs container's elements invalidated in the NetworkManager after relaunching Unity Project (#905)
 - [459c041c] (2021-06-14) Luke Stampfli / feat!: OnNetworkSpawn / OnNetworkDespawn (#865)
 - [376ed36b] (2021-06-10) Benoit Doyon / feat: Add missing XMLdoc comment (#897)
