@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.EditorTests
 {
