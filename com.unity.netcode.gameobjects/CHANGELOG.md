@@ -11,14 +11,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
-- Implemented auto `NetworkObject` transform parenting synchronization at runtime over the network (#855)
+- Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
 
 ### Changed
 
-- Renamed package as "Unity Netcode for GameObjects", replaced `MLAPI` namespace and its variants with `Unity.Netcode` namespace and per asm-def variants (#1007, #1009, #1015, #1017, #1019, #1025, #1026, #1065)
-  - All `MLAPI.*` namespaces are replaced with `Unity.Netcode`
+- Bumped minimum Unity version, renamed package as "Unity Netcode for GameObjects", replaced `MLAPI` namespace and its variants with `Unity.Netcode` namespace and per asm-def variants (#1007, #1009, #1015, #1017, #1019, #1025, #1026, #1065)
+  - Minimum Unity version:
+    - 2019.4 → 2020.3+
+  - Package rename:
+    - Display name: `MLAPI Networking Library` → `Netcode for GameObjects`
+    - Name: `com.unity.multiplayer.mlapi` → `com.unity.netcode.gameobjects`
+    - Updated package description
+  - All `MLAPI.x` namespaces are replaced with `Unity.Netcode`
+    - `MLAPI.Messaging` → `Unity.Netcode`
+    - `MLAPI.Connection` → `Unity.Netcode`
+    - `MLAPI.Logging` → `Unity.Netcode`
+    - `MLAPI.SceneManagement` → `Unity.Netcode`
+    - and other `MLAPI.x` variants to `Unity.Netcode`
   - All assembly definitions are renamed with `com.unity.netcode.x` variants
+    - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
+    - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
+    - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 
 ### Deprecated
