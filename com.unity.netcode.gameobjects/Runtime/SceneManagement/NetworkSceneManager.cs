@@ -1114,7 +1114,7 @@ namespace Unity.Netcode
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if(!ValidateSceneBeforeLoading(sceneIndex, LoadSceneMode.Single))
+                    if (!ValidateSceneBeforeLoading(sceneIndex, LoadSceneMode.Single))
                     {
                         continue;
                     }
