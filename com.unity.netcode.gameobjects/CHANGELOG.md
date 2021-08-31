@@ -14,7 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- something
+- `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency reasons (#698)
 
 ### Deprecated
 
@@ -256,27 +256,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [24e65315] (2021-04-09) M. Fatih MAR / chore: delete testing asmdef from the testproject (#721)
 - [2dda54ad] (2021-04-08) M. Fatih MAR / refactor!: GlobalObjectIdHash to become 32-bits instead of 64-bits (#718)
 - [52e91a45] (2021-04-08) Jeffrey Rainy / chore: Move NetworkVariable traffic onto a reliable fragmented sequen… (#717)
-- [186c31d5] (2021-04-08) M. Fatih MAR / feat!: GlobalObjectIdHash to replace PrefabHash and PrefabHashGenerator (#698)
 - [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
-- [13b406f2] (2021-04-08) M. Fatih MAR / fix: private member naming standard issue (#713)
-- [27ac4e0b] (2021-04-07) M. Fatih MAR / chore: delete CODEOWNERS.meta (#711)
 - [a52b0bf0] (2021-04-07) Jeffrey Rainy / test: Adding a first test to check the robustness of MLAPI to transpo… (#709)
 - [d9969907] (2021-04-07) kvassall-unity / chore: add CODEOWNERS (#697)
-- [050c4992] (2021-04-07) M. Fatih MAR / refactor: remove FormerlySerializedAs attribute from NetworkPrefabs field (#708)
 - [e51d7e71] (2021-04-06) Albin Corén / refactor: BufferManager is no longer static (#705)
 - [9f5f39b4] (2021-04-06) Albin Corén / refactor!: SpawnManager is no longer static (#696)
-- [2976167d] (2021-04-01) M. Fatih MAR / feat!: GlobalObjectIdHash64 to replace NetworkInstanceId (#695)
-- [06cc418b] (2021-04-01) M. Fatih MAR / chore: tweak testproject visuals, upgrade engine version (#694)
 - [2571b8ce] (2021-03-31) DanZolnik / feat!: add client id to spawn handler delegate (#685)
 - [ffbf84e3] (2021-03-31) Jeffrey Rainy / fix: more stable profiler stats. Averages over a full second. No memory allocations. (#692)
-- [77790b74] (2021-03-31) M. Fatih MAR / refactor: make NetworkScenePostProcessor internal, drop MonoBehaviour, rename files (#689)
-- [53af4595] (2021-03-31) M. Fatih MAR / refactor!: xxHash to replace FNV (#691)
-- [bcf4dfcf] (2021-03-31) M. Fatih MAR / refactor: make NetworkObject's NetworkInstanceId property internal (#690)
-- [9ae8b111] (2021-03-31) M. Fatih MAR / feat: add hash32/hash64 for string/byte[] APIs to xxHash (#688)
-- [91f472d1] (2021-03-30) M. Fatih MAR / feat: move xxhash from editor into runtime asmdef (#687)
-- [a867fdc0] (2021-03-30) M. Fatih MAR / feat: add script for standards check/fix and git pre-push hook/unhook (#682)
-- [a46e46f7] (2021-03-30) M. Fatih MAR / refactor: use m_ServerRpcParams, rename RPC param names (#681)
-- [ca47b1d3] (2021-03-30) M. Fatih MAR / chore: refactor/consolidate gitignore files (#680)
 - [467ef5dc] (2021-03-30) Albin Corén / fix: UNET transport channel UI (#679)
 - [350b9a23] (2021-03-29) Albin Corén / test: add NetworkObject and NetworkBehaviour EditorTests (#607)
 - [91339ecc] (2021-03-29) Albin Corén / fix: do not allow multiple player prefabs on networkmanager being checked in the editor (#676)
