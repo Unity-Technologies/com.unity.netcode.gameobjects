@@ -105,7 +105,7 @@ namespace Unity.Netcode
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
             ulong val = 0;
@@ -142,7 +142,7 @@ namespace Unity.Netcode
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
             value = ReadByteBits((int)bitCount);
@@ -159,7 +159,7 @@ namespace Unity.Netcode
             int checkPos = (m_BitPosition + 1);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
 

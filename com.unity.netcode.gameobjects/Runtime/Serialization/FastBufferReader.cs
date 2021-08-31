@@ -530,7 +530,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + bytesToRead > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 
@@ -558,7 +558,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + 1 > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             value = BufferPointer[PositionInternal++];
@@ -606,7 +606,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + size > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
@@ -693,7 +693,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + len > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 

@@ -516,7 +516,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + bytesToWrite > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
 
@@ -542,7 +542,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + 1 > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
             BufferPointer[PositionInternal++] = value;
@@ -590,7 +590,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + size > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
             UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
@@ -724,7 +724,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + len > AllowedWriteMark)
             {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
 
