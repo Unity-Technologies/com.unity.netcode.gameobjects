@@ -18,9 +18,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
         uint m_NbFrames = 0;
         IReadOnlyCollection<TMetric> m_Values;
 
-        public WaitForMetricValues(IMetricDispatcher dispatcher, MetricWithDirection metricName)
+        public WaitForMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName)
         {
-            m_MetricName = metricName.Id;
+            m_MetricName = directionalMetricName.Id;
 
             dispatcher.RegisterObserver(this);
         }
