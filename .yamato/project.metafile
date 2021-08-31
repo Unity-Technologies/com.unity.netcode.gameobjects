@@ -7,14 +7,17 @@ test_platforms:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: b1.large
+	editorpath: .Editor\Unity.exe
   - name: mac
     type: Unity::VM::osx
     image: package-ci/mac:stable
     flavor: m1.mac
+	editorpath: .Editor/Unity.app/Contents/MacOS/Unity
   - name: ubuntu
     type: Unity::VM
     image: package-ci/ubuntu:stable
     flavor: b1.large
+	editorpath: .Editor/Unity
 
 # Projects within the repository that will be tested. Name will be used
 # for job ids, so it should not contain spaces/non-supported characters
