@@ -1137,6 +1137,8 @@ namespace Unity.Netcode
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel,
             ArraySegment<byte> payload, float receiveTime)
         {
+            NetworkMetrics.TrackTransportBytesReceived(payload.Count);
+
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
@@ -1220,6 +1222,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo("Unwrapping Data Header");
@@ -1240,6 +1243,7 @@ namespace Unity.Netcode
             {
                 var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
                 MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
+                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), data.Count);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1250,6 +1254,7 @@ namespace Unity.Netcode
             float receiveTime, NetworkChannel receiveChannel)
         {
             MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
+            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
         }
 
         /// <summary>
@@ -1318,6 +1323,7 @@ namespace Unity.Netcode
                         networkBehaviour.__getTypeName(),
                         item.StreamSize);
                 }
+                s_InvokeRpc.End();
 #endif
             }
         }

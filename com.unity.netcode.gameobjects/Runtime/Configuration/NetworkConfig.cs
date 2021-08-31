@@ -144,10 +144,18 @@ namespace Unity.Netcode
         /// </summary>
         public bool EnableNetworkLogs = true;
 
-        // todo: transitional. For the next release, only Snapshot should remain
-        // The booleans allow iterative development and testing in the meantime
+        /// <summary>
+        /// Whether or not to enable Snapshot System for variable updates. Currently unsupported.
+        /// </summary>
         public bool UseSnapshotDelta { get; } = false;
+        /// <summary>
+        /// Whether or not to enable Snapshot System for spawn and despawn commands. Working but experimental.
+        /// </summary>
         public bool UseSnapshotSpawn { get; } = false;
+        /// <summary>
+        /// When Snapshot System spawn is enabled: max size of Snapshot Messages. Meant to fit MTU.
+        /// </summary>
+        public int SnapshotMaxSpawnUsage { get; } = 1200;
 
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)

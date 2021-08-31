@@ -8,6 +8,17 @@ namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
+        readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        readonly Counter m_TransportBytesReceived = new Counter(NetworkMetricTypes.TotalBytesReceived.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+
+    	readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageSent.Id);
+        readonly EventMetric<NetworkMessageEvent> m_NetworkMessageReceivedEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageReceived.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageSent.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageReceived.Id);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(NetworkMetricTypes.UnnamedMessageSent.Id);
@@ -32,6 +43,8 @@ namespace Unity.Netcode
         public NetworkMetrics()
         {
             Dispatcher = new MetricDispatcherBuilder()
+                .WithCounters(m_TransportBytesSent, m_TransportBytesReceived)
+                .WithMetricEvents(m_NetworkMessageSentEvent, m_NetworkMessageReceivedEvent)
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
@@ -48,12 +61,32 @@ namespace Unity.Netcode
 
         internal IMetricDispatcher Dispatcher { get; }
 
+        public void TrackTransportBytesSent(long bytesCount)
+        {
+            m_TransportBytesSent.Increment(bytesCount);
+        }
+
+        public void TrackTransportBytesReceived(long bytesCount)
+        {
+            m_TransportBytesReceived.Increment(bytesCount);
+        }
+
         public void TrackNetworkObject(NetworkObject networkObject)
         {
             if (!m_NetworkGameObjects.ContainsKey(networkObject.NetworkObjectId))
             {
                 m_NetworkGameObjects[networkObject.NetworkObjectId] = new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId);
             }
+        }
+
+        public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
+        {
+            m_NetworkMessageSentEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(receivedClientId), messageType, bytesCount));
+        }
+
+        public void TrackNetworkMessageReceived(ulong senderClientId, string messageType, long bytesCount)
+        {
+            m_NetworkMessageReceivedEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(senderClientId), messageType, bytesCount));
         }
 
         public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)
