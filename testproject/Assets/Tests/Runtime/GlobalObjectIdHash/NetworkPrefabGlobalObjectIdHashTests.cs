@@ -1,9 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -27,10 +24,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
-            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/GlobalObjectIdHash/{nameof(NetworkPrefabGlobalObjectIdHashTests)}.unity");
-
+            const string scenePath = "Assets/Tests/Runtime/GlobalObjectIdHash/" + nameof(NetworkPrefabGlobalObjectIdHashTests) + ".unity";
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
         }
 
