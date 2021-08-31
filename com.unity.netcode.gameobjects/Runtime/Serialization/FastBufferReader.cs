@@ -693,7 +693,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + len > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
 
