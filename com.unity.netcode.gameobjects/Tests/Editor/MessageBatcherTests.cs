@@ -26,7 +26,9 @@ namespace Unity.Netcode.EditorTests
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem,
+                sendBatcher.QueueItem(
+                    queueItem.ClientNetworkIds,
+                    queueItem,
                     k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
@@ -75,7 +77,9 @@ namespace Unity.Netcode.EditorTests
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem,
+                sendBatcher.QueueItem(
+                    queueItem.ClientNetworkIds,
+                    queueItem,
                     k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
