@@ -44,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
-            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
 
             SpawnNetworkObject();
 
@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNetworkObjectSpawnReceivedMetric()
         {
-            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ClientMetrics.Dispatcher, MetricNames.ObjectSpawnedReceived);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedReceived);
 
             var networkObject = SpawnNetworkObject();
 
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedSent);
 
             Server.SpawnManager.OnDespawnObject(networkObject, true);
 
@@ -107,7 +107,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedReceived);
 
             Server.SpawnManager.OnDespawnObject(networkObject, true);
 
@@ -135,7 +135,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
 
             NetworkObject.NetworkShow(new List<NetworkObject> { networkObject1, networkObject2 }, Client.LocalClientId);
 
@@ -168,7 +168,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedSent);
 
             NetworkObject.NetworkHide(new List<NetworkObject> { networkObject1, networkObject2 }, Client.LocalClientId);
 
