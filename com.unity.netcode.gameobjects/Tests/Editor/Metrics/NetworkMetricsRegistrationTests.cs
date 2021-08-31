@@ -27,7 +27,7 @@ namespace Unity.Netcode.EditorTests.Metrics
             Assert.NotNull(collection);
 
             Assert.That(
-                collection.Metrics,
+                collection.Metrics.OfType<IEventMetric>(),
                 Has.Exactly(2).Matches<IEventMetric>(
                     eventMetric =>
                     {
