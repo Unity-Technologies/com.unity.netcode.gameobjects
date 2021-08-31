@@ -651,6 +651,15 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            if (m_NetworkManager == null)
+            {
+                Debug.Log("m_NetworkManager is null");
+            }
+            else if (m_NetworkManager.NetworkConfig == null)
+            {
+                Debug.Log("m_NetworkManager.NetworkConfig is null");
+            }
+
             if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 return;
