@@ -26,7 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- something
+- Support for cross-asmdef RPC ILPP (#678)
 
 ### Security
 
@@ -277,7 +277,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [a867fdc0] (2021-03-30) M. Fatih MAR / feat: add script for standards check/fix and git pre-push hook/unhook (#682)
 - [a46e46f7] (2021-03-30) M. Fatih MAR / refactor: use m_ServerRpcParams, rename RPC param names (#681)
 - [ca47b1d3] (2021-03-30) M. Fatih MAR / chore: refactor/consolidate gitignore files (#680)
-- [61df17d5] (2021-03-30) M. Fatih MAR / fix: cross-asmdef RPC ILPP (#678)
 - [467ef5dc] (2021-03-30) Albin Corén / fix: UNET transport channel UI (#679)
 - [350b9a23] (2021-03-29) Albin Corén / test: add NetworkObject and NetworkBehaviour EditorTests (#607)
 - [91339ecc] (2021-03-29) Albin Corén / fix: do not allow multiple player prefabs on networkmanager being checked in the editor (#676)
