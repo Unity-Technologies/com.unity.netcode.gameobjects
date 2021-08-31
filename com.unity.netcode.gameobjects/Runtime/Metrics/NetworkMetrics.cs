@@ -8,11 +8,11 @@ namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
-        readonly Counter m_TransportBytesSent = new Counter(MetricNames.TransportBytesSent)
+        readonly Counter m_TransportBytesSent = new Counter(MetricNames.TotalBytesSent)
         {
             ShouldResetOnDispatch = true,
         };
-        readonly Counter m_TransportBytesReceived = new Counter(MetricNames.TransportBytesReceived)
+        readonly Counter m_TransportBytesReceived = new Counter(MetricNames.TotalBytesReceived)
         {
             ShouldResetOnDispatch = true,
         };
