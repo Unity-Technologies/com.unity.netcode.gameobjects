@@ -428,7 +428,7 @@ namespace Unity.Netcode
 
                 var size = bufferSizeCapture.StopMeasureSegment();
                 m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    targetClientIds, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
+                    targetClientIds, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], size);
                 return;
             }
 
@@ -589,14 +589,14 @@ namespace Unity.Netcode
 
                 var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                 bufferSizeCapture.StartMeasureSegment();
-              
+
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-              
+
                 var size = bufferSizeCapture.StopMeasureSegment();
                 m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                     m_NetworkManager.ConnectedClientsIds,
-                    (uint) ClientSynchEventData.SceneEventType,
-                    GetSceneNameFromNetcodeSceneIndex(ClientSynchEventData.SceneIndex),
+                    (uint)sceneEventProgress.SceneEventType,
+                    ScenesInBuild[(int)sceneEventProgress.SceneIndex],
                     size);
             }
 
@@ -1050,12 +1050,12 @@ namespace Unity.Netcode
                         // Set the target client id that will be used during in scene NetworkObject serialization
                         SceneEventData.TargetClientId = clientId;
                         using var nonNullContext = (InternalCommandContext)context;
-                      
+
                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                         bufferSizeCapture.StartMeasureSegment();
-                      
+
                         SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                      
+
                         var size = bufferSizeCapture.StopMeasureSegment();
                             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, size);
                     }
@@ -1164,17 +1164,17 @@ namespace Unity.Netcode
             {
 
                 using var nonNullContext = (InternalCommandContext)context;
-              
+
                 var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                 bufferSizeCapture.StartMeasureSegment();
-              
+
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-              
+
                 var size = bufferSizeCapture.StopMeasureSegment();
                 foreach (var sceneIndex in ClientSynchEventData.ScenesToSynchronize)
                 {
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                        clientId, (uint)ClientSynchEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(sceneIndex), size);
+                        clientId, (uint)ClientSynchEventData.SceneEventType,ScenesInBuild[(int)sceneIndex], size);
                 }
             }
 
@@ -1316,12 +1316,12 @@ namespace Unity.Netcode
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
-              
+
                 var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                 bufferSizeCapture.StartMeasureSegment();
-              
+
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
-              
+
                 var size = bufferSizeCapture.StopMeasureSegment();
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)ClientSynchEventData.SceneEventType, sceneName, size);
             }
@@ -1522,7 +1522,7 @@ namespace Unity.Netcode
                         foreach (var sceneIndex in SceneEventData.ScenesToSynchronize)
                         {
                             m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                                clientId, (uint) SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(sceneIndex), stream.Length);
+                                clientId, (uint) SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], stream.Length);
                         }
                     }
                     else
@@ -1530,7 +1530,7 @@ namespace Unity.Netcode
                         // For all other scene event types, we are only dealing with one scene at a time, so we can read it
                         // from the SceneEventData directly.
                         m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                            clientId, (uint) SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), stream.Length);
+                            clientId, (uint) SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], stream.Length);
                     }
 
                     if (SceneEventData.IsSceneEventClientSide())
