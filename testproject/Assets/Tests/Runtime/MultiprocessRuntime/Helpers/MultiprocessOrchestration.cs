@@ -56,6 +56,10 @@ public class MultiprocessOrchestration
                 case RuntimePlatform.WindowsEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.exe";
                     break;
+                case RuntimePlatform.LinuxPlayer:
+                case RuntimePlatform.LinuxEditor:
+                    workerProcess.StartInfo.FileName = $"{buildPath}";
+                    break;
                 default:
                     throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
             }
