@@ -7,8 +7,8 @@
         "Unity.Netcode.Prototyping",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
+        "Unity.Collections",
         "UnityEngine.TestRunner"
-        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
