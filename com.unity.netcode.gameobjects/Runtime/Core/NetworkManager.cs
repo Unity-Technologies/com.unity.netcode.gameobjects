@@ -266,17 +266,6 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
-                {
-                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
-                    {
-                        NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
-                    }
-                }
-            }
-
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
             // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
@@ -453,25 +442,12 @@ namespace Unity.Netcode
             // Register INetworkUpdateSystem (always register this after messageQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
-
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
-            }
-
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
-            // Build the NetworkPrefabOverrideLinks dictionary
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -1537,8 +1513,6 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }
-
-
 
         /// <summary>
         /// Spawns the newly approved player

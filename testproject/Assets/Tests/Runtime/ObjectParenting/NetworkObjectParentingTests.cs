@@ -1,10 +1,7 @@
 using System.Collections;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
-using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -40,14 +37,25 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            if (sceneName.StartsWith("InitTestScene"))
+            {
+                return false;
+            }
+            return true;
+        }
+
         [UnitySetUp]
         public IEnumerator Setup()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
-            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/ObjectParenting/{nameof(NetworkObjectParentingTests)}.unity");
+            // We need NetworkManager to be instantiated first before you load scenes externally in order to be able to determine if
+            // we are running a unit test or not. (it is this or manually setting a property)
+            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+
+            const string scenePath = "Assets/Tests/Runtime/ObjectParenting/" + nameof(NetworkObjectParentingTests) + ".unity";
 
             m_InitScene = SceneManager.GetActiveScene();
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
@@ -56,7 +64,6 @@ namespace Unity.Netcode.RuntimeTests
 
             const int setCount = k_ClientInstanceCount + 1;
 
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
@@ -86,6 +93,18 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start server and client NetworkManager instances
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            m_ServerNetworkManager.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
+            // Register our scene verification delegate handler so we don't load the unit test scene
+            m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
+            foreach (var entry in m_ClientNetworkManagers)
+            {
+                if (!entry.SceneManager.ScenesInBuild.Contains(nameof(NetworkObjectParentingTests)))
+                {
+                    entry.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
+                }
+                // Register our scene verification delegate handler so we don't load the unit test scene
+                entry.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
+            }
 
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
