@@ -31,7 +31,7 @@ namespace TestProject.ManualTests
                 s_Singleton = this;
             }
 
-            if ( IsServer && NetworkManager.SceneManager != null)
+            if (IsServer && NetworkManager.SceneManager != null)
             {
                 NetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             }
