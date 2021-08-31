@@ -55,6 +55,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### TODO
 
+- [9c759d6f] (2021-08-31) Jeffrey Rainy / feat: snapshot. MTU sizing option for Snapshot. MTT-1087 (#1111)
+- [96309fb7] (2021-08-31) Benoit Doyon / Add metrics for transport bytes sent and received (#1104)
+- [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
 - [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
 - [75609cd1] (2021-08-31) Benoit Doyon / feat: Change MetricNames for a more complex value type (#1109)
 - [7fbc65cb] (2021-08-31) Josie Messa / feat: Track scene event metrics (#1089)
