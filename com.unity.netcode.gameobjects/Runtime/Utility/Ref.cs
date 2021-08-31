@@ -14,12 +14,23 @@ namespace Unity.Netcode
             }
         }
 
+        public unsafe Ref(T* ptr)
+        {
+            m_Value = ptr;
+        }
+
         public unsafe bool IsSet => m_Value != null;
 
         public unsafe ref T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref *m_Value;
+        }
+
+        public unsafe T* Ptr
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Value;
         }
     }
 }
