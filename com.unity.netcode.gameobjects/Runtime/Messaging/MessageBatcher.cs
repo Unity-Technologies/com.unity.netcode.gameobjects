@@ -205,32 +205,30 @@ namespace Unity.Netcode
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
         public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkChannel receiveChannel)
         {
-            using (var copy = PooledNetworkBuffer.Get())
+            using var copy = PooledNetworkBuffer.Get();
+            do
             {
-                do
+                // read the length of the next message
+                int messageSize = PopLength(messageBuffer);
+                if (messageSize < 0)
                 {
-                    // read the length of the next message
-                    int messageSize = PopLength(messageBuffer);
-                    if (messageSize < 0)
-                    {
-                        // abort if there's an error reading lengths
-                        return;
-                    }
+                    // abort if there's an error reading lengths
+                    return;
+                }
 
-                    // copy what comes after current stream position
-                    long position = messageBuffer.Position;
-                    copy.SetLength(messageSize);
-                    copy.Position = 0;
-                    Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
+                // copy what comes after current stream position
+                long position = messageBuffer.Position;
+                copy.SetLength(messageSize);
+                copy.Position = 0;
+                Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
-                    var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
-                    receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
+                var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
+                receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
 
-                    // seek over the message
-                    // MessageReceiveQueueItem peeks at content, it doesn't advance
-                    messageBuffer.Seek(messageSize, SeekOrigin.Current);
-                } while (messageBuffer.Position < messageBuffer.Length);
-            }
+                // seek over the message
+                // MessageReceiveQueueItem peeks at content, it doesn't advance
+                messageBuffer.Seek(messageSize, SeekOrigin.Current);
+            } while (messageBuffer.Position < messageBuffer.Length);
         }
     }
 }

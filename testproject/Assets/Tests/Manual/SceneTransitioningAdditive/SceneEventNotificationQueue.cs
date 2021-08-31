@@ -38,6 +38,25 @@ namespace TestProject.ManualTests
             m_NetworkManager = gameObject.GetComponent<NetworkManager>();
         }
 
+        private void DeregisterFromOnSceneEvent()
+        {
+            if (m_IsInitialized && m_NetworkManager != null && m_NetworkManager.SceneManager != null)
+            {
+                m_IsInitialized = false;
+                m_NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            DeregisterFromOnSceneEvent();
+        }
+
+        private void OnDisable()
+        {
+            DeregisterFromOnSceneEvent();
+        }
+
         /// <summary>
         /// Invoked on all local scene event notifications
         /// </summary>
@@ -96,11 +115,6 @@ namespace TestProject.ManualTests
                 {
                     m_SceneEvents.Dequeue();
                 }
-            }
-            else if (m_IsInitialized)
-            {
-                m_IsInitialized = false;
-                m_NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
         }
     }

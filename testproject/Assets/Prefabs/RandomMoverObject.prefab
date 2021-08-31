@@ -146,7 +146,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 2
   Channel: 0
   InLocalSpace: 0
   SyncPositionX: 1
@@ -158,6 +157,9 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   FixedSendsPerSecond: 5
 --- !u!114 &1932194183178713890
 MonoBehaviour:
@@ -168,7 +170,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 771575417923360811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c552ef0ccf6ff8148a9c9606e7d3fc15, type: 3}
+  m_Script: {fileID: 11500000, guid: c4152da5a2f4e7746aecdcd815f6616b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2058396567867412356
