@@ -26,7 +26,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Support for cross-asmdef RPC ILPP (#678)
+- Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
+- Fixed cross-asmdef RPC ILPP (#678)
 
 ### Security
 
@@ -206,7 +207,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [4916a930] (2021-05-07) Albin Corén / fix: Test transports are no longer shown to users in transport dropdown (#802)
 - [f431d519] (2021-05-07) M. Fatih MAR / fix: run testproject tests on PR trigger (#809)
 - [0a7bcb2a] (2021-05-05) M. Fatih MAR / fix: standards script to fail on any errors in a check run (#807)
-- [a8f16aa7] (2021-05-05) M. Fatih MAR / fix: NetworkBehaviourILPP to iterate over all types in an AsmDef (#803)
 - [2a77e533] (2021-05-05) Albin Corén / refactor: extract GlobalObjectIdHash generation from NetworkObject.OnValidate() (#798)
 - [f1c86121] (2021-05-04) Albin Corén / fix: Fix editor NetworkManager field when NetworkManager is null (#797)
 - [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
@@ -221,40 +221,23 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [3e1aef34] (2021-04-29) Albin Corén / fix: NetworkManager doesn't destroy itself on multi instance (#765)
 - [ea307953] (2021-04-28) Noel Stephens / refactor: scene object serialization consolidation and improved handling (#756)
 - [75e09775] (2021-04-27) Albin Corén / refactor: FindObject(s)OfType now filters NetworkManagers (#763)
-- [50e2a44c] (2021-04-27) M. Fatih MAR / feat: implement temporary globalobjectidhash override (#776)
-- [32909ae7] (2021-04-27) M. Fatih MAR / ci: upgrade standards check machine size to medium from small (#778)
 - [ae70d511] (2021-04-27) Albin Corén / refactor!: NetworkBehaviour and NetworkObject NetworkManager instance can now be overriden (#762)
-- [c876ad9e] (2021-04-27) M. Fatih MAR / chore: remove #region blocks to better comply with coding standards (#777)
-- [cc3ab426] (2021-04-27) M. Fatih MAR / ci: coding standards check in yamato (#720)
 - [ca676c3b] (2021-04-26) Noel Stephens / test: Companion Tests for MTT-640 and PR-749 (#754)
-- [abc85557] (2021-04-26) M. Fatih MAR / fix: globalobjectidhash printing in editor, remove istestrun flag (#774)
 - [9e127c10] (2021-04-23) Albin Corén / refactor: BufferManager now uses internal NetworkManager (#746)
 - [6998fd47] (2021-04-22) Noel Stephens / feat!: Network Prefab Overrides, Inspector View, and the default Player Prefab (#749)
-- [e2f74f87] (2021-04-23) M. Fatih MAR / chore: fix namespace for ProfilerTests (#761)
-- [789c4055] (2021-04-22) M. Fatih MAR / fix: cleanup using directives in NetworkManager (#758)
 - [cd92e897] (2021-04-22) Albin Corén / fix: RpcQueueProcessor now uses the correct instance to invoke (#747)
-- [2c8f8263] (2021-04-22) M. Fatih MAR / fix: correct the math behind ranged single/double read/write methods in reader/writer impls (#760)
-- [c21427e7] (2021-04-22) M. Fatih MAR / chore: update testproject/packages-lock.json (#759)
 - [4beabfea] (2021-04-20) Albin Corén / refactor: InternalMessageSender is no longer static (#739)
 - [4a130606] (2021-04-19) Albin Corén / refactor!: NetworkSceneManager is no longer static (#738)
 - [b7357f85] (2021-04-19) Andrew Spiering / ci: Enabling MLAPI UTP Transport package (#736)
-- [5770ce2c] (2021-04-19) M. Fatih MAR / chore: minor coding standards fixes (#750)
 - [ac8e4623] (2021-04-16) Albin Corén / refactor: remove version control using (#748)
 - [9dc01b00] (2021-04-16) Albin Corén / refactor!: CustomMessageManager is no longer static (#737)
 - [54a45938] (2021-04-16) Albin Corén / refactor: InternalMessageHandler is no longer static (#706)
-- [a9a6ec29] (2021-04-16) M. Fatih MAR / fix: do not override GlobalObjectIdHash in Editor (#744)
-- [9aa543c9] (2021-04-15) M. Fatih MAR / fix: minor whitespace fixes according to standards (#743)
-- [d534a20f] (2021-04-15) M. Fatih MAR / test: all networkprefabs attached to the networkmanager have to be unique (#742)
-- [adef6bc3] (2021-04-15) M. Fatih MAR / test: all networkobjects in the scene have to be unique (#741)
 - [c0386eb3] (2021-04-15) Jesse Olmer / Merge branch 'master' into develop
-- [023b64ae] (2021-04-15) M. Fatih MAR / docs: remove license button from readme (#740)
 - [68482608] (2021-04-15) Cosmin / docs: Remove MIT license hyperlink in the main README.md (#732)
 - [644c71a1] (2021-04-14) Jesse Olmer / Merge branch 'master' into develop
 - [0f7d388b] (2021-04-14) Jesse Olmer / Merge tag '0.1.0' into develop
 - [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
 - [8219636e] (2021-04-13) Noel Stephens / feat!: NetworkPrefabHandler to replace UsePrefabSync and Custom Spawn/Destroy Handlers (#727)
-- [24e65315] (2021-04-09) M. Fatih MAR / chore: delete testing asmdef from the testproject (#721)
-- [2dda54ad] (2021-04-08) M. Fatih MAR / refactor!: GlobalObjectIdHash to become 32-bits instead of 64-bits (#718)
 - [52e91a45] (2021-04-08) Jeffrey Rainy / chore: Move NetworkVariable traffic onto a reliable fragmented sequen… (#717)
 - [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
 - [a52b0bf0] (2021-04-07) Jeffrey Rainy / test: Adding a first test to check the robustness of MLAPI to transpo… (#709)
