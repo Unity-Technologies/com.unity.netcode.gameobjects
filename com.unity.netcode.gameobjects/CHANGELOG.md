@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Adopted Unity C# Coding Standards in the codebase (#666 formatting and #670 naming rules)
+- Adopted Unity C# Coding Standards in the codebase (PR#666 formatting and PR#670 naming rules)
 
 ### Changed
 
