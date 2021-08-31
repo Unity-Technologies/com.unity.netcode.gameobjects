@@ -19,7 +19,6 @@ namespace TestProject.ManualTests
         private void Start()
         {
             m_RandomMovement = GetComponent<RandomMovement>();
-
         }
 
         public override void OnNetworkSpawn()
@@ -33,19 +32,22 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if (NetworkObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
+            if (NetworkObject != null)
             {
-                if (m_RandomMovement)
+                if (IsOwner && Input.GetKeyDown(KeyCode.Space))
                 {
-                    m_RandomMovement.enabled = !m_RandomMovement.enabled;
+                    if (m_RandomMovement)
+                    {
+                        m_RandomMovement.enabled = !m_RandomMovement.enabled;
+                    }
                 }
-            }
 
-            if (NetworkObject && NetworkObject.NetworkManager && NetworkObject.NetworkManager.IsListening)
-            {
-                if (m_RandomMovement.enabled)
+                if (NetworkObject != null && NetworkObject.NetworkManager != null && NetworkObject.NetworkManager.IsListening)
                 {
-                    m_RandomMovement.Move(MoveSpeed);
+                    if (m_RandomMovement.enabled)
+                    {
+                        m_RandomMovement.Move(MoveSpeed);
+                    }
                 }
             }
         }

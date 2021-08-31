@@ -37,7 +37,11 @@ namespace Unity.Netcode
         /// or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
         /// </summary>
         InvalidSceneName,
-
+        /// <summary>
+        /// Server side: Returned if the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> delegate handler returns false
+        /// (i.e. scene is considered not valid/safe to load)
+        /// </summary>
+        SceneFailedVerification,
         /// <summary>
         /// This is used for internal error notifications.
         /// If you receive this event then it is most likely due to a bug.
@@ -84,7 +88,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AreAllClientsDoneLoading { get; private set; }
 
-        internal string SceneName { get; set; }
+        internal uint SceneIndex { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 
