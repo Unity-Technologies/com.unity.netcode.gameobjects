@@ -266,17 +266,6 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
-                {
-                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
-                    {
-                        NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
-                    }
-                }
-            }
-
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
             // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
@@ -453,25 +442,12 @@ namespace Unity.Netcode
             // Register INetworkUpdateSystem (always register this after messageQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
-
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
-            }
-
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
-            // Build the NetworkPrefabOverrideLinks dictionary
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -1054,8 +1030,6 @@ namespace Unity.Netcode
 
         private void OnNetworkEarlyUpdate()
         {
-            NetworkMetrics.DispatchFrame();
-
             if (IsListening)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1116,6 +1090,8 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
+
+            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
@@ -1126,14 +1102,12 @@ namespace Unity.Netcode
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
 
-                    if (NetworkConfig.ConnectionApproval)
-                    {
-                        nonNullContext.NetworkWriter.WriteByteArray(NetworkConfig.ConnectionData);
-                    }
+                if (NetworkConfig.ConnectionApproval)
+                {
+                    nonNullContext.NetworkWriter.WriteByteArray(NetworkConfig.ConnectionData);
                 }
             }
         }
@@ -1255,19 +1229,17 @@ namespace Unity.Netcode
             m_InputBufferWrapper.SetLength(data.Count + data.Offset);
             m_InputBufferWrapper.Position = data.Offset;
 
-            using (var messageStream = m_InputBufferWrapper)
-            {
-                // Client tried to send a network message that was not the connection request before he was accepted.
+            using var messageStream = m_InputBufferWrapper;
+            // Client tried to send a network message that was not the connection request before he was accepted.
 
-                if (MessageQueueContainer.IsUsingBatching())
-                {
-                    m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
-                }
-                else
-                {
-                    var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
-                    MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
-                }
+            if (MessageQueueContainer.IsUsingBatching())
+            {
+                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
+            }
+            else
+            {
+                var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
+                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1290,65 +1262,63 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.Begin();
 #endif
-            using (var reader = PooledNetworkReader.Get(item.NetworkBuffer))
+            using var reader = PooledNetworkReader.Get(item.NetworkBuffer);
+            var networkObjectId = reader.ReadUInt64Packed();
+            var networkBehaviourId = reader.ReadUInt16Packed();
+            var networkMethodId = reader.ReadUInt32Packed();
+
+            if (__rpc_func_table.ContainsKey(networkMethodId))
             {
-                var networkObjectId = reader.ReadUInt64Packed();
-                var networkBehaviourId = reader.ReadUInt16Packed();
-                var networkMethodId = reader.ReadUInt32Packed();
-
-                if (__rpc_func_table.ContainsKey(networkMethodId))
+                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
-                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    if (networkBehaviour == null)
-                    {
-                        return;
-                    }
+                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                if (networkBehaviour == null)
+                {
+                    return;
+                }
 
-                    var rpcParams = new __RpcParams();
-                    switch (item.MessageType)
-                    {
-                        case MessageQueueContainer.MessageType.ServerRpc:
-                            rpcParams.Server = new ServerRpcParams
+                var rpcParams = new __RpcParams();
+                switch (item.MessageType)
+                {
+                    case MessageQueueContainer.MessageType.ServerRpc:
+                        rpcParams.Server = new ServerRpcParams
+                        {
+                            Receive = new ServerRpcReceiveParams
                             {
-                                Receive = new ServerRpcReceiveParams
-                                {
-                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage,
-                                    SenderClientId = item.NetworkId
-                                }
-                            };
-                            break;
-                        case MessageQueueContainer.MessageType.ClientRpc:
-                            rpcParams.Client = new ClientRpcParams
+                                UpdateStage = (NetworkUpdateStage)networkUpdateStage,
+                                SenderClientId = item.NetworkId
+                            }
+                        };
+                        break;
+                    case MessageQueueContainer.MessageType.ClientRpc:
+                        rpcParams.Client = new ClientRpcParams
+                        {
+                            Receive = new ClientRpcReceiveParams
                             {
-                                Receive = new ClientRpcReceiveParams
-                                {
-                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage
-                                }
-                            };
-                            break;
-                    }
+                                UpdateStage = (NetworkUpdateStage)networkUpdateStage
+                            }
+                        };
+                        break;
+                }
 
-                    __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
+                __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
-                    {
-                        NetworkMetrics.TrackRpcReceived(
-                            item.NetworkId,
-                            networkObjectId,
-                            rpcMethodName,
-                            networkBehaviour.__getTypeName(),
-                            item.StreamSize);
-                    }
-#endif
+                if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
+                {
+                    NetworkMetrics.TrackRpcReceived(
+                        item.NetworkId,
+                        networkObjectId,
+                        rpcMethodName,
+                        networkBehaviour.__getTypeName(),
+                        item.StreamSize);
                 }
+#endif
             }
         }
 
@@ -1459,10 +1429,8 @@ namespace Unity.Netcode
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
@@ -1505,16 +1473,14 @@ namespace Unity.Netcode
 
                     if (context != null)
                     {
-                        using (var nonNullContext = (InternalCommandContext)context)
-                        {
-                            nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
-                            nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
+                        using var nonNullContext = (InternalCommandContext)context;
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
+                        nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
 
-                            // If scene management is disabled, then just serialize all client relative (observed) NetworkObjects
-                            if (!NetworkConfig.EnableSceneManagement)
-                            {
-                                SpawnManager.SerializeObservedNetworkObjects(ownerClientId, nonNullContext.NetworkWriter);
-                            }
+                        // If scene management is disabled, then just serialize all client relative (observed) NetworkObjects
+                        if (!NetworkConfig.EnableSceneManagement)
+                        {
+                            SpawnManager.SerializeObservedNetworkObjects(ownerClientId, nonNullContext.NetworkWriter);
                         }
                     }
 
@@ -1546,8 +1512,6 @@ namespace Unity.Netcode
             }
         }
 
-
-
         /// <summary>
         /// Spawns the newly approved player
         /// </summary>
@@ -1569,42 +1533,40 @@ namespace Unity.Netcode
                     new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
+                    using var nonNullContext = (InternalCommandContext)context;
+                    nonNullContext.NetworkWriter.WriteBool(true);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+
+                    //Does not have a parent
+                    nonNullContext.NetworkWriter.WriteBool(false);
+
+                    // This is not a scene object
+                    nonNullContext.NetworkWriter.WriteBool(false);
+
+                    nonNullContext.NetworkWriter.WriteUInt32Packed(playerPrefabHash);
+
+                    if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
                     {
                         nonNullContext.NetworkWriter.WriteBool(true);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                        //Does not have a parent
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                        nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                    }
+                    else
+                    {
                         nonNullContext.NetworkWriter.WriteBool(false);
+                    }
 
-                        // This is not a scene object
-                        nonNullContext.NetworkWriter.WriteBool(false);
+                    nonNullContext.NetworkWriter.WriteBool(false); //No payload data
 
-                        nonNullContext.NetworkWriter.WriteUInt32Packed(playerPrefabHash);
-
-                        if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
-                        {
-                            nonNullContext.NetworkWriter.WriteBool(true);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
-
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
-                        }
-                        else
-                        {
-                            nonNullContext.NetworkWriter.WriteBool(false);
-                        }
-
-                        nonNullContext.NetworkWriter.WriteBool(false); //No payload data
-
-                        if (NetworkConfig.EnableNetworkVariable)
-                        {
-                            ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
-                        }
+                    if (NetworkConfig.EnableNetworkVariable)
+                    {
+                        ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
                     }
                 }
             }

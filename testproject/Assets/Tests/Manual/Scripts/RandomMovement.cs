@@ -46,7 +46,11 @@ namespace TestProject.ManualTests
             else if (!IsServer && IsOwner)
             {
                 // Client must sent Rpc
-                MovePlayerServerRpc(m_Direction * speed);
+                MovePlayerServerRpc(m_Direction * speed*1.05f);
+            }
+            else if (IsServer && !IsOwner)
+            {
+                m_MoveTowardsPosition = Vector3.Lerp(m_MoveTowardsPosition, Vector3.zero, 0.01f);
             }
         }
 

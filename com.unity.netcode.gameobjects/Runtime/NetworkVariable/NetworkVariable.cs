@@ -111,18 +111,16 @@ namespace Unity.Netcode
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using var reader = PooledNetworkReader.Get(stream);
+            T previousValue = m_InternalValue;
+            m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
+
+            if (keepDirtyDelta)
             {
-                T previousValue = m_InternalValue;
-                m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
-
-                if (keepDirtyDelta)
-                {
-                    m_IsDirty = true;
-                }
-
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                m_IsDirty = true;
             }
+
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
         }
 
         /// <inheritdoc />
@@ -134,10 +132,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
-            {
-                writer.WriteObjectPacked(m_InternalValue); //BOX
-            }
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteObjectPacked(m_InternalValue); //BOX
         }
     }
 }
