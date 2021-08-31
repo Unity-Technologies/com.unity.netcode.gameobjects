@@ -140,6 +140,7 @@ namespace Unity.Netcode.EditorTests
             using var messageStream13 = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObject, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching());
             networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream13.GetBuffer(), 0, (int)messageStream13.Length), 0);
 
+
             // Should cause log (client only)
             // Everything should log MessageReceiveQueueItem even if ignored
             LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));

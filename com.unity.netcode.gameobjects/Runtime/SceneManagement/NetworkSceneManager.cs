@@ -1377,7 +1377,6 @@ namespace Unity.Netcode
 
                             // All scenes are synchronized, let the server know we are done synchronizing
                             m_NetworkManager.IsConnectedClient = true;
-                            m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
                             // Notify the client that they have finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1385,6 +1384,9 @@ namespace Unity.Netcode
                                 SceneEventType = SceneEventData.SceneEventType,
                                 ClientId = m_NetworkManager.LocalClientId, // Client sent this to the server
                             });
+
+                            // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
+                            m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
                         }
                         break;
                     }
@@ -1476,6 +1478,10 @@ namespace Unity.Netcode
                             SceneName = string.Empty,
                             ClientId = clientId
                         });
+
+                        // While we did invoke the C2S_SyncComplete event notification, we will also call the traditional client connected callback on the server
+                        // which assures the client is "ready to receive RPCs" as well.
+                        m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
                         if (SceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
                         {
