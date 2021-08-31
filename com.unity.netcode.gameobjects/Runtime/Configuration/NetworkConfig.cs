@@ -232,7 +232,7 @@ namespace Unity.Netcode
 
             using var buffer = PooledNetworkBuffer.Get();
             using var writer = PooledNetworkWriter.Get(buffer);
-            
+
             writer.WriteUInt16Packed(ProtocolVersion);
             writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
 

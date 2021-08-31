@@ -46,7 +46,7 @@ namespace TestProject.ManualTests
             else if (!IsServer && IsOwner)
             {
                 // Client must sent Rpc
-                MovePlayerServerRpc(m_Direction * speed*1.05f);
+                MovePlayerServerRpc(m_Direction * speed * 1.05f);
             }
             else if (IsServer && !IsOwner)
             {
