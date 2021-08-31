@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-
+using Unity.Collections;
 
 
 namespace Unity.Netcode.RuntimeTests
@@ -74,6 +74,30 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    public struct FixedString32Struct : INetworkSerializable
+    {
+        public FixedString32 String;
+        public void NetworkSerialize(NetworkSerializer serializer)
+        {
+            if (serializer.IsReading)
+            {
+                var stringArraySize = 0;
+                serializer.Serialize(ref stringArraySize);
+                var stringArray = new char[stringArraySize];
+                serializer.Serialize(ref stringArray);
+                var asString = new string(stringArray);
+                String.CopyFrom(asString);
+            }
+            else
+            {
+                var stringArray = String.Value.ToCharArray();
+                var stringArraySize = stringArray.Length;
+                serializer.Serialize(ref stringArraySize);
+                serializer.Serialize(ref stringArray);
+            }
+        }
+    }
+
     public struct TestStruct : INetworkSerializable
     {
         public uint SomeInt;
@@ -98,6 +122,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
         public readonly NetworkVariable<FixedStringStruct> TheString = new NetworkVariable<FixedStringStruct>();
+        public readonly NetworkVariable<FixedString32Struct> TheString32 = new NetworkVariable<FixedString32Struct>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -328,6 +353,31 @@ namespace Unity.Netcode.RuntimeTests
                     //  but the public variable everywhere
                     return
                         m_Player1OnClient1.TheString.Value.GetIt() == k_FixedStringTestValue;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator FixedString32StructTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    var tmp = m_Player1OnServer.TheString32.Value;
+                    tmp.String = k_FixedStringTestValue;
+                    m_Player1OnServer.TheString32.Value = tmp;
+
+                    // we are writing to the private and public variables on player 1's object...
+                },
+                () =>
+                {
+                    var tmp = m_Player1OnClient1.TheString32.Value;
+
+                    // ...and we should see the writes to the private var only on the server & the owner,
+                    //  but the public variable everywhere
+                    return
+                        m_Player1OnClient1.TheString32.Value.String == k_FixedStringTestValue;
                 }
             );
         }

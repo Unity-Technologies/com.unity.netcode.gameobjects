@@ -8,7 +8,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats"
+        "Unity.Multiplayer.NetStats",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
