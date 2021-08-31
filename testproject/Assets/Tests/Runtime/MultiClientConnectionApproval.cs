@@ -43,6 +43,8 @@ namespace TestProject.RuntimeTests
         }
 
 
+
+
         /// <summary>
         /// Allows for several connection approval related configurations
         /// </summary>
@@ -185,6 +187,60 @@ namespace TestProject.RuntimeTests
             {
                 callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
             }
+        }
+
+
+
+        private int m_ServerClientConnectedInvocations;
+
+        private int m_ClientConnectedInvocations;
+
+        /// <summary>
+        /// Tests that the OnClientConnectedCallback is invoked when scene management is enabled and disabled
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement)
+        {
+            m_ServerClientConnectedInvocations = 0;
+            m_ClientConnectedInvocations = 0;
+
+            // Create Host and (numClients) clients
+            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+
+            server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+            server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+
+            foreach (var client in clients)
+            {
+                client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+                client.OnClientConnectedCallback += Client_OnClientConnectedCallback;
+            }
+
+            // Start the instances
+            if (!MultiInstanceHelpers.Start(true, server, clients))
+            {
+                Assert.Fail("Failed to start instances");
+            }
+
+            // [Client-Side] Wait for a connection to the server
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+
+            // [Host-Side] Check to make sure all clients are connected
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+
+            Assert.True(m_ClientConnectedInvocations == 3);
+            Assert.True(m_ServerClientConnectedInvocations == 4);
+        }
+
+        private void Client_OnClientConnectedCallback(ulong clientId)
+        {
+            m_ClientConnectedInvocations++;
+        }
+
+        private void Server_OnClientConnectedCallback(ulong clientId)
+        {
+            m_ServerClientConnectedInvocations++;
         }
 
         [TearDown]
