@@ -22,12 +22,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- something
+- Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 
 ### Fixed
 
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
-- Fixed cross-asmdef RPC ILPP (#678)
+- Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
 
 ### Security
 
@@ -144,11 +144,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [7e19026a] (2021-06-15) Noel Stephens / fix: NetworkPrefabs container's elements invalidated in the NetworkManager after relaunching Unity Project (#905)
 - [459c041c] (2021-06-14) Luke Stampfli / feat!: OnNetworkSpawn / OnNetworkDespawn (#865)
 - [376ed36b] (2021-06-10) Benoit Doyon / feat: Add missing XMLdoc comment (#897)
-- [bfea822e] (2021-06-11) M. Fatih MAR / refactor: upgrade ILPP backend, drop 2019.4 support, rename types/fields (#895)
-- [f70a75fa] (2021-06-10) M. Fatih MAR / fix: do not access/render runtime info if not playing in the editor (#898)
 - [28e1d85c] (2021-06-09) Benoit Doyon / feat: Add name property for network variables (#891)
-- [6d9d3172] (2021-06-09) M. Fatih MAR / chore: delete PhilTestResults.xml (#894)
-- [6f5e7cad] (2021-06-09) M. Fatih MAR / feat: MultiInstanceHelpers to use fixed FrameRate by default (#893)
 - [a0fa2a48] (2021-06-09) Albin Corén / test: General MultiInstanceHelper improvements (#885)
 - [fa2109e7] (2021-06-08) Noel Stephens / refactor: isKinematic set to true for rigid bodies of non-authorized instances (#886)
 - [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
@@ -165,7 +161,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [a5c3aaed] (2021-05-27) Albin Corén / test: Added RPC test (#822)
 - [22c8db80] (2021-05-24) Matt Walsh / refactor!: tick param removal (#853)
 - [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
-- [0ebc1e6d] (2021-05-21) M. Fatih MAR / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [75de2e0b] (2021-05-21) Noel Stephens / test: verify that empty or null arrays of custom INetworkSerializable types can be sent and received (#851)
 - [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
@@ -180,33 +175,22 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [34b1a91b] (2021-05-19) Noel Stephens / fix: CleanDiffedSceneObjects was not clearing PendingSoftSyncObjects  (#834)
 - [e2fd839c] (2021-05-19) Samuel Bellomo / Adding tests for that exception Adding the possibility to have multiple clients in MultiInstanceHelpers Updating exception check to make sure to use local networkmanager (so it works with tests)
 - [d11e22be] (2021-05-19) Sam Bellomo / feat: NetworkTransform now uses NetworkVariables instead of RPCs (#826)
-- [c09fa57f] (2021-05-19) M. Fatih MAR / fix: gracefully handle exceptions in an RPC invoke (#846)
 - [ad8ae404] (2021-05-18) Samuel Bellomo / Adding proper exception for invalid case. This is so users don't have silent failures calling this client side expecting to see other player objects. This solves issue https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/issues/581
 - [e409b373] (2021-05-18) Andrew Spiering / fix: Fixing utp license file for legal (#843)
-- [cf8d29c0] (2021-05-18) M. Fatih MAR / ci: enable standards check on UTP too (#837)
-- [2774a2c1] (2021-05-18) M. Fatih MAR / refactor: NetworkBehaviour.NetworkObject no longer throws an exception (#838)
-- [04479232] (2021-05-18) M. Fatih MAR / fix: revert #830 (#840)
 - [31b41aed] (2021-05-17) Noel Stephens / test: converting the manual rpc tests over to an automated unit test (#830)
-- [edcd5c7f] (2021-05-14) M. Fatih MAR / feat: grabbable ball script to utilize transform parenting (#827)
 - [09dec32e] (2021-05-11) Noel Stephens / refactor: Minor updates for unique editor unit tests with updated comments (#801)
 - [3afda532] (2021-05-11) Albin Corén / test: Added MultiInstanceHelper for multi-instance runtime tests (#817)
 - [1808ea01] (2021-05-10) Noel Stephens / test: connection approval and invalid NetworkPrefabs within NetworkConfig.NetworkPrefabs (#825)
 - [ba6fe039] (2021-05-10) Noel Stephens / fix: Handling empty network prefab entries during NetworkManager.Init (#818)
 - [11b2d250] (2021-05-10) Luke Stampfli / refactor: reduce dictionary lookups (#584)
-- [aa193a48] (2021-05-10) M. Fatih MAR / chore: update namespaces in testproject test scripts (#820)
-- [1bea8671] (2021-05-10) M. Fatih MAR / fix: make manualtests asmdef a normal runtime asmdef (#821)
 - [f1728f65] (2021-05-10) Jeffrey Rainy / perf: cache the behaviour id in NetworkBehaviour (#819)
 - [f9ad5d4f] (2021-05-09) Albin Corén / feat: Added SIPTransport for multi instance testing (#806)
-- [ddfc4989] (2021-05-09) M. Fatih MAR / feat: add GrabbableBall to SampleScene in testproject (#816)
 - [2ade79b8] (2021-05-09) Noel Stephens / test: scene transitioning within testproject (#815)
 - [df423caa] (2021-05-08) Noel Stephens / refactor: unit test scene transitioning (#814)
 - [51940a66] (2021-05-08) Noel Stephens / refactor: remove game objects after test finishes (#813)
 - [df687449] (2021-05-08) Noel Stephens / fix: Set singleton if needed and style update (#812)
 - [3304a8d3] (2021-05-07) Jeffrey Rainy / feat: snapshot system milestone 1 (#805)
-- [56b5244a] (2021-05-07) M. Fatih MAR / test: scaffold runtimetests, editortests and manualtests asmdefs in testproject (#810)
 - [4916a930] (2021-05-07) Albin Corén / fix: Test transports are no longer shown to users in transport dropdown (#802)
-- [f431d519] (2021-05-07) M. Fatih MAR / fix: run testproject tests on PR trigger (#809)
-- [0a7bcb2a] (2021-05-05) M. Fatih MAR / fix: standards script to fail on any errors in a check run (#807)
 - [2a77e533] (2021-05-05) Albin Corén / refactor: extract GlobalObjectIdHash generation from NetworkObject.OnValidate() (#798)
 - [f1c86121] (2021-05-04) Albin Corén / fix: Fix editor NetworkManager field when NetworkManager is null (#797)
 - [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
