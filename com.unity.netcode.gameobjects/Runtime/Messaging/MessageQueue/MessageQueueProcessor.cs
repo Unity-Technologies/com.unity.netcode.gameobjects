@@ -283,6 +283,8 @@ namespace Unity.Netcode
             {
                 channel = NetworkChannel.Fragmented;
             }
+
+            m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(length);
             m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, channel);
         }
 
@@ -307,6 +309,7 @@ namespace Unity.Netcode
                 case MessageQueueContainer.MessageType.ServerRpc:
                     // TODO: Can we remove this special case for server RPCs?
                     {
+                        m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(item.MessageData.Count);
                         m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
                         break;
                     }
@@ -314,6 +317,7 @@ namespace Unity.Netcode
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {
+                            m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(item.MessageData.Count);
                             m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
                         }
 
