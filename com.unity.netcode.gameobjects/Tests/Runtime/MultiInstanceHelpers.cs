@@ -31,7 +31,6 @@ namespace Unity.Netcode.RuntimeTests
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-
             CreateNewClients(clientCount, out clients);
 
             // Create gameObject
@@ -44,8 +43,6 @@ namespace Unity.Netcode.RuntimeTests
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
             {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                 // Set transport
                 NetworkTransport = go.AddComponent<SIPTransport>()
             };
@@ -65,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
-
+            var activeSceneName = SceneManager.GetActiveScene().name;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create gameObject
@@ -76,8 +73,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
@@ -131,7 +126,7 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
 
             NetworkManagerInstances.Clear();
@@ -139,7 +134,8 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
-                Object.Destroy(s_CoroutineRunner);
+                s_CoroutineRunner.StopAllCoroutines();
+                Object.DestroyImmediate(s_CoroutineRunner);
             }
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
