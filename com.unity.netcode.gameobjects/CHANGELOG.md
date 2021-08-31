@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- something
+- Adopted Unity C# Coding Standards in the codebase (#666 formatting and #670 naming rules)
 
 ### Changed
 
@@ -279,27 +279,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [ca47b1d3] (2021-03-30) M. Fatih MAR / chore: refactor/consolidate gitignore files (#680)
 - [61df17d5] (2021-03-30) M. Fatih MAR / fix: cross-asmdef RPC ILPP (#678)
 - [467ef5dc] (2021-03-30) Albin Corén / fix: UNET transport channel UI (#679)
-- [142e508e] (2021-03-30) M. Fatih MAR / feat: naming rules (coding standards) (#670)
 - [350b9a23] (2021-03-29) Albin Corén / test: add NetworkObject and NetworkBehaviour EditorTests (#607)
 - [91339ecc] (2021-03-29) Albin Corén / fix: do not allow multiple player prefabs on networkmanager being checked in the editor (#676)
 - [db2d1713] (2021-03-29) Albin Corén / fix: fix approval flow not being triggered for host (#675)
 - [ce477d79] (2021-03-29) Albin Corén / fix: prevent multiple connection requests being processed while pending approval (#653)
 - [e9c826fc] (2021-03-27) Sean Stolberg / ci: streamline PR and nightly CI jobs (#671)
-- [6250fcbe] (2021-03-25) M. Fatih MAR / feat: spacing and formatting rules (coding standards) (#666)
 - [1e650bbb] (2021-03-25) kvassall-unity / Merge pull request #646 from Unity-Technologies/feature/initial_barebones_proflier_test
 - [bee8bcaa] (2021-03-25) kvassall-unity / More PR feedback
 - [93437ad1] (2021-03-25) kvassall-unity / More PR feedback
 - [bcd35b96] (2021-03-24) kvassall-unity / Merge branch 'develop' into feature/initial_barebones_proflier_test
 - [1700973a] (2021-03-24) Noel Stephens / test: sending multiple clients RPC messages in various combinations for RPC Queue validation purposes (#635)
-- [fec0df6c] (2021-03-24) M. Fatih MAR / fix: backport github issue templates from master to develop (#660)
-- [c7c90da2] (2021-03-24) M. Fatih MAR / refactor: remove editconfig and gitattributes (#659)
-- [ab12ba4b] (2021-03-24) M. Fatih MAR / fix: backport TickSystemTests.VerifyTickSystem() test (#658)
 - [537067cc] (2021-03-23) kvassall-unity / Cleaning up the tests some more
 - [749a9459] (2021-03-22) kvassall-unity / Updating to make tests more explicit on the type of things we should be testing
 - [fdeb073c] (2021-03-22) kvassall-unity / Hooking the Network manager up to the ProfilerNotifier
 - [d549d4c6] (2021-03-19) kvassall-unity / Updating to have a more testable interface and have reusable code that MLAPI could use directly
 - [551c3536] (2021-03-18) kvassall-unity / test: Building out a test to get some surface coverage of the mlapi profiler functionality
-- [5031f9b6] (2021-03-23) M. Fatih MAR / chore: merge release into develop (#657)
 - [5a5fc055] (2021-03-23) Matt Walsh / Merge pull request #651 from Unity-Technologies/fix/destroyobjectspam
 - [5e04e7e5] (2021-03-22) NoelStephensUnity / refactor: remove count check
 - [2f9a8339] (2021-03-22) NoelStephensUnity / fix: destroy object spam
@@ -325,7 +319,7 @@ This is hotfix v0.1.1 for the initial experimental Unity MLAPI Package.
 
 ### Changed
 
-* Fixed issue with the Unity Registry package version missing some fixes from the v0.1.0 release.
+- Fixed issue with the Unity Registry package version missing some fixes from the v0.1.0 release.
 
 ## [0.1.0] - 2021-03-23
 
@@ -338,18 +332,14 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - `INetworkSerializable` interface replaces `IBitWritable`.
 - Added `NetworkSerializer`..., which is the main aggregator that implements serialization code for built-in supported types and holds `NetworkReader` and `NetworkWriter` instances internally.
 - Added a Network Update Loop infrastructure that aids Netcode systems to update (such as RPC queue and transport) outside of the standard `MonoBehaviour` event cycle. See [RFC #8](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0008-network-update-loop.md) and the following details:
-
   - It uses Unity's [low-level Player Loop API](https://docs.unity3d.com/ScriptReference/LowLevel.PlayerLoop.html) and allows for registering `INetworkUpdateSystem`s with `NetworkUpdate` methods to be executed at specific `NetworkUpdateStage`s, which may also be before or after `MonoBehaviour`-driven game logic execution.
   - You will typically interact with `NetworkUpdateLoop` for registration and `INetworkUpdateSystem` for implementation.
   - `NetworkVariable`s are now tick-based using the `NetworkTickSystem`, tracking time through network interactions and syncs.
-
 - Added message batching to handle consecutive RPC requests sent to the same client. `RpcBatcher` sends batches based on requests from the `RpcQueueProcessing`, by batch size threshold or immediately.
 - [GitHub 494](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/494): Added a constraint to allow one `NetworkObject` per `GameObject`, set through the `DisallowMultipleComponent` attribute.
 - Integrated MLAPI with the Unity Profiler for versions 2020.2 and later:
-
   - Added new profiler modules for MLAPI that report important network data.
   - Attached the profiler to a remote player to view network data over the wire.
-
 - A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject). 
 - Added a [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) new GitHub repository to accept extensions from the MLAPI community. Current extensions include moved MLAPI features for lag compensation (useful for Server Authoritative actions) and `TrackedObject`.
 
@@ -402,33 +392,31 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 
 With a new release of MLAPI in Unity, some features have been removed:
 
-* SyncVars have been removed from MLAPI. Use `NetworkVariable`s in place of this functionality. <!-- MTT54 -->
-* [GitHub 527](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/527): Lag compensation systems and `TrackedObject` have moved to the new [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) repo.
-* [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
-
-    * Removed `SecuritySendFlags` from all APIs.
-    * Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
-    * Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
-    * Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
-
-* Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
-* Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
-* [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
+- SyncVars have been removed from MLAPI. Use `NetworkVariable`s in place of this functionality. <!-- MTT54 -->
+- [GitHub 527](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/527): Lag compensation systems and `TrackedObject` have moved to the new [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) repo.
+- [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
+    - Removed `SecuritySendFlags` from all APIs.
+    - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
+    - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
+    - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
+- Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
+- Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
+- [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
 
 ### Known Issues
 
-* `NetworkNavMeshAgent` does not synchronize mesh data, Agent Size, Steering, Obstacle Avoidance, or Path Finding settings. It only synchronizes the destination and velocity, not the path to the destination.
-* For `RPC`, methods with a `ClientRpc` or `ServerRpc` suffix which are not marked with [ServerRpc] or [ClientRpc] will cause a compiler error.
-* For `NetworkAnimator`, Animator Overrides are not supported. Triggers do not work.
-* For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
-* `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
-* `NetworkTransform` have the following issues:
-  * Replicated objects may have jitter. 
-  * The owner is always authoritative about the object's position.
-  * Scale is not synchronized.
-* Connection Approval is not called on the host client.
-* For `NamedMessages`, always use `NetworkBuffer` as the underlying stream for sending named and unnamed messages.
-* For `NetworkManager`, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
+- `NetworkNavMeshAgent` does not synchronize mesh data, Agent Size, Steering, Obstacle Avoidance, or Path Finding settings. It only synchronizes the destination and velocity, not the path to the destination.
+- For `RPC`, methods with a `ClientRpc` or `ServerRpc` suffix which are not marked with [ServerRpc] or [ClientRpc] will cause a compiler error.
+- For `NetworkAnimator`, Animator Overrides are not supported. Triggers do not work.
+- For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
+- `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
+- `NetworkTransform` have the following issues:
+  - Replicated objects may have jitter. 
+  - The owner is always authoritative about the object's position.
+  - Scale is not synchronized.
+- Connection Approval is not called on the host client.
+- For `NamedMessages`, always use `NetworkBuffer` as the underlying stream for sending named and unnamed messages.
+- For `NetworkManager`, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
 
 ## [0.0.1-preview.1] - 2020-12-20
 
