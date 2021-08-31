@@ -651,7 +651,8 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            if (m_NetworkManager == null || m_NetworkManager.NetworkConfig == null ||
+                !m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 return;
             }
