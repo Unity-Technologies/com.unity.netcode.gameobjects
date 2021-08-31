@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             using var binaryWriter = new BinaryWriter(memoryStream);
             binaryWriter.Write(messageName);
 
-            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, MetricNames.NetworkMessageSent);
+            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
 
             Server.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, memoryStream);
 
@@ -52,7 +52,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             using var binaryWriter = new BinaryWriter(memoryStream);
             binaryWriter.Write(messageName);
 
-            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, MetricNames.NetworkMessageSent);
+            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
 
             Server.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, memoryStream);
 
@@ -76,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 Debug.Log($"Received from {sender}");
             });
 
-            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(FirstClientMetrics.Dispatcher, MetricNames.NetworkMessageReceived);
+            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageReceived);
 
             Server.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, memoryStream);
 
