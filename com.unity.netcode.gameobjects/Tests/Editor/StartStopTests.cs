@@ -16,7 +16,6 @@ namespace Unity.Netcode.EditorTests
 
             singletonNetworkManager.NetworkConfig = new NetworkConfig()
             {
-                RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name},
                 NetworkTransport = transport
             };
 
