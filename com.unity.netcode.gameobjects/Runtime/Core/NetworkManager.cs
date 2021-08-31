@@ -1243,6 +1243,7 @@ namespace Unity.Netcode
             {
                 var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
                 MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
+                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), data.Count);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1253,6 +1254,7 @@ namespace Unity.Netcode
             float receiveTime, NetworkChannel receiveChannel)
         {
             MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
+            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
         }
 
         /// <summary>
