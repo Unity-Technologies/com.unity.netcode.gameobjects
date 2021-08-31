@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
-            if(sceneName.StartsWith("InitTestScene"))
+            if (sceneName.StartsWith("InitTestScene"))
             {
                 return false;
             }

@@ -101,7 +101,7 @@ namespace TestProject.ManualTests
                 }
                 else if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete)
                 {
-                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.isLoaded )
+                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.isLoaded)
                     {
                         m_SceneLoaded = new Scene();
                         m_WaitForSceneLoadOrUnload = false;
@@ -156,10 +156,10 @@ namespace TestProject.ManualTests
                 switch (sceneEventProgressStatus)
                 {
                     case SceneEventProgressStatus.SceneEventInProgress:
-                    {
-                        yield return new WaitForSeconds(0.25f);
-                        break;
-                    }
+                        {
+                            yield return new WaitForSeconds(0.25f);
+                            break;
+                        }
                     case SceneEventProgressStatus.Started:
                         {
                             continueCheck = false;
