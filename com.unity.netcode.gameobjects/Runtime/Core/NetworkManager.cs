@@ -1318,6 +1318,7 @@ namespace Unity.Netcode
                         networkBehaviour.__getTypeName(),
                         item.StreamSize);
                 }
+                s_InvokeRpc.End();
 #endif
             }
         }
