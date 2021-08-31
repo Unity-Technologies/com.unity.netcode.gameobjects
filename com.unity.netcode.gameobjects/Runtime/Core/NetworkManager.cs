@@ -853,7 +853,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Global shtudown. Disconnects clients and stops server.
+        /// Globally shuts down the library.
+        /// Disconnects clients if connected and stops server if running.
         /// </summary>
         public void Shutdown()
         {
@@ -864,10 +865,6 @@ namespace Unity.Netcode
 
             if (IsServer)
             {
-                var disconnectedIds = new HashSet<ulong>();
-
-                //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
-
                 // make sure all messages are flushed before transport disconnect clients
                 if (MessageQueueContainer != null)
                 {
@@ -875,6 +872,10 @@ namespace Unity.Netcode
                         queueType: MessageQueueContainer.MessageQueueProcessingTypes.Send,
                         NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
                 }
+
+                var disconnectedIds = new HashSet<ulong>();
+
+                //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shutdown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
                 foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
                 {
