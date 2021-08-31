@@ -24,6 +24,8 @@ namespace Unity.Netcode
         readonly EventMetric<RpcEvent> m_RpcReceivedEvent = new EventMetric<RpcEvent>(NetworkMetricTypes.RpcReceived.Id);
         readonly EventMetric<ServerLogEvent> m_ServerLogSentEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogSent.Id);
         readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogReceived.Id);
+        readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
+        readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
 
         readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
@@ -38,6 +40,7 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_ObjectDestroySentEvent, m_ObjectDestroyReceivedEvent)
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
+                .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(NetcodeObserver.Observer);
@@ -224,6 +227,24 @@ namespace Unity.Netcode
         public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
             m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
+        }
+
+        public void TrackSceneEventSent(ulong[] receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
+        {
+            foreach (var receiverClientId in receiverClientIds)
+            {
+                TrackSceneEventSent(receiverClientId, sceneEventType, sceneName, bytesCount);
+            }
+        }
+
+        public void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount)
+        {
+            m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), (SceneEventType)sceneEventType, sceneName, bytesCount));
+        }
+
+        public void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount)
+        {
+            m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), (SceneEventType)sceneEventType, sceneName, bytesCount));
         }
 
         public void DispatchFrame()
