@@ -98,4 +98,14 @@ public class MultiprocessOrchestration
     {
         return Environment.GetCommandLineArgs().Contains("-automated");
     }
+
+    public static void KillAllProcesses()
+    {
+        foreach(var process in Processes)
+        {
+            process.Kill();
+        }
+
+        Processes.Clear();
+    }
 }

@@ -107,18 +107,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             if (!ShouldIgnoreTests)
             {
-                TestCoordinator.Instance.CloseRemoteClientRpc();
 
-                // Just make sure the client is disconnected.
-                // NOTE-FIXME: We still have clients that hang around for the maximum idle wait time when
-                // all MultiProcess tests are done
-                foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-                {
-                    if (clientId != NetworkManager.Singleton.ServerClientId)
-                    {
-                        NetworkManager.Singleton.DisconnectClient(clientId);
-                    }
-                }
+                MultiprocessOrchestration.KillAllProcesses();
+                //TestCoordinator.Instance.CloseRemoteClientRpc();
 
                 NetworkManager.Singleton.StopHost();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
@@ -127,6 +118,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
                 SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+
+
             }
         }
     }
