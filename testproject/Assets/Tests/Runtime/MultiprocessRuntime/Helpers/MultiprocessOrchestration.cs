@@ -76,7 +76,7 @@ public class MultiprocessOrchestration
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}"; // Let each process log to a different file
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {

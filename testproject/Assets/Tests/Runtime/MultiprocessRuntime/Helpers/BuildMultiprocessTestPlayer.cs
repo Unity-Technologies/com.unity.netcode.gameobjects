@@ -89,8 +89,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
 
             buildOptions &= ~BuildOptions.AutoRunPlayer;
+            // Include all EditorBuildSettings.scenes with clients so they are in alignment with the server's scenes in build list indices
             var buildReport = BuildPipeline.BuildPlayer(
-                new[] { $"Assets/Scenes/{MainSceneName}.unity" },
+                EditorBuildSettings.scenes,
                 buildPathToUse,
                 EditorUserBuildSettings.activeBuildTarget,
                 buildOptions);

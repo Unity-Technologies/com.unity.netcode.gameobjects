@@ -108,10 +108,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
             var rpcQueueContainer = new MessageQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Make sure we set testing mode so we don't try to invoke RPCs
             rpcQueueContainer.SetTestingState(true);
-
+#endif
             var maxRpcEntries = 8;
             var messageChunkSize = 2048;
             var preCalculatedBufferValues = new List<byte>(messageChunkSize);
