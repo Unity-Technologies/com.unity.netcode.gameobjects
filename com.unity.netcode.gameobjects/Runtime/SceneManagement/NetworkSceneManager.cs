@@ -547,7 +547,7 @@ namespace Unity.Netcode
             }
 
             var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
-            sceneEventProgress.SceneIndex = GetBuildIndexFromSceneName(sceneName);
+            sceneEventProgress.SceneBuildIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventProgressTracking.Add(sceneEventProgress.Guid, sceneEventProgress);
 
             if (!isUnloading)
@@ -582,7 +582,7 @@ namespace Unity.Netcode
             {
                 using var nonNullContext = (InternalCommandContext)context;
                 ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
-                ClientSynchEventData.SceneIndex = sceneEventProgress.SceneIndex;
+                ClientSynchEventData.SceneIndex = sceneEventProgress.SceneBuildIndex;
                 ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
                 ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
                 ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
@@ -596,7 +596,7 @@ namespace Unity.Netcode
                 m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                     m_NetworkManager.ConnectedClientsIds,
                     (uint)sceneEventProgress.SceneEventType,
-                    ScenesInBuild[(int)sceneEventProgress.SceneIndex],
+                    ScenesInBuild[(int)sceneEventProgress.SceneBuildIndex],
                     size);
             }
 
@@ -604,7 +604,7 @@ namespace Unity.Netcode
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 SceneEventType = sceneEventProgress.SceneEventType,
-                SceneName = ScenesInBuild[(int)sceneEventProgress.SceneIndex],
+                SceneName = ScenesInBuild[(int)sceneEventProgress.SceneBuildIndex],
                 ClientId = m_NetworkManager.ServerClientId,
                 LoadSceneMode = sceneEventProgress.LoadSceneMode,
                 ClientsThatCompleted = sceneEventProgress.DoneClients,
