@@ -1,7 +1,6 @@
-﻿using Unity.Netcode;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace BoostrapSample
+namespace Unity.Netcode.Samples
 {
     /// <summary>
     /// Component attached to NetworkManager's "Player Prefab".
@@ -13,14 +12,10 @@ namespace BoostrapSample
         /// </summary>
         public override void OnNetworkSpawn()
         {
-            if (IsLocalPlayer)
-            {
-                Move();
-            }
+            SubmitPositionRequestServerRpc();
         }
 
         /// <summary>
-        /// Move requests are funneled through this method.
         /// If this method is invoked on the client instance of this player, it will invoke a ServerRpc.
         /// If this method is invoked on the server instance of this player, it will position the player at a random
         /// point on a plane.
@@ -30,23 +25,12 @@ namespace BoostrapSample
         /// "Server", this transform's position modification can only be performed on the server, where it will then be
         /// replicated on all other clients.
         /// </remarks>
-        public void Move()
-        {
-            if (NetworkManager.Singleton.IsServer)
-            {
-                transform.position = GetRandomPositionOnXYPlane();
-            }
-            else
-            {
-                SubmitPositionRequestServerRpc();
-            }
-        }
-
         [ServerRpc]
-        void SubmitPositionRequestServerRpc()
+        public void SubmitPositionRequestServerRpc()
         {
             Debug.Log($"SubmitPositionRequestServerRpc received on server from client: {OwnerClientId}");
-            Move();
+
+            transform.position = GetRandomPositionOnXYPlane();
         }
 
         static Vector3 GetRandomPositionOnXYPlane()

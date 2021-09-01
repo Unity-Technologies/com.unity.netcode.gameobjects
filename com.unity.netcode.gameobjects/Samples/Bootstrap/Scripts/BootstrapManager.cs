@@ -1,7 +1,6 @@
-﻿using Unity.Netcode;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace BoostrapSample
+namespace Unity.Netcode.Samples
 {
     /// <summary>
     /// Class to display helper buttons and status labels on the GUI, as well as buttons to start host/client/server.
@@ -59,7 +58,7 @@ namespace BoostrapSample
                     if (networkedClient.PlayerObject.TryGetComponent(out BootstrapPlayer bootstrapPlayer))
                     {
                         // move player
-                        bootstrapPlayer.Move();
+                        bootstrapPlayer.SubmitPositionRequestServerRpc();
                     }
                 }
             }
