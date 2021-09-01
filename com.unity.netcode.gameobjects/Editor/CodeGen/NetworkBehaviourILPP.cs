@@ -78,7 +78,7 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private MethodReference m_Debug_LogWarning_MethodRef;
+        private MethodReference m_Debug_LogError_MethodRef;
         private TypeReference m_NetworkManager_TypeRef;
         private MethodReference m_NetworkManager_getLocalClientId_MethodRef;
         private MethodReference m_NetworkManager_getIsListening_MethodRef;
@@ -150,7 +150,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkSerializer_SerializeRayArray_MethodRef;
         private MethodReference m_NetworkSerializer_SerializeRay2DArray_MethodRef;
 
-        private const string k_Debug_LogWarning = nameof(Debug.LogWarning);
+        private const string k_Debug_LogError = nameof(Debug.LogError);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
         private const string k_NetworkManager_IsListening = nameof(NetworkManager.IsListening);
         private const string k_NetworkManager_IsHost = nameof(NetworkManager.IsHost);
@@ -182,10 +182,10 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case k_Debug_LogWarning:
+                    case k_Debug_LogError:
                         if (methodInfo.GetParameters().Length == 1)
                         {
-                            m_Debug_LogWarning_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                            m_Debug_LogError_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         }
 
                         break;
@@ -830,9 +830,9 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ceq));
                         instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
 
-                        // Debug.LogWarning(...);
+                        // Debug.LogError(...);
                         instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!"));
-                        instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogWarning_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
 
                         instructions.Add(logNextInstr);
 
@@ -1827,9 +1827,9 @@ namespace Unity.Netcode.Editor.CodeGen
                 processor.Emit(OpCodes.Ceq);
                 processor.Emit(OpCodes.Brfalse, logNextInstr);
 
-                // Debug.LogWarning(...);
+                // Debug.LogError(...);
                 processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!");
-                processor.Emit(OpCodes.Call, m_Debug_LogWarning_MethodRef);
+                processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
 
                 processor.Append(logNextInstr);
 
