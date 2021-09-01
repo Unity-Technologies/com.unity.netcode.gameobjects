@@ -76,6 +76,11 @@ namespace Unity.Netcode
                 {
                     NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
                 }
+
+                // Mark the client being connected
+                m_NetworkManager.IsConnectedClient = true;
+                // When scene management is disabled we notify after everything is synchronized
+                m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
             }
         }
 
