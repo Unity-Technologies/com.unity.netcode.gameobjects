@@ -906,7 +906,8 @@ namespace Unity.Netcode
                     }
                 }
             }
-            else
+
+            if (IsClient)
             {
                 // Client only, send disconnect to server
                 NetworkConfig.NetworkTransport.DisconnectLocalClient();
