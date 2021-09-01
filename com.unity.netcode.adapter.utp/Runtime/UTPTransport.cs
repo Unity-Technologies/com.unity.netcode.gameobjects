@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
@@ -12,6 +13,7 @@ using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using System.Linq;
 using Unity.Networking.Transport.Utilities;
+using UnityEngine.Assertions;
 using NetworkEvent = Unity.Netcode.NetworkEvent;
 
 namespace Unity.Netcode
@@ -38,6 +40,10 @@ namespace Unity.Netcode
         [SerializeField] private int m_ReciveQueueSize = 128;
         [SerializeField] private int m_SendQueueSize = 128;
 
+        [Tooltip("The maximum size of the send queue for batching NGO events")]
+        [SerializeField]
+        private int m_SendQueueBatchSize = 4096;
+
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
 
@@ -56,6 +62,11 @@ namespace Unity.Netcode
         public ProtocolType Protocol => m_ProtocolType;
 
         private RelayServerData m_RelayServerData;
+
+        /// <summary>
+        /// SendQueue dictionary is used to batch events instead of sending them immediately.
+        /// </summary>
+        private readonly Dictionary<SendTarget, SendQueue> m_SendQueue = new Dictionary<SendTarget, SendQueue>();
 
         private void InitDriver()
         {
@@ -130,7 +141,7 @@ namespace Unity.Netcode
                     yield break;
                 }
 
-                m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = m_RelayServerData });
+                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
             }
             else
             {
@@ -316,34 +327,57 @@ namespace Unity.Netcode
                     return true;
 
                 case UTPNetworkEvent.Type.Data:
-                    var channelId = reader.ReadByte();
-                    var size = reader.ReadInt();
-
-                    if (size > m_MessageBufferSize)
+                    var isBatched = reader.ReadByte();
+                    if (isBatched == 1)
                     {
-                        Debug.LogError("The received message does not fit into the message buffer");
-                    }
-                    else
-                    {
-                        unsafe
+                        while (reader.GetBytesRead() < reader.Length)
                         {
-                            fixed(byte* buffer = &m_MessageBuffer[0])
-                            {
-                                reader.ReadBytes(buffer, size);
-                            }
+                            var channelId = reader.ReadByte();
+                            var payloadSize = reader.ReadInt();
+                            ReadData(payloadSize, ref reader, ref networkConnection, channelId);
                         }
-                        InvokeOnTransportEvent(NetworkEvent.Data,
-                            ParseClientId(networkConnection),
-                            (NetworkChannel)channelId,
-                            new ArraySegment<byte>(m_MessageBuffer, 0, size),
-                            Time.realtimeSinceStartup
-                        );
-                        // Debug.Log($"Receiving: {String.Join(", ", m_MessageBuffer.Take(size).Select(x => string.Format("{0:x}", x)))}");
                     }
+                    else  // If is not batched, then read the entire buffer at once
+                    {
+                        var channelId = reader.ReadByte();
+                        var payloadSize = reader.ReadInt();
+
+                        ReadData(payloadSize, ref reader, ref networkConnection, channelId);
+                    }
+
                     return true;
             }
 
             return false;
+        }
+
+        private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection, byte channelId)
+        {
+            // TODO: cosmin remove debug log
+            Debug.LogFormat("Reading {0}! ", size);
+
+            if (size > m_MessageBufferSize)
+            {
+                Debug.LogError("The received message does not fit into the message buffer");
+            }
+            else
+            {
+                unsafe
+                {
+                    fixed (byte* buffer = &m_MessageBuffer[0])
+                    {
+                        reader.ReadBytes(buffer, size);
+                    }
+                }
+
+                InvokeOnTransportEvent(NetworkEvent.Data,
+                    ParseClientId(networkConnection),
+                    (NetworkChannel)channelId,
+                    new ArraySegment<byte>(m_MessageBuffer, 0, size),
+                    Time.realtimeSinceStartup
+                );
+                // Debug.Log($"Receiving: {String.Join(", ", m_MessageBuffer.Take(size).Select(x => string.Format("{0:x}", x)))}");
+            }
         }
 
         private void Update()
@@ -362,6 +396,17 @@ namespace Unity.Netcode
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Send batched messages out in LateUpdate.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (m_Driver.IsCreated)
+            {
+                FlushAllSendQueues();
+            }
         }
 
         private void OnDestroy()
@@ -442,33 +487,125 @@ namespace Unity.Netcode
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
-            var size = data.Count + 5;
-
+            var size = data.Count + 1 + 4; // 1 byte for the channel and 4 for the count of the data
             var pipeline = SelectSendPipeline(networkChannel, size);
-            var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, size);
+
+            SendTarget sendTarget = new SendTarget(clientId, pipeline);
+            if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
+            {
+                queue = new SendQueue(m_SendQueueBatchSize);
+                m_SendQueue.Add(sendTarget, queue);
+            }
+
+            var success = queue.AddEvent((byte)networkChannel, data);
+            if (!success)
+            {
+                // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
+                if (data.Count > queue.Size)
+                {
+                    // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
+                    Debug.LogWarning($"Sent {data.Count} bytes on channel: {networkChannel}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}).");
+                    Debug.Assert(networkChannel == NetworkChannel.Fragmented);
+                    SendMessageInstantly(sendTarget.ClientId, data, networkChannel, pipeline);
+                }
+                else
+                {
+                    // TODO: Cosmin handle this edge case!
+                   Debug.Assert(false);
+                }
+            }
+        }
+
+        private unsafe void SendBatchedMessage(ulong clientId, ArraySegment<byte> data, NetworkPipeline pipeline)
+        {
+            var payloadSize = data.Count + 1; // One extra byte to mark whether this message is batched or not
+            var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
             if (result == 0)
             {
-                writer.WriteByte((byte)networkChannel);
-                writer.WriteInt(data.Count);
-
                 if (data.Array != null)
                 {
+                    // This 1 byte indicates whether the message has been batched or not
+                    writer.WriteByte(1);
+
+                    // Note: we are not writing the one byte for the channel and the other 4 for the data count as it will be handled by the queue
                     unsafe
                     {
-                        fixed(byte* dataPtr = &data.Array[data.Offset])
+                        fixed (byte* dataPtr = &data.Array[data.Offset])
                         {
                             writer.WriteBytes(dataPtr, data.Count);
                         }
                     }
                 }
+
                 result = m_Driver.EndSend(writer);
-                if (result == size)
+                if (result == payloadSize) // If the whole data fit, then we are done here
                 {
+                    Debug.LogFormat("Writing {0}! ", result);
                     return;
                 }
             }
 
             Debug.LogError($"Error sending the message {result}");
+        }
+
+        private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel, NetworkPipeline pipeline)
+        {
+            var payloadSize = data.Count + 1 + 1 + 4; // 1 byte to indicate if the message is batched, 1 for channelId and 4 for the payload size
+            var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
+            if (result == 0)
+            {
+                if (data.Array != null)
+                {
+                    writer.WriteByte(0); // This 1 byte indicates whether the message has been batched or not, in this case is not, as is sent instantly
+                    writer.WriteByte((byte)networkChannel); // Send the channel ID;
+                    writer.WriteInt(payloadSize);
+
+                    // Note: we are not writing the one byte for the channel and the other 4 for the data count as it will be handled by the queue
+                    unsafe
+                    {
+                        fixed (byte* dataPtr = &data.Array[data.Offset])
+                        {
+                            writer.WriteBytes(dataPtr, data.Count);
+                        }
+                    }
+                }
+
+                result = m_Driver.EndSend(writer);
+                if (result == payloadSize) // If the whole data fit, then we are done here
+                {
+                    // TODO: cosmin remove debug log
+                    Debug.LogFormat("Writing {0}! ", result);
+                    return;
+                }
+            }
+
+            Debug.LogError($"Error sending the message {result}");
+        }
+
+        /// <summary>
+        /// Flushes all send queues.
+        /// </summary>
+        private void FlushAllSendQueues()
+        {
+            foreach (var kvp in m_SendQueue)
+            {
+                if (kvp.Value.IsEmpty())
+                {
+                    continue;
+                }
+
+                NetworkPipeline pipeline = kvp.Key.NetworkPipeline;
+                var payloadSize = kvp.Value.Count + 1;
+                if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
+                {
+                    // TODO: Cosmin re-check this with Andrew
+                    pipeline = SelectSendPipeline(NetworkChannel.Fragmented, payloadSize);
+                }
+
+                var sendBuffer = kvp.Value.GetData();
+                SendBatchedMessage(kvp.Key.ClientId, sendBuffer, pipeline);
+                kvp.Value.Clear();
+            }
         }
 
         public override SocketTasks StartClient()
@@ -506,6 +643,88 @@ namespace Unity.Netcode
         public override void Shutdown()
         {
             DisposeDriver();
+        }
+
+
+        // -------------- Utility Types -------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Memory Stream controller to store several events into one single buffer
+        /// </summary>
+        private class SendQueue
+        {
+            MemoryStream m_Stream;
+
+            /// <summary>
+            /// The size of the send queue.
+            /// </summary>
+            public int Size { get; }
+
+            public SendQueue(int size)
+            {
+                Size = size;
+                byte[] buffer = new byte[size];
+                m_Stream = new MemoryStream(buffer, 0, buffer.Length, true, true);
+            }
+
+            /// <summary>
+            /// Ads an event to the send queue.
+            /// </summary>
+            /// <param name="channelId">The channel this event should be sent on.</param>
+            /// <param name="data">The data to send.</param>
+            /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
+            internal bool AddEvent(byte channelId, ArraySegment<byte> data)
+            {
+                if (m_Stream.Position + data.Count + 1 + 4 > Size) // TODO: Cosmin should comment this
+                {
+                    return false;
+                }
+
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
+                {
+                    writer.WriteByte(channelId);
+                    writer.WriteInt32(data.Count);
+                    Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
+                    m_Stream.Position += data.Count;
+                }
+
+                return true;
+            }
+
+            internal void Clear()
+            {
+                m_Stream.Position = 0;
+            }
+
+            internal bool IsEmpty()
+            {
+                return m_Stream.Position == 0;
+            }
+
+            internal int Count => (int)m_Stream.Position;
+
+            internal ArraySegment<byte> GetData()
+            {
+                return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
+            }
+        }
+
+        /// <summary>
+        /// Cached information about reliability mode with a certain client
+        /// </summary>
+        private struct SendTarget
+        {
+
+            // TODO: implement IEquatable?
+            // TODO: maybe replace ClientId with NetworkConnection to avoid any casting??
+            public readonly ulong ClientId;
+            public readonly NetworkPipeline NetworkPipeline;
+
+            public SendTarget(ulong clientId, NetworkPipeline networkPipeline)
+            {
+                ClientId = clientId;
+                NetworkPipeline = networkPipeline;
+            }
         }
     }
 }
