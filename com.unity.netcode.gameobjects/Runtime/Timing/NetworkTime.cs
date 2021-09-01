@@ -63,7 +63,7 @@ namespace Unity.Netcode
             Assert.IsTrue(tickRate > 0, "Tickrate must be a positive value.");
 
             m_TickRate = tickRate;
-            m_TickInterval = 1f / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
+            m_TickInterval = 1d / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
             m_CachedTickOffset = 0;
             m_CachedTick = 0;
             m_TimeSec = 0;
