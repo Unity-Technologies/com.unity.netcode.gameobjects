@@ -283,7 +283,7 @@ namespace Unity.Netcode.Prototyping
         private int k_debugDrawLineTime = 10;
 
         internal NetworkState LocalNetworkState;
-		
+
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
         private Vector3 TransformPosition
@@ -696,7 +696,7 @@ namespace Unity.Netcode.Prototyping
             RotationInterpolator.Awake();
             RotationInterpolator.UseFixedUpdate = UseFixedUpdate;
 
-            ReplNetworkState.Settings.SendNetworkChannel = NetworkChannel.PositionUpdate;
+            // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
@@ -756,15 +756,15 @@ namespace Unity.Netcode.Prototyping
             // this needs to be done in Update to catch that time change as soon as it happens.
             /*
 			todo
-			                if (UpdateNetworkState(ref LocalNetworkState))
+			    if (UpdateNetworkState(ref LocalNetworkState))
                 {
                     // if updated (dirty), change NetVar, mark it dirty
                     ReplNetworkState.Value = LocalNetworkState;
                     ReplNetworkState.SetDirty(true);
                 }
 			*/
-			
-			var isDirty = UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, time); // todo sam diff here is Fixedtime
+
+			var isDirty = UpdateNetworkStateCheckDirty(ref LocalNetworkState, time); // todo sam diff here is Fixedtime
             if (isDirty)
             {
                 alreadySentLastValue = false;
@@ -775,13 +775,17 @@ namespace Unity.Netcode.Prototyping
                 alreadySentLastValue = true; // to send one more value after a transform moves, so that unclamped interpolation has two similar last values
                 shouldSendLastValue = true;
             }
-            ReplNetworkState.ValueRef.IsLastSent = shouldSendLastValue;
+            //ReplNetworkState.ValueRef.IsLastSent = shouldSendLastValue;
 
-            ReplNetworkState.SetDirty(shouldSendLastValue || isDirty);
-            if (ReplNetworkState.IsDirty())
+            if (isDirty)
             {
-                Debug.DrawLine(ReplNetworkState.Value.Position, ReplNetworkState.Value.Position + Vector3.up, Color.magenta, 10, false);
+                ReplNetworkState.Value = LocalNetworkState;
             }
+            ReplNetworkState.SetDirty(shouldSendLastValue || isDirty);
+            // if (ReplNetworkState.IsDirty())
+            // {
+            //     Debug.DrawLine(ReplNetworkState.Value.Position, ReplNetworkState.Value.Position + Vector3.up, Color.magenta, 10, false);
+            // }
             shouldSendLastValue = false;
         }
 
