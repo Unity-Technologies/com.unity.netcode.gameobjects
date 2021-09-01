@@ -217,7 +217,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [d9969907] (2021-04-07) kvassall-unity / chore: add CODEOWNERS (#697)
 - [e51d7e71] (2021-04-06) Albin Corén / refactor: BufferManager is no longer static (#705)
 - [9f5f39b4] (2021-04-06) Albin Corén / refactor!: SpawnManager is no longer static (#696)
-- [2571b8ce] (2021-03-31) DanZolnik / feat!: add client id to spawn handler delegate (#685)
 - [ffbf84e3] (2021-03-31) Jeffrey Rainy / fix: more stable profiler stats. Averages over a full second. No memory allocations. (#692)
 - [467ef5dc] (2021-03-30) Albin Corén / fix: UNET transport channel UI (#679)
 - [350b9a23] (2021-03-29) Albin Corén / test: add NetworkObject and NetworkBehaviour EditorTests (#607)
