@@ -13,6 +13,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
+- When a client tries to spawn a `NetworkObject` an exception is thrown to indicate unsupported behavior. (#981)
+- Added a `NetworkTime` and `NetworkTickSystem` which allows for improved control over time and ticks. (#845)
+- Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
 
 ### Changed
 
@@ -34,6 +37,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
+- `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
 
 ### Deprecated
 
@@ -48,6 +52,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkObject.OwnerClientId` property changing before `NetworkBehaviour.OnGainedOwnership()` callback (#1092)
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
+- Fixed `NetworkManager` shutdown when quitting the application or switching scenes. Now NetworkManager shutdowns correctly and despawns existing NetworkObjects (#1011)
 
 ### Security
 
