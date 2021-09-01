@@ -51,8 +51,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            // We need NetworkManager to be instantiated first before you load scenes externally in order to be able to determine if
-            // we are running a unit test or not. (it is this or manually setting a property)
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
             const string scenePath = "Assets/Tests/Runtime/ObjectParenting/" + nameof(NetworkObjectParentingTests) + ".unity";
