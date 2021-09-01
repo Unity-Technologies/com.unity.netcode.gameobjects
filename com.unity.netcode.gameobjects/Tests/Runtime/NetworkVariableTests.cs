@@ -8,72 +8,6 @@ using Unity.Collections;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public unsafe struct FixedStringStruct : INetworkSerializable
-    {
-        private const int k_MaxSize = 128;
-        public fixed char FixedString[k_MaxSize];
-        public int StringSize;
-
-        public void SetIt(string valueToSet)
-        {
-            Assert.False(valueToSet.Length >= k_MaxSize);
-            fixed(char* charPtr = FixedString)
-            {
-                for(int i = 0; i < valueToSet.Length; i++)
-                {
-                    charPtr[i] = valueToSet[i];
-                }
-            }
-            StringSize = valueToSet.Length;
-        }
-
-        public string GetIt()
-        {
-            var retValue = string.Empty;
-            fixed (char* charPtr = FixedString)
-            {
-                for (int i = 0; i < StringSize; i++)
-                {
-                    retValue += FixedString[i];
-                }
-            }
-            return retValue;
-        }
-
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            if (serializer.IsReading)
-            {
-                serializer.Serialize(ref StringSize);
-
-                var charArray = new char[StringSize];
-                serializer.Serialize(ref charArray);
-
-                fixed (char* charPtr = FixedString)
-                {
-                    for (int i = 0; i < StringSize; i++)
-                    {
-                        charPtr[i] = charArray[i];
-                    }
-                }
-            }
-            else
-            {
-                serializer.Serialize(ref StringSize);
-
-                var charArray = new char[StringSize];
-                fixed (char* charPtr = FixedString)
-                {
-                    for (int i = 0; i < StringSize; i++)
-                    {
-                        charArray[i] = charPtr[i];
-                    }
-                }
-                serializer.Serialize(ref charArray);
-            }
-        }
-    }
-
     public struct FixedString32Struct : INetworkSerializable
     {
         public FixedString32 String;
@@ -121,8 +55,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
         public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
-        public readonly NetworkVariable<FixedStringStruct> TheString = new NetworkVariable<FixedStringStruct>();
-        public readonly NetworkVariable<FixedString32Struct> TheString32 = new NetworkVariable<FixedString32Struct>();
+        public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -333,51 +266,26 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FixedArrayStringTest([Values(true, false)] bool useHost)
-        {
-            m_TestWithHost = useHost;
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    var tmp = m_Player1OnServer.TheString.Value;
-                    tmp.SetIt(k_FixedStringTestValue);
-                    m_Player1OnServer.TheString.Value = tmp;
-
-                    // we are writing to the private and public variables on player 1's object...
-                },
-                () =>
-                {
-                    var tmp = m_Player1OnClient1.TheString.Value;
-
-                    // ...and we should see the writes to the private var only on the server & the owner,
-                    //  but the public variable everywhere
-                    return
-                        m_Player1OnClient1.TheString.Value.GetIt() == k_FixedStringTestValue;
-                }
-            );
-        }
-
-        [UnityTest]
         public IEnumerator FixedString32StructTest([Values(true, false)] bool useHost)
         {
             m_TestWithHost = useHost;
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    var tmp = m_Player1OnServer.TheString32.Value;
+                    var tmp = m_Player1OnServer.FixedStringStruct.Value;
                     tmp.String = k_FixedStringTestValue;
-                    m_Player1OnServer.TheString32.Value = tmp;
+                    m_Player1OnServer.FixedStringStruct.Value = tmp;
 
                     // we are writing to the private and public variables on player 1's object...
                 },
                 () =>
                 {
-                    var tmp = m_Player1OnClient1.TheString32.Value;
+                    var tmp = m_Player1OnClient1.FixedStringStruct.Value;
 
                     // ...and we should see the writes to the private var only on the server & the owner,
                     //  but the public variable everywhere
                     return
-                        m_Player1OnClient1.TheString32.Value.String == k_FixedStringTestValue;
+                        m_Player1OnClient1.FixedStringStruct.Value.String == k_FixedStringTestValue;
                 }
             );
         }
