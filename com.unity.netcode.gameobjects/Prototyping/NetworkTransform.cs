@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.Prototyping
 {
@@ -9,7 +10,9 @@ namespace Unity.Netcode.Prototyping
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
-    [DefaultExecutionOrder(1000000)] // this is needed to catch the update time after the transform was updated by user scripts
+// todo add a note in doc about this
+    // todo have a way for this to be only server side? This way client side you can have scripts that depend on that position update that'll execute afterward
+    [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         internal struct NetworkState : INetworkSerializable
@@ -23,10 +26,10 @@ namespace Unity.Netcode.Prototyping
             internal const int RotAngleZBit = 6;
             internal const int ScaleXBit = 7;
             internal const int ScaleYBit = 8;
-
             internal const int ScaleZBit = 9;
+            internal const int LastSentBit = 10; // todo remove this
 
-            // 10-15: <unused>
+            // 11-15: <unused>
             public ushort Bitset;
 
             public bool InLocalSpace
@@ -92,6 +95,12 @@ namespace Unity.Netcode.Prototyping
                 set => Bitset |= (ushort) ((value ? 1 : 0) << ScaleZBit);
             }
 
+            public bool IsLastSent
+            {
+                get => (Bitset & (1 << LastSentBit)) != 0;
+                set => Bitset |= (ushort) ((value ? 1 : 0) << LastSentBit);
+            }
+
             public float PositionX, PositionY, PositionZ;
             public float RotAngleX, RotAngleY, RotAngleZ;
             public float ScaleX, ScaleY, ScaleZ;
@@ -133,7 +142,7 @@ namespace Unity.Netcode.Prototyping
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 serializer.Serialize(ref SentTime);
-                // InLocalSpace + HasXXX Bits
+                // InLocalSpace + HasXXX Bits + LastSent flag
                 serializer.Serialize(ref Bitset);
                 // Position Values
                 if (HasPositionX)
@@ -212,6 +221,8 @@ namespace Unity.Netcode.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
+        public bool UseFixedUpdate = true;
+
         public virtual IInterpolator<float> PositionXInterpolator { get; set; }
         public virtual IInterpolator<float> PositionYInterpolator { get; set; }
 
@@ -271,6 +282,8 @@ namespace Unity.Netcode.Prototyping
         {
             yield return RotationInterpolator;
         }
+
+        private int k_debugDrawLineTime = 10;
 
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
@@ -431,10 +444,11 @@ namespace Unity.Netcode.Prototyping
 
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
-            if (isDirty)
+            // if (isDirty)
             {
                 networkState.SentTime = dirtyTime;
             }
+
 
             return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
         }
@@ -599,6 +613,11 @@ namespace Unity.Netcode.Prototyping
 
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
 
+            if (newState.IsLastSent)
+            {
+                Debug.Log("asdf");
+            }
+
             if (newState.HasPositionX)
             {
                 PositionXInterpolator.AddMeasurement(newState.Position.x, sentTime);
@@ -646,6 +665,12 @@ namespace Unity.Netcode.Prototyping
             {
                 ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
+
+            if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+            {
+                var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
+                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_debugDrawLineTime, false);
+            }
         }
 
         private void Awake()
@@ -661,7 +686,6 @@ namespace Unity.Netcode.Prototyping
                     break;
                 }
             }
-
             if (!interpolatorAlreadySet)
             {
                 InitializeInterpolator<BufferedLinearInterpolatorFloat, BufferedLinearInterpolatorQuaternion>();
@@ -670,9 +694,10 @@ namespace Unity.Netcode.Prototyping
             foreach (var interpolator in AllFloatInterpolators())
             {
                 interpolator.Awake();
+                interpolator.UseFixedUpdate = UseFixedUpdate;
             }
-
             RotationInterpolator.Awake();
+            RotationInterpolator.UseFixedUpdate = UseFixedUpdate;
 
             ReplNetworkState.Settings.SendNetworkChannel = Channel;
             ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
@@ -730,11 +755,41 @@ namespace Unity.Netcode.Prototyping
 
         }
 
+        private void DoSendToOthers(double time)
+        {
+            // check for time there was a change to the transform
+            // this needs to be done in Update to catch that time change as soon as it happens.
+            var isDirty = UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, time); // todo sam diff here is Fixedtime
+            if (isDirty)
+            {
+                alreadySentLastValue = false;
+            }
+            else if (!alreadySentLastValue)
+            {
+                isDirty = true;
+                alreadySentLastValue = true; // to send one more value after a transform moves, so that unclamped interpolation has two similar last values
+                shouldSendLastValue = true;
+            }
+            ReplNetworkState.ValueRef.IsLastSent = shouldSendLastValue;
+
+            ReplNetworkState.SetDirty(shouldSendLastValue || isDirty);
+            if (ReplNetworkState.IsDirty())
+            {
+                Debug.DrawLine(ReplNetworkState.Value.Position, ReplNetworkState.Value.Position + Vector3.up, Color.magenta, 10, false);
+            }
+            shouldSendLastValue = false;
+        }
+
         private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
             {
                 return;
+            }
+
+            if (IsServer && UseFixedUpdate)
+            {
+                DoSendToOthers(NetworkManager.LocalTime.FixedTime);
             }
 
             // try to update previously consumed NetworkState
@@ -761,6 +816,10 @@ namespace Unity.Netcode.Prototyping
             }
         }
 
+        private bool alreadySentLastValue = false;
+        private bool shouldSendLastValue = false;
+
+
         private void Update()
         {
             if (!NetworkObject.IsSpawned)
@@ -768,16 +827,11 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (IsServer)
+            if (IsServer && !UseFixedUpdate)
             {
-                if (IsAuthoritativeTransformDirty())
-                {
-                    // check for time there was a change to the transform
-                    // this needs to be done in Update to catch that time change as soon as it happens.
-                    ReplNetworkState.SetDirty(UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, NetworkManager.LocalTime.Time));
-                }
+                DoSendToOthers(NetworkManager.LocalTime.Time);
             }
-            else if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)
+            if (!IsServer && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 foreach (var interpolator in AllFloatInterpolators())
                 {
@@ -785,6 +839,12 @@ namespace Unity.Netcode.Prototyping
                 }
 
                 RotationInterpolator.Update(Time.deltaTime);
+
+                if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+                {
+                    var interpolatedPosition = new Vector3(PositionXInterpolator.GetInterpolatedValue(), PositionYInterpolator.GetInterpolatedValue(), PositionZInterpolator.GetInterpolatedValue());
+                    Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_debugDrawLineTime, false);
+                }
 
                 ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
             }

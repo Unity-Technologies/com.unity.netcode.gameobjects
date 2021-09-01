@@ -21,7 +21,7 @@ public class MoveInCircle : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        NetworkManager.Singleton.NetworkTimeSystem.ServerBufferSec = 0.15f;
+        //NetworkManager.Singleton.NetworkTimeSystem.ServerBufferSec = 0.15f;
     }
 
     void FixedUpdate()

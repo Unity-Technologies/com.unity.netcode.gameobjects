@@ -55,5 +55,7 @@ namespace Unity.Netcode
         public void OnDestroy()
         {
         }
+
+        public bool UseFixedUpdate { get; set; }
     }
 }

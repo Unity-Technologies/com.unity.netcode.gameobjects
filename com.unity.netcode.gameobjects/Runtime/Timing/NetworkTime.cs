@@ -106,7 +106,8 @@ namespace Unity.Netcode
         private void UpdateCache()
         {
             double d = m_TimeSec / m_TickInterval;
-            m_CachedTick = (int)d;
+            m_CachedTick = (int)d; // rounding up. if you're in tick 3.123, you're really in the tick 4
+            // m_CachedTick = (int)Math.Ceiling(d); // rounding up. if you're in tick 3.123, you're really in the tick 4
             m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
 
             // This handles negative time, decreases tick by 1 and makes offset positive.
