@@ -35,6 +35,7 @@ namespace Unity.Netcode
         // snapshot internal
         internal int TickWritten;
         internal List<ulong> TargetClientIds;
+        internal int TimesWritten;
     }
 
     internal struct SnapshotSpawnCommand
@@ -758,6 +759,20 @@ namespace Unity.Netcode
             return (1 << diff) > (spawnCommand.TimesWritten - 1);
         }
 
+        private bool ShouldWriteDespawn(in SnapshotDespawnCommand despawnCommand)
+        {
+            if (m_CurrentTick < despawnCommand.TickWritten)
+            {
+                return false;
+            }
+
+            // 63 as we can't shift more than that.
+            var diff = Math.Min(63, m_CurrentTick - despawnCommand.TickWritten);
+
+            // -1 to make the first resend immediate
+            return (1 << diff) > (despawnCommand.TimesWritten - 1);
+        }
+
         private void WriteSpawns(NetworkBuffer buffer, ulong clientId)
         {
             var spawnWritten = 0;
@@ -831,7 +846,7 @@ namespace Unity.Netcode
                 var index = clientData.NextDespawnIndex;
                 var savedPosition = writer.GetStream().Position;
 
-                if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
+                if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId) && ShouldWriteDespawn(m_Snapshot.Despawns[index]))
                 {
                     var sentDespawn = m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
 
@@ -844,6 +859,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        m_Snapshot.Despawns[index].TimesWritten++;
                         clientData.SentSpawns.Add(sentDespawn);
                         despawnWritten++;
                     }
@@ -1091,6 +1107,7 @@ namespace Unity.Netcode
             despawn.NetworkObjectId = default;
             despawn.TickWritten = default;
             despawn.TargetClientIds = default;
+            despawn.TimesWritten = default;
 
             return despawn;
         }
