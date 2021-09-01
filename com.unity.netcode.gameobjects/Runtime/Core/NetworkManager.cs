@@ -1035,21 +1035,14 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_TransportPoll.Begin();
 #endif
-                var isLoopBack = false;
 
-                //If we are in loopback mode, we don't need to touch the transport
-                if (!isLoopBack)
+                NetworkEvent networkEvent;
+                do
                 {
-                    NetworkEvent networkEvent;
-                    int processedEvents = 0;
-                    do
-                    {
-                        processedEvents++;
-                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
-                        HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
-                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                    } while (IsListening && networkEvent != NetworkEvent.Nothing);
-                }
+                    networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
+                    HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
+                    // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_TransportPoll.End();
