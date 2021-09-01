@@ -5,51 +5,58 @@ namespace Unity.Netcode.EditorTests
 {
     public class StartStopTests
     {
-        [Test]
-        public void TestStopAndRestartForExceptions()
+        private NetworkManager m_NetworkManager;
+
+        [SetUp]
+        public void Setup()
         {
             // Create the reusable NetworkManager
-            var singletonNetworkManager = new GameObject(nameof(NetworkManager)).AddComponent<NetworkManager>();
-            var transport = singletonNetworkManager.gameObject.AddComponent<DummyTransport>();
+            m_NetworkManager = new GameObject(nameof(NetworkManager)).AddComponent<NetworkManager>();
+            var transport = m_NetworkManager.gameObject.AddComponent<DummyTransport>();
 
-            singletonNetworkManager.NetworkConfig = new NetworkConfig()
+            m_NetworkManager.NetworkConfig = new NetworkConfig()
             {
                 NetworkTransport = transport
             };
+        }
 
-            // Start a normal server
-            singletonNetworkManager.StartServer();
+        [Test]
+        public void TestStopAndRestartForExceptions()
+        {
+            m_NetworkManager.StartServer();
+            m_NetworkManager.Shutdown();
+            m_NetworkManager.StartServer();
+            m_NetworkManager.Shutdown();
+        }
 
-            // Ensure proper start
-            Assert.True(singletonNetworkManager.IsServer);
-            Assert.False(singletonNetworkManager.IsClient);
-            Assert.False(singletonNetworkManager.IsHost);
+        [Test]
+        public void TestStartupServerState()
+        {
+            m_NetworkManager.StartServer();
 
-            // Shut it down.
-            singletonNetworkManager.Shutdown();
+            Assert.True(m_NetworkManager.IsServer);
+            Assert.False(m_NetworkManager.IsClient);
+            Assert.False(m_NetworkManager.IsHost);
 
-            Assert.False(singletonNetworkManager.IsServer);
-            Assert.False(singletonNetworkManager.IsClient);
-            Assert.False(singletonNetworkManager.IsHost);
+            m_NetworkManager.Shutdown();
+        }
 
-            // Restart
-            singletonNetworkManager.StartServer();
+        [Test]
+        public void TestFlagShutdown()
+        {
+            m_NetworkManager.StartServer();
+            m_NetworkManager.Shutdown();
 
-            // Ensure everything is still normal after restart
-            Assert.True(singletonNetworkManager.IsServer);
-            Assert.False(singletonNetworkManager.IsClient);
-            Assert.False(singletonNetworkManager.IsHost);
+            Assert.False(m_NetworkManager.IsServer);
+            Assert.False(m_NetworkManager.IsClient);
+            Assert.False(m_NetworkManager.IsHost);
+        }
 
-            // Final shutdown
-            singletonNetworkManager.Shutdown();
-
-            // Ensure everything is shut down
-            Assert.False(singletonNetworkManager.IsServer);
-            Assert.False(singletonNetworkManager.IsClient);
-            Assert.False(singletonNetworkManager.IsHost);
-
+        [TearDown]
+        public void Teardown()
+        {
             // Cleanup
-            Object.DestroyImmediate(singletonNetworkManager.gameObject);
+            Object.DestroyImmediate(m_NetworkManager.gameObject);
         }
     }
 }
