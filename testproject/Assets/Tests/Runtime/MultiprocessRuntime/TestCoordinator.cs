@@ -22,7 +22,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 30;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -41,7 +41,24 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Instance != null)
         {
-            Debug.LogError("Multiple test coordinator, destroying this instance");
+            Debug.LogError("Multiple test coordinators detected, destroying this instance");
+            var loadedScenes = "Loaded Scenes:\n";
+            for (int i = 0; i <  UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                var sceneName = scene.name;
+                loadedScenes += sceneName + "\n";
+                if (sceneName == Unity.Netcode.MultiprocessRuntimeTests.BuildMultiprocessTestPlayer.MainSceneName)
+                {
+                    var gameObjectList = scene.GetRootGameObjects();
+                    foreach (var gameObject in gameObjectList)
+                    {
+                        loadedScenes += gameObject.name + ", ";
+                    }
+                    loadedScenes += "\n";
+                }
+            }
+            Debug.LogError(loadedScenes);
             Destroy(gameObject);
             return;
         }
@@ -101,12 +118,21 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal.Clear();
     }
 
+    private void OnDisable()
+    {
+        //Remove our reference
+        Instance = null;
+    }
+
     public void OnDestroy()
     {
         if (NetworkObject != null && NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
+
+        //Remove our reference
+        Instance = null;
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
@@ -254,7 +280,7 @@ public class TestCoordinator : NetworkBehaviour
         catch (Exception e)
         {
             WriteErrorServerRpc(e.Message);
-            throw;
+            //throw;
         }
     }
 

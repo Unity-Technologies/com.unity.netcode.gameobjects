@@ -41,8 +41,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
             m_OriginalActiveScene = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.LoadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
         }
 
         private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
@@ -65,10 +65,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            for (int i = 0; i < WorkerCount; i++)
-            {
-                MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-            }
 
             m_SceneHasLoaded = true;
         }
@@ -76,14 +72,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
+            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening && m_SceneHasLoaded);
 
-            var startTime = Time.time;
+            if (MultiprocessOrchestration.Processes.Count < WorkerCount)
+            {
+                var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.Processes.Count;
+                for (int i = 0; i < numProcessesToCreate; i++)
+                {
+                    MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                }
+            }
+
+            var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
 
-                if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
+                if (Time.realtimeSinceStartup > timeOutTime)
                 {
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
