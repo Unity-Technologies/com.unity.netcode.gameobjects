@@ -14,7 +14,7 @@ public class TransportTest : MonoBehaviour
         NetworkObject[] networkObjects = FindObjectsOfType<NetworkObject>();
         for (int i = 0; i < networkObjects.Length; i++)
         {
-            DestroyImmediate(networkObjects[i]);
+            DestroyImmediate(networkObjects[i].gameObject);
         }
     }
 
