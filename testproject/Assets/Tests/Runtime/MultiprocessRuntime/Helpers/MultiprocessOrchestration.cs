@@ -66,6 +66,7 @@ public class MultiprocessOrchestration
     // todo remove this once we have proper automation
     public static bool IsUsingUTR()
     {
-        return Environment.GetCommandLineArgs().Contains("-automated");
+        // return Environment.GetCommandLineArgs().Contains("-automated");
+        return false;
     }
 }
