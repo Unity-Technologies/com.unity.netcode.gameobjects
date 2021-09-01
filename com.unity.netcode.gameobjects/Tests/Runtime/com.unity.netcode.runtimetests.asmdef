@@ -5,10 +5,10 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Prototyping",
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
         "Unity.Collections",
-        "UnityEngine.TestRunner"
+        "UnityEngine.TestRunner",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
