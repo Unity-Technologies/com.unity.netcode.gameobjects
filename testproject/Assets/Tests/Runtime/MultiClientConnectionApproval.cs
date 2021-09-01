@@ -43,8 +43,6 @@ namespace TestProject.RuntimeTests
         }
 
 
-
-
         /// <summary>
         /// Allows for several connection approval related configurations
         /// </summary>
