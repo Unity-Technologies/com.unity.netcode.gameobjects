@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 
 namespace Unity.Netcode
@@ -34,8 +33,7 @@ namespace Unity.Netcode
             m_SendDict.Clear();
         }
 
-        // Used to store targets, internally
-        private ulong[] m_TargetList = new ulong[0];
+
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
@@ -85,39 +83,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// FillTargetList
-        /// Fills a list with the ClientId's an item is targeted to
-        /// </summary>
-        /// <param name="item">the FrameQueueItem we want targets for</param>
-        /// <param name="networkIdList">the list to fill</param>
-        private static void FillTargetList(in MessageFrameItem item, ref ulong[] networkIdList)
-        {
-            switch (item.MessageType)
-            {
-                // todo: revisit .resize() and .ToArry() usage, for performance
-                case MessageQueueContainer.MessageType.ServerRpc:
-                    Array.Resize(ref networkIdList, 1);
-                    networkIdList[0] = item.NetworkId;
-                    break;
-                default:
-                // todo: consider the implications of default usage of queueItem.clientIds
-                case MessageQueueContainer.MessageType.ClientRpc:
-                    // copy the list
-                    networkIdList = item.ClientNetworkIds.ToArray();
-                    break;
-            }
-        }
-
-        /// <summary>
         /// QueueItem
         /// Add a FrameQueueItem to be sent
         /// </summary>queueItem
         /// <param name="item">the threshold in bytes</param>
-        public void QueueItem(in MessageFrameItem item, int automaticSendThresholdBytes, SendCallbackType sendCallback)
+        public void QueueItem(
+            IReadOnlyCollection<ulong> targetList,
+            in MessageFrameItem item,
+            int automaticSendThresholdBytes,
+            SendCallbackType sendCallback)
         {
-            FillTargetList(item, ref m_TargetList);
-
-            foreach (ulong clientId in m_TargetList)
+            foreach (ulong clientId in targetList)
             {
                 if (!m_SendDict.ContainsKey(clientId))
                 {
@@ -205,32 +181,30 @@ namespace Unity.Netcode
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
         public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkChannel receiveChannel)
         {
-            using (var copy = PooledNetworkBuffer.Get())
+            using var copy = PooledNetworkBuffer.Get();
+            do
             {
-                do
+                // read the length of the next message
+                int messageSize = PopLength(messageBuffer);
+                if (messageSize < 0)
                 {
-                    // read the length of the next message
-                    int messageSize = PopLength(messageBuffer);
-                    if (messageSize < 0)
-                    {
-                        // abort if there's an error reading lengths
-                        return;
-                    }
+                    // abort if there's an error reading lengths
+                    return;
+                }
 
-                    // copy what comes after current stream position
-                    long position = messageBuffer.Position;
-                    copy.SetLength(messageSize);
-                    copy.Position = 0;
-                    Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
+                // copy what comes after current stream position
+                long position = messageBuffer.Position;
+                copy.SetLength(messageSize);
+                copy.Position = 0;
+                Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
-                    var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
-                    receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
+                var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
+                receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
 
-                    // seek over the message
-                    // MessageReceiveQueueItem peeks at content, it doesn't advance
-                    messageBuffer.Seek(messageSize, SeekOrigin.Current);
-                } while (messageBuffer.Position < messageBuffer.Length);
-            }
+                // seek over the message
+                // MessageReceiveQueueItem peeks at content, it doesn't advance
+                messageBuffer.Seek(messageSize, SeekOrigin.Current);
+            } while (messageBuffer.Position < messageBuffer.Length);
         }
     }
 }

@@ -194,11 +194,11 @@ namespace Unity.Netcode.Prototyping
             }
         }
 
-        /// <summary>
-        /// The network channel to use send updates
-        /// </summary>
-        [Tooltip("The network channel to use send updates")]
-        private NetworkChannel Channel = NetworkChannel.PositionUpdate;
+        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
+        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
+        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
+
+        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
 
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
@@ -209,11 +209,8 @@ namespace Unity.Netcode.Prototyping
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
-        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
-        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
-
-        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+        // todo: revisit after MTT-876
+        public bool Interpolate = true;
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -285,7 +282,8 @@ namespace Unity.Netcode.Prototyping
 
         private int k_debugDrawLineTime = 10;
 
-
+        internal NetworkState LocalNetworkState;
+		
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
         private Vector3 TransformPosition
@@ -676,7 +674,6 @@ namespace Unity.Netcode.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-
             bool interpolatorAlreadySet = false;
             foreach (var interpolator in AllFloatInterpolators())
             {
@@ -699,9 +696,7 @@ namespace Unity.Netcode.Prototyping
             RotationInterpolator.Awake();
             RotationInterpolator.UseFixedUpdate = UseFixedUpdate;
 
-            ReplNetworkState.Settings.SendNetworkChannel = Channel;
-            ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
-
+            ReplNetworkState.Settings.SendNetworkChannel = NetworkChannel.PositionUpdate;
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
@@ -759,7 +754,17 @@ namespace Unity.Netcode.Prototyping
         {
             // check for time there was a change to the transform
             // this needs to be done in Update to catch that time change as soon as it happens.
-            var isDirty = UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, time); // todo sam diff here is Fixedtime
+            /*
+			todo
+			                if (UpdateNetworkState(ref LocalNetworkState))
+                {
+                    // if updated (dirty), change NetVar, mark it dirty
+                    ReplNetworkState.Value = LocalNetworkState;
+                    ReplNetworkState.SetDirty(true);
+                }
+			*/
+			
+			var isDirty = UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, time); // todo sam diff here is Fixedtime
             if (isDirty)
             {
                 alreadySentLastValue = false;
@@ -789,6 +794,7 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer && UseFixedUpdate)
             {
+                // try to update local NetworkState
                 DoSendToOthers(NetworkManager.LocalTime.FixedTime);
             }
 

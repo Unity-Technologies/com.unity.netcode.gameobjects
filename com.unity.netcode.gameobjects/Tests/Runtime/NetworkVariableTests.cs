@@ -17,45 +17,33 @@ namespace Unity.Netcode.RuntimeTests
             serializer.Serialize(ref SomeBool);
         }
     }
-
-    public class TestClass : INetworkSerializable
-    {
-        public uint SomeInt;
-        public bool SomeBool;
-
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            serializer.Serialize(ref SomeInt);
-            serializer.Serialize(ref SomeBool);
-        }
-    }
-
     public class NetworkVariableTest : NetworkBehaviour
     {
-        public readonly NetworkList<int> TheList = new NetworkList<int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
+        public readonly ClientNetworkVariable<int> ClientVar = new ClientNetworkVariable<int>();
 
-        public readonly NetworkSet<int> TheSet = new NetworkSet<int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
+        public readonly ClientNetworkVariable<int> ClientVarPrivate =
+            new ClientNetworkVariable<int>(NetworkVariableReadPermission.OwnerOnly);
 
-        public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
+        public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
+        public readonly NetworkList<int> TheList = new NetworkList<int>();
+        public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
+        public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
             ListDelegateTriggered = true;
         }
+
         private void SetChanged(NetworkSetEvent<int> e)
         {
             SetDelegateTriggered = true;
         }
+
         private void DictionaryChanged(NetworkDictionaryEvent<int, int> e)
         {
             DictionaryDelegateTriggered = true;
         }
+
         public void Awake()
         {
             TheList.OnListChanged += ListChanged;
@@ -64,387 +52,480 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
-        public readonly NetworkVariable<TestClass> TheClass = new NetworkVariable<TestClass>(new TestClass());
 
         public bool ListDelegateTriggered;
         public bool SetDelegateTriggered;
         public bool DictionaryDelegateTriggered;
     }
 
-    namespace Unity.Netcode.RuntimeTests
+    public class NetworkVariableTests : BaseMultiInstanceTest
     {
-        public class NetworkVariableTests : BaseMultiInstanceTest
+        protected override int NbClients => 2;
+
+        private const uint k_TestUInt = 0x12345678;
+
+        private const int k_TestVal1 = 111;
+        private const int k_TestVal2 = 222;
+        private const int k_TestVal3 = 333;
+
+        private const int k_TestKey1 = 0x0f0f;
+        private const int k_TestKey2 = 0xf0f0;
+
+        // Player1 component on the server
+        private NetworkVariableTest m_Player1OnServer;
+
+        // Player2 component on the server
+        private NetworkVariableTest m_Player2OnServer;
+
+        // Player1 component on client1
+        private NetworkVariableTest m_Player1OnClient1;
+
+        // Player2 component on client1
+        private NetworkVariableTest m_Player1OnClient2;
+
+        // client2's version of client1's player object
+        private NetworkVariableTest m_Player1FromClient2;
+
+        private bool m_TestWithHost;
+
+        [UnitySetUp]
+        public override IEnumerator Setup()
         {
-            protected override int NbClients => 1;
-
-            private const uint k_TestUInt = 0xdeadbeef;
-
-            private const int k_TestVal1 = 111;
-            private const int k_TestVal2 = 222;
-            private const int k_TestVal3 = 333;
-
-            private const int k_TestKey1 = 0x0f0f;
-            private const int k_TestKey2 = 0xf0f0;
-
-            private NetworkVariableTest m_ServerComp;
-            private NetworkVariableTest m_ClientComp;
-
-            private readonly bool m_TestWithHost = false;
-
-            [UnitySetUp]
-            public override IEnumerator Setup()
-            {
-                yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
-                    updatePlayerPrefab: playerPrefab =>
-                    {
-                        var networkTransform = playerPrefab.AddComponent<NetworkVariableTest>();
-                    });
-
-                // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-                var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                    x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                    m_ServerNetworkManager, serverClientPlayerResult));
-
-                // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-                var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                    x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                    m_ClientNetworkManagers[0], clientClientPlayerResult));
-
-                var serverSideClientPlayer = serverClientPlayerResult.Result;
-                var clientSideClientPlayer = clientClientPlayerResult.Result;
-
-                m_ServerComp = serverSideClientPlayer.GetComponent<NetworkVariableTest>();
-                m_ClientComp = clientSideClientPlayer.GetComponent<NetworkVariableTest>();
-
-                m_ServerComp.TheList.Clear();
-                m_ServerComp.TheSet.Clear();
-                m_ServerComp.TheDictionary.Clear();
-
-                if (m_ServerComp.TheList.Count > 0 || m_ServerComp.TheSet.Count > 0 || m_ServerComp.TheDictionary.Count > 0)
+            yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
+                updatePlayerPrefab: playerPrefab =>
                 {
-                    throw new Exception("at least one server network container not empty at start");
-                }
-                if (m_ClientComp.TheList.Count > 0 || m_ClientComp.TheSet.Count > 0 || m_ClientComp.TheDictionary.Count > 0)
+                    var networkTransform = playerPrefab.AddComponent<NetworkVariableTest>();
+                });
+
+            // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
+            var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
+                m_ServerNetworkManager, result));
+            m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
+
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
+                m_ServerNetworkManager, result));
+            m_Player2OnServer = result.Result.GetComponent<NetworkVariableTest>();
+
+            // This is client1's view of itself
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
+                m_ClientNetworkManagers[0], result));
+
+            m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
+
+            // This is client2's view of itself
+            result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
+                m_ClientNetworkManagers[1], result));
+
+            m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
+
+            // This is client2's view of client 1's object
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
+                m_ClientNetworkManagers[1], result));
+
+            //            var client2client1 = result.Result;
+            m_Player1FromClient2 = result.Result.GetComponent<NetworkVariableTest>();
+
+            m_Player1OnServer.TheList.Clear();
+            m_Player1OnServer.TheSet.Clear();
+            m_Player1OnServer.TheDictionary.Clear();
+
+            if (m_Player1OnServer.TheList.Count > 0 || m_Player1OnServer.TheSet.Count > 0 || m_Player1OnServer.TheDictionary.Count > 0)
+            {
+                throw new Exception("at least one server network container not empty at start");
+            }
+            if (m_Player1OnClient1.TheList.Count > 0 || m_Player1OnClient1.TheSet.Count > 0 || m_Player1OnClient1.TheDictionary.Count > 0)
+            {
+                throw new Exception("at least one client network container not empty at start");
+            }
+        }
+
+        /// <summary>
+        /// Runs generalized tests on all predefined NetworkVariable types
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AllNetworkVariableTypes([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            // Create, instantiate, and host
+            // This would normally go in Setup, but since every other test but this one
+            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  for now we put this within this one test until we migrate it to MIH
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+
+            Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
+
+            var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);
+
+            NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
+
+            // Start Testing
+            networkVariableTestComponent.EnableTesting = true;
+
+            var testsAreComplete = networkVariableTestComponent.IsTestComplete();
+
+            // Wait for the NetworkVariable tests to complete
+            while (!testsAreComplete)
+            {
+                yield return new WaitForSeconds(0.003f);
+                testsAreComplete = networkVariableTestComponent.IsTestComplete();
+            }
+
+            // Stop Testing
+            networkVariableTestComponent.EnableTesting = false;
+
+            Assert.IsTrue(networkVariableTestComponent.DidAllValuesChange());
+
+            // Disable this once we are done.
+            networkVariableTestComponent.gameObject.SetActive(false);
+
+            Assert.IsTrue(testsAreComplete);
+
+            // This would normally go in Teardown, but since every other test but this one
+            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  for now we put this within this one test until we migrate it to MIH
+            NetworkManagerHelper.ShutdownNetworkManager();
+        }
+
+        [Test]
+        public void ClientWritePermissionTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            // client must not be allowed to write to a server auth variable
+            Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
+        }
+
+        [Test]
+        public void ServerWritePermissionTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            // server must not be allowed to write to a client auth variable
+            Assert.Throws<InvalidOperationException>(() => m_Player1OnServer.ClientVar.Value = k_TestVal1);
+        }
+
+        [UnityTest]
+        public IEnumerator ClientTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
                 {
-                    throw new Exception("at least one client network container not empty at start");
-                }
-            }
-
-            /// <summary>
-            /// Runs generalized tests on all predefined NetworkVariable types
-            /// </summary>
-            [UnityTest]
-            public IEnumerator AllNetworkVariableTypes()
-            {
-                // Create, instantiate, and host
-                // This would normally go in Setup, but since every other test but this one
-                //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
-                //  for now we put this within this one test until we migrate it to MIH
-                Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-
-                Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
-
-                var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);
-
-                NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-
-                // Start Testing
-                networkVariableTestComponent.EnableTesting = true;
-
-                var testsAreComplete = networkVariableTestComponent.IsTestComplete();
-
-                // Wait for the NetworkVariable tests to complete
-                while (!testsAreComplete)
+                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
+                    m_Player1OnClient2.ClientVar.Value = k_TestVal3;
+                },
+                () =>
                 {
-                    yield return new WaitForSeconds(0.003f);
-                    testsAreComplete = networkVariableTestComponent.IsTestComplete();
+                    // the client's values should win on the objects it owns
+                    return
+                        m_Player1OnServer.ClientVar.Value == k_TestVal2 &&
+                        m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
+                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
+                        m_Player1OnClient2.ClientVar.Value == k_TestVal3;
                 }
+            );
+        }
 
-                // Stop Testing
-                networkVariableTestComponent.EnableTesting = false;
+        [UnityTest]
+        public IEnumerator PrivateClientTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-                Assert.IsTrue(networkVariableTestComponent.DidAllValuesChange());
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    // we are writing to the private and public variables on player 1's object...
+                    m_Player1OnClient1.ClientVarPrivate.Value = k_TestVal1;
+                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
+                },
+                () =>
+                {
+                    // ...and we should see the writes to the private var only on the server & the owner,
+                    //  but the public variable everywhere
+                    return
+                        m_Player1FromClient2.ClientVarPrivate.Value != k_TestVal1 &&
+                        m_Player1OnClient1.ClientVarPrivate.Value == k_TestVal1 &&
+                        m_Player1FromClient2.ClientVar.Value != k_TestVal2 &&
+                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
+                        m_Player1OnServer.ClientVarPrivate.Value == k_TestVal1 &&
+                        m_Player1OnServer.ClientVar.Value == k_TestVal2;
+                }
+            );
+        }
 
-                // Disable this once we are done.
-                networkVariableTestComponent.gameObject.SetActive(false);
+        [UnityTest]
+        public IEnumerator NetworkListAdd([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                    m_Player1OnServer.TheList.Add(k_TestVal2);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 2 &&
+                        m_Player1OnClient1.TheList.Count == 2 &&
+                        m_Player1OnServer.ListDelegateTriggered &&
+                        m_Player1OnClient1.ListDelegateTriggered &&
+                        m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                        m_Player1OnClient1.TheList[0] == k_TestVal1 &&
+                        m_Player1OnServer.TheList[1] == k_TestVal2 &&
+                        m_Player1OnClient1.TheList[1] == k_TestVal2;
+                }
+            );
+        }
 
-                Assert.IsTrue(testsAreComplete);
+        [UnityTest]
+        public IEnumerator NetworkListRemove([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            // first put some stuff in; re-use the add test
+            yield return NetworkListAdd(useHost);
 
-                // This would normally go in Teardown, but since every other test but this one
-                //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
-                //  for now we put this within this one test until we migrate it to MIH
-                NetworkManagerHelper.ShutdownNetworkManager();
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () => m_Player1OnServer.TheList.RemoveAt(0),
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 1 &&
+                           m_Player1OnClient1.TheList.Count == 1 &&
+                           m_Player1OnServer.ListDelegateTriggered &&
+                           m_Player1OnClient1.ListDelegateTriggered &&
+                           m_Player1OnServer.TheList[0] == k_TestVal2 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal2;
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkListAdd()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheList.Add(k_TestVal1);
-                        m_ServerComp.TheList.Add(k_TestVal2);
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheList.Count == 2 &&
-                            m_ClientComp.TheList.Count == 2 &&
-                            m_ServerComp.ListDelegateTriggered &&
-                            m_ClientComp.ListDelegateTriggered &&
-                            m_ServerComp.TheList[0] == k_TestVal1 &&
-                            m_ClientComp.TheList[0] == k_TestVal1 &&
-                            m_ServerComp.TheList[1] == k_TestVal2 &&
-                            m_ClientComp.TheList[1] == k_TestVal2;
-                    }
-                );
-            }
+        [UnityTest]
+        public IEnumerator NetworkListClear([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-            [UnityTest]
-            public IEnumerator NetworkListRemove()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkListAdd();
+            // first put some stuff in; re-use the add test
+            yield return NetworkListAdd(useHost);
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () => m_ServerComp.TheList.RemoveAt(0),
-                    () =>
-                    {
-                        return m_ServerComp.TheList.Count == 1 &&
-                               m_ClientComp.TheList.Count == 1 &&
-                               m_ServerComp.ListDelegateTriggered &&
-                               m_ClientComp.ListDelegateTriggered &&
-                               m_ServerComp.TheList[0] == k_TestVal2 &&
-                               m_ClientComp.TheList[0] == k_TestVal2;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () => m_Player1OnServer.TheList.Clear(),
+                () =>
+                {
+                    return
+                        m_Player1OnServer.ListDelegateTriggered &&
+                        m_Player1OnClient1.ListDelegateTriggered &&
+                        m_Player1OnServer.TheList.Count == 0 &&
+                        m_Player1OnClient1.TheList.Count == 0;
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkListClear()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkListAdd();
+        [UnityTest]
+        public IEnumerator NetworkSetAdd([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () => m_ServerComp.TheList.Clear(),
-                    () =>
-                    {
-                        return
-                            m_ServerComp.ListDelegateTriggered &&
-                            m_ClientComp.ListDelegateTriggered &&
-                            m_ServerComp.TheList.Count == 0 &&
-                            m_ClientComp.TheList.Count == 0;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheSet.Add(k_TestVal1);
+                    m_Player1OnServer.TheSet.Add(k_TestVal2);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheSet.Count == 2 &&
+                           m_Player1OnClient1.TheSet.Count == 2 &&
+                           m_Player1OnServer.SetDelegateTriggered &&
+                           m_Player1OnClient1.SetDelegateTriggered &&
+                           m_Player1OnServer.TheSet.Contains(k_TestVal1) &&
+                           m_Player1OnClient1.TheSet.Contains(k_TestVal1) &&
+                           m_Player1OnServer.TheSet.Contains(k_TestVal2) &&
+                           m_Player1OnClient1.TheSet.Contains(k_TestVal2);
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkSetAdd()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheSet.Add(k_TestVal1);
-                        m_ServerComp.TheSet.Add(k_TestVal2);
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheSet.Count == 2 &&
-                               m_ClientComp.TheSet.Count == 2 &&
-                               m_ServerComp.SetDelegateTriggered &&
-                               m_ClientComp.SetDelegateTriggered &&
-                               m_ServerComp.TheSet.Contains(k_TestVal1) &&
-                               m_ClientComp.TheSet.Contains(k_TestVal1) &&
-                               m_ServerComp.TheSet.Contains(k_TestVal2) &&
-                               m_ClientComp.TheSet.Contains(k_TestVal2);
-                    }
-                );
-            }
+        [UnityTest]
+        public IEnumerator NetworkSetRemove([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-            [UnityTest]
-            public IEnumerator NetworkSetRemove()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkSetAdd();
+            // first put some stuff in; re-use the add test
+            yield return NetworkSetAdd(useHost);
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheSet.Remove(k_TestVal1);
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheSet.Count == 1 &&
-                               m_ClientComp.TheSet.Count == 1 &&
-                               m_ServerComp.SetDelegateTriggered &&
-                               m_ClientComp.SetDelegateTriggered &&
-                               m_ServerComp.TheSet.Contains(k_TestVal2) &&
-                               m_ClientComp.TheSet.Contains(k_TestVal2);
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheSet.Remove(k_TestVal1);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheSet.Count == 1 &&
+                           m_Player1OnClient1.TheSet.Count == 1 &&
+                           m_Player1OnServer.SetDelegateTriggered &&
+                           m_Player1OnClient1.SetDelegateTriggered &&
+                           m_Player1OnServer.TheSet.Contains(k_TestVal2) &&
+                           m_Player1OnClient1.TheSet.Contains(k_TestVal2);
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkSetClear()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkSetAdd();
+        [UnityTest]
+        public IEnumerator NetworkSetClear([Values(true, false)] bool useHost)
+        {
+            // first put some stuff in; re-use the add test
+            yield return NetworkSetAdd(useHost);
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheSet.Clear();
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheSet.Count == 0 &&
-                               m_ClientComp.TheSet.Count == 0 &&
-                               m_ServerComp.SetDelegateTriggered &&
-                               m_ClientComp.SetDelegateTriggered;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheSet.Clear();
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheSet.Count == 0 &&
+                           m_Player1OnClient1.TheSet.Count == 0 &&
+                           m_Player1OnServer.SetDelegateTriggered &&
+                           m_Player1OnClient1.SetDelegateTriggered;
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkDictionaryAdd()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheDictionary.Add(k_TestKey1, k_TestVal1);
-                        m_ServerComp.TheDictionary.Add(k_TestKey2, k_TestVal2);
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheDictionary.Count == 2 &&
-                               m_ClientComp.TheDictionary.Count == 2 &&
-                               m_ServerComp.DictionaryDelegateTriggered &&
-                               m_ClientComp.DictionaryDelegateTriggered &&
-                               m_ServerComp.TheDictionary[k_TestKey1] == k_TestVal1 &&
-                               m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal1 &&
-                               m_ServerComp.TheDictionary[k_TestKey2] == k_TestVal2 &&
-                               m_ClientComp.TheDictionary[k_TestKey2] == k_TestVal2;
-                    }
-                );
-            }
+        [UnityTest]
+        public IEnumerator NetworkDictionaryAdd([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-            /* Note, not adding coverage for RemovePair, because we plan to remove
-             *  this in the next PR
-             */
-            [UnityTest]
-            public IEnumerator NetworkDictionaryRemoveByKey()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkDictionaryAdd();
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheDictionary.Add(k_TestKey1, k_TestVal1);
+                    m_Player1OnServer.TheDictionary.Add(k_TestKey2, k_TestVal2);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheDictionary.Count == 2 &&
+                           m_Player1OnClient1.TheDictionary.Count == 2 &&
+                           m_Player1OnServer.DictionaryDelegateTriggered &&
+                           m_Player1OnClient1.DictionaryDelegateTriggered &&
+                           m_Player1OnServer.TheDictionary[k_TestKey1] == k_TestVal1 &&
+                           m_Player1OnClient1.TheDictionary[k_TestKey1] == k_TestVal1 &&
+                           m_Player1OnServer.TheDictionary[k_TestKey2] == k_TestVal2 &&
+                           m_Player1OnClient1.TheDictionary[k_TestKey2] == k_TestVal2;
+                }
+            );
+        }
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheDictionary.Remove(k_TestKey2);
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheDictionary.Count == 1 &&
-                               m_ClientComp.TheDictionary.Count == 1 &&
-                               m_ServerComp.DictionaryDelegateTriggered &&
-                               m_ClientComp.DictionaryDelegateTriggered &&
-                               m_ServerComp.TheDictionary[k_TestKey1] == k_TestVal1 &&
-                               m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal1;
-                    }
-                );
-            }
+        /* Note, not adding coverage for RemovePair, because we plan to remove
+         *  this in the next PR
+         */
+        [UnityTest]
+        public IEnumerator NetworkDictionaryRemoveByKey([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-            [UnityTest]
-            public IEnumerator NetworkDictionaryChangeValue()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkDictionaryAdd();
+            // first put some stuff in; re-use the add test
+            yield return NetworkDictionaryAdd(useHost);
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheDictionary[k_TestKey1] = k_TestVal3;
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheDictionary.Count == 2 &&
-                               m_ClientComp.TheDictionary.Count == 2 &&
-                               m_ServerComp.DictionaryDelegateTriggered &&
-                               m_ClientComp.DictionaryDelegateTriggered &&
-                               m_ServerComp.TheDictionary[k_TestKey1] == k_TestVal3 &&
-                               m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal3;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheDictionary.Remove(k_TestKey2);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheDictionary.Count == 1 &&
+                           m_Player1OnClient1.TheDictionary.Count == 1 &&
+                           m_Player1OnServer.DictionaryDelegateTriggered &&
+                           m_Player1OnClient1.DictionaryDelegateTriggered &&
+                           m_Player1OnServer.TheDictionary[k_TestKey1] == k_TestVal1 &&
+                           m_Player1OnClient1.TheDictionary[k_TestKey1] == k_TestVal1;
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator NetworkDictionaryClear()
-            {
-                // first put some stuff in; re-use the add test
-                yield return NetworkDictionaryAdd();
+        [UnityTest]
+        public IEnumerator NetworkDictionaryChangeValue([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheDictionary.Clear();
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheDictionary.Count == 0 &&
-                               m_ClientComp.TheDictionary.Count == 0 &&
-                               m_ServerComp.DictionaryDelegateTriggered &&
-                               m_ClientComp.DictionaryDelegateTriggered;
-                    }
-                );
-            }
+            // first put some stuff in; re-use the add test
+            yield return NetworkDictionaryAdd(useHost);
 
-            [UnityTest]
-            public IEnumerator TestNetworkVariableClass()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheClass.Value.SomeBool = false;
-                        m_ServerComp.TheClass.Value.SomeInt = k_TestUInt;
-                        m_ServerComp.TheClass.SetDirty(true);
-                    },
-                    () =>
-                    {
-                        return
-                            m_ClientComp.TheClass.Value.SomeBool == false &&
-                            m_ClientComp.TheClass.Value.SomeInt == k_TestUInt;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheDictionary[k_TestKey1] = k_TestVal3;
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheDictionary.Count == 2 &&
+                           m_Player1OnClient1.TheDictionary.Count == 2 &&
+                           m_Player1OnServer.DictionaryDelegateTriggered &&
+                           m_Player1OnClient1.DictionaryDelegateTriggered &&
+                           m_Player1OnServer.TheDictionary[k_TestKey1] == k_TestVal3 &&
+                           m_Player1OnClient1.TheDictionary[k_TestKey1] == k_TestVal3;
+                }
+            );
+        }
 
-            [UnityTest]
-            public IEnumerator TestNetworkVariableStruct()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheStruct.Value =
-                            new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
-                        m_ServerComp.TheStruct.SetDirty(true);
-                    },
-                    () =>
-                    {
-                        return
-                            m_ClientComp.TheStruct.Value.SomeBool == false &&
-                            m_ClientComp.TheStruct.Value.SomeInt == k_TestUInt;
-                    }
-                );
-            }
+        [UnityTest]
+        public IEnumerator NetworkDictionaryClear([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
 
-            [UnityTearDown]
-            public override IEnumerator Teardown()
-            {
-                yield return base.Teardown();
-                UnityEngine.Object.Destroy(m_PlayerPrefab);
-            }
+            // first put some stuff in; re-use the add test
+            yield return NetworkDictionaryAdd(useHost);
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheDictionary.Clear();
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheDictionary.Count == 0 &&
+                           m_Player1OnClient1.TheDictionary.Count == 0 &&
+                           m_Player1OnServer.DictionaryDelegateTriggered &&
+                           m_Player1OnClient1.DictionaryDelegateTriggered;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheStruct.Value =
+                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
+                    m_Player1OnServer.TheStruct.SetDirty(true);
+                },
+                () =>
+                {
+                    return
+                        m_Player1OnClient1.TheStruct.Value.SomeBool == false &&
+                        m_Player1OnClient1.TheStruct.Value.SomeInt == k_TestUInt;
+                }
+            );
+        }
+
+        [UnityTearDown]
+        public override IEnumerator Teardown()
+        {
+            yield return base.Teardown();
+            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
         }
     }
 }

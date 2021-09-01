@@ -200,78 +200,76 @@ namespace Unity.Netcode.RuntimeTests
             int[] netUpdates = new int[7];
 
             bool isTesting = false;
-            using (var plainScript = new MyPlainScript())
+            using var plainScript = new MyPlainScript();
+            plainScript.UpdateCallbacks = new NetworkUpdateCallbacks
             {
-                plainScript.UpdateCallbacks = new NetworkUpdateCallbacks
+                OnInitialization = () =>
                 {
-                    OnInitialization = () =>
+                    if (isTesting)
                     {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetInitializationIndex]++;
-                        }
-                    },
-                    OnEarlyUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetEarlyUpdateIndex]++;
-                        }
-                    },
-                    OnFixedUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetFixedUpdateIndex]++;
-                        }
-                    },
-                    OnPreUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetPreUpdateIndex]++;
-                        }
-                    },
-                    OnUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetUpdateIndex]++;
-                        }
-                    },
-                    OnPreLateUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetPreLateUpdateIndex]++;
-                        }
-                    },
-                    OnPostLateUpdate = () =>
-                    {
-                        if (isTesting)
-                        {
-                            netUpdates[kNetPostLateUpdateIndex]++;
-                        }
+                        netUpdates[kNetInitializationIndex]++;
                     }
-                };
+                },
+                OnEarlyUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetEarlyUpdateIndex]++;
+                    }
+                },
+                OnFixedUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetFixedUpdateIndex]++;
+                    }
+                },
+                OnPreUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetPreUpdateIndex]++;
+                    }
+                },
+                OnUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetUpdateIndex]++;
+                    }
+                },
+                OnPreLateUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetPreLateUpdateIndex]++;
+                    }
+                },
+                OnPostLateUpdate = () =>
+                {
+                    if (isTesting)
+                    {
+                        netUpdates[kNetPostLateUpdateIndex]++;
+                    }
+                }
+            };
 
-                plainScript.Initialize();
-                int nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-                isTesting = true;
+            plainScript.Initialize();
+            int nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            isTesting = true;
 
-                const int kRunTotalFrames = 16;
-                int waitFrameNumber = Time.frameCount + kRunTotalFrames;
-                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+            const int kRunTotalFrames = 16;
+            int waitFrameNumber = Time.frameCount + kRunTotalFrames;
+            yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
 
-                Assert.AreEqual(0, netUpdates[kNetInitializationIndex]);
-                Assert.AreEqual(kRunTotalFrames, netUpdates[kNetEarlyUpdateIndex]);
-                Assert.AreEqual(0, netUpdates[kNetFixedUpdateIndex]);
-                Assert.AreEqual(0, netUpdates[kNetPreUpdateIndex]);
-                Assert.AreEqual(0, netUpdates[kNetUpdateIndex]);
-                Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreLateUpdateIndex]);
-                Assert.AreEqual(0, netUpdates[kNetPostLateUpdateIndex]);
-            }
+            Assert.AreEqual(0, netUpdates[kNetInitializationIndex]);
+            Assert.AreEqual(kRunTotalFrames, netUpdates[kNetEarlyUpdateIndex]);
+            Assert.AreEqual(0, netUpdates[kNetFixedUpdateIndex]);
+            Assert.AreEqual(0, netUpdates[kNetPreUpdateIndex]);
+            Assert.AreEqual(0, netUpdates[kNetUpdateIndex]);
+            Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreLateUpdateIndex]);
+            Assert.AreEqual(0, netUpdates[kNetPostLateUpdateIndex]);
         }
 
         private struct MonoBehaviourCallbacks

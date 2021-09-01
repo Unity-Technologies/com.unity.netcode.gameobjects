@@ -523,10 +523,8 @@ namespace Unity.Netcode
             // is not packed!
             var sizeToCopy = reader.ReadUInt32();
 
-            using (var writer = PooledNetworkWriter.Get(InternalBuffer))
-            {
-                writer.ReadAndWrite(reader, (long)sizeToCopy);
-            }
+            using var writer = PooledNetworkWriter.Get(InternalBuffer);
+            writer.ReadAndWrite(reader, (long)sizeToCopy);
 
             InternalBuffer.Position = 0;
         }
@@ -538,19 +536,17 @@ namespace Unity.Netcode
         /// </summary>
         internal void DeserializeScenePlacedObjects()
         {
-            using (var reader = PooledNetworkReader.Get(InternalBuffer))
+            using var reader = PooledNetworkReader.Get(InternalBuffer);
+            // is not packed!
+            var newObjectsCount = reader.ReadUInt16();
+
+            for (ushort i = 0; i < newObjectsCount; i++)
             {
-                // is not packed!
-                var newObjectsCount = reader.ReadUInt16();
+                // Set our relative scene to the NetworkObject
+                m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
-                for (ushort i = 0; i < newObjectsCount; i++)
-                {
-                    // Set our relative scene to the NetworkObject
-                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                    // Deserialize the NetworkObject
-                    NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
-                }
+                // Deserialize the NetworkObject
+                NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
             }
         }
 
@@ -681,23 +677,21 @@ namespace Unity.Netcode
         /// <param name="networkManager"></param>
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
-            using (var reader = PooledNetworkReader.Get(InternalBuffer))
+            using var reader = PooledNetworkReader.Get(InternalBuffer);
+            // Process all NetworkObjects for this scene
+            var newObjectsCount = reader.ReadInt32Packed();
+
+            for (int i = 0; i < newObjectsCount; i++)
             {
-                // Process all NetworkObjects for this scene
-                var newObjectsCount = reader.ReadInt32Packed();
+                /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
+                /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
+                /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
+                m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
-                for (int i = 0; i < newObjectsCount; i++)
+                var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
+                if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                 {
-                    /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
-                    /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
-                    /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
-                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                    var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
-                    if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
-                    {
-                        m_NetworkObjectsSync.Add(spawnedNetworkObject);
-                    }
+                    m_NetworkObjectsSync.Add(spawnedNetworkObject);
                 }
             }
         }
