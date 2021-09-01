@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
             // Wait until all objects have spawned.
             int expectedCount = SpawnRpcDespawn.ClientUpdateCount + 1;
             const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 1.0f;
+            var doubleCheckTime = Time.realtimeSinceStartup + 10.0f;
             while (SpawnRpcDespawn.ClientUpdateCount < expectedCount)
             {
                 if (Time.frameCount > maxFrames)

@@ -31,6 +31,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// </summary>
         protected abstract int WorkerCount { get; }
 
+        private Scene m_OriginalActiveScene;
+
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
@@ -38,16 +40,31 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-
-            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
+            m_OriginalActiveScene = SceneManager.GetActiveScene();
+            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            if (sceneName.StartsWith("InitTestScene"))
+            {
+                return false;
+            }
+            return true;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            if(scene.name == BuildMultiprocessTestPlayer.MainSceneName)
+            {
+                SceneManager.SetActiveScene(scene);
+            }
 
             NetworkManager.Singleton.StartHost();
+            // Use scene verification to make sure we don't try to synchronize the TestRunner scene
+            NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
             for (int i = 0; i < WorkerCount; i++)
             {
                 MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
@@ -80,6 +97,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             if (!ShouldIgnoreTests)
             {
+
                 TestCoordinator.Instance.TestRunTeardown();
             }
         }
@@ -90,9 +108,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!ShouldIgnoreTests)
             {
                 TestCoordinator.Instance.CloseRemoteClientRpc();
+
+                // Just make sure the client is disconnected.
+                // NOTE-FIXME: We still have clients that hang around for the maximum idle wait time when
+                // all MultiProcess tests are done
+                foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+                {
+                    if (clientId != NetworkManager.Singleton.ServerClientId)
+                    {
+                        NetworkManager.Singleton.DisconnectClient(clientId);
+                    }
+                }
+
                 NetworkManager.Singleton.StopHost();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
+                if(m_OriginalActiveScene.IsValid())
+                {
+                    SceneManager.SetActiveScene(m_OriginalActiveScene);
+                }
+                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
             }
         }
     }

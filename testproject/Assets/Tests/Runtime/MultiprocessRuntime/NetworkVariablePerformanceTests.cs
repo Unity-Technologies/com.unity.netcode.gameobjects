@@ -230,11 +230,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public override void TeardownSuite()
         {
-            base.TeardownSuite();
             if (!ShouldIgnoreTests)
             {
                 s_ServerObjectPool.Dispose();
             }
+            base.TeardownSuite();
         }
 
         private static void SetupSpawnedObject(OneNetVar spawnedObject)
