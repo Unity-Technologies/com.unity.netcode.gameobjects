@@ -13,14 +13,11 @@ namespace Unity.Netcode
         {
             m_NetworkBehaviour = networkBehaviour;
         }
-        /// <summary>
-        /// The delivery type (QoS) to send data with
-        /// </summary>
-        public NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
 
-        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
+        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             ReadPerm = readPermIn;
+            Delivery = networkDelivery;
         }
 
         private protected bool m_IsDirty;
@@ -35,6 +32,11 @@ namespace Unity.Netcode
         /// The read permission for this var
         /// </summary>
         public readonly NetworkVariableReadPermission ReadPerm;
+
+        /// <summary>
+        /// The delivery type (QoS) to send data with
+        /// </summary>
+        public readonly NetworkDelivery Delivery;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
