@@ -286,7 +286,7 @@ namespace Unity.Netcode
         }
     }
 
-    public class NetcodeObserver
+    internal class NetcodeObserver
     {
         public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }

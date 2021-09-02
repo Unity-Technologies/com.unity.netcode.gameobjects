@@ -1488,13 +1488,16 @@ namespace Unity.Netcode
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
+                    else
+                    {
+                        InvokeOnClientConnectedCallback(ownerClientId);
+                    }
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
+                    InvokeOnClientConnectedCallback(ownerClientId);
                 }
-
-                OnClientConnectedCallback?.Invoke(ownerClientId);
 
                 if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
                 {
