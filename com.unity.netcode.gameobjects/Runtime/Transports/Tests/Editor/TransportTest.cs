@@ -47,7 +47,6 @@ public class TransportTest : MonoBehaviour
             Assert.Fail("The UNet transport won't allow registration of a legit user channel");
         }
 
-        nm.StopServer();
         nm.Shutdown();
 
         ut.Channels.Clear();
@@ -64,7 +63,6 @@ public class TransportTest : MonoBehaviour
             Debug.Log(ex.Message);
         }
 
-        nm.StopServer();
         nm.Shutdown();
     }
 }

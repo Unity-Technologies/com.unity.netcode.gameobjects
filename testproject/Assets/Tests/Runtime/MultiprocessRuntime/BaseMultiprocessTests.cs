@@ -178,7 +178,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
             if(m_OriginalActiveScene.IsValid())
             {
-                SceneManager.SetActiveScene(m_OriginalActiveScene);
+                TestCoordinator.Instance.CloseRemoteClientRpc();
+                NetworkManager.Singleton.Shutdown();
+                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
             }
             SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
             s_SceneHasLoaded = false;

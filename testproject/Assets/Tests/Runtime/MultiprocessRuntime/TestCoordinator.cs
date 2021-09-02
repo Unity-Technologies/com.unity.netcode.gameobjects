@@ -318,7 +318,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         try
         {
-            NetworkManager.Singleton.StopClient();
+            NetworkManager.Singleton.Shutdown();
             m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
             Debug.Log("Quitting player cleanly");
             Application.Quit();

@@ -352,18 +352,7 @@ namespace Unity.Netcode.Editor
 
                 if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
                 {
-                    if (m_NetworkManager.IsHost)
-                    {
-                        m_NetworkManager.StopHost();
-                    }
-                    else if (m_NetworkManager.IsServer)
-                    {
-                        m_NetworkManager.StopServer();
-                    }
-                    else if (m_NetworkManager.IsClient)
-                    {
-                        m_NetworkManager.StopClient();
-                    }
+                    m_NetworkManager.Shutdown();
                 }
             }
         }

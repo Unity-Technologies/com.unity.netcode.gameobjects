@@ -14,18 +14,7 @@ public class ExitButtonScript : MonoBehaviour
     {
         if (NetworkManager.Singleton)
         {
-            if (NetworkManager.Singleton.IsHost)
-            {
-                NetworkManager.Singleton.StopHost();
-            }
-            else if (NetworkManager.Singleton.IsClient)
-            {
-                NetworkManager.Singleton.StopClient();
-            }
-            else if (NetworkManager.Singleton.IsServer)
-            {
-                NetworkManager.Singleton.StopServer();
-            }
+            NetworkManager.Singleton.Shutdown();
             Destroy(NetworkManager.Singleton.gameObject);
         }
 
