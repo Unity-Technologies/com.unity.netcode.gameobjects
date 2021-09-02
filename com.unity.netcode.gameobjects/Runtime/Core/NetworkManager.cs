@@ -641,8 +641,6 @@ namespace Unity.Netcode
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
-            NetworkConfig.NetworkTransport.ResetChannelCache();
-
             NetworkConfig.NetworkTransport.Initialize();
         }
 
@@ -1030,31 +1028,25 @@ namespace Unity.Netcode
 
         private void OnNetworkEarlyUpdate()
         {
-            if (IsListening)
+            if (!IsListening)
             {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_TransportPoll.Begin();
-#endif
-                var isLoopBack = false;
-
-                //If we are in loopback mode, we don't need to touch the transport
-                if (!isLoopBack)
-                {
-                    NetworkEvent networkEvent;
-                    int processedEvents = 0;
-                    do
-                    {
-                        processedEvents++;
-                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
-                        HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
-                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                    } while (IsListening && networkEvent != NetworkEvent.Nothing);
-                }
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_TransportPoll.End();
-#endif
+                return;
             }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportPoll.Begin();
+#endif
+            NetworkEvent networkEvent;
+            do
+            {
+                networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime);
+                HandleRawTransportPoll(networkEvent, clientId, payload, receiveTime);
+                // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+            } while (IsListening && networkEvent != NetworkEvent.Nothing);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportPoll.End();
+#endif
         }
 
         // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
@@ -1081,8 +1073,7 @@ namespace Unity.Netcode
             if (NetworkConfig.EnableNetworkVariable)
             {
                 // Do NetworkVariable updates
-                BehaviourUpdater.NetworkBehaviourUpdate(this
-                );
+                BehaviourUpdater.NetworkBehaviourUpdate(this);
             }
 
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
@@ -1097,9 +1088,7 @@ namespace Unity.Netcode
         private void SendConnectionRequest()
         {
             var clientIds = new[] { ServerClientId };
-            var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ConnectionRequest, NetworkChannel.Internal,
-                clientIds, NetworkUpdateStage.EarlyUpdate);
+            var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionRequest, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
@@ -1134,8 +1123,7 @@ namespace Unity.Netcode
             }
         }
 
-        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel,
-            ArraySegment<byte> payload, float receiveTime)
+        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
             NetworkMetrics.TrackTransportBytesReceived(payload.Count);
 
@@ -1182,7 +1170,7 @@ namespace Unity.Netcode
                             NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
                         }
 
-                        HandleIncomingData(clientId, networkChannel, payload, receiveTime);
+                        HandleIncomingData(clientId, payload, receiveTime);
                         break;
                     }
                 case NetworkEvent.Disconnect:
@@ -1217,7 +1205,7 @@ namespace Unity.Netcode
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
 
-        internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime)
+        internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
@@ -1228,39 +1216,37 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo("Unwrapping Data Header");
             }
 
-            m_InputBufferWrapper.SetTarget(data.Array);
-            m_InputBufferWrapper.SetLength(data.Count + data.Offset);
-            m_InputBufferWrapper.Position = data.Offset;
+            m_InputBufferWrapper.SetTarget(payload.Array);
+            m_InputBufferWrapper.SetLength(payload.Count + payload.Offset);
+            m_InputBufferWrapper.Position = payload.Offset;
 
             using var messageStream = m_InputBufferWrapper;
             // Client tried to send a network message that was not the connection request before he was accepted.
 
             if (MessageQueueContainer.IsUsingBatching())
             {
-                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
+                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime);
             }
             else
             {
                 var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
-                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
-                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), data.Count);
+                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
+                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), payload.Count);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
 #endif
         }
 
-        private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId,
-            float receiveTime, NetworkChannel receiveChannel)
+        private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime)
         {
-            MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
+            MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
             NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
         }
 
         /// <summary>
         /// Called when an inbound queued RPC is invoked
         /// </summary>
-        /// <param name="item">frame queue item to invoke</param>
 #pragma warning disable 618
         internal void InvokeRpc(MessageFrameItem item, NetworkUpdateStage networkUpdateStage)
         {
@@ -1295,7 +1281,7 @@ namespace Unity.Netcode
                         {
                             Receive = new ServerRpcReceiveParams
                             {
-                                UpdateStage = (NetworkUpdateStage)networkUpdateStage,
+                                UpdateStage = networkUpdateStage,
                                 SenderClientId = item.NetworkId
                             }
                         };
@@ -1305,7 +1291,7 @@ namespace Unity.Netcode
                         {
                             Receive = new ClientRpcReceiveParams
                             {
-                                UpdateStage = (NetworkUpdateStage)networkUpdateStage
+                                UpdateStage = networkUpdateStage
                             }
                         };
                         break;
@@ -1430,9 +1416,7 @@ namespace Unity.Netcode
             }
 
             ulong[] clientIds = ConnectedClientsIds;
-            var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.TimeSync, NetworkChannel.SyncChannel,
-                clientIds, NetworkUpdateStage.EarlyUpdate);
+            var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.TimeSync, NetworkDelivery.Unreliable, clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
@@ -1474,9 +1458,7 @@ namespace Unity.Netcode
                 // Server doesn't send itself the connection approved message
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
-                        new ulong[] { ownerClientId }, NetworkUpdateStage.EarlyUpdate);
-
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkDelivery.ReliableSequenced, new[] { ownerClientId }, NetworkUpdateStage.EarlyUpdate);
                     if (context != null)
                     {
                         using var nonNullContext = (InternalCommandContext)context;
@@ -1528,7 +1510,7 @@ namespace Unity.Netcode
         /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player</param>
         internal void ApprovedPlayerSpawn(ulong clientId, uint playerPrefabHash)
         {
-            foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
+            foreach (var clientPair in ConnectedClients)
             {
                 if (clientPair.Key == clientId ||
                     clientPair.Key == ServerClientId || // Server already spawned it
@@ -1538,8 +1520,7 @@ namespace Unity.Netcode
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
+                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced, new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using var nonNullContext = (InternalCommandContext)context;

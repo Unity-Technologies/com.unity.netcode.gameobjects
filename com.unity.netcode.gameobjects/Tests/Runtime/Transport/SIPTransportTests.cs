@@ -19,19 +19,19 @@ namespace Unity.Netcode.RuntimeTests.Transport
             client.Initialize();
             client.StartClient();
 
-            NetworkEvent serverEvent = server.PollEvent(out ulong clientId, out NetworkChannel _, out _, out _);
-            NetworkEvent clientEvent = client.PollEvent(out ulong serverId, out NetworkChannel _, out _, out _);
+            NetworkEvent serverEvent = server.PollEvent(out ulong clientId, out _, out _);
+            NetworkEvent clientEvent = client.PollEvent(out ulong serverId, out _, out _);
 
             // Make sure both connected
             Assert.True(serverEvent == NetworkEvent.Connect);
             Assert.True(clientEvent == NetworkEvent.Connect);
 
             // Send data
-            server.Send(clientId, new ArraySegment<byte>(Encoding.ASCII.GetBytes("Hello Client")), NetworkChannel.Internal);
-            client.Send(serverId, new ArraySegment<byte>(Encoding.ASCII.GetBytes("Hello Server")), NetworkChannel.Internal);
+            server.Send(clientId, new ArraySegment<byte>(Encoding.ASCII.GetBytes("Hello Client")), NetworkDelivery.ReliableSequenced);
+            client.Send(serverId, new ArraySegment<byte>(Encoding.ASCII.GetBytes("Hello Server")), NetworkDelivery.ReliableSequenced);
 
-            serverEvent = server.PollEvent(out ulong newClientId, out NetworkChannel _, out ArraySegment<byte> serverPayload, out _);
-            clientEvent = client.PollEvent(out ulong newServerId, out NetworkChannel _, out ArraySegment<byte> clientPayload, out _);
+            serverEvent = server.PollEvent(out ulong newClientId, out ArraySegment<byte> serverPayload, out _);
+            clientEvent = client.PollEvent(out ulong newServerId, out ArraySegment<byte> clientPayload, out _);
 
             // Make sure we got data
             Assert.True(serverEvent == NetworkEvent.Data);

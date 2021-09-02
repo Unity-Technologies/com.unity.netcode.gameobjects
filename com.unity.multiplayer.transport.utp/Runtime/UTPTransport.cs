@@ -1,17 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
-
 using Unity.Netcode;
-
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Networking.Transport;
-
 using UnityEngine;
 using UnityEngine.Assertions;
-
 using NetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using NetcodeEvent = Unity.Netcode.NetworkEvent;
 
@@ -40,14 +36,12 @@ internal struct ClientUpdateJob : IJob
             return;
         }
 
-        DataStreamReader streamReader;
         NetworkEvent.Type cmd;
-
-        while ((cmd = Connection[0].PopEvent(Driver, out streamReader)) != NetworkEvent.Type.Empty)
+        while ((cmd = Connection[0].PopEvent(Driver, out var streamReader)) != NetworkEvent.Type.Empty)
         {
             if (cmd == NetworkEvent.Type.Connect)
             {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeEvent.Connect, Id = Connection[0].InternalId };
+                var d = new RawNetworkMessage { Length = 0, Type = (uint)NetcodeEvent.Connect, Id = Connection[0].InternalId };
                 PacketData.Enqueue(d);
             }
             else if (cmd == NetworkEvent.Type.Data)
@@ -260,14 +254,14 @@ public class UTPTransport : NetworkTransport
         }
     }
 
-    public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+    public override unsafe void Send(ulong clientId, ArraySegment<byte> data, NetworkDelivery networkDelivery)
     {
         var pipelineIndex = 0;
 
         GetUTPConnectionDetails(clientId, out uint peerId);
 
         var writer = new DataStreamWriter(data.Count + 1 + 4, Allocator.Temp);
-        writer.WriteByte((byte)networkChannel);
+        writer.WriteByte((byte)networkDelivery);
         writer.WriteInt(data.Count);
 
         fixed (byte* dataArrayPtr = data.Array)
@@ -278,10 +272,9 @@ public class UTPTransport : NetworkTransport
         SendToClient(writer.AsNativeArray(), peerId, pipelineIndex);
     }
 
-    public override NetcodeEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+    public override NetcodeEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
     {
         clientId = 0;
-        networkChannel = NetworkChannel.ChannelUnused;
 
         payload = new ArraySegment<byte>(Array.Empty<byte>());
         receiveTime = 0;
@@ -315,20 +308,20 @@ public class UTPTransport : NetworkTransport
                         {
                             Marshal.Copy((IntPtr)message.Data, arr, 0, size);
                             var payload = new ArraySegment<byte>(arr);
-                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, payload, Time.realtimeSinceStartup);
                         }
 
                         break;
                     case NetcodeEvent.Connect:
-                        {
-                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                        }
+                    {
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    }
                         break;
                     case NetcodeEvent.Disconnect:
-                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
                     case NetcodeEvent.Nothing:
-                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
                 }
             }
@@ -336,7 +329,6 @@ public class UTPTransport : NetworkTransport
 
             if (m_JobHandle.IsCompleted)
             {
-
                 if (m_IsServer)
                 {
                     var connectionJob = new ServerUpdateConnectionsJob
@@ -344,7 +336,6 @@ public class UTPTransport : NetworkTransport
                         Driver = Driver,
                         Connections = Connections,
                         PacketData = PacketData.AsParallelWriter()
-
                     };
 
                     var serverUpdateJob = new ServerUpdateJob

@@ -9,9 +9,9 @@ namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:
-    /// Maximum buffer size that can be sent (currently 1MB is the default maximum RpcQueueHistoryFrame size)
-    /// That all RPCs invoke at the appropriate NetworkUpdateStage (Client and Server)
-    /// A lower level RpcQueueContainer test that validates RpcQueueFrameItems after they have been put into the queue
+    ///     - Maximum buffer size that can be sent (currently 1MB is the default maximum `MessageQueueHistoryFrame` size)
+    ///     - That all RPCs invoke at the appropriate `NetworkUpdateStage` (Client and Server)
+    ///     - A lower level `MessageQueueContainer` test that validates `MessageQueueFrameItems` after they have been put into the queue
     /// </summary>
     public class RpcQueueTests
     {
@@ -112,37 +112,28 @@ namespace Unity.Netcode.RuntimeTests
             // Make sure we set testing mode so we don't try to invoke RPCs
             rpcQueueContainer.SetTestingState(true);
 
-            var maxRpcEntries = 8;
-            var messageChunkSize = 2048;
+            const int maxRpcEntries = 8;
+            const int messageChunkSize = 2048;
+
             var preCalculatedBufferValues = new List<byte>(messageChunkSize);
-
-
             for (int i = 0; i < messageChunkSize; i++)
             {
                 preCalculatedBufferValues.AddRange(BitConverter.GetBytes(UnityEngine.Random.Range(0, ulong.MaxValue)));
             }
 
-            var indexOffset = 0;
             ulong senderNetworkId = 1;
 
-            // Create fictitious list of clients to send to
-            ulong[] psuedoClients = new ulong[] { 0 };
-
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
-            var maximumOffsetValue = preCalculatedBufferValues.Count;
-
+            // Create fictitious list of clients to send to
+            var psuedoClients = new ulong[] { 0 };
             // Testing outbound side of the RpcQueueContainer
             for (int i = 0; i < maxRpcEntries; i++)
             {
                 // Increment our offset into our randomly generated data for next entry;
-                indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
-                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkChannel.DefaultMessage,
-                        senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-
+                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkDelivery.Reliable,
+                    senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 writer.WriteByteArray(randomGeneratedDataArray, messageChunkSize);
-
 
                 rpcQueueContainer.EndAddQueueItemToFrame(writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
@@ -151,8 +142,6 @@ namespace Unity.Netcode.RuntimeTests
             var currentFrame = rpcQueueContainer.GetLoopBackHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             // Reset our index offset
-            indexOffset = 0;
-            int queueEntryItemCount = 0;
             // Parse through the entries written to the current RpcQueueHistoryFrame
             var currentQueueItem = currentFrame.GetFirstQueueItem();
             while (currentQueueItem.MessageType != MessageQueueContainer.MessageType.None)
@@ -161,13 +150,12 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
                 Assert.AreEqual(currentQueueItem.MessageType, MessageQueueContainer.MessageType.ServerRpc);
                 Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
-                Assert.AreEqual(currentQueueItem.NetworkChannel, NetworkChannel.DefaultMessage);
+                Assert.AreEqual(currentQueueItem.Delivery, NetworkDelivery.Reliable);
 
                 // Validate the data in the queue
                 Assert.IsTrue(NetworkManagerHelper.BuffersMatch(currentQueueItem.MessageData.Offset, messageChunkSize, currentQueueItem.MessageData.Array, randomGeneratedDataArray));
 
                 // Prepare for next queue item
-                queueEntryItemCount++;
                 currentQueueItem = currentFrame.GetNextQueueItem();
             }
 

@@ -87,6 +87,10 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager
     {
+        private const MessageQueueContainer.MessageType k_MessageType = MessageQueueContainer.MessageType.SceneEvent;
+        private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableSequenced;
+        private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
+
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
 
@@ -132,7 +136,6 @@ namespace Unity.Netcode
         /// Server Side: <see cref="LoadScene(string, LoadSceneMode)"/> will return <see cref="SceneEventProgressStatus.SceneFailedVerification"/>.
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
-
 
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
@@ -194,11 +197,6 @@ namespace Unity.Netcode
         internal SceneEventData ClientSynchEventData;
 
         private NetworkManager m_NetworkManager { get; }
-
-        private const MessageQueueContainer.MessageType k_MessageType = MessageQueueContainer.MessageType.SceneEvent;
-        private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
-        private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
-
 
         internal Scene DontDestroyOnLoadScene;
 
@@ -416,7 +414,7 @@ namespace Unity.Netcode
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                k_MessageType, k_ChannelType, targetClientIds, k_NetworkUpdateStage);
+                k_MessageType, k_DeliveryType, targetClientIds, k_NetworkUpdateStage);
 
             if (context != null)
             {
@@ -577,7 +575,7 @@ namespace Unity.Netcode
         {
             // Send a message to all clients that all clients are done loading or unloading
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                k_MessageType, k_ChannelType, m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
+                k_MessageType, k_DeliveryType, m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
@@ -1044,7 +1042,7 @@ namespace Unity.Netcode
                 if (clientId != m_NetworkManager.ServerClientId)
                 {
                     var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                        k_MessageType, k_ChannelType, new ulong[] { clientId }, k_NetworkUpdateStage);
+                        k_MessageType, k_DeliveryType, new ulong[] { clientId }, k_NetworkUpdateStage);
                     if (context != null)
                     {
                         // Set the target client id that will be used during in scene NetworkObject serialization
@@ -1159,7 +1157,7 @@ namespace Unity.Netcode
             ClientSynchEventData.AddSpawnedNetworkObjects();
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                k_MessageType, k_ChannelType, new ulong[] { clientId }, k_NetworkUpdateStage);
+                k_MessageType, k_DeliveryType, new ulong[] { clientId }, k_NetworkUpdateStage);
             if (context != null)
             {
 
@@ -1312,7 +1310,7 @@ namespace Unity.Netcode
             ClientSynchEventData.SceneIndex = sceneIndex;
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                k_MessageType, k_ChannelType, new ulong[] { m_NetworkManager.ServerClientId }, k_NetworkUpdateStage);
+                k_MessageType, k_DeliveryType, new ulong[] { m_NetworkManager.ServerClientId }, k_NetworkUpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
