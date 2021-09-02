@@ -9,6 +9,9 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
