@@ -1,20 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-
-using Unity.Netcode;
 using UnityEngine;
 
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
-using System.Linq;
+using Unity.Collections;
 using Unity.Networking.Transport.Utilities;
-using UnityEngine.Assertions;
-using NetworkEvent = Unity.Netcode.NetworkEvent;
 
 namespace Unity.Netcode
 {
@@ -41,8 +36,7 @@ namespace Unity.Netcode
         [SerializeField] private int m_SendQueueSize = 128;
 
         [Tooltip("The maximum size of the send queue for batching NGO events")]
-        [SerializeField]
-        private int m_SendQueueBatchSize = 4096;
+        [SerializeField] private int m_SendQueueBatchSize = 4096;
 
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
@@ -133,7 +127,7 @@ namespace Unity.Netcode
             {
                 //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
                 //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-                if(m_RelayServerData.Equals(default(RelayServerData)))
+                if (m_RelayServerData.Equals(default(RelayServerData)))
                 {
                     Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
                     task.IsDone = true;
@@ -141,7 +135,7 @@ namespace Unity.Netcode
                     yield break;
                 }
 
-                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
+                m_NetworkParameters.Add(new RelayNetworkParameter {ServerData = m_RelayServerData});
             }
             else
             {
@@ -247,7 +241,8 @@ namespace Unity.Netcode
             }
         }
 
-        public void SetRelayServerData(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null)
+        public void SetRelayServerData(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] keyBytes,
+            byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null)
         {
             RelayConnectionData hostConnectionData;
 
@@ -264,7 +259,9 @@ namespace Unity.Netcode
             {
                 hostConnectionData = connectionData;
             }
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key);
+
+            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData,
+                ref hostConnectionData, ref key);
             m_RelayServerData.ComputeNewNonce();
         }
 
@@ -281,7 +278,7 @@ namespace Unity.Netcode
             }
             else
             {
-                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
+                m_NetworkParameters.Add(new RelayNetworkParameter {ServerData = m_RelayServerData});
 
                 yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
             }
@@ -337,7 +334,7 @@ namespace Unity.Netcode
                             ReadData(payloadSize, ref reader, ref networkConnection, channelId);
                         }
                     }
-                    else  // If is not batched, then read the entire buffer at once
+                    else // If is not batched, then read the entire buffer at once
                     {
                         var channelId = reader.ReadByte();
                         var payloadSize = reader.ReadInt();
@@ -351,7 +348,8 @@ namespace Unity.Netcode
             return false;
         }
 
-        private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection, byte channelId)
+        private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection,
+            byte channelId)
         {
             // TODO: cosmin remove debug log
             Debug.LogFormat("Reading {0}! ", size);
@@ -372,7 +370,7 @@ namespace Unity.Netcode
 
                 InvokeOnTransportEvent(NetworkEvent.Data,
                     ParseClientId(networkConnection),
-                    (NetworkChannel)channelId,
+                    (NetworkChannel) channelId,
                     new ArraySegment<byte>(m_MessageBuffer, 0, size),
                     Time.realtimeSinceStartup
                 );
@@ -407,12 +405,12 @@ namespace Unity.Netcode
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
-            return *(ulong*)&utpConnectionId;
+            return *(ulong*) &utpConnectionId;
         }
 
         private static unsafe NetworkConnection ParseClientId(ulong netcodeConnectionId)
         {
-            return *(NetworkConnection*)&netcodeConnectionId;
+            return *(NetworkConnection*) &netcodeConnectionId;
         }
 
         public override void DisconnectLocalClient()
@@ -437,6 +435,14 @@ namespace Unity.Netcode
                 {
                     m_Driver.Disconnect(connection);
                 }
+
+                // we need to cleanup any SendQueues for this connectionID;
+                var keys = m_SendQueue.Keys.Where(k => k.ClientId == clientId);
+                foreach (var queue in keys)
+                {
+                    m_SendQueue[queue].Dispose();
+                    m_SendQueue.Remove(queue);
+                }
             }
         }
 
@@ -447,7 +453,8 @@ namespace Unity.Netcode
 
         public override void Init()
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
+            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
+                "Netcode connection id size does not match UTP connection id size");
             Debug.Assert(m_MessageBufferSize > 5, "Message buffer size must be greater than 5");
 
             m_NetworkParameters = new List<INetworkParameter>();
@@ -456,10 +463,10 @@ namespace Unity.Netcode
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
             var maxFragmentationCapacity = MaximumMessageLength + 128;
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = maxFragmentationCapacity});
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() {PayloadCapacity = maxFragmentationCapacity});
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
-                maximumPayloadSize = (uint)m_MessageBufferSize,
+                maximumPayloadSize = (uint) m_MessageBufferSize,
                 receiveQueueCapacity = m_ReciveQueueSize,
                 sendQueueCapacity = m_SendQueueSize
             });
@@ -467,7 +474,8 @@ namespace Unity.Netcode
             m_MessageBuffer = new byte[m_MessageBufferSize];
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel,
+            out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             networkChannel = default;
@@ -510,25 +518,18 @@ namespace Unity.Netcode
             }
         }
 
-        private unsafe void SendBatchedMessage(ulong clientId, ArraySegment<byte> data, NetworkPipeline pipeline)
+        private unsafe void SendBatchedMessage(ulong clientId, ref NativeArray<byte> data, NetworkPipeline pipeline)
         {
-            var payloadSize = data.Count + 1; // One extra byte to mark whether this message is batched or not
+            var payloadSize = data.Length + 1; // One extra byte to mark whether this message is batched or not
             var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
+
             if (result == 0)
             {
-                if (data.Array != null)
+                if (data.IsCreated)
                 {
                     // This 1 byte indicates whether the message has been batched or not, in this case it is
                     writer.WriteByte(1);
-
-                    // Note: we are not writing the one byte for the channel and the other 4 for the data count as it will be handled by the queue
-                    unsafe
-                    {
-                        fixed (byte* dataPtr = &data.Array[data.Offset])
-                        {
-                            writer.WriteBytes(dataPtr, data.Count);
-                        }
-                    }
+                    writer.WriteBytes(data);
                 }
 
                 result = m_Driver.EndSend(writer);
@@ -542,9 +543,12 @@ namespace Unity.Netcode
             Debug.LogError($"Error sending the message {result}");
         }
 
-        private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel, NetworkPipeline pipeline)
+        private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel,
+            NetworkPipeline pipeline)
         {
-            var payloadSize = data.Count + 1 + 1 + 4; // 1 byte to indicate if the message is batched, 1 for channelId and 4 for the payload size
+            var payloadSize =
+                data.Count + 1 + 1 +
+                4; // 1 byte to indicate if the message is batched, 1 for channelId and 4 for the payload size
             var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
             if (result == 0)
             {
@@ -603,7 +607,7 @@ namespace Unity.Netcode
             }
 
             var sendBuffer = sendQueue.GetData();
-            SendBatchedMessage(sendTarget.ClientId, sendBuffer, pipeline);
+            SendBatchedMessage(sendTarget.ClientId, ref sendBuffer, pipeline);
             sendQueue.Clear();
         }
 
@@ -636,12 +640,21 @@ namespace Unity.Netcode
                     StartCoroutine(StartRelayServer(task));
                     break;
             }
+
             return task.AsTasks();
         }
 
         public override void Shutdown()
         {
             DisposeDriver();
+
+            foreach (var queue in m_SendQueue.Values)
+            {
+                queue.Dispose();
+            }
+
+            // make sure we don't leak queues when we shutdown
+            m_SendQueue.Clear();
         }
 
 
@@ -650,9 +663,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Memory Stream controller to store several events into one single buffer
         /// </summary>
-        private class SendQueue
+        private class SendQueue : IDisposable
         {
-            MemoryStream m_Stream;
+            private NativeArray<byte> m_Array;
+            private DataStreamWriter m_Stream;
 
             /// <summary>
             /// The size of the send queue.
@@ -662,8 +676,8 @@ namespace Unity.Netcode
             public SendQueue(int size)
             {
                 Size = size;
-                byte[] buffer = new byte[size];
-                m_Stream = new MemoryStream(buffer, 0, buffer.Length, true, true);
+                m_Array = new NativeArray<byte>(size, Allocator.Persistent);
+                m_Stream = new DataStreamWriter(m_Array);
             }
 
             /// <summary>
@@ -676,17 +690,20 @@ namespace Unity.Netcode
             {
                 // Check if we are about to write more than the buffer can fit
                 // Note: 1 byte for the channel + 4 for the count of data
-                if (m_Stream.Position + data.Count + 1 + 4 > Size)
+                if (m_Stream.Length + data.Count + 1 + 4 > Size)
                 {
                     return false;
                 }
 
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(m_Stream))
+                m_Stream.WriteByte(channelId);
+                m_Stream.WriteInt(data.Count);
+
+                unsafe
                 {
-                    writer.WriteByte(channelId);
-                    writer.WriteInt32(data.Count);
-                    Array.Copy(data.Array, data.Offset, m_Stream.GetBuffer(), m_Stream.Position, data.Count);
-                    m_Stream.Position += data.Count;
+                    fixed (byte* byteData = data.Array)
+                    {
+                        m_Stream.WriteBytes(byteData, data.Count);
+                    }
                 }
 
                 return true;
@@ -694,19 +711,24 @@ namespace Unity.Netcode
 
             internal void Clear()
             {
-                m_Stream.Position = 0;
+                m_Stream.Clear();
             }
 
             internal bool IsEmpty()
             {
-                return m_Stream.Position == 0;
+                return m_Stream.Length == 0;
             }
 
-            internal int Count => (int)m_Stream.Position;
+            internal int Count => m_Stream.Length;
 
-            internal ArraySegment<byte> GetData()
+            internal NativeArray<byte> GetData()
             {
-                return new ArraySegment<byte>(m_Stream.GetBuffer(), 0, (int)m_Stream.Position);
+                return m_Stream.AsNativeArray();
+            }
+
+            public void Dispose()
+            {
+                m_Array.Dispose();
             }
         }
 
