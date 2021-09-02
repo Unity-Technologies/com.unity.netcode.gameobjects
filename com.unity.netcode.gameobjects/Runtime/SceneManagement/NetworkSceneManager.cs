@@ -202,7 +202,9 @@ namespace Unity.Netcode
 
         internal Scene DontDestroyOnLoadScene;
 
-
+        /// <summary>
+        /// Handle NetworkSeneManager clean up
+        /// </summary>
         public void Dispose()
         {
             SceneEventData.Dispose();

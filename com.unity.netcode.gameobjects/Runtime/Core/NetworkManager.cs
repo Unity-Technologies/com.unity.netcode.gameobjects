@@ -983,6 +983,7 @@ namespace Unity.Netcode
 
             if (SceneManager != null)
             {
+                // Let the NetworkSceneManager clean up its two SceneEvenData instances
                 SceneManager.Dispose();
                 SceneManager = null;
             }
