@@ -73,13 +73,13 @@ namespace Unity.Netcode
             return Transports[transportId].GetCurrentRtt(connectionId);
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             for (int i = 0; i < Transports.Length; i++)
             {
                 if (Transports[i].IsSupported)
                 {
-                    Transports[i].Init();
+                    Transports[i].Initialize();
                 }
             }
         }

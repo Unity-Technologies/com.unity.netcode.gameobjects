@@ -252,7 +252,7 @@ namespace Unity.Netcode.EditorTests
         {
         }
 
-        public override void Init()
+        public override void Initialize()
         {
         }
     }

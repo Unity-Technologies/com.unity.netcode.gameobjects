@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
             return 50;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
         }
 

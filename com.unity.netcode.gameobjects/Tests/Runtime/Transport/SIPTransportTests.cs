@@ -13,10 +13,10 @@ namespace Unity.Netcode.RuntimeTests.Transport
             SIPTransport server = new GameObject("Server").AddComponent<SIPTransport>();
             SIPTransport client = new GameObject("Client").AddComponent<SIPTransport>();
 
-            server.Init();
+            server.Initialize();
             server.StartServer();
 
-            client.Init();
+            client.Initialize();
             client.StartClient();
 
             NetworkEvent serverEvent = server.PollEvent(out ulong clientId, out NetworkChannel _, out _, out _);

@@ -312,7 +312,7 @@ namespace Unity.Netcode.Transports.UNET
             UnityEngine.Networking.NetworkTransport.Shutdown();
         }
 
-        public override void Init()
+        public override void Initialize()
         {
             m_MessageBuffer = new byte[MessageBufferSize];
 

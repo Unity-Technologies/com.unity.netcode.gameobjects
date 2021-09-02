@@ -643,7 +643,7 @@ namespace Unity.Netcode
 
             NetworkConfig.NetworkTransport.ResetChannelCache();
 
-            NetworkConfig.NetworkTransport.Init();
+            NetworkConfig.NetworkTransport.Initialize();
         }
 
         /// <summary>
