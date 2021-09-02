@@ -762,7 +762,6 @@ namespace Unity.Netcode
             }
         }
 
-
         /// <summary>
         /// Used to release the pooled network buffer
         /// </summary>
@@ -772,12 +771,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Constructor
+        /// Constructor for SceneEventData
         /// </summary>
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-
         }
     }
 }
