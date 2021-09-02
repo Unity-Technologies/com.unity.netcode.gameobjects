@@ -9,7 +9,7 @@
 
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u 2021.2 -c editor -c iOS -w --fast
+    - unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - utr.bat --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
@@ -26,10 +26,9 @@
     type: Unity::VM::osx
     image: mobile/macos-10.15-testing:stable
     flavor: b1.large
-  variables:
-    NETCODE_BRANCH: chore/enable-tests-on-android
   commands:
-    - bash cli/ios/step_1_setup.sh $NETCODE_BRANCH
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - unity-downloader-cli -u 2021.2 -c editor -c iOS -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
     - ./utr --suite=playmode --platform=iOS --editor-location=.Editor --testproject=com.unity.netcode.gameobjects/testproject --player-save-path=build/players --artifacts_path=build/logs --build-only --testfilter=Unity.Netcode.RuntimeTests
@@ -51,7 +50,7 @@
       flavor: b1.medium
   # Set a dependency on the build job
   dependencies:
-    - .yamato/mobile-build-no-template.yml#2021.2_Build_iOS_player
+    - .yamato/mobile-build-and-test.yml#2021.2_Build_iOS_player
   commands:
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
@@ -87,3 +86,4 @@
     logs:
       paths:
         - "build/test-results/**"
+
