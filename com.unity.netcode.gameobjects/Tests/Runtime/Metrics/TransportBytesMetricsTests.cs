@@ -1,4 +1,4 @@
-﻿#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.IO;
