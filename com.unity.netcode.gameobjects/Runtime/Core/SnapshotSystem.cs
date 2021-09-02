@@ -504,7 +504,7 @@ namespace Unity.Netcode
         internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
         {
             // look through the spawns sent
-            for(int index = 0; index < clientData.SentSpawns.Count; /*no increment*/)
+            for (int index = 0; index < clientData.SentSpawns.Count; /*no increment*/)
             {
                 // needless copy, but I didn't find a way around
                 ClientData.SentSpawn sent = clientData.SentSpawns[index];
