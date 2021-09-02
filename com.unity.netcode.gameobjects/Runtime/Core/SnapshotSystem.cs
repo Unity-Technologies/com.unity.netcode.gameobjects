@@ -193,6 +193,9 @@ namespace Unity.Netcode
                     command.TargetClientIds = GetClientList();
                 }
 
+                // for clientData in client list
+                // clientData.SpawnSet.Add(command.NetworkObjectId);
+
                 // todo:
                 // this 'if' might be temporary, but is needed to help in debugging
                 // or maybe it stays
@@ -499,8 +502,11 @@ namespace Unity.Netcode
         internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
         {
             // look through the spawns sent
-            foreach (var sent in clientData.SentSpawns)
+            for(int index = 0; index < clientData.SentSpawns.Count; /*no increment*/)
             {
+                // needless copy, but I didn't find a way around
+                ClientData.SentSpawn sent = clientData.SentSpawns[index];
+
                 // for those with the sequence number being ack'ed
                 if (sent.SequenceNumber == ackSequence)
                 {
@@ -548,6 +554,16 @@ namespace Unity.Netcode
                             }
                         }
                     }
+
+                    // remove current `sent`, by moving last over,
+                    // as it was acknowledged.
+                    // skip incrementing index
+                    clientData.SentSpawns[index] = clientData.SentSpawns[clientData.SentSpawns.Count - 1];
+                    clientData.SentSpawns.RemoveAt(clientData.SentSpawns.Count - 1);
+                }
+                else
+                {
+                    index++;
                 }
             }
 
