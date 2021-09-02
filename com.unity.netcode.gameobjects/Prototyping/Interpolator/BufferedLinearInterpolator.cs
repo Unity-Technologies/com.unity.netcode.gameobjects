@@ -37,8 +37,22 @@ namespace Unity.Netcode
         }
 
         internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
+
+        public void ResetTo(T targetValue)
+        {
+            m_LifetimeConsumedCount = 1;
+            m_InterpStartValue = targetValue;
+            m_InterpEndValue = targetValue;
+            m_CurrentInterpValue = targetValue;
+            m_Buffer.Clear();
+            m_EndTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
+            m_StartTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
+
+            simpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
+            Update(0);
+        }
+
         public bool UseFixedUpdate { get; set; }
-        // protected virtual double ServerTimeBeingHandledForBuffering => interpolatorTime.BufferedServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
         protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? interpolatorTime.BufferedServerFixedTime : interpolatorTime.BufferedServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
         protected virtual double RenderTime => interpolatorTime.BufferedServerTime - 1f / interpolatorTime.TickRate;
 
@@ -72,12 +86,12 @@ namespace Unity.Netcode
 
         public void OnNetworkSpawn()
         {
-            Update(0);
         }
 
-        double TickOrTime(NetworkTime t)
+        double FixedOrTime(NetworkTime t)
         {
             if (UseFixedUpdate) return t.FixedTime;
+
             return t.Time;
         }
         private void TryConsumeFromBuffer()
@@ -91,7 +105,7 @@ namespace Unity.Netcode
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready. This can consume multiple times
-                    if (TickOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering) // todo do tick + 1 instead of changing the way tick is calculated? discuss with Luke
+                    if (FixedOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering) // todo do tick + 1 instead of changing the way tick is calculated? discuss with Luke
                     {
                         // if (RenderTime > TickOrTime(m_EndTimeConsumed))
                         {
@@ -119,8 +133,6 @@ namespace Unity.Netcode
 
         public T Update(float deltaTime)
         {
-            if (m_LifetimeConsumedCount > 2) // todo remove debug
-            Debug.Log($"Sam got value m_Buffer.Count {m_Buffer.Count}");
             TryConsumeFromBuffer();
 
             if (m_LifetimeConsumedCount == 0 && m_Buffer.Count == 0)
@@ -135,7 +147,7 @@ namespace Unity.Netcode
 
             if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
-                double range = TickOrTime(m_EndTimeConsumed) - TickOrTime(m_StartTimeConsumed);
+                double range = FixedOrTime(m_EndTimeConsumed) - FixedOrTime(m_StartTimeConsumed);
                 float t;
                 if (range == 0)
                 {
@@ -143,7 +155,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    t = (float) ((RenderTime - TickOrTime(m_StartTimeConsumed)) / range);
+                    t = (float) ((RenderTime - FixedOrTime(m_StartTimeConsumed)) / range);
                 }
 
                 if (t > 2) // max extrapolation
@@ -151,12 +163,11 @@ namespace Unity.Netcode
                     t = 1;
                 }
 
-                if (m_LifetimeConsumedCount > 2) // todo remove debug
-                Debug.Log($"sam got value t {t}, TT(m_EndTimeConsumed) {TickOrTime(m_EndTimeConsumed)}, TT(m_StartTimeConsumed) {TickOrTime(m_StartTimeConsumed)}, range {range}, " +
-                          $" RenderTime {RenderTime}, ServerTimeBeingHandledForBuffering {ServerTimeBeingHandledForBuffering}, interpolatorTime.TickRate {interpolatorTime.TickRate}, " +
-                          $" interpolatorTime.BufferedServerFixedTime {interpolatorTime.BufferedServerFixedTime}, interpolatorTime.BufferedServerTime {interpolatorTime.BufferedServerTime}");
-                Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {TickOrTime(m_StartTimeConsumed)}, end time {TickOrTime(m_EndTimeConsumed)}");
-                m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
+                Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}"); // todo remove GC alloc this creates
+
+                // m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
+                simpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
+                m_CurrentInterpValue = simpleInterpolator.Update(deltaTime);
             }
 
             return m_CurrentInterpValue;
@@ -190,32 +201,46 @@ namespace Unity.Netcode
         {
         }
 
-        public abstract T Interpolate(T start, T end, float time);
+        protected abstract T Interpolate(T start, T end, float time);
+
+        protected abstract SimpleInterpolator<T> simpleInterpolator { get; }
     }
 
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
-        public override float Interpolate(float start, float end, float time)
+        protected override float Interpolate(float start, float end, float time)
         {
-            return Mathf.Lerp(start, end, time);
-            // return Mathf.LerpUnclamped(start, end, time);
+            return Mathf.LerpUnclamped(start, end, time);
         }
 
         public BufferedLinearInterpolatorFloat()
         {
         }
+
+        protected override SimpleInterpolator<float> simpleInterpolator { get; } = new SimpleInterpolatorFloat();
+    }
+
+    public class BufferedLinearInterpolatorFloatForScale : BufferedLinearInterpolatorFloat
+    {
+        protected override float Interpolate(float start, float end, float time)
+        {
+            // scale can't be negative, stopping negative extrapolation
+            return Mathf.Max(Mathf.LerpUnclamped(start, end, time), 0);
+        }
     }
 
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
-        public override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
+        protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
-            // return Quaternion.SlerpUnclamped(start, end, time);
-            return Quaternion.Slerp(start, end, time);
+            return Quaternion.SlerpUnclamped(start, end, time);
+            // return Quaternion.Slerp(start, end, time);
         }
 
         public BufferedLinearInterpolatorQuaternion()
         {
         }
+
+        protected override SimpleInterpolator<Quaternion> simpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
     }
 }

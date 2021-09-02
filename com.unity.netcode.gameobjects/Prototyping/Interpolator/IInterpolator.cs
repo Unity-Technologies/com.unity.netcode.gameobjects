@@ -13,6 +13,7 @@ namespace Unity.Netcode
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime);
         public T GetInterpolatedValue();
         public void OnDestroy();
+        public void ResetTo(T targetValue);
         public bool UseFixedUpdate { get; set; }
     }
 }

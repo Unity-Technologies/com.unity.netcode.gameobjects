@@ -27,24 +27,26 @@ public class MoveInCircle : NetworkBehaviour
     void FixedUpdate()
     {
         if (m_RunInUpdate) return;
-        Tick(Time.fixedDeltaTime);
+        Tick(true);
     }
 
     private void Update()
     {
         if (!m_RunInUpdate) return;
-        Tick(Time.deltaTime);
+        Tick(false);
     }
 
-    void Tick(float deltaTime)
+    void Tick(bool isFixed)
     {
         if (NetworkManager.Singleton.IsServer || !m_RunServerOnly)
         {
             m_DebugOldPosition = transform.position;
+            var deltaTime = isFixed ? Time.fixedDeltaTime : Time.deltaTime;
             transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);
             // Debug.Log($"ewqqwe {Math.Round((transform.position - debug_oldPosition).magnitude, 2)} time diff {Math.Round(Time.time - lastTime, 2)}");
             m_DebugLastTime = Time.time;
             transform.Rotate(0, m_RotationSpeed * deltaTime, 0);
+            transform.localScale = ((Mathf.Sin(isFixed ? Time.fixedTime : Time.time)+1) * Vector3.one);
         }
     }
 }

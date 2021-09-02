@@ -3,12 +3,12 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class SimpleInterpolatorVector3 : IInterpolator<Vector3>
+    public abstract class SimpleInterpolator<T> : IInterpolator<T>
     {
         private float m_CurrentTime;
-        private Vector3 m_StartVector;
-        private Vector3 m_EndVector;
-        private Vector3 m_UpdatedVector;
+        private T m_Start;
+        private T m_End;
+        private T m_Updated;
 
         private const float k_MaxLerpTime = 0.1f;
 
@@ -29,10 +29,10 @@ namespace Unity.Netcode
         {
         }
 
-        public Vector3 Update(float deltaTime)
+        public T Update(float deltaTime)
         {
             m_CurrentTime += deltaTime;
-            m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / k_MaxLerpTime);
+            m_Updated = Interpolate(m_Start, m_End, m_CurrentTime / k_MaxLerpTime);
             return GetInterpolatedValue();
         }
 
@@ -40,22 +40,47 @@ namespace Unity.Netcode
         {
         }
 
-        public void AddMeasurement(Vector3 newMeasurement, NetworkTime sentTick)
+        public void AddMeasurement(T newMeasurement, NetworkTime sentTick)
         {
-            m_EndVector = newMeasurement;
+            m_End = newMeasurement;
             m_CurrentTime = 0;
-            m_StartVector = m_UpdatedVector;
+            m_Start = m_Updated;
         }
 
-        public Vector3 GetInterpolatedValue()
+        public T GetInterpolatedValue()
         {
-            return m_UpdatedVector;
+            return m_Updated;
         }
 
         public void OnDestroy()
         {
         }
 
+        public void ResetTo(T targetValue)
+        {
+            m_End = targetValue;
+            m_Start = targetValue;
+            m_Updated = targetValue;
+            m_CurrentTime = 0;
+        }
+
+        protected abstract T Interpolate(T a, T b, float time);
+
         public bool UseFixedUpdate { get; set; }
+    }
+    public class SimpleInterpolatorFloat : SimpleInterpolator<float>
+    {
+        protected override float Interpolate(float a, float b, float time)
+        {
+            return Mathf.Lerp(a, b, time);
+        }
+    }
+
+    public class SimpleInterpolatorQuaternion : SimpleInterpolator<Quaternion>
+    {
+        protected override Quaternion Interpolate(Quaternion a, Quaternion b, float time)
+        {
+            return Quaternion.Slerp(a, b, time);
+        }
     }
 }

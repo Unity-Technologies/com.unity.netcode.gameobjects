@@ -10,7 +10,7 @@ namespace Unity.Netcode.Prototyping
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
-// todo add a note in doc about this
+    // todo add a note in doc about this
     // todo have a way for this to be only server side? This way client side you can have scripts that depend on that position update that'll execute afterward
     [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
@@ -27,9 +27,8 @@ namespace Unity.Netcode.Prototyping
             internal const int ScaleXBit = 7;
             internal const int ScaleYBit = 8;
             internal const int ScaleZBit = 9;
-            internal const int LastSentBit = 10; // todo remove this
 
-            // 11-15: <unused>
+            // 10-15: <unused>
             public ushort Bitset;
 
             public bool InLocalSpace
@@ -93,12 +92,6 @@ namespace Unity.Netcode.Prototyping
             {
                 get => (Bitset & (1 << ScaleZBit)) != 0;
                 set => Bitset |= (ushort) ((value ? 1 : 0) << ScaleZBit);
-            }
-
-            public bool IsLastSent
-            {
-                get => (Bitset & (1 << LastSentBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << LastSentBit);
             }
 
             public float PositionX, PositionY, PositionZ;
@@ -225,64 +218,53 @@ namespace Unity.Netcode.Prototyping
 
         public virtual IInterpolator<float> PositionZInterpolator { get; set; }
 
-        // public virtual IInterpolator<float> RotationXInterpolator { get; set; }
-        // public virtual IInterpolator<float> RotationYInterpolator { get; set; }
-        // public virtual IInterpolator<float> RotationZInterpolator { get; set; }
-        public virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
+        public virtual IInterpolator<Quaternion> RotationInterpolator { get; set; } // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
         public virtual IInterpolator<float> ScaleXInterpolator { get; set; }
         public virtual IInterpolator<float> ScaleYInterpolator { get; set; }
         public virtual IInterpolator<float> ScaleZInterpolator { get; set; }
 
-        public void InitializeInterpolator<T, U>() where T : IInterpolator<float>, new() where U : IInterpolator<Quaternion>, new()
+        public void InitializeInterpolator<Pos, Rot, Scale>() where Pos : IInterpolator<float>, new() where Rot : IInterpolator<Quaternion>, new() where Scale : IInterpolator<float>, new()
         {
-            PositionXInterpolator = new T();
-            PositionYInterpolator = new T();
-            PositionZInterpolator = new T();
-            RotationInterpolator = new U();
-            // RotationXInterpolator = new T();
-            // RotationYInterpolator = new T();
-            // RotationZInterpolator = new T();
-            ScaleXInterpolator = new T();
-            ScaleYInterpolator = new T();
-            ScaleZInterpolator = new T();
+            PositionXInterpolator = new Pos();
+            PositionYInterpolator = new Pos();
+            PositionZInterpolator = new Pos();
+            RotationInterpolator = new Rot();
+            ScaleXInterpolator = new Scale();
+            ScaleYInterpolator = new Scale();
+            ScaleZInterpolator = new Scale();
         }
 
         public void SetCurrentInterpolatedState()
         {
             var tickRate = NetworkManager.Singleton.NetworkConfig.TickRate;
-            PositionXInterpolator.AddMeasurement(ReplNetworkState.Value.PositionX, new NetworkTime(tickRate, 0.0));
-            PositionYInterpolator.AddMeasurement(ReplNetworkState.Value.PositionY, new NetworkTime(tickRate, 0.0));
-            PositionZInterpolator.AddMeasurement(ReplNetworkState.Value.PositionZ, new NetworkTime(tickRate, 0.0));
-            RotationInterpolator.AddMeasurement(Quaternion.Euler(ReplNetworkState.Value.Rotation), new NetworkTime(tickRate, 0.0));
-            // RotationXInterpolator.AddMeasurement(ReplNetworkState.Value.RotationX ulerAngles.x, new NetworkTime(tickRate, 0.0));
-            // RotationYInterpolator.AddMeasurement(ReplNetworkState.Value.RotationX ulerAngles.y, new NetworkTime(tickRate, 0.0));
-            // RotationZInterpolator.AddMeasurement(ReplNetworkState.Value.RotationX ulerAngles.z, new NetworkTime(tickRate, 0.0));
-            ScaleXInterpolator.AddMeasurement(ReplNetworkState.Value.ScaleX, new NetworkTime(tickRate, 0.0));
-            ScaleYInterpolator.AddMeasurement(ReplNetworkState.Value.ScaleY, new NetworkTime(tickRate, 0.0));
-            ScaleZInterpolator.AddMeasurement(ReplNetworkState.Value.ScaleZ, new NetworkTime(tickRate, 0.0));
+            for (int i = 0; i < 1; i++) // repeat this twice to set both "start" and "end" values
+            {
+                ScaleXInterpolator.ResetTo(ReplNetworkState.Value.ScaleX);
+                ScaleYInterpolator.ResetTo(ReplNetworkState.Value.ScaleY);
+                ScaleZInterpolator.ResetTo(ReplNetworkState.Value.ScaleZ);
+
+                PositionXInterpolator.ResetTo(ReplNetworkState.Value.PositionX);
+                PositionYInterpolator.ResetTo(ReplNetworkState.Value.PositionY);
+                PositionZInterpolator.ResetTo(ReplNetworkState.Value.PositionZ);
+
+                RotationInterpolator.ResetTo(Quaternion.Euler(ReplNetworkState.Value.Rotation));
+            }
         }
 
         public IEnumerable<IInterpolator<float>> AllFloatInterpolators()
         {
-            yield return PositionXInterpolator;
-            yield return PositionYInterpolator;
-            yield return PositionZInterpolator;
-            // yield return RotationXInterpolator;
-            // yield return RotationYInterpolator;
-            // yield return RotationZInterpolator;
             yield return ScaleXInterpolator;
             yield return ScaleYInterpolator;
             yield return ScaleZInterpolator;
-        }
 
-        public IEnumerable<IInterpolator<Quaternion>> AllQuaternionInterpolators()
-        {
-            yield return RotationInterpolator;
+            yield return PositionXInterpolator;
+            yield return PositionYInterpolator;
+            yield return PositionZInterpolator;
         }
 
         private int k_debugDrawLineTime = 10;
 
-        internal NetworkState LocalNetworkState;
+        internal NetworkState LocalAuthoritativeNetworkState;
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
@@ -442,7 +424,7 @@ namespace Unity.Netcode.Prototyping
 
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
-            // if (isDirty)
+            if (isDirty)
             {
                 networkState.SentTime = dirtyTime;
             }
@@ -476,22 +458,6 @@ namespace Unity.Netcode.Prototyping
             {
                 interpolatedPosition.z = PositionZInterpolator.GetInterpolatedValue();
             }
-
-            // RotAngles Read
-            // if (networkState.HasRotAngleX)
-            // {
-            //     interpolatedRotAngles.x = RotationXInterpolator.GetInterpolatedValue();
-            // }
-            //
-            // if (networkState.HasRotAngleY)
-            // {
-            //     interpolatedRotAngles.y = RotationYInterpolator.GetInterpolatedValue();
-            // }
-            //
-            // if (networkState.HasRotAngleZ)
-            // {
-            //     interpolatedRotAngles.z = RotationZInterpolator.GetInterpolatedValue();
-            // }
 
             if (networkState.HasRotAngleX)
             {
@@ -566,6 +532,7 @@ namespace Unity.Netcode.Prototyping
                 {
                     m_Transform.localScale = Vector3.one;
                     var lossyScale = m_Transform.lossyScale;
+                    // todo this conversion is messing with interpolation. local scale interpolates fine, lossy scale is jittery. should investigate
                     m_Transform.localScale = new Vector3(networkState.ScaleX / lossyScale.x, networkState.ScaleY / lossyScale.y, networkState.ScaleZ / lossyScale.z);
                 }
 
@@ -603,6 +570,11 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
+            if (IsServer)
+            {
+                return; // todo use authority
+            }
+
             // todo for teleport, check teleport flag
             // if (newState.Teleporting)
             // {
@@ -610,11 +582,6 @@ namespace Unity.Netcode.Prototyping
             // }
 
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
-
-            if (newState.IsLastSent)
-            {
-                Debug.Log("asdf");
-            }
 
             if (newState.HasPositionX)
             {
@@ -673,6 +640,7 @@ namespace Unity.Netcode.Prototyping
 
         private void Awake()
         {
+            // NetworkManager.Singleton.NetworkTickSystem.Tick += TickFixedUpdate;
             m_Transform = transform;
             bool interpolatorAlreadySet = false;
             foreach (var interpolator in AllFloatInterpolators())
@@ -683,9 +651,10 @@ namespace Unity.Netcode.Prototyping
                     break;
                 }
             }
+
             if (!interpolatorAlreadySet)
             {
-                InitializeInterpolator<BufferedLinearInterpolatorFloat, BufferedLinearInterpolatorQuaternion>();
+                InitializeInterpolator<BufferedLinearInterpolatorFloat, BufferedLinearInterpolatorQuaternion, BufferedLinearInterpolatorFloatForScale>();
             }
 
             foreach (var interpolator in AllFloatInterpolators())
@@ -693,10 +662,26 @@ namespace Unity.Netcode.Prototyping
                 interpolator.Awake();
                 interpolator.UseFixedUpdate = UseFixedUpdate;
             }
+
             RotationInterpolator.Awake();
             RotationInterpolator.UseFixedUpdate = UseFixedUpdate;
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out
+
+            // set initial value for spawn
+            if (IsServer)
+            {
+                if (UseFixedUpdate)
+                {
+                    // try to update local NetworkState
+                    DoSendToOthers(NetworkManager.LocalTime.FixedTime);
+                }
+                else
+                {
+                    DoSendToOthers(NetworkManager.LocalTime.Time);
+                }
+            }
+
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
@@ -726,11 +711,11 @@ namespace Unity.Netcode.Prototyping
             {
                 SetCurrentInterpolatedState(); // useful for late joining
 
-                foreach (var interpolator in AllFloatInterpolators())
+                foreach (var interpolator in AllFloatInterpolators()) // todo remove GC alloc this creates
                 {
                     interpolator.OnNetworkSpawn();
                 }
-
+// todo cache network manager to remove some of the time it takes to get it
                 RotationInterpolator.OnNetworkSpawn();
 
                 ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
@@ -747,46 +732,18 @@ namespace Unity.Netcode.Prototyping
             }
 
             RotationInterpolator.OnDestroy();
-
         }
 
         private void DoSendToOthers(double time)
         {
             // check for time there was a change to the transform
             // this needs to be done in Update to catch that time change as soon as it happens.
-            /*
-			todo
-			    if (UpdateNetworkState(ref LocalNetworkState))
-                {
-                    // if updated (dirty), change NetVar, mark it dirty
-                    ReplNetworkState.Value = LocalNetworkState;
-                    ReplNetworkState.SetDirty(true);
-                }
-			*/
 
-			var isDirty = UpdateNetworkStateCheckDirty(ref LocalNetworkState, time); // todo sam diff here is Fixedtime
-            if (isDirty)
+            if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, time))
             {
-                alreadySentLastValue = false;
+                ReplNetworkState.Value = LocalAuthoritativeNetworkState;
+                ReplNetworkState.SetDirty(true);
             }
-            else if (!alreadySentLastValue)
-            {
-                isDirty = true;
-                alreadySentLastValue = true; // to send one more value after a transform moves, so that unclamped interpolation has two similar last values
-                shouldSendLastValue = true;
-            }
-            //ReplNetworkState.ValueRef.IsLastSent = shouldSendLastValue;
-
-            if (isDirty)
-            {
-                ReplNetworkState.Value = LocalNetworkState;
-            }
-            ReplNetworkState.SetDirty(shouldSendLastValue || isDirty);
-            // if (ReplNetworkState.IsDirty())
-            // {
-            //     Debug.DrawLine(ReplNetworkState.Value.Position, ReplNetworkState.Value.Position + Vector3.up, Color.magenta, 10, false);
-            // }
-            shouldSendLastValue = false;
         }
 
         private void FixedUpdate()
@@ -826,8 +783,8 @@ namespace Unity.Netcode.Prototyping
             }
         }
 
-        private bool alreadySentLastValue = false;
-        private bool shouldSendLastValue = false;
+        // private bool alreadySentLastValue = false;
+        // private bool shouldSendLastValue = false;
 
 
         private void Update()
@@ -841,6 +798,8 @@ namespace Unity.Netcode.Prototyping
             {
                 DoSendToOthers(NetworkManager.LocalTime.Time);
             }
+
+            // apply interpolated value
             if (!IsServer && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 foreach (var interpolator in AllFloatInterpolators())

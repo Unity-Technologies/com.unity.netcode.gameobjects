@@ -44,6 +44,11 @@ namespace Unity.Netcode
         {
         }
 
+        public void ResetTo(T targetValue)
+        {
+            m_Current = targetValue;
+        }
+
         public bool UseFixedUpdate { get; set; }
     }
 }
