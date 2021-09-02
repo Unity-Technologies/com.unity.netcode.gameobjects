@@ -110,7 +110,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream10.GetBuffer(), 0, (int)messageStream10.Length), 0);
 
             // Stop server to trigger full shutdown
-            networkManager.StopServer();
+            networkManager.Shutdown();
 
             // Replace the real message handler with a dummy one that just prints a result
             networkManager.MessageHandler = new DummyMessageHandler(networkManager);
@@ -198,7 +198,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream21.GetBuffer(), 0, (int)messageStream21.Length), 0);
 
             // Full cleanup
-            networkManager.StopClient();
+            networkManager.Shutdown();
 
             // Ensure no missmatches with expectations
             LogAssert.NoUnexpectedReceived();
