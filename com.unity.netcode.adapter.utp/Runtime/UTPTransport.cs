@@ -400,17 +400,6 @@ namespace Unity.Netcode
 
         }
 
-        /// <summary>
-        /// Send batched messages out in LateUpdate.
-        /// </summary>
-        // private void LateUpdate()
-        // {
-        //     if (m_Driver.IsCreated)
-        //     {
-        //         FlushAllSendQueues();
-        //     }
-        // }
-
         private void OnDestroy()
         {
             DisposeDriver();
