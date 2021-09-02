@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Netcode.MultiprocessRuntimeTests;
-using System.Linq;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -21,7 +20,7 @@ public class MultiprocessOrchestration
         {
             Processes = new List<Process>();
         }
-        Debug.Log("Determine whether to start on local or remote nodes");
+        
         string userprofile = "";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -32,10 +31,19 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        Debug.Log($"userprofile is {userprofile}");
+        // Debug.Log($"userprofile is {userprofile}");
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
 
         var workerProcess = new Process();
+        if (Processes.Count > 0)
+        {
+            string message = "";
+            foreach (var p in Processes)
+            {
+                message += $" {p.Id} {p.HasExited} {p.StartTime} ";
+            }
+            Debug.Log($"Current process count {Processes.Count} with data {message}");
+        }
         Processes.Add(workerProcess);
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
@@ -80,6 +88,7 @@ public class MultiprocessOrchestration
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
+            Debug.Log($"Attempting to start new process, current process count: {Processes.Count}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -93,16 +102,12 @@ public class MultiprocessOrchestration
         }
     }
 
-    // todo remove this once we have proper automation
-    public static bool IsUsingUTR()
-    {
-        return Environment.GetCommandLineArgs().Contains("-automated");
-    }
-
     public static void KillAllProcesses()
     {
+        Debug.Log("Killing processes...");
         foreach(var process in Processes)
         {
+            Debug.Log($"Killing process {process.Id} with state {process.HasExited}");
             process.Kill();
         }
 

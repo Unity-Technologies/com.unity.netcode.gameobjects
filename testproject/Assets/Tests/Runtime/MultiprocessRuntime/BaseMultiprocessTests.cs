@@ -21,8 +21,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         static private bool s_SceneHasLoaded;
 
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
-
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
         /// TODO there's a good chance this will be refactored with something fancier once we start integrating with bokken
@@ -50,13 +48,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            if (IsPerformanceTest)
+            {
+                Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
+                // This assert should result in OneTimeSetUp not even running
+            }
+            Debug.Log("Running OneTimeSetUp ... SetupTestSuite");
             // TestFixtures will run for each TestFixture, w
             if (!s_SceneHasLoaded)
             {
-                if (IsPerformanceTest)
-                {
-                    Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
-                }
                 var shouldUnloadFirst = false;
 
                 var currentlyActiveScene = SceneManager.GetActiveScene();
@@ -165,32 +165,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            if (!ShouldIgnoreTests)
-            {
-
-                TestCoordinator.Instance.TestRunTeardown();
-            }
+            TestCoordinator.Instance.TestRunTeardown();
         }
 
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            if (!ShouldIgnoreTests)
+            Debug.Log("Running OneTimeTearDown ... TeardownSuite");
+            TestCoordinator.Instance.CloseRemoteClientRpc();
+
+            NetworkManager.Singleton.StopHost();
+            Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+            if(m_OriginalActiveScene.IsValid())
             {
-
-                MultiprocessOrchestration.KillAllProcesses();
-                //TestCoordinator.Instance.CloseRemoteClientRpc();
-
-                NetworkManager.Singleton.StopHost();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                if(m_OriginalActiveScene.IsValid())
-                {
-                    SceneManager.SetActiveScene(m_OriginalActiveScene);
-
-                }
-                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                s_SceneHasLoaded = false;
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
+            SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+            s_SceneHasLoaded = false;
+
+            MultiprocessOrchestration.KillAllProcesses();
         }
     }
 }
