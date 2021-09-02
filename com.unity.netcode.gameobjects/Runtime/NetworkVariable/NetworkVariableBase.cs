@@ -7,6 +7,11 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class NetworkVariableBase
     {
+        /// <summary>
+        /// The delivery type (QoS) to send data with
+        /// </summary>
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
+
         private protected NetworkBehaviour m_NetworkBehaviour;
 
         public void Initialize(NetworkBehaviour networkBehaviour)
@@ -14,10 +19,9 @@ namespace Unity.Netcode
             m_NetworkBehaviour = networkBehaviour;
         }
 
-        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {
             ReadPerm = readPermIn;
-            Delivery = networkDelivery;
         }
 
         private protected bool m_IsDirty;
@@ -32,11 +36,6 @@ namespace Unity.Netcode
         /// The read permission for this var
         /// </summary>
         public readonly NetworkVariableReadPermission ReadPerm;
-
-        /// <summary>
-        /// The delivery type (QoS) to send data with
-        /// </summary>
-        public readonly NetworkDelivery Delivery;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced

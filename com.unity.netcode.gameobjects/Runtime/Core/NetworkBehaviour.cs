@@ -442,7 +442,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    var networkDelivery = NetworkVariableFields[i].Delivery;
+                    var networkDelivery = NetworkVariableBase.Delivery;
                     if (!firstLevelIndex.ContainsKey(networkDelivery))
                     {
                         firstLevelIndex.Add(networkDelivery, secondLevelCounter);
