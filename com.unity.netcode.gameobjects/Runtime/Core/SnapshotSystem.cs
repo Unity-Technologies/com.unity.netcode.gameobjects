@@ -193,6 +193,8 @@ namespace Unity.Netcode
                     command.TargetClientIds = GetClientList();
                 }
 
+                // todo: store, for each client, the spawn not ack'ed yet,
+                // to prevent sending despawns to them.
                 // for clientData in client list
                 // clientData.SpawnSet.Add(command.NetworkObjectId);
 
@@ -827,7 +829,8 @@ namespace Unity.Netcode
                 var index = clientData.NextSpawnIndex;
                 var savedPosition = writer.GetStream().Position;
 
-                if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId) && ShouldWriteSpawn(m_Snapshot.Spawns[index]))
+                // todo: re-enable ShouldWriteSpawn, once we have a mechanism to not let despawn pass in front of spawns
+                if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId) /*&& ShouldWriteSpawn(m_Snapshot.Spawns[index])*/)
                 {
                     var sentSpawn = m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
 
@@ -854,7 +857,6 @@ namespace Unity.Netcode
             // ack'ed before sending a despawn for the same object.
             // Uncommenting this line would allow some despawn to be sent while spawns are pending.
             // As-is it is overly restrictive but allows us to go forward without the spawn/despawn dependency check
-
             // overSize = false;
 
             for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
@@ -862,7 +864,8 @@ namespace Unity.Netcode
                 var index = clientData.NextDespawnIndex;
                 var savedPosition = writer.GetStream().Position;
 
-                if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId) && ShouldWriteDespawn(m_Snapshot.Despawns[index]))
+                // todo: re-enable ShouldWriteSpawn, once we have a mechanism to not let despawn pass in front of spawns
+                if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId) /*&& ShouldWriteDespawn(m_Snapshot.Despawns[index])*/)
                 {
                     var sentDespawn = m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
 
