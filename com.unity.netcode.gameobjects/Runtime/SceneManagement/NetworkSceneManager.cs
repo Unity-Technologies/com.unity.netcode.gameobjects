@@ -85,7 +85,7 @@ namespace Unity.Netcode
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
     /// Uses the <see cref="MessageQueueContainer.MessageType.SceneEvent"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
-    public class NetworkSceneManager
+    public class NetworkSceneManager : IDisposable
     {
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
@@ -201,6 +201,17 @@ namespace Unity.Netcode
 
 
         internal Scene DontDestroyOnLoadScene;
+
+        /// <summary>
+        /// Handle NetworkSeneManager clean up
+        /// </summary>
+        public void Dispose()
+        {
+            SceneEventData.Dispose();
+            SceneEventData = null;
+            ClientSynchEventData.Dispose();
+            ClientSynchEventData = null;
+        }
 
         /// <summary>
         /// Gets the scene name from full path to the scene
