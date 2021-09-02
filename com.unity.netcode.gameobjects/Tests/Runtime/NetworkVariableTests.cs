@@ -123,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                    var networkTransform = playerPrefab.AddComponent<NetworkVariableTest>();
+                    playerPrefab.AddComponent<NetworkVariableTest>();
                 });
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
@@ -159,7 +159,6 @@ namespace Unity.Netcode.RuntimeTests
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[1], result));
 
-            //            var client2client1 = result.Result;
             m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();
@@ -579,7 +578,6 @@ namespace Unity.Netcode.RuntimeTests
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
         }
     }
 }
