@@ -3,9 +3,35 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
+using Unity.Collections;
+
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public struct FixedString32Struct : INetworkSerializable
+    {
+        public FixedString32 FixedString;
+        public void NetworkSerialize(NetworkSerializer serializer)
+        {
+            if (serializer.IsReading)
+            {
+                var stringArraySize = 0;
+                serializer.Serialize(ref stringArraySize);
+                var stringArray = new char[stringArraySize];
+                serializer.Serialize(ref stringArray);
+                var asString = new string(stringArray);
+                FixedString.CopyFrom(asString);
+            }
+            else
+            {
+                var stringArray = FixedString.Value.ToCharArray();
+                var stringArraySize = stringArray.Length;
+                serializer.Serialize(ref stringArraySize);
+                serializer.Serialize(ref stringArray);
+            }
+        }
+    }
+
     public struct TestStruct : INetworkSerializable
     {
         public uint SomeInt;
@@ -28,6 +54,8 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
         public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
+
+        public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -60,6 +88,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkVariableTests : BaseMultiInstanceTest
     {
+        private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
         protected override int NbClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
@@ -81,10 +110,10 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariableTest m_Player1OnClient1;
 
         // Player2 component on client1
-        private NetworkVariableTest m_Player1OnClient2;
+        private NetworkVariableTest m_Player2OnClient2;
 
         // client2's version of client1's player object
-        private NetworkVariableTest m_Player1FromClient2;
+        private NetworkVariableTest m_Player1OnClient2;
 
         private bool m_TestWithHost;
 
@@ -94,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                    var networkTransform = playerPrefab.AddComponent<NetworkVariableTest>();
+                    playerPrefab.AddComponent<NetworkVariableTest>();
                 });
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
@@ -123,15 +152,14 @@ namespace Unity.Netcode.RuntimeTests
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
                 m_ClientNetworkManagers[1], result));
 
-            m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
+            m_Player2OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client2's view of client 1's object
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[1], result));
 
-            //            var client2client1 = result.Result;
-            m_Player1FromClient2 = result.Result.GetComponent<NetworkVariableTest>();
+            m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();
             m_Player1OnServer.TheSet.Clear();
@@ -222,7 +250,7 @@ namespace Unity.Netcode.RuntimeTests
                 () =>
                 {
                     m_Player1OnClient1.ClientVar.Value = k_TestVal2;
-                    m_Player1OnClient2.ClientVar.Value = k_TestVal3;
+                    m_Player2OnClient2.ClientVar.Value = k_TestVal3;
                 },
                 () =>
                 {
@@ -231,7 +259,32 @@ namespace Unity.Netcode.RuntimeTests
                         m_Player1OnServer.ClientVar.Value == k_TestVal2 &&
                         m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
                         m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
-                        m_Player1OnClient2.ClientVar.Value == k_TestVal3;
+                        m_Player2OnClient2.ClientVar.Value == k_TestVal3;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator FixedString32StructTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    var tmp = m_Player1OnServer.FixedStringStruct.Value;
+                    tmp.FixedString = k_FixedStringTestValue;
+                    m_Player1OnServer.FixedStringStruct.Value = tmp;
+
+                    // we are writing to the private and public variables on player 1's object...
+                },
+                () =>
+                {
+                    var tmp = m_Player1OnClient1.FixedStringStruct.Value;
+
+                    // ...and we should see the writes to the private var only on the server & the owner,
+                    //  but the public variable everywhere
+                    return
+                        m_Player1OnClient1.FixedStringStruct.Value.FixedString == k_FixedStringTestValue;
                 }
             );
         }
@@ -253,9 +306,9 @@ namespace Unity.Netcode.RuntimeTests
                     // ...and we should see the writes to the private var only on the server & the owner,
                     //  but the public variable everywhere
                     return
-                        m_Player1FromClient2.ClientVarPrivate.Value != k_TestVal1 &&
+                        m_Player1OnClient2.ClientVarPrivate.Value != k_TestVal1 &&
                         m_Player1OnClient1.ClientVarPrivate.Value == k_TestVal1 &&
-                        m_Player1FromClient2.ClientVar.Value != k_TestVal2 &&
+                        m_Player1OnClient2.ClientVar.Value != k_TestVal2 &&
                         m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
                         m_Player1OnServer.ClientVarPrivate.Value == k_TestVal1 &&
                         m_Player1OnServer.ClientVar.Value == k_TestVal2;
@@ -525,7 +578,6 @@ namespace Unity.Netcode.RuntimeTests
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
         }
     }
 }

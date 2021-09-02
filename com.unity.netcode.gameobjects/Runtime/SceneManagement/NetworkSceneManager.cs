@@ -1184,7 +1184,8 @@ namespace Unity.Netcode
                 var size = bufferSizeCapture.StopMeasureSegment();
                 foreach (var sceneIndex in ClientSynchEventData.ScenesToSynchronize)
                 {
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)ClientSynchEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], size);
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
+                       clientId, (uint)ClientSynchEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], size);
                 }
             }
 
@@ -1537,14 +1538,16 @@ namespace Unity.Netcode
                         // to track a metric for each one.
                         foreach (var sceneIndex in SceneEventData.ScenesToSynchronize)
                         {
-                            m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], stream.Length);
+                            m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
+                               clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], stream.Length);
                         }
                     }
                     else
                     {
                         // For all other scene event types, we are only dealing with one scene at a time, so we can read it
                         // from the SceneEventData directly.
-                        m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], stream.Length);
+                        m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
+                           clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], stream.Length);
                     }
 
                     if (SceneEventData.IsSceneEventClientSide())
