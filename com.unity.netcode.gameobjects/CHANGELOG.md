@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - When a client tries to spawn a `NetworkObject` an exception is thrown to indicate unsupported behavior. (#981)
 - Added a `NetworkTime` and `NetworkTickSystem` which allows for improved control over time and ticks. (#845)
 - Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
+- Added `SnapshotSystem`. This internal system will allow variables and (de)spawn commands to be send in blocks. Will leverage unreliable messages and offer efficient transfer with eventual consistency. Off by default for now and only implemented for spawns and despawns.
 
 ### Changed
 
@@ -53,6 +54,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
 - Fixed `NetworkManager` shutdown when quitting the application or switching scenes. Now NetworkManager shutdowns correctly and despawns existing NetworkObjects (#1011)
+- Fixed `specified cast is not valid.' on NetworkWriter` (#951)
+- Fixed `Clients are receiving data from objects not visible to them` (#915)
 
 ### Security
 
@@ -60,33 +63,26 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### TODO
 
-- [9c759d6f] (2021-08-31) Jeffrey Rainy / feat: snapshot. MTU sizing option for Snapshot. MTT-1087 (#1111)
 - [96309fb7] (2021-08-31) Benoit Doyon / Add metrics for transport bytes sent and received (#1104)
 - [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
 - [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
 - [75609cd1] (2021-08-31) Benoit Doyon / feat: Change MetricNames for a more complex value type (#1109)
 - [7fbc65cb] (2021-08-31) Josie Messa / feat: Track scene event metrics (#1089)
-- [ff185d6a] (2021-08-31) Jeffrey Rainy / style: whitespace fixes (#1117)
 - [c1ee3b62] (2021-08-30) Noel Stephens / feat: replace scene registration with scenes in build list (#1080)
-- [b5f761cf] (2021-08-27) Jeffrey Rainy / fix: mtt-857 GitHub issue 915 (#1099)
 - [ced41388] (2021-08-27) Noel Stephens / fix: NetworkSceneManager exception when DontDestroyOnLoad NetworkObjects are being synchronized (#1090)
 - [bef00ff6] (2021-08-27) JS Fauteux / fix: MTT-1124 Counters are now reported in sync with other metrics (#1096)
 - [4dfc7601] (2021-08-27) becksebenius-unity / chore: updated all of the namespaces to match the tools package change (#1095)
 - [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
-- [3796565a] (2021-08-26) Jeffrey Rainy / fix: mtt-1088 review. Safer handling of out-of-order or old messages (#1091)
 - [f733bec4] (2021-08-25) becksebenius-unity / feat: fulfilling interface for tools to find network objects from an id (#1086)
 - [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
 - [611678a2] (2021-08-25) Matt Walsh / feat!: network variables - client auth, permission cleanup, containers (#1074)
 - [904552fc] (2021-08-24) Noel Stephens / fix: networkmanager prefab validation and no scene management manual test (#1073)
-- [152178b1] (2021-08-24) Jeffrey Rainy / feat: snapshot. MTT-1088 Snapshot acknowledgment gaps (#1083)
 - [fd44d53a] (2021-08-24) Benoit Doyon / feat: Add a test to validate registration of metric types (#1072)
 - [93c8db00] (2021-08-24) Jesse Olmer / chore!: Remove unsupported UNET Relay behavior (MTT-1000) (#1081)
 - [94a4bf68] (2021-08-23) becksebenius-unity / fix: 2+ inheritance from network behaviour causes compilation exception (#1078) (#1079)
 - [89a92fbd] (2021-08-23) Noel Stephens / feat: additive scene loading and networkscenemanager refactoring (#955)
 - [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
 - [0d956059] (2021-08-19) Luke Stampfli / fix: networkmanager destroy on app quit (#1011)
-- [46b55520] (2021-08-19) Jeffrey Rainy / feat: snapshot, using unreliable packets, now that the underlying foundation supports it. Only merge after https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/1062 (#1064)
-- [428d6e43] (2021-08-19) Jeffrey Rainy / feat: snapshot. Fully integrated despawn, mtt-1092, mtt-1056 (#1062)
 - [43d4494c] (2021-08-18) becksebenius-unity / feat: report network behaviour name to the profiler (#1058)
 - [19e6d3ca] (2021-08-18) Noel Stephens / fix: player movement (#1063)
 - [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTime properties (#1053)
@@ -94,18 +90,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [fffc11f2] (2021-08-16) becksebenius-unity / chore: remove all the old profiling code (#1048)
 - [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
 - [6b58eeb0] (2021-08-11) becksebenius-unity / feat: Implement metrics for the new network profiler (#960)
-- [18de5721] (2021-08-10) Jeffrey Rainy / refactor: Snapshot prep. createObjects and destroyObjects dead code (#1040)
-- [589882c0] (2021-08-10) Jeffrey Rainy / refactor: calling networkShow(NetworkObject) code in networkshow(List<NetworkObject>) (#1028)
-- [01ad0c21] (2021-08-10) Jeffrey Rainy / feat: snapshot. MTT-685 MTT-822 (#1021)
-- [dce2e54d] (2021-08-10) Jeffrey Rainy / test: adding a multi-instance test checking NetworkShow and NetworkHide on lists of objects (#1036)
 - [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
 - [1da76b29] (2021-08-05) Matt Walsh / fix!: added plainly-callable Add() method to NetworkSet [MTT-1005] (#1022)
-- [d71dd1b8] (2021-08-04) Jeffrey Rainy / fix: fixing incorrect merge done as part of commit 85842eeacb99f6ab53ceb78295ec91da5ead7c73 (#1023)
 - [5b9f953b] (2021-08-04) Matt Walsh / test: add network collections, struct and class tests MTT-936 (#1000)
 - [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
 - [f5c51f25] (2021-08-03) Noel Stephens / test: network prefab pools and INetworkPrefabInstanceHandler (#1004)
-- [6b78f322] (2021-08-03) Jeffrey Rainy / refactor: snapshot. merge preparation. Removing old acks, removing unused varia… (#1013)
-- [85842eea] (2021-08-03) Jeffrey Rainy / feat: snapshot. ground work, preparing depedencies. No impact on code behaviour (#1012)
 - [bba72a4b] (2021-08-02) Noel Stephens / refactor!: remove spawn payload technical debt (#1005)
 - [cbe74c2e] (2021-07-30) Luke Stampfli / fix: Client throw exception when destroying spawned object (invalid operation) (#981)
 - [d6b2a486] (2021-07-29) Noel Stephens / refactor!: NetworkPrefabHandler and INetworkPrefabInstanceHandler API & XmlDoc changes (#977)
@@ -115,16 +104,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [82e1c33e] (2021-07-26) Luke Stampfli / fix: Remove assert which is currently broken (#984)
 - [b9ffc1f1] (2021-07-23) Jaedyn Draper / feat: Message Ordering (#948)
 - [fb1555f3] (2021-07-21) Luke Stampfli / feat!: Network Time (RFC #14) (#845)
-- [9ae52deb] (2021-07-21) Jeffrey Rainy / test: small fix to ManualNetworkVariableTest.cs, exposed during anoth… (#968)
-- [fa2be6f1] (2021-07-19) Jeffrey Rainy / feat: snapshot. Adding RTT computation API. (#963)
-- [bdd7d714] (2021-07-14) Jeffrey Rainy / feat: snapshot. Milestone 1b. Testproject "manual test" "scene transitioning" working with snapshot. Disabled by default. (#862)
 - [13e2b7f1] (2021-07-13) Sam Bellomo / test: multiprocess tests part 6: fixing issues runnings all tests together (#957)
 - [bf296660] (2021-07-13) Sam Bellomo / docs: Perf tests part 5. Adding documentation and instructions (#952)
 - [6c8efd66] (2021-07-12) Sam Bellomo / test: Perf tests part 4. Adding example of performance test with spawning x network objects at once (#925)
 - [089c2065] (2021-07-12) Luke Stampfli / test: Correctly teardown OnNetworkSpawn/Despawn tests.
 - [725a77a9] (2021-07-12) Sam Bellomo / test: Perf tests part 3. Adding ExecuteStepInContext for better test readability (#924)
 - [833f1faf] (2021-07-09) Sam Bellomo / test: Perf tests part 2. Adding Test Coordinator and base test class (#923)
-- [b2209c2c] (2021-07-08) Jeffrey Rainy / fix: (MLAPI.Serialization) 'specified cast is not valid.' on NetworkW… (#951)
 - [d08b84ac] (2021-07-08) Sam Bellomo / test: Perf tests part 1. Basis for multiprocess tests process orchestration.  (#922)
 - [be0ca068] (2021-07-06) Phil Deschain / feat: network animator Trigger parameter support (#872)
 - [7ed627c6] (2021-06-30) Sam Bellomo / fix: reducing log level for noisy log and adding details for developer log (#926)
@@ -145,7 +130,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [3e96cf95] (2021-06-08) Jean-Sébastien Fauteux / feat: Add RPC Name Lookup Table Provided by NetworkBehaviourILPP (#875)
 - [92cd9cc6] (2021-06-04) Noel Stephens / fix: remove OnClientConnectedCallback registration from StatsDisplay (#882)
 - [59994781] (2021-06-04) Benoit Doyon / feat: Add profiling decorator pattern (#878)
-- [ba93f729] (2021-06-03) Jeffrey Rainy / refactor: Removing dead code for NETWORK_VARIABLE_UPDATE (#880)
 - [3495445e] (2021-06-03) Jesse Olmer / fix: update package version to 0.2.0 because of unity minversion change (#881)
 - [0444c039] (2021-06-02) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
 - [fa15fc6f] (2021-06-01) Jesse Olmer / docs: Fix typo in changelog version title
@@ -158,7 +142,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [75de2e0b] (2021-05-21) Noel Stephens / test: verify that empty or null arrays of custom INetworkSerializable types can be sent and received (#851)
 - [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
-- [d796d787] (2021-05-21) Jeffrey Rainy / fix: snapshot system. Properly gating the SnapshotSystem from being used until is is ready and specifically enabled (#852)
 - [e2b17b10] (2021-05-21) Samuel Bellomo / some cleanup
 - [086a55a7] (2021-05-21) Noel Stephens / test:  verifies that a user can use INetworkSerializable with RPCs (#850)
 - [3566ea04] (2021-05-20) Samuel Bellomo / fixing a few issues when connecting and disconnecting additional clients Adding separate tests in SpawnManagerTests. Added Teardown
@@ -177,13 +160,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [1808ea01] (2021-05-10) Noel Stephens / test: connection approval and invalid NetworkPrefabs within NetworkConfig.NetworkPrefabs (#825)
 - [ba6fe039] (2021-05-10) Noel Stephens / fix: Handling empty network prefab entries during NetworkManager.Init (#818)
 - [11b2d250] (2021-05-10) Luke Stampfli / refactor: reduce dictionary lookups (#584)
-- [f1728f65] (2021-05-10) Jeffrey Rainy / perf: cache the behaviour id in NetworkBehaviour (#819)
 - [f9ad5d4f] (2021-05-09) Albin Corén / feat: Added SIPTransport for multi instance testing (#806)
 - [2ade79b8] (2021-05-09) Noel Stephens / test: scene transitioning within testproject (#815)
 - [df423caa] (2021-05-08) Noel Stephens / refactor: unit test scene transitioning (#814)
 - [51940a66] (2021-05-08) Noel Stephens / refactor: remove game objects after test finishes (#813)
 - [df687449] (2021-05-08) Noel Stephens / fix: Set singleton if needed and style update (#812)
-- [3304a8d3] (2021-05-07) Jeffrey Rainy / feat: snapshot system milestone 1 (#805)
 - [4916a930] (2021-05-07) Albin Corén / fix: Test transports are no longer shown to users in transport dropdown (#802)
 - [2a77e533] (2021-05-05) Albin Corén / refactor: extract GlobalObjectIdHash generation from NetworkObject.OnValidate() (#798)
 - [f1c86121] (2021-05-04) Albin Corén / fix: Fix editor NetworkManager field when NetworkManager is null (#797)
@@ -216,13 +197,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [0f7d388b] (2021-04-14) Jesse Olmer / Merge tag '0.1.0' into develop
 - [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
 - [8219636e] (2021-04-13) Noel Stephens / feat!: NetworkPrefabHandler to replace UsePrefabSync and Custom Spawn/Destroy Handlers (#727)
-- [52e91a45] (2021-04-08) Jeffrey Rainy / chore: Move NetworkVariable traffic onto a reliable fragmented sequen… (#717)
 - [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
-- [a52b0bf0] (2021-04-07) Jeffrey Rainy / test: Adding a first test to check the robustness of MLAPI to transpo… (#709)
 - [d9969907] (2021-04-07) kvassall-unity / chore: add CODEOWNERS (#697)
 - [e51d7e71] (2021-04-06) Albin Corén / refactor: BufferManager is no longer static (#705)
 - [9f5f39b4] (2021-04-06) Albin Corén / refactor!: SpawnManager is no longer static (#696)
-- [ffbf84e3] (2021-03-31) Jeffrey Rainy / fix: more stable profiler stats. Averages over a full second. No memory allocations. (#692)
 - [467ef5dc] (2021-03-30) Albin Corén / fix: UNET transport channel UI (#679)
 - [350b9a23] (2021-03-29) Albin Corén / test: add NetworkObject and NetworkBehaviour EditorTests (#607)
 - [91339ecc] (2021-03-29) Albin Corén / fix: do not allow multiple player prefabs on networkmanager being checked in the editor (#676)
