@@ -485,7 +485,6 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.S2C_Load:
                     {
-
                         SetInternalBuffer();
                         // We store off the trailing in-scene placed serialized NetworkObject data to
                         // be processed once we are done loading.
@@ -740,8 +739,10 @@ namespace Unity.Netcode
             }
         }
 
-
-        internal void SetInternalBuffer()
+        /// <summary>
+        /// Gets a PooledNetworkBuffer if needed
+        /// </summary>
+        private void SetInternalBuffer()
         {
             if (InternalBuffer == null)
             {
@@ -749,7 +750,10 @@ namespace Unity.Netcode
             }
         }
 
-        internal void ReleaseInternalBuffer()
+        /// <summary>
+        /// Releases the PooledNetworkBuffer when no longer needed
+        /// </summary>
+        private void ReleaseInternalBuffer()
         {
             if (InternalBuffer != null)
             {
