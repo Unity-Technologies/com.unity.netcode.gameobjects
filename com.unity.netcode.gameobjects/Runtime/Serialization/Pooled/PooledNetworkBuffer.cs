@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -7,7 +9,12 @@ namespace Unity.Netcode
     {
         private bool m_IsDisposed = false;
 
-        internal PooledNetworkBuffer() { }
+        internal StackTrace instantiationSite;
+
+        internal PooledNetworkBuffer()
+        {
+            instantiationSite = new StackTrace();
+        }
 
         /// <summary>
         /// Gets a PooledNetworkBuffer from the static NetworkBufferPool
@@ -38,7 +45,15 @@ namespace Unity.Netcode
             {
                 m_IsDisposed = true;
                 NetworkBufferPool.PutBackInPool(this);
+                instantiationSite = null;
             }
+        }
+
+        internal void Reset()
+        {
+            instantiationSite = new StackTrace();
+            SetLength(0);
+            Position = 0;
         }
     }
 }

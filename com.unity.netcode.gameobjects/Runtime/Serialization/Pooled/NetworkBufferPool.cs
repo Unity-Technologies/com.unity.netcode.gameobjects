@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Unity.Netcode
 {
@@ -15,6 +17,7 @@ namespace Unity.Netcode
         private const uint k_MaxBitPoolBuffers = 1024;
         private const uint k_MaxCreatedDelta = 512;
 
+        private static List<PooledNetworkBuffer> s_CreatedBufferList = new List<PooledNetworkBuffer>();
 
         /// <summary>
         /// Retrieves an expandable PooledNetworkBuffer from the pool
@@ -53,6 +56,15 @@ namespace Unity.Netcode
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
                         NetworkLog.LogWarning($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
+                        foreach (var stacks in s_CreatedBufferList
+                            .GroupBy(x => x.instantiationSite?.ToString())
+                            .Select(x => new { Stack = x.Key, Count = x.Count() })
+                            .OrderByDescending(x => x.Count).ToArray())
+                        {
+                            NetworkLog.LogWarning($"{stacks.Count} occurrences of\n{stacks.Stack ?? "null"}");
+                        }
+
+                        throw new Exception();
                     }
                 }
                 else if (s_CreatedBuffers < k_MaxBitPoolBuffers)
@@ -60,12 +72,14 @@ namespace Unity.Netcode
                     s_CreatedBuffers++;
                 }
 
-                return new PooledNetworkBuffer();
+                // KeyValuePair<string,uint> biggestCallSite = s_CallSites.Aggregate((l, r) => l.Value > r.Value ? l : r);
+                var newBuffer = new PooledNetworkBuffer();
+                s_CreatedBufferList.Add(newBuffer);
+                return newBuffer;
             }
 
             PooledNetworkBuffer buffer = s_Buffers.Dequeue();
-            buffer.SetLength(0);
-            buffer.Position = 0;
+            buffer.Reset();
 
             return buffer;
         }
