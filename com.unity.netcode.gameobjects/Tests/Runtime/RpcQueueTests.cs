@@ -125,14 +125,14 @@ namespace Unity.Netcode.RuntimeTests
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
             // Create fictitious list of clients to send to
-            var psuedoClients = new ulong[] { 0 };
+            var pseudoClients = new ulong[] { 0 };
             // Testing outbound side of the RpcQueueContainer
             for (int i = 0; i < maxRpcEntries; i++)
             {
                 // Increment our offset into our randomly generated data for next entry;
 
                 var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkDelivery.Reliable,
-                    senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    senderNetworkId, pseudoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 writer.WriteByteArray(randomGeneratedDataArray, messageChunkSize);
 
                 rpcQueueContainer.EndAddQueueItemToFrame(writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
