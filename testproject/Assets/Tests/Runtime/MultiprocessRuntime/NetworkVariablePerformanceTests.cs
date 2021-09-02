@@ -1,3 +1,4 @@
+#if ONE_TIME_SETUP_WIP
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -248,3 +249,4 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
     }
 }
+#endif
