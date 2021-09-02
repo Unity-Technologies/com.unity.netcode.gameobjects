@@ -384,7 +384,10 @@ namespace Unity.Netcode
             messageQueueHistoryFrame.QueueWriter.WriteUInt16((ushort)messageType);
             messageQueueHistoryFrame.QueueWriter.WriteSingle(sendTimestamp);
             messageQueueHistoryFrame.QueueWriter.WriteUInt64(senderNetworkId);
-            messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkDelivery);
+            if (queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Outbound)
+            {
+                messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkDelivery);
+            }
 
             if (queueFrameType != MessageQueueHistoryFrame.QueueFrameType.Inbound)
             {
