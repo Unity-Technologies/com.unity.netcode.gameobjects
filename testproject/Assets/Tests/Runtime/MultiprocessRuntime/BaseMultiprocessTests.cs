@@ -23,7 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private bool m_SceneHasLoaded;
 
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || !BuildMultiprocessTestPlayer.IsMultiprocessTestPlayerAvailable(); // todo remove UTR check once we have proper automation
+        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
@@ -36,10 +36,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             if (ShouldIgnoreTests)
             {
-                if (!BuildMultiprocessTestPlayer.IsMultiprocessTestPlayerAvailable())
-                {
-                    Assert.Ignore($"Multiprocess test player is not available so cannot run tests: {Application.platform}");
-                }
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
 
@@ -101,4 +97,3 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
     }
 }
-
