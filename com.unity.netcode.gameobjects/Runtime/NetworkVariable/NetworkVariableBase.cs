@@ -14,9 +14,9 @@ namespace Unity.Netcode
             m_NetworkBehaviour = networkBehaviour;
         }
         /// <summary>
-        /// The name of the channel to be used for syncing
+        /// The delivery type (QoS) to send data with
         /// </summary>
-        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
+        public NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
 
         protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {
