@@ -309,7 +309,7 @@ namespace Unity.Netcode
 
         internal SnapshotSpawnCommand ReadSpawn(NetworkReader reader)
         {
-            var command = SnapshotSystem.GetSpawnCommand();
+            var command = new SnapshotSpawnCommand();
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
             command.GlobalObjectIdHash = (uint)reader.ReadUInt64Packed();
@@ -328,7 +328,7 @@ namespace Unity.Netcode
 
         internal SnapshotDespawnCommand ReadDespawn(NetworkReader reader)
         {
-            SnapshotDespawnCommand command = SnapshotSystem.GetDespawnCommand();
+            SnapshotDespawnCommand command = new SnapshotDespawnCommand();
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
             command.TickWritten = reader.ReadInt32Packed();
@@ -1117,38 +1117,6 @@ namespace Unity.Netcode
 
             table += "======\n";
             Debug.Log(table);
-        }
-
-        static internal SnapshotDespawnCommand GetDespawnCommand()
-        {
-            var despawn = new SnapshotDespawnCommand();
-
-            despawn.NetworkObjectId = default;
-            despawn.TickWritten = default;
-            despawn.TargetClientIds = default;
-            despawn.TimesWritten = default;
-
-            return despawn;
-        }
-
-        static internal SnapshotSpawnCommand GetSpawnCommand()
-        {
-            var spawn = new SnapshotSpawnCommand();
-
-            spawn.NetworkObjectId = default;
-            spawn.GlobalObjectIdHash = default;
-            spawn.IsSceneObject = default;
-            spawn.IsPlayerObject = default;
-            spawn.OwnerClientId = default;
-            spawn.ParentNetworkId = default;
-            spawn.ObjectPosition = default;
-            spawn.ObjectRotation = default;
-            spawn.ObjectScale = default;
-            spawn.TickWritten = default;
-            spawn.TargetClientIds = default;
-            spawn.TimesWritten = default;
-
-            return spawn;
         }
     }
 }
