@@ -376,7 +376,6 @@ namespace Unity.Netcode
                     new ArraySegment<byte>(m_MessageBuffer, 0, size),
                     Time.realtimeSinceStartup
                 );
-                // Debug.Log($"Receiving: {String.Join(", ", m_MessageBuffer.Take(size).Select(x => string.Format("{0:x}", x)))}");
             }
         }
 
@@ -385,6 +384,7 @@ namespace Unity.Netcode
             if (m_Driver.IsCreated)
             {
                 m_Driver.ScheduleUpdate().Complete();
+
                 while(AcceptConnection() && m_Driver.IsCreated)
                 {
                     ;
@@ -394,6 +394,8 @@ namespace Unity.Netcode
                 {
                     ;
                 }
+
+                FlushAllSendQueues();
             }
 
         }
@@ -401,13 +403,13 @@ namespace Unity.Netcode
         /// <summary>
         /// Send batched messages out in LateUpdate.
         /// </summary>
-        private void LateUpdate()
-        {
-            if (m_Driver.IsCreated)
-            {
-                FlushAllSendQueues();
-            }
-        }
+        // private void LateUpdate()
+        // {
+        //     if (m_Driver.IsCreated)
+        //     {
+        //         FlushAllSendQueues();
+        //     }
+        // }
 
         private void OnDestroy()
         {
@@ -487,7 +489,7 @@ namespace Unity.Netcode
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
-            var size = data.Count + 1 + 4; // 1 byte for the channel and 4 for the count of the data
+            var size = data.Count + 1 + 4; // 1 extra byte for the channel and another 4 for the count of the data
             var pipeline = SelectSendPipeline(networkChannel, size);
 
             SendTarget sendTarget = new SendTarget(clientId, pipeline);
@@ -498,20 +500,23 @@ namespace Unity.Netcode
             }
 
             var success = queue.AddEvent((byte)networkChannel, data);
-            if (!success)
+            if (!success) // This would be false only when the SendQueue is full already or we are sending a super large message at once
             {
                 // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
                 if (data.Count > queue.Size)
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
-                    Debug.LogWarning($"Sent {data.Count} bytes on channel: {networkChannel}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}).");
-                    Debug.Assert(networkChannel == NetworkChannel.Fragmented);
+                    Debug.LogWarning($"Sent {data.Count} bytes on channel: {networkChannel}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}). This can be the initial payload!");
+                    Debug.Assert(networkChannel == NetworkChannel.Fragmented); // Messages like this, should always be sent via the fragmented pipeline.
                     SendMessageInstantly(sendTarget.ClientId, data, networkChannel, pipeline);
                 }
                 else
                 {
-                    // TODO: Cosmin handle this edge case!
-                   Debug.Assert(false);
+                    // Since our queue buffer is full then send that right away, clear it and queue this new data
+                    SendBatchedMessageAndClearQueue(sendTarget, queue);
+                    Debug.Assert(queue.IsEmpty() == true);
+                    queue.Clear();
+                    queue.AddEvent((byte)networkChannel, data);
                 }
             }
         }
@@ -524,7 +529,7 @@ namespace Unity.Netcode
             {
                 if (data.Array != null)
                 {
-                    // This 1 byte indicates whether the message has been batched or not
+                    // This 1 byte indicates whether the message has been batched or not, in this case it is
                     writer.WriteByte(1);
 
                     // Note: we are not writing the one byte for the channel and the other 4 for the data count as it will be handled by the queue
@@ -558,7 +563,7 @@ namespace Unity.Netcode
                 {
                     writer.WriteByte(0); // This 1 byte indicates whether the message has been batched or not, in this case is not, as is sent instantly
                     writer.WriteByte((byte)networkChannel); // Send the channel ID;
-                    writer.WriteInt(payloadSize);
+                    writer.WriteInt(data.Count);
 
                     // Note: we are not writing the one byte for the channel and the other 4 for the data count as it will be handled by the queue
                     unsafe
@@ -594,18 +599,23 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                NetworkPipeline pipeline = kvp.Key.NetworkPipeline;
-                var payloadSize = kvp.Value.Count + 1;
-                if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
-                {
-                    // TODO: Cosmin re-check this with Andrew
-                    pipeline = SelectSendPipeline(NetworkChannel.Fragmented, payloadSize);
-                }
-
-                var sendBuffer = kvp.Value.GetData();
-                SendBatchedMessage(kvp.Key.ClientId, sendBuffer, pipeline);
-                kvp.Value.Clear();
+                SendBatchedMessageAndClearQueue(kvp.Key, kvp.Value);
             }
+        }
+
+        private void SendBatchedMessageAndClearQueue(SendTarget sendTarget, SendQueue sendQueue)
+        {
+            NetworkPipeline pipeline = sendTarget.NetworkPipeline;
+            var payloadSize = sendQueue.Count + 1; // 1 extra byte to tell whether the message is batched or not
+            if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
+            {
+                // TODO: Cosmin re-check this with Andrew
+                pipeline = SelectSendPipeline(NetworkChannel.Fragmented, payloadSize);
+            }
+
+            var sendBuffer = sendQueue.GetData();
+            SendBatchedMessage(sendTarget.ClientId, sendBuffer, pipeline);
+            sendQueue.Clear();
         }
 
         public override SocketTasks StartClient()
@@ -675,7 +685,9 @@ namespace Unity.Netcode
             /// <returns>True if the event was added successfully to the queue. False if there was no space in the queue.</returns>
             internal bool AddEvent(byte channelId, ArraySegment<byte> data)
             {
-                if (m_Stream.Position + data.Count + 1 + 4 > Size) // TODO: Cosmin should comment this
+                // Check if we are about to write more than the buffer can fit
+                // Note: 1 byte for the channel + 4 for the count of data
+                if (m_Stream.Position + data.Count + 1 + 4 > Size)
                 {
                     return false;
                 }
