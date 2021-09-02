@@ -148,11 +148,11 @@ namespace TestProject.RuntimeTests
 
             foreach (var client in clients)
             {
-                client.StopClient();
+                client.Shutdown();
             }
 
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
-            server.StopHost();
+            server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
