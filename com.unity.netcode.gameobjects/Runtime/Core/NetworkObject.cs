@@ -394,7 +394,7 @@ namespace Unity.Netcode
 
         private SnapshotDespawnCommand GetDespawnCommand()
         {
-            SnapshotDespawnCommand command = new SnapshotDespawnCommand();
+            var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
 
             return command;
@@ -402,7 +402,7 @@ namespace Unity.Netcode
 
         private SnapshotSpawnCommand GetSpawnCommand()
         {
-            SnapshotSpawnCommand command = new SnapshotSpawnCommand();
+            var command = new SnapshotSpawnCommand();
             command.NetworkObjectId = NetworkObjectId;
             command.OwnerClientId = OwnerClientId;
             command.IsPlayerObject = IsPlayerObject;

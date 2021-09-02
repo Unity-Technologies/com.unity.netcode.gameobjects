@@ -328,7 +328,7 @@ namespace Unity.Netcode
 
         internal SnapshotDespawnCommand ReadDespawn(NetworkReader reader)
         {
-            SnapshotDespawnCommand command = new SnapshotDespawnCommand();
+            var command = new SnapshotDespawnCommand();
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
             command.TickWritten = reader.ReadInt32Packed();
