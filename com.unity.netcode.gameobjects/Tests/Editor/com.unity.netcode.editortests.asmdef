@@ -20,26 +20,4 @@
             "define": "MULTIPLAYER_TOOLS"
         }
     ]
-}{
-    "name": "Unity.Netcode.EditorTests",
-    "rootNamespace": "Unity.Netcode.EditorTests",
-    "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-	"versionDefines": [
-        {
-            "name": "com.unity.multiplayer.tools",
-            "expression": "",
-            "define": "MULTIPLAYER_TOOLS"
-        }
-    ]
 }
