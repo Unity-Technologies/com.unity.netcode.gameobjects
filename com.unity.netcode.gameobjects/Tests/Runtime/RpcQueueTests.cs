@@ -110,7 +110,9 @@ namespace Unity.Netcode.RuntimeTests
             var rpcQueueContainer = new MessageQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
 
             // Make sure we set testing mode so we don't try to invoke RPCs
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             rpcQueueContainer.SetTestingState(true);
+#endif
 
             var maxRpcEntries = 8;
             var messageChunkSize = 2048;
