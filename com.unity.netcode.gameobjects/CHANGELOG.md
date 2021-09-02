@@ -16,7 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - When a client tries to spawn a `NetworkObject` an exception is thrown to indicate unsupported behavior. (#981)
 - Added a `NetworkTime` and `NetworkTickSystem` which allows for improved control over time and ticks. (#845)
 - Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
-- Added `SnapshotSystem`. This internal system will allow variables and (de)spawn commands to be send in blocks. Will leverage unreliable messages and offer efficient transfer with eventual consistency. Off by default for now and only implemented for spawns and despawns.
+- Added `SnapshotSystem`. This internal system will allow variables and (de)spawn commands to be sent in blocks. Will leverage unreliable messages and offer efficient transfer with eventual consistency. Off by default for now and only implemented for spawns and despawns.
 
 ### Changed
 
