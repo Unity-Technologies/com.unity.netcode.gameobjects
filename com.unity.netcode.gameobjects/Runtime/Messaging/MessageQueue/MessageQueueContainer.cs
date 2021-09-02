@@ -829,7 +829,7 @@ namespace Unity.Netcode
         }
 
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_INCLUDE_TESTS
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// Enables testing of the MessageQueueContainer
         /// </summary>
