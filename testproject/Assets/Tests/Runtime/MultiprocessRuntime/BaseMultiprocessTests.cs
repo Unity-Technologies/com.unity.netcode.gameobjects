@@ -19,9 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected virtual bool IsPerformanceTest => true;
 
-        private const string k_GlobalEmptySceneName = "EmptyScene";
-
-        private bool m_SceneHasLoaded;
+        static private bool s_SceneHasLoaded;
 
         protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
 
@@ -33,17 +31,84 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private Scene m_OriginalActiveScene;
 
-        [OneTimeSetUp]
-        public virtual void SetupTestSuite()
+
+        private void SceneUnloaded(Scene scene)
         {
-            if (IsPerformanceTest)
+            if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
-                Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
+                SceneManager.sceneUnloaded -= SceneUnloaded;
+                LoadMainTestScene();
             }
-            m_OriginalActiveScene = SceneManager.GetActiveScene();
+        }
+
+        private void LoadMainTestScene()
+        {
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
         }
+
+        [OneTimeSetUp]
+        public virtual void SetupTestSuite()
+        {
+            // TestFixtures will run for each TestFixture, w
+            if (!s_SceneHasLoaded)
+            {
+                if (IsPerformanceTest)
+                {
+                    Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
+                }
+                var shouldUnloadFirst = false;
+
+                var currentlyActiveScene = SceneManager.GetActiveScene();
+
+                if (currentlyActiveScene.name == BuildMultiprocessTestPlayer.MainSceneName)
+                {
+                    if (m_OriginalActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
+                    {
+                        SceneManager.SetActiveScene(m_OriginalActiveScene);
+                        currentlyActiveScene = SceneManager.GetActiveScene();
+                    }
+                    shouldUnloadFirst = true;
+                }
+                else
+                {
+                    for (int i = 0; i < SceneManager.sceneCount; i++)
+                    {
+                        var scene = SceneManager.GetSceneAt(i);
+                        var sceneName = scene.name;
+                        if (sceneName == BuildMultiprocessTestPlayer.MainSceneName)
+                        {
+                            shouldUnloadFirst = true;
+                        }
+                    }
+                }
+
+                if (shouldUnloadFirst)
+                {
+                    if (currentlyActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
+                    {
+                        m_OriginalActiveScene = currentlyActiveScene;
+                    }
+                    SceneManager.sceneUnloaded += SceneUnloaded;
+                    SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                }
+                else
+                {
+                    if (currentlyActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
+                    {
+                        m_OriginalActiveScene = currentlyActiveScene;
+                    }
+                    LoadMainTestScene();
+                }
+            }
+            else if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.StartHost();
+                // Use scene verification to make sure we don't try to synchronize the TestRunner scene
+                NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
+            }
+        }
+
 
         private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
@@ -66,13 +131,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Use scene verification to make sure we don't try to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
 
-            m_SceneHasLoaded = true;
+            s_SceneHasLoaded = true;
         }
 
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening && m_SceneHasLoaded);
+            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening && s_SceneHasLoaded);
 
             if (MultiprocessOrchestration.Processes.Count < WorkerCount)
             {
@@ -121,10 +186,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if(m_OriginalActiveScene.IsValid())
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
+
                 }
                 SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-
-
+                s_SceneHasLoaded = false;
             }
         }
     }
