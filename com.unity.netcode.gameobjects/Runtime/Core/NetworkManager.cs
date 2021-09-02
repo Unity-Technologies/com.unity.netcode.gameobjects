@@ -983,6 +983,7 @@ namespace Unity.Netcode
 
             if (SceneManager != null)
             {
+                SceneManager.Dispose();
                 SceneManager = null;
             }
 

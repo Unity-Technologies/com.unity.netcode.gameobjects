@@ -119,7 +119,7 @@ namespace Unity.Netcode
         /// </summary>
         private List<ulong> m_NetworkObjectsToBeRemoved = new List<ulong>();
 
-        internal PooledNetworkBuffer InternalBuffer;
+        internal NetworkBuffer InternalBuffer;
 
         private NetworkManager m_NetworkManager;
 
@@ -743,7 +743,7 @@ namespace Unity.Netcode
         {
             if (InternalBuffer != null)
             {
-                NetworkBufferPool.PutBackInPool(InternalBuffer);
+                InternalBuffer.Dispose();
                 InternalBuffer = null;
             }
         }
@@ -754,7 +754,7 @@ namespace Unity.Netcode
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            InternalBuffer = NetworkBufferPool.GetBuffer();
+            InternalBuffer = new NetworkBuffer(1024, 256);
         }
     }
 }
