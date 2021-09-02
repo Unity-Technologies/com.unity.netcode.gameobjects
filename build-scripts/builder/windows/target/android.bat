@@ -10,11 +10,11 @@ echo must pass at either "build" or "test" as first argument
 goto done
 :BUILD
 echo building on windows for android
-call utr --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only
+call utr --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests
 goto done
 :TEST
 SET ANDROID_SDK_ROOT=%cd%\.Editor\Data\PlaybackEngines\AndroidPlayer\SDK
-call utr --suite=playmode --platform=Android --player-load-path=build/players --artifacts_path=build/test-results
+call utr --suite=playmode --platform=Android --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
 goto done
 :DONE
 echo done
