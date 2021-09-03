@@ -221,7 +221,7 @@ namespace Unity.Netcode.Prototyping
 
         public void InitializeInterpolator<TPos, TRot, TScale>() where TPos : IInterpolator<float>, new() where TRot : IInterpolator<Quaternion>, new() where TScale : IInterpolator<float>, new()
         {
-            AllFloatInterpolators.Clear();
+            m_AllFloatInterpolators.Clear();
             if (Interpolate)
             {
                 PositionXInterpolator = new TPos();
@@ -243,16 +243,15 @@ namespace Unity.Netcode.Prototyping
                 ScaleZInterpolator = new NoInterpolator<float>();
             }
 
-            AllFloatInterpolators.Add(PositionXInterpolator);
-            AllFloatInterpolators.Add(PositionYInterpolator);
-            AllFloatInterpolators.Add(PositionZInterpolator);
-            AllFloatInterpolators.Add(ScaleXInterpolator);
-            AllFloatInterpolators.Add(ScaleYInterpolator);
-            AllFloatInterpolators.Add(ScaleZInterpolator);
+            m_AllFloatInterpolators.Add(PositionXInterpolator);
+            m_AllFloatInterpolators.Add(PositionYInterpolator);
+            m_AllFloatInterpolators.Add(PositionZInterpolator);
+            m_AllFloatInterpolators.Add(ScaleXInterpolator);
+            m_AllFloatInterpolators.Add(ScaleYInterpolator);
+            m_AllFloatInterpolators.Add(ScaleZInterpolator);
         }
 
-        // public IInterpolator<float>[] all = new[];
-        private readonly List<IInterpolator<float>> AllFloatInterpolators = new List<IInterpolator<float>>(6);
+        private readonly List<IInterpolator<float>> m_AllFloatInterpolators = new List<IInterpolator<float>>(6);
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
@@ -553,12 +552,12 @@ namespace Unity.Netcode.Prototyping
         {
             m_Transform = transform;
 
-            if (AllFloatInterpolators.Count == 0)
+            if (m_AllFloatInterpolators.Count == 0)
             {
                 InitializeInterpolator<BufferedLinearInterpolatorFloat, BufferedLinearInterpolatorQuaternion, BufferedLinearInterpolatorFloatForScale>();
             }
 
-            foreach (var interpolator in AllFloatInterpolators)
+            foreach (var interpolator in m_AllFloatInterpolators)
             {
                 interpolator.Awake();
                 interpolator.UseFixedUpdate = UseFixedUpdate;
@@ -588,7 +587,7 @@ namespace Unity.Netcode.Prototyping
 
         public void Start()
         {
-            foreach (var interpolator in AllFloatInterpolators)
+            foreach (var interpolator in m_AllFloatInterpolators)
             {
                 interpolator.Start();
             }
@@ -598,7 +597,7 @@ namespace Unity.Netcode.Prototyping
 
         public void OnEnable()
         {
-            foreach (var interpolator in AllFloatInterpolators)
+            foreach (var interpolator in m_AllFloatInterpolators)
             {
                 interpolator.OnEnable();
             }
@@ -612,10 +611,11 @@ namespace Unity.Netcode.Prototyping
             {
                 ResetCurrentInterpolatedState(); // useful for late joining
 
-                foreach (var interpolator in AllFloatInterpolators) // todo remove GC alloc this creates
+                foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.OnNetworkSpawn();
                 }
+
                 // todo cache network manager to remove some of the time it takes to get it
                 RotationInterpolator.OnNetworkSpawn();
 
@@ -627,7 +627,7 @@ namespace Unity.Netcode.Prototyping
         {
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
 
-            foreach (var interpolator in AllFloatInterpolators)
+            foreach (var interpolator in m_AllFloatInterpolators)
             {
                 interpolator.OnDestroy();
             }
@@ -672,7 +672,7 @@ namespace Unity.Netcode.Prototyping
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
 
-                foreach (var interpolator in AllFloatInterpolators)
+                foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
                 }
@@ -696,7 +696,7 @@ namespace Unity.Netcode.Prototyping
             // apply interpolated value
             if (!IsServer && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                foreach (var interpolator in AllFloatInterpolators)
+                foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Update(Time.deltaTime);
                 }
