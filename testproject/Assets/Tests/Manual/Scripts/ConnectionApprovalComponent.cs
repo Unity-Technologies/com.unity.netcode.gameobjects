@@ -7,6 +7,9 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
+    /// <summary>
+    /// This component demonstrates how to use the Netcode for GameObjects connection approval feature
+    /// </summary>
     public class ConnectionApprovalComponent : NetworkBehaviour
     {
         [SerializeField]
@@ -78,20 +81,29 @@ namespace TestProject.ManualTests
             }
         }
 
-        private void NetworkManager_OnClientConnectedCallback(ulong obj)
+        /// <summary>
+        /// When a client connects we display a message and if we are not the server
+        /// we display a disconnect button for ease of testing.
+        /// </summary>
+        private void NetworkManager_OnClientConnectedCallback(ulong clientId)
         {
             if (m_ClientDisconnectButton)
             {
                 m_ClientDisconnectButton.gameObject.SetActive(!IsServer);
             }
 
-            AddNewMessage($"Client {obj} was connected.");
+            AddNewMessage($"Client {clientId} was connected.");
         }
 
-        private void NetworkManager_OnClientDisconnectCallback(ulong obj)
+        /// <summary>
+        /// When a client is disconnected we display a message and if we
+        /// are not listening and not the server we reset the UI Connection
+        /// mode buttons
+        /// </summary>
+        private void NetworkManager_OnClientDisconnectCallback(ulong clientId)
         {
 
-            AddNewMessage($"Client {obj} was disconnected!");
+            AddNewMessage($"Client {clientId} was disconnected!");
 
             if (!NetworkManager.IsListening && !NetworkManager.IsServer)
             {
@@ -104,6 +116,9 @@ namespace TestProject.ManualTests
             }
         }
 
+        /// <summary>
+        /// Just display certain check boxes only when we are in a network session
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             if (m_SimulateFailure)
@@ -117,6 +132,9 @@ namespace TestProject.ManualTests
             }
         }
 
+        /// <summary>
+        /// Used for the client when the disconnect button is pressed
+        /// </summary>
         public void OnDisconnectClient()
         {
             if ( NetworkManager != null && NetworkManager.IsListening && !NetworkManager.IsServer)
@@ -130,6 +148,12 @@ namespace TestProject.ManualTests
             }
         }
 
+        /// <summary>
+        /// Invoked only on the server, this will handle the various connection approval combinations
+        /// </summary>
+        /// <param name="dataToken">key or password to get approval</param>
+        /// <param name="clientId">client identifier being approved</param>
+        /// <param name="aprovalCallback">callback that should be invoked once it is determined if client is approved or not</param>
         private void ConnectionApprovalCallback(byte[] dataToken, ulong clientId, NetworkManager.ConnectionApprovedDelegate aprovalCallback)
         {
             string approvalToken = Encoding.ASCII.GetString(dataToken);
@@ -161,16 +185,19 @@ namespace TestProject.ManualTests
                 }
 
                 m_ConnectionMessageToDisplay.gameObject.SetActive(true);
-                StartCoroutine(WaitToHideConnectionText());
             }
         }
 
+        /// <summary>
+        /// Adds a new message to be displayed and if our display coroutine is not running start it.
+        /// </summary>
+        /// <param name="msg">message to add to the list of messages to be displayed</param>
         private void AddNewMessage(string msg)
         {
             m_Messages.Add(new MessageEntry() { Message = msg, TimeOut = Time.realtimeSinceStartup + 8.0f });
             if (!m_ConnectionMessageToDisplay.gameObject.activeInHierarchy)
             {
-                StartCoroutine(WaitToHideConnectionText());
+                StartCoroutine(DisplayMessatesUntilEmpty());
                 if (m_ConnectionMessageToDisplay)
                 {
                     m_ConnectionMessageToDisplay.gameObject.SetActive(true);
@@ -178,7 +205,11 @@ namespace TestProject.ManualTests
             }
         }
 
-        private IEnumerator WaitToHideConnectionText()
+        /// <summary>
+        /// Coroutine that displays messages until there are no more messages to be displayed.
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator DisplayMessatesUntilEmpty()
         {
             var messagesToRemove = new List<MessageEntry>();
             while (m_Messages.Count > 0)
