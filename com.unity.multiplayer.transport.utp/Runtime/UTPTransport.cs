@@ -179,9 +179,9 @@ public class UTPTransport : NetworkTransport
     public string Address = "127.0.0.1";
     public ushort Port = 7777;
 
-    private NetworkDriver Driver;
-    private NativeList<NetworkConnection> Connections;
-    private NativeQueue<RawNetworkMessage> PacketData;
+    private NetworkDriver m_Driver;
+    private NativeList<NetworkConnection> m_Connections;
+    private NativeQueue<RawNetworkMessage> m_PacketData;
     private NativeArray<byte> m_PacketProcessBuffer;
 
     private JobHandle m_JobHandle;
@@ -192,20 +192,20 @@ public class UTPTransport : NetworkTransport
 
     public override ulong ServerClientId => 0;
 
-    public override void DisconnectLocalClient() { _ = Driver.Disconnect(Connections[0]); }
+    public override void DisconnectLocalClient() { _ = m_Driver.Disconnect(m_Connections[0]); }
     public override void DisconnectRemoteClient(ulong clientId)
     {
         GetUTPConnectionDetails(clientId, out uint peerId);
         var con = GetConnection(peerId);
         if (con != default)
         {
-            Driver.Disconnect(con);
+            m_Driver.Disconnect(con);
         }
     }
 
     private NetworkConnection GetConnection(uint id)
     {
-        foreach (var item in Connections)
+        foreach (var item in m_Connections)
         {
             if (item.InternalId == id)
             {
@@ -220,27 +220,27 @@ public class UTPTransport : NetworkTransport
 
     public override void Initialize()
     {
-        Driver = NetworkDriver.Create();
+        m_Driver = NetworkDriver.Create();
 
-        m_NetworkPipelines[0] = Driver.CreatePipeline(typeof(FragmentationPipelineStage));
-        m_NetworkPipelines[1] = Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
-        m_NetworkPipelines[2] = Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+        m_NetworkPipelines[0] = m_Driver.CreatePipeline(typeof(FragmentationPipelineStage));
+        m_NetworkPipelines[1] = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+        m_NetworkPipelines[2] = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
 
-        PacketData = new NativeQueue<RawNetworkMessage>(Allocator.Persistent);
+        m_PacketData = new NativeQueue<RawNetworkMessage>(Allocator.Persistent);
         m_PacketProcessBuffer = new NativeArray<byte>(1000, Allocator.Persistent);
     }
 
     [BurstCompile]
     private void SendToClient(NativeArray<byte> packet, ulong clientId, int pipelineIndex)
     {
-        foreach (var targetConn in Connections)
+        foreach (var targetConn in m_Connections)
         {
             if (targetConn.InternalId != (int)clientId)
             {
                 continue;
             }
 
-            var writer = Driver.BeginSend(m_NetworkPipelines[pipelineIndex], targetConn);
+            var writer = m_Driver.BeginSend(m_NetworkPipelines[pipelineIndex], targetConn);
 
             if (!writer.IsCreated)
             {
@@ -249,7 +249,7 @@ public class UTPTransport : NetworkTransport
 
             writer.WriteBytes(packet);
 
-            Driver.EndSend(writer);
+            m_Driver.EndSend(writer);
         }
     }
 
@@ -300,7 +300,7 @@ public class UTPTransport : NetworkTransport
     {
         if (m_IsServer || m_IsClient)
         {
-            while (PacketData.TryDequeue(out var message))
+            while (m_PacketData.TryDequeue(out var message))
             {
                 var data = m_PacketProcessBuffer.Slice(0, message.Length);
                 unsafe
@@ -324,9 +324,9 @@ public class UTPTransport : NetworkTransport
 
                         break;
                     case NetcodeEvent.Connect:
-                    {
-                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    }
+                        {
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        }
                         break;
                     case NetcodeEvent.Disconnect:
                         InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, new ArraySegment<byte>(), Time.realtimeSinceStartup);
@@ -344,32 +344,32 @@ public class UTPTransport : NetworkTransport
                 {
                     var connectionJob = new ServerUpdateConnectionsJob
                     {
-                        Driver = Driver,
-                        Connections = Connections,
-                        PacketData = PacketData.AsParallelWriter()
+                        Driver = m_Driver,
+                        Connections = m_Connections,
+                        PacketData = m_PacketData.AsParallelWriter()
                     };
 
                     var serverUpdateJob = new ServerUpdateJob
                     {
-                        Driver = Driver.ToConcurrent(),
-                        Connections = Connections.AsDeferredJobArray(),
-                        PacketData = PacketData.AsParallelWriter()
+                        Driver = m_Driver.ToConcurrent(),
+                        Connections = m_Connections.AsDeferredJobArray(),
+                        PacketData = m_PacketData.AsParallelWriter()
                     };
 
-                    m_JobHandle = Driver.ScheduleUpdate();
+                    m_JobHandle = m_Driver.ScheduleUpdate();
                     m_JobHandle = connectionJob.Schedule(m_JobHandle);
-                    m_JobHandle = serverUpdateJob.Schedule(Connections, 1, m_JobHandle);
+                    m_JobHandle = serverUpdateJob.Schedule(m_Connections, 1, m_JobHandle);
                 }
 
                 if (m_IsClient)
                 {
                     var job = new ClientUpdateJob
                     {
-                        Driver = Driver,
-                        Connection = Connections,
-                        PacketData = PacketData
+                        Driver = m_Driver,
+                        Connection = m_Connections,
+                        PacketData = m_PacketData
                     };
-                    m_JobHandle = Driver.ScheduleUpdate();
+                    m_JobHandle = m_Driver.ScheduleUpdate();
                     m_JobHandle = job.Schedule(m_JobHandle);
                 }
             }
@@ -382,25 +382,25 @@ public class UTPTransport : NetworkTransport
     {
         m_JobHandle.Complete();
 
-        if (PacketData.IsCreated)
+        if (m_PacketData.IsCreated)
         {
-            PacketData.Dispose();
+            m_PacketData.Dispose();
         }
 
-        if (Connections.IsCreated)
+        if (m_Connections.IsCreated)
         {
-            Connections.Dispose();
+            m_Connections.Dispose();
         }
 
-        Driver.Dispose();
+        m_Driver.Dispose();
         m_PacketProcessBuffer.Dispose();
     }
 
     public override SocketTasks StartClient()
     {
-        Connections = new NativeList<NetworkConnection>(1, Allocator.Persistent);
+        m_Connections = new NativeList<NetworkConnection>(1, Allocator.Persistent);
         var endpoint = NetworkEndPoint.Parse(Address, Port);
-        Connections.Add(Driver.Connect(endpoint));
+        m_Connections.Add(m_Driver.Connect(endpoint));
         m_IsClient = true;
 
         Debug.Log("StartClient");
@@ -412,19 +412,19 @@ public class UTPTransport : NetworkTransport
 
     public override SocketTasks StartServer()
     {
-        Connections = new NativeList<NetworkConnection>(0xFF, Allocator.Persistent);
+        m_Connections = new NativeList<NetworkConnection>(0xFF, Allocator.Persistent);
         var endpoint = NetworkEndPoint.Parse(Address, Port);
         m_IsServer = true;
 
         Debug.Log("StartServer");
 
-        if (Driver.Bind(endpoint) != 0)
+        if (m_Driver.Bind(endpoint) != 0)
         {
             Debug.LogError("Failed to bind to port " + Port);
         }
         else
         {
-            Driver.Listen();
+            m_Driver.Listen();
         }
 
         return SocketTask.Working.AsTasks();
