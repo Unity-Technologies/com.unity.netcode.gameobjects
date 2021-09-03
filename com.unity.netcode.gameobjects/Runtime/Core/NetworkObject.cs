@@ -312,9 +312,7 @@ namespace Unity.Netcode
             else
             {
                 // Send destroy call
-                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                    new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
+                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
                 if (context != null)
                 {
                     using var nonNullContext = (InternalCommandContext)context;
@@ -394,17 +392,15 @@ namespace Unity.Netcode
 
         private SnapshotDespawnCommand GetDespawnCommand()
         {
-            SnapshotDespawnCommand command;
+            var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }
 
         private SnapshotSpawnCommand GetSpawnCommand()
         {
-            SnapshotSpawnCommand command;
+            var command = new SnapshotSpawnCommand();
             command.NetworkObjectId = NetworkObjectId;
             command.OwnerClientId = OwnerClientId;
             command.IsPlayerObject = IsPlayerObject;
@@ -426,8 +422,6 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }
@@ -723,11 +717,7 @@ namespace Unity.Netcode
             m_IsReparented = true;
             ApplyNetworkParenting();
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ParentSync, NetworkChannel.Internal,
-                NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
-                NetworkUpdateLoop.UpdateStage);
-
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ParentSync, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds.Where(id => Observers.Contains(id)).ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;

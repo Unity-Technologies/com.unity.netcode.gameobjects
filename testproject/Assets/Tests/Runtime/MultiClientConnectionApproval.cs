@@ -148,11 +148,11 @@ namespace TestProject.RuntimeTests
 
             foreach (var client in clients)
             {
-                client.StopClient();
+                client.Shutdown();
             }
 
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
-            server.StopHost();
+            server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
@@ -240,6 +240,50 @@ namespace TestProject.RuntimeTests
         {
             m_ServerClientConnectedInvocations++;
         }
+
+
+        private int m_ServerClientDisconnectedInvocations;
+
+        /// <summary>
+        /// Tests that clients are disconnected when their ConnectionApproval setting is mismatched with the host-server
+        /// and  when scene management is enabled and disabled
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true,false)] bool connectionApproval)
+        {
+            m_ServerClientDisconnectedInvocations = 0;
+
+            // Create Host and (numClients) clients
+            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+
+            server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+            server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
+            server.NetworkConfig.ConnectionApproval = connectionApproval;
+
+            foreach (var client in clients)
+            {
+                client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+                client.NetworkConfig.ConnectionApproval = !connectionApproval;
+            }
+
+            // Start the instances
+            if (!MultiInstanceHelpers.Start(true, server, clients))
+            {
+                Assert.Fail("Failed to start instances");
+            }
+
+            var nextFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            Assert.True(m_ServerClientDisconnectedInvocations == 3);
+        }
+
+        private void Server_OnClientDisconnectedCallback(ulong clientId)
+        {
+            m_ServerClientDisconnectedInvocations++;
+        }
+
 
         [TearDown]
         public void TearDown()

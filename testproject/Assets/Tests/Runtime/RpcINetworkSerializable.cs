@@ -87,8 +87,8 @@ namespace TestProject.RuntimeTests
             }
 
             // End of test
-            m_ClientNetworkManagers[0].StopClient();
-            m_ServerNetworkManager.StopHost();
+            m_ClientNetworkManagers[0].Shutdown();
+            m_ServerNetworkManager.Shutdown();
         }
 
         /// <summary>
@@ -209,8 +209,8 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].StopClient();
-            m_ServerNetworkManager.StopHost();
+            m_ClientNetworkManagers[0].Shutdown();
+            m_ServerNetworkManager.Shutdown();
 
         }
 

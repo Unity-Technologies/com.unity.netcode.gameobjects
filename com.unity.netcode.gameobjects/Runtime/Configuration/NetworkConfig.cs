@@ -245,7 +245,7 @@ namespace Unity.Netcode
                     writer.WriteUInt32Packed(sortedEntry.Key);
                 }
             }
-
+            writer.WriteBool(ConnectionApproval);
             writer.WriteBool(EnableNetworkVariable);
             writer.WriteBool(ForceSamePrefabs);
             writer.WriteBool(EnableSceneManagement);

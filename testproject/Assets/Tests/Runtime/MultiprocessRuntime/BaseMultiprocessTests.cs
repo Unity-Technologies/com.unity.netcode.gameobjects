@@ -90,7 +90,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!ShouldIgnoreTests)
             {
                 TestCoordinator.Instance.CloseRemoteClientRpc();
-                NetworkManager.Singleton.StopHost();
+                NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
                 SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
             }
