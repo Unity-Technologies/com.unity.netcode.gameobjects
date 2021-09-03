@@ -23,22 +23,53 @@ namespace Unity.Netcode.EditorTests
         }
 
         const int k_MockTickRate = 1;
+
         NetworkTime T(float time, int tickRate = k_MockTickRate)
         {
             return new NetworkTime(tickRate, timeSec: time);
         }
 
-        /*
-         * TODO
-         * test normal interpolation
-         * test with some jitter
-         * test with high jitter
-         * test with too high jitter
-         * test with negative time should fail
-         * check https://github.com/vis2k/Mirror/blob/02cc3de7b8889f477118e20379b584eaf8bd43b6/Assets/Mirror/Tests/Editor/SnapshotInterpolationTests.cs
-         * for examples of tests
-         * Test every single public API
-         */
+        [Test]
+        public void TestSimpleInterpolator()
+        {
+            var interpolator = new SimpleInterpolatorFloat();
+            interpolator.UseFixedUpdate = false;
+
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
+
+            interpolator.AddMeasurement(10, default);
+            var val = interpolator.Update(0.05f);
+            Assert.That(val, Is.EqualTo(5f));
+        }
+
+        [Test]
+        public void TestReset()
+        {
+            void DoTest<TypeToTest>(Action<IInterpolator<float>> specialAction = null) where TypeToTest : IInterpolator<float>, new()
+            {
+                var interpolator = new TypeToTest();
+                specialAction?.Invoke(interpolator);
+                interpolator.AddMeasurement(5, T(1.0f));
+                var initVal = interpolator.Update(10); // big value
+                Assert.That(initVal, Is.EqualTo(5f));
+                Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
+
+                interpolator.ResetTo(100f);
+                Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(100f));
+                var val = interpolator.Update(1f);
+                Assert.That(val, Is.EqualTo(100f));
+            }
+
+            DoTest<NoInterpolator<float>>();
+            DoTest<SimpleInterpolatorFloat>();
+            DoTest<BufferedLinearInterpolatorFloat>(interpolator =>
+                {
+                    var timeMock = new MockInterpolatorTime(0, k_MockTickRate);
+                    ((BufferedLinearInterpolatorFloat) interpolator).interpolatorTime = timeMock;
+                    timeMock.BufferedServerTime = 100f;
+                }
+            );
+        }
 
         [Test]
         public void NormalUsage()
@@ -133,6 +164,8 @@ namespace Unity.Netcode.EditorTests
             // message time=3 was lost
             interpolator.AddMeasurement(4f, T(4f));
             interpolator.AddMeasurement(5f, T(5f));
+            // message time=6 was lost
+            interpolator.AddMeasurement(100f, T(7f)); // high value to produce a misprediction
 
             mockBufferedTime.BufferedServerTime = 2f;
             interpolator.Update(2f);
@@ -146,10 +179,10 @@ namespace Unity.Netcode.EditorTests
             interpolator.Update(0.5f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f));
 
-            // pausing until buffer reaches next value in buffer, should have been 2.5f, pausing to last value 2f
+            // extrapolating to 2.5
             mockBufferedTime.BufferedServerTime = 3.5f;
             interpolator.Update(0.5f);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f));
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2.5f));
 
             // next value skips to where it was supposed to be once buffer time is showing the next value
             mockBufferedTime.BufferedServerTime = 4f;
@@ -164,6 +197,26 @@ namespace Unity.Netcode.EditorTests
             mockBufferedTime.BufferedServerTime = 5f;
             interpolator.Update(0.5f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(4f));
+
+            // lost time=6, extrapolating
+            mockBufferedTime.BufferedServerTime = 5.5f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(4.5f));
+
+            mockBufferedTime.BufferedServerTime = 6.0f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
+
+            // misprediction
+            mockBufferedTime.BufferedServerTime = 6.5f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5.5f));
+
+            // lerp to right value
+            mockBufferedTime.BufferedServerTime = 7.0f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.GreaterThan(6.0f));
+            Assert.That(interpolator.GetInterpolatedValue(), Is.LessThanOrEqualTo(100f));
         }
 
         [Test]
@@ -314,10 +367,17 @@ namespace Unity.Netcode.EditorTests
             mockBufferedTime.BufferedServerTime = 3f;
             interp = interpolator.Update(0.5f);
             Assert.That(interp, Is.EqualTo(2f));
+
+            // with unclamped interpolation, we continue mispredicting since the two last values are actually treated as the same. Therefore we're not stopping at "2"
             mockBufferedTime.BufferedServerTime = 3.5f;
             interp = interpolator.Update(0.5f);
-            Assert.That(interp, Is.EqualTo(2f));
+            Assert.That(interp, Is.EqualTo(2.5f));
             mockBufferedTime.BufferedServerTime = 4f;
+            interp = interpolator.Update(0.5f);
+            Assert.That(interp, Is.EqualTo(3f));
+
+            // we add a measurement with an updated time
+            interpolator.AddMeasurement(2f, T(3f));
             interp = interpolator.Update(0.5f);
             Assert.That(interp, Is.EqualTo(2f));
         }

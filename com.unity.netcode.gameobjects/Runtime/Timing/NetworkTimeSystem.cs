@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -20,8 +19,6 @@ namespace Unity.Netcode
         /// This increases the difference between local and server time so that messages arrive earlier on the server.
         /// </summary>
         public double LocalBufferSec { get; set; }
-
-        private double m_ServerBufferSec;
 
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.

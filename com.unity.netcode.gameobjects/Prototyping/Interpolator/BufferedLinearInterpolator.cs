@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Solves for jittered incoming values
-    /// Doesn't solve for message loss
+    /// Solves for incoming values that are jittered
+    /// Partially solves for message loss. Unclamped lerping will help hide it, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
@@ -30,13 +30,13 @@ namespace Unity.Netcode
             public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
 
+        internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
+
         private struct BufferedItem
         {
             public T item;
             public NetworkTime timeSent;
         }
-
-        internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
 
         public bool UseFixedUpdate { get; set; }
 
@@ -98,6 +98,8 @@ namespace Unity.Netcode
 
             return t.Time;
         }
+
+        // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer()
         {
             int consumedCount = 0;
@@ -109,7 +111,7 @@ namespace Unity.Netcode
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready. This can consume multiple times
-                    if (FixedOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering) // todo do tick + 1 instead of changing the way tick is calculated? discuss with Luke
+                    if (FixedOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering)
                     {
                         if (m_LifetimeConsumedCount == 0)
                         {
@@ -159,7 +161,7 @@ namespace Unity.Netcode
                     t = (float) ((RenderTime - FixedOrTime(m_StartTimeConsumed)) / range);
                 }
 
-                // if (t > 5) // max extrapolation
+                if (t > 3) // max extrapolation
                 {
                     t = 1;
                 }

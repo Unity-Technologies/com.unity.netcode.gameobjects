@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -210,6 +209,8 @@ namespace Unity.Netcode.Prototyping
 
         public bool UseFixedUpdate = true;
 
+        private int k_debugDrawLineTime = 10;
+
         public virtual IInterpolator<float> PositionXInterpolator { get; set; }
         public virtual IInterpolator<float> PositionYInterpolator { get; set; }
         public virtual IInterpolator<float> PositionZInterpolator { get; set; }
@@ -252,9 +253,6 @@ namespace Unity.Netcode.Prototyping
             yield return ScaleZInterpolator;
         }
 
-        private int k_debugDrawLineTime = 10;
-
-
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
         internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
@@ -263,19 +261,15 @@ namespace Unity.Netcode.Prototyping
 
         public void ResetCurrentInterpolatedState()
         {
-            var tickRate = NetworkManager.Singleton.NetworkConfig.TickRate;
-            for (int i = 0; i < 1; i++) // repeat this twice to set both "start" and "end" values
-            {
-                ScaleXInterpolator.ResetTo(ReplNetworkState.Value.ScaleX);
-                ScaleYInterpolator.ResetTo(ReplNetworkState.Value.ScaleY);
-                ScaleZInterpolator.ResetTo(ReplNetworkState.Value.ScaleZ);
+            PositionXInterpolator.ResetTo(ReplNetworkState.Value.PositionX);
+            PositionYInterpolator.ResetTo(ReplNetworkState.Value.PositionY);
+            PositionZInterpolator.ResetTo(ReplNetworkState.Value.PositionZ);
 
-                PositionXInterpolator.ResetTo(ReplNetworkState.Value.PositionX);
-                PositionYInterpolator.ResetTo(ReplNetworkState.Value.PositionY);
-                PositionZInterpolator.ResetTo(ReplNetworkState.Value.PositionZ);
+            RotationInterpolator.ResetTo(Quaternion.Euler(ReplNetworkState.Value.Rotation));
 
-                RotationInterpolator.ResetTo(Quaternion.Euler(ReplNetworkState.Value.Rotation));
-            }
+            ScaleXInterpolator.ResetTo(ReplNetworkState.Value.ScaleX);
+            ScaleYInterpolator.ResetTo(ReplNetworkState.Value.ScaleY);
+            ScaleZInterpolator.ResetTo(ReplNetworkState.Value.ScaleZ);
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
@@ -451,7 +445,6 @@ namespace Unity.Netcode.Prototyping
                 interpolatedScale.z = ScaleZInterpolator.GetInterpolatedValue();
             }
 
-            PrevNetworkState = networkState;
             // Position Apply
             if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
             {

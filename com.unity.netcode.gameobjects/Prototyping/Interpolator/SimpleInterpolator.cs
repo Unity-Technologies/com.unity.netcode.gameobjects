@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -68,6 +67,7 @@ namespace Unity.Netcode
 
         public bool UseFixedUpdate { get; set; }
     }
+
     public class SimpleInterpolatorFloat : SimpleInterpolator<float>
     {
         protected override float Interpolate(float a, float b, float time)

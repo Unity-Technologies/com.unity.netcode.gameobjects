@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Unity.Netcode
 {
     public interface IInterpolator<T>
