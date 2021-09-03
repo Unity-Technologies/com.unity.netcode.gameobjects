@@ -8,7 +8,7 @@ namespace Unity.Netcode
     {
         public class SendStream
         {
-            public NetworkChannel NetworkChannel;
+            public NetworkDelivery Delivery;
             public PooledNetworkBuffer Buffer;
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
@@ -30,9 +30,9 @@ namespace Unity.Netcode
                 kvp.Value.Writer.Dispose();
                 kvp.Value.Buffer.Dispose();
             }
+
             m_SendDict.Clear();
         }
-
 
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
@@ -83,10 +83,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// QueueItem
         /// Add a FrameQueueItem to be sent
-        /// </summary>queueItem
-        /// <param name="item">the threshold in bytes</param>
+        /// </summary>
         public void QueueItem(
             IReadOnlyCollection<ulong> targetList,
             in MessageFrameItem item,
@@ -107,19 +105,19 @@ namespace Unity.Netcode
                 if (sendStream.IsEmpty)
                 {
                     sendStream.IsEmpty = false;
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.Delivery = item.Delivery;
                 }
                 // If the item is a different channel we have to flush and change channels.
                 // This isn't great if channels are interleaved, but having a different stream
                 // per channel would create ordering issues.
-                else if (sendStream.NetworkChannel != item.NetworkChannel)
+                else if (sendStream.Delivery != item.Delivery)
                 {
                     sendCallback(clientId, sendStream);
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
 
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.Delivery = item.Delivery;
                 }
 
                 // write the amounts of bytes that are coming up
@@ -140,11 +138,9 @@ namespace Unity.Netcode
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-
-        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime, NetworkChannel receiveChannel);
+        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
-        /// SendItems
         /// Send any batch of messages that are of length above threshold
         /// </summary>
         /// <param name="thresholdBytes"> the threshold in bytes</param>
@@ -171,15 +167,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// ReceiveItems
         /// Process the messageStream and call the callback with individual messages
         /// </summary>
         /// <param name="messageBuffer"> the messageStream containing the batched messages</param>
         /// <param name="receiveCallback"> the callback to call has type int f(message, type, clientId, time) </param>
-        /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkChannel receiveChannel)
+        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime)
         {
             using var copy = PooledNetworkBuffer.Get();
             do
@@ -199,7 +193,7 @@ namespace Unity.Netcode
                 Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
                 var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
-                receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
+                receiveCallback(copy, messageType, clientId, receiveTime);
 
                 // seek over the message
                 // MessageReceiveQueueItem peeks at content, it doesn't advance
