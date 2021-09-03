@@ -38,22 +38,12 @@ namespace Unity.Netcode
 
         internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
 
-        public void ResetTo(T targetValue)
-        {
-            m_LifetimeConsumedCount = 1;
-            m_InterpStartValue = targetValue;
-            m_InterpEndValue = targetValue;
-            m_CurrentInterpValue = targetValue;
-            m_Buffer.Clear();
-            m_EndTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
-            m_StartTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
-
-            simpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
-            Update(0);
-        }
-
         public bool UseFixedUpdate { get; set; }
-        protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? interpolatorTime.BufferedServerFixedTime : interpolatorTime.BufferedServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+
+        /// <summary>
+        /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
+        /// </summary>
+        protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? interpolatorTime.BufferedServerFixedTime : interpolatorTime.BufferedServerTime;
         protected virtual double RenderTime => interpolatorTime.BufferedServerTime - 1f / interpolatorTime.TickRate;
 
         private T m_InterpStartValue;
@@ -88,6 +78,20 @@ namespace Unity.Netcode
         {
         }
 
+        public void ResetTo(T targetValue)
+        {
+            m_LifetimeConsumedCount = 1;
+            m_InterpStartValue = targetValue;
+            m_InterpEndValue = targetValue;
+            m_CurrentInterpValue = targetValue;
+            m_Buffer.Clear();
+            m_EndTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
+            m_StartTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
+
+            simpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
+            Update(0);
+        }
+
         double FixedOrTime(NetworkTime t)
         {
             if (UseFixedUpdate) return t.FixedTime;
@@ -101,24 +105,21 @@ namespace Unity.Netcode
             if (RenderTime >= m_EndTimeConsumed.Time)
             {
                 // buffer is sorted so older (smaller) time values are at the end.
-                for (int i = m_Buffer.Count - 1; i >= 0; i--)
+                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready. This can consume multiple times
                     if (FixedOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering) // todo do tick + 1 instead of changing the way tick is calculated? discuss with Luke
                     {
-                        // if (RenderTime > TickOrTime(m_EndTimeConsumed))
+                        if (m_LifetimeConsumedCount == 0)
                         {
-                            if (m_LifetimeConsumedCount == 0)
-                            {
-                                m_StartTimeConsumed = bufferedValue.timeSent;
-                                m_InterpStartValue = bufferedValue.item;
-                            }
-                            else if (consumedCount == 0)
-                            {
-                                m_StartTimeConsumed = m_EndTimeConsumed;
-                                m_InterpStartValue = m_InterpEndValue;
-                            }
+                            m_StartTimeConsumed = bufferedValue.timeSent;
+                            m_InterpStartValue = bufferedValue.item;
+                        }
+                        else if (consumedCount == 0)
+                        {
+                            m_StartTimeConsumed = m_EndTimeConsumed;
+                            m_InterpStartValue = m_InterpEndValue;
                         }
 
                         m_EndTimeConsumed = bufferedValue.timeSent;
@@ -158,14 +159,13 @@ namespace Unity.Netcode
                     t = (float) ((RenderTime - FixedOrTime(m_StartTimeConsumed)) / range);
                 }
 
-                if (t > 2) // max extrapolation
+                // if (t > 5) // max extrapolation
                 {
                     t = 1;
                 }
 
                 Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}"); // todo remove GC alloc this creates
 
-                // m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
                 simpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
                 m_CurrentInterpValue = simpleInterpolator.Update(deltaTime);
             }
@@ -213,10 +213,6 @@ namespace Unity.Netcode
             return Mathf.LerpUnclamped(start, end, time);
         }
 
-        public BufferedLinearInterpolatorFloat()
-        {
-        }
-
         protected override SimpleInterpolator<float> simpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
@@ -234,7 +230,6 @@ namespace Unity.Netcode
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
-            // return Quaternion.Slerp(start, end, time);
         }
 
         public BufferedLinearInterpolatorQuaternion()
