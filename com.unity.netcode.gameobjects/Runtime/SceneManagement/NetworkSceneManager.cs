@@ -85,7 +85,7 @@ namespace Unity.Netcode
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
     /// Uses the <see cref="MessageQueueContainer.MessageType.SceneEvent"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
-    public class NetworkSceneManager
+    public class NetworkSceneManager : IDisposable
     {
         private const MessageQueueContainer.MessageType k_MessageType = MessageQueueContainer.MessageType.SceneEvent;
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableSequenced;
@@ -199,6 +199,17 @@ namespace Unity.Netcode
         private NetworkManager m_NetworkManager { get; }
 
         internal Scene DontDestroyOnLoadScene;
+
+        /// <summary>
+        /// Handle NetworkSeneManager clean up
+        /// </summary>
+        public void Dispose()
+        {
+            SceneEventData.Dispose();
+            SceneEventData = null;
+            ClientSynchEventData.Dispose();
+            ClientSynchEventData = null;
+        }
 
         /// <summary>
         /// Gets the scene name from full path to the scene
@@ -1055,7 +1066,7 @@ namespace Unity.Netcode
                         SceneEventData.OnWrite(nonNullContext.NetworkWriter);
 
                         var size = bufferSizeCapture.StopMeasureSegment();
-                            m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, size);
+                        m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, size);
                     }
                     else
                     {
@@ -1172,7 +1183,7 @@ namespace Unity.Netcode
                 foreach (var sceneIndex in ClientSynchEventData.ScenesToSynchronize)
                 {
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                        clientId, (uint)ClientSynchEventData.SceneEventType,ScenesInBuild[(int)sceneIndex], size);
+                       clientId, (uint)ClientSynchEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], size);
                 }
             }
 
@@ -1321,7 +1332,7 @@ namespace Unity.Netcode
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
 
                 var size = bufferSizeCapture.StopMeasureSegment();
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)ClientSynchEventData.SceneEventType, sceneName, size);
+                m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)ClientSynchEventData.SceneEventType, sceneName, size);
             }
 
             // Send notification to local client that the scene has finished loading
@@ -1526,7 +1537,7 @@ namespace Unity.Netcode
                         foreach (var sceneIndex in SceneEventData.ScenesToSynchronize)
                         {
                             m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                                clientId, (uint) SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], stream.Length);
+                               clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], stream.Length);
                         }
                     }
                     else
@@ -1534,7 +1545,7 @@ namespace Unity.Netcode
                         // For all other scene event types, we are only dealing with one scene at a time, so we can read it
                         // from the SceneEventData directly.
                         m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                            clientId, (uint) SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], stream.Length);
+                           clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], stream.Length);
                     }
 
                     if (SceneEventData.IsSceneEventClientSide())

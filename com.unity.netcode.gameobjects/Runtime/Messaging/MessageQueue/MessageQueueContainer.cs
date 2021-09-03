@@ -524,15 +524,15 @@ namespace Unity.Netcode
 
                     //Write message data
                     loopBackHistoryFrame.QueueWriter.WriteBytes(
-                        messageQueueHistoryItem.QueueBuffer.GetBuffer(), messageSize - 2,
-                        // Skip the 2 byte network header
-                        // The network header is read on the receiving side to be able to call
-                        // AddQueueItemToInboundFrame, which needs the message type and update stage
-                        // (which are the two values in the network header) in order to create
-                        // the inbound queue item. Here, we're skipping that - the loopback frame item
-                        // is added to the inbound frame directly rather than passed along the wire.
-                        // Since this skips the process that reads the network header, we skip writing it.
-                        (int)messageQueueHistoryItem.QueueBuffer.Position + 2);
+                       messageQueueHistoryItem.QueueBuffer.GetBuffer(), messageSize - 2,
+                       // Skip the 2 byte network header
+                       // The network header is read on the receiving side to be able to call
+                       // AddQueueItemToInboundFrame, which needs the message type and update stage
+                       // (which are the two values in the network header) in order to create
+                       // the inbound queue item. Here, we're skipping that - the loopback frame item
+                       // is added to the inbound frame directly rather than passed along the wire.
+                       // Since this skips the process that reads the network header, we skip writing it.
+                       (int)messageQueueHistoryItem.QueueBuffer.Position + 2);
 
                     //Set the total size for this stream
                     loopBackHistoryFrame.TotalSize = (uint)loopBackHistoryFrame.QueueBuffer.Position;
