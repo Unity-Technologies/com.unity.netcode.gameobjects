@@ -102,9 +102,7 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientIdInternal = null;
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
-                NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
@@ -152,9 +150,7 @@ namespace Unity.Netcode
 
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
-                clientIds, NetworkUpdateLoop.UpdateStage);
+            var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
@@ -383,9 +379,7 @@ namespace Unity.Netcode
 
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-                var context = messageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
+                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced, new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using var nonNullContext = (InternalCommandContext)context;
@@ -667,10 +661,7 @@ namespace Unity.Netcode
                                     }
                                 }
 
-                                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-                                var context = messageQueueContainer.EnterInternalCommandContext(
-                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                    m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
+                                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
                                     using var nonNullContext = (InternalCommandContext)context;
