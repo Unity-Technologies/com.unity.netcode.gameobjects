@@ -34,10 +34,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            if (Application.isEditor)
-            {
-                Assert.Ignore("Ignoring tests that shouldn't run from unity editor.");
-            }
             if (IsPerformanceTest)
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
