@@ -11,7 +11,7 @@ namespace Unity.Netcode
         public void TrackTransportBytesReceived(long bytesCount)
         {
         }
-        
+
         public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
         {
         }
