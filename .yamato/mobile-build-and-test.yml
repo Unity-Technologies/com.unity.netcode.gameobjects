@@ -9,9 +9,10 @@
 
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
+    - mkdir C:\TMP
+    - cd C:\TMP && unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-    - utr.bat --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests
+    - utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     players:
         paths:
@@ -31,7 +32,7 @@
     - unity-downloader-cli -u 2021.2 -c editor -c iOS -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
-    - ./utr --suite=playmode --platform=iOS --editor-location=.Editor --testproject=com.unity.netcode.gameobjects/testproject --player-save-path=build/players --artifacts_path=build/logs --build-only --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr --suite=playmode --platform=iOS --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     players:
         paths:
