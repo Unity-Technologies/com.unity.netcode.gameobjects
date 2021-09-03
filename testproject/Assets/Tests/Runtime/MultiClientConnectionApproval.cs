@@ -244,8 +244,6 @@ namespace TestProject.RuntimeTests
 
         private int m_ServerClientDisconnectedInvocations;
 
-        private int m_ClientDisconnectedInvocation;
-
         /// <summary>
         /// Tests that clients are disconnected when their ConnectionApproval setting is mismatched with the host-server
         /// and  when scene management is enabled and disabled
@@ -255,7 +253,6 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true,false)] bool connectionApproval)
         {
             m_ServerClientDisconnectedInvocations = 0;
-            m_ClientDisconnectedInvocation = 0;
 
             // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
