@@ -1,0 +1,10 @@
+{
+    "name": "TestProject.ToolsIntegration.RuntimeTests",
+    "rootNamespace": "TestProject.ToolsIntegration.RuntimeTests",
+    "references": [
+        "Unity.Netcode.RuntimeTests"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
