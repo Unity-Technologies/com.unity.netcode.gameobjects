@@ -306,18 +306,18 @@ namespace Unity.Netcode
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            var channel = sendStream.NetworkChannel;
+            var networkDelivery = sendStream.Delivery;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
             // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
             // if we have no other choice.
             if (length > k_FragmentationThreshold)
             {
-                channel = NetworkChannel.Fragmented;
+                networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
             }
 
             m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(length);
-            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, channel);
+            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, networkDelivery);
         }
 
         /// <summary>
@@ -327,20 +327,20 @@ namespace Unity.Netcode
         /// <param name="item">Information on what to send</param>
         private void SendFrameQueueItem(IReadOnlyCollection<ulong> targetIds, in MessageFrameItem item)
         {
-            var channel = item.NetworkChannel;
+            var networkDelivery = item.Delivery;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
             // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
             // if we have no other choice.
             if (item.MessageData.Count > k_FragmentationThreshold)
             {
-                channel = NetworkChannel.Fragmented;
+                networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
             }
 
             foreach (var clientId in targetIds)
             {
                 m_MessageQueueContainer.NetworkManager.NetworkMetrics.TrackTransportBytesSent(item.MessageData.Count);
-                m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, item.MessageData, channel);
+                m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, item.MessageData, networkDelivery);
             }
         }
 

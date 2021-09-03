@@ -7,16 +7,17 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class NetworkVariableBase
     {
+        /// <summary>
+        /// The delivery type (QoS) to send data with
+        /// </summary>
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
+
         private protected NetworkBehaviour m_NetworkBehaviour;
 
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
             m_NetworkBehaviour = networkBehaviour;
         }
-        /// <summary>
-        /// The name of the channel to be used for syncing
-        /// </summary>
-        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
 
         protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {

@@ -64,16 +64,16 @@ namespace Unity.Netcode
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
+            var networkDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             if (IsHost)
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, networkDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, networkDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
@@ -133,7 +133,7 @@ namespace Unity.Netcode
             }
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
+            var networkDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
@@ -151,7 +151,7 @@ namespace Unity.Netcode
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
@@ -161,7 +161,7 @@ namespace Unity.Netcode
                     messageQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery, NetworkObjectId,
                         clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 }
                 else
@@ -171,7 +171,7 @@ namespace Unity.Netcode
             }
             else
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery, NetworkObjectId,
                     clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
 
@@ -364,8 +364,8 @@ namespace Unity.Netcode
 
         private bool m_VarInit = false;
 
-        private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
-        private readonly List<NetworkChannel> m_ChannelsForNetworkVariableGroups = new List<NetworkChannel>();
+        private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
+        private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 
         private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
@@ -436,27 +436,26 @@ namespace Unity.Netcode
             }
 
             {
-                // Create index map for channels
-                var firstLevelIndex = new Dictionary<NetworkChannel, int>();
+                // Create index map for delivery types
+                var firstLevelIndex = new Dictionary<NetworkDelivery, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    var networkChannel = NetworkVariableBase.NetworkVariableChannel;
-
-                    if (!firstLevelIndex.ContainsKey(networkChannel))
+                    var networkDelivery = NetworkVariableBase.Delivery;
+                    if (!firstLevelIndex.ContainsKey(networkDelivery))
                     {
-                        firstLevelIndex.Add(networkChannel, secondLevelCounter);
-                        m_ChannelsForNetworkVariableGroups.Add(networkChannel);
+                        firstLevelIndex.Add(networkDelivery, secondLevelCounter);
+                        m_DeliveryTypesForNetworkVariableGroups.Add(networkDelivery);
                         secondLevelCounter++;
                     }
 
-                    if (firstLevelIndex[networkChannel] >= m_ChannelMappedNetworkVariableIndexes.Count)
+                    if (firstLevelIndex[networkDelivery] >= m_DeliveryMappedNetworkVariableIndices.Count)
                     {
-                        m_ChannelMappedNetworkVariableIndexes.Add(new HashSet<int>());
+                        m_DeliveryMappedNetworkVariableIndices.Add(new HashSet<int>());
                     }
 
-                    m_ChannelMappedNetworkVariableIndexes[firstLevelIndex[networkChannel]].Add(i);
+                    m_DeliveryMappedNetworkVariableIndices[firstLevelIndex[networkDelivery]].Add(i);
                 }
             }
         }
@@ -508,7 +507,7 @@ namespace Unity.Netcode
 
             if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
-                for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+                for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
                 {
                     using var buffer = PooledNetworkBuffer.Get();
                     using var writer = PooledNetworkWriter.Get(buffer);
@@ -521,9 +520,9 @@ namespace Unity.Netcode
                     var writtenAny = false;
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
-                        if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
+                        if (!m_DeliveryMappedNetworkVariableIndices[j].Contains(k))
                         {
-                            // This var does not belong to the currently iterating channel group.
+                            // This var does not belong to the currently iterating delivery group.
                             if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                             {
                                 writer.WriteUInt16Packed(0);
@@ -590,7 +589,7 @@ namespace Unity.Netcode
                     if (writtenAny)
                     {
                         var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                            MessageQueueContainer.MessageType.NetworkVariableDelta, m_ChannelsForNetworkVariableGroups[j],
+                            MessageQueueContainer.MessageType.NetworkVariableDelta, m_DeliveryTypesForNetworkVariableGroups[j],
                             new[] { clientId }, NetworkUpdateLoop.UpdateStage);
                         if (context != null)
                         {

@@ -719,6 +719,7 @@ namespace Unity.Netcode
             {
                 m_ClientData.Add(clientId, new ClientData());
             }
+
             if (!m_ConnectionRtts.ContainsKey(clientId))
             {
                 m_ConnectionRtts.Add(clientId, new ConnectionRtt());
@@ -726,10 +727,7 @@ namespace Unity.Netcode
 
             m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.SnapshotData, NetworkDelivery.Unreliable, new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
