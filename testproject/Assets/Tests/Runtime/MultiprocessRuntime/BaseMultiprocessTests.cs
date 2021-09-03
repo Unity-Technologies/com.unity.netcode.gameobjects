@@ -19,7 +19,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected virtual bool IsPerformanceTest => true;
 
-        static private bool s_SceneHasLoaded;
+        private const string k_GlobalEmptySceneName = "EmptyScene";
+
+        private bool m_SceneHasLoaded;
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
@@ -27,133 +29,46 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// </summary>
         protected abstract int WorkerCount { get; }
 
-        private Scene m_OriginalActiveScene;
-
-
-        private void SceneUnloaded(Scene scene)
-        {
-            if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
-            {
-                SceneManager.sceneUnloaded -= SceneUnloaded;
-                LoadMainTestScene();
-            }
-        }
-
-        private void LoadMainTestScene()
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.LoadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
-        }
-
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            if (Application.isEditor)
+            {
+                Assert.Ignore("Ignoring tests that shouldn't run from unity editor.");
+            }
             if (IsPerformanceTest)
             {
-                Assert.Ignore("Ignoring performance tests. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
-                // This assert should result in OneTimeSetUp not even running
+                Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-            Debug.Log("Running OneTimeSetUp ... SetupTestSuite");
-            // TestFixtures will run for each TestFixture, w
-            if (!s_SceneHasLoaded)
-            {
-                var shouldUnloadFirst = false;
 
-                var currentlyActiveScene = SceneManager.GetActiveScene();
-
-                if (currentlyActiveScene.name == BuildMultiprocessTestPlayer.MainSceneName)
-                {
-                    if (m_OriginalActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
-                    {
-                        SceneManager.SetActiveScene(m_OriginalActiveScene);
-                        currentlyActiveScene = SceneManager.GetActiveScene();
-                    }
-                    shouldUnloadFirst = true;
-                }
-                else
-                {
-                    for (int i = 0; i < SceneManager.sceneCount; i++)
-                    {
-                        var scene = SceneManager.GetSceneAt(i);
-                        var sceneName = scene.name;
-                        if (sceneName == BuildMultiprocessTestPlayer.MainSceneName)
-                        {
-                            shouldUnloadFirst = true;
-                        }
-                    }
-                }
-
-                if (shouldUnloadFirst)
-                {
-                    if (currentlyActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
-                    {
-                        m_OriginalActiveScene = currentlyActiveScene;
-                    }
-                    SceneManager.sceneUnloaded += SceneUnloaded;
-                    SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                }
-                else
-                {
-                    if (currentlyActiveScene.IsValid() && currentlyActiveScene.name.StartsWith("InitTestScene"))
-                    {
-                        m_OriginalActiveScene = currentlyActiveScene;
-                    }
-                    LoadMainTestScene();
-                }
-            }
-            else if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsListening)
-            {
-                NetworkManager.Singleton.StartHost();
-                // Use scene verification to make sure we don't try to synchronize the TestRunner scene
-                NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            }
-        }
-
-
-        private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
-        {
-            if (sceneName.StartsWith("InitTestScene"))
-            {
-                return false;
-            }
-            return true;
+            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            if(scene.name == BuildMultiprocessTestPlayer.MainSceneName)
-            {
-                SceneManager.SetActiveScene(scene);
-            }
 
             NetworkManager.Singleton.StartHost();
-            // Use scene verification to make sure we don't try to synchronize the TestRunner scene
-            NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
+            for (int i = 0; i < WorkerCount; i++)
+            {
+                MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+            }
 
-            s_SceneHasLoaded = true;
+            m_SceneHasLoaded = true;
         }
 
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening && s_SceneHasLoaded);
+            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
-            if (MultiprocessOrchestration.Processes.Count < WorkerCount)
-            {
-                var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.Processes.Count;
-                for (int i = 0; i < numProcessesToCreate; i++)
-                {
-                    MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                }
-            }
-
-            var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
+            var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
 
-                if (Time.realtimeSinceStartup > timeOutTime)
+                if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
@@ -171,23 +86,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            Debug.Log("Running OneTimeTearDown ... TeardownSuite");
             TestCoordinator.Instance.CloseRemoteClientRpc();
-
-            NetworkManager.Singleton.StopHost();
+            NetworkManager.Singleton.Shutdown();
             Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-            if(m_OriginalActiveScene.IsValid())
-            {
-                TestCoordinator.Instance.CloseRemoteClientRpc();
-                NetworkManager.Singleton.Shutdown();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
-            }
-            SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-            s_SceneHasLoaded = false;
-
-            MultiprocessOrchestration.KillAllProcesses();
+            SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
         }
     }
 }
-
