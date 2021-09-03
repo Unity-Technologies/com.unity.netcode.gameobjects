@@ -738,7 +738,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 068bf11ceb1344667af4cc40950f44f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ReferencedPrefab: {fileID: 5637023994061915634, guid: b0952a471c5a147cb92f6afcdb648f8a,
+  ReferencedPrefab: {fileID: 9115731988109684252, guid: c2851feb7276442cc86a6f2d1d69ea11,
     type: 3}
 --- !u!114 &1211923378
 MonoBehaviour:
@@ -861,7 +861,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  Channels: []
   MessageSendMode: 0
 --- !u!1 &2027640071
 GameObject:
@@ -906,5 +905,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc5ef7b69296d69458910681f29471e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Port: 7777
   Address: 127.0.0.1
+  Port: 7777
