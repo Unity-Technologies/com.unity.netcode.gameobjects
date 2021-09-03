@@ -485,6 +485,7 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.S2C_Load:
                     {
+                        SetInternalBuffer();
                         // We store off the trailing in-scene placed serialized NetworkObject data to
                         // be processed once we are done loading.
                         InternalBuffer.Position = 0;
@@ -514,8 +515,8 @@ namespace Unity.Netcode
         /// <param name="reader"></param>
         internal void CopySceneSyncrhonizationData(NetworkReader reader)
         {
+            SetInternalBuffer();
             m_NetworkObjectsSync.Clear();
-
             ScenesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
             SceneHandlesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
             InternalBuffer.Position = 0;
@@ -548,6 +549,7 @@ namespace Unity.Netcode
                 // Deserialize the NetworkObject
                 NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
             }
+            ReleaseInternalBuffer();
         }
 
         /// <summary>
@@ -694,6 +696,7 @@ namespace Unity.Netcode
                     m_NetworkObjectsSync.Add(spawnedNetworkObject);
                 }
             }
+            ReleaseInternalBuffer();
         }
 
         /// <summary>
@@ -737,9 +740,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to release the pooled network buffer
+        /// Gets a PooledNetworkBuffer if needed
         /// </summary>
-        public void Dispose()
+        private void SetInternalBuffer()
+        {
+            if (InternalBuffer == null)
+            {
+                InternalBuffer = NetworkBufferPool.GetBuffer();
+            }
+        }
+
+        /// <summary>
+        /// Releases the PooledNetworkBuffer when no longer needed
+        /// </summary>
+        private void ReleaseInternalBuffer()
         {
             if (InternalBuffer != null)
             {
@@ -749,12 +763,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Constructor
+        /// Used to release the pooled network buffer
+        /// </summary>
+        public void Dispose()
+        {
+            ReleaseInternalBuffer();
+        }
+
+        /// <summary>
+        /// Constructor for SceneEventData
         /// </summary>
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            InternalBuffer = NetworkBufferPool.GetBuffer();
         }
     }
 }
