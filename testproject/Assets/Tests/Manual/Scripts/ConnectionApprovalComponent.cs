@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,11 +24,22 @@ namespace TestProject.ManualTests
         [SerializeField]
         private Toggle m_PlayerPrefabOverride;
 
+        [SerializeField]
+        private Button m_ClientDisconnectButton;
 
+        [SerializeField]
+        private ConnectionModeScript m_ConnectionModeButtons;
+
+        private class MessageEntry
+        {
+            public string Message;
+            public float TimeOut;
+        }
+
+        private List<MessageEntry> m_Messages = new List<MessageEntry>();
 
         private void Start()
         {
-
             if (m_PlayerPrefabOverride)
             {
                 m_PlayerPrefabOverride.gameObject.SetActive(false);
@@ -41,6 +53,11 @@ namespace TestProject.ManualTests
             if (m_ConnectionMessageToDisplay)
             {
                 m_ConnectionMessageToDisplay.gameObject.SetActive(false);
+            }
+
+            if (m_ClientDisconnectButton)
+            {
+                m_ClientDisconnectButton.gameObject.SetActive(false);
             }
 
             if (NetworkManager != null && NetworkManager.NetworkConfig.ConnectionApproval)
@@ -57,6 +74,33 @@ namespace TestProject.ManualTests
                 }
 
                 NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+                NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+            }
+        }
+
+        private void NetworkManager_OnClientConnectedCallback(ulong obj)
+        {
+            if (m_ClientDisconnectButton)
+            {
+                m_ClientDisconnectButton.gameObject.SetActive(!IsServer);
+            }
+
+            AddNewMessage($"Client {obj} was connected.");
+        }
+
+        private void NetworkManager_OnClientDisconnectCallback(ulong obj)
+        {
+
+            AddNewMessage($"Client {obj} was disconnected!");
+
+            if (!NetworkManager.IsListening && !NetworkManager.IsServer)
+            {
+                m_ConnectionModeButtons.Reset();
+            }
+
+            if (m_ClientDisconnectButton)
+            {
+                m_ClientDisconnectButton.gameObject.SetActive(false);
             }
         }
 
@@ -73,46 +117,47 @@ namespace TestProject.ManualTests
             }
         }
 
-        private void NetworkManager_OnClientDisconnectCallback(ulong obj)
+        public void OnDisconnectClient()
         {
-            Debug.Log($"Client {obj} connected!");
+            if ( NetworkManager != null && NetworkManager.IsListening && !NetworkManager.IsServer)
+            {
+                NetworkManager.Shutdown();
+                m_ConnectionModeButtons.Reset();
+                if (m_ClientDisconnectButton)
+                {
+                    m_ClientDisconnectButton.gameObject.SetActive(false);
+                }
+            }
         }
 
-        private void ConnectionApprovalCallback(byte[] arg1, ulong arg2, NetworkManager.ConnectionApprovedDelegate arg3)
+        private void ConnectionApprovalCallback(byte[] dataToken, ulong clientId, NetworkManager.ConnectionApprovedDelegate aprovalCallback)
         {
-            string approvalToken = Encoding.ASCII.GetString(arg1);
+            string approvalToken = Encoding.ASCII.GetString(dataToken);
             var isTokenValid = approvalToken == m_ApprovalToken;
-            if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && arg2 != NetworkManager.LocalClientId)
+            if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && clientId != NetworkManager.LocalClientId)
             {
                 isTokenValid = false;
             }
 
-            if (isTokenValid)
+            if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
             {
-                if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
-                {
-                    arg3.Invoke(true, m_GlobalObjectIdHashOverride, true, null, null);
-                }
-                else
-                {
-                    arg3.Invoke(true, null, true, null, null);
-                }
+                aprovalCallback.Invoke(true, m_GlobalObjectIdHashOverride, isTokenValid, null, null);
             }
             else
             {
-                NetworkManager.DisconnectClient(arg2);
-                Debug.LogWarning($"User id {arg2} was disconnected due to failed connection approval!");
+                aprovalCallback.Invoke(true, null, isTokenValid, null, null);
             }
 
-            if (m_ConnectionMessageToDisplay && arg2 != NetworkManager.LocalClientId)
+
+            if (m_ConnectionMessageToDisplay)
             {
                 if (isTokenValid)
                 {
-                    m_ConnectionMessageToDisplay.text = $"Client id {arg2} is authorized!";
+                    AddNewMessage($"Client id {clientId} is authorized!");
                 }
                 else
                 {
-                    m_ConnectionMessageToDisplay.text = $"Client id {arg2} failed authorization!";
+                    AddNewMessage($"Client id {clientId} failed authorization!");
                 }
 
                 m_ConnectionMessageToDisplay.gameObject.SetActive(true);
@@ -120,9 +165,44 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void AddNewMessage(string msg)
+        {
+            m_Messages.Add(new MessageEntry() { Message = msg, TimeOut = Time.realtimeSinceStartup + 8.0f });
+            if (!m_ConnectionMessageToDisplay.gameObject.activeInHierarchy)
+            {
+                StartCoroutine(WaitToHideConnectionText());
+                if (m_ConnectionMessageToDisplay)
+                {
+                    m_ConnectionMessageToDisplay.gameObject.SetActive(true);
+                }
+            }
+        }
+
         private IEnumerator WaitToHideConnectionText()
         {
-            yield return new WaitForSeconds(5);
+            var messagesToRemove = new List<MessageEntry>();
+            while (m_Messages.Count > 0)
+            {
+                m_ConnectionMessageToDisplay.text = string.Empty;
+                foreach (var message in m_Messages)
+                {
+                    if (message.TimeOut > Time.realtimeSinceStartup)
+                    {
+                        m_ConnectionMessageToDisplay.text += message.Message + "\n";
+                    }
+                    else
+                    {
+                        messagesToRemove.Add(message);
+                    }
+                }
+                yield return new WaitForSeconds(0.5f);
+                foreach (var message in messagesToRemove)
+                {
+                    m_Messages.Remove(message);
+                }
+                messagesToRemove.Clear();
+            }
+
             if (m_ConnectionMessageToDisplay)
             {
                 m_ConnectionMessageToDisplay.gameObject.SetActive(false);
