@@ -11,14 +11,11 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
     {
-        // public const float InterpolationConfigTimeSec = 0.100f; // todo expose global config, todo use in actual code
-
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
         {
             public double BufferedServerTime { get; }
             public double BufferedServerFixedTime { get; }
-            public double LocalTime { get; }
             public int TickRate { get; }
         }
 
@@ -26,7 +23,6 @@ namespace Unity.Netcode
         {
             public double BufferedServerTime => NetworkManager.Singleton.ServerTime.Time;
             public double BufferedServerFixedTime => NetworkManager.Singleton.ServerTime.FixedTime;
-            public double LocalTime => NetworkManager.Singleton.LocalTime.Time;
             public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
 
@@ -58,10 +54,6 @@ namespace Unity.Netcode
 
         private int m_LifetimeConsumedCount;
 
-        public BufferedLinearInterpolator()
-        {
-        }
-
         public void Start()
         {
         }
@@ -88,15 +80,13 @@ namespace Unity.Netcode
             m_EndTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
             m_StartTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
 
-            simpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
+            SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
             Update(0);
         }
 
-        double FixedOrTime(NetworkTime t)
+        private double FixedOrTime(NetworkTime t)
         {
-            if (UseFixedUpdate) return t.FixedTime;
-
-            return t.Time;
+            return UseFixedUpdate ? t.FixedTime : t.Time;
         }
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
@@ -166,10 +156,13 @@ namespace Unity.Netcode
                     t = 1;
                 }
 
-                Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}"); // todo remove GC alloc this creates
+                if (Debug.isDebugBuild)
+                {
+                    Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
+                }
 
-                simpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
-                m_CurrentInterpValue = simpleInterpolator.Update(deltaTime);
+                SimpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
+                m_CurrentInterpValue = SimpleInterpolator.Update(deltaTime);
             }
 
             return m_CurrentInterpValue;
@@ -205,7 +198,7 @@ namespace Unity.Netcode
 
         protected abstract T Interpolate(T start, T end, float time);
 
-        protected abstract SimpleInterpolator<T> simpleInterpolator { get; }
+        protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
     }
 
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
@@ -215,7 +208,7 @@ namespace Unity.Netcode
             return Mathf.LerpUnclamped(start, end, time);
         }
 
-        protected override SimpleInterpolator<float> simpleInterpolator { get; } = new SimpleInterpolatorFloat();
+        protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
     public class BufferedLinearInterpolatorFloatForScale : BufferedLinearInterpolatorFloat
@@ -234,10 +227,6 @@ namespace Unity.Netcode
             return Quaternion.SlerpUnclamped(start, end, time);
         }
 
-        public BufferedLinearInterpolatorQuaternion()
-        {
-        }
-
-        protected override SimpleInterpolator<Quaternion> simpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
+        protected override SimpleInterpolator<Quaternion> SimpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
     }
 }

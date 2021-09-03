@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class BufferedInterpolatorTests
+    public class InterpolatorTests
     {
         private const float k_Precision = 0.00000001f;
 
@@ -11,14 +11,12 @@ namespace Unity.Netcode.EditorTests
         {
             public double BufferedServerTime { get; set; }
             public double BufferedServerFixedTime { get; }
-            public double LocalTime { get; }
             public int TickRate { get; set; }
 
             public MockInterpolatorTime(double serverTime, int tickRate)
             {
                 BufferedServerTime = serverTime;
                 TickRate = tickRate;
-                LocalTime = serverTime; // todo
             }
         }
 

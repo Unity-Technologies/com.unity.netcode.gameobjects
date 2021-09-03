@@ -209,27 +209,28 @@ namespace Unity.Netcode.Prototyping
 
         public bool UseFixedUpdate = true;
 
-        private int k_debugDrawLineTime = 10;
+        private const int k_DebugDrawLineTime = 10;
 
-        public virtual IInterpolator<float> PositionXInterpolator { get; set; }
-        public virtual IInterpolator<float> PositionYInterpolator { get; set; }
-        public virtual IInterpolator<float> PositionZInterpolator { get; set; }
-        public virtual IInterpolator<Quaternion> RotationInterpolator { get; set; } // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
-        public virtual IInterpolator<float> ScaleXInterpolator { get; set; }
-        public virtual IInterpolator<float> ScaleYInterpolator { get; set; }
-        public virtual IInterpolator<float> ScaleZInterpolator { get; set; }
+        protected virtual IInterpolator<float> PositionXInterpolator { get; set; }
+        protected virtual IInterpolator<float> PositionYInterpolator { get; set; }
+        protected virtual IInterpolator<float> PositionZInterpolator { get; set; }
+        protected virtual IInterpolator<Quaternion> RotationInterpolator { get; set; } // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+        protected virtual IInterpolator<float> ScaleXInterpolator { get; set; }
+        protected virtual IInterpolator<float> ScaleYInterpolator { get; set; }
+        protected virtual IInterpolator<float> ScaleZInterpolator { get; set; }
 
-        public void InitializeInterpolator<Pos, Rot, Scale>() where Pos : IInterpolator<float>, new() where Rot : IInterpolator<Quaternion>, new() where Scale : IInterpolator<float>, new()
+        public void InitializeInterpolator<TPos, TRot, TScale>() where TPos : IInterpolator<float>, new() where TRot : IInterpolator<Quaternion>, new() where TScale : IInterpolator<float>, new()
         {
+            AllFloatInterpolators.Clear();
             if (Interpolate)
             {
-                PositionXInterpolator = new Pos();
-                PositionYInterpolator = new Pos();
-                PositionZInterpolator = new Pos();
-                RotationInterpolator = new Rot();
-                ScaleXInterpolator = new Scale();
-                ScaleYInterpolator = new Scale();
-                ScaleZInterpolator = new Scale();
+                PositionXInterpolator = new TPos();
+                PositionYInterpolator = new TPos();
+                PositionZInterpolator = new TPos();
+                RotationInterpolator = new TRot();
+                ScaleXInterpolator = new TScale();
+                ScaleYInterpolator = new TScale();
+                ScaleZInterpolator = new TScale();
             }
             else
             {
@@ -241,17 +242,17 @@ namespace Unity.Netcode.Prototyping
                 ScaleYInterpolator = new NoInterpolator<float>();
                 ScaleZInterpolator = new NoInterpolator<float>();
             }
+
+            AllFloatInterpolators.Add(PositionXInterpolator);
+            AllFloatInterpolators.Add(PositionYInterpolator);
+            AllFloatInterpolators.Add(PositionZInterpolator);
+            AllFloatInterpolators.Add(ScaleXInterpolator);
+            AllFloatInterpolators.Add(ScaleYInterpolator);
+            AllFloatInterpolators.Add(ScaleZInterpolator);
         }
 
-        public IEnumerable<IInterpolator<float>> AllFloatInterpolators()
-        {
-            yield return PositionXInterpolator;
-            yield return PositionYInterpolator;
-            yield return PositionZInterpolator;
-            yield return ScaleXInterpolator;
-            yield return ScaleYInterpolator;
-            yield return ScaleZInterpolator;
-        }
+        // public IInterpolator<float>[] all = new[];
+        private readonly List<IInterpolator<float>> AllFloatInterpolators = new List<IInterpolator<float>>(6);
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
@@ -293,7 +294,7 @@ namespace Unity.Netcode.Prototyping
             if (InLocalSpace != networkState.InLocalSpace)
             {
                 networkState.InLocalSpace = InLocalSpace;
-                isDirty |= true;
+                isDirty = true;
             }
 
             if (SyncPositionX &&
@@ -511,17 +512,17 @@ namespace Unity.Netcode.Prototyping
 
             if (newState.HasPositionX)
             {
-                PositionXInterpolator.AddMeasurement(newState.Position.x, sentTime);
+                PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
             }
 
             if (newState.HasPositionY)
             {
-                PositionYInterpolator.AddMeasurement(newState.Position.y, sentTime);
+                PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
             }
 
             if (newState.HasPositionZ)
             {
-                PositionZInterpolator.AddMeasurement(newState.Position.z, sentTime);
+                PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
 
             RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
@@ -544,29 +545,20 @@ namespace Unity.Netcode.Prototyping
             if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
-                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_debugDrawLineTime, false);
+                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
             }
         }
 
         private void Awake()
         {
             m_Transform = transform;
-            bool interpolatorAlreadySet = false;
-            foreach (var interpolator in AllFloatInterpolators())
-            {
-                if (interpolator != null || RotationInterpolator != null)
-                {
-                    interpolatorAlreadySet = true;
-                    break;
-                }
-            }
 
-            if (!interpolatorAlreadySet)
+            if (AllFloatInterpolators.Count == 0)
             {
                 InitializeInterpolator<BufferedLinearInterpolatorFloat, BufferedLinearInterpolatorQuaternion, BufferedLinearInterpolatorFloatForScale>();
             }
 
-            foreach (var interpolator in AllFloatInterpolators())
+            foreach (var interpolator in AllFloatInterpolators)
             {
                 interpolator.Awake();
                 interpolator.UseFixedUpdate = UseFixedUpdate;
@@ -596,7 +588,7 @@ namespace Unity.Netcode.Prototyping
 
         public void Start()
         {
-            foreach (var interpolator in AllFloatInterpolators())
+            foreach (var interpolator in AllFloatInterpolators)
             {
                 interpolator.Start();
             }
@@ -606,7 +598,7 @@ namespace Unity.Netcode.Prototyping
 
         public void OnEnable()
         {
-            foreach (var interpolator in AllFloatInterpolators())
+            foreach (var interpolator in AllFloatInterpolators)
             {
                 interpolator.OnEnable();
             }
@@ -620,7 +612,7 @@ namespace Unity.Netcode.Prototyping
             {
                 ResetCurrentInterpolatedState(); // useful for late joining
 
-                foreach (var interpolator in AllFloatInterpolators()) // todo remove GC alloc this creates
+                foreach (var interpolator in AllFloatInterpolators) // todo remove GC alloc this creates
                 {
                     interpolator.OnNetworkSpawn();
                 }
@@ -635,7 +627,7 @@ namespace Unity.Netcode.Prototyping
         {
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
 
-            foreach (var interpolator in AllFloatInterpolators())
+            foreach (var interpolator in AllFloatInterpolators)
             {
                 interpolator.OnDestroy();
             }
@@ -680,7 +672,7 @@ namespace Unity.Netcode.Prototyping
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
 
-                foreach (var interpolator in AllFloatInterpolators())
+                foreach (var interpolator in AllFloatInterpolators)
                 {
                     interpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
                 }
@@ -704,7 +696,7 @@ namespace Unity.Netcode.Prototyping
             // apply interpolated value
             if (!IsServer && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                foreach (var interpolator in AllFloatInterpolators())
+                foreach (var interpolator in AllFloatInterpolators)
                 {
                     interpolator.Update(Time.deltaTime);
                 }
@@ -714,7 +706,7 @@ namespace Unity.Netcode.Prototyping
                 if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
                 {
                     var interpolatedPosition = new Vector3(PositionXInterpolator.GetInterpolatedValue(), PositionYInterpolator.GetInterpolatedValue(), PositionZInterpolator.GetInterpolatedValue());
-                    Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_debugDrawLineTime, false);
+                    Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
                 }
 
                 ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
