@@ -31,7 +31,9 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
                 }
 
-                NetworkManager.DisconnectClient(clientId);
+                // Treat this similar to a client that is not approved (remove from pending and disconnect at transport layer)
+                NetworkManager.PendingClients.Remove(clientId);
+                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
                 return;
             }
 

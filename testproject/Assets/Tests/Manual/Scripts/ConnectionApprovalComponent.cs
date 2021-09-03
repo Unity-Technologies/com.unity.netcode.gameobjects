@@ -75,10 +75,10 @@ namespace TestProject.ManualTests
                 {
                     Debug.LogError($"You need to set the {nameof(m_ApprovalToken)} to a value first!");
                 }
-
-                NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
-                NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
             }
+
+            NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+            NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
         }
 
         /// <summary>
