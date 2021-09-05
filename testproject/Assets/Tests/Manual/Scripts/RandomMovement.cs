@@ -100,7 +100,7 @@ namespace TestProject.ManualTests
         /// </summary>
         /// <param name="direction"></param>
         [ClientRpc]
-        private void ChangeDirectionClientRpc(Vector3 direction)
+        protected void ChangeDirectionClientRpc(Vector3 direction)
         {
             OnClientChangeDirection(direction);
         }

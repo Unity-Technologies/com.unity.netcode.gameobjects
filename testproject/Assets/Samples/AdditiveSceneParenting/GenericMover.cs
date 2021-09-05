@@ -14,22 +14,40 @@ public class GenericMover : NetworkBehaviour
     [HideInInspector]
     public int SyncrhonizedObjectTypeIndex;
 
-    private Rigidbody m_RigidBody;
+    protected Rigidbody m_RigidBody;
+    protected Collider m_LocalCollider;
     private Vector3 m_Direction;
 
     [HideInInspector]
-    public bool MovementEnabled;
+    public NetworkVariable<bool> MovementEnabled = new NetworkVariable<bool>();
+
+
+    protected virtual void OnStart()
+    {
+
+    }
 
     private void Start()
     {
-        m_RigidBody = GetComponent<Rigidbody>();
-        MovementEnabled = true;
+        OnStart();
     }
 
-    public void SetHasParent(bool hasParent)
+    public override void OnNetworkSpawn()
     {
-        m_RigidBody.isKinematic = hasParent;
-        MovementEnabled = !hasParent;
+        m_RigidBody = GetComponent<Rigidbody>();
+        m_LocalCollider = GetComponent<Collider>();
+
+        if (!IsServer)
+        {
+            m_RigidBody.isKinematic = true;
+            m_LocalCollider.enabled = false;
+        }
+        else
+        {
+            MovementEnabled.Value = true;
+        }
+
+        base.OnNetworkSpawn();
     }
 
     /// <summary>
@@ -50,7 +68,7 @@ public class GenericMover : NetworkBehaviour
     /// </summary>
     private void FixedUpdate()
     {
-        if (NetworkManager != null && NetworkManager.IsListening && MovementEnabled)
+        if (NetworkManager != null && NetworkManager.IsListening && MovementEnabled.Value)
         {
             if (IsOwner)
             {
@@ -58,7 +76,6 @@ public class GenericMover : NetworkBehaviour
             }
         }
     }
-
 
     protected virtual void HandleCollision(Collider collider)
     {

@@ -15,11 +15,10 @@ GameObject:
   - component: {fileID: 5079610531609167723}
   - component: {fileID: 8439197204819822200}
   - component: {fileID: 4644224934328629675}
-  - component: {fileID: 5935771341589384032}
   - component: {fileID: 4293291596850329240}
   m_Layer: 9
   m_Name: ShinyBlueCapsule-GenericMover
-  m_TagString: GenericObject
+  m_TagString: Target
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -161,21 +160,6 @@ MonoBehaviour:
   InLocalSpace: 0
   Interpolate: 1
   FixedSendsPerSecond: 5
---- !u!114 &5935771341589384032
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8439197204819822188}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0e5cc49bd583dd4da6a546595e8999b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  HasHandler: 0
-  SyncrhonizedObjectTypeIndex: 0
-  MovementEnabled: 0
 --- !u!114 &4293291596850329240
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -188,6 +172,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db03007937f281b4f8ed95450f8691c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasHandler: 0
+  SyncrhonizedObjectTypeIndex: 0
+  MovementEnabled: 0
 --- !u!1 &8694378240701722541
 GameObject:
   m_ObjectHideFlags: 0
