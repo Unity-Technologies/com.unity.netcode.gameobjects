@@ -14,11 +14,6 @@ public class MoverPickupObject : GenericMover
     public override void OnNetworkSpawn()
     {
         name += "-" + NetworkObjectId.ToString();
-        if (!IsServer)
-        {
-
-        }
-
         base.OnNetworkSpawn();
     }
 
@@ -187,81 +182,6 @@ public class MoverPickupObject : GenericMover
         m_HunterObjectId.Value = -1;
         yield return new WaitForSeconds(pickupDelay);
         m_DelayUntilNextPickup.Value = false;
-        yield return null;
-    }
-}
-
-public struct PickupObjectState : INetworkSerializable
-{
-    private bool m_DelayUntilNextPickup;
-    private bool m_HunterHoldingObject;
-    private bool m_IsBeingHunted;
-    private short m_HunterObjectId;
-
-    public bool IsDirty { get; internal set; }
-
-    public void NetworkSerialize(NetworkSerializer serializer)
-    {
-        if (!serializer.IsReading)
-        {
-            serializer.Writer.WriteBool(m_DelayUntilNextPickup);
-            serializer.Writer.WriteBool(m_HunterHoldingObject);
-            serializer.Writer.WriteBool(m_IsBeingHunted);
-            serializer.Writer.WriteInt16Packed(m_HunterObjectId);
-        }
-        else
-        {
-            m_DelayUntilNextPickup = serializer.Reader.ReadBool();
-            m_HunterHoldingObject = serializer.Reader.ReadBool();
-            m_IsBeingHunted = serializer.Reader.ReadBool();
-            m_HunterObjectId = serializer.Reader.ReadInt16Packed();
-        }
-        IsDirty = false;
-    }
-
-    public void SetPickedUp()
-    {
-        m_HunterHoldingObject = true;
-        IsDirty = true;
-    }
-
-    public bool IsHunterHoldingObject()
-    {
-        return m_HunterHoldingObject;
-    }
-
-
-    public ulong GetHunterObjectId()
-    {
-        return (ulong)m_HunterObjectId;
-    }
-
-    public void SetBeingHunted(ulong hunterObjectId)
-    {
-        m_HunterObjectId = (short)hunterObjectId;
-        m_IsBeingHunted = true;
-        IsDirty = true;
-    }
-
-    public bool CanBePickedUp(ulong hunterObjectId)
-    {
-        if (m_IsBeingHunted )
-        {
-            return (hunterObjectId == (ulong)m_HunterObjectId) && !m_DelayUntilNextPickup;
-        }
-
-        return true;
-    }
-
-    public IEnumerator NextPickupDelay(float pickupDelay)
-    {
-        m_IsBeingHunted = false;
-        m_HunterHoldingObject = false;
-        m_DelayUntilNextPickup = true;
-        m_HunterObjectId = -1;
-        IsDirty = true;
-        yield return new WaitForSeconds(pickupDelay);
-        m_DelayUntilNextPickup = false;
         yield return null;
     }
 }
