@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+
 using Unity.Netcode;
 
 public class ParentingSpawnHandler : NetworkBehaviour
@@ -13,21 +13,6 @@ public class ParentingSpawnHandler : NetworkBehaviour
     [Tooltip("When true, the MoverPickupObject will be spawned and moved into the scene this ParentingSpawnHandler is located within.")]
     [SerializeField]
     private bool m_SpawnLocalScene;
-
-    private void OnDestroy()
-    {
-        // In the event we want to test unloading the additive scene but we are
-        // targeting the additive scene (scene this is located in), then we want
-        // to remove our reference from anything we spawned that is still around
-        foreach (var spawnedThing in m_ThingsSpawned)
-        {
-            var pickupObject = spawnedThing.GetComponent<MoverPickupObject>();
-            if (pickupObject != null)
-            {
-                pickupObject.SetParentSpawnHandler(null);
-            }
-        }
-    }
 
     public override void OnNetworkSpawn()
     {
@@ -81,15 +66,6 @@ public class ParentingSpawnHandler : NetworkBehaviour
     {
         if (IsServer)
         {
-            foreach( var thing in m_ThingsSpawned)
-            {
-                var pickupObject = GetComponent<MoverPickupObject>();
-                if (pickupObject != null && !pickupObject.IsHunterHoldingObject())
-                {
-                    pickupObject.MoveObjectBackToOriginalSceneClientRpc();
-                }
-            }
-
             var numbertoSpawn = NetworkManager.ConnectedClientsIds.Length - m_ThingsSpawned.Count;
             for (int i = 0; i < numbertoSpawn; i++)
             {
@@ -97,26 +73,13 @@ public class ParentingSpawnHandler : NetworkBehaviour
                 objectToParent.transform.position = transform.position;
                 objectToParent.transform.rotation = transform.rotation;
                 objectToParent.transform.localScale = transform.localScale;
-                var networkObject = objectToParent.GetComponent<NetworkObject>();
-                networkObject.Spawn(false);
+                var pickupObject = objectToParent.GetComponent<MoverPickupObject>();
+                pickupObject.SpawnInScene(gameObject.scene);
                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
-                networkObject.GetComponent<MoverPickupObject>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), m_MoverVelocity);
+                pickupObject.SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), m_MoverVelocity);
                 m_ThingsSpawned.Add(objectToParent);
-                if (m_SpawnLocalScene)
-                {
-                    networkObject.GetComponent<MoverPickupObject>().SetParentSpawnHandler(this);
-                }
             }
         }
-    }
-
-    public Scene GetMyTargetScene(MoverPickupObject moverPickupObject )
-    {
-        if (m_SpawnLocalScene)
-        {
-            return gameObject.scene;
-        }
-        return moverPickupObject.gameObject.scene;
     }
 }
 

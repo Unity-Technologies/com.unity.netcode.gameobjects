@@ -82,6 +82,17 @@ public class PickUpSeekerMovement : RandomMovement
         }
     }
 
+
+    public bool IsHoldingObject()
+    {
+        if (m_PickThisUpWhenTriggered != null)
+        {
+            return m_PickThisUpWhenTriggered.IsHunterHoldingObject();
+        }
+        return false;
+    }
+
+
     private void Update()
     {
         if (IsOwner)
@@ -128,8 +139,17 @@ public class PickUpSeekerMovement : RandomMovement
                 }
                 else
                 {
-                    m_Direction = (m_PickThisUpWhenTriggered.gameObject.transform.position - transform.position).normalized;
-                    m_Direction.y = 0.0f;
+                    // Server can set the value before client notifies, so we have to watch for that scenario
+                    if (m_PickThisUpWhenTriggered.CanBePickedUp(NetworkManager.LocalClientId))
+                    {
+                        m_Direction = (m_PickThisUpWhenTriggered.gameObject.transform.position - transform.position).normalized;
+                        m_Direction.y = 0.0f;
+                    }
+                    else // Client grabbed this, let's find something else.
+                    {
+                        m_PickThisUpWhenTriggered = null;
+                    }
+                    m_LastSearchForPickup = Time.realtimeSinceStartup + 0.15f;
                 }
             }
         }

@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
 
 public class MoverPickupObject : GenericMover
@@ -44,41 +43,64 @@ public class MoverPickupObject : GenericMover
         if (IsServer)
         {
             var newPosition = transform.parent.transform.position + Vector3.right + Vector3.forward;
+            ResetAsDropped();
             StartCoroutine(NextPickupDelay(0.5f));
             transform.parent = null;
             transform.position = newPosition;
             m_LocalCollider.enabled = true;
             m_RigidBody.isKinematic = false;
             MovementEnabled.Value = true;
-            MoveObjectBackToOriginalSceneClientRpc();
         }
     }
 
-    [ClientRpc]
-    public void MoveObjectBackToOriginalSceneClientRpc()
+    public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
     {
-        if (!IsServer && m_ParentSpawnHandler == null)
-        {
-            m_ParentSpawnHandler = FindObjectOfType<ParentingSpawnHandler>();
-        }
+        base.OnNetworkObjectParentChanged(parentNetworkObject);
 
-        // Check to see if we are in our original scene and if not then move us back into that scene if it is still valid
-        if (m_ParentSpawnHandler != null)
+        if (IsServer)
         {
-            SceneManager.MoveGameObjectToScene(gameObject, m_ParentSpawnHandler.GetMyTargetScene(this));
+            if (parentNetworkObject == null)
+            {
+                if (!TryMoveBackToOriginalScene())
+                {
+                    Debug.LogError($"Could not move {nameof(SceneAwareNetworkObject)} back to its original scene!");
+                }
+            }
         }
     }
 
-    // The scene we were originally located within
-    private ParentingSpawnHandler m_ParentSpawnHandler;
-
-    public void SetParentSpawnHandler(ParentingSpawnHandler parentingSpawnHandler)
+    private bool m_ShouldMoveBackToOriginalScene;
+    private GameObject m_SetParent;
+    // This is a work around for missed FixedUpdate Messages?
+    private void Update()
     {
-        m_ParentSpawnHandler = parentingSpawnHandler;
-        MoveObjectBackToOriginalSceneClientRpc();
+        if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer)
+        {
+            if (m_SetParent != null)
+            {
+                if (NetworkObject.TrySetParent(m_SetParent.gameObject))
+                {
+                    SetPickedUp();
+                    MovementEnabled.Value = false;
+                    m_LocalCollider.enabled = false;
+                    m_RigidBody.isKinematic = true;
+                    transform.position = m_SetParent.transform.position + Vector3.up;
+                }
+                else
+                {
+                    Debug.LogError($"Client {m_SetParent.name} failed to pickup {name}!");
+                }
+                m_SetParent = null;
+            }
+        }
     }
 
-
+    /// <summary>
+    /// This detects if we can be picked up and if so we will start the parenting process
+    /// This also includes important notes towards the end of this method regarding
+    /// SceneAwareNetworkObject and keeping clients synchronized properly
+    /// </summary>
+    /// <param name="collider"></param>
     protected override void HandleCollision(Collider collider)
     {
         base.HandleCollision(collider);
@@ -90,12 +112,16 @@ public class MoverPickupObject : GenericMover
                 return;
             }
 
-            var networkObjectOther = collider.gameObject.GetComponent<NetworkObject>();
+            var seekerHunter = collider.gameObject.GetComponent<PickUpSeekerMovement>();
+            if (seekerHunter == null || seekerHunter != null && seekerHunter.IsHoldingObject())
+            {
+                return;
+            }
 
-            if (networkObjectOther != null && networkObjectOther.IsPlayerObject)
+            if (seekerHunter.NetworkObject != null && seekerHunter.NetworkObject.IsPlayerObject )
             {
                 // First see if we can be picked up
-                if (!CanBePickedUp(networkObjectOther.OwnerClientId))
+                if (!CanBePickedUp(seekerHunter.NetworkObject.OwnerClientId))
                 {
                     // If not then bail early
                     return;
@@ -107,20 +133,17 @@ public class MoverPickupObject : GenericMover
                 }
 
                 // If there is already someone hunting it, then don't pick it up
-                if (GetHunterObjectId() == networkObjectOther.OwnerClientId)
+                if (GetHunterObjectId() == seekerHunter.NetworkObject.OwnerClientId)
                 {
-                    if (NetworkObject.TrySetParent(networkObjectOther.gameObject))
-                    {
-                        SetPickedUp();
-                        MovementEnabled.Value = false;
-                        m_LocalCollider.enabled = false;
-                        m_RigidBody.isKinematic = true;
-                        transform.position = networkObjectOther.transform.position + Vector3.up;
-                    }
-                    else
-                    {
-                        Debug.LogError($"Client {networkObjectOther.OwnerClientId} failed to pickup {name}!");
-                    }
+                    // In the event the MoverPickupObject is in a different scene, we need to
+                    // **first** move the SceneAwareNetworkObject into the target scene so clients
+                    // will synchronize to the current scene ***before we parent***.  Parenting first
+                    // will move the SceneAwareNetworkObject into the seekerHunter's scene automatically
+                    // and we cannot move something into a scene that has a parent (this is a Unity behavior).
+                    MoveToScene(m_SetParent.scene);
+
+                    // Delay parenting until this GameObject's next update by setting the target parent GameObject
+                    m_SetParent = seekerHunter.NetworkObject.gameObject;
                 }
             }
         }
@@ -168,6 +191,13 @@ public class MoverPickupObject : GenericMover
         return !m_DelayUntilNextPickup.Value;
     }
 
+    protected void ResetAsDropped()
+    {
+        m_HunterObjectId.Value = -1;
+        m_IsBeingHunted.Value = false;
+        m_HunterHoldingObject.Value = false;
+    }
+
     /// <summary>
     /// Resets the pickup object and delays for a bit until it can be picked up again to avoid
     /// immediate "pickup" when dropped.
@@ -176,10 +206,7 @@ public class MoverPickupObject : GenericMover
     /// <returns></returns>
     public IEnumerator NextPickupDelay(float pickupDelay)
     {
-        m_IsBeingHunted.Value = false;
-        m_HunterHoldingObject.Value = false;
         m_DelayUntilNextPickup.Value = true;
-        m_HunterObjectId.Value = -1;
         yield return new WaitForSeconds(pickupDelay);
         m_DelayUntilNextPickup.Value = false;
         yield return null;

@@ -4,7 +4,7 @@ using Unity.Netcode;
 /// <summary>
 /// A general object used for pooling purposes
 /// </summary>
-public class GenericMover : NetworkBehaviour
+public class GenericMover : SceneAwareNetworkObject
 {
     private float m_Velocity;
 
