@@ -21,17 +21,6 @@ public class GenericMover : SceneAwareNetworkObject
     [HideInInspector]
     public NetworkVariable<bool> MovementEnabled = new NetworkVariable<bool>();
 
-
-    protected virtual void OnStart()
-    {
-
-    }
-
-    private void Start()
-    {
-        OnStart();
-    }
-
     public override void OnNetworkSpawn()
     {
         m_RigidBody = GetComponent<Rigidbody>();
@@ -46,7 +35,6 @@ public class GenericMover : SceneAwareNetworkObject
         {
             MovementEnabled.Value = true;
         }
-
         base.OnNetworkSpawn();
     }
 

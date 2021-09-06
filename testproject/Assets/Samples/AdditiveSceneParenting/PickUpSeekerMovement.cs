@@ -155,7 +155,6 @@ public class PickUpSeekerMovement : RandomMovement
         }
     }
 
-
     /// <summary>
     /// Drops the object being carried
     /// </summary>
@@ -174,7 +173,6 @@ public class PickUpSeekerMovement : RandomMovement
         m_PickThisUpWhenTriggered = null;
         m_LastSearchForPickup = Time.realtimeSinceStartup + m_DelayUntilSeekNewTarget;
     }
-
 
     /// <summary>
     /// Clients have to send an RPC to drop the object

@@ -4,12 +4,6 @@ using Unity.Netcode;
 
 public class MoverPickupObject : GenericMover
 {
-
-    protected override void OnStart()
-    {
-        base.OnStart();
-    }
-
     public override void OnNetworkSpawn()
     {
         name += "-" + NetworkObjectId.ToString();
