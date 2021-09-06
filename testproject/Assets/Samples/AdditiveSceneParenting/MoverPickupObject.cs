@@ -139,7 +139,7 @@ public class MoverPickupObject : GenericMover
                     // will synchronize to the current scene ***before we parent***.  Parenting first
                     // will move the SceneAwareNetworkObject into the seekerHunter's scene automatically
                     // and we cannot move something into a scene that has a parent (this is a Unity behavior).
-                    MoveToScene(m_SetParent.scene);
+                    MoveToScene(seekerHunter.NetworkObject.gameObject.scene);
 
                     // Delay parenting until this GameObject's next update by setting the target parent GameObject
                     m_SetParent = seekerHunter.NetworkObject.gameObject;
