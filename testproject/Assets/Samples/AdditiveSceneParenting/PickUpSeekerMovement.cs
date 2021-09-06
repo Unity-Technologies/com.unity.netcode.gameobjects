@@ -52,7 +52,7 @@ public class PickUpSeekerMovement : RandomMovement
     /// <param name="clientIdHunter">client id hunting the MoverPickupObject</param>
     private void SetBeingHunted(ulong networkObjectIdHunted, ulong clientIdHunter)
     {
-        if(IsServer)
+        if (IsServer)
         {
             if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectIdHunted))
             {
@@ -74,7 +74,7 @@ public class PickUpSeekerMovement : RandomMovement
 
 
     [ClientRpc]
-    private void ConfirmPickupObjectHuntedClientRpc(ulong networkObjectIdHunted,ClientRpcParams clientParams)
+    private void ConfirmPickupObjectHuntedClientRpc(ulong networkObjectIdHunted, ClientRpcParams clientParams)
     {
         if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectIdHunted))
         {
@@ -126,7 +126,7 @@ public class PickUpSeekerMovement : RandomMovement
                     var foundTargets = FindObjectsOfType<MoverPickupObject>();
                     if (foundTargets != null && foundTargets.Length > 0)
                     {
-                        foreach(var target in foundTargets)
+                        foreach (var target in foundTargets)
                         {
                             if (target.CanBePickedUp(NetworkManager.LocalClientId))
                             {

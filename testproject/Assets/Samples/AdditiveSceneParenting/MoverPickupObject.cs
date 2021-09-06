@@ -69,7 +69,6 @@ public class MoverPickupObject : GenericMover
         }
     }
 
-    private bool m_ShouldMoveBackToOriginalScene;
     private GameObject m_SetParent;
     // This is a work around for missed FixedUpdate Messages?
     private void Update()
@@ -118,7 +117,7 @@ public class MoverPickupObject : GenericMover
                 return;
             }
 
-            if (seekerHunter.NetworkObject != null && seekerHunter.NetworkObject.IsPlayerObject )
+            if (seekerHunter.NetworkObject != null && seekerHunter.NetworkObject.IsPlayerObject)
             {
                 // First see if we can be picked up
                 if (!CanBePickedUp(seekerHunter.NetworkObject.OwnerClientId))
