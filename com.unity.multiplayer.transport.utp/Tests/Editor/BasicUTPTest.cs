@@ -10,7 +10,7 @@ namespace Unity.Netcode.UTP.EditorTests
         {
             var o = new GameObject();
             var utpTransport = (UTPTransport)o.AddComponent(typeof(UTPTransport));
-            utpTransport.Init();
+            utpTransport.Initialize();
 
             Assert.True(utpTransport.ServerClientId == 0);
 

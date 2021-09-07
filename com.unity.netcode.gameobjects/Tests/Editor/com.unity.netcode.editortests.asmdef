@@ -5,7 +5,12 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [
         "Editor"
@@ -21,5 +26,12 @@
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],
-    "noEngineReferences": false
+    "noEngineReferences": false,
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        }
+    ]
 }

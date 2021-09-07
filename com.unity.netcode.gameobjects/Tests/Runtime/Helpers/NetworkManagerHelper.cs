@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UNET;
 
@@ -71,18 +70,12 @@ namespace Unity.Netcode.RuntimeTests
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
                 var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
-
                 if (networkConfig == null)
                 {
                     networkConfig = new NetworkConfig
                     {
                         EnableSceneManagement = false,
-                        RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
                     };
-                }
-                else
-                {
-                    networkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
                 }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
@@ -205,27 +198,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private static void StopNetworkManagerMode()
         {
-            switch (CurrentNetworkManagerMode)
-            {
-                case NetworkManagerOperatingMode.Host:
-                    {
-                        // Stop the host
-                        NetworkManagerObject.StopHost();
-                        break;
-                    }
-                case NetworkManagerOperatingMode.Server:
-                    {
-                        // Stop the server
-                        NetworkManagerObject.StopServer();
-                        break;
-                    }
-                case NetworkManagerOperatingMode.Client:
-                    {
-                        // Stop the client
-                        NetworkManagerObject.StopClient();
-                        break;
-                    }
-            }
+            NetworkManagerObject.Shutdown();
 
             Debug.Log($"{CurrentNetworkManagerMode} stopped.");
             CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;

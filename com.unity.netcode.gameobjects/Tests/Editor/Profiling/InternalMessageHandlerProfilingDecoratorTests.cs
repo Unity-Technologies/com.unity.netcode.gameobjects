@@ -97,7 +97,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageReceiveQueueItemCallsUnderlyingHandler()
         {
-            m_Decorator.MessageReceiveQueueItem(0, null, 0.0f, MessageQueueContainer.MessageType.None, NetworkChannel.Internal);
+            m_Decorator.MessageReceiveQueueItem(0, null, 0.0f, MessageQueueContainer.MessageType.None);
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.MessageReceiveQueueItem));
         }

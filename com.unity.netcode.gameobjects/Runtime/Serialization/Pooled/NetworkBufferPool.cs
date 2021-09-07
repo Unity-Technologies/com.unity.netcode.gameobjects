@@ -13,7 +13,7 @@ namespace Unity.Netcode
         private static Queue<PooledNetworkBuffer> s_Buffers = new Queue<PooledNetworkBuffer>();
 
         private const uint k_MaxBitPoolBuffers = 1024;
-        private const uint k_MaxCreatedDelta = 768;
+        private const uint k_MaxCreatedDelta = 512;
 
 
         /// <summary>

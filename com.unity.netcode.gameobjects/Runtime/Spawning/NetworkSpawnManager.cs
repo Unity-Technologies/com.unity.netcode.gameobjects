@@ -35,6 +35,9 @@ namespace Unity.Netcode
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private ulong m_NetworkObjectIdCounter;
 
+        // A list of target ClientId, use when sending despawn commands. Kept as a member to reduce memory allocations
+        private List<ulong> m_TargetClientIds = new List<ulong>();
+
         internal ulong GetNetworkObjectId()
         {
             if (ReleasedNetworkObjectIds.Count > 0 && NetworkManager.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - ReleasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkManager.NetworkConfig.NetworkIdRecycleDelay)
@@ -99,25 +102,21 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientIdInternal = null;
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
-                NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
+
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+
+                var size = bufferSizeCapture.StopMeasureSegment();
+
+                foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-
-                    foreach (var client in NetworkManager.ConnectedClients)
-                    {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -151,24 +150,20 @@ namespace Unity.Netcode
 
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
-                clientIds, NetworkUpdateLoop.UpdateStage);
+            var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
+
+                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+
+                var size = bufferSizeCapture.StopMeasureSegment();
+                foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    foreach (var client in NetworkManager.ConnectedClients)
-                    {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -312,8 +307,15 @@ namespace Unity.Netcode
                 return;
             }
 
+            // this initialization really should be at the bottom of the function
             networkObject.IsSpawned = true;
 
+            // this initialization really should be at the top of this function.  If and when we break the
+            //  NetworkVariable dependency on NetworkBehaviour, this otherwise creates problems because
+            //  SetNetworkVariableData above calls InitializeVariables, and the 'baked out' data isn't ready there;
+            //  the current design banks on getting the network behaviour set and then only reading from it
+            //  after the below initialization code.  However cowardice compels me to hold off on moving this until
+            //  that commit
             networkObject.IsSceneObject = sceneObject;
             networkObject.NetworkObjectId = networkId;
 
@@ -363,7 +365,7 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkSpawn();
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject)
+        internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
         {
             if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
@@ -377,21 +379,17 @@ namespace Unity.Netcode
 
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-                var context = messageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
+                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced, new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
 
-                        var size = bufferSizeCapture.StopMeasureSegment();
-                        NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
-                    }
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
                 }
             }
         }
@@ -500,7 +498,7 @@ namespace Unity.Netcode
 
             foreach (var sobj in spawnedObjects)
             {
-                if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value)
+                if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.DestroyWithScene && sobj.gameObject.scene != NetworkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     SpawnedObjectsList.Remove(sobj);
                     UnityEngine.Object.Destroy(sobj.gameObject);
@@ -624,7 +622,6 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.IsSpawned = false;
             networkObject.InvokeBehaviourNetworkDespawn();
 
             if (NetworkManager != null && NetworkManager.IsServer)
@@ -652,29 +649,36 @@ namespace Unity.Netcode
                             // As long as we have any remaining clients, then notify of the object being destroy.
                             if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
+                                m_TargetClientIds.Clear();
 
-                                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-                                var context = messageQueueContainer.EnterInternalCommandContext(
-                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                    clientIds, NetworkUpdateStage.PostLateUpdate);
+                                // We keep only the client for which the object is visible
+                                // as the other clients have them already despawned
+                                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                                {
+                                    if (networkObject.IsNetworkVisibleTo(clientId))
+                                    {
+                                        m_TargetClientIds.Add(clientId);
+                                    }
+                                }
+
+                                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
-                                    using (var nonNullContext = (InternalCommandContext)context)
-                                    {
-                                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                        bufferSizeCapture.StartMeasureSegment();
+                                    using var nonNullContext = (InternalCommandContext)context;
+                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                                    bufferSizeCapture.StartMeasureSegment();
 
-                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
-                                        var size = bufferSizeCapture.StopMeasureSegment();
-                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
-                                    }
+                                    var size = bufferSizeCapture.StopMeasureSegment();
+                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                 }
                             }
                         }
                     }
                 }
             }
+            networkObject.IsSpawned = false;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {

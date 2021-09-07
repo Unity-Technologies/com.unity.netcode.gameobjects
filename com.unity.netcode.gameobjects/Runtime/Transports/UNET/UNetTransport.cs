@@ -1,7 +1,6 @@
 #pragma warning disable 618 // disable is obsolete
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -15,6 +14,12 @@ namespace Unity.Netcode.Transports.UNET
             Queued
         }
 
+        private int m_UnreliableChannelId;
+        private int m_UnreliableSequencedChannelId;
+        private int m_ReliableChannelId;
+        private int m_ReliableSequencedChannelId;
+        private int m_ReliableFragmentedSequencedChannelId;
+
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
         public int MaxConnections = 100;
@@ -23,25 +28,6 @@ namespace Unity.Netcode.Transports.UNET
         public string ConnectAddress = "127.0.0.1";
         public int ConnectPort = 7777;
         public int ServerListenPort = 7777;
-        public int ServerWebsocketListenPort = 8887;
-        public bool SupportWebsocket = false;
-
-        // user-definable channels.  To add your own channel, do something of the form:
-        //  #define MY_CHANNEL 0
-        //  ...
-        //  transport.Channels.Add(
-        //     new UNetChannel()
-        //       {
-        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in netcode SDK
-        //         Type = QosType.Unreliable
-        //       }
-        //  );
-        public List<UNetChannel> Channels = new List<UNetChannel>();
-
-        // Relay
-        public bool UseNetcodeRelay = false;
-        public string NetcodeRelayAddress = "127.0.0.1";
-        public int NetcodeRelayPort = 8888;
 
         public SendMode MessageSendMode = SendMode.Immediately;
 
@@ -50,24 +36,11 @@ namespace Unity.Netcode.Transports.UNET
         private WeakReference m_TemporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<NetworkChannel, int> m_ChannelNameToId = new Dictionary<NetworkChannel, int>();
-        private readonly Dictionary<int, NetworkChannel> m_ChannelIdToName = new Dictionary<int, NetworkChannel>();
         private int m_ServerConnectionId;
         private int m_ServerHostId;
 
         private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetNetcodeClientId(0, 0, true);
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            for (int i = 0; i < Channels.Count; i++)
-            {
-                // Set the channels to a incrementing value
-                Channels[i].Id = (byte)((byte)NetworkChannel.ChannelUnused + i);
-            }
-        }
-#endif
 
         protected void LateUpdate()
         {
@@ -78,9 +51,9 @@ namespace Unity.Netcode.Transports.UNET
 #else
                 if (NetworkManager.Singleton.IsServer)
                 {
-                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                    foreach (var targetClient in NetworkManager.Singleton.ConnectedClientsList)
                     {
-                        SendQueued(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
+                        SendQueued(targetClient.ClientId);
                     }
                 }
                 else
@@ -91,50 +64,58 @@ namespace Unity.Netcode.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+        public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            int channelId = 0;
-
-            if (m_ChannelNameToId.TryGetValue(networkChannel, out int value))
-            {
-                channelId = value;
-            }
-            else
-            {
-                channelId = m_ChannelNameToId[NetworkChannel.Internal];
-            }
-
             byte[] buffer;
-
-            if (data.Offset > 0)
+            if (payload.Offset > 0)
             {
                 // UNET cant handle this, do a copy
 
-                if (m_MessageBuffer.Length >= data.Count)
+                if (m_MessageBuffer.Length >= payload.Count)
                 {
                     buffer = m_MessageBuffer;
                 }
                 else
                 {
-                    object bufferRef = null;
-                    if (m_TemporaryBufferReference != null && ((bufferRef = m_TemporaryBufferReference.Target) != null) && ((byte[])bufferRef).Length >= data.Count)
+                    object bufferRef;
+                    if (m_TemporaryBufferReference != null && ((bufferRef = m_TemporaryBufferReference.Target) != null) && ((byte[])bufferRef).Length >= payload.Count)
                     {
                         buffer = (byte[])bufferRef;
                     }
                     else
                     {
-                        buffer = new byte[data.Count];
+                        buffer = new byte[payload.Count];
                         m_TemporaryBufferReference = new WeakReference(buffer);
                     }
                 }
 
-                Buffer.BlockCopy(data.Array, data.Offset, buffer, 0, data.Count);
+                Buffer.BlockCopy(payload.Array, payload.Offset, buffer, 0, payload.Count);
             }
             else
             {
-                buffer = data.Array;
+                buffer = payload.Array;
+            }
+
+            int channelId = -1;
+            switch (networkDelivery)
+            {
+                case NetworkDelivery.Unreliable:
+                    channelId = m_UnreliableChannelId;
+                    break;
+                case NetworkDelivery.UnreliableSequenced:
+                    channelId = m_UnreliableSequencedChannelId;
+                    break;
+                case NetworkDelivery.Reliable:
+                    channelId = m_ReliableChannelId;
+                    break;
+                case NetworkDelivery.ReliableSequenced:
+                    channelId = m_ReliableSequencedChannelId;
+                    break;
+                case NetworkDelivery.ReliableFragmentedSequenced:
+                    channelId = m_ReliableFragmentedSequencedChannelId;
+                    break;
             }
 
             if (MessageSendMode == SendMode.Queued)
@@ -142,27 +123,27 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_WEBGL
                 Debug.LogError("Cannot use queued sending mode for WebGL");
 #else
-                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                UnityEngine.Networking.NetworkTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, payload.Count, out byte error);
 #endif
             }
             else
             {
-                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, channelId, buffer, payload.Count, out byte error);
             }
         }
 
 #if !UNITY_WEBGL
-        public void SendQueued(ulong clientId)
+        private void SendQueued(ulong clientId)
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.SendQueuedMessages(hostId, connectionId, out _);
         }
 #endif
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
-            var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
+            var eventType = UnityEngine.Networking.NetworkTransport.Receive(out int hostId, out int connectionId, out _, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
             receiveTime = Time.realtimeSinceStartup;
@@ -182,21 +163,12 @@ namespace Unity.Netcode.Transports.UNET
                     m_TemporaryBufferReference = new WeakReference(tempBuffer);
                 }
 
-                eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
+                eventType = UnityEngine.Networking.NetworkTransport.Receive(out hostId, out connectionId, out _, tempBuffer, tempBuffer.Length, out receivedSize, out error);
                 payload = new ArraySegment<byte>(tempBuffer, 0, receivedSize);
             }
             else
             {
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
-            }
-
-            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkChannel value))
-            {
-                networkChannel = value;
-            }
-            else
-            {
-                networkChannel = NetworkChannel.Internal;
             }
 
             if (m_ConnectTask != null && hostId == m_ServerHostId && connectionId == m_ServerConnectionId)
@@ -257,8 +229,8 @@ namespace Unity.Netcode.Transports.UNET
         {
             var socketTask = SocketTask.Working;
 
-            m_ServerHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            m_ServerHostId = UnityEngine.Networking.NetworkTransport.AddHost(new HostTopology(GetConfig(), 1), 0, null);
+            m_ServerConnectionId = UnityEngine.Networking.NetworkTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
 
             var connectError = (NetworkError)error;
 
@@ -288,22 +260,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var topology = new HostTopology(GetConfig(), MaxConnections);
 
-            if (SupportWebsocket)
-            {
-                if (!UseNetcodeRelay)
-                {
-                    int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
-                }
-                else
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError("Cannot create websocket host when using Unity.Netcode relay");
-                    }
-                }
-            }
-
-            int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+            UnityEngine.Networking.NetworkTransport.AddHost(topology, ServerListenPort, null);
 
             return SocketTask.Done.AsTasks();
         }
@@ -312,57 +269,44 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
         {
-            RelayTransport.Disconnect(m_ServerHostId, m_ServerConnectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect(m_ServerHostId, m_ServerConnectionId, out byte error);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            if (UseNetcodeRelay)
-            {
-                return 0;
-            }
-            else
-            {
-                return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
-            }
+            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
         }
 
         public override void Shutdown()
         {
-            m_ChannelIdToName.Clear();
-            m_ChannelNameToId.Clear();
             UnityEngine.Networking.NetworkTransport.Shutdown();
         }
 
-        public override void Init()
+        public override void Initialize()
         {
-            UpdateRelay();
-
             m_MessageBuffer = new byte[MessageBufferSize];
 
             UnityEngine.Networking.NetworkTransport.Init();
         }
 
-        public ulong GetNetcodeClientId(byte hostId, ushort connectionId, bool isServer)
+        private ulong GetNetcodeClientId(byte hostId, ushort connectionId, bool isServer)
         {
             if (isServer)
             {
                 return 0;
             }
-            else
-            {
-                return ((ulong)connectionId | (ulong)hostId << 16) + 1;
-            }
+
+            return (connectionId | (ulong)hostId << 16) + 1;
         }
 
-        public void GetUNetConnectionDetails(ulong clientId, out byte hostId, out ushort connectionId)
+        private void GetUNetConnectionDetails(ulong clientId, out byte hostId, out ushort connectionId)
         {
             if (clientId == 0)
             {
@@ -376,93 +320,19 @@ namespace Unity.Netcode.Transports.UNET
             }
         }
 
-        public ConnectionConfig GetConfig()
+        private ConnectionConfig GetConfig()
         {
             var connectionConfig = new ConnectionConfig();
 
-            // Built-in netcode channels
-            for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
-            {
-                int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);
-
-                m_ChannelIdToName.Add(channelId, NETCODE_CHANNELS[i].Channel);
-                m_ChannelNameToId.Add(NETCODE_CHANNELS[i].Channel, channelId);
-            }
-
-            // Custom user-added channels
-            for (int i = 0; i < Channels.Count; i++)
-            {
-                int channelId = AddUNETChannel(Channels[i].Type, connectionConfig);
-
-                if (m_ChannelNameToId.ContainsKey((NetworkChannel)Channels[i].Id))
-                {
-                    throw new InvalidChannelException($"Channel {channelId} already exists");
-                }
-
-                m_ChannelIdToName.Add(channelId, (NetworkChannel)Channels[i].Id);
-                m_ChannelNameToId.Add((NetworkChannel)Channels[i].Id, channelId);
-            }
+            m_UnreliableChannelId = connectionConfig.AddChannel(QosType.Unreliable);
+            m_UnreliableSequencedChannelId = connectionConfig.AddChannel(QosType.UnreliableSequenced);
+            m_ReliableChannelId = connectionConfig.AddChannel(QosType.Reliable);
+            m_ReliableSequencedChannelId = connectionConfig.AddChannel(QosType.ReliableSequenced);
+            m_ReliableFragmentedSequencedChannelId = connectionConfig.AddChannel(QosType.ReliableFragmentedSequenced);
 
             connectionConfig.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
 
             return connectionConfig;
-        }
-
-        public int AddNetcodeChannel(NetworkDelivery type, ConnectionConfig config)
-        {
-            switch (type)
-            {
-                case NetworkDelivery.Unreliable:
-                    return config.AddChannel(QosType.Unreliable);
-                case NetworkDelivery.Reliable:
-                    return config.AddChannel(QosType.Reliable);
-                case NetworkDelivery.ReliableSequenced:
-                    return config.AddChannel(QosType.ReliableSequenced);
-                case NetworkDelivery.ReliableFragmentedSequenced:
-                    return config.AddChannel(QosType.ReliableFragmentedSequenced);
-                case NetworkDelivery.UnreliableSequenced:
-                    return config.AddChannel(QosType.UnreliableSequenced);
-            }
-
-            return 0;
-        }
-
-        public int AddUNETChannel(QosType type, ConnectionConfig config)
-        {
-            switch (type)
-            {
-                case QosType.Unreliable:
-                    return config.AddChannel(QosType.Unreliable);
-                case QosType.UnreliableFragmented:
-                    return config.AddChannel(QosType.UnreliableFragmented);
-                case QosType.UnreliableSequenced:
-                    return config.AddChannel(QosType.UnreliableSequenced);
-                case QosType.Reliable:
-                    return config.AddChannel(QosType.Reliable);
-                case QosType.ReliableFragmented:
-                    return config.AddChannel(QosType.ReliableFragmented);
-                case QosType.ReliableSequenced:
-                    return config.AddChannel(QosType.ReliableSequenced);
-                case QosType.StateUpdate:
-                    return config.AddChannel(QosType.StateUpdate);
-                case QosType.ReliableStateUpdate:
-                    return config.AddChannel(QosType.ReliableStateUpdate);
-                case QosType.AllCostDelivery:
-                    return config.AddChannel(QosType.AllCostDelivery);
-                case QosType.UnreliableFragmentedSequenced:
-                    return config.AddChannel(QosType.UnreliableFragmentedSequenced);
-                case QosType.ReliableFragmentedSequenced:
-                    return config.AddChannel(QosType.ReliableFragmentedSequenced);
-            }
-
-            return 0;
-        }
-
-        private void UpdateRelay()
-        {
-            RelayTransport.Enabled = UseNetcodeRelay;
-            RelayTransport.RelayAddress = NetcodeRelayAddress;
-            RelayTransport.RelayPort = (ushort)NetcodeRelayPort;
         }
     }
 }

@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
+using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine.TestTools;
 
@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
-            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, MetricNames.ServerLogSent);
+            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
 
             var message = Guid.NewGuid().ToString();
             NetworkLog.LogWarningServer(message);
@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogReceivedMetric()
         {
-            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, MetricNames.ServerLogReceived);
+            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ServerLogReceived);
 
             var message = Guid.NewGuid().ToString();
             NetworkLog.LogWarningServer(message);

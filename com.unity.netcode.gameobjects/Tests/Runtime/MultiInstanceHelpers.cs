@@ -31,7 +31,6 @@ namespace Unity.Netcode.RuntimeTests
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-
             CreateNewClients(clientCount, out clients);
 
             // Create gameObject
@@ -44,8 +43,6 @@ namespace Unity.Netcode.RuntimeTests
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
             {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                 // Set transport
                 NetworkTransport = go.AddComponent<SIPTransport>()
             };
@@ -65,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
-
+            var activeSceneName = SceneManager.GetActiveScene().name;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create gameObject
@@ -76,8 +73,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
@@ -93,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="clientToStop"></param>
         public static void StopOneClient(NetworkManager clientToStop)
         {
-            clientToStop.StopClient();
+            clientToStop.Shutdown();
             Object.Destroy(clientToStop.gameObject);
             NetworkManagerInstances.Remove(clientToStop);
         }
@@ -114,24 +109,13 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsHost)
-                {
-                    networkManager.StopHost();
-                }
-                else if (networkManager.IsServer)
-                {
-                    networkManager.StopServer();
-                }
-                else if (networkManager.IsClient)
-                {
-                    networkManager.StopClient();
-                }
+                networkManager.Shutdown();
             }
 
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
 
             NetworkManagerInstances.Clear();
@@ -139,7 +123,8 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
-                Object.Destroy(s_CoroutineRunner);
+                s_CoroutineRunner.StopAllCoroutines();
+                Object.DestroyImmediate(s_CoroutineRunner);
             }
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
@@ -204,6 +189,7 @@ namespace Unity.Netcode.RuntimeTests
             public T Result;
         }
 
+        private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
 
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
@@ -214,16 +200,19 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="networkObject">The networkObject to be treated as Prefab</param>
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
-        public static void MakeNetworkedObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
+        public static void MakeNetworkObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
         {
-            // Set a globalObjectId for prefab
+            // Override `GlobalObjectIdHash` if `globalObjectIdHash` param is set
             if (globalObjectIdHash != default)
             {
-                networkObject.TempGlobalObjectIdHashOverride = globalObjectIdHash;
+                networkObject.GlobalObjectIdHash = globalObjectIdHash;
             }
 
-            // Force generation
-            networkObject.GenerateGlobalObjectIdHash();
+            // Fallback to auto-increment if `GlobalObjectIdHash` was never set
+            if (networkObject.GlobalObjectIdHash == default)
+            {
+                networkObject.GlobalObjectIdHash = ++s_AutoIncrementGlobalObjectIdHashCounter;
+            }
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
