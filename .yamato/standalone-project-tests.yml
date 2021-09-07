@@ -1,7 +1,6 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 
-
 # For every platform and editor version, run its project tests without
 # running package tests too since they are handled on their respective
 # jobs
@@ -18,6 +17,7 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - {% if platform.name == "win" %} build-scripts\builder\windows\target\windows.bat build {% endif %}
     - {% if platform.name == "win" %} build-scripts\builder\windows\target\windows.bat test {% endif %}
+    - echo {{ platform.name }}
   artifacts:
     logs:
       paths:
