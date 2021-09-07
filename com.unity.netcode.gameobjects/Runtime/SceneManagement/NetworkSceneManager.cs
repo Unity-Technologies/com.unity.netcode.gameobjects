@@ -1665,7 +1665,7 @@ namespace Unity.Netcode
                 // Only move objects with no parent as child objects will follow
                 if (sobj.gameObject.transform.parent == null)
                 {
-                    // We set the child NetworkObject to active at this point
+                    // set it back to active at this point
                     sobj.gameObject.SetActive(true);
                     SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
                 }
