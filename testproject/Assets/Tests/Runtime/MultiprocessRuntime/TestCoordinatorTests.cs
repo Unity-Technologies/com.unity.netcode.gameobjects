@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     [TestFixture(1)]
-    //[TestFixture(2)]
+    [TestFixture(2)]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
