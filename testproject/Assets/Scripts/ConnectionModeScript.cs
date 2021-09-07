@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 
+
 #if ENABLE_RELAY_SERVICE
 using System;
 using Unity.Services.Core;
@@ -26,6 +27,8 @@ public class ConnectionModeScript : MonoBehaviour
     private int m_MaxConnections = 10;
 
     private CommandLineProcessor m_CommandLineProcessor;
+
+    private bool m_UsingRelay = false;
 
 #if ENABLE_RELAY_SERVICE
     [SerializeField]
@@ -78,6 +81,7 @@ public class ConnectionModeScript : MonoBehaviour
 #if ENABLE_RELAY_SERVICE
             if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
             {
+                m_UsingRelay = true;
                 m_JoinCodeInput.SetActive(true);
                 //If Start() is called on the first frame update, it's not likely that the AuthenticationService is going to be instantiated yet
                 //Moved old logic for this out to OnServicesInitialized
@@ -113,11 +117,14 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-#if ENABLE_RELAY_SERVICE
-            StartCoroutine(StartRelayServer(StartServer));
-#else
-            StartServer();
-#endif
+            if (m_UsingRelay)
+            {
+                StartCoroutine(StartRelayServer(StartServer));
+            }
+            else
+            {
+                StartServer();
+            }
         }
     }
 
@@ -128,12 +135,13 @@ public class ConnectionModeScript : MonoBehaviour
         m_ConnectionModeButtons.SetActive(false);
     }
 
-#if ENABLE_RELAY_SERVICE
+
     /// <summary>
     /// Coroutine that handles starting MLAPI in server mode if Relay is enabled
     /// </summary>
     private IEnumerator StartRelayServer(Action postAllocationAction)
     {
+#if ENABLE_RELAY_SERVICE
         m_ConnectionModeButtons.SetActive(false);
 
         var serverRelayUtilityTask = RelayUtility.AllocateRelayServerAndGetJoinCode(m_MaxConnections);
@@ -155,8 +163,11 @@ public class ConnectionModeScript : MonoBehaviour
         NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData);
 
         postAllocationAction();
-    }
+#else
+        yield return null;
 #endif
+    }
+
 
     /// <summary>
     /// Handles starting netcode in host mode
@@ -165,11 +176,14 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-#if ENABLE_RELAY_SERVICE
-            StartCoroutine(StartRelayServer(StartHost));
-#else
-            StartHost();
-#endif
+            if (m_UsingRelay)
+            {
+                StartCoroutine(StartRelayServer(StartHost));
+            }
+            else
+            {
+                StartHost();
+            }
         }
     }
 
@@ -202,13 +216,14 @@ public class ConnectionModeScript : MonoBehaviour
         m_ConnectionModeButtons.SetActive(false);
     }
 
-#if ENABLE_RELAY_SERVICE
+
     /// <summary>
     /// Coroutine that kicks off Relay SDK calls to join a Relay Server instance with a join code
     /// </summary>
     /// <returns></returns>
     private IEnumerator StartRelayClient()
     {
+#if ENABLE_RELAY_SERVICE
         m_ConnectionModeButtons.SetActive(false);
 
         //assumes that RelayJoinCodeInput populated RelayJoinCode prior to this
@@ -232,16 +247,17 @@ public class ConnectionModeScript : MonoBehaviour
 
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();
-    }
+#else
+        yield return null;
 #endif
+    }
+
     /// <summary>
     /// Handles authenticating UnityServices, needed for Relay
     /// </summary>
     public async void OnSignIn()
     {
 #if ENABLE_RELAY_SERVICE
-        Unity.Services.Relay.RelayService.Configuration.BasePath = m_RelayAllocationBasePath;
-
         await UnityServices.InitializeAsync();
         OnServicesInitialized();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();

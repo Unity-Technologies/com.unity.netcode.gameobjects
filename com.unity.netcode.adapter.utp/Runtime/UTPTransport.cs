@@ -240,7 +240,7 @@ namespace Unity.Netcode
         }
 
         public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes,
-            byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null)
+            byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
             RelayConnectionData hostConnectionData;
 
@@ -259,7 +259,7 @@ namespace Unity.Netcode
             }
 
             m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData,
-                ref hostConnectionData, ref key);
+                ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
         }
 
