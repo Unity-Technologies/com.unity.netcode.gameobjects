@@ -1,0 +1,66 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.14f1\\Editor\\Data\\Tools\\nodejs\\node.exe',
+1 verbose cli   'C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.14f1\\Editor\\Data\\Tools\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'view',
+1 verbose cli   'com.unity.2d.sprite@1.0.0',
+1 verbose cli   '--registry',
+1 verbose cli   'https://packages.unity.com/' ]
+2 info using npm@3.10.10
+3 info using node@v6.10.0
+4 silly mapToRegistry name com.unity.2d.sprite
+5 silly mapToRegistry using default registry
+6 silly mapToRegistry registry https://packages.unity.com/
+7 silly mapToRegistry data Result {
+7 silly mapToRegistry   raw: 'com.unity.2d.sprite',
+7 silly mapToRegistry   scope: null,
+7 silly mapToRegistry   escapedName: 'com.unity.2d.sprite',
+7 silly mapToRegistry   name: 'com.unity.2d.sprite',
+7 silly mapToRegistry   rawSpec: '',
+7 silly mapToRegistry   spec: 'latest',
+7 silly mapToRegistry   type: 'tag' }
+8 silly mapToRegistry uri https://packages.unity.com/com.unity.2d.sprite
+9 verbose request uri https://packages.unity.com/com.unity.2d.sprite
+10 verbose request no auth needed
+11 info attempt registry request try #1 at 12:51:48 PM
+12 verbose request id bb8c6ff27abf75ae
+13 http request GET https://packages.unity.com/com.unity.2d.sprite
+14 http 404 https://packages.unity.com/com.unity.2d.sprite
+15 verbose headers { 'x-powered-by': 'Express',
+15 verbose headers   'content-type': 'application/json; charset=utf-8',
+15 verbose headers   'content-length': '37',
+15 verbose headers   etag: 'W/"25-gZLX/77GjylNO6kyiGZBNSZYryI"',
+15 verbose headers   vary: 'Accept-Encoding',
+15 verbose headers   date: 'Tue, 07 Sep 2021 19:51:48 GMT' }
+16 silly get cb [ 404,
+16 silly get   { 'x-powered-by': 'Express',
+16 silly get     'content-type': 'application/json; charset=utf-8',
+16 silly get     'content-length': '37',
+16 silly get     etag: 'W/"25-gZLX/77GjylNO6kyiGZBNSZYryI"',
+16 silly get     vary: 'Accept-Encoding',
+16 silly get     date: 'Tue, 07 Sep 2021 19:51:48 GMT' } ]
+17 verbose stack Error: no such package available : com.unity.2d.sprite
+17 verbose stack     at makeError (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:302:12)
+17 verbose stack     at CachingRegistryClient.<anonymous> (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:290:14)
+17 verbose stack     at Request._callback (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:210:14)
+17 verbose stack     at Request.self.callback (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\request\request.js:187:22)
+17 verbose stack     at emitTwo (events.js:106:13)
+17 verbose stack     at Request.emit (events.js:191:7)
+17 verbose stack     at Request.<anonymous> (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\request\request.js:1048:10)
+17 verbose stack     at emitOne (events.js:96:13)
+17 verbose stack     at Request.emit (events.js:188:7)
+17 verbose stack     at IncomingMessage.<anonymous> (C:\Program Files\Unity\Hub\Editor\2020.3.14f1\Editor\Data\Tools\nodejs\node_modules\npm\node_modules\request\request.js:969:12)
+18 verbose statusCode 404
+19 verbose pkgid com.unity.2d.sprite
+20 verbose cwd C:\Users\esteban.maldonado\Documents\UnityGithub\com.unity.netcode.gameobjects\testproject
+21 error Windows_NT 10.0.19043
+22 error argv "C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.14f1\\Editor\\Data\\Tools\\nodejs\\node.exe" "C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.14f1\\Editor\\Data\\Tools\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "view" "com.unity.2d.sprite@1.0.0" "--registry" "https://packages.unity.com/"
+23 error node v6.10.0
+24 error npm  v3.10.10
+25 error code E404
+26 error 404 no such package available : com.unity.2d.sprite
+27 error 404
+28 error 404 'com.unity.2d.sprite' is not in the npm registry.
+29 error 404 You should bug the author to publish it (or use the name yourself!)
+30 error 404 Note that you can also install from a
+31 error 404 tarball, folder, http url, or git url.
+32 verbose exit [ 1, true ]
