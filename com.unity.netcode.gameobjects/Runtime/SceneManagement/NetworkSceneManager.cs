@@ -1580,15 +1580,24 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
+                // In case an object has been set as a child of another object, if the parent is a NetworkObject then we don't
+                // need to move this into the DontDestroyOnLoad scene because when the parent is moved it will automatically
+                // move its children into the DontDestroyOnLoad scene.
                 if (sobj.gameObject.transform.parent != null)
                 {
-                    sobj.gameObject.transform.parent = null;
+                    if (sobj.gameObject.GetComponentInParent<NetworkObject>() != null)
+                    {
+                        // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
+                        sobj.gameObject.SetActive(false);
+                        continue;
+                    }
                 }
 
                 if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
                 {
                     UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                    // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
+                    sobj.gameObject.SetActive(false);
                 }
                 else if (m_NetworkManager.IsServer)
                 {
@@ -1657,17 +1666,25 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
+                // In case an object has been set as a child of another object, if the parent is a NetworkObject then we don't
+                // need to move this into the scene because when the parent is moved it will automatically move its children
+                // into the scene.
                 if (sobj.gameObject.transform.parent != null)
                 {
-                    sobj.gameObject.transform.parent = null;
+                    if (sobj.gameObject.GetComponentInParent<NetworkObject>() != null)
+                    {
+                        // We set the child NetworkObject to active at this point
+                        sobj.gameObject.SetActive(true);
+                        continue;
+                    }
                 }
 
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
                 {
                     continue;
                 }
-
+                // We set the NetworkObject to active at this point
+                sobj.gameObject.SetActive(true);
                 SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
             }
         }
