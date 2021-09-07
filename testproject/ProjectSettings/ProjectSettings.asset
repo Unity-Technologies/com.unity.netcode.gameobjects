@@ -678,7 +678,7 @@ PlayerSettings:
     m_VersionName: 
   apiCompatibilityLevel: 6
   activeInputHandler: 0
-  cloudProjectId: 41b4b759-38bb-46fb-9eb2-b233a90bade7
+  cloudProjectId:
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
   projectName: relay-stg

@@ -1,5 +1,5 @@
 {
-    "name": "Unity.Netcode.Adapater.UTP",
+    "name": "Unity.Netcode.Adapter.UTP",
     "rootNamespace": "",
     "references": [
         "Unity.Collections",

@@ -1,12 +1,12 @@
 {
-    "name": "Unity.Netcode.Adapater.UTP.RuntimeTests",
+    "name": "Unity.Netcode.Adapter.UTP.RuntimeTests",
     "rootNamespace": "Unity.Netcode.UTP.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Adapater.UTP"
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
