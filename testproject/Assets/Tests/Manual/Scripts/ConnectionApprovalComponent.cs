@@ -137,7 +137,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public void OnDisconnectClient()
         {
-            if ( NetworkManager != null && NetworkManager.IsListening && !NetworkManager.IsServer)
+            if (NetworkManager != null && NetworkManager.IsListening && !NetworkManager.IsServer)
             {
                 NetworkManager.Shutdown();
                 m_ConnectionModeButtons.Reset();
