@@ -15,8 +15,8 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "win" %} build-scripts\builder\windows\target\windows.bat build {% endif %}
-    - {% if platform.name == "win" %} build-scripts\builder\windows\target\windows.bat test {% endif %}
+    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} build
+    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} test
     - echo {{ platform.name }}
   artifacts:
     logs:
