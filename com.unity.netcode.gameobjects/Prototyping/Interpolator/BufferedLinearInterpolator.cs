@@ -158,7 +158,7 @@ namespace Unity.Netcode
 
                 if (Debug.isDebugBuild)
                 {
-                    Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
+                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
                 }
 
                 SimpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
