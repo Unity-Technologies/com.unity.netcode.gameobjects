@@ -10,7 +10,7 @@ namespace Unity.Netcode.UTP.EditorTests
         public void BasicInitServer()
         {
             UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             var tasks = transport.StartServer();
             Assert.False(tasks.IsDone && !tasks.Success);
@@ -23,7 +23,7 @@ namespace Unity.Netcode.UTP.EditorTests
         public void BasicInitClient()
         {
             UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             var tasks = transport.StartClient();
             Assert.False(tasks.IsDone && !tasks.Success);
@@ -36,7 +36,7 @@ namespace Unity.Netcode.UTP.EditorTests
         public void NoRestartServer()
         {
             UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             transport.StartServer();
             var tasks = transport.StartServer();
@@ -50,7 +50,7 @@ namespace Unity.Netcode.UTP.EditorTests
         public void NoRestartClient()
         {
             UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             transport.StartClient();
             var tasks = transport.StartClient();
@@ -68,7 +68,7 @@ namespace Unity.Netcode.UTP.EditorTests
 
             // Start server then client.
             transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             transport.StartServer();
             tasks = transport.StartClient();
@@ -78,7 +78,7 @@ namespace Unity.Netcode.UTP.EditorTests
 
             // Start client then server.
             transport = new GameObject().AddComponent<UTPTransport>();
-            transport.Init();
+            transport.Initialize();
 
             transport.StartClient();
             tasks = transport.StartServer();

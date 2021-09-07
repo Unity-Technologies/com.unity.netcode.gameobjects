@@ -28,14 +28,14 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            client.Send(client.ServerClientId, ping, NetworkChannel.Internal);
+            client.Send(client.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
 
             Assert.That(serverEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            server.Send(serverEvents[0].ClientID, pong, NetworkChannel.Internal);
+            server.Send(serverEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, clientEvents);
 
@@ -63,8 +63,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            server.Send(serverEvents[0].ClientID, ping, NetworkChannel.Internal);
-            client.Send(client.ServerClientId, ping, NetworkChannel.Internal);
+            server.Send(serverEvents[0].ClientID, ping, NetworkDelivery.ReliableSequenced);
+            client.Send(client.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
@@ -73,8 +73,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.That(clientEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            server.Send(serverEvents[0].ClientID, pong, NetworkChannel.Internal);
-            client.Send(client.ServerClientId, pong, NetworkChannel.Internal);
+            server.Send(serverEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
+            client.Send(client.ServerClientId, pong, NetworkDelivery.ReliableSequenced);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
@@ -104,10 +104,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
             var data1 = new ArraySegment<byte>(new byte [] { 11 });
-            client.Send(client.ServerClientId, data1, NetworkChannel.Internal);
+            client.Send(client.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
 
             var data2 = new ArraySegment<byte>(new byte [] { 22 });
-            client.Send(client.ServerClientId, data2, NetworkChannel.Internal);
+            client.Send(client.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
 
@@ -144,10 +144,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.AreEqual(2, serverEvents.Count);
 
             var data1 = new ArraySegment<byte>(new byte [] { 11 });
-            server.Send(serverEvents[0].ClientID, data1, NetworkChannel.Internal);
+            server.Send(serverEvents[0].ClientID, data1, NetworkDelivery.ReliableSequenced);
 
             var data2 = new ArraySegment<byte>(new byte [] { 22 });
-            server.Send(serverEvents[1].ClientID, data2, NetworkChannel.Internal);
+            server.Send(serverEvents[1].ClientID, data2, NetworkDelivery.ReliableSequenced);
 
             // Once one has received its data, the other should have too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, client1Events);
@@ -188,10 +188,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.AreEqual(1, client2Events.Count);
 
             var data1 = new ArraySegment<byte>(new byte [] { 11 });
-            client1.Send(client1.ServerClientId, data1, NetworkChannel.Internal);
+            client1.Send(client1.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
 
             var data2 = new ArraySegment<byte>(new byte [] { 22 });
-            client2.Send(client2.ServerClientId, data2, NetworkChannel.Internal);
+            client2.Send(client2.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
 
