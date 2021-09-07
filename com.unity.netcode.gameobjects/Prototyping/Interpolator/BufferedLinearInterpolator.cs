@@ -14,9 +14,9 @@ namespace Unity.Netcode
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
         {
-            public double BufferedServerTime { get; }
-            public double BufferedServerFixedTime { get; }
-            public int TickRate { get; }
+            double BufferedServerTime { get; }
+            double BufferedServerFixedTime { get; }
+            int TickRate { get; }
         }
 
         private class InterpolatorTime : IInterpolatorTime
