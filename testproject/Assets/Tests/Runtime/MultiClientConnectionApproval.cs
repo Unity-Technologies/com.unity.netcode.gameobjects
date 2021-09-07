@@ -250,7 +250,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true,false)] bool connectionApproval)
+        public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true, false)] bool connectionApproval)
         {
             m_ServerClientDisconnectedInvocations = 0;
 
