@@ -729,10 +729,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Cached information about reliability mode with a certain client
         /// </summary>
-        private struct SendTarget
+        private struct SendTarget : IEquatable<SendTarget>
         {
-
-            // TODO: implement IEquatable?
             public readonly ulong ClientId;
             public readonly NetworkPipeline NetworkPipeline;
 
@@ -740,6 +738,24 @@ namespace Unity.Netcode
             {
                 ClientId = clientId;
                 NetworkPipeline = networkPipeline;
+            }
+
+            public bool Equals(SendTarget other)
+            {
+                return ClientId == other.ClientId && NetworkPipeline.Equals(other.NetworkPipeline);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is SendTarget other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (ClientId.GetHashCode() * 397) ^ NetworkPipeline.GetHashCode();
+                }
             }
         }
     }
