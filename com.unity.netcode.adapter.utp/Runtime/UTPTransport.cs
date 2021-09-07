@@ -474,13 +474,6 @@ namespace Unity.Netcode
         {
             var size = payload.Count + 1 + 4; // 1 extra byte for the channel and another 4 for the count of the data
             var pipeline = SelectSendPipeline(networkDelivery, size);
-/* Unmerged change from project 'Unity.Netcode.Adapater.UTP'
-Before:
-            SendTarget sendTarget = new SendTarget(clientId, pipeline);
-After:
-            var sendTarget = new SendTarget(clientId, pipeline);
-*/
-
 
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
