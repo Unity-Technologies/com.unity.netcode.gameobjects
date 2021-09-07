@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     public class ConnectionTests
     {
         // For tests using multiple clients.
-        private const int NumClients = 5;
+        private const int k_NumClients = 5;
 
         // Check connection with a single client.
         [UnityTest]
@@ -43,15 +43,15 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ConnectMultipleClients()
         {
             UTPTransport server;
-            var clients = new UTPTransport[NumClients];
+            var clients = new UTPTransport[k_NumClients];
 
             List<TransportEvent> serverEvents;
-            var clientsEvents = new List<TransportEvent>[NumClients];
+            var clientsEvents = new List<TransportEvent>[k_NumClients];
 
             InitializeTransport(out server, out serverEvents);
             server.StartServer();
 
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 InitializeTransport(out clients[i], out clientsEvents[i]);
                 clients[i].StartClient();
@@ -64,7 +64,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(clientsEvents.All(evs => evs[0].Type == NetworkEvent.Connect));
 
             server.Shutdown();
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 clients[i].Shutdown();
             }
@@ -102,15 +102,15 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ServerDisconnectMultipleClients()
         {
             UTPTransport server;
-            var clients = new UTPTransport[NumClients];
+            var clients = new UTPTransport[k_NumClients];
 
             List<TransportEvent> serverEvents;
-            var clientsEvents = new List<TransportEvent>[NumClients];
+            var clientsEvents = new List<TransportEvent>[k_NumClients];
 
             InitializeTransport(out server, out serverEvents);
             server.StartServer();
 
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 InitializeTransport(out clients[i], out clientsEvents[i]);
                 clients[i].StartClient();
@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(1, clientsEvents.Count(evs => evs.Count == 2 && evs[1].Type == NetworkEvent.Disconnect));
 
             // Disconnect all the other clients.
-            for (int i = 1; i < NumClients; i++)
+            for (int i = 1; i < k_NumClients; i++)
             {
                 server.DisconnectRemoteClient(serverEvents[i].ClientID);
             }
@@ -141,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(clientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
 
             server.Shutdown();
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 clients[i].Shutdown();
             }
@@ -179,15 +179,15 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ClientDisconnectMultipleClients()
         {
             UTPTransport server;
-            var clients = new UTPTransport[NumClients];
+            var clients = new UTPTransport[k_NumClients];
 
             List<TransportEvent> serverEvents;
-            var clientsEvents = new List<TransportEvent>[NumClients];
+            var clientsEvents = new List<TransportEvent>[k_NumClients];
 
             InitializeTransport(out server, out serverEvents);
             server.StartServer();
 
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 InitializeTransport(out clients[i], out clientsEvents[i]);
                 clients[i].StartClient();
@@ -201,7 +201,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, serverEvents);
 
             // Disconnect all the other clients.
-            for (int i = 1; i < NumClients; i++)
+            for (int i = 1; i < k_NumClients; i++)
             {
                 clients[i].DisconnectLocalClient();
             }
@@ -209,11 +209,11 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, serverEvents);
 
             // Check that we got the correct number of Disconnect events on the server.
-            Assert.AreEqual(NumClients * 2, serverEvents.Count);
-            Assert.AreEqual(NumClients, serverEvents.Count(e => e.Type == NetworkEvent.Disconnect));
+            Assert.AreEqual(k_NumClients * 2, serverEvents.Count);
+            Assert.AreEqual(k_NumClients, serverEvents.Count(e => e.Type == NetworkEvent.Disconnect));
 
             server.Shutdown();
-            for (int i = 0; i < NumClients; i++)
+            for (int i = 0; i < k_NumClients; i++)
             {
                 clients[i].Shutdown();
             }
