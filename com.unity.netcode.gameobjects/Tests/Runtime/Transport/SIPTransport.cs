@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+#if UNITY_EDITOR
 using Unity.Netcode.Editor;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -11,7 +13,9 @@ namespace Unity.Netcode.RuntimeTests
     /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
+#if UNITY_EDITOR
     [DontShowInTransportDropdown]
+#endif
     public class SIPTransport : NetworkTransport
     {
         private struct Event
@@ -19,7 +23,6 @@ namespace Unity.Netcode.RuntimeTests
             public NetworkEvent Type;
             public ulong ConnectionId;
             public ArraySegment<byte> Data;
-            public NetworkChannel Channel;
         }
 
         private class Peer
@@ -46,7 +49,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_LocalConnection.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
                     ConnectionId = m_LocalConnection.ConnectionId,
                     Data = new ArraySegment<byte>()
                 });
@@ -76,7 +78,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_Peers[clientId].IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
                     ConnectionId = clientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -85,7 +86,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_LocalConnection.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
                     ConnectionId = clientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -104,7 +104,7 @@ namespace Unity.Netcode.RuntimeTests
             return 50;
         }
 
-        public override void Init()
+        public override void Initialize()
         {
         }
 
@@ -122,7 +122,6 @@ namespace Unity.Netcode.RuntimeTests
                 onePeer.Value.IncomingBuffer.Enqueue(new Event
                 {
                     Type = NetworkEvent.Disconnect,
-                    Channel = NetworkChannel.Internal,
                     ConnectionId = LocalClientId,
                     Data = new ArraySegment<byte>()
                 });
@@ -222,14 +221,14 @@ namespace Unity.Netcode.RuntimeTests
             return SocketTask.Done.AsTasks();
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
             if (m_LocalConnection != null)
             {
                 // Create copy since netcode wants the byte array back straight after the method call.
                 // Hard on GC.
-                byte[] copy = new byte[data.Count];
-                Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
+                byte[] copy = new byte[payload.Count];
+                Buffer.BlockCopy(payload.Array, payload.Offset, copy, 0, payload.Count);
 
                 if (!m_Peers.ContainsKey(clientId))
                 {
@@ -240,20 +239,18 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     Type = NetworkEvent.Data,
                     ConnectionId = m_LocalConnection.ConnectionId,
-                    Data = new ArraySegment<byte>(copy),
-                    Channel = channel
+                    Data = new ArraySegment<byte>(copy)
                 });
             }
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (m_LocalConnection != null)
             {
                 if (m_LocalConnection.IncomingBuffer.Count == 0)
                 {
                     clientId = 0;
-                    channel = NetworkChannel.Internal;
                     payload = new ArraySegment<byte>();
                     receiveTime = 0;
                     return NetworkEvent.Nothing;
@@ -262,20 +259,16 @@ namespace Unity.Netcode.RuntimeTests
                 var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
 
                 clientId = peerEvent.ConnectionId;
-                channel = peerEvent.Channel;
                 payload = peerEvent.Data;
                 receiveTime = 0;
 
                 return peerEvent.Type;
             }
-            else
-            {
-                clientId = 0;
-                channel = NetworkChannel.Internal;
-                payload = new ArraySegment<byte>();
-                receiveTime = 0;
-                return NetworkEvent.Nothing;
-            }
+
+            clientId = 0;
+            payload = new ArraySegment<byte>();
+            receiveTime = 0;
+            return NetworkEvent.Nothing;
         }
     }
 }

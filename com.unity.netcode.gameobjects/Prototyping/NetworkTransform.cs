@@ -128,11 +128,11 @@ namespace Unity.Netcode.Prototyping
             }
         }
 
-        /// <summary>
-        /// The network channel to use send updates
-        /// </summary>
-        [Tooltip("The network channel to use send updates")]
-        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
+        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
+        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
+        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
+
+        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
 
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
@@ -143,11 +143,8 @@ namespace Unity.Netcode.Prototyping
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
-        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
-        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
-
-        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+        // todo: revisit after MTT-876
+        public bool Interpolate = true;
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -156,6 +153,7 @@ namespace Unity.Netcode.Prototyping
         public float FixedSendsPerSecond = 30f;
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+        internal NetworkState LocalNetworkState;
         internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
         internal NetworkState PrevNetworkState;
 
@@ -364,10 +362,6 @@ namespace Unity.Netcode.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-
-            ReplNetworkState.Settings.SendNetworkChannel = Channel;
-            ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
-
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
@@ -385,7 +379,13 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                ReplNetworkState.SetDirty(UpdateNetworkState(ref ReplNetworkState.ValueRef));
+                // try to update local NetworkState
+                if (UpdateNetworkState(ref LocalNetworkState))
+                {
+                    // if updated (dirty), change NetVar, mark it dirty
+                    ReplNetworkState.Value = LocalNetworkState;
+                    ReplNetworkState.SetDirty(true);
+                }
             }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally

@@ -28,10 +28,13 @@ namespace Unity.Netcode
                         m_Touched.UnionWith(spawnedObjs);
                         foreach (var sobj in spawnedObjs)
                         {
-                            // Sync just the variables for just the objects this client sees
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            if (sobj.IsNetworkVisibleTo(client.ClientId))
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                // Sync just the variables for just the objects this client sees
+                                for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                                {
+                                    sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                }
                             }
                         }
                     }
@@ -50,9 +53,12 @@ namespace Unity.Netcode
                     // when client updates the server, it tells it about all its objects
                     foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        if (sobj.IsOwner)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            }
                         }
                     }
 

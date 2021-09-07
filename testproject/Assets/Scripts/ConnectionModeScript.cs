@@ -255,4 +255,12 @@ public class ConnectionModeScript : MonoBehaviour
         }
 #endif
     }
+
+    public void Reset()
+    {
+        if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
+        {
+            m_ConnectionModeButtons.SetActive(true);
+        }
+    }
 }

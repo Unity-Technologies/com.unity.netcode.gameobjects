@@ -58,7 +58,7 @@ namespace Unity.Netcode.Editor
             if (value == null)
             {
                 var fieldType = m_NetworkVariableFields[m_NetworkVariableNames[index]].FieldType;
-                var networkVariable = (INetworkVariable)Activator.CreateInstance(fieldType, true);
+                var networkVariable = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
                 m_NetworkVariableFields[m_NetworkVariableNames[index]].SetValue(target, networkVariable);
             }
 
@@ -66,12 +66,7 @@ namespace Unity.Netcode.Editor
             var genericType = type.GetGenericArguments()[0];
 
             EditorGUILayout.BeginHorizontal();
-            if (genericType == typeof(string))
-            {
-                var networkVariable = (NetworkVariable<string>)m_NetworkVariableFields[m_NetworkVariableNames[index]].GetValue(target);
-                networkVariable.Value = EditorGUILayout.TextField(m_NetworkVariableNames[index], networkVariable.Value);
-            }
-            else if (genericType.IsValueType)
+            if (genericType.IsValueType)
             {
                 var method = typeof(NetworkBehaviourEditor).GetMethod("RenderNetworkVariableValueType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
                 var genericMethod = method.MakeGenericMethod(genericType);
@@ -86,7 +81,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.EndHorizontal();
         }
 
-        private void RenderNetworkVariableValueType<T>(int index) where T : struct
+        private void RenderNetworkVariableValueType<T>(int index) where T : unmanaged
         {
             var networkVariable = (NetworkVariable<T>)m_NetworkVariableFields[m_NetworkVariableNames[index]].GetValue(target);
             var type = typeof(T);

@@ -14,8 +14,6 @@ namespace Unity.Netcode.RuntimeTests
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
-        internal static uint DefaultPayerGlobalObjectIdHashValue = 7777777;
-
         protected abstract int NbClients { get; }
 
         [UnitySetUp]
@@ -45,8 +43,7 @@ namespace Unity.Netcode.RuntimeTests
             // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
             // If we are tearing down, we don't want to leave NetworkObjects hanging around
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
-            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
-            foreach (var networkObject in networkObjectsList)
+            foreach (var networkObject in networkObjects)
             {
                 Object.DestroyImmediate(networkObject);
             }
@@ -63,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running. Will be reset on teardown.</param>
         /// <returns></returns>
-        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
+        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
         {
             // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
             // If we are tearing down, we don't want to leave NetworkObjects hanging around
@@ -96,9 +93,12 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
+            if (updatePlayerPrefab != null)
+            {
+                updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
+            }
 
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;

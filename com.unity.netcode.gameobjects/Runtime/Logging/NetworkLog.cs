@@ -56,21 +56,17 @@ namespace Unity.Netcode
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
-                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ServerLog, NetworkDelivery.ReliableSequenced, new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
-                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
-                        nonNullContext.NetworkWriter.WriteStringPacked(message);
-                        var size = bufferSizeCapture.StopMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+                    nonNullContext.NetworkWriter.WriteByte((byte)logType);
+                    nonNullContext.NetworkWriter.WriteStringPacked(message);
+                    var size = bufferSizeCapture.StopMeasureSegment();
 
-                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
-                    }
+                    NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
                 }
             }
         }

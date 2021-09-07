@@ -25,7 +25,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private class OneNetVar : NetworkBehaviour
         {
             public static int InstanceCount;
-            public NetworkVariableInt OneInt = new NetworkVariableInt();
+            public NetworkVariable<int> OneInt = new NetworkVariable<int>();
 
             public void Initialize()
             {

@@ -485,6 +485,7 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.S2C_Load:
                     {
+                        SetInternalBuffer();
                         // We store off the trailing in-scene placed serialized NetworkObject data to
                         // be processed once we are done loading.
                         InternalBuffer.Position = 0;
@@ -514,8 +515,8 @@ namespace Unity.Netcode
         /// <param name="reader"></param>
         internal void CopySceneSyncrhonizationData(NetworkReader reader)
         {
+            SetInternalBuffer();
             m_NetworkObjectsSync.Clear();
-
             ScenesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
             SceneHandlesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
             InternalBuffer.Position = 0;
@@ -523,10 +524,8 @@ namespace Unity.Netcode
             // is not packed!
             var sizeToCopy = reader.ReadUInt32();
 
-            using (var writer = PooledNetworkWriter.Get(InternalBuffer))
-            {
-                writer.ReadAndWrite(reader, (long)sizeToCopy);
-            }
+            using var writer = PooledNetworkWriter.Get(InternalBuffer);
+            writer.ReadAndWrite(reader, (long)sizeToCopy);
 
             InternalBuffer.Position = 0;
         }
@@ -538,20 +537,19 @@ namespace Unity.Netcode
         /// </summary>
         internal void DeserializeScenePlacedObjects()
         {
-            using (var reader = PooledNetworkReader.Get(InternalBuffer))
+            using var reader = PooledNetworkReader.Get(InternalBuffer);
+            // is not packed!
+            var newObjectsCount = reader.ReadUInt16();
+
+            for (ushort i = 0; i < newObjectsCount; i++)
             {
-                // is not packed!
-                var newObjectsCount = reader.ReadUInt16();
+                // Set our relative scene to the NetworkObject
+                m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
-                for (ushort i = 0; i < newObjectsCount; i++)
-                {
-                    // Set our relative scene to the NetworkObject
-                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                    // Deserialize the NetworkObject
-                    NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
-                }
+                // Deserialize the NetworkObject
+                NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
             }
+            ReleaseInternalBuffer();
         }
 
         /// <summary>
@@ -681,25 +679,24 @@ namespace Unity.Netcode
         /// <param name="networkManager"></param>
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
-            using (var reader = PooledNetworkReader.Get(InternalBuffer))
+            using var reader = PooledNetworkReader.Get(InternalBuffer);
+            // Process all NetworkObjects for this scene
+            var newObjectsCount = reader.ReadInt32Packed();
+
+            for (int i = 0; i < newObjectsCount; i++)
             {
-                // Process all NetworkObjects for this scene
-                var newObjectsCount = reader.ReadInt32Packed();
+                /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
+                /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
+                /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
+                m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
-                for (int i = 0; i < newObjectsCount; i++)
+                var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
+                if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                 {
-                    /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
-                    /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
-                    /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
-                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                    var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
-                    if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
-                    {
-                        m_NetworkObjectsSync.Add(spawnedNetworkObject);
-                    }
+                    m_NetworkObjectsSync.Add(spawnedNetworkObject);
                 }
             }
+            ReleaseInternalBuffer();
         }
 
         /// <summary>
@@ -743,9 +740,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to release the pooled network buffer
+        /// Gets a PooledNetworkBuffer if needed
         /// </summary>
-        public void Dispose()
+        private void SetInternalBuffer()
+        {
+            if (InternalBuffer == null)
+            {
+                InternalBuffer = NetworkBufferPool.GetBuffer();
+            }
+        }
+
+        /// <summary>
+        /// Releases the PooledNetworkBuffer when no longer needed
+        /// </summary>
+        private void ReleaseInternalBuffer()
         {
             if (InternalBuffer != null)
             {
@@ -755,12 +763,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Constructor
+        /// Used to release the pooled network buffer
+        /// </summary>
+        public void Dispose()
+        {
+            ReleaseInternalBuffer();
+        }
+
+        /// <summary>
+        /// Constructor for SceneEventData
         /// </summary>
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            InternalBuffer = NetworkBufferPool.GetBuffer();
         }
     }
 }

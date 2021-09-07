@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 
 namespace Unity.Netcode
@@ -9,7 +8,7 @@ namespace Unity.Netcode
     {
         public class SendStream
         {
-            public NetworkChannel NetworkChannel;
+            public NetworkDelivery Delivery;
             public PooledNetworkBuffer Buffer;
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
@@ -31,11 +30,10 @@ namespace Unity.Netcode
                 kvp.Value.Writer.Dispose();
                 kvp.Value.Buffer.Dispose();
             }
+
             m_SendDict.Clear();
         }
 
-        // Used to store targets, internally
-        private ulong[] m_TargetList = new ulong[0];
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
@@ -85,39 +83,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// FillTargetList
-        /// Fills a list with the ClientId's an item is targeted to
-        /// </summary>
-        /// <param name="item">the FrameQueueItem we want targets for</param>
-        /// <param name="networkIdList">the list to fill</param>
-        private static void FillTargetList(in MessageFrameItem item, ref ulong[] networkIdList)
-        {
-            switch (item.MessageType)
-            {
-                // todo: revisit .resize() and .ToArry() usage, for performance
-                case MessageQueueContainer.MessageType.ServerRpc:
-                    Array.Resize(ref networkIdList, 1);
-                    networkIdList[0] = item.NetworkId;
-                    break;
-                default:
-                // todo: consider the implications of default usage of queueItem.clientIds
-                case MessageQueueContainer.MessageType.ClientRpc:
-                    // copy the list
-                    networkIdList = item.ClientNetworkIds.ToArray();
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// QueueItem
         /// Add a FrameQueueItem to be sent
-        /// </summary>queueItem
-        /// <param name="item">the threshold in bytes</param>
-        public void QueueItem(in MessageFrameItem item, int automaticSendThresholdBytes, SendCallbackType sendCallback)
+        /// </summary>
+        public void QueueItem(
+            IReadOnlyCollection<ulong> targetList,
+            in MessageFrameItem item,
+            int automaticSendThresholdBytes,
+            SendCallbackType sendCallback)
         {
-            FillTargetList(item, ref m_TargetList);
-
-            foreach (ulong clientId in m_TargetList)
+            foreach (ulong clientId in targetList)
             {
                 if (!m_SendDict.ContainsKey(clientId))
                 {
@@ -131,19 +105,19 @@ namespace Unity.Netcode
                 if (sendStream.IsEmpty)
                 {
                     sendStream.IsEmpty = false;
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.Delivery = item.Delivery;
                 }
                 // If the item is a different channel we have to flush and change channels.
                 // This isn't great if channels are interleaved, but having a different stream
                 // per channel would create ordering issues.
-                else if (sendStream.NetworkChannel != item.NetworkChannel)
+                else if (sendStream.Delivery != item.Delivery)
                 {
                     sendCallback(clientId, sendStream);
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
 
-                    sendStream.NetworkChannel = item.NetworkChannel;
+                    sendStream.Delivery = item.Delivery;
                 }
 
                 // write the amounts of bytes that are coming up
@@ -164,11 +138,9 @@ namespace Unity.Netcode
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-
-        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime, NetworkChannel receiveChannel);
+        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
-        /// SendItems
         /// Send any batch of messages that are of length above threshold
         /// </summary>
         /// <param name="thresholdBytes"> the threshold in bytes</param>
@@ -195,42 +167,38 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// ReceiveItems
         /// Process the messageStream and call the callback with individual messages
         /// </summary>
         /// <param name="messageBuffer"> the messageStream containing the batched messages</param>
         /// <param name="receiveCallback"> the callback to call has type int f(message, type, clientId, time) </param>
-        /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime, NetworkChannel receiveChannel)
+        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, ulong clientId, float receiveTime)
         {
-            using (var copy = PooledNetworkBuffer.Get())
+            using var copy = PooledNetworkBuffer.Get();
+            do
             {
-                do
+                // read the length of the next message
+                int messageSize = PopLength(messageBuffer);
+                if (messageSize < 0)
                 {
-                    // read the length of the next message
-                    int messageSize = PopLength(messageBuffer);
-                    if (messageSize < 0)
-                    {
-                        // abort if there's an error reading lengths
-                        return;
-                    }
+                    // abort if there's an error reading lengths
+                    return;
+                }
 
-                    // copy what comes after current stream position
-                    long position = messageBuffer.Position;
-                    copy.SetLength(messageSize);
-                    copy.Position = 0;
-                    Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
+                // copy what comes after current stream position
+                long position = messageBuffer.Position;
+                copy.SetLength(messageSize);
+                copy.Position = 0;
+                Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
-                    var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
-                    receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
+                var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
+                receiveCallback(copy, messageType, clientId, receiveTime);
 
-                    // seek over the message
-                    // MessageReceiveQueueItem peeks at content, it doesn't advance
-                    messageBuffer.Seek(messageSize, SeekOrigin.Current);
-                } while (messageBuffer.Position < messageBuffer.Length);
-            }
+                // seek over the message
+                // MessageReceiveQueueItem peeks at content, it doesn't advance
+                messageBuffer.Seek(messageSize, SeekOrigin.Current);
+            } while (messageBuffer.Position < messageBuffer.Length);
         }
     }
 }

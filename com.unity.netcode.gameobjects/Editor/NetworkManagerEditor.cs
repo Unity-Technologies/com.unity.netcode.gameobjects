@@ -21,7 +21,6 @@ namespace Unity.Netcode.Editor
         // NetworkConfig fields
         private SerializedProperty m_PlayerPrefabProperty;
         private SerializedProperty m_ProtocolVersionProperty;
-        private SerializedProperty m_AllowRuntimeSceneChangesProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
         private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
@@ -37,7 +36,6 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_LoadSceneTimeOutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
-        private ReorderableList m_RegisteredSceneAssetsList;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -92,7 +90,6 @@ namespace Unity.Netcode.Editor
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -121,7 +118,6 @@ namespace Unity.Netcode.Editor
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -200,30 +196,6 @@ namespace Unity.Netcode.Editor
                 }
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
-
-            m_RegisteredSceneAssetsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredSceneAssets)), true, true, true, true);
-            m_RegisteredSceneAssetsList.elementHeightCallback = index =>
-            {
-                return EditorGUIUtility.singleLineHeight + 8;
-            };
-            m_RegisteredSceneAssetsList.drawElementCallback = (rect, index, isActive, isFocused) =>
-            {
-                rect.y += 5;
-
-                var sceneAsset = m_RegisteredSceneAssetsList.serializedProperty.GetArrayElementAtIndex(index);
-                int firstLabelWidth = 24;
-                int padding = 2;
-
-                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), index.ToString());
-                EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), sceneAsset, GUIContent.none);
-            };
-
-            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkScenes");
-
-            m_RegisteredSceneAssetsList.onAddCallback = (registeredList) =>
-            {
-                m_NetworkManager.NetworkConfig.RegisteredSceneAssets.Add(null);
-            };
         }
 
         public override void OnInspectorGUI()
@@ -256,13 +228,6 @@ namespace Unity.Netcode.Editor
 
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
-                {
-                    m_RegisteredSceneAssetsList.DoLayoutList();
-                    EditorGUILayout.Space();
-                }
-
 
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
@@ -330,7 +295,6 @@ namespace Unity.Netcode.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
-                    EditorGUILayout.PropertyField(m_AllowRuntimeSceneChangesProperty);
                 }
 
                 serializedObject.ApplyModifiedProperties();
@@ -388,18 +352,7 @@ namespace Unity.Netcode.Editor
 
                 if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
                 {
-                    if (m_NetworkManager.IsHost)
-                    {
-                        m_NetworkManager.StopHost();
-                    }
-                    else if (m_NetworkManager.IsServer)
-                    {
-                        m_NetworkManager.StopServer();
-                    }
-                    else if (m_NetworkManager.IsClient)
-                    {
-                        m_NetworkManager.StopClient();
-                    }
+                    m_NetworkManager.Shutdown();
                 }
             }
         }

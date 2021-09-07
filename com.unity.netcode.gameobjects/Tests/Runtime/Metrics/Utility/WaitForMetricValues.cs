@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Dispatch;
-using Unity.Multiplayer.NetStats.Metrics;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
 {
-    public class WaitForMetricValues<TMetric> : IMetricObserver
+    internal class WaitForMetricValues<TMetric> : IMetricObserver
     {
         readonly string m_MetricName;
         bool m_Found;
@@ -18,9 +18,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
         uint m_NbFrames = 0;
         IReadOnlyCollection<TMetric> m_Values;
 
-        public WaitForMetricValues(IMetricDispatcher dispatcher, string metricName)
+        public WaitForMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName)
         {
-            m_MetricName = metricName;
+            m_MetricName = directionalMetricName.Id;
 
             dispatcher.RegisterObserver(this);
         }
