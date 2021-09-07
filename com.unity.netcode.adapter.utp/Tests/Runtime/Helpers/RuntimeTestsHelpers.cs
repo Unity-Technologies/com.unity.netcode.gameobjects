@@ -3,10 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
-using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
@@ -68,15 +65,17 @@ namespace Unity.Netcode.UTP.RuntimeTests
             {
                 // Copy the data since the backing array will be reused for future messages.
                 if (data != default(ArraySegment<byte>))
+                {
                     data = new ArraySegment<byte>(data.ToArray());
+                }
 
                 m_Events.Add(new TransportEvent
-                    {
-                        Type = type,
-                        ClientID = clientID,
-                        Data = data,
-                        ReceiveTime = receiveTime
-                    });
+                {
+                    Type = type,
+                    ClientID = clientID,
+                    Data = data,
+                    ReceiveTime = receiveTime
+                });
             }
         }
     }

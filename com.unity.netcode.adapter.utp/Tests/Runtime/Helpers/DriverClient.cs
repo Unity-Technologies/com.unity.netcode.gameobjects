@@ -5,11 +5,10 @@ using Unity.Networking.Transport.Utilities;
 using UnityEngine;
 
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
-    using static RuntimeTestsHelpers;
-
     // Thin wrapper around a UTP NetworkDriver that can act as a client to a UTPTransport server.
     // In particular that means the pipelines are set up the same way as in UTPTransport.
     //
@@ -37,7 +36,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         private void Awake()
         {
             var maxCap = UTPTransport.MaximumMessageLength + 128;
-            var fragParams = new FragmentationUtility.Parameters(){ PayloadCapacity = maxCap };
+            var fragParams = new FragmentationUtility.Parameters() { PayloadCapacity = maxCap };
 
             m_Driver = NetworkDriver.Create(fragParams);
 
@@ -56,7 +55,9 @@ namespace Unity.Netcode.UTP.RuntimeTests
         private void OnDestroy()
         {
             if (m_Driver.IsCreated)
+            {
                 m_Driver.Dispose();
+            }
         }
 
         public void Connect()

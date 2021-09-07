@@ -1,18 +1,13 @@
 using NUnit.Framework;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
-using Unity.Netcode;
-using Unity.Netcode.UTP.RuntimeTests;
 using UnityEngine;
 using UnityEngine.TestTools;
+using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    using static RuntimeTestsHelpers;
-
     public class ConnectionTests
     {
         // For tests using multiple clients.
@@ -70,7 +65,9 @@ namespace Unity.Netcode.RuntimeTests
 
             server.Shutdown();
             for (int i = 0; i < NumClients; i++)
+            {
                 clients[i].Shutdown();
+            }
 
             yield return null;
         }
@@ -132,7 +129,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // Disconnect all the other clients.
             for (int i = 1; i < NumClients; i++)
+            {
                 server.DisconnectRemoteClient(serverEvents[i].ClientID);
+            }
 
             // Need to manually wait since we don't know which client got the Disconnect.
             yield return new WaitForSeconds(MaxNetworkEventWaitTime);
@@ -143,7 +142,9 @@ namespace Unity.Netcode.RuntimeTests
 
             server.Shutdown();
             for (int i = 0; i < NumClients; i++)
+            {
                 clients[i].Shutdown();
+            }
 
             yield return null;
         }
@@ -201,7 +202,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // Disconnect all the other clients.
             for (int i = 1; i < NumClients; i++)
+            {
                 clients[i].DisconnectLocalClient();
+            }
 
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, serverEvents);
 
@@ -211,7 +214,9 @@ namespace Unity.Netcode.RuntimeTests
 
             server.Shutdown();
             for (int i = 0; i < NumClients; i++)
+            {
                 clients[i].Shutdown();
+            }
 
             yield return null;
         }

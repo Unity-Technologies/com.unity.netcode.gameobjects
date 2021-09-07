@@ -133,7 +133,7 @@ namespace Unity.Netcode
                     yield break;
                 }
 
-                m_NetworkParameters.Add(new RelayNetworkParameter {ServerData = m_RelayServerData});
+                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
             }
             else
             {
@@ -177,8 +177,6 @@ namespace Unity.Netcode
 
         private IEnumerator ServerBindAndListen(SocketTask task, NetworkEndPoint endPoint)
         {
-            //var endpoint = NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort);
-
             InitDriver();
 
             if (m_Driver.Bind(endPoint) != 0)
@@ -276,7 +274,7 @@ namespace Unity.Netcode
             }
             else
             {
-                m_NetworkParameters.Add(new RelayNetworkParameter {ServerData = m_RelayServerData});
+                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
 
                 yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
             }
@@ -326,17 +324,15 @@ namespace Unity.Netcode
                     {
                         while (reader.GetBytesRead() < reader.Length)
                         {
-                            var channelId = reader.ReadByte();
                             var payloadSize = reader.ReadInt();
-                            ReadData(payloadSize, ref reader, ref networkConnection, channelId);
+                            ReadData(payloadSize, ref reader, ref networkConnection);
                         }
                     }
                     else // If is not batched, then read the entire buffer at once
                     {
-                        var channelId = reader.ReadByte();
                         var payloadSize = reader.ReadInt();
 
-                        ReadData(payloadSize, ref reader, ref networkConnection, channelId);
+                        ReadData(payloadSize, ref reader, ref networkConnection);
                     }
 
                     return true;
@@ -345,8 +341,7 @@ namespace Unity.Netcode
             return false;
         }
 
-        private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection,
-            byte channelId)
+        private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection)
         {
             if (size > m_MessageBufferSize)
             {
@@ -376,7 +371,7 @@ namespace Unity.Netcode
             {
                 m_Driver.ScheduleUpdate().Complete();
 
-                while(AcceptConnection() && m_Driver.IsCreated)
+                while (AcceptConnection() && m_Driver.IsCreated)
                 {
                     ;
                 }
@@ -398,12 +393,12 @@ namespace Unity.Netcode
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
-            return *(ulong*) &utpConnectionId;
+            return *(ulong*)&utpConnectionId;
         }
 
         private static unsafe NetworkConnection ParseClientId(ulong netcodeConnectionId)
         {
-            return *(NetworkConnection*) &netcodeConnectionId;
+            return *(NetworkConnection*)&netcodeConnectionId;
         }
 
         public override void DisconnectLocalClient()
@@ -456,10 +451,10 @@ namespace Unity.Netcode
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
             var maxFragmentationCapacity = MaximumMessageLength + 128;
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() {PayloadCapacity = maxFragmentationCapacity});
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = maxFragmentationCapacity });
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
-                maximumPayloadSize = (uint) m_MessageBufferSize,
+                maximumPayloadSize = (uint)m_MessageBufferSize,
                 receiveQueueCapacity = m_ReciveQueueSize,
                 sendQueueCapacity = m_SendQueueSize
             });
@@ -479,8 +474,15 @@ namespace Unity.Netcode
         {
             var size = payload.Count + 1 + 4; // 1 extra byte for the channel and another 4 for the count of the data
             var pipeline = SelectSendPipeline(networkDelivery, size);
-
+/* Unmerged change from project 'Unity.Netcode.Adapater.UTP'
+Before:
             SendTarget sendTarget = new SendTarget(clientId, pipeline);
+After:
+            var sendTarget = new SendTarget(clientId, pipeline);
+*/
+
+
+            var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
                 queue = new SendQueue(m_SendQueueBatchSize);
@@ -526,7 +528,6 @@ namespace Unity.Netcode
                 result = m_Driver.EndSend(writer);
                 if (result == payloadSize) // If the whole data fit, then we are done here
                 {
-                    Debug.LogFormat("Writing {0}! ", result);
                     return;
                 }
             }
