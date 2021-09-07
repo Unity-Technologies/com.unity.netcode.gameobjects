@@ -6,7 +6,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Solves for incoming values that are jittered
-    /// Partially solves for message loss. Unclamped lerping will help hide it, but not completely
+    /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
