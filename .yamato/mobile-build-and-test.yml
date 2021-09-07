@@ -1,8 +1,8 @@
 2021.2_Build_Android_player:
   name: 2021.2 Build Android player
   agent:
-      type: Unity::VM::osx
-      image: mobile/android-macos-r19:latest
+      type: Unity::VM
+      image: mobile/android-linux-build:latest
       flavor: b1.small
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
@@ -10,7 +10,7 @@
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
     - |
-       set UTR_VERSION=0.12.0
+       export UTR_VERSION=0.12.0
        ./utr --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     players:
