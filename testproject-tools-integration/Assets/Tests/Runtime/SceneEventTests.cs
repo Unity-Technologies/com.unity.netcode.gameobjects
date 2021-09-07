@@ -34,23 +34,22 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // otherwise.
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
-                {
-                    m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
-                    if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle))
-                        return;
-                    m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
-                    m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneEvent.Scene.handle, sceneEvent.Scene.handle);
-                }
+                if (!sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load)) return;
+
+                m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
+                if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle)) return;
+
+                m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
+                m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
             };
         }
 
-        [UnityTearDown]
-        public override IEnumerator Teardown()
-        {
-            m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
-            return base.Teardown();
-        }
+        // [UnityTearDown]
+        // public override IEnumerator Teardown()
+        // {
+        //     m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+        //     return base.Teardown();
+        // }
 
         [UnityTest]
         public IEnumerator TestSceneEventMetrics_LoadScene_S2C_Load()
@@ -84,6 +83,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     break;
                 yield return null;
             }
+            Assert.IsTrue(serverSceneLoaded);
+
 
             // Now that the scene has loaded locally, the message will be sent to the client which is the point
             // the metric is tracked.
@@ -134,6 +135,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     break;
                 yield return null;
             }
+            Assert.IsTrue(clientSceneLoaded);
+
 
             // Now that the scene has loaded locally, the message will be sent to the client which is the point
             // the metric is tracked.
@@ -195,6 +198,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     break;
                 yield return null;
             }
+            Assert.IsTrue(serverSceneLoadComplete);
+
 
             // Now that the scene has loaded locally, the message will be sent to the client which is the point
             // the metric is tracked.
@@ -221,7 +226,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 }
 
                 // assert that we found a metric for the given client ID.
-                Assert.True(check);
+                Assert.IsTrue(check);
             }
 
             // Assert received metrics
@@ -239,24 +244,23 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             ////////// ARRANGE //////////
 
-            // We need to load a scene to unload one, so wait for the server to be notified that the client has
-            // completed loading the seen, as this is the last thing that happens.
+            // We need to load a scene to unload one, so load a scene, then wait for the client to notify the server
+            // that it has finished loading the scene, as this is the last thing that happens.
             var sceneLoadComplete = false;
+            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_LoadComplete) sceneLoadComplete = true;
+            };
+
             var serverSceneUnloaded = false;
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                switch (sceneEvent.SceneEventType)
-                {
-                    case SceneEventData.SceneEventTypes.S2C_LoadComplete when sceneEvent.ClientId.Equals(m_Client.LocalClientId):
-                        sceneLoadComplete = true;
-                        break;
-                    case SceneEventData.SceneEventTypes.S2C_Unload:
-                        serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                        sceneEvent.AsyncOperation.completed += op => serverSceneUnloaded = true;
-                        break;
-                }
+                if (sceneEvent.SceneEventType != SceneEventData.SceneEventTypes.S2C_Unload) return;
+                serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
+                sceneEvent.AsyncOperation.completed += op => serverSceneUnloaded = true;
             };
 
+            // load the scene
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
             for (int i = 0; i < 240; i++)
             {
@@ -264,6 +268,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     break;
                 yield return null;
             }
+            Assert.IsTrue(sceneLoadComplete);
 
             // Now we can start the test!
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -288,6 +293,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     break;
                 yield return null;
             }
+            Assert.IsTrue(serverSceneUnloaded);
+
 
             // Now that the scene has unloaded locally, the message will be sent to the client which is the point
             // the metric is tracked.
@@ -311,7 +318,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventType.S2C_Unload, receivedMetric.SceneEventType);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(SimpleSceneName, receivedMetric.SceneName);
-
         }
     }
 }
