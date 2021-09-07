@@ -3,16 +3,16 @@
   agent:
       type: Unity::VM
       image: package-ci/win10:stable
-      flavor: b1.small
+      flavor: b1.large
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - | 
        mkdir C:\TMP
        cd C:\TMP
        unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
     - |
        set UTR_VERSION=0.12.0
-       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
        utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     players:
