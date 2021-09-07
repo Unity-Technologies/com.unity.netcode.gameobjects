@@ -6,7 +6,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Solves for incoming values that are jittered
-    /// Partially solves for message loss. Unclamped lerping will help hide it, but not completely
+    /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
@@ -26,7 +26,7 @@ namespace Unity.Netcode
             public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
 
-        internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
+        internal IInterpolatorTime InterpolatorTimeProxy = new InterpolatorTime();
 
         private struct BufferedItem
         {
@@ -39,8 +39,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
         /// </summary>
-        protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? interpolatorTime.BufferedServerFixedTime : interpolatorTime.BufferedServerTime;
-        protected virtual double RenderTime => interpolatorTime.BufferedServerTime - 1f / interpolatorTime.TickRate;
+        protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? InterpolatorTimeProxy.BufferedServerFixedTime : InterpolatorTimeProxy.BufferedServerTime;
+        protected virtual double RenderTime => InterpolatorTimeProxy.BufferedServerTime - 1f / InterpolatorTimeProxy.TickRate;
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;
@@ -77,8 +77,8 @@ namespace Unity.Netcode
             m_InterpEndValue = targetValue;
             m_CurrentInterpValue = targetValue;
             m_Buffer.Clear();
-            m_EndTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
-            m_StartTimeConsumed = new NetworkTime(interpolatorTime.TickRate, 0);
+            m_EndTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
+            m_StartTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
 
             SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
             Update(0);

@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -12,6 +11,7 @@ public class MoveInCircle : NetworkBehaviour
 
     [SerializeField]
     private bool m_RunServerOnly;
+
     [SerializeField]
     private bool m_RunInUpdate;
 
@@ -24,19 +24,25 @@ public class MoveInCircle : NetworkBehaviour
         //NetworkManager.Singleton.NetworkTimeSystem.ServerBufferSec = 0.15f;
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        if (m_RunInUpdate) return;
+        if (m_RunInUpdate)
+        {
+            return;
+        }
         Tick(true);
     }
 
     private void Update()
     {
-        if (!m_RunInUpdate) return;
+        if (!m_RunInUpdate)
+        {
+            return;
+        }
         Tick(false);
     }
 
-    void Tick(bool isFixed)
+    private void Tick(bool isFixed)
     {
         if (NetworkManager.Singleton.IsServer || !m_RunServerOnly)
         {
