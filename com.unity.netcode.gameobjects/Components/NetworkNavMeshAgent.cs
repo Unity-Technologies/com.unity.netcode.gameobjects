@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Unity.Netcode.Prototyping
+namespace Unity.Netcode.Components
 {
     /// <summary>
     /// A prototype component for syncing NavMeshAgents
