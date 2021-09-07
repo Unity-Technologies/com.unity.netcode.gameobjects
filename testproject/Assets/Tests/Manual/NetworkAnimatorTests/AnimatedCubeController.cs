@@ -1,5 +1,5 @@
 using Unity.Netcode;
-using Unity.Netcode.Prototyping;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Tests.Manual.NetworkAnimatorTests
