@@ -351,9 +351,6 @@ namespace Unity.Netcode
         private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection,
             byte channelId)
         {
-            // TODO: cosmin remove debug log
-            Debug.LogFormat("Reading {0}! ", size);
-
             if (size > m_MessageBufferSize)
             {
                 Debug.LogError("The received message does not fit into the message buffer");
@@ -437,7 +434,7 @@ namespace Unity.Netcode
                 }
 
                 // we need to cleanup any SendQueues for this connectionID;
-                var keys = m_SendQueue.Keys.Where(k => k.ClientId == clientId);
+                var keys = m_SendQueue.Keys.Where(k => k.ClientId == clientId).ToList();
                 foreach (var queue in keys)
                 {
                     m_SendQueue[queue].Dispose();
@@ -571,8 +568,6 @@ namespace Unity.Netcode
                 result = m_Driver.EndSend(writer);
                 if (result == payloadSize) // If the whole data fit, then we are done here
                 {
-                    // TODO: cosmin remove debug log
-                    Debug.LogFormat("Writing {0}! ", result);
                     return;
                 }
             }
@@ -602,7 +597,6 @@ namespace Unity.Netcode
             var payloadSize = sendQueue.Count + 1; // 1 extra byte to tell whether the message is batched or not
             if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
             {
-                // TODO: Cosmin re-check this with Andrew
                 pipeline = SelectSendPipeline(NetworkChannel.Fragmented, payloadSize);
             }
 
@@ -739,7 +733,6 @@ namespace Unity.Netcode
         {
 
             // TODO: implement IEquatable?
-            // TODO: maybe replace ClientId with NetworkConnection to avoid any casting??
             public readonly ulong ClientId;
             public readonly NetworkPipeline NetworkPipeline;
 
