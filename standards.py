@@ -14,7 +14,6 @@ parser.add_argument("--hook", action="store_true")
 parser.add_argument("--unhook", action="store_true")
 parser.add_argument("--check", action="store_true")
 parser.add_argument("--fix", action="store_true")
-parser.add_argument("--yamato", action="store_true")
 
 parser.add_argument("--verbosity", default="minimal")
 parser.add_argument("--tool-path", default="dotnet-format")
@@ -72,7 +71,7 @@ if args.unhook:
     print("unhook: succeeded")
 
 
-if args.check or args.fix or args.yamato:
+if args.check or args.fix:
     glob_match = os.path.join(args.project_path, args.project_glob)
     glob_files = glob.glob(glob_match)
     print(f"glob: found {len(glob_files)} files matching -> {glob_match}")
@@ -123,14 +122,3 @@ if args.fix:
         exit("fix: failed")
 
     print("fix: succeeded")
-
-if args.yamato:
-    print("yamato: execute")
-
-    for project_file in glob_files:
-        print(f"yamato: project -> {project_file}")
-        yamato_exec = os.system(f"{args.tool_path} {project_file} --fix-style error --check --verbosity {args.verbosity}")
-        if yamato_exec != 0:
-            exit(f"yamato: failed, exit code -> {yamato_exec}")
-
-    print("yamato: succeeded")
