@@ -13,7 +13,7 @@
        unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
     - |
        set UTR_VERSION=0.12.0
-       utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests
+       utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests --extra-editor-arg=-nographics --timeout=1800 --extra-editor-arg=-batchmode --reruncount=2
   artifacts:
     players:
         paths:
