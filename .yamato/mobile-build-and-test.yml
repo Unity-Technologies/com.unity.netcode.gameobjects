@@ -1,20 +1,17 @@
 2021.2_Build_Android_player:
   name: 2021.2 Build Android player
   agent:
-      type: Unity::VM
-      # Any generic image can be used, no need to have Android tools in the image for building
-      # All Android tools will be downloaded by unity-downloader-cli
-      image: package-ci/win10:stable
+      type: Unity::VM::osx
+      image: mobile/android-macos-r19:latest
       flavor: b1.small
-
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - powershell New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
     - unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    - chmod +x ./utr
     - |
        set UTR_VERSION=0.12.0
-       utr.bat --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests
+       ./utr --suite=playmode --platform=Android --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     players:
         paths:
