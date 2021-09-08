@@ -13,7 +13,7 @@ namespace Unity.Netcode
     public class NetworkDictionary<TKey, TValue> : NetworkVariableBase where TKey : unmanaged, IEquatable<TKey> where TValue : unmanaged
     {
         private NativeHashMap<TKey, TValue> m_Dictionary = new NativeHashMap<TKey, TValue>(64, Allocator.Persistent);
-        private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();
+        private readonly NativeList<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new NativeList<NetworkDictionaryEvent<TKey, TValue>>(64, Allocator.Persistent);
 
         /// <summary>
         /// Delegate type for dictionary changed event
@@ -181,8 +181,8 @@ namespace Unity.Netcode
         public override void WriteDelta(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
-            for (int i = 0; i < m_DirtyEvents.Count; i++)
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Length);
+            for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
                 writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
                 switch (m_DirtyEvents[i].Type)
@@ -228,7 +228,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override bool IsDirty()
         {
-            return base.IsDirty() || m_DirtyEvents.Count > 0;
+            return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
         /// <inheritdoc />
@@ -353,6 +353,7 @@ namespace Unity.Netcode
         public void Dispose()
         {
             m_Dictionary.Dispose();
+            m_DirtyEvents.Dispose();
         }
     }
 
