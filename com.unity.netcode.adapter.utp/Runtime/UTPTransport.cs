@@ -689,8 +689,6 @@ namespace Unity.Netcode
             var simulatorParams = ClientSimulatorParameters;
             transport.m_NetworkParameters.Insert(0, simulatorParams);
             transport.m_NetworkParameters.Insert(0, netParams);
-#else
-            driver = NetworkDriver.Create(reliabilityParams, fragmentationParams);
 #endif
             if (transport.m_NetworkParameters.Count > 0)
             {
