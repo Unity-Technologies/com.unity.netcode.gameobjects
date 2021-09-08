@@ -20,7 +20,7 @@ public class MultiprocessOrchestration
         {
             Processes = new List<Process>();
         }
-        
+
         string userprofile = "";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -107,7 +107,7 @@ public class MultiprocessOrchestration
     public static void KillAllProcesses()
     {
         Debug.Log("Killing processes...");
-        foreach(var process in Processes)
+        foreach (var process in Processes)
         {
             Debug.Log($"Killing process {process.Id} with state {process.HasExited}");
             process.Kill();

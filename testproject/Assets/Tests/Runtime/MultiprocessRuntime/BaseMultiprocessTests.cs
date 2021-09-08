@@ -76,7 +76,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// <returns>true - scene is fine to synchronize/inform clients to load and false - scene should not be loaded by clients</returns>
         private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
-            if(sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
             {
                 return false;
             }

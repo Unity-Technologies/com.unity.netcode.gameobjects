@@ -43,7 +43,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             Debug.LogError("Multiple test coordinators detected, destroying this instance");
             var loadedScenes = "Loaded Scenes:\n";
-            for (int i = 0; i <  UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
             {
                 var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
                 var sceneName = scene.name;
