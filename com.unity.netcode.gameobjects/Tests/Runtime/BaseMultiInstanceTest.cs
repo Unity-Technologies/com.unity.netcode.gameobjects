@@ -58,14 +58,13 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
-        /// synchronize to this scene when they connect (host-server side only for multiprocess)
+        /// synchronize to this scene when they connect
         /// </summary>
         private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
             if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
             {
-
                 return false;
             }
             return true;
