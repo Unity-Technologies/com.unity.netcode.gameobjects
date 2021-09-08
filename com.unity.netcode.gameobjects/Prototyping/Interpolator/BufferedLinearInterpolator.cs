@@ -148,7 +148,7 @@ namespace Unity.Netcode
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
                 float maxInterpTime = 0.1f;
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime);
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime); // second interpolate to smooth out extrapolation jumps
             }
 
             return m_CurrentInterpValue;
