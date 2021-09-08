@@ -2,18 +2,26 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Networking.Transport;
-using Unity.Networking.Transport.Relay;
 using UnityEngine;
 
-using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+using UTPNetworkEvent = Unity.Netcode.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
 namespace Unity.Netcode
 {
-    public class UTPTransport : NetworkTransport
+    /// <summary>
+    /// Provides an interface that overrides the ability to create your own drivers and pipelines
+    /// </summary>
+    public interface INetworkStreamDriverConstructor
+    {
+        void CreateDriver(UTPTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
+    }
+
+    public class UTPTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         public enum ProtocolType
         {
@@ -29,6 +37,11 @@ namespace Unity.Netcode
         }
 
         public const int MaximumMessageLength = 6 * 1024;
+
+#pragma warning disable IDE1006 // Naming Styles
+        public static INetworkStreamDriverConstructor s_DriverConstructor;
+#pragma warning restore IDE1006 // Naming Styles
+        public INetworkStreamDriverConstructor DriverConstructor => DriverConstructor != null ? DriverConstructor : this;
 
         [SerializeField] private ProtocolType m_ProtocolType;
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
@@ -64,20 +77,7 @@ namespace Unity.Netcode
 
         private void InitDriver()
         {
-            if (m_NetworkParameters.Count > 0)
-            {
-                m_Driver = NetworkDriver.Create(m_NetworkParameters.ToArray());
-            }
-            else
-            {
-                m_Driver = NetworkDriver.Create();
-            }
-
-            m_UnreliableSequencedPipeline = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
-            m_ReliableSequencedPipeline = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
-            m_ReliableSequencedFragmentedPipeline = m_Driver.CreatePipeline(
-                typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
-            );
+            DriverConstructor.CreateDriver(this, out m_Driver, out m_UnreliableSequencedPipeline, out m_ReliableSequencedPipeline, out m_ReliableSequencedFragmentedPipeline);
         }
 
         private void DisposeDriver()
@@ -289,7 +289,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            InvokeOnTransportEvent(NetworkEvent.Connect,
+            InvokeOnTransportEvent(UTPNetworkEvent.Connect,
                 ParseClientId(connection),
                 default(ArraySegment<byte>),
                 Time.realtimeSinceStartup);
@@ -304,21 +304,21 @@ namespace Unity.Netcode
 
             switch (eventType)
             {
-                case UTPNetworkEvent.Type.Connect:
-                    InvokeOnTransportEvent(NetworkEvent.Connect,
+                case Networking.Transport.NetworkEvent.Type.Connect:
+                    InvokeOnTransportEvent(UTPNetworkEvent.Connect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case UTPNetworkEvent.Type.Disconnect:
-                    InvokeOnTransportEvent(NetworkEvent.Disconnect,
+                case Networking.Transport.NetworkEvent.Type.Disconnect:
+                    InvokeOnTransportEvent(UTPNetworkEvent.Disconnect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case UTPNetworkEvent.Type.Data:
+                case Networking.Transport.NetworkEvent.Type.Data:
                     var isBatched = reader.ReadByte();
                     if (isBatched == 1)
                     {
@@ -357,7 +357,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                InvokeOnTransportEvent(NetworkEvent.Data,
+                InvokeOnTransportEvent(UTPNetworkEvent.Data,
                     ParseClientId(networkConnection),
                     new ArraySegment<byte>(m_MessageBuffer, 0, size),
                     Time.realtimeSinceStartup
@@ -462,12 +462,12 @@ namespace Unity.Netcode
             m_MessageBuffer = new byte[m_MessageBufferSize];
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+        public override UTPNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             payload = default;
             receiveTime = default;
-            return NetworkEvent.Nothing;
+            return UTPNetworkEvent.Nothing;
         }
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
@@ -635,6 +635,24 @@ namespace Unity.Netcode
 
             // make sure we don't leak queues when we shutdown
             m_SendQueue.Clear();
+        }
+
+        public void CreateDriver(UTPTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
+        {
+            if (transport.m_NetworkParameters.Count > 0)
+            {
+                driver = NetworkDriver.Create(transport.m_NetworkParameters.ToArray());
+            }
+            else
+            {
+                driver = NetworkDriver.Create();
+            }
+
+            unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+            reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+            reliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+            );
         }
 
 
