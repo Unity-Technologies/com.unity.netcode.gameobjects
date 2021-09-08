@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
-        public NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
+        public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
         public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
 
