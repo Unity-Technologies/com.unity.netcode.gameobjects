@@ -7,7 +7,7 @@
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
+standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
   name : {{ project.name }} project tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
