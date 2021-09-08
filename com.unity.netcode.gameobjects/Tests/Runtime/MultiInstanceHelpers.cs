@@ -138,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
         /// <returns></returns>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, Action<NetworkManager> startInitializationCallback = null )
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, Action<NetworkManager> startInitializationCallback = null)
         {
             if (s_IsStarted)
             {
