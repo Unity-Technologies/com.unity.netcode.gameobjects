@@ -14,9 +14,9 @@ namespace Unity.Netcode
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
         {
-            public double BufferedServerTime { get; }
-            public double BufferedServerFixedTime { get; }
-            public int TickRate { get; }
+            double BufferedServerTime { get; }
+            double BufferedServerFixedTime { get; }
+            int TickRate { get; }
         }
 
         private class InterpolatorTime : IInterpolatorTime
@@ -158,7 +158,7 @@ namespace Unity.Netcode
 
                 if (Debug.isDebugBuild)
                 {
-                    Debug.Assert(t >= 0, $"t must be bigger or equal than 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
+                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
                 }
 
                 SimpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
