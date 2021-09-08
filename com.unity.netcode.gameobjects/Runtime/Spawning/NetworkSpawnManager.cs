@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Collections;
+using Unity.Netcode.Messages;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -365,6 +367,78 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkSpawn();
         }
 
+        // Ran on both server and client
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ref NetworkObject.SceneObject sceneObject, bool destroyWithScene)
+        {
+            if (networkObject == null)
+            {
+                throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
+            }
+
+            if (networkObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is already spawned");
+            }
+
+            if (sceneObject.Metadata.HasNetworkVariables && NetworkManager.NetworkConfig.EnableNetworkVariable)
+            {
+                networkObject.SetNetworkVariableData(ref sceneObject.NetworkVariableDataReader);
+            }
+
+            if (SpawnedObjects.ContainsKey(sceneObject.Metadata.NetworkObjectId))
+            {
+                Debug.LogWarning($"Trying to spawn {nameof(NetworkObject.NetworkObjectId)} {sceneObject.Metadata.NetworkObjectId} that already exists!");
+                return;
+            }
+
+            networkObject.IsSpawned = true;
+
+            networkObject.IsSceneObject = sceneObject.Metadata.IsSceneObject;
+            networkObject.NetworkObjectId = sceneObject.Metadata.NetworkObjectId;
+
+            networkObject.DestroyWithScene = sceneObject.Metadata.IsSceneObject || destroyWithScene;
+
+            networkObject.OwnerClientIdInternal = sceneObject.Metadata.OwnerClientId;
+            networkObject.IsPlayerObject = sceneObject.Metadata.IsPlayerObject;
+
+            SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
+            SpawnedObjectsList.Add(networkObject);
+
+            NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
+
+            if (NetworkManager.IsServer)
+            {
+                if (sceneObject.Metadata.IsPlayerObject)
+                {
+                    NetworkManager.ConnectedClients[sceneObject.Metadata.OwnerClientId].PlayerObject = networkObject;
+                }
+                else
+                {
+                    NetworkManager.ConnectedClients[sceneObject.Metadata.OwnerClientId].OwnedObjects.Add(networkObject);
+                }
+            }
+            else if (sceneObject.Metadata.IsPlayerObject && sceneObject.Metadata.OwnerClientId == NetworkManager.LocalClientId)
+            {
+                NetworkManager.ConnectedClients[sceneObject.Metadata.OwnerClientId].PlayerObject = networkObject;
+            }
+
+            if (NetworkManager.IsServer)
+            {
+                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                {
+                    if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(NetworkManager.ConnectedClientsList[i].ClientId))
+                    {
+                        networkObject.Observers.Add(NetworkManager.ConnectedClientsList[i].ClientId);
+                    }
+                }
+            }
+
+            networkObject.SetCachedParent(networkObject.transform.parent);
+            networkObject.ApplyNetworkParenting();
+            NetworkObject.CheckOrphanChildren();
+            networkObject.InvokeBehaviourNetworkSpawn();
+        }
+
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
         {
             if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
@@ -698,6 +772,34 @@ namespace Unity.Netcode
                 }
             }
         }
+    
+
+        /// <summary>
+        /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also
+        /// adding the client to each <see cref="NetworkObject">'s <see cref="NetworkObject.Observers"/> list only if
+        /// observable to the client.
+        /// Maximum number of objects that could theoretically be serialized is 65536 for now
+        /// </summary>
+        /// <param name="clientId"> the client identifier used to determine if a spawned NetworkObject is observable</param>
+        /// <param name="internalCommandContext"> contains the writer used for serialization </param>
+        internal void SerializeObservedNetworkObjects(ulong clientId, ref ConnectionApprovedMessage message)
+        {
+            if (SpawnedObjectsList.Count == 0)
+            {
+                return;
+            }
+            message.SceneObjects =
+                new NativeArray<NetworkObject.SceneObject>(SpawnedObjectsList.Count, Allocator.TempJob);
+            foreach (var sobj in SpawnedObjectsList)
+            {
+                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
+                {
+                    sobj.Observers.Add(clientId);
+                    message.SceneObjects[message.SceneObjectCount++] = sobj.GetMessageSceneObject(clientId);
+                }
+            }
+        }
+    
 
         /// <summary>
         /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also

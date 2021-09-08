@@ -15,22 +15,6 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void HandleConnectionRequestCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleConnectionRequest(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleConnectionRequest));
-        }
-
-        [Test]
-        public void HandleConnectionApprovedCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleConnectionApproved(0, null, 0.0f);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleConnectionApproved));
-        }
-
-        [Test]
         public void HandleAddObjectCallsUnderlyingHandler()
         {
             m_Decorator.HandleAddObject(0, null);

@@ -19,8 +19,6 @@ namespace Unity.Netcode
 
         public enum MessageType
         {
-            ConnectionRequest,
-            ConnectionApproved,
             ClientRpc,
             ServerRpc,
             CreateObject,

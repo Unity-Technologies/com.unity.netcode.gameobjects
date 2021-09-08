@@ -76,7 +76,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, size);
 #endif
-            BufferPointer = (byte*)buffer;
+            BufferPointer = (byte*) buffer;
             PositionInternal = 0;
             m_Length = 0;
             CapacityInternal = size;
@@ -119,6 +119,7 @@ namespace Unity.Netcode
             {
                 m_Length = PositionInternal;
             }
+
             PositionInternal = where;
         }
 
@@ -139,6 +140,7 @@ namespace Unity.Netcode
             {
                 PositionInternal = where;
             }
+
             if (m_Length > where)
             {
                 m_Length = where;
@@ -166,6 +168,7 @@ namespace Unity.Netcode
             {
                 desiredSize *= 2;
             }
+
             var newSize = Math.Min(desiredSize, MaxCapacityInternal);
             void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -173,7 +176,7 @@ namespace Unity.Netcode
 #endif
             UnsafeUtility.MemCpy(buffer, BufferPointer, Length);
             UnsafeUtility.Free(BufferPointer, m_Allocator);
-            BufferPointer = (byte*)buffer;
+            BufferPointer = (byte*) buffer;
             CapacityInternal = newSize;
         }
 
@@ -207,6 +210,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(bytes);
@@ -254,6 +258,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(len);
@@ -292,6 +297,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(bytes);
@@ -323,6 +329,7 @@ namespace Unity.Netcode
             {
                 UnsafeUtility.MemCpy(b, BufferPointer, Length);
             }
+
             return ret;
         }
 
@@ -356,6 +363,10 @@ namespace Unity.Netcode
         public static int GetWriteSize(string s, bool oneByteChars = false)
         {
             return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
+        }
+
+        public void WriteUnknownSafe<T>(in T value)
+        {
         }
 
         /// <summary>
@@ -665,7 +676,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="other">Writer to copy to</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void CopyTo(FastBufferWriter other)
+        public unsafe void CopyTo(ref FastBufferWriter other)
         {
             other.WriteBytes(BufferPointer, PositionInternal);
         }
@@ -677,9 +688,102 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="other">Writer to copy to</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void CopyFrom(FastBufferWriter other)
+        public unsafe void CopyFrom(ref FastBufferWriter other)
         {
             WriteBytes(other.BufferPointer, other.PositionInternal);
+        }
+        
+        
+        /// <summary>
+        /// Get the size required to write a FixedUnmanagedArray
+        /// </summary>
+        /// <param name="value"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int GetWriteSize<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count) 
+            where TPropertyType : unmanaged
+            where TStorageType : unmanaged, IFixedArrayStorage
+        {
+            return count * sizeof(TPropertyType);
+        }
+
+        /// <summary>
+        /// Write a value of type FixedUnmanagedArray to the buffer.
+        /// </summary>
+        /// <param name="value">The value to copy</param>
+        /// <typeparam name="T">Any unmanaged type</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteValue<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
+            where TPropertyType : unmanaged
+            where TStorageType : unmanaged, IFixedArrayStorage
+        {
+            int len = sizeof(TPropertyType) * count;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
+            }
+            if (PositionInternal + len > AllowedWriteMark)
+            {
+                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
+            }
+#endif
+
+            BytewiseUtility.FastCopyBytes(BufferPointer + PositionInternal, (byte*)value.GetArrayPtr(), len);
+            PositionInternal += len;
+        }
+
+        /// <summary>
+        /// Write a value of type FixedUnmanagedArray to the buffer.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to copy</param>
+        /// <typeparam name="T">Any unmanaged type</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteValueSafe<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
+            where TPropertyType : unmanaged
+            where TStorageType : unmanaged, IFixedArrayStorage
+        {
+            int len = sizeof(TPropertyType) * count;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
+            }
+#endif
+
+            if (!TryBeginWriteInternal(len))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            
+            BytewiseUtility.FastCopyBytes(BufferPointer + PositionInternal, (byte*)value.GetArrayPtr(), len);
+            PositionInternal += len;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Obsolete("FixedUnmanagedArray must be written/read using a count.")]
+        public void WriteValue<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value)
+            where TPropertyType : unmanaged
+            where TStorageType : unmanaged, IFixedArrayStorage
+        {
+            throw new NotSupportedException("FixedUnmanagedArray must be written/read using a count.");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Obsolete("FixedUnmanagedArray must be written/read using a count.")]
+        public void WriteValueSafe<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value)
+            where TPropertyType : unmanaged
+            where TStorageType : unmanaged, IFixedArrayStorage
+        {
+            throw new NotSupportedException("FixedUnmanagedArray must be written/read using a count.");
         }
 
         /// <summary>

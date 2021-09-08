@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Profiling.Memory.Experimental;
 
 namespace Unity.Netcode
 {
@@ -852,6 +855,16 @@ namespace Unity.Netcode
             }
         }
 
+        internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.InitializeVariables();
+                behavior.WriteNetworkVariableData(ref writer, clientId);
+            }
+        }
+
         internal void SetNetworkVariableData(Stream stream)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -859,6 +872,16 @@ namespace Unity.Netcode
                 var behaviour = ChildNetworkBehaviours[i];
                 behaviour.InitializeVariables();
                 behaviour.SetNetworkVariableData(stream);
+            }
+        }
+
+        internal void SetNetworkVariableData(ref FastBufferReader reader)
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behaviour = ChildNetworkBehaviours[i];
+                behaviour.InitializeVariables();
+                behaviour.SetNetworkVariableData(ref reader);
             }
         }
 
@@ -902,6 +925,209 @@ namespace Unity.Netcode
             }
 
             return ChildNetworkBehaviours[index];
+        }
+
+        internal struct SceneObject
+        {
+            public struct SceneObjectMetadata
+            {
+                public ulong NetworkObjectId;
+                public ulong OwnerClientId;
+                public uint Hash;
+            
+                public bool IsPlayerObject;
+                public bool HasParent;
+                public bool IsSceneObject;
+                public bool HasTransform;
+                public bool IsReparented;
+                public bool HasNetworkVariables;
+            }
+
+            public SceneObjectMetadata Metadata;
+            
+            #region If(Metadata.HasParent)
+                public ulong ParentObjectId;
+            #endregion
+            
+            #region If(Metadata.HasTransform)
+                public struct TransformData
+                {
+                    public Vector3 Position;
+                    public Quaternion Rotation;
+                }
+
+                public TransformData Transform;
+            #endregion
+            
+            #region If(Metadata.IsReparented)
+                public bool IsLatestParentSet;
+    
+                #region If(IsLatestParentSet)
+                    public ulong? LatestParent;
+                #endregion
+            #endregion
+
+            #region If(data.HasNetworkVariables)
+            public FastBufferWriter NetworkVariableDataWriter;
+            public FastBufferReader NetworkVariableDataReader;
+            #endregion
+
+            public unsafe void Serialize(ref FastBufferWriter writer)
+            {
+                if (!writer.TryBeginWrite(
+                    sizeof(SceneObjectMetadata) +
+                    (Metadata.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
+                    (Metadata.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
+                    (Metadata.IsReparented
+                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
+                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
+                        : 0) +
+                    (Metadata.HasNetworkVariables ? sizeof(int) + NetworkVariableDataWriter.Length : 0)))
+                {
+                    throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
+                }
+                
+                writer.WriteValue(Metadata);
+
+                if (Metadata.HasParent)
+                {
+                    writer.WriteValue(ParentObjectId);
+                }
+
+                if (Metadata.HasTransform)
+                {
+                    writer.WriteValue(Transform);
+                }
+
+                if (Metadata.IsReparented)
+                {
+                    writer.WriteValue(IsLatestParentSet);
+                    if (IsLatestParentSet)
+                    {
+                        writer.WriteValue((ulong)LatestParent);
+                    }
+                }
+
+                if (Metadata.HasNetworkVariables)
+                {
+                    writer.WriteValue(NetworkVariableDataWriter.Length);
+                    writer.WriteBytes(NetworkVariableDataWriter.GetUnsafePtr(), NetworkVariableDataWriter.Length);
+                }
+            }
+
+            public unsafe void Deserialize(ref FastBufferReader reader)
+            {
+                if (!reader.TryBeginRead(sizeof(SceneObjectMetadata)))
+                {
+                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                }
+                reader.ReadValue(out Metadata);
+                if (!reader.TryBeginRead(
+                    (Metadata.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
+                    (Metadata.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
+                    (Metadata.IsReparented
+                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
+                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
+                        : 0) +
+                    (Metadata.HasNetworkVariables ? sizeof(int) : 0)))
+                {
+                    throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
+                }
+
+                if (Metadata.HasParent)
+                {
+                    reader.ReadValue(out ParentObjectId);
+                }
+
+                if (Metadata.HasTransform)
+                {
+                    reader.ReadValue(out Transform);
+                }
+
+                if (Metadata.IsReparented)
+                {
+                    reader.ReadValue(out IsLatestParentSet);
+                    if (IsLatestParentSet)
+                    {
+                        reader.ReadValue(out ulong latestParent);
+                        LatestParent = latestParent;
+                    }
+                }
+
+                if (Metadata.HasNetworkVariables)
+                {
+                    reader.ReadValue(out int length);
+                    if (!reader.TryBeginRead(length))
+                    {
+                        throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                    }
+                    
+                    NetworkVariableDataReader = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(),
+                        // Allocator.None = view into existing buffer, no allocations or copies and no need to Dispose()
+                        Allocator.None, length);
+                    reader.Seek(reader.Position + length);
+                }
+            }
+        }
+
+        internal SceneObject GetMessageSceneObject(ulong targetClientId)
+        {
+            var obj = new SceneObject
+            {
+                Metadata = new SceneObject.SceneObjectMetadata
+                {
+                    IsPlayerObject = IsPlayerObject,
+                    NetworkObjectId = NetworkObjectId,
+                    OwnerClientId = OwnerClientId,
+                    IsSceneObject = IsSceneObject ?? true,
+                    HasNetworkVariables = NetworkManager.NetworkConfig.EnableNetworkVariable,
+                    Hash = HostCheckForGlobalObjectIdHashOverride()
+                }
+            };
+            
+            NetworkObject parentNetworkObject = null;
+            
+            if (!AlwaysReplicateAsRoot && transform.parent != null)
+            {
+                parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+            }
+
+            if (parentNetworkObject)
+            {
+                obj.Metadata.HasParent = true;
+                obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
+            }
+            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
+            {
+                obj.Metadata.HasTransform = true;
+                obj.Transform = new SceneObject.TransformData
+                {
+                    Position = transform.position,
+                    Rotation = transform.rotation
+                };
+            }
+
+            var (isReparented, latestParent) = GetNetworkParenting();
+            obj.Metadata.IsReparented = isReparented;
+            if (isReparented)
+            {
+                var isLatestParentSet = latestParent != null && latestParent.HasValue;
+                obj.IsLatestParentSet = isLatestParentSet;
+                if (isLatestParentSet)
+                {
+                    obj.LatestParent = latestParent.Value;
+                }
+            }
+            
+            //If we are including NetworkVariable data
+            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
+            {
+                obj.NetworkVariableDataWriter = new FastBufferWriter(1300, Allocator.TempJob, UInt16.MaxValue);
+                // Write network variable data
+                WriteNetworkVariableData(ref obj.NetworkVariableDataWriter, targetClientId);
+            }
+
+            return obj;
         }
 
         /// <summary>
@@ -1076,6 +1302,44 @@ namespace Unity.Netcode
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, true, false);
+
+            return networkObject;
+        }
+
+        /// <summary>
+        /// Used to deserialize a serialized scene object which occurs
+        /// when the client is approved or during a scene transition
+        /// </summary>
+        /// <param name="objectStream">inbound stream</param>
+        /// <param name="reader">reader for the stream</param>
+        /// <param name="networkManager">NetworkManager instance</param>
+        /// <returns>optional to use NetworkObject deserialized</returns>
+        internal static NetworkObject AddSceneObject(ref SceneObject sceneObject, NetworkManager networkManager)
+        {
+            Vector3? position = null;
+            Quaternion? rotation = null;
+            ulong? parentNetworkId = null;
+
+            if (sceneObject.Metadata.HasTransform)
+            {
+                position = sceneObject.Transform.Position;
+                rotation = sceneObject.Transform.Rotation;
+            }
+
+            if (sceneObject.Metadata.HasParent)
+            {
+                parentNetworkId = sceneObject.ParentObjectId;
+            }
+
+            //Attempt to create a local NetworkObject
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
+                sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.Hash, 
+                sceneObject.Metadata.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Metadata.IsReparented);
+
+            networkObject?.SetNetworkParenting(sceneObject.Metadata.IsReparented, sceneObject.LatestParent);
+
+            // Spawn the NetworkObject
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, ref sceneObject, false);
 
             return networkObject;
         }

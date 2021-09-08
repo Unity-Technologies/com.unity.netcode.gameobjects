@@ -14,78 +14,6 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
         }
 
-        public void HandleConnectionRequest(ulong clientId, Stream stream)
-        {
-            if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client))
-            {
-                // Set to pending approval to prevent future connection requests from being approved
-                client.ConnectionState = PendingClient.State.PendingApproval;
-            }
-
-            using var reader = PooledNetworkReader.Get(stream);
-            ulong configHash = reader.ReadUInt64Packed();
-            if (!NetworkManager.NetworkConfig.CompareConfig(configHash))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
-                }
-
-                // Treat this similar to a client that is not approved (remove from pending and disconnect at transport layer)
-                NetworkManager.PendingClients.Remove(clientId);
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
-                return;
-            }
-
-            if (NetworkManager.NetworkConfig.ConnectionApproval)
-            {
-                byte[] connectionBuffer = reader.ReadByteArray();
-                NetworkManager.InvokeConnectionApproval(connectionBuffer, clientId,
-                    (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                        NetworkManager.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation));
-            }
-            else
-            {
-                NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
-            }
-        }
-
-        /// <summary>
-        /// Client Side: handles the connection approved message
-        /// </summary>
-        /// <param name="clientId">transport derived client identifier (currently not used)</param>
-        /// <param name="stream">incoming stream</param>
-        /// <param name="receiveTime">time this message was received (currently not used)</param>
-        public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
-        {
-            using var reader = PooledNetworkReader.Get(stream);
-            NetworkManager.LocalClientId = reader.ReadUInt64Packed();
-
-            int tick = reader.ReadInt32Packed();
-            var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
-            NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
-
-            NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
-
-            // Only if scene management is disabled do we handle NetworkObject synchronization at this point
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement)
-            {
-                NetworkManager.SpawnManager.DestroySceneObjects();
-
-                // is not packed!
-                var objectCount = reader.ReadUInt16();
-                for (ushort i = 0; i < objectCount; i++)
-                {
-                    NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
-                }
-
-                // Mark the client being connected
-                m_NetworkManager.IsConnectedClient = true;
-                // When scene management is disabled we notify after everything is synchronized
-                m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
-            }
-        }
-
         public void HandleAddObject(ulong clientId, Stream stream)
         {
             using var reader = PooledNetworkReader.Get(stream);
@@ -257,7 +185,7 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={((int)messageType).ToString()}");
             }
 
-            if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != MessageQueueContainer.MessageType.ConnectionRequest))
+            if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {

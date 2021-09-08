@@ -66,7 +66,6 @@ namespace Unity.Netcode.EditorTests
             {
                 MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
-                NetworkChannel = NetworkChannel.Internal
             };
             var message = GetMessage();
 
@@ -98,7 +97,6 @@ namespace Unity.Netcode.EditorTests
             {
                 MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
-                NetworkChannel = NetworkChannel.Internal
             };
             var message = GetMessage();
 
@@ -133,7 +131,6 @@ namespace Unity.Netcode.EditorTests
             {
                 MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
-                NetworkChannel = NetworkChannel.Internal
             };
             var message = GetMessage();
 
@@ -170,7 +167,6 @@ namespace Unity.Netcode.EditorTests
             {
                 MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
-                NetworkChannel = NetworkChannel.Internal
             };
             var message = GetMessage();
             var message2 = GetMessage();

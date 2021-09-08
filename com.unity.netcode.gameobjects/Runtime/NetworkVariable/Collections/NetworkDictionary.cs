@@ -223,6 +223,164 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+        {
+            reader.ReadValue(out ushort deltaCount);
+            for (int i = 0; i < deltaCount; i++)
+            {
+                reader.ReadValue(out NetworkDictionaryEvent<TKey, TValue>.EventType eventType);
+                switch (eventType)
+                {
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
+                        {
+                            reader.ReadValue(out TKey key);
+                            reader.ReadValue(out TValue value);
+                            m_Dictionary.Add(key, value);
+
+                            if (OnDictionaryChanged != null)
+                            {
+                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
+                        {
+                            reader.ReadValue(out TKey key);
+                            TValue value;
+                            m_Dictionary.TryGetValue(key, out value);
+                            m_Dictionary.Remove(key);
+
+                            if (OnDictionaryChanged != null)
+                            {
+                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
+                        {
+                            reader.ReadValue(out TKey key);
+                            reader.ReadValue(out TValue value);
+                            m_Dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
+
+                            if (OnDictionaryChanged != null)
+                            {
+                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
+                        {
+                            //read nothing
+                            m_Dictionary.Clear();
+
+                            if (OnDictionaryChanged != null)
+                            {
+                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType
+                                });
+                            }
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
+                        {
+                            reader.ReadValue(out TKey key);
+                            reader.ReadValue(out TValue value);
+
+                            m_Dictionary[key] = value;
+
+                            if (OnDictionaryChanged != null)
+                            {
+                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+
+                            if (keepDirtyDelta)
+                            {
+                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                {
+                                    Type = eventType,
+                                    Key = key,
+                                    Value = value
+                                });
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override void ReadField(ref FastBufferReader reader)
+        {
+            m_Dictionary.Clear();
+            reader.ReadValue(out ushort entryCount);
+            for (int i = 0; i < entryCount; i++)
+            {
+                reader.ReadValue(out TKey key);
+                reader.ReadValue(out TValue value);
+                m_Dictionary.Add(key, value);
+            }
+        }
+
+        /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value)
         {
             return m_Dictionary.TryGetValue(key, out value);
@@ -279,6 +437,58 @@ namespace Unity.Netcode
             {
                 writer.WriteObjectPacked(pair.Key);
                 writer.WriteObjectPacked(pair.Value);
+            }
+        }
+
+        /// <inheritdoc />
+        public override void WriteDelta(ref FastBufferWriter writer)
+        {
+            writer.WriteValueSafe((ushort)m_DirtyEvents.Count);
+            for (int i = 0; i < m_DirtyEvents.Count; i++)
+            {
+                writer.WriteValueSafe(m_DirtyEvents[i].Type);
+                switch (m_DirtyEvents[i].Type)
+                {
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
+                        {
+                            //write nothing
+                        }
+                        break;
+                    case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Key);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                        }
+                        break;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override void WriteField(ref FastBufferWriter writer)
+        {
+            writer.WriteValueSafe((ushort)m_Dictionary.Count);
+            foreach (KeyValuePair<TKey, TValue> pair in m_Dictionary)
+            {
+                writer.WriteValueSafe(pair.Key);
+                writer.WriteValueSafe(pair.Value);
             }
         }
 
@@ -456,7 +666,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Enum representing the different operations available for triggering an event.
         /// </summary>
-        public enum EventType
+        public enum EventType : byte
         {
             /// <summary>
             /// Add

@@ -43,20 +43,6 @@ namespace Unity.Netcode
             {
                 switch (item.MessageType)
                 {
-                    case MessageQueueContainer.MessageType.ConnectionRequest:
-                        if (m_NetworkManager.IsServer)
-                        {
-                            m_NetworkManager.MessageHandler.HandleConnectionRequest(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.ConnectionApproved:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleConnectionApproved(item.NetworkId, item.NetworkBuffer, item.Timestamp);
-                        }
-
-                        break;
                     case MessageQueueContainer.MessageType.ClientRpc:
                     case MessageQueueContainer.MessageType.ServerRpc:
                         // Can rely on currentStage == the original updateStage in the buffer

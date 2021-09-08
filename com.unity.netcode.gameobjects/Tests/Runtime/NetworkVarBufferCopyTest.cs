@@ -44,6 +44,28 @@ namespace Unity.Netcode.RuntimeTests
                 FieldWritten = true;
             }
 
+            public override void WriteDelta(ref FastBufferWriter writer)
+            {
+                using (var bitWriter = writer.EnterBitwiseContext())
+                {
+                    bitWriter.WriteBits((byte)1, 1);
+                }
+                writer.WriteValue(k_DummyValue);
+
+                DeltaWritten = true;
+            }
+
+            public override void WriteField(ref FastBufferWriter writer)
+            {
+                using (var bitWriter = writer.EnterBitwiseContext())
+                {
+                    bitWriter.WriteBits((byte)1, 1);
+                }
+                writer.WriteValue(k_DummyValue);
+
+                FieldWritten = true;
+            }
+
             public override void ReadField(Stream stream)
             {
                 using var reader = PooledNetworkReader.Get(stream);
@@ -58,6 +80,32 @@ namespace Unity.Netcode.RuntimeTests
                 using var reader = PooledNetworkReader.Get(stream);
                 reader.ReadBits(1);
                 Assert.AreEqual(k_DummyValue, reader.ReadInt32());
+
+                DeltaRead = true;
+            }
+
+            public override void ReadField(ref FastBufferReader reader)
+            {
+                using (var bitReader = reader.EnterBitwiseContext())
+                {
+                    bitReader.ReadBits(out byte b, 1);
+                }
+
+                reader.ReadValue(out int i);
+                Assert.AreEqual(k_DummyValue, i);
+
+                FieldRead = true;
+            }
+
+            public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+            {
+                using (var bitReader = reader.EnterBitwiseContext())
+                {
+                    bitReader.ReadBits(out byte b, 1);
+                }
+
+                reader.ReadValue(out int i);
+                Assert.AreEqual(k_DummyValue, i);
 
                 DeltaRead = true;
             }

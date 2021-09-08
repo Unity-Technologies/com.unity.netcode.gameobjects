@@ -4,9 +4,17 @@ namespace Unity.Netcode
 {
     public interface INetworkHooks
     {
-        void OnSendMessage(ulong clientId, Type messageType, NetworkChannel channel, NetworkDelivery delivery);
-        void OnReceiveMessage(ulong senderId, Type messageType, NetworkChannel channel);
-        void OnSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
-        void OnReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
+        void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery);
+        void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery);
+        void OnBeforeReceiveMessage(ulong senderId, Type messageType);
+        void OnAfterReceiveMessage(ulong senderId, Type messageType);
+        void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
+        void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
+        void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
+        void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
+        
+        
+        bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery);
+        bool OnVerifyCanReceive(ulong senderId, Type messageType);
     }
 }

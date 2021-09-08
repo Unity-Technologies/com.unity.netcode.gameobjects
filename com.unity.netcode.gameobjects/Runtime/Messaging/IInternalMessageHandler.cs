@@ -5,8 +5,6 @@ namespace Unity.Netcode
     internal interface IInternalMessageHandler
     {
         NetworkManager NetworkManager { get; }
-        void HandleConnectionRequest(ulong clientId, Stream stream);
-        void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime);
         void HandleAddObject(ulong clientId, Stream stream);
         void HandleDestroyObject(ulong clientId, Stream stream);
         void HandleSceneEvent(ulong clientId, Stream stream);

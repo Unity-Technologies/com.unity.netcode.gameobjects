@@ -276,7 +276,7 @@ namespace TestProject.RuntimeTests
             var nextFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            Assert.True(m_ServerClientDisconnectedInvocations == 3);
+            Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
         }
 
         private void Server_OnClientDisconnectedCallback(ulong clientId)

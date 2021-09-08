@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -752,6 +753,47 @@ namespace Unity.Netcode
             }
         }
 
+        internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
+        {
+            if (NetworkVariableFields.Count == 0)
+            {
+                return;
+            }
+
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                bool canClientRead = NetworkVariableFields[j].CanClientRead(clientId);
+
+                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                {
+                    if (!canClientRead)
+                    {
+                        writer.WriteValue((ushort)0);
+                    }
+                }
+                else
+                {
+                    writer.WriteValue(canClientRead);
+                }
+
+                if (canClientRead)
+                {
+                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    {
+                        var tmpWriter = new FastBufferWriter(1300, Allocator.Temp, Int16.MaxValue);
+                        NetworkVariableFields[j].WriteField(ref tmpWriter);
+
+                        writer.WriteValue((ushort)tmpWriter.Length);
+                        tmpWriter.CopyTo(ref writer);
+                    }
+                    else
+                    {
+                        NetworkVariableFields[j].WriteField(ref writer);
+                    }
+                }
+            }
+        }
+
         internal void SetNetworkVariableData(Stream stream)
         {
             if (NetworkVariableFields.Count == 0)
@@ -810,6 +852,62 @@ namespace Unity.Netcode
                         }
 
                         stream.Position = readStartPos + varSize;
+                    }
+                }
+            }
+        }
+        
+        internal void SetNetworkVariableData(ref FastBufferReader reader)
+        {
+            if (NetworkVariableFields.Count == 0)
+            {
+                return;
+            }
+
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                ushort varSize = 0;
+
+                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                {
+                    reader.ReadValue(out varSize);
+
+                    if (varSize == 0)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    reader.ReadValue(out bool clientCanRead);
+                    if (!clientCanRead)
+                    {
+                        continue;
+                    }
+                }
+
+                var readStartPos = reader.Position;
+                NetworkVariableFields[j].ReadField(ref reader);
+
+                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                {
+                    if (reader.Position > (readStartPos + varSize))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"Var data read too far. {reader.Position - (readStartPos + varSize)} bytes.");
+                        }
+
+                        reader.Seek(readStartPos + varSize);
+                    }
+                    else if (reader.Position < (readStartPos + varSize))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"Var data read too little. {(readStartPos + varSize) - reader.Position} bytes.");
+                        }
+
+                        reader.Seek(readStartPos + varSize);
                     }
                 }
             }

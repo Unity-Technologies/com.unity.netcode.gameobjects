@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
+using Unity.Netcode.Messages;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -49,6 +51,8 @@ namespace Unity.Netcode
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
+        private MessagingSystem m_MessagingSystem;
+
         private NetworkPrefabHandler m_PrefabHandler;
 
         public NetworkPrefabHandler PrefabHandler
@@ -61,6 +65,93 @@ namespace Unity.Netcode
                 }
 
                 return m_PrefabHandler;
+            }
+        }
+
+        private class NetworkManagerHooks : INetworkHooks
+        {
+            private NetworkManager m_NetworkManager;
+
+            internal NetworkManagerHooks(NetworkManager manager)
+            {
+                m_NetworkManager = manager;
+            }
+            
+            public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnBeforeReceiveMessage(ulong senderId, Type messageType)
+            {
+            }
+
+            public void OnAfterReceiveMessage(ulong senderId, Type messageType)
+            {
+            }
+
+            public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
+            {
+                return true;
+            }
+
+            public bool OnVerifyCanReceive(ulong senderId, Type messageType)
+            {
+                if(m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
+                       (client.ConnectionState == PendingClient.State.PendingApproval || 
+                        (client.ConnectionState == PendingClient.State.PendingConnection &&
+                         messageType != typeof(ConnectionRequestMessage))))
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId.ToString()} before it has been accepted");
+                    }
+
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        
+        private class NetworkManagerMessageSender : IMessageSender
+        {
+            private NetworkManager m_NetworkManager;
+
+            public NetworkManagerMessageSender(NetworkManager manager)
+            {
+                m_NetworkManager = manager;
+            }
+        
+            public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
+            {
+            
+                var length = batchData.Length;
+                //TODO: Transport needs to have a way to send it data without copying and allocating here.
+                var bytes = batchData.ToArray();
+                var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
+
+                m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, delivery);
+
             }
         }
 
@@ -148,7 +239,11 @@ namespace Unity.Netcode
         public ulong LocalClientId
         {
             get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : m_LocalClientId;
-            internal set => m_LocalClientId = value;
+            internal set
+            {
+                m_LocalClientId = value;
+                m_MessagingSystem.SetLocalClientId(value);
+            }
         }
 
         private ulong m_LocalClientId;
@@ -360,8 +455,13 @@ namespace Unity.Netcode
             // Cannot allow any new data to arrive from the wire after MessageQueueContainer's Initialization update
             // has run
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            LocalClientId = 0;
+            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, UInt64.MaxValue);
+            m_MessagingSystem.Hook(new NetworkManagerHooks(this));
+
+            LocalClientId = UInt64.MaxValue;
+            
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -936,6 +1036,12 @@ namespace Unity.Netcode
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
+            
+            if (m_MessagingSystem != null)
+            {
+                m_MessagingSystem.Dispose();
+                m_MessagingSystem = null;
+            }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
 
@@ -993,6 +1099,9 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreUpdate:
                     OnNetworkPreUpdate();
                     break;
+                case NetworkUpdateStage.PostLateUpdate:
+                    OnNetworkPostLateUpdate();
+                    break;
             }
         }
 
@@ -1014,6 +1123,8 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
+            m_MessagingSystem.ProcessIncomingMessageQueue();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
 #endif
@@ -1030,6 +1141,11 @@ namespace Unity.Netcode
             {
                 NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
             }
+        }
+
+        private void OnNetworkPostLateUpdate()
+        {
+            m_MessagingSystem.ProcessSendQueues();
         }
 
         /// <summary>
@@ -1057,18 +1173,15 @@ namespace Unity.Netcode
 
         private void SendConnectionRequest()
         {
-            var clientIds = new[] { ServerClientId };
-            var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionRequest, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateStage.EarlyUpdate);
-            if (context != null)
+            var message = new ConnectionRequestMessage
             {
-                using var nonNullContext = (InternalCommandContext)context;
-                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
-
-                if (NetworkConfig.ConnectionApproval)
-                {
-                    nonNullContext.NetworkWriter.WriteByteArray(NetworkConfig.ConnectionData);
-                }
-            }
+                ConfigHash = NetworkConfig.GetConfig(),
+                ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
+                ConnectionData =
+                    new FixedUnmanagedArray<byte, ConnectionRequestMessage.ConnectionDataStorage>(NetworkConfig
+                        .ConnectionData)
+            };
+            SendMessage(message, NetworkDelivery.Reliable, ServerClientId);
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1103,6 +1216,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
+                    m_MessagingSystem.ClientConnected(clientId);
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1152,6 +1266,7 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
+                    m_MessagingSystem.ClientDisconnected(clientId);
 
                     if (IsServer)
                     {
@@ -1174,8 +1289,34 @@ namespace Unity.Netcode
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
 
+        public void SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds)
+            where T : INetworkMessage
+            where U : IReadOnlyList<ulong>
+        {
+            m_MessagingSystem.SendMessage(message, delivery, clientIds);
+        }
+
+        public unsafe void SendMessage<T>(in T message, NetworkDelivery delivery,
+            ulong* clientIds, int numClientIds)
+            where T: INetworkMessage
+        {
+            m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
+        }
+
+        public void SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+            where T: INetworkMessage
+        {
+            m_MessagingSystem.SendMessage(message, delivery, clientId);
+        }
+
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
+            var firstByte = payload.Array[0];
+            if (firstByte != 0b11111111)
+            {
+                m_MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
+                return;
+            }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
@@ -1187,7 +1328,7 @@ namespace Unity.Netcode
 
             m_InputBufferWrapper.SetTarget(payload.Array);
             m_InputBufferWrapper.SetLength(payload.Count + payload.Offset);
-            m_InputBufferWrapper.Position = payload.Offset;
+            m_InputBufferWrapper.Position = payload.Offset + 1;
 
             using var messageStream = m_InputBufferWrapper;
             // Client tried to send a network message that was not the connection request before he was accepted.
@@ -1427,29 +1568,22 @@ namespace Unity.Netcode
                 // Server doesn't send itself the connection approved message
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkDelivery.ReliableSequenced, new[] { ownerClientId }, NetworkUpdateStage.EarlyUpdate);
-                    if (context != null)
+                    var message = new ConnectionApprovedMessage
                     {
-                        using var nonNullContext = (InternalCommandContext)context;
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
-                        nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
-
-                        // If scene management is disabled, then just serialize all client relative (observed) NetworkObjects
-                        if (!NetworkConfig.EnableSceneManagement)
-                        {
-                            SpawnManager.SerializeObservedNetworkObjects(ownerClientId, nonNullContext.NetworkWriter);
-                        }
+                        OwnerClientId = ownerClientId,
+                        NetworkTick = LocalTime.Tick
+                    };
+                    if (!NetworkConfig.EnableSceneManagement)
+                    {
+                        SpawnManager.SerializeObservedNetworkObjects(ownerClientId, ref message);
+                        InvokeOnClientConnectedCallback(ownerClientId);
                     }
-
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
-                    if (NetworkConfig.EnableSceneManagement)
+                    else
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
-                    else
-                    {
-                        InvokeOnClientConnectedCallback(ownerClientId);
-                    }
+                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {

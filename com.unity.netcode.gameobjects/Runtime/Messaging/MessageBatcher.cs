@@ -98,6 +98,7 @@ namespace Unity.Netcode
                     // todo: consider what happens if many clients join and leave the game consecutively
                     // we probably need a cleanup mechanism at some point
                     m_SendDict[clientId] = new SendStream();
+                    m_SendDict[clientId].Writer.WriteByte(0b11111111);
                 }
 
                 SendStream sendStream = m_SendDict[clientId];
@@ -116,6 +117,7 @@ namespace Unity.Netcode
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
+                    sendStream.Writer.WriteByte(0b11111111);
 
                     sendStream.Delivery = item.Delivery;
                 }
@@ -132,6 +134,7 @@ namespace Unity.Netcode
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
+                    sendStream.Writer.WriteByte(0b11111111);
                     sendStream.IsEmpty = true;
                 }
             }
@@ -160,6 +163,7 @@ namespace Unity.Netcode
                         // clear the batch that was sent from the SendDict
                         entry.Value.Buffer.SetLength(0);
                         entry.Value.Buffer.Position = 0;
+                        entry.Value.Writer.WriteByte(0b11111111);
                         entry.Value.IsEmpty = true;
                     }
                 }

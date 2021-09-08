@@ -145,9 +145,14 @@ namespace Unity.Netcode
             {
                 return;
             }
-            foreach (var queue in m_SendQueues)
+
+            var keys = m_SendQueues.GetKeyArray(Allocator.Temp);
+            using(keys)
             {
-                queue.Value.Value.Dispose();
+                foreach (var key in keys)
+                {
+                    ClientDisconnected(key);
+                }
             }
             m_SendQueues.Dispose();
             m_IncomingMessageQueue.Dispose();
@@ -197,7 +202,6 @@ namespace Unity.Netcode
         
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
         {
-            BatchHeader header;
             unsafe
             {
                 fixed (byte* nativeData = data.Array)
@@ -209,15 +213,17 @@ namespace Unity.Netcode
                         NetworkLog.LogWarning("Received a packet too small to contain a BatchHeader. Ignoring it.");
                         return;
                     }
-                    batchReader.ReadValue(out header);
+
+                    batchReader.ReadValue(out BatchHeader batchHeader);
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnReceiveBatch(clientId, header.BatchSize, batchReader.Length);
+                        m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
                     }
 
-                    for (var messageIdx = 0; messageIdx < header.BatchSize; ++messageIdx)
+                    for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
                     {
+                        Debug.Log("Receiving a batch");
                         if (!batchReader.TryBeginRead(sizeof(MessageHeader)))
                         {
                             NetworkLog.LogWarning("Received a batch that didn't have enough data for all of its batches, ending early!");
@@ -241,8 +247,25 @@ namespace Unity.Netcode
                         });
                         batchReader.Seek(batchReader.Position + messageHeader.MessageSize);
                     }
+                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                    {
+                        m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
+                    }
                 }
             }
+        }
+
+        private bool CanReceive(ulong clientId, Type messageType)
+        {
+            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+            {
+                if (!m_Hooks[hookIdx].OnVerifyCanReceive(clientId, messageType))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
@@ -251,18 +274,41 @@ namespace Unity.Netcode
             {
                 SystemOwner = m_Owner,
                 SenderId = senderId,
-                ReceivingChannel = header.NetworkChannel,
                 Timestamp = timestamp,
                 Header = header
             };
+            var type = m_ReverseTypeMap[header.MessageType];
+            if (!CanReceive(senderId, type))
+            {
+                reader.Dispose();
+                return;
+            }
+            
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnReceiveMessage(senderId, m_ReverseTypeMap[header.MessageType], header.NetworkChannel);
+                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type);
             }
+            Debug.Log($"Processing {type}");
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
-                handler.Invoke(ref reader, context);
+                // No user-land message handler exceptions should escape the receive loop.
+                // If an exception is throw, the message is ignored.
+                // Example use case: A bad message is received that can't be deserialized and throws
+                // an OverflowException because it specifies a length greater than the number of bytes in it
+                // for some dynamic-length value.
+                try
+                {
+                    handler.Invoke(ref reader, context);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            }
+            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+            {
+                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type);
             }
         }
 
@@ -290,13 +336,25 @@ namespace Unity.Netcode
             {
                 queue.Value.GetValueRef(i).Writer.Dispose();
             }
-            queue.Value.Dispose();
 
-            m_SendQueues.Remove(clientId);
             DynamicUnmanagedArray<SendQueueItem>.ReleaseRef(queue);
+            m_SendQueues.Remove(clientId);
         }
 
-        internal unsafe void SendMessage<T, U>(in T message, NetworkChannel channel, NetworkDelivery delivery, in U clients) 
+        private bool CanSend(ulong clientId, Type messageType, NetworkDelivery delivery)
+        {
+            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+            {
+                if (!m_Hooks[hookIdx].OnVerifyCanSend(clientId, messageType, delivery))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal unsafe void SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds) 
             where T: INetworkMessage
             where U: IReadOnlyList<ulong>
         {
@@ -306,14 +364,21 @@ namespace Unity.Netcode
             {
                 message.Serialize(ref tmpSerializer);
 
-                for (var i = 0; i < clients.Count; ++i)
+                for (var i = 0; i < clientIds.Count; ++i)
                 {
-                    var clientId = clients[i];
+                    var clientId = clientIds[i];
+
+                    if (!CanSend(clientId, typeof(T), delivery))
+                    {
+                        continue;
+                    }
                     
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnSendMessage(clientId, typeof(T), channel, delivery);
+                        m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(T), delivery);
                     }
+                    
+                    Debug.Log($"Sending {typeof(T)} to {clientId}");
                     
                     ref var sendQueueItem = ref m_SendQueues[clientId].Value;
                     if (sendQueueItem.Count == 0)
@@ -340,7 +405,6 @@ namespace Unity.Netcode
                     {
                         MessageSize = (short) tmpSerializer.Length,
                         MessageType = m_MessageTypes[typeof(T)],
-                        NetworkChannel = channel
                     };
 
 
@@ -359,6 +423,11 @@ namespace Unity.Netcode
                     writeQueueItem.Writer.WriteValue(header);
                     writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
                     writeQueueItem.BatchHeader.BatchSize++;
+                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                    {
+                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(T), delivery);
+                    }
+                    Debug.Log($"Sented {typeof(T)} to {clientId} batch size is now {writeQueueItem.BatchHeader.BatchSize}");
                 }
             }
         }
@@ -398,11 +467,19 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe void SendMessage<T>(in T message, NetworkChannel channel, NetworkDelivery delivery,
+        internal unsafe void SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T: INetworkMessage
         {
-            SendMessage(message, channel, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
+            SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
+        }
+
+        internal unsafe void SendMessage<T>(in T message, NetworkDelivery delivery,
+            ulong clientId)
+            where T: INetworkMessage
+        {
+            ulong* clientIds = stackalloc ulong[] {clientId};
+            SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
         internal void ProcessSendQueues()
@@ -419,10 +496,11 @@ namespace Unity.Netcode
                         queueItem.Writer.Dispose();
                         continue;
                     }
+                    Debug.Log($"Sending a batch to {clientId}");
                     
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                        m_Hooks[hookIdx].OnBeforeSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
                     
                     queueItem.Writer.Seek(0);
@@ -432,6 +510,11 @@ namespace Unity.Netcode
                     
                     m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
                     queueItem.Writer.Dispose();
+                    
+                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                    {
+                        m_Hooks[hookIdx].OnBeforeSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                    }
                 }
                 sendQueueItem.Clear();
             }

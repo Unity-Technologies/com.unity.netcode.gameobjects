@@ -404,8 +404,6 @@ namespace Unity.Netcode.EditorTests
             // Set the NetworkConfig
             networkManager.NetworkConfig = new NetworkConfig()
             {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                 // Set transport
                 NetworkTransport = obj.AddComponent<DummyTransport>()
             };
@@ -419,7 +417,7 @@ namespace Unity.Netcode.EditorTests
             finally
             {
                 UnityEngine.Object.DestroyImmediate(obj);
-                networkManager.StopServer();
+                networkManager.Shutdown();
             }
         }
 

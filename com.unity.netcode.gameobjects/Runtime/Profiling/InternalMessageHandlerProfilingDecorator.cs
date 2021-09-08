@@ -5,8 +5,6 @@ namespace Unity.Netcode
 {
     internal class InternalMessageHandlerProfilingDecorator : IInternalMessageHandler
     {
-        private readonly ProfilerMarker m_HandleConnectionRequest = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionRequest)}");
-        private readonly ProfilerMarker m_HandleConnectionApproved = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionApproved)}");
         private readonly ProfilerMarker m_HandleAddObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObject)}");
         private readonly ProfilerMarker m_HandleDestroyObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObject)}");
         private readonly ProfilerMarker m_HandleSceneEvent = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSceneEvent)}");
@@ -28,24 +26,6 @@ namespace Unity.Netcode
         }
 
         public NetworkManager NetworkManager => m_MessageHandler.NetworkManager;
-
-        public void HandleConnectionRequest(ulong clientId, Stream stream)
-        {
-            m_HandleConnectionRequest.Begin();
-
-            m_MessageHandler.HandleConnectionRequest(clientId, stream);
-
-            m_HandleConnectionRequest.End();
-        }
-
-        public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
-        {
-            m_HandleConnectionApproved.Begin();
-
-            m_MessageHandler.HandleConnectionApproved(clientId, stream, receiveTime);
-
-            m_HandleConnectionApproved.End();
-        }
 
         public void HandleAddObject(ulong clientId, Stream stream)
         {

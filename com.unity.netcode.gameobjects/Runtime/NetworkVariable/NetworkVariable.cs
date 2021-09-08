@@ -105,6 +105,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Writes the variable to the writer
+        /// </summary>
+        /// <param name="stream">The stream to write the value to</param>
+        public override void WriteDelta(ref FastBufferWriter writer)
+        {
+            WriteField(ref writer);
+        }
+
+        /// <summary>
         /// Reads value from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
@@ -123,6 +132,24 @@ namespace Unity.Netcode
             OnValueChanged?.Invoke(previousValue, m_InternalValue);
         }
 
+        /// <summary>
+        /// Reads value from the reader and applies it
+        /// </summary>
+        /// <param name="stream">The stream to read the value from</param>
+        /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
+        public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+        {
+            T previousValue = m_InternalValue;
+            reader.ReadValue(out m_InternalValue);
+            
+            if (keepDirtyDelta)
+            {
+                m_IsDirty = true;
+            }
+
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
+        }
+
         /// <inheritdoc />
         public override void ReadField(Stream stream)
         {
@@ -130,10 +157,22 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        public override void ReadField(ref FastBufferReader reader)
+        {
+            ReadDelta(ref reader, false);
+        }
+
+        /// <inheritdoc />
         public override void WriteField(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
             writer.WriteObjectPacked(m_InternalValue); //BOX
+        }
+
+        /// <inheritdoc />
+        public override void WriteField(ref FastBufferWriter writer)
+        {
+            writer.WriteValue(m_InternalValue);
         }
     }
 }

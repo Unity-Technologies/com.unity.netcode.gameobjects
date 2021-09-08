@@ -35,19 +35,6 @@ namespace Unity.Netcode.EditorTests
             // This has to be done post start
             networkManager.MessageQueueContainer.EnableBatchedMessages(false);
 
-            // Should cause log (server only)
-            // Everything should log MessageReceiveQueueItem even if ignored
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleConnectionRequest));
-            using var messageStream0 = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching());
-            networkManager.HandleIncomingData(0, new ArraySegment<byte>(messageStream0.GetBuffer(), 0, (int)messageStream0.Length), 0);
-
-            // Should not cause log (client only)
-            // Everything should log MessageReceiveQueueItem even if ignored
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-            using var messageStream1 = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching());
-            networkManager.HandleIncomingData(0, new ArraySegment<byte>(messageStream1.GetBuffer(), 0, (int)messageStream1.Length), 0);
-
             // Should not cause log (client only)
             // Everything should log MessageReceiveQueueItem even if ignored
             LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
@@ -119,19 +106,6 @@ namespace Unity.Netcode.EditorTests
             // Disable batching to make the RPCs come straight through
             // This has to be done post start (and post restart since the queue container is reset)
             networkManager.MessageQueueContainer.EnableBatchedMessages(false);
-
-            // Should not cause log (server only)
-            // Everything should log MessageReceiveQueueItem even if ignored
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-            using var messageStream11 = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching());
-            networkManager.HandleIncomingData(0, new ArraySegment<byte>(messageStream11.GetBuffer(), 0, (int)messageStream11.Length), 0);
-
-            // Should cause log (client only)
-            // Everything should log MessageReceiveQueueItem even if ignored
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-            LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleConnectionApproved));
-            using var messageStream12 = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching());
-            networkManager.HandleIncomingData(0, new ArraySegment<byte>(messageStream12.GetBuffer(), 0, (int)messageStream12.Length), 0);
 
             // Should cause log (client only)
             // Everything should log MessageReceiveQueueItem even if ignored

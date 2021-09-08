@@ -12,10 +12,6 @@ namespace Unity.Netcode.EditorTests
             NetworkManager = networkManager;
         }
 
-        public void HandleConnectionRequest(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleConnectionRequest));
-
-        public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime) => VerifyCalled(nameof(HandleConnectionApproved));
-
         public void HandleAddObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAddObject));
 
         public void HandleDestroyObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObject));

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -63,7 +64,7 @@ namespace Unity.Netcode
 
         public unsafe T Pop()
         {
-            return m_Data[m_Length--];
+            return m_Data[--m_Length];
         }
 
         public void Clear()
