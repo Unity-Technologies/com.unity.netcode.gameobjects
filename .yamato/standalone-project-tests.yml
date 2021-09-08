@@ -15,6 +15,7 @@ standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} setup
     - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} build
     - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} test
     - echo {{ platform.name }}
