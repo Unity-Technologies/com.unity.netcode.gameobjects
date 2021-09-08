@@ -370,6 +370,26 @@ namespace Unity.Netcode.Components
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        [ServerRpc(Delivery = RpcDelivery.Reliable)]
+        private void SendPositionServerRpc(Vector3 position)
+        {
+            m_Transform.position = position;
+/*            LocalNetworkState.PositionX = position.x;
+            LocalNetworkState.PositionY = position.y;
+            LocalNetworkState.PositionZ = position.z;
+*/
+
+/*
+            // try to update local NetworkState
+            if (UpdateNetworkState(ref LocalNetworkState))
+            {
+                // if updated (dirty), change NetVar, mark it dirty
+                ReplNetworkState.Value = LocalNetworkState;
+                ReplNetworkState.SetDirty(true);
+            }
+*/
+        }
+
         private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
@@ -377,7 +397,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (IsServer)
+            if (IsServer && NetworkObject.IsOwner)
             {
                 // try to update local NetworkState
                 if (UpdateNetworkState(ref LocalNetworkState))
@@ -390,9 +410,17 @@ namespace Unity.Netcode.Components
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
             // we apply the latest ReplNetworkState again to revert our changes
-            else if (UpdateNetworkState(ref PrevNetworkState))
+            else
             {
-                ApplyNetworkState(ReplNetworkState.Value);
+                if (!NetworkObject.IsOwner && UpdateNetworkState(ref PrevNetworkState))
+                {
+                    ApplyNetworkState(ReplNetworkState.Value);
+                }
+
+                if (NetworkObject.IsOwner && !IsServer && UpdateNetworkState(ref PrevNetworkState))
+                {
+                    SendPositionServerRpc(transform.position);
+                }
             }
         }
 
