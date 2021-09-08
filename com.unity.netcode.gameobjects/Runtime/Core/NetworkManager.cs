@@ -248,6 +248,27 @@ namespace Unity.Netcode
 
         internal INetworkMetrics NetworkMetrics { get; private set; }
 
+        internal bool EnableMetrics
+        {
+#if MULTIPLAYER_TOOLS
+            get => NetworkMetrics is NetworkMetrics;
+            set
+            {
+                if (value && !EnableMetrics)
+                {
+                    NetworkMetrics = new NetworkMetrics();
+                }
+                else if (!value && EnableMetrics)
+                {
+                    NetworkMetrics = new NullNetworkMetrics();
+                }
+            }
+#else
+            get => false;
+            set{}
+#endif
+        }
+
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
