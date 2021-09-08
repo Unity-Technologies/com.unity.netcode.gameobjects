@@ -28,45 +28,22 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void TestSimpleInterpolator()
-        {
-            var interpolator = new SimpleInterpolatorFloat();
-            interpolator.UseFixedUpdate = false;
-
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
-
-            interpolator.AddMeasurement(10, default);
-            var val = interpolator.Update(0.05f);
-            Assert.That(val, Is.EqualTo(5f));
-        }
-
-        [Test]
         public void TestReset()
         {
-            void DoTest<TypeToTest>(Action<IInterpolator<float>> specialAction = null) where TypeToTest : IInterpolator<float>, new()
-            {
-                var interpolator = new TypeToTest();
-                specialAction?.Invoke(interpolator);
-                interpolator.AddMeasurement(5, T(1.0f));
-                var initVal = interpolator.Update(10); // big value
-                Assert.That(initVal, Is.EqualTo(5f));
-                Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var timeMock = new MockInterpolatorTime(0, k_MockTickRate);
+            interpolator.InterpolatorTimeProxy = timeMock;
+            timeMock.BufferedServerTime = 100f;
 
-                interpolator.ResetTo(100f);
-                Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(100f));
-                var val = interpolator.Update(1f);
-                Assert.That(val, Is.EqualTo(100f));
-            }
+            interpolator.AddMeasurement(5, T(1.0f));
+            var initVal = interpolator.Update(10); // big value
+            Assert.That(initVal, Is.EqualTo(5f));
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
 
-            DoTest<NoInterpolator<float>>();
-            DoTest<SimpleInterpolatorFloat>();
-            DoTest<BufferedLinearInterpolatorFloat>(interpolator =>
-                {
-                    var timeMock = new MockInterpolatorTime(0, k_MockTickRate);
-                    ((BufferedLinearInterpolatorFloat) interpolator).InterpolatorTimeProxy = timeMock;
-                    timeMock.BufferedServerTime = 100f;
-                }
-            );
+            interpolator.ResetTo(100f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(100f));
+            var val = interpolator.Update(1f);
+            Assert.That(val, Is.EqualTo(100f));
         }
 
         [Test]

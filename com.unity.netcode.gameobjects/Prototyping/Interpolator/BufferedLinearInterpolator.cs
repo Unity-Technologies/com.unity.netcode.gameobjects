@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
+    public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
@@ -39,8 +39,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
         /// </summary>
-        protected virtual double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? InterpolatorTimeProxy.BufferedServerFixedTime : InterpolatorTimeProxy.BufferedServerTime;
-        protected virtual double RenderTime => InterpolatorTimeProxy.BufferedServerTime - 1f / InterpolatorTimeProxy.TickRate;
+        private double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? InterpolatorTimeProxy.BufferedServerFixedTime : InterpolatorTimeProxy.BufferedServerTime;
+
+        private double RenderTime => InterpolatorTimeProxy.BufferedServerTime - 1f / InterpolatorTimeProxy.TickRate;
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;
@@ -54,22 +55,6 @@ namespace Unity.Netcode
 
         private int m_LifetimeConsumedCount;
 
-        public void Start()
-        {
-        }
-
-        public void OnEnable()
-        {
-        }
-
-        public void Awake()
-        {
-        }
-
-        public void OnNetworkSpawn()
-        {
-        }
-
         public void ResetTo(T targetValue)
         {
             m_LifetimeConsumedCount = 1;
@@ -80,7 +65,7 @@ namespace Unity.Netcode
             m_EndTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
             m_StartTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
 
-            SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
+            // SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
             Update(0);
         }
 
@@ -161,15 +146,12 @@ namespace Unity.Netcode
                     Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
                 }
 
-                SimpleInterpolator.AddMeasurement(Interpolate(m_InterpStartValue, m_InterpEndValue, t), default); // using simple interpolation so there's no jump
-                m_CurrentInterpValue = SimpleInterpolator.Update(deltaTime);
+                var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
+                float maxInterpTime = 0.1f;
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime);
             }
 
             return m_CurrentInterpValue;
-        }
-
-        public void FixedUpdate(float fixedDeltaTime)
-        {
         }
 
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
@@ -192,41 +174,39 @@ namespace Unity.Netcode
             return m_CurrentInterpValue;
         }
 
-        public void OnDestroy()
-        {
-        }
-
         protected abstract T Interpolate(T start, T end, float time);
+        protected abstract T InterpolateUnclamped(T start, T end, float time);
 
-        protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
+        // protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
     }
 
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
-        protected override float Interpolate(float start, float end, float time)
+        protected override float InterpolateUnclamped(float start, float end, float time)
         {
             return Mathf.LerpUnclamped(start, end, time);
         }
 
-        protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
-    }
-
-    public class BufferedLinearInterpolatorFloatForScale : BufferedLinearInterpolatorFloat
-    {
         protected override float Interpolate(float start, float end, float time)
         {
-            // scale can't be negative, stopping negative extrapolation
-            return Mathf.Max(Mathf.LerpUnclamped(start, end, time), 0);
+            return Mathf.Lerp(start, end, time);
         }
+
+        // protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+        protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
+        {
+            return Quaternion.SlerpUnclamped(start, end, time);
+        }
+
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
         }
 
-        protected override SimpleInterpolator<Quaternion> SimpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
+        // protected override SimpleInterpolator<Quaternion> SimpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
     }
 }
