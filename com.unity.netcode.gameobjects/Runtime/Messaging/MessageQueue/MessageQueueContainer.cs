@@ -73,8 +73,6 @@ namespace Unity.Netcode
 
         private MessageQueueProcessor m_MessageQueueProcessor;
 
-        private uint m_OutboundFramesProcessed;
-        private uint m_InboundFramesProcessed;
         private uint m_MaxFrameHistory;
         private int m_InboundStreamBufferIndex;
         private int m_OutBoundStreamBufferIndex;
@@ -109,29 +107,18 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns how many frames have been processed (Inbound/Outbound)
-        /// </summary>
-        /// <param name="queueType"></param>
-        /// <returns>number of frames procssed</returns>
-        public uint GetStreamBufferFrameCount(MessageQueueHistoryFrame.QueueFrameType queueType)
-        {
-            return queueType == MessageQueueHistoryFrame.QueueFrameType.Inbound ? m_InboundFramesProcessed : m_OutboundFramesProcessed;
-        }
-
-        /// <summary>
         /// Creates a context for an internal command.
         /// The context contains a NetworkWriter property used to fill out the command body.
         /// If used as IDisposable, the command will be sent at the end of the using() block.
         /// If not used as IDisposable, the command can be sent by calling context.Finalize()
         /// </summary>
         /// <param name="messageType">The type of message being sent</param>
-        /// <param name="transportChannel">The channel the message is being sent on</param>
+        /// <param name="networkDelivery">The channel the message is being sent on</param>
         /// <param name="clientIds">The destinations for this message</param>
         /// <param name="updateStage">The stage at which the message will be processed on the receiving side</param>
         /// <returns></returns>
-        internal InternalCommandContext? EnterInternalCommandContext(MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
+        internal InternalCommandContext? EnterInternalCommandContext(MessageType messageType, NetworkDelivery networkDelivery, ulong[] clientIds, NetworkUpdateStage updateStage)
         {
-            PooledNetworkWriter writer;
             if (updateStage == NetworkUpdateStage.Initialization)
             {
                 NetworkLog.LogWarning($"Trying to send a message of type {messageType} to be executed during Initialization stage. Changing to EarlyUpdate.");
@@ -148,8 +135,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, NetworkManager.LocalClientId,
-                clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            var writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, networkDelivery, NetworkManager.LocalClientId, clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             writer.WriteByte((byte)messageType);
             writer.WriteByte((byte)updateStage); // NetworkUpdateStage
@@ -276,11 +262,9 @@ namespace Unity.Netcode
         {
             if (messageQueueFrame.GetQueueFrameType() == MessageQueueHistoryFrame.QueueFrameType.Inbound)
             {
-                m_InboundFramesProcessed++;
             }
             else
             {
-                m_OutboundFramesProcessed++;
             }
         }
 
@@ -306,13 +290,13 @@ namespace Unity.Netcode
         /// AddQueueItemToInboundFrame
         /// Adds a message queue item to the outbound frame
         /// </summary>
-        /// <param name="qItemType">type of message</param>
-        /// <param name="timeStamp">when it was received</param>
-        /// <param name="sourceNetworkId">who sent the message</param>
-        /// <param name="message">the message being received</param>
-        internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkChannel receiveChannel)
+        /// <param name="messageType">type of message</param>
+        /// <param name="receiveTimestamp">when it was received</param>
+        /// <param name="senderNetworkId">who sent the message</param>
+        /// <param name="messageBuffer">the message being received</param>
+        internal void AddQueueItemToInboundFrame(MessageType messageType, float receiveTimestamp, ulong senderNetworkId, NetworkBuffer messageBuffer)
         {
-            var updateStage = (NetworkUpdateStage)message.ReadByte();
+            var updateStage = (NetworkUpdateStage)messageBuffer.ReadByte();
 
             var messageFrameItem = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
             messageFrameItem.IsDirty = true;
@@ -320,18 +304,17 @@ namespace Unity.Netcode
             long startPosition = messageFrameItem.QueueBuffer.Position;
 
             //Write the packed version of the queueItem to our current queue history buffer
-            messageFrameItem.QueueWriter.WriteUInt16((ushort)qItemType);
-            messageFrameItem.QueueWriter.WriteSingle(timeStamp);
-            messageFrameItem.QueueWriter.WriteUInt64(sourceNetworkId);
-            messageFrameItem.QueueWriter.WriteByte((byte)receiveChannel);
+            messageFrameItem.QueueWriter.WriteUInt16((ushort)messageType);
+            messageFrameItem.QueueWriter.WriteSingle(receiveTimestamp);
+            messageFrameItem.QueueWriter.WriteUInt64(senderNetworkId);
 
             //Inbound we copy the entire packet and store the position offset
-            long streamSize = message.Length - message.Position;
+            long streamSize = messageBuffer.Length - messageBuffer.Position;
             messageFrameItem.QueueWriter.WriteInt64(streamSize);
             // This 0 is an offset into the following stream. Since we're copying from the offset rather than copying the whole buffer, it can stay at 0.
             // In other words, we're not using the offset anymore, but it's being left for now in case it becomes necessary again later.
             messageFrameItem.QueueWriter.WriteInt64(0);
-            messageFrameItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize, (int)message.Position);
+            messageFrameItem.QueueWriter.WriteBytes(messageBuffer.GetBuffer(), streamSize, (int)messageBuffer.Position);
 
             //Add the packed size to the offsets for parsing over various entries
             messageFrameItem.QueueItemOffsets.Add((uint)messageFrameItem.QueueBuffer.Position);
@@ -381,15 +364,15 @@ namespace Unity.Netcode
         /// BeginAddQueueItemToOutboundFrame
         /// Adds a queue item to the outbound queue frame
         /// </summary>
-        /// <param name="qItemType">type of the queue item</param>
-        /// <param name="timeStamp">when queue item was submitted</param>
-        /// <param name="networkChannel">channel this queue item is being sent</param>
-        /// <param name="sourceNetworkId">source network id of the sender</param>
+        /// <param name="messageType">type of the queue item</param>
+        /// <param name="sendTimestamp">when queue item was submitted</param>
+        /// <param name="networkDelivery">channel this queue item is being sent</param>
+        /// <param name="senderNetworkId">source network id of the sender</param>
         /// <param name="targetNetworkIds">target network id(s)</param>
         /// <param name="queueFrameType">type of queue frame</param>
         /// <param name="updateStage">what update stage the RPC should be invoked on</param>
         /// <returns>PooledNetworkWriter</returns>
-        public PooledNetworkWriter BeginAddQueueItemToFrame(MessageType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        public PooledNetworkWriter BeginAddQueueItemToFrame(MessageType messageType, float sendTimestamp, NetworkDelivery networkDelivery, ulong senderNetworkId, ulong[] targetNetworkIds,
             MessageQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.IsHost && queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Inbound;
@@ -398,10 +381,13 @@ namespace Unity.Netcode
             messageQueueHistoryFrame.IsDirty = true;
 
             //Write the packed version of the queueItem to our current queue history buffer
-            messageQueueHistoryFrame.QueueWriter.WriteUInt16((ushort)qItemType);
-            messageQueueHistoryFrame.QueueWriter.WriteSingle(timeStamp);
-            messageQueueHistoryFrame.QueueWriter.WriteUInt64(sourceNetworkId);
-            messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkChannel);
+            messageQueueHistoryFrame.QueueWriter.WriteUInt16((ushort)messageType);
+            messageQueueHistoryFrame.QueueWriter.WriteSingle(sendTimestamp);
+            messageQueueHistoryFrame.QueueWriter.WriteUInt64(senderNetworkId);
+            if (queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Outbound)
+            {
+                messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkDelivery);
+            }
 
             if (queueFrameType != MessageQueueHistoryFrame.QueueFrameType.Inbound)
             {
@@ -728,8 +714,6 @@ namespace Unity.Netcode
         {
             m_InboundStreamBufferIndex = 0;
             m_OutBoundStreamBufferIndex = 0;
-            m_OutboundFramesProcessed = 0;
-            m_InboundFramesProcessed = 0;
         }
 
         /// <summary>

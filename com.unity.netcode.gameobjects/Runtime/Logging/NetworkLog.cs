@@ -56,9 +56,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
-                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ServerLog, NetworkDelivery.ReliableSequenced, new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using var nonNullContext = (InternalCommandContext)context;
