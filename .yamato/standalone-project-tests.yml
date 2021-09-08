@@ -8,7 +8,7 @@
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
-  name : {{ project.name }} project tests - {{ editor }} on {{ platform.name }}
+  name : standalone {{ project.name }} tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
