@@ -70,6 +70,43 @@ namespace Unity.Netcode
 
         private RelayServerData m_RelayServerData;
 
+#if UNITY_EDITOR
+        private static int ClientPacketDelayMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay");
+        private static int ClientPacketJitterMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter");
+        private static int ClientPacketDropRate => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate");
+#elif DEVELOPMENT_BUILD
+        public static int ClientPacketDelayMs = 0;
+        public static int ClientPacketJitterMs = 0;
+        public static int ClientPacketDropRate = 0;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public SimulatorUtility.Parameters ClientSimulatorParameters
+        {
+            get
+            {
+                var packetDelay = ClientPacketDelayMs;
+                var jitter = ClientPacketJitterMs;
+                if (jitter > packetDelay)
+                {
+                    jitter = packetDelay;
+                }
+
+                var packetDrop = ClientPacketDropRate;
+                int networkRate = 60; // TODO: read from some better place
+                // All 3 packet types every frame stored for maximum delay, doubled for safety margin
+                int maxPackets = 2 * (networkRate * 3 * packetDelay + 999) / 1000;
+                return new SimulatorUtility.Parameters
+                {
+                    MaxPacketSize = NetworkParameterConstants.MTU,
+                    MaxPacketCount = maxPackets,
+                    PacketDelayMs = packetDelay,
+                    PacketJitterMs = jitter,
+                    PacketDropPercentage = packetDrop
+                };
+            }
+        }
+#endif
+
         /// <summary>
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
         /// </summary>
@@ -639,6 +676,22 @@ namespace Unity.Netcode
 
         public void CreateDriver(UTPTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var netParams = new NetworkConfigParameter
+            {
+                maxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts,
+                connectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS,
+                disconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS,
+                maxFrameTimeMS = 100
+            };
+
+            var simulatorParams = ClientSimulatorParameters;
+            transport.m_NetworkParameters.Insert(0, simulatorParams);
+            transport.m_NetworkParameters.Insert(0, netParams);
+#else
+            driver = NetworkDriver.Create(reliabilityParams, fragmentationParams);
+#endif
             if (transport.m_NetworkParameters.Count > 0)
             {
                 driver = NetworkDriver.Create(transport.m_NetworkParameters.ToArray());
@@ -647,12 +700,32 @@ namespace Unity.Netcode
             {
                 driver = NetworkDriver.Create();
             }
-
-            unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
-            reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
-            reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
-            );
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
+            {
+                unreliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(UnreliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend));
+                reliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(ReliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend));
+                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(ReliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend));
+            }
+            else
+#endif
+            {
+                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+                reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+                );
+            }
         }
 
 
