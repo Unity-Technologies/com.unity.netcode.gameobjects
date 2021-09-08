@@ -17,7 +17,8 @@ public class UIController : MonoBehaviour
     private void Awake()
     {
 #if ENABLE_RELAY_SERVICE
-        if (Transport.Protocol == UTPTransport.ProtocolType.RelayUnityTransport) {
+        if (Transport.Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
+        {
             HideButtons();
             JoinCode.SetActive(false);
         }
@@ -56,7 +57,8 @@ public class UIController : MonoBehaviour
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
         Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
 
-        if (AuthenticationService.Instance.IsSignedIn) {
+        if (AuthenticationService.Instance.IsSignedIn)
+        {
             ButtonsRoot.SetActive(true);
             JoinCode.SetActive(true);
             AuthButton.SetActive(false);
