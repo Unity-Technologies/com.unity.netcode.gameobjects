@@ -50,23 +50,26 @@ public class MultiprocessOrchestration
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
         // run performance tests with more realistic conditions.
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
+        string extraArgs = "";
         try
         {
-
             var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
+                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.exe";
+                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
                     break;
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}";
+                    extraArgs += "-nographics";
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
@@ -86,7 +89,7 @@ public class MultiprocessOrchestration
         workerProcess.StartInfo.RedirectStandardOutput = true;
         // In order to support interactive mode there will need to be a way to differentiate the various operational modes and turn graphics on and off based on it
         // workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -nographics -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
