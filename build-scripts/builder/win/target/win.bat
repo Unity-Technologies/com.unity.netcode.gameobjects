@@ -27,5 +27,5 @@ if not exist .git (echo Must be run from the root of the repository && exit 1)
 if not exist com.unity.netcode.gameobjects (echo Must be run from the root of the repository && exit 1)
 
 if not exist utr.bat (echo downloading utr && curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat)
-unity-downloader-cli -u 2021.2 -c Editor -c Android --fast --wait
+unity-downloader-cli -u 2021.2 -c Editor --fast --wait
 goto done
