@@ -15,6 +15,7 @@ standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} setup
     - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} build
     - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} test
