@@ -699,7 +699,7 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }
@@ -734,7 +734,7 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }

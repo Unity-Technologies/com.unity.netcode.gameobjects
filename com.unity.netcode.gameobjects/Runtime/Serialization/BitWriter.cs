@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -190,7 +191,7 @@ namespace Unity.Netcode
         {
             byte* ptr = ((byte*)&value) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            BytewiseUtility.FastCopyBytes(bufferPointer, ptr, bytesToWrite);
+            UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
 
             m_BitPosition += bytesToWrite * k_BitsPerByte;
         }
