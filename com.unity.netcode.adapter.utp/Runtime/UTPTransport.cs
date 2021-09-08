@@ -41,7 +41,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
-        public INetworkStreamDriverConstructor DriverConstructor => DriverConstructor != null ? DriverConstructor : this;
+        public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor != null ? DriverConstructor : this;
 
         [SerializeField] private ProtocolType m_ProtocolType;
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
