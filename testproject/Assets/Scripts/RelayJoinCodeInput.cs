@@ -13,8 +13,10 @@ public class RelayJoinCodeInput : MonoBehaviour
 
     private void Update()
     {
-        if (m_TextInput.IsInteractable()) {
-            if (!string.IsNullOrEmpty(ConnectionScript.RelayJoinCode)) {
+        if (m_TextInput.IsInteractable())
+        {
+            if (!string.IsNullOrEmpty(ConnectionScript.RelayJoinCode))
+            {
                 m_TextInput.text = ConnectionScript.RelayJoinCode;
                 m_TextInput.readOnly = true;
             }

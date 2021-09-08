@@ -202,7 +202,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
 #if ENABLE_RELAY_SERVICE
-             StartCoroutine(StartRelayClient());
+            StartCoroutine(StartRelayClient());
 #else
              StartClient();
 #endif
