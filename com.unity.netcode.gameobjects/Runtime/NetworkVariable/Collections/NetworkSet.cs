@@ -1,7 +1,7 @@
 #if !NET35
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using System.IO;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -9,10 +9,11 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : NetworkVariableBase, ISet<T> where T : unmanaged
+    public class NetworkSet<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
-        private readonly ISet<T> m_Set = new HashSet<T>();
-        private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
+        private const int k_Dummy = 1;
+        private NativeHashMap<T, int> m_Set = new NativeHashMap<T, int>(64, Allocator.Persistent);
+        private NativeList<NetworkSetEvent<T>> m_DirtyEvents = new NativeList<NetworkSetEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
         /// Delegate type for set changed event
@@ -33,27 +34,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkList</param>
+        /// <param name="readPerm">The read permissions to use for the NetworkList</param>
         public NetworkSet(NetworkVariableReadPermission readPerm) : base(readPerm) { }
-
-        /// <summary>
-        /// Creates a NetworkSet with a custom value and custom settings
-        /// </summary>
-        /// <param name="settings">The settings to use for the NetworkSet</param>
-        /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableReadPermission readPerm, ISet<T> value) : base(readPerm)
-        {
-            m_Set = value;
-        }
-
-        /// <summary>
-        /// Creates a NetworkSet with a custom value and the default settings
-        /// </summary>
-        /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkSet(ISet<T> value)
-        {
-            m_Set = value;
-        }
 
         /// <inheritdoc />
         public override void ResetDirty()
@@ -65,15 +47,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override bool IsDirty()
         {
-            return base.IsDirty() || m_DirtyEvents.Count > 0;
+            return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
         /// <inheritdoc />
         public override void WriteDelta(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
-            for (int i = 0; i < m_DirtyEvents.Count; i++)
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Length);
+            for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
                 writer.WriteBits((byte)m_DirtyEvents[i].Type, 2);
 
@@ -102,11 +84,11 @@ namespace Unity.Netcode
         public override void WriteField(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteUInt16Packed((ushort)m_Set.Count);
+            writer.WriteUInt16Packed((ushort)m_Set.Count());
 
-            foreach (T value in m_Set)
+            foreach (var pair in m_Set)
             {
-                writer.WriteObjectPacked(value); //BOX
+                writer.WriteObjectPacked(pair.Key); //BOX
             }
         }
 
@@ -119,7 +101,7 @@ namespace Unity.Netcode
 
             for (int i = 0; i < count; i++)
             {
-                m_Set.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                m_Set.Add((T)reader.ReadObjectPacked(typeof(T)), k_Dummy); //BOX
             }
         }
 
@@ -136,7 +118,7 @@ namespace Unity.Netcode
                     case NetworkSetEvent<T>.EventType.Add:
                         {
                             var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Add(value);
+                            m_Set.Add(value, k_Dummy);
 
                             if (OnSetChanged != null)
                             {
@@ -207,135 +189,9 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
-        public IEnumerator<T> GetEnumerator()
+        public void Add(T item)
         {
-            return m_Set.GetEnumerator();
-        }
-
-        /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return m_Set.GetEnumerator();
-        }
-
-        /// <inheritdoc />
-        public void ExceptWith(IEnumerable<T> other)
-        {
-            foreach (T value in other)
-            {
-                if (m_Set.Contains(value))
-                {
-                    Remove(value);
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        public void IntersectWith(IEnumerable<T> other)
-        {
-            var otherSet = new HashSet<T>(other);
-
-            foreach (T value in m_Set)
-            {
-                if (!otherSet.Contains(value))
-                {
-                    Remove(value);
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        public bool IsProperSubsetOf(IEnumerable<T> other)
-        {
-            return m_Set.IsProperSubsetOf(other);
-        }
-
-        /// <inheritdoc />
-        public bool IsProperSupersetOf(IEnumerable<T> other)
-        {
-            return m_Set.IsProperSupersetOf(other);
-        }
-
-        /// <inheritdoc />
-        public bool IsSubsetOf(IEnumerable<T> other)
-        {
-            return m_Set.IsSubsetOf(other);
-        }
-
-        /// <inheritdoc />
-        public bool IsSupersetOf(IEnumerable<T> other)
-        {
-            return m_Set.IsSupersetOf(other);
-        }
-
-        /// <inheritdoc />
-        public bool Overlaps(IEnumerable<T> other)
-        {
-            return m_Set.Overlaps(other);
-        }
-
-        /// <inheritdoc />
-        public bool SetEquals(IEnumerable<T> other)
-        {
-            return m_Set.SetEquals(other);
-        }
-
-        /// <inheritdoc />
-        public void SymmetricExceptWith(IEnumerable<T> other)
-        {
-            foreach (T value in other)
-            {
-                if (m_Set.Contains(value))
-                {
-                    Remove(value);
-                }
-                else
-                {
-                    m_Set.Add(value);
-
-                    var setEvent = new NetworkSetEvent<T>()
-                    {
-                        Type = NetworkSetEvent<T>.EventType.Add,
-                        Value = value
-                    };
-                    m_DirtyEvents.Add(setEvent);
-
-                    if (OnSetChanged != null)
-                    {
-                        OnSetChanged(setEvent);
-                    }
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        public void UnionWith(IEnumerable<T> other)
-        {
-            foreach (T value in other)
-            {
-                if (!m_Set.Contains(value))
-                {
-                    m_Set.Add(value);
-
-                    var setEvent = new NetworkSetEvent<T>()
-                    {
-                        Type = NetworkSetEvent<T>.EventType.Add,
-                        Value = value
-                    };
-                    m_DirtyEvents.Add(setEvent);
-
-                    if (OnSetChanged != null)
-                    {
-                        OnSetChanged(setEvent);
-                    }
-                }
-            }
-        }
-
-        public bool Add(T item)
-        {
-            m_Set.Add(item);
+            m_Set.Add(item, k_Dummy);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -348,12 +204,7 @@ namespace Unity.Netcode
             {
                 OnSetChanged(setEvent);
             }
-
-            return true;
         }
-
-        /// <inheritdoc />
-        void ICollection<T>.Add(T item) => Add(item);
 
         /// <inheritdoc />
         public void Clear()
@@ -375,17 +226,11 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Contains(T item)
         {
-            return m_Set.Contains(item);
+            return m_Set.ContainsKey(item);
         }
 
         /// <inheritdoc />
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            m_Set.CopyTo(array, arrayIndex);
-        }
-
-        /// <inheritdoc />
-        public bool Remove(T item)
+        public void Remove(T item)
         {
             m_Set.Remove(item);
 
@@ -400,15 +245,10 @@ namespace Unity.Netcode
             {
                 OnSetChanged(setEvent);
             }
-
-            return true;
         }
 
         /// <inheritdoc />
-        public int Count => m_Set.Count;
-
-        /// <inheritdoc />
-        public bool IsReadOnly => m_Set.IsReadOnly;
+        public int Count => m_Set.Count();
 
         public int LastModifiedTick
         {
@@ -417,6 +257,12 @@ namespace Unity.Netcode
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
             }
+        }
+
+        public void Dispose()
+        {
+            m_Set.Dispose();
+            m_DirtyEvents.Dispose();
         }
     }
 

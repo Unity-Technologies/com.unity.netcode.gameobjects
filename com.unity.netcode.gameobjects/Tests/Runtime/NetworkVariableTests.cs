@@ -78,6 +78,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void OnDestroy()
         {
+            TheSet.Dispose();
             TheDictionary.Dispose();
         }
 
