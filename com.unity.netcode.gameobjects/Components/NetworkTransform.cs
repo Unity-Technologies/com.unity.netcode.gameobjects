@@ -374,12 +374,13 @@ namespace Unity.Netcode.Components
         private void SendPositionServerRpc(Vector3 position)
         {
             m_Transform.position = position;
-/*            LocalNetworkState.PositionX = position.x;
+            /*
+            LocalNetworkState.PositionX = position.x;
             LocalNetworkState.PositionY = position.y;
             LocalNetworkState.PositionZ = position.z;
-*/
+            */
 
-/*
+            /*
             // try to update local NetworkState
             if (UpdateNetworkState(ref LocalNetworkState))
             {
@@ -387,7 +388,7 @@ namespace Unity.Netcode.Components
                 ReplNetworkState.Value = LocalNetworkState;
                 ReplNetworkState.SetDirty(true);
             }
-*/
+            */
         }
 
         private void FixedUpdate()
