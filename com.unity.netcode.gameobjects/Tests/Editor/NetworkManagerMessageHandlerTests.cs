@@ -1,8 +1,6 @@
 using System;
 using NUnit.Framework;
-#if UNITY_EDITOR
 using Unity.Netcode.Editor;
-#endif
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
