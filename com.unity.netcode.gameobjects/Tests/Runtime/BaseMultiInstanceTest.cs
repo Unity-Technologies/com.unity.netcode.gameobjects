@@ -72,6 +72,37 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// This registers scene validation with the server to prevent the server from telling connecting
+        /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
+        /// scene and its handle for both client(s) and server-host.
+        /// </summary>
+        private void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        {
+            // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
+            // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
+            if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
+            {
+                networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+                // If a unit/integration test does not handle this on their own, then Ignore the validation warning
+                networkManager.SceneManager.IgnoreSceneValidationWarning = true;
+            }
+
+            // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
+            // warning about using the currently active scene
+            var scene = SceneManager.GetActiveScene();
+            // As long as this is a test runner scene (or most likely a test runner scene)
+            if (scene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            {
+                // Register the test runner scene just so we avoid another warning about not being able to find the
+                // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
+                // loaded and register the server to client scene handle since host-server shares the test runner scene
+                // with the clients.
+                networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
+                networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
+            }
+        }
+
+        /// <summary>
         /// Utility to spawn some clients and a server and set them up
         /// </summary>
         /// <param name="nbClients"></param>
@@ -88,7 +119,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Object.DestroyImmediate(netObject);
             }
-
 
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
@@ -126,39 +156,11 @@ namespace Unity.Netcode.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(useHost, server, clients))
+            // Start the instances and pass in our SceneManagerInitialization action that is invoked before
+            if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
-            }
-
-            // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
-            // will not try to synchronize clients to the TestRunner scene.
-            if (m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading == null)
-            {
-                m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
-                // If a unit/integration test does not handle this on their own, then Ignore the validation warning
-                m_ServerNetworkManager.SceneManager.IgnoreSceneValidationWarning = true;
-
-                // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
-                // warning about using the currently active scene
-                var scene = SceneManager.GetActiveScene();
-                // As long as this is a test runner scene (or most likely a test runner scene)
-                if (scene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
-                {
-                    // Register the test runner scene just so we avoid another warning about not being able to find the
-                    // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
-                    // loaded and register the server to client scene handle since host-server shares the test runner scene
-                    // with the clients.
-                    server.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
-                    server.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
-                    for (int i = 0; i < clients.Length; i++)
-                    {
-                        clients[i].SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
-                        clients[i].SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
-                    }
-                }
             }
 
             // Wait for connection on client side
