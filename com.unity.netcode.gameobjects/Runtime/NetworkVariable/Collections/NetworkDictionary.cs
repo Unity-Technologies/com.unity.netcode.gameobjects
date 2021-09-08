@@ -1,6 +1,7 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -9,9 +10,9 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : NetworkVariableBase, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
+    public class NetworkDictionary<TKey, TValue> : NetworkVariableBase where TKey : unmanaged, IEquatable<TKey> where TValue : unmanaged
     {
-        private readonly IDictionary<TKey, TValue> m_Dictionary = new Dictionary<TKey, TValue>();
+        private NativeHashMap<TKey, TValue> m_Dictionary = new NativeHashMap<TKey, TValue>(64, Allocator.Persistent);
         private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();
 
         /// <summary>
@@ -35,25 +36,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="readPerm">The read permission to use for this NetworkDictionary</param>
         public NetworkDictionary(NetworkVariableReadPermission readPerm) : base(readPerm) { }
-
-        /// <summary>
-        /// Creates a NetworkDictionary with a custom value and custom settings
-        /// </summary>
-        /// <param name="readPerm">The read permission to use for this NetworkDictionary</param>
-        /// <param name="value">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(NetworkVariableReadPermission readPerm, IDictionary<TKey, TValue> value) : base(readPerm)
-        {
-            m_Dictionary = value;
-        }
-
-        /// <summary>
-        /// Creates a NetworkDictionary with a custom value and the default settings
-        /// </summary>
-        /// <param name="value">The initial value to use for the NetworkDictionary</param>
-        public NetworkDictionary(IDictionary<TKey, TValue> value)
-        {
-            m_Dictionary = value;
-        }
 
         /// <inheritdoc />
         public override void ResetDirty()
@@ -105,33 +87,6 @@ namespace Unity.Netcode
                             TValue value;
                             m_Dictionary.TryGetValue(key, out value);
                             m_Dictionary.Remove(key);
-
-                            if (OnDictionaryChanged != null)
-                            {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
-
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
-                        }
-                        break;
-                    case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
-                        {
-                            var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                            var value = (TValue)reader.ReadObjectPacked(typeof(TValue));
-                            m_Dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
 
                             if (OnDictionaryChanged != null)
                             {
@@ -223,12 +178,6 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public bool TryGetValue(TKey key, out TValue value)
-        {
-            return m_Dictionary.TryGetValue(key, out value);
-        }
-
-        /// <inheritdoc />
         public override void WriteDelta(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
@@ -247,12 +196,6 @@ namespace Unity.Netcode
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
                             writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                        }
-                        break;
-                    case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
@@ -274,8 +217,8 @@ namespace Unity.Netcode
         public override void WriteField(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteUInt16Packed((ushort)m_Dictionary.Count);
-            foreach (KeyValuePair<TKey, TValue> pair in m_Dictionary)
+            writer.WriteUInt16Packed((ushort)m_Dictionary.Count());
+            foreach (var pair in m_Dictionary)
             {
                 writer.WriteObjectPacked(pair.Key);
                 writer.WriteObjectPacked(pair.Value);
@@ -308,17 +251,25 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public ICollection<TKey> Keys => m_Dictionary.Keys;
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            return m_Dictionary.TryGetValue(key, out value);
+        }
 
         /// <inheritdoc />
-        public ICollection<TValue> Values => m_Dictionary.Values;
+        public NativeArray<TKey> Keys(Allocator alloc)
+        {
+            return m_Dictionary.GetKeyArray(alloc);
+        }
 
         /// <inheritdoc />
-        public int Count => m_Dictionary.Count;
+        public NativeArray<TValue> Values(Allocator alloc)
+        {
+            return m_Dictionary.GetValueArray(alloc);
+        }
 
         /// <inheritdoc />
-        // TODO: remove w/ native containers
-        public bool IsReadOnly => m_Dictionary.IsReadOnly;
+        public int Count => m_Dictionary.Count();
 
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
@@ -338,16 +289,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            m_Dictionary.Add(item);
-
-            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
-            {
-                Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Add,
-                Key = item.Key,
-                Value = item.Value
-            };
-
-            HandleAddDictionaryEvent(dictionaryEvent);
+            Add(item.Key, item.Value);
         }
 
         /// <inheritdoc />
@@ -366,7 +308,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return m_Dictionary.Contains(item);
+            return m_Dictionary.ContainsKey(item.Key) &&
+               EqualityComparer<TValue>.Default.Equals(item.Value, m_Dictionary[item.Key]);
         }
 
         /// <inheritdoc />
@@ -376,19 +319,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-        {
-            m_Dictionary.CopyTo(array, arrayIndex);
-        }
-
-        /// <inheritdoc />
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-        {
-            return m_Dictionary.GetEnumerator();
-        }
-
-        /// <inheritdoc />
-        public bool Remove(TKey key)
+        public void Remove(TKey key)
         {
             m_Dictionary.Remove(key);
 
@@ -403,31 +334,6 @@ namespace Unity.Netcode
             };
 
             HandleAddDictionaryEvent(dictionaryEvent);
-
-            return true;
-        }
-
-
-        /// <inheritdoc />
-        public bool Remove(KeyValuePair<TKey, TValue> item)
-        {
-            m_Dictionary.Remove(item);
-
-            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
-            {
-                Type = NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair,
-                Key = item.Key,
-                Value = item.Value
-            };
-
-            HandleAddDictionaryEvent(dictionaryEvent);
-            return true;
-        }
-
-        /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return m_Dictionary.GetEnumerator();
         }
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
@@ -443,6 +349,10 @@ namespace Unity.Netcode
                 // todo: implement proper network tick for NetworkDictionary
                 return NetworkTickSystem.NoTick;
             }
+        }
+        public void Dispose()
+        {
+            m_Dictionary.Dispose();
         }
     }
 
@@ -467,11 +377,6 @@ namespace Unity.Netcode
             /// Remove
             /// </summary>
             Remove,
-
-            /// <summary>
-            /// Remove pair
-            /// </summary>
-            RemovePair,
 
             /// <summary>
             /// Clear

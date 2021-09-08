@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -48,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
-        public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
+        public NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
         public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
 
@@ -73,6 +75,12 @@ namespace Unity.Netcode.RuntimeTests
             TheSet.OnSetChanged += SetChanged;
             TheDictionary.OnDictionaryChanged += DictionaryChanged;
         }
+
+        public void OnDestroy()
+        {
+            TheDictionary.Dispose();
+        }
+
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
 
@@ -387,6 +395,53 @@ namespace Unity.Netcode.RuntimeTests
                            m_Player1OnClient1.SetDelegateTriggered;
                 }
             );
+        }
+
+        [Test]
+        public void NetworkDictionaryTryGetValue([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            m_Player1OnServer.TheDictionary[k_TestKey1] = k_TestVal1;
+            int outValue;
+            var result = m_Player1OnServer.TheDictionary.TryGetValue(k_TestKey1, out outValue);
+            Assert.IsTrue(result == true);
+            Assert.IsTrue(outValue == k_TestVal1);
+        }
+
+        [Test]
+        public void NetworkDictionaryAddKeyValue([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            m_Player1OnServer.TheDictionary.Add(k_TestKey1, k_TestVal1);
+            Assert.IsTrue(m_Player1OnServer.TheDictionary[k_TestKey1] == k_TestVal1);
+        }
+
+        [Test]
+        public void NetworkDictionaryAddKeyValuePair([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            m_Player1OnServer.TheDictionary.Add(new KeyValuePair<int, int>(k_TestKey1, k_TestVal1));
+            Assert.IsTrue(m_Player1OnServer.TheDictionary[k_TestKey1] == k_TestVal1);
+        }
+
+        [Test]
+        public void NetworkDictionaryContainsKey([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            m_Player1OnServer.TheDictionary.Add(k_TestKey1, k_TestVal1);
+            Assert.IsTrue(m_Player1OnServer.TheDictionary.ContainsKey(k_TestKey1));
+        }
+
+        [Test]
+        public void NetworkDictionaryContains([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            m_Player1OnServer.TheDictionary.Add(k_TestKey1, k_TestVal1);
+            Assert.IsTrue(m_Player1OnServer.TheDictionary.Contains(new KeyValuePair<int, int>(k_TestKey1, k_TestVal1)));
         }
 
         [UnityTest]
