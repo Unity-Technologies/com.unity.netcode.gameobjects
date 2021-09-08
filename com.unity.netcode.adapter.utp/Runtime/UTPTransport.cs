@@ -294,7 +294,7 @@ namespace Unity.Netcode
             }
 
             m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData,
-                ref hostConnectionData, ref key);
+                ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
         }
 
