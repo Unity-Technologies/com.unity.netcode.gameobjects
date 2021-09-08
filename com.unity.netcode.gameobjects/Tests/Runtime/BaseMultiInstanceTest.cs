@@ -155,7 +155,8 @@ namespace Unity.Netcode.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Start the instances and pass in our SceneManagerInitialization action that is invoked before
+            // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+            // is started and after each client is started.
             if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
             {
                 Debug.LogError("Failed to start instances");
