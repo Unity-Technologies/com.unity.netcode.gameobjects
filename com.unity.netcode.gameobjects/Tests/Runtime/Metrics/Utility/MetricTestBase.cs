@@ -61,6 +61,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
             FirstClientMetrics = FirstClient.NetworkMetrics as NetworkMetrics;
             SecondClient = m_ClientNetworkManagers[0];
             SecondClientMetrics = SecondClient.NetworkMetrics as NetworkMetrics;
+
+            Server.EnableMetrics = true;
+            foreach (var c in m_ClientNetworkManagers)
+            {
+                c.EnableMetrics = false;
+            }
         }
     }
 }
