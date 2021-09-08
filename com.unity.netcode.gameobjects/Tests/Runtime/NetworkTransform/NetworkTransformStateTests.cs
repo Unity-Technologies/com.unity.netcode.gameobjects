@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Unity.Netcode.Prototyping;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests

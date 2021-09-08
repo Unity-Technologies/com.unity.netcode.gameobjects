@@ -1,6 +1,6 @@
-using Unity.Netcode.Prototyping;
 using UnityEditor;
 using UnityEngine;
+using Unity.Netcode.Components;
 
 namespace Unity.Netcode.Editor
 {
