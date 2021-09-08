@@ -7,7 +7,7 @@ test_platforms:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: b1.large
-    pathsep: /
+    pathsep: \
   - name: mac
     type: Unity::VM::osx
     image: package-ci/mac:stable
@@ -17,7 +17,7 @@ test_platforms:
     type: Unity::VM
     image: package-ci/ubuntu:stable
     flavor: b1.large
-    pathsep: \
+    pathsep: /
 
 # Projects within the repository that will be tested. Name will be used
 # for job ids, so it should not contain spaces/non-supported characters
