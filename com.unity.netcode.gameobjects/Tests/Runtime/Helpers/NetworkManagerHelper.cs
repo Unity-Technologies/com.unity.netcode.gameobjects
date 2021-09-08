@@ -69,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
-                var unetTransport = NetworkManagerGameObject.AddComponent<UTPTransport>();
+                var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
                 if (networkConfig == null)
                 {
                     networkConfig = new NetworkConfig
@@ -80,11 +80,12 @@ namespace Unity.Netcode.RuntimeTests
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
 
-                // unetTransport.ConnectAddress = "127.0.0.1";
-                // unetTransport.ConnectPort = 7777;
-                // unetTransport.ServerListenPort = 7777;
-              //  unetTransport.MaxConnections = 100;
-             //   unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
+                unetTransport.ConnectAddress = "127.0.0.1";
+                unetTransport.ConnectPort = 7777;
+                unetTransport.ServerListenPort = 7777;
+                unetTransport.MessageBufferSize = 65535;
+                unetTransport.MaxConnections = 100;
+                unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
                 // Starts the network manager in the mode specified
