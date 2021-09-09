@@ -137,6 +137,11 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
+        /// <summary>
+        /// This will squelch the warning about a scene failing validation
+        /// </summary>
+        internal bool IgnoreSceneValidationWarning;
+
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
         /// <summary>
@@ -301,7 +306,10 @@ namespace Unity.Netcode
                 {
                     serverHostorClient = m_NetworkManager.IsHost ? "Host" : "Server";
                 }
-                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                if (!IgnoreSceneValidationWarning)
+                {
+                    Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                }
             }
             return validated;
         }
