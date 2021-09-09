@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 namespace Unity.Netcode.Prototyping
 {
     /// <summary>
-    /// A prototype component for syncing transforms
+    /// A component for syncing transforms
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts

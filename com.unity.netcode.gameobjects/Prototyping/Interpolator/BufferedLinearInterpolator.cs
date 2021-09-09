@@ -30,8 +30,8 @@ namespace Unity.Netcode
 
         private struct BufferedItem
         {
-            public T item;
-            public NetworkTime timeSent;
+            public T Item;
+            public NetworkTime TimeSent;
         }
 
         public bool UseFixedUpdate { get; set; }
@@ -86,12 +86,12 @@ namespace Unity.Netcode
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready. This can consume multiple times
-                    if (FixedOrTime(bufferedValue.timeSent) <= ServerTimeBeingHandledForBuffering)
+                    if (FixedOrTime(bufferedValue.TimeSent) <= ServerTimeBeingHandledForBuffering)
                     {
                         if (m_LifetimeConsumedCount == 0)
                         {
-                            m_StartTimeConsumed = bufferedValue.timeSent;
-                            m_InterpStartValue = bufferedValue.item;
+                            m_StartTimeConsumed = bufferedValue.TimeSent;
+                            m_InterpStartValue = bufferedValue.Item;
                         }
                         else if (consumedCount == 0)
                         {
@@ -99,8 +99,8 @@ namespace Unity.Netcode
                             m_InterpStartValue = m_InterpEndValue;
                         }
 
-                        m_EndTimeConsumed = bufferedValue.timeSent;
-                        m_InterpEndValue = bufferedValue.item;
+                        m_EndTimeConsumed = bufferedValue.TimeSent;
+                        m_InterpEndValue = bufferedValue.Item;
                         m_Buffer.RemoveAt(i);
                         consumedCount++;
                         m_LifetimeConsumedCount++;
@@ -164,8 +164,8 @@ namespace Unity.Netcode
 
             if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
-                m_Buffer.Add(new BufferedItem {item = newMeasurement, timeSent = sentTime});
-                m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time));
+                m_Buffer.Add(new BufferedItem {Item = newMeasurement, TimeSent = sentTime});
+                m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
             }
         }
 

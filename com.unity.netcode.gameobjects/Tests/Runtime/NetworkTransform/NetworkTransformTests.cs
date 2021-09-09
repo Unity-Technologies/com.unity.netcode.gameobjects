@@ -1,7 +1,6 @@
 using System.Collections;
 using Unity.Netcode.Prototyping;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
