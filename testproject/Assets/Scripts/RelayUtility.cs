@@ -6,13 +6,13 @@ using System;
 
 public class RelayUtility
 {
-    async public static Task<(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] connectionData, byte[] key, string joinCode)> AllocateRelayServerAndGetJoinCode(int maxConnections, string region = null)
+    public static async Task<(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] connectionData, byte[] key, string joinCode)> AllocateRelayServerAndGetJoinCode(int maxConnections, string region = null)
     {
         Allocation allocation;
         string createJoinCode;
         try
         {
-            allocation = await Relay.Instance.CreateAllocationAsync(maxConnections);
+            allocation = await Relay.Instance.CreateAllocationAsync(maxConnections, region);
         }
         catch (Exception e)
         {
@@ -36,7 +36,7 @@ public class RelayUtility
         return (allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port, allocation.AllocationIdBytes, allocation.ConnectionData, allocation.Key, createJoinCode);
     }
 
-    async public static Task<(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] connectionData, byte[] hostConnectionData, byte[] key)> JoinRelayServerFromJoinCode(string joinCode)
+    public static async Task<(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] connectionData, byte[] hostConnectionData, byte[] key)> JoinRelayServerFromJoinCode(string joinCode)
     {
         JoinAllocation allocation;
         try
