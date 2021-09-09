@@ -1180,8 +1180,8 @@ namespace Unity.Netcode
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
 
                 var size = bufferSizeCapture.StopMeasureSegment();
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                       clientId, (uint)ClientSynchEventData.SceneEventType, "", size);
+                m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
+                    clientId, (uint)ClientSynchEventData.SceneEventType, "", size);
             }
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
