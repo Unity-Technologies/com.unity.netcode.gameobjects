@@ -137,6 +137,11 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
+        /// <summary>
+        /// This will squelch the warning about a scene failing validation
+        /// </summary>
+        internal bool IgnoreSceneValidationWarning;
+
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
         /// <summary>
@@ -301,7 +306,10 @@ namespace Unity.Netcode
                 {
                     serverHostorClient = m_NetworkManager.IsHost ? "Host" : "Server";
                 }
-                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                if (!IgnoreSceneValidationWarning)
+                {
+                    Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                }
             }
             return validated;
         }
@@ -994,7 +1002,7 @@ namespace Unity.Netcode
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 // Move all objects to the new scene
-                MoveObjectsToScene(nextScene);
+                MoveObjectsFromDontDestroyOnLoadToScene(nextScene);
             }
 
             // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
@@ -1580,15 +1588,15 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
-                if (sobj.gameObject.transform.parent != null)
-                {
-                    sobj.gameObject.transform.parent = null;
-                }
-
                 if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
                 {
-                    UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                    // Only move objects with no parent as child objects will follow
+                    if (sobj.gameObject.transform.parent == null)
+                    {
+                        UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                        // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
+                        sobj.gameObject.SetActive(false);
+                    }
                 }
                 else if (m_NetworkManager.IsServer)
                 {
@@ -1650,25 +1658,25 @@ namespace Unity.Netcode
         /// Moves all spawned NetworkObjects (from do not destroy on load) to the scene specified
         /// </summary>
         /// <param name="scene">scene to move the NetworkObjects to</param>
-        private void MoveObjectsToScene(Scene scene)
+        private void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = m_NetworkManager.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
-                if (sobj.gameObject.transform.parent != null)
-                {
-                    sobj.gameObject.transform.parent = null;
-                }
-
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
                 {
                     continue;
                 }
 
-                SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                // Only move objects with no parent as child objects will follow
+                if (sobj.gameObject.transform.parent == null)
+                {
+                    // set it back to active at this point
+                    sobj.gameObject.SetActive(true);
+                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                }
             }
         }
     }

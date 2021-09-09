@@ -4,8 +4,8 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping",
-        "Unity.Netcode.Adapter.UTP",
+        "Unity.Netcode.Components"
+    	"Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
         "Unity.Services.Relay"

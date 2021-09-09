@@ -1,5 +1,5 @@
 using System.Collections;
-using Unity.Netcode.Prototyping;
+using Unity.Netcode.Components;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
