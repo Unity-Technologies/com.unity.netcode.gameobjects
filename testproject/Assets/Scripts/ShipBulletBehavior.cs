@@ -3,27 +3,30 @@ using Unity.Netcode;
 
 public class ShipBulletBehavior : NetworkBehaviour
 {
-    public float bulletSpeed = 10f;
+    public float BulletSpeed = 10f;
 
-    public GameObject bulletOwner = null;
+    public GameObject BulletOwner = null;
 
-    private NetworkVariable<float> bulletLifetime = 
+    private NetworkVariable<float> m_BulletLifetime = 
         new NetworkVariable<float>(NetworkVariableReadPermission.Everyone, 10f);
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        if (IsOwner)
+        if (NetworkManager != null && NetworkManager.IsListening)
         {
-            transform.Translate(Vector2.right * bulletSpeed * Time.deltaTime);
-        }
-
-        if (IsServer)
-        {
-            bulletLifetime.Value -= Time.deltaTime;
-            if (bulletLifetime.Value <= 0f)
+            if (IsOwner)
             {
-                DespawnBullet();
+                transform.Translate(Vector2.right * BulletSpeed * Time.deltaTime);
+            }
+
+            if (IsServer)
+            {
+                m_BulletLifetime.Value -= Time.deltaTime;
+                if (m_BulletLifetime.Value <= 0f)
+                {
+                    DespawnBullet();
+                }
             }
         }
     }
@@ -32,9 +35,11 @@ public class ShipBulletBehavior : NetworkBehaviour
     {
         // Only react to trigger on the server
         if (!IsServer)
+        {
             return;
+        }
 
-        if (other.gameObject != bulletOwner)
+        if (other.gameObject != BulletOwner)
         {
             var spacheshipController = other.gameObject.GetComponent<SpaceshipController>();
             if (spacheshipController != null)
