@@ -158,20 +158,14 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // if set, then invoke this for the server
-            if (startInitializationCallback != null)
-            {
-                startInitializationCallback.Invoke(server);
-            }
+            startInitializationCallback?.Invoke(server);
 
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
 
                 // if set, then invoke this for the client
-                if (startInitializationCallback != null)
-                {
-                    startInitializationCallback.Invoke(clients[i]);
-                }
+                startInitializationCallback?.Invoke(clients[i]);
             }
 
             return true;

@@ -71,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// This registers scene validation with the server to prevent the server from telling connecting
+        /// This registers scene validation callback for the server to prevent it from telling connecting
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
         /// scene and its handle for both client(s) and server-host.
         /// </summary>
