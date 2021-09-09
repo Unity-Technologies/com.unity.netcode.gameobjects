@@ -8,6 +8,8 @@ develop_nightly_trigger:
         frequency: 4 * * ?
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
+    - .yamato/mobile-build-and-test.yml#2021.2_Run_iOS_Player_With_Tests
+    - .yamato/mobile-build-and-test.yml#2021.2_Run_Android_Player_With_Tests
 {% for project in projects -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
