@@ -5,6 +5,8 @@ public class SpaceshipController : NetworkBehaviour
 {
     private NetworkVariable<int> m_ShipHealth = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 3);
 
+    private NetworkVariable<Vector3> m_Position = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone);
+
     [SerializeField]
     private float m_MovementSpeed;
 
@@ -14,6 +16,8 @@ public class SpaceshipController : NetworkBehaviour
     private Vector2 m_Direction = new Vector2();
 
     private Rigidbody2D m_Rigidbody2D;
+
+    private Vector2 m_CurrentPosition = new Vector2();
 
     // Similar to Start(), but for the Networking session
     public override void OnNetworkSpawn()
@@ -27,35 +31,41 @@ public class SpaceshipController : NetworkBehaviour
 
     private void Update()
     {
-        if (IsOwner)
+        if (NetworkManager != null && NetworkManager.IsListening)
         {
-            m_Direction = Vector2.zero;
+            if (IsLocalPlayer)
+            {
+                m_Direction = Vector2.zero;
 
-            if (Input.GetKey(KeyCode.LeftArrow))
-            {
-                m_Direction.x -= 1f;
-            }
-            if (Input.GetKey(KeyCode.RightArrow))
-            {
-                m_Direction.x += 1f;
-            }
-            if (Input.GetKey(KeyCode.DownArrow))
-            {
-                m_Direction.y -= 1f;
-            }
-            if (Input.GetKey(KeyCode.UpArrow))
-            {
-                m_Direction.y += 1f;
-            }
+                if (Input.GetKey(KeyCode.LeftArrow))
+                {
+                    m_Direction.x -= 1f;
+                }
+                if (Input.GetKey(KeyCode.RightArrow))
+                {
+                    m_Direction.x += 1f;
+                }
+                if (Input.GetKey(KeyCode.DownArrow))
+                {
+                    m_Direction.y -= 1f;
+                }
+                if (Input.GetKey(KeyCode.UpArrow))
+                {
+                    m_Direction.y += 1f;
+                }
 
-            m_Direction.Normalize();
+                m_Direction.Normalize();
 
-            transform.Translate(m_Direction * m_MovementSpeed * Time.deltaTime);
+                m_CurrentPosition.Set(transform.position.x, transform.position.y);
 
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                // Send a request to the server to spawn a bullet
-                ShootBulletServerRPC();
+                //m_Rigidbody2D.MovePosition(m_CurrentPosition + m_Direction * m_MovementSpeed * Time.deltaTime);
+                transform.Translate(m_Direction * m_MovementSpeed * Time.deltaTime);
+
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    // Send a request to the server to spawn a bullet
+                    ShootBulletServerRPC();
+                }
             }
         }
     }
@@ -73,7 +83,7 @@ public class SpaceshipController : NetworkBehaviour
         newBullet.transform.Rotate(Vector3.up, transform.eulerAngles.y);
 
         var shipBulletBehavior = newBullet.GetComponent<ShipBulletBehavior>();
-        shipBulletBehavior.bulletOwner = gameObject;
+        shipBulletBehavior.BulletOwner = gameObject;
 
         newBullet.GetComponent<NetworkObject>().Spawn();
     }
