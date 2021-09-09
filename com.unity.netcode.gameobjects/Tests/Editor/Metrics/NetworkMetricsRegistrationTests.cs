@@ -15,7 +15,8 @@ namespace Unity.Netcode.EditorTests.Metrics
             .Where(x => x.GetInterfaces().Contains(typeof(INetworkMetricEvent)))
             .ToArray();
 
-        [TestCaseSource(nameof(s_MetricTypes))]
+        // Disable test while we reevaluate the assumption that INetworkMetricEvent interfaces must be reported from MLAPI.
+        //[TestCaseSource(nameof(s_MetricTypes))]
         public void ValidateThatAllMetricTypesAreRegistered(Type metricType)
         {
             var dispatcher = new NetworkMetrics().Dispatcher as MetricDispatcher;
