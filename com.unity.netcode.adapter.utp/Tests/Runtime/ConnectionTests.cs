@@ -12,12 +12,10 @@ namespace Unity.Netcode.RuntimeTests
     {
         // For tests using multiple clients.
         private const int k_NumClients = 5;
-
-        UTPTransport server;
-        UTPTransport[] clients = new UTPTransport[k_NumClients];
-
-        List<TransportEvent> serverEvents;
-        List<TransportEvent>[] clientsEvents = new List<TransportEvent>[k_NumClients];
+        private UTPTransport server;
+        private UTPTransport[] clients = new UTPTransport[k_NumClients];
+        private List<TransportEvent> serverEvents;
+        private List<TransportEvent>[] clientsEvents = new List<TransportEvent>[k_NumClients];
 
         [UnityTearDown]
         public IEnumerator Cleanup()
@@ -27,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
             if (server)
             {
                 server.Shutdown();
-                GameObject.DestroyImmediate(server);
+                Object.DestroyImmediate(server);
             }
 
             foreach (var transport in clients)
@@ -35,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (transport)
                 {
                     transport.Shutdown();
-                    GameObject.DestroyImmediate(transport);
+                    Object.DestroyImmediate(transport);
                 }
             }
 

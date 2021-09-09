@@ -12,8 +12,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class TransportTests
     {
-        UTPTransport server, client1, client2;
-        List<TransportEvent> serverEvents, client1Events, client2Events;
+        private UTPTransport server, client1, client2;
+        private List<TransportEvent> serverEvents, client1Events, client2Events;
 
         [UnityTearDown]
         public IEnumerator Cleanup()
@@ -22,19 +22,19 @@ namespace Unity.Netcode.UTP.RuntimeTests
             if (server)
             {
                 server.Shutdown();
-                GameObject.DestroyImmediate(server);
+                UnityEngine.Object.DestroyImmediate(server);
             }
 
             if (client1)
             {
                 client1.Shutdown();
-                GameObject.DestroyImmediate(client1);
+                UnityEngine.Object.DestroyImmediate(client1);
             }
 
             if (client2)
             {
                 client2.Shutdown();
-                GameObject.DestroyImmediate(client2);
+                UnityEngine.Object.DestroyImmediate(client2);
             }
 
             serverEvents?.Clear();
