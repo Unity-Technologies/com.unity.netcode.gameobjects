@@ -11,8 +11,7 @@ namespace Unity.Netcode
     /// <typeparam name="T">The type for the set</typeparam>
     public class NetworkSet<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
-        private const int k_Dummy = 1;
-        private NativeHashMap<T, int> m_Set = new NativeHashMap<T, int>(64, Allocator.Persistent);
+        private NativeHashSet<T> m_Set = new NativeHashSet<T>(64, Allocator.Persistent);
         private NativeList<NetworkSetEvent<T>> m_DirtyEvents = new NativeList<NetworkSetEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
@@ -88,7 +87,7 @@ namespace Unity.Netcode
 
             foreach (var pair in m_Set)
             {
-                writer.WriteObjectPacked(pair.Key); //BOX
+                writer.WriteObjectPacked(pair); //BOX
             }
         }
 
@@ -101,7 +100,7 @@ namespace Unity.Netcode
 
             for (int i = 0; i < count; i++)
             {
-                m_Set.Add((T)reader.ReadObjectPacked(typeof(T)), k_Dummy); //BOX
+                m_Set.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
             }
         }
 
@@ -118,7 +117,7 @@ namespace Unity.Netcode
                     case NetworkSetEvent<T>.EventType.Add:
                         {
                             var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Add(value, k_Dummy);
+                            m_Set.Add(value);
 
                             if (OnSetChanged != null)
                             {
@@ -191,7 +190,7 @@ namespace Unity.Netcode
 
         public void Add(T item)
         {
-            m_Set.Add(item, k_Dummy);
+            m_Set.Add(item);
 
             var setEvent = new NetworkSetEvent<T>()
             {
@@ -226,7 +225,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Contains(T item)
         {
-            return m_Set.ContainsKey(item);
+            return m_Set.Contains(item);
         }
 
         /// <inheritdoc />
@@ -259,7 +258,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             m_Set.Dispose();
             m_DirtyEvents.Dispose();

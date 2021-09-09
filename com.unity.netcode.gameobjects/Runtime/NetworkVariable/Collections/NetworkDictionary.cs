@@ -257,13 +257,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public NativeArray<TKey> Keys(Allocator alloc)
+        public NativeArray<TKey> Keys(Allocator alloc = Allocator.Temp)
         {
             return m_Dictionary.GetKeyArray(alloc);
         }
 
         /// <inheritdoc />
-        public NativeArray<TValue> Values(Allocator alloc)
+        public NativeArray<TValue> Values(Allocator alloc = Allocator.Temp)
         {
             return m_Dictionary.GetValueArray(alloc);
         }
@@ -350,7 +350,7 @@ namespace Unity.Netcode
                 return NetworkTickSystem.NoTick;
             }
         }
-        public void Dispose()
+        public override void Dispose()
         {
             m_Dictionary.Dispose();
             m_DirtyEvents.Dispose();
