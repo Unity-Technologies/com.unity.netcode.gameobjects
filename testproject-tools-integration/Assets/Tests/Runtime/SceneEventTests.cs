@@ -490,12 +490,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 foreach (var metric in sentMetrics)
                 {
                     if (SceneManager.GetSceneAt(i).name != metric.SceneName) continue;
-                        // Assert the metric is correct
-                        check = true;
-                        Assert.AreEqual(SceneEventType.S2C_Sync, metric.SceneEventType);
-                        Assert.AreEqual(newClients[0].LocalClientId, metric.Connection.Id);
-                        Assert.AreEqual(SceneManager.GetSceneAt(i).name, metric.SceneName);
-                        break;
+                    // Assert the metric is correct
+                    check = true;
+                    Assert.AreEqual(SceneEventType.S2C_Sync, metric.SceneEventType);
+                    Assert.AreEqual(newClients[0].LocalClientId, metric.Connection.Id);
+                    Assert.AreEqual(SceneManager.GetSceneAt(i).name, metric.SceneName);
+                    break;
                 }
 
                 // assert that we found a metric for the given client ID.
@@ -560,26 +560,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             ////////// ASSERT //////////
             // Assert sent metrics
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(SceneManager.sceneCount, sentMetrics.Count);
+            Assert.AreEqual(1, sentMetrics.Count);
+            var sentMetric = sentMetrics.First();
 
-            // One metric is sent for each scene that is synced
-            for (int i = 0; i < SceneManager.sceneCount; i++)
-            {
-                var check = false;
-                foreach (var metric in sentMetrics)
-                {
-                    if (SceneManager.GetSceneAt(i).name != metric.SceneName) continue;
-                        // Assert the metric is correct
-                        check = true;
-                        Assert.AreEqual(SceneEventType.C2S_SyncComplete, metric.SceneEventType);
-                        Assert.AreEqual(newClients[0].LocalClientId, metric.Connection.Id);
-                        Assert.AreEqual(SceneManager.GetSceneAt(i).name, metric.SceneName);
-                        break;
-                }
-
-                // assert that we found a metric for the given client ID.
-                Assert.IsTrue(check);
-            }
+            Assert.AreEqual(SceneEventType.C2S_SyncComplete, sentMetric.SceneEventType);
+            Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
+            Assert.AreEqual(SceneManager.GetSceneAt(0).name, sentMetric.SceneName);
 
             // Assert received metrics
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -595,7 +581,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                     // Assert the metric is correct
                     check = true;
                     Assert.AreEqual(SceneEventType.S2C_Sync, metric.SceneEventType);
-                    Assert.AreEqual(Server.LocalClientId, metric.Connection.Id);
+                    Assert.AreEqual(newClient.LocalClientId, metric.Connection.Id);
                     Assert.AreEqual(SceneManager.GetSceneAt(i).name, metric.SceneName);
                     break;
                 }
