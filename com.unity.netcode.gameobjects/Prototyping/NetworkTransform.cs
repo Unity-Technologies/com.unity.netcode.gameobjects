@@ -207,7 +207,6 @@ namespace Unity.Netcode.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        public bool UseFixedUpdate = true;
 
         private const int k_DebugDrawLineTime = 10;
 
@@ -530,32 +529,16 @@ namespace Unity.Netcode.Prototyping
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
 
-            foreach (var interpolator in m_AllFloatInterpolators)
-            {
-                interpolator.UseFixedUpdate = UseFixedUpdate;
-            }
-
-            m_RotationInterpolator.UseFixedUpdate = UseFixedUpdate;
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
             // set initial value for spawn
             if (IsServer)
             {
-                if (UseFixedUpdate)
-                {
-                    // try to update local NetworkState
-                    DoUpdateToGhosts(NetworkManager.LocalTime.FixedTime);
-                }
-                else
-                {
-                    DoUpdateToGhosts(NetworkManager.LocalTime.Time);
-                }
+                DoUpdateToGhosts(NetworkManager.LocalTime.Time);
             }
 
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
-
-
 
         public override void OnNetworkSpawn()
         {
@@ -588,11 +571,6 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (IsServer && UseFixedUpdate) // todo change IsServer for HasAuthority check
-            {
-                // try to update local NetworkState
-                DoUpdateToGhosts(NetworkManager.LocalTime.FixedTime);
-            }
 
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
@@ -618,7 +596,7 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (IsServer && !UseFixedUpdate)
+            if (IsServer)
             {
                 DoUpdateToGhosts(NetworkManager.LocalTime.Time);
             }

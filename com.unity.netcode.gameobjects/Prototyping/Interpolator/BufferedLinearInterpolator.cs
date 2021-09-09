@@ -34,12 +34,11 @@ namespace Unity.Netcode
             public NetworkTime TimeSent;
         }
 
-        public bool UseFixedUpdate { get; set; }
 
         /// <summary>
         /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
         /// </summary>
-        private double ServerTimeBeingHandledForBuffering => UseFixedUpdate ? InterpolatorTimeProxy.BufferedServerFixedTime : InterpolatorTimeProxy.BufferedServerTime;
+        private double ServerTimeBeingHandledForBuffering => InterpolatorTimeProxy.BufferedServerTime;
 
         private double RenderTime => InterpolatorTimeProxy.BufferedServerTime - 1f / InterpolatorTimeProxy.TickRate;
 
@@ -69,10 +68,6 @@ namespace Unity.Netcode
             Update(0);
         }
 
-        private double FixedOrTime(NetworkTime t)
-        {
-            return UseFixedUpdate ? t.FixedTime : t.Time;
-        }
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer()
@@ -86,7 +81,7 @@ namespace Unity.Netcode
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready. This can consume multiple times
-                    if (FixedOrTime(bufferedValue.TimeSent) <= ServerTimeBeingHandledForBuffering)
+                    if (bufferedValue.TimeSent.Time <= ServerTimeBeingHandledForBuffering)
                     {
                         if (m_LifetimeConsumedCount == 0)
                         {
@@ -125,7 +120,7 @@ namespace Unity.Netcode
 
             if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
-                double range = FixedOrTime(m_EndTimeConsumed) - FixedOrTime(m_StartTimeConsumed);
+                double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
                 float t;
                 if (range == 0)
                 {
@@ -133,17 +128,19 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    t = (float) ((RenderTime - FixedOrTime(m_StartTimeConsumed)) / range);
+                    t = (float) ((RenderTime - m_StartTimeConsumed.Time) / range);
                 }
 
                 if (t > 3) // max extrapolation
                 {
+                    // TODO this causes issues with teleport, investigate
+                    // todo make this configurable
                     t = 1;
                 }
 
                 if (Debug.isDebugBuild)
                 {
-                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {FixedOrTime(m_StartTimeConsumed)}, end time {FixedOrTime(m_EndTimeConsumed)}");
+                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
                 }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);

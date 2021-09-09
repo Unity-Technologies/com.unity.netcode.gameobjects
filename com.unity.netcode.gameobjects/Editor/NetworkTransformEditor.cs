@@ -21,7 +21,6 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
-        private SerializedProperty m_UseFixedUpdateProperty;
 
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
@@ -45,7 +44,6 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
-            m_UseFixedUpdateProperty = serializedObject.FindProperty(nameof(NetworkTransform.UseFixedUpdate));
         }
 
         public override void OnInspectorGUI()
@@ -113,7 +111,6 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
-            EditorGUILayout.PropertyField(m_UseFixedUpdateProperty);
 
             serializedObject.ApplyModifiedProperties();
         }
