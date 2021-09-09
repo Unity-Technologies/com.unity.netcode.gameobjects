@@ -24,43 +24,20 @@ MonoBehaviour:
     m_Scopes: []
     m_IsDefault: 1
     m_Capabilities: 7
-  - m_Id: scoped:Candidate
-    m_Name: Candidate
-    m_Url: https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates
-    m_Scopes:
-    - com.unity.transport
-    - com.unity.collections
-    - com.unity.services.relay
-    - com.unity.services.authentication
-    - com.unity.services.core
-    - com.unity.jobs
-    m_IsDefault: 0
-    m_Capabilities: 0
   m_UserSelectedRegistryName: 
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_ErrorMessage: 
     m_Original:
-      m_Id: scoped:Candidate
-      m_Name: Candidate
-      m_Url: https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates
-      m_Scopes:
-      - com.unity.transport
-      - com.unity.collections
-      - com.unity.services.relay
-      - com.unity.services.authentication
-      - com.unity.services.core
-      - com.unity.jobs
+      m_Id: 
+      m_Name: 
+      m_Url: 
+      m_Scopes: []
       m_IsDefault: 0
       m_Capabilities: 0
     m_Modified: 0
-    m_Name: Candidate
-    m_Url: https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates
+    m_Name: 
+    m_Url: 
     m_Scopes:
-    - com.unity.transport
-    - com.unity.collections
-    - com.unity.services.relay
-    - com.unity.services.authentication
-    - com.unity.services.core
-    - com.unity.jobs
+    - 
     m_SelectedScopeIndex: 0
