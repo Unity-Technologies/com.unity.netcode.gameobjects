@@ -353,7 +353,6 @@ namespace Unity.Netcode.Components
             // skip if we're not spawned, or the server, or the owner of this object making the change
             if (!NetworkObject.IsSpawned || IsServer || IsOwner)
             {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 
@@ -379,8 +378,7 @@ namespace Unity.Netcode.Components
             ApplyNetworkState(networkState);
 
             // as a server, update netvar<networkstate> to cause it to be replicated down to clients
-            ReplNetworkState.Value = networkState;
-            ReplNetworkState.SetDirty(true);
+            UpdateNetworkVariable(ref networkState);
         }
 
         private void FixedUpdate()
@@ -397,8 +395,7 @@ namespace Unity.Netcode.Components
                 {
                     if (IsServer)
                     {
-                        ReplNetworkState.Value = LocalNetworkState;
-                        ReplNetworkState.SetDirty(true);
+                        UpdateNetworkVariable(ref LocalNetworkState);
                     }
                     else
                     {
@@ -406,6 +403,12 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
+        }
+
+        private void UpdateNetworkVariable(ref NetworkState networkState)
+        {
+            ReplNetworkState.Value = networkState;
+            ReplNetworkState.SetDirty(true);
         }
 
         /// <summary>
