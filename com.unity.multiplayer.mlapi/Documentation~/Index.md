@@ -26,3 +26,5 @@ This version of MLAPI is compatible with the following versions of the Unity Edi
 |---|---|
 |March 10, 2021|Document created. Matches package version 0.1.0|
 |June 1, 2021| Updated and added links for additional content. Matches patch version 0.1.0 and hotfixes.|
+|Sept 9,2021|Updated the links and name of the file.|
+
