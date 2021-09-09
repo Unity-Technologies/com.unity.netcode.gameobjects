@@ -8,16 +8,17 @@
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
-  name : {{ project.name }} project tests - {{ editor }} on {{ platform.name }}
+  name : standalone {{ project.name }} tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} setup
-    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} build
-    - build-scripts\builder\{{ platform.name }}\target\{{ platform.name }} test
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} setup
+    - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} build
+    - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} test
     - echo {{ platform.name }}
   artifacts:
     logs:
