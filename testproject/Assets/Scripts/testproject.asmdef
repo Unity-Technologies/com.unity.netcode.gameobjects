@@ -4,7 +4,7 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Components"
+        "Unity.Netcode.Components",
     	"Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
