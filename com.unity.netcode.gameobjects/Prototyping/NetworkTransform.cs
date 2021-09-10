@@ -31,64 +31,104 @@ namespace Unity.Netcode.Prototyping
             public bool InLocalSpace
             {
                 get => (Bitset & (1 << InLocalSpaceBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << InLocalSpaceBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << InLocalSpaceBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << InLocalSpaceBit));
+                }
             }
 
             // Position
             public bool HasPositionX
             {
                 get => (Bitset & (1 << PositionXBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << PositionXBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << PositionXBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << PositionXBit));
+                }
             }
 
             public bool HasPositionY
             {
                 get => (Bitset & (1 << PositionYBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << PositionYBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << PositionYBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << PositionYBit));
+                }
             }
 
             public bool HasPositionZ
             {
                 get => (Bitset & (1 << PositionZBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << PositionZBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << PositionZBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << PositionZBit));
+                }
             }
 
             // RotAngles
             public bool HasRotAngleX
             {
                 get => (Bitset & (1 << RotAngleXBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << RotAngleXBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleXBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleXBit));
+                }
             }
 
             public bool HasRotAngleY
             {
                 get => (Bitset & (1 << RotAngleYBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << RotAngleYBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleYBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleYBit));
+                }
             }
 
             public bool HasRotAngleZ
             {
                 get => (Bitset & (1 << RotAngleZBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << RotAngleZBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleZBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleZBit));
+                }
             }
 
             // Scale
             public bool HasScaleX
             {
                 get => (Bitset & (1 << ScaleXBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << ScaleXBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleXBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << ScaleXBit));
+                }
             }
 
             public bool HasScaleY
             {
                 get => (Bitset & (1 << ScaleYBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << ScaleYBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleYBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << ScaleYBit));
+                }
             }
 
             public bool HasScaleZ
             {
                 get => (Bitset & (1 << ScaleZBit)) != 0;
-                set => Bitset |= (ushort) ((value ? 1 : 0) << ScaleZBit);
+                set
+                {
+                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleZBit));
+                    else Bitset = (ushort) (Bitset & ~(1 << ScaleZBit));
+                }
             }
 
             public float PositionX, PositionY, PositionZ;
@@ -243,24 +283,24 @@ namespace Unity.Netcode.Prototyping
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
         {
-            return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
-        }
-
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateCheckDirtyWithInfo(ref NetworkState networkState, double dirtyTime)
-        {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
-            bool isDirty = false;
-            bool isPositionDirty = false;
-            bool isRotationDirty = false;
-            bool isScaleDirty = false;
+            networkState.HasPositionX = false;
+            networkState.HasPositionY = false;
+            networkState.HasPositionZ = false;
+            networkState.HasRotAngleX = false;
+            networkState.HasRotAngleY = false;
+            networkState.HasRotAngleZ = false;
+            networkState.HasScaleX = false;
+            networkState.HasScaleY = false;
+            networkState.HasScaleZ = false;
+
 
             if (InLocalSpace != networkState.InLocalSpace)
             {
                 networkState.InLocalSpace = InLocalSpace;
-                isDirty = true;
             }
 
             if (SyncPositionX &&
@@ -269,7 +309,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionX = position.x;
                 networkState.HasPositionX = true;
-                isPositionDirty = true;
             }
 
             if (SyncPositionY &&
@@ -278,7 +317,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionY = position.y;
                 networkState.HasPositionY = true;
-                isPositionDirty = true;
             }
 
             if (SyncPositionZ &&
@@ -287,7 +325,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
-                isPositionDirty = true;
             }
 
             if (SyncRotAngleX &&
@@ -296,7 +333,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
-                isRotationDirty = true;
             }
 
             if (SyncRotAngleY &&
@@ -305,7 +341,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
-                isRotationDirty = true;
             }
 
             if (SyncRotAngleZ &&
@@ -314,7 +349,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
-                isRotationDirty = true;
             }
 
             if (SyncScaleX &&
@@ -323,7 +357,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleX = scale.x;
                 networkState.HasScaleX = true;
-                isScaleDirty = true;
             }
 
             if (SyncScaleY &&
@@ -332,7 +365,6 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleY = scale.y;
                 networkState.HasScaleY = true;
-                isScaleDirty = true;
             }
 
             if (SyncScaleZ &&
@@ -341,10 +373,11 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleZ = scale.z;
                 networkState.HasScaleZ = true;
-                isScaleDirty = true;
             }
 
-            isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
+            bool isDirty = networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ ||
+                           networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ ||
+                           networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ;
 
             if (isDirty)
             {
@@ -352,7 +385,7 @@ namespace Unity.Netcode.Prototyping
             }
 
 
-            return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
+            return isDirty;
         }
 
         internal void ApplyNetworkStateFromAuthority(NetworkState networkState)
@@ -479,33 +512,55 @@ namespace Unity.Netcode.Prototyping
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
+                LocalAuthoritativeNetworkState.PositionX = newState.PositionX;
             }
 
             if (newState.HasPositionY)
             {
                 m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+                LocalAuthoritativeNetworkState.PositionY = newState.PositionY;
             }
 
             if (newState.HasPositionZ)
             {
                 m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
+                LocalAuthoritativeNetworkState.PositionZ = newState.PositionZ;
             }
 
-            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+            if (newState.HasRotAngleX)
+            {
+                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.RotAngleX, LocalAuthoritativeNetworkState.RotAngleY, LocalAuthoritativeNetworkState.RotAngleZ), sentTime);
+                LocalAuthoritativeNetworkState.RotAngleX = newState.RotAngleX;
+            }
+
+            if (newState.HasRotAngleY)
+            {
+                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(LocalAuthoritativeNetworkState.RotAngleX, newState.RotAngleY, LocalAuthoritativeNetworkState.RotAngleZ), sentTime);
+                LocalAuthoritativeNetworkState.RotAngleY = newState.RotAngleY;
+            }
+
+            if (newState.HasRotAngleZ)
+            {
+                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(LocalAuthoritativeNetworkState.RotAngleX, LocalAuthoritativeNetworkState.RotAngleY, newState.RotAngleZ), sentTime);
+                LocalAuthoritativeNetworkState.RotAngleZ = newState.RotAngleZ;
+            }
 
             if (newState.HasScaleX)
             {
                 m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
+                LocalAuthoritativeNetworkState.ScaleX = newState.ScaleX;
             }
 
             if (newState.HasScaleY)
             {
                 m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
+                LocalAuthoritativeNetworkState.ScaleY = newState.ScaleY;
             }
 
             if (newState.HasScaleZ)
             {
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
+                LocalAuthoritativeNetworkState.ScaleZ = newState.ScaleZ;
             }
 
             if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
@@ -519,7 +574,7 @@ namespace Unity.Netcode.Prototyping
         {
             m_Transform = transform;
 
-            if (m_AllFloatInterpolators.Count == 0/* && Interpolate*/)
+            if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
                 m_AllFloatInterpolators.Add(m_PositionYInterpolator);
@@ -577,12 +632,14 @@ namespace Unity.Netcode.Prototyping
             // we apply the latest ReplNetworkState again to revert our changes
             if (!IsServer)
             {
-                var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref PrevNetworkState, 0);
-                if (oldStateDirtyInfo.isDirty && !oldStateDirtyInfo.isRotationDirty)
+                var isDirty = UpdateNetworkStateCheckDirty(ref PrevNetworkState, 0);
+                bool isRotationDirty = PrevNetworkState.HasRotAngleX || PrevNetworkState.HasRotAngleY || PrevNetworkState.HasRotAngleZ;
+                if (isDirty && !isRotationDirty)
                 {
                     // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                     // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                    var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : "scale";
+                    var isPositionDirty = PrevNetworkState.HasPositionX || PrevNetworkState.HasPositionY || PrevNetworkState.HasPositionZ;
+                    var dirtyField = isPositionDirty ? "position" : "scale";
                     Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
