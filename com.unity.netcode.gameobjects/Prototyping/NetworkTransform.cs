@@ -283,24 +283,27 @@ namespace Unity.Netcode.Prototyping
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
         {
+            return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
+        }
+
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateCheckDirtyWithInfo(ref NetworkState networkState, double dirtyTime)
+        {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
-            networkState.HasPositionX = false;
-            networkState.HasPositionY = false;
-            networkState.HasPositionZ = false;
-            networkState.HasRotAngleX = false;
-            networkState.HasRotAngleY = false;
-            networkState.HasRotAngleZ = false;
-            networkState.HasScaleX = false;
-            networkState.HasScaleY = false;
-            networkState.HasScaleZ = false;
+            bool isDirty = false;
+            bool isPositionDirty = false;
+            bool isRotationDirty = false;
+            bool isScaleDirty = false;
 
+
+            // todo come back to using custom isDirty check for checking if we have unauthorized modif client side?
 
             if (InLocalSpace != networkState.InLocalSpace)
             {
                 networkState.InLocalSpace = InLocalSpace;
+                isDirty = true;
             }
 
             if (SyncPositionX &&
@@ -309,6 +312,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionX = position.x;
                 networkState.HasPositionX = true;
+                isPositionDirty = true;
             }
 
             if (SyncPositionY &&
@@ -317,6 +321,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionY = position.y;
                 networkState.HasPositionY = true;
+                isPositionDirty = true;
             }
 
             if (SyncPositionZ &&
@@ -325,6 +330,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
+                isPositionDirty = true;
             }
 
             if (SyncRotAngleX &&
@@ -333,6 +339,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
+                isRotationDirty = true;
             }
 
             if (SyncRotAngleY &&
@@ -341,6 +348,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
+                isRotationDirty = true;
             }
 
             if (SyncRotAngleZ &&
@@ -349,6 +357,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
+                isRotationDirty = true;
             }
 
             if (SyncScaleX &&
@@ -357,6 +366,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleX = scale.x;
                 networkState.HasScaleX = true;
+                isScaleDirty = true;
             }
 
             if (SyncScaleY &&
@@ -365,6 +375,7 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleY = scale.y;
                 networkState.HasScaleY = true;
+                isScaleDirty = true;
             }
 
             if (SyncScaleZ &&
@@ -373,19 +384,17 @@ namespace Unity.Netcode.Prototyping
             {
                 networkState.ScaleZ = scale.z;
                 networkState.HasScaleZ = true;
+                isScaleDirty = true;
             }
 
-            bool isDirty = networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ ||
-                           networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ ||
-                           networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ;
+            isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
             if (isDirty)
             {
                 networkState.SentTime = dirtyTime;
             }
 
-
-            return isDirty;
+            return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
         }
 
         internal void ApplyNetworkStateFromAuthority(NetworkState networkState)
@@ -512,55 +521,33 @@ namespace Unity.Netcode.Prototyping
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
-                LocalAuthoritativeNetworkState.PositionX = newState.PositionX;
             }
 
             if (newState.HasPositionY)
             {
                 m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
-                LocalAuthoritativeNetworkState.PositionY = newState.PositionY;
             }
 
             if (newState.HasPositionZ)
             {
                 m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
-                LocalAuthoritativeNetworkState.PositionZ = newState.PositionZ;
             }
 
-            if (newState.HasRotAngleX)
-            {
-                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.RotAngleX, LocalAuthoritativeNetworkState.RotAngleY, LocalAuthoritativeNetworkState.RotAngleZ), sentTime);
-                LocalAuthoritativeNetworkState.RotAngleX = newState.RotAngleX;
-            }
-
-            if (newState.HasRotAngleY)
-            {
-                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(LocalAuthoritativeNetworkState.RotAngleX, newState.RotAngleY, LocalAuthoritativeNetworkState.RotAngleZ), sentTime);
-                LocalAuthoritativeNetworkState.RotAngleY = newState.RotAngleY;
-            }
-
-            if (newState.HasRotAngleZ)
-            {
-                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(LocalAuthoritativeNetworkState.RotAngleX, LocalAuthoritativeNetworkState.RotAngleY, newState.RotAngleZ), sentTime);
-                LocalAuthoritativeNetworkState.RotAngleZ = newState.RotAngleZ;
-            }
+            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
 
             if (newState.HasScaleX)
             {
                 m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
-                LocalAuthoritativeNetworkState.ScaleX = newState.ScaleX;
             }
 
             if (newState.HasScaleY)
             {
                 m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
-                LocalAuthoritativeNetworkState.ScaleY = newState.ScaleY;
             }
 
             if (newState.HasScaleZ)
             {
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
-                LocalAuthoritativeNetworkState.ScaleZ = newState.ScaleZ;
             }
 
             if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
@@ -589,7 +576,7 @@ namespace Unity.Netcode.Prototyping
             // set initial value for spawn
             if (IsServer)
             {
-                DoUpdateToGhosts(NetworkManager.LocalTime.Time);
+                DoUpdateToGhosts();
             }
 
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
@@ -610,9 +597,9 @@ namespace Unity.Netcode.Prototyping
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void DoUpdateToGhosts(double time)
+        private void DoUpdateToGhosts()
         {
-            if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, time))
+            if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
                 ReplNetworkState.Value = LocalAuthoritativeNetworkState;
                 ReplNetworkState.SetDirty(true);
@@ -632,14 +619,12 @@ namespace Unity.Netcode.Prototyping
             // we apply the latest ReplNetworkState again to revert our changes
             if (!IsServer)
             {
-                var isDirty = UpdateNetworkStateCheckDirty(ref PrevNetworkState, 0);
-                bool isRotationDirty = PrevNetworkState.HasRotAngleX || PrevNetworkState.HasRotAngleY || PrevNetworkState.HasRotAngleZ;
-                if (isDirty && !isRotationDirty)
+                var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref PrevNetworkState, 0);
+                if (oldStateDirtyInfo.isDirty && !oldStateDirtyInfo.isRotationDirty)
                 {
                     // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                     // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                    var isPositionDirty = PrevNetworkState.HasPositionX || PrevNetworkState.HasPositionY || PrevNetworkState.HasPositionZ;
-                    var dirtyField = isPositionDirty ? "position" : "scale";
+                    var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : "scale";
                     Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
@@ -655,7 +640,7 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                DoUpdateToGhosts(NetworkManager.LocalTime.Time);
+                DoUpdateToGhosts();
             }
 
             // apply interpolated value
