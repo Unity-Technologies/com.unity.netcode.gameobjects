@@ -297,8 +297,7 @@ namespace Unity.Netcode.Prototyping
             bool isRotationDirty = false;
             bool isScaleDirty = false;
 
-
-            // todo come back to using custom isDirty check for checking if we have unauthorized modif client side?
+            // hasPositionZ set to false when it should be true?
 
             if (InLocalSpace != networkState.InLocalSpace)
             {
@@ -408,48 +407,48 @@ namespace Unity.Netcode.Prototyping
             // InLocalSpace Read
             InLocalSpace = networkState.InLocalSpace;
             // Position Read
-            if (networkState.HasPositionX)
+            if (SyncPositionX)
             {
                 interpolatedPosition.x = Interpolate ? m_PositionXInterpolator.GetInterpolatedValue() : networkState.Position.x;
             }
 
-            if (networkState.HasPositionY)
+            if (SyncPositionY)
             {
                 interpolatedPosition.y = Interpolate ? m_PositionYInterpolator.GetInterpolatedValue() : networkState.Position.y;
             }
 
-            if (networkState.HasPositionZ)
+            if (SyncPositionZ)
             {
                 interpolatedPosition.z = Interpolate ? m_PositionZInterpolator.GetInterpolatedValue() : networkState.Position.z;
             }
 
-            if (networkState.HasRotAngleX)
+            if (SyncRotAngleX)
             {
                 interpolatedRotAngles.x = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x : networkState.Rotation.x;
             }
 
-            if (networkState.HasRotAngleY)
+            if (SyncRotAngleY)
             {
                 interpolatedRotAngles.y = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y : networkState.Rotation.y;
             }
 
-            if (networkState.HasRotAngleZ)
+            if (SyncRotAngleZ)
             {
                 interpolatedRotAngles.z = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z : networkState.Rotation.z;
             }
 
             // Scale Read
-            if (networkState.HasScaleX)
+            if (SyncScaleX)
             {
                 interpolatedScale.x = Interpolate ? m_ScaleXInterpolator.GetInterpolatedValue() : networkState.Scale.x;
             }
 
-            if (networkState.HasScaleY)
+            if (SyncScaleY)
             {
                 interpolatedScale.y = Interpolate ? m_ScaleYInterpolator.GetInterpolatedValue() : networkState.Scale.y;
             }
 
-            if (networkState.HasScaleZ)
+            if (SyncScaleZ)
             {
                 interpolatedScale.z = Interpolate ? m_ScaleZInterpolator.GetInterpolatedValue() : networkState.Scale.z;
             }
@@ -613,14 +612,13 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
             // we apply the latest ReplNetworkState again to revert our changes
             if (!IsServer)
             {
                 var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref PrevNetworkState, 0);
-                if (oldStateDirtyInfo.isDirty && !oldStateDirtyInfo.isRotationDirty)
+                if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                 {
                     // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                     // from an unauthorized transform change or euler to quaternion conversion artifacts.
