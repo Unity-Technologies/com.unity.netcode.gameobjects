@@ -93,6 +93,15 @@ namespace Unity.Netcode
             m_HandleNetworkVariableDelta.End();
         }
 
+        public void HandleSnapshot(ulong clientId, Stream stream)
+        {
+            m_HandleNetworkVariableDelta.Begin();
+
+            m_MessageHandler.HandleSnapshot(clientId, stream);
+
+            m_HandleNetworkVariableDelta.End();
+        }
+
         public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType)
         {
             switch (messageType)
