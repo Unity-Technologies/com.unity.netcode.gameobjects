@@ -8,7 +8,7 @@ See guides below to install Unity Netcode for GameObjects, set up your project, 
 
 * [Documentation](https://docs-multiplayer.unity3d.com/docs/getting-started/about-mlapi)
 * [Installation](https://docs-multiplayer.unity3d.com/docs/migration/install)
-* [First Steps](https://docs-multiplayer.unity3d.com/docs/tutorials/helloworldintro)
+* [First Steps](https://docs-multiplayer.unity3d.com/docs/tutorials/helloworld/helloworldintro)
 * [API Reference](https://docs-multiplayer.unity3d.com/docs/mlapi-api/introduction)
 
 # Technical details
@@ -28,3 +28,4 @@ This version of Netcode for GameObjects is compatible with the following Unity v
 |June 1, 2021|Update and add links for additional content. Matches patch version 0.1.0 and hotfixes.|
 |June 3, 2021|Update document to acknowledge Unity min version change. Matches package version 0.2.0|
 |August 5, 2021|Update product/package name|
+|September 9,2021|Updated the links and name of the file.|
