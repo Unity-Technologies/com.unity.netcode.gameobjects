@@ -17,9 +17,12 @@ standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} setup
-    - build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} build
-    - {% if platform.name == "ubuntu" %}export DISPLAY=:0 && {% endif %}build-scripts{{platform.pathsep}}builder{{platform.pathsep}}{{ platform.name }}{{platform.pathsep}}target{{platform.pathsep}}{{ platform.name }} test
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr{% if platform.name == "win" %}.bat{% endif %} --output utr{% if platform.name == "win" %}.bat{% endif %}
+    - unity-downloader-cli -u {{editor}} -c Editor --fast --wait
+    - {% if platform.name != "win" %}./{% endif %}utr --suite=playmode --platform={{platform.standalone}}  --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests
+    - |
+      {% if platform.name == "win" %}set{% endif %}{% if platform.name != "win" %}export{% endif %} UTR_VERSION=0.12.0
+      {% if platform.name != "win" %}./{% endif %}utr --suite=playmode --platform={{platform.standalone}}  --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
     - echo {{ platform.name }}
   artifacts:
     logs:
