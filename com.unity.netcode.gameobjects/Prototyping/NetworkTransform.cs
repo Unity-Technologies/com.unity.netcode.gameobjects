@@ -454,7 +454,7 @@ namespace Unity.Netcode.Prototyping
             }
 
             // Position Apply
-            if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
+            if (SyncPositionX || SyncPositionY || SyncPositionZ)
             {
                 if (InLocalSpace)
                 {
@@ -469,7 +469,7 @@ namespace Unity.Netcode.Prototyping
             }
 
             // RotAngles Apply
-            if (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ)
+            if (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
             {
                 if (InLocalSpace)
                 {
@@ -484,7 +484,7 @@ namespace Unity.Netcode.Prototyping
             }
 
             // Scale Apply
-            if (networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ)
+            if (SyncScaleX || SyncScaleY || SyncScaleZ)
             {
                 if (InLocalSpace)
                 {
@@ -622,7 +622,7 @@ namespace Unity.Netcode.Prototyping
                 {
                     // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                     // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                    var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : "scale";
+                    var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                     Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
