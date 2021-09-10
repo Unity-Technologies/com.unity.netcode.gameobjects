@@ -74,7 +74,7 @@
     - chmod +x ./utr
     # Run the test build on the device
     - export UTR_VERSION=0.12.0
-    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     logs:
       paths:
