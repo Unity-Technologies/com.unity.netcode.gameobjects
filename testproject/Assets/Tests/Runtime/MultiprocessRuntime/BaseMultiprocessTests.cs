@@ -19,81 +19,118 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected virtual bool IsPerformanceTest => true;
 
-        private const string k_GlobalEmptySceneName = "EmptyScene";
-
-        private bool m_SceneHasLoaded;
-
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
-
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
-        /// TODO there's a good chance this will be refactored with something fancier once we start integrating with bokken
+        /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
         /// </summary>
         protected abstract int WorkerCount { get; }
+
+        private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
+
+        // Since we want to additively load our BuildMultiprocessTestPlayer.MainSceneName
+        // We want to keep a reference to the
+        private Scene m_OriginalActiveScene;
 
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            if (ShouldIgnoreTests)
+            if (IsPerformanceTest)
             {
-                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
+                Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
 
-            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
+            var currentlyActiveScene = SceneManager.GetActiveScene();
+
+            // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
+            // being invoked and the TestRunner scene has not been set to the active scene yet.
+            // This could mean that TeardownSuite wasn't called or SceneManager is not finished unloading
+            // or could not unload the BuildMultiprocessTestPlayer.MainSceneName.
+            if (!currentlyActiveScene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            {
+                Debug.LogError($"Expected the currently active scene to begin with ({k_FirstPartOfTestRunnerSceneName}) but currently active scene is {currentlyActiveScene.name}");
+            }
+            m_OriginalActiveScene = currentlyActiveScene;
+
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-
-            NetworkManager.Singleton.StartHost();
-            for (int i = 0; i < WorkerCount; i++)
+            if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
-                MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                SceneManager.SetActiveScene(scene);
             }
 
-            m_SceneHasLoaded = true;
+            NetworkManager.Singleton.StartHost();
+
+            // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
+            NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+        }
+
+        /// <summary>
+        /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
+        /// synchronize to this scene when they connect (host-server side only for multiprocess)
+        /// </summary>
+        /// <returns>true - scene is fine to synchronize/inform clients to load and false - scene should not be loaded by clients</returns>
+        private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            {
+                return false;
+            }
+            return true;
         }
 
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
-
+            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening);
             var startTime = Time.time;
+
+            // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
+            // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
+            // then any subsequent calls to Setup if there are already workers it will skip this step
+            if (MultiprocessOrchestration.Processes.Count < WorkerCount)
+            {
+                var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.Processes.Count;
+                for (int i = 0; i < numProcessesToCreate; i++)
+                {
+                    MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                }
+            }
+
+            var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
 
-                if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
+                if (Time.realtimeSinceStartup > timeOutTime)
                 {
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
-
             TestCoordinator.Instance.KeepAliveClientRpc();
         }
 
         [TearDown]
         public virtual void Teardown()
         {
-            if (!ShouldIgnoreTests)
-            {
-                TestCoordinator.Instance.TestRunTeardown();
-            }
+            TestCoordinator.Instance.TestRunTeardown();
         }
 
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            if (!ShouldIgnoreTests)
+            MultiprocessOrchestration.ShutdownAllProcesses();
+            NetworkManager.Singleton.Shutdown();
+            Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+            if (m_OriginalActiveScene.IsValid())
             {
-                TestCoordinator.Instance.CloseRemoteClientRpc();
-                NetworkManager.Singleton.Shutdown();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
+            SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
         }
     }
 }
