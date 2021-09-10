@@ -104,22 +104,16 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientIdInternal = null;
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
+            var message = new ChangeOwnershipMessage
             {
-                using var nonNullContext = (InternalCommandContext)context;
-                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                bufferSizeCapture.StartMeasureSegment();
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
-
-                var size = bufferSizeCapture.StopMeasureSegment();
-
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                }
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
             }
         }
 
@@ -150,23 +144,17 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
-            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
+            
+            var message = new ChangeOwnershipMessage
             {
-                using var nonNullContext = (InternalCommandContext)context;
-                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                bufferSizeCapture.StartMeasureSegment();
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
-
-                var size = bufferSizeCapture.StopMeasureSegment();
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
-                }
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
             }
         }
 
@@ -368,7 +356,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ref NetworkObject.SceneObject sceneObject, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, ref FastBufferReader variableData, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -382,7 +370,7 @@ namespace Unity.Netcode
 
             if (sceneObject.Metadata.HasNetworkVariables && NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
-                networkObject.SetNetworkVariableData(ref sceneObject.NetworkVariableDataReader);
+                networkObject.SetNetworkVariableData(ref variableData);
             }
 
             if (SpawnedObjects.ContainsKey(sceneObject.Metadata.NetworkObjectId))
@@ -451,20 +439,12 @@ namespace Unity.Netcode
                     return;
                 }
 
-                var messageQueueContainer = NetworkManager.MessageQueueContainer;
-
-                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced, new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
-                if (context != null)
+                var message = new CreateObjectMessage
                 {
-                    using var nonNullContext = (InternalCommandContext)context;
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
-                }
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
+                };
+                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
             }
         }
 
@@ -735,18 +715,12 @@ namespace Unity.Netcode
                                     }
                                 }
 
-                                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
-                                if (context != null)
+                                var message = new DestroyObjectMessage
                                 {
-                                    using var nonNullContext = (InternalCommandContext)context;
-                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                    bufferSizeCapture.StartMeasureSegment();
-
-                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-
-                                    var size = bufferSizeCapture.StopMeasureSegment();
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
-                                }
+                                    NetworkObjectId = networkObject.NetworkObjectId
+                                };
+                                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                             }
                         }
                     }
@@ -772,34 +746,7 @@ namespace Unity.Netcode
                 }
             }
         }
-    
 
-        /// <summary>
-        /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also
-        /// adding the client to each <see cref="NetworkObject">'s <see cref="NetworkObject.Observers"/> list only if
-        /// observable to the client.
-        /// Maximum number of objects that could theoretically be serialized is 65536 for now
-        /// </summary>
-        /// <param name="clientId"> the client identifier used to determine if a spawned NetworkObject is observable</param>
-        /// <param name="internalCommandContext"> contains the writer used for serialization </param>
-        internal void SerializeObservedNetworkObjects(ulong clientId, ref ConnectionApprovedMessage message)
-        {
-            if (SpawnedObjectsList.Count == 0)
-            {
-                return;
-            }
-            message.SceneObjects =
-                new NativeArray<NetworkObject.SceneObject>(SpawnedObjectsList.Count, Allocator.TempJob);
-            foreach (var sobj in SpawnedObjectsList)
-            {
-                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
-                {
-                    sobj.Observers.Add(clientId);
-                    message.SceneObjects[message.SceneObjectCount++] = sobj.GetMessageSceneObject(clientId);
-                }
-            }
-        }
-    
 
         /// <summary>
         /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also

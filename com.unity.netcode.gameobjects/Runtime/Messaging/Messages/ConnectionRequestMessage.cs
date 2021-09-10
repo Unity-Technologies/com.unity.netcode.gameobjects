@@ -47,6 +47,10 @@ namespace Unity.Netcode.Messages
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
             var networkManager = (NetworkManager) context.SystemOwner;
+            if (!networkManager.IsServer)
+            {
+                return;
+            }
             
             ConnectionRequestMessage message = new ConnectionRequestMessage();
             if (networkManager.NetworkConfig.ConnectionApproval)

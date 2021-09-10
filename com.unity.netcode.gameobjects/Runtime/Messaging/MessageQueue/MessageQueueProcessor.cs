@@ -49,74 +49,14 @@ namespace Unity.Netcode
                         // After all, that's the whole point of it being in the buffer.
                         m_NetworkManager.InvokeRpc(item, item.UpdateStage);
                         break;
-                    case MessageQueueContainer.MessageType.CreateObject:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleAddObject(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.DestroyObject:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleDestroyObject(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.ChangeOwner:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleChangeOwner(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.TimeSync:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleTimeSync(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-
                     case MessageQueueContainer.MessageType.UnnamedMessage:
                         m_NetworkManager.MessageHandler.HandleUnnamedMessage(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NamedMessage:
                         m_NetworkManager.MessageHandler.HandleNamedMessage(item.NetworkId, item.NetworkBuffer);
                         break;
-                    case MessageQueueContainer.MessageType.ServerLog:
-                        if (m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableNetworkLogs)
-                        {
-                            m_NetworkManager.MessageHandler.HandleNetworkLog(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.SnapshotData:
-                        InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
-                        break;
-                    case MessageQueueContainer.MessageType.NetworkVariableDelta:
-                        m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
-                        break;
                     case MessageQueueContainer.MessageType.SceneEvent:
                         m_NetworkManager.MessageHandler.HandleSceneEvent(item.NetworkId, item.NetworkBuffer);
-                        break;
-                    case MessageQueueContainer.MessageType.ParentSync:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            var networkObjectId = item.NetworkReader.ReadUInt64Packed();
-                            var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(item.NetworkReader);
-                            if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                            {
-                                var networkObject = m_NetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
-                                networkObject.SetNetworkParenting(isReparented, latestParent);
-                                networkObject.ApplyNetworkParenting();
-                            }
-                            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                            {
-                                NetworkLog.LogWarning($"Read {item.MessageType} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(m_NetworkManager.SpawnManager.SpawnedObjects)}");
-                            }
-                        }
-
                         break;
 
                     default:

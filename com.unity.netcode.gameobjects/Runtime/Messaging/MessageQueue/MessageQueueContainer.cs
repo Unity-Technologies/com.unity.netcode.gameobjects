@@ -21,17 +21,10 @@ namespace Unity.Netcode
         {
             ClientRpc,
             ServerRpc,
-            CreateObject,
-            DestroyObject,
-            ChangeOwner,
-            TimeSync,
             UnnamedMessage,
             NamedMessage,
-            ServerLog,
             SnapshotData,
-            NetworkVariableDelta,
             SceneEvent,
-            ParentSync,
 
             None //Indicates end of frame
         }

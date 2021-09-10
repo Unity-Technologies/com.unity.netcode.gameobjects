@@ -185,14 +185,14 @@ namespace Unity.Netcode
             if (method == null)
             {
                 throw new InvalidMessageStructureException(
-                    "All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.Name}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
             }
 
             var asDelegate = Delegate.CreateDelegate(typeof(MessageHandler), method, false);
             if (asDelegate == null)
             {
                 throw new InvalidMessageStructureException(
-                    "All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.Name}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
             }
 
             m_MessageHandlers[m_HighMessageType] = (MessageHandler) asDelegate;
@@ -223,7 +223,7 @@ namespace Unity.Netcode
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
                     {
-                        Debug.Log("Receiving a batch");
+                        Debug.Log($"Receiving a batch:  {BitConverter.ToString(batchReader.ToArray())}");
                         if (!batchReader.TryBeginRead(sizeof(MessageHeader)))
                         {
                             NetworkLog.LogWarning("Received a batch that didn't have enough data for all of its batches, ending early!");
@@ -286,9 +286,9 @@ namespace Unity.Netcode
             
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type);
+                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
             }
-            Debug.Log($"Processing {type}");
+            Debug.Log($"Processing {type} ({header.MessageType}): {BitConverter.ToString(reader.ToArray())}");
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
@@ -308,7 +308,7 @@ namespace Unity.Netcode
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type);
+                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
             }
         }
 
@@ -354,7 +354,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe void SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds) 
+        internal unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds) 
             where T: INetworkMessage
             where U: IReadOnlyList<ulong>
         {
@@ -378,7 +378,7 @@ namespace Unity.Netcode
                         m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(T), delivery);
                     }
                     
-                    Debug.Log($"Sending {typeof(T)} to {clientId}");
+                    Debug.Log($"Sending {typeof(T)} ({m_MessageTypes[typeof(T)]}) to {clientId}:  {BitConverter.ToString(tmpSerializer.ToArray())}");
                     
                     ref var sendQueueItem = ref m_SendQueues[clientId].Value;
                     if (sendQueueItem.Count == 0)
@@ -395,7 +395,7 @@ namespace Unity.Netcode
                         {
                             sendQueueItem.Add(new SendQueueItem(delivery, 1300, Allocator.TempJob,
                                 maxSize));
-                            sendQueueItem.GetValueRef(0).Writer.Seek(sizeof(BatchHeader));
+                            sendQueueItem.GetValueRef(sendQueueItem.Count - 1).Writer.Seek(sizeof(BatchHeader));
                         }
                     }
 
@@ -425,10 +425,13 @@ namespace Unity.Netcode
                     writeQueueItem.BatchHeader.BatchSize++;
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(T), delivery);
+                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(T), delivery, tmpSerializer.Length + sizeof(MessageHeader));
                     }
                     Debug.Log($"Sented {typeof(T)} to {clientId} batch size is now {writeQueueItem.BatchHeader.BatchSize}");
+                    Debug.Log(BitConverter.ToString(writeQueueItem.Writer.ToArray()));
                 }
+
+                return tmpSerializer.Length;
             }
         }
         
@@ -467,19 +470,19 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe void SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T: INetworkMessage
         {
-            SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
+            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
-        internal unsafe void SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong clientId)
             where T: INetworkMessage
         {
             ulong* clientIds = stackalloc ulong[] {clientId};
-            SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
+            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
         internal void ProcessSendQueues()
@@ -496,7 +499,6 @@ namespace Unity.Netcode
                         queueItem.Writer.Dispose();
                         continue;
                     }
-                    Debug.Log($"Sending a batch to {clientId}");
                     
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
@@ -507,13 +509,14 @@ namespace Unity.Netcode
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.AllowedWriteMark = 2;
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
+                    Debug.Log($"Sending a batch to {clientId}:  {BitConverter.ToString(queueItem.Writer.ToArray())}");
                     
                     m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
                     queueItem.Writer.Dispose();
                     
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnBeforeSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                        m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
                 }
                 sendQueueItem.Clear();

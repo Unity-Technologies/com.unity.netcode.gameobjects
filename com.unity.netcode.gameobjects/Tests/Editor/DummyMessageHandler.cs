@@ -12,18 +12,8 @@ namespace Unity.Netcode.EditorTests
             NetworkManager = networkManager;
         }
 
-        public void HandleAddObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAddObject));
-
-        public void HandleDestroyObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObject));
-
         public void HandleSceneEvent(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSceneEvent));
-
-        public void HandleChangeOwner(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleChangeOwner));
-
-        public void HandleTimeSync(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleTimeSync));
-
-        public void HandleNetworkVariableDelta(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkVariableDelta));
-
+        
         public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType)
         {
             VerifyCalled(nameof(MessageReceiveQueueItem));
@@ -43,8 +33,6 @@ namespace Unity.Netcode.EditorTests
         public void HandleUnnamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleUnnamedMessage));
 
         public void HandleNamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNamedMessage));
-
-        public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
 

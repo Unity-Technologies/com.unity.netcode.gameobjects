@@ -15,43 +15,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void HandleAddObjectCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleAddObject(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleAddObject));
-        }
-
-        [Test]
-        public void HandleDestroyObjectCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleDestroyObject(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleDestroyObject));
-        }
-
-        [Test]
         public void HandleSceneEventCallsUnderlyingHandler()
         {
             m_Decorator.HandleSceneEvent(0, null);
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleSceneEvent));
-        }
-
-        [Test]
-        public void HandleChangeOwnerCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleChangeOwner(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleChangeOwner));
-        }
-
-        [Test]
-        public void HandleNetworkVariableDeltaCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleNetworkVariableDelta(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNetworkVariableDelta));
         }
 
         [Test]
@@ -68,14 +36,6 @@ namespace Unity.Netcode.EditorTests
             m_Decorator.HandleNamedMessage(0, null);
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNamedMessage));
-        }
-
-        [Test]
-        public void HandleNetworkLogCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleNetworkLog(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNetworkLog));
         }
 
         [Test]
