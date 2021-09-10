@@ -3,6 +3,6 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping"
+        "Unity.Netcode.Components"
     ]
 }
