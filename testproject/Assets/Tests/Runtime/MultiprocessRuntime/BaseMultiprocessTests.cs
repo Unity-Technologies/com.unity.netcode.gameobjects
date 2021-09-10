@@ -15,6 +15,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     }
 
     [MultiprocessTests]
+    [UnityPlatform(exclude = new[]
+    {
+        RuntimePlatform.Android,
+        RuntimePlatform.IPhonePlayer
+    })]
     public abstract class BaseMultiprocessTests
     {
         protected virtual bool IsPerformanceTest => true;

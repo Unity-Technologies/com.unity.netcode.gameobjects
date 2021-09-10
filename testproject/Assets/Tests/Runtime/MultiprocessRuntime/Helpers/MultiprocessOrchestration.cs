@@ -83,12 +83,9 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}");
 
-
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        // In order to support interactive mode there will need to be a way to differentiate the various operational modes and turn graphics on and off based on it
-        // workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
@@ -113,9 +110,19 @@ public class MultiprocessOrchestration
         foreach (var process in Processes)
         {
             Debug.Log($"Killing process {process.Id} with state {process.HasExited}");
-            process.Kill();
+            if (!process.HasExited)
+            {
+                try
+                {
+                    process.Kill();
+                }
+                catch(Exception e)
+                {
+                    Debug.LogError(e.Message);
+                }
+                
+            }
         }
-
         Processes.Clear();
     }
 }
