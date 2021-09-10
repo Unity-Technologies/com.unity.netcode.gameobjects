@@ -42,6 +42,29 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             };
         }
 
+        [UnityTearDown]
+        public override IEnumerator Teardown()
+        {
+            if (m_LoadedScene.isLoaded) m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+            {
+                var sceneUnloaded = false;
+                m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+                {
+                    if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete) sceneUnloaded = true;
+                };
+                for (int i = 0; i < 240; i++)
+                {
+                    if (sceneUnloaded)
+                        break;
+                    yield return null;
+                }
+
+                Assert.IsTrue(sceneUnloaded);
+            }
+
+            yield return base.Teardown();
+        }
+
         [UnityTest]
         public IEnumerator TestSceneEventMetrics_LoadScene_S2C_Load()
         {
