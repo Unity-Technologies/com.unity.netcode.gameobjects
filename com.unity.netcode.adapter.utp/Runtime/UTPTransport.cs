@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-using UTPNetworkEvent = Unity.Netcode.NetworkEvent;
+using NGONetworkEvent = Unity.Netcode.NetworkEvent;
+using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Networking.Transport;
@@ -326,7 +327,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            InvokeOnTransportEvent(UTPNetworkEvent.Connect,
+            InvokeOnTransportEvent(NGONetworkEvent.Connect,
                 ParseClientId(connection),
                 default(ArraySegment<byte>),
                 Time.realtimeSinceStartup);
@@ -341,21 +342,21 @@ namespace Unity.Netcode
 
             switch (eventType)
             {
-                case Networking.Transport.NetworkEvent.Type.Connect:
-                    InvokeOnTransportEvent(UTPNetworkEvent.Connect,
+                case UTPNetworkEvent.Type.Connect:
+                    InvokeOnTransportEvent(NGONetworkEvent.Connect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case Networking.Transport.NetworkEvent.Type.Disconnect:
-                    InvokeOnTransportEvent(UTPNetworkEvent.Disconnect,
+                case UTPNetworkEvent.Type.Disconnect:
+                    InvokeOnTransportEvent(NGONetworkEvent.Disconnect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case Networking.Transport.NetworkEvent.Type.Data:
+                case UTPNetworkEvent.Type.Data:
                     var isBatched = reader.ReadByte();
                     if (isBatched == 1)
                     {
@@ -394,7 +395,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                InvokeOnTransportEvent(UTPNetworkEvent.Data,
+                InvokeOnTransportEvent(NGONetworkEvent.Data,
                     ParseClientId(networkConnection),
                     new ArraySegment<byte>(m_MessageBuffer, 0, size),
                     Time.realtimeSinceStartup
@@ -499,12 +500,12 @@ namespace Unity.Netcode
             m_MessageBuffer = new byte[m_MessageBufferSize];
         }
 
-        public override UTPNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+        public override NGONetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             payload = default;
             receiveTime = default;
-            return UTPNetworkEvent.Nothing;
+            return NGONetworkEvent.Nothing;
         }
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)

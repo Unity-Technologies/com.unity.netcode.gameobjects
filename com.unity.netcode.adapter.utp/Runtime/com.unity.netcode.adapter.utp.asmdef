@@ -1,6 +1,6 @@
 {
     "name": "Unity.Netcode.Adapter.UTP",
-    "rootNamespace": "",
+    "rootNamespace": "Unity.Netcode.UTP",
     "references": [
         "Unity.Collections",
         "Unity.Jobs",

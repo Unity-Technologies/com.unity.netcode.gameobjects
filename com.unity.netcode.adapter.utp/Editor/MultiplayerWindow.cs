@@ -7,10 +7,10 @@ namespace Unity.Netcode.Editor
     {
         private const string k_PrefsKeyPrefix = "NetcodeGameObjects";
 
-        [MenuItem("Netcode/NGO Tools")]
+        [MenuItem("Netcode/Simulator Tools")]
         public static void ShowWindow()
         {
-            GetWindow<MultiplayerWindow>(false, "NGO Tools Tools", true);
+            GetWindow<MultiplayerWindow>(false, "Simulator Tools", true);
         }
 
         private void OnGUI()
