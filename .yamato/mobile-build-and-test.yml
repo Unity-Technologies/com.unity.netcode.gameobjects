@@ -92,7 +92,7 @@
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
        set UTR_VERSION=0.12.0
-       ./utr --artifacts_path=artifacts --timeout=1800 --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=android --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
+       ./utr --artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=android --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   # Set uploadable artifact paths
   artifacts:
     logs:
