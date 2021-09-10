@@ -136,7 +136,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="host">Whether or not to create a Host instead of Server</param>
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
+        /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
+        /// <returns></returns>
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, Action<NetworkManager> startInitializationCallback = null)
         {
             if (s_IsStarted)
             {
@@ -155,9 +157,15 @@ namespace Unity.Netcode.RuntimeTests
                 server.StartServer();
             }
 
+            // if set, then invoke this for the server
+            startInitializationCallback?.Invoke(server);
+
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
+
+                // if set, then invoke this for the client
+                startInitializationCallback?.Invoke(clients[i]);
             }
 
             return true;
