@@ -14,6 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public static class MultiInstanceHelpers
     {
+        public const int DefaultMinFrames = 1;
         public const int DefaultMaxFrames = 64;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static bool s_IsStarted;
@@ -436,7 +437,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="workload">Action / code to run</param>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = 1)
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
         {
             var waitResult = new CoroutineResultWrapper<bool>();
             workload();
@@ -460,7 +461,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = 1)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
