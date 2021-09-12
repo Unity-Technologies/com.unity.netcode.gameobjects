@@ -211,7 +211,7 @@ namespace Unity.Netcode
         /// unless it was already loaded.
         ///
         /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
-        /// scenes will be loaded additively.  Uses need to determine which scenes are valid to load via the
+        /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
         /// <see cref="VerifySceneBeforeLoading"/> method.
         /// </summary>
         public LoadSceneMode ClientSynchronizationMode { get; internal set; }
@@ -272,7 +272,7 @@ namespace Unity.Netcode
         /// unless it was already loaded.
         ///
         /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
-        /// scenes will be loaded additively.  Uses need to determine which scenes are valid to load via the
+        /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
         /// <see cref="VerifySceneBeforeLoading"/> method.
         /// </summary>
         /// <param name="mode"><see cref="LoadSceneMode"/> for initial client synchronization</param>
