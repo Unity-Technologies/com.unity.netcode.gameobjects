@@ -205,7 +205,21 @@ namespace Unity.Netcode
 
         internal Scene DontDestroyOnLoadScene;
 
+        /// <summary>
+        /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
+        /// the server's currently active scene will be loaded in single mode on the client
+        /// unless it was already loaded.
+        ///
+        /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
+        /// scenes will be loaded additively.  Uses need to determine which scenes are valid to load via the
+        /// <see cref="VerifySceneBeforeLoading"/> method.
+        /// </summary>
         public LoadSceneMode ClientSynchronizationMode { get; internal set; }
+
+        /// <summary>
+        /// When true, the <see cref="Debug.LogWarning(object)"/> messages will be turned off
+        /// </summary>
+        private bool m_DisableValidationWarningMessages;
 
         /// <summary>
         /// Handle NetworkSeneManager clean up
@@ -242,6 +256,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// When set to true, this will disable the console warnings about
+        /// a scene being invalidated.
+        /// </summary>
+        /// <param name="disabled"></param>
+        public void DisableValidationWarnings(bool disabled)
+        {
+            m_DisableValidationWarningMessages = disabled;
+        }
+
+        /// <summary>
         /// This will change how clients are initially synchronized.
         /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
         /// the server's currently active scene will be loaded in single mode on the client
@@ -263,7 +287,6 @@ namespace Unity.Netcode
         /// <param name="networkManager"></param>
         internal NetworkSceneManager(NetworkManager networkManager)
         {
-            ClientSynchronizationMode = LoadSceneMode.Additive;
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
@@ -318,7 +341,7 @@ namespace Unity.Netcode
             {
                 validated = VerifySceneBeforeLoading.Invoke((int)sceneIndex, sceneName, loadSceneMode);
             }
-            if (!validated && ClientSynchronizationMode == LoadSceneMode.Single)
+            if (!validated && !m_DisableValidationWarningMessages)
             {
                 var serverHostorClient = "Client";
                 if (m_NetworkManager.IsServer)
