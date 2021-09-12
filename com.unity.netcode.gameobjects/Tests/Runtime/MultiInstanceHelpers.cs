@@ -486,7 +486,7 @@ namespace Unity.Netcode.RuntimeTests
                 var nextFrameNumber = Time.frameCount + 2;
                 yield return new WaitUntil(() =>
                 {
-                     return Time.frameCount >= nextFrameNumber;
+                    return Time.frameCount >= nextFrameNumber;
                 });
             }
 
