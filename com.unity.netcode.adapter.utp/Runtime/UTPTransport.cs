@@ -407,6 +407,8 @@ namespace Unity.Netcode
         {
             if (m_Driver.IsCreated)
             {
+                FlushAllSendQueues();
+
                 m_Driver.ScheduleUpdate().Complete();
 
                 while (AcceptConnection() && m_Driver.IsCreated)
@@ -418,8 +420,6 @@ namespace Unity.Netcode
                 {
                     ;
                 }
-
-                FlushAllSendQueues();
             }
 
         }
