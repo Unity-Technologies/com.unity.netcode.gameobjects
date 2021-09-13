@@ -72,6 +72,16 @@ public class ConnectionModeScript : MonoBehaviour
         yield return null;
     }
 
+    private bool HasRelaySupport()
+    {
+        var hasUnityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        if (hasUnityTransport != null && hasUnityTransport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        {
+            return true;
+        }
+        return false;
+    }
+
     // Start is called before the first frame update
     private void Start()
     {
@@ -79,7 +89,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons && m_AuthenticationButtons)
         {
 #if ENABLE_RELAY_SERVICE
-            if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+            if (HasRelaySupport())
             {
                 m_UsingRelay = true;
                 m_JoinCodeInput.SetActive(true);
@@ -91,6 +101,7 @@ public class ConnectionModeScript : MonoBehaviour
             else
 #endif
             {
+
                 m_JoinCodeInput.SetActive(false);
                 m_AuthenticationButtons.SetActive(false);
                 m_ConnectionModeButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening);
@@ -101,7 +112,7 @@ public class ConnectionModeScript : MonoBehaviour
     private void OnServicesInitialized()
     {
 #if ENABLE_RELAY_SERVICE
-        if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        if (HasRelaySupport())
         {
             m_JoinCodeInput.SetActive(true);
             m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
@@ -117,7 +128,7 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            if (m_UsingRelay)
+            if (HasRelaySupport())
             {
                 StartCoroutine(StartRelayServer(StartServer));
             }
@@ -176,7 +187,7 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            if (m_UsingRelay)
+            if (HasRelaySupport())
             {
                 StartCoroutine(StartRelayServer(StartHost));
             }
@@ -201,11 +212,14 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-#if ENABLE_RELAY_SERVICE
-            StartCoroutine(StartRelayClient());
-#else
-             StartClient();
-#endif
+            if (HasRelaySupport())
+            {
+                StartCoroutine(StartRelayClient());
+            }
+            else
+            {
+                StartClient();
+            }
         }
     }
 
