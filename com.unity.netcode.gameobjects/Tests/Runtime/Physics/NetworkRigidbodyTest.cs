@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
     {
         protected override int NbClients => 1;
 
-        public abstract bool Kinematic { get;}
+        public abstract bool Kinematic { get; }
 
         [UnitySetUp]
         public override IEnumerator Setup()
