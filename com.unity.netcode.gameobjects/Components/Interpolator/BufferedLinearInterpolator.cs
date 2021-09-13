@@ -64,7 +64,6 @@ namespace Unity.Netcode
             m_EndTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
             m_StartTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
 
-            // SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
             Update(0);
         }
 
@@ -173,8 +172,6 @@ namespace Unity.Netcode
 
         protected abstract T Interpolate(T start, T end, float time);
         protected abstract T InterpolateUnclamped(T start, T end, float time);
-
-        // protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
     }
 
     internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
@@ -188,8 +185,6 @@ namespace Unity.Netcode
         {
             return Mathf.Lerp(start, end, time);
         }
-
-        // protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
     internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
@@ -203,7 +198,5 @@ namespace Unity.Netcode
         {
             return Quaternion.SlerpUnclamped(start, end, time);
         }
-
-        // protected override SimpleInterpolator<Quaternion> SimpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
     }
 }
