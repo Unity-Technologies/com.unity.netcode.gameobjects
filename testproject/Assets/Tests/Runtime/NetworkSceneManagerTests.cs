@@ -154,6 +154,7 @@ namespace TestProject.RuntimeTests
                 if (enableSceneVerification)
                 {
                     manager.SceneManager.VerifySceneBeforeLoading = ClientVerifySceneBeforeLoading;
+                    manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
                 }
             }
         }
@@ -257,9 +258,16 @@ namespace TestProject.RuntimeTests
         {
             switch (sceneEvent.SceneEventType)
             {
+                case SceneEventData.SceneEventTypes.S2C_Sync:
+                    {
+                        // Verify that the Client Synchronization Mode set by the server is being received by the client (which means it is applied when loading the first scene)
+                        Assert.AreEqual(m_ClientNetworkManagers.ToArray().Where(c => c.LocalClientId == sceneEvent.ClientId).First().SceneManager.ClientSynchronizationMode, sceneEvent.LoadSceneMode);
+                        break;
+                    }
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
+
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
