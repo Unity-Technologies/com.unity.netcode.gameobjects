@@ -1197,7 +1197,10 @@ namespace Unity.Netcode
             {
                 var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
                 MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
-                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), payload.Count);
+                var bytesReported = LocalClientId == clientId
+                    ? 0
+                    : payload.Count;
+                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), bytesReported);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1207,7 +1210,10 @@ namespace Unity.Netcode
         private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime)
         {
             MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
-            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
+            var bytesReported = LocalClientId == clientId
+                ? 0
+                : messageBuffer.Length;
+            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), bytesReported);
         }
 
         /// <summary>

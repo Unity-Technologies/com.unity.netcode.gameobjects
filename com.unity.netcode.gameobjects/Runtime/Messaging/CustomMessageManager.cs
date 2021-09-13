@@ -32,7 +32,10 @@ namespace Unity.Netcode
         internal void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
             OnUnnamedMessage?.Invoke(clientId, stream);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, stream.SafeGetLengthOrDefault());
+            var bytesReported = m_NetworkManager.LocalClientId == clientId
+                ? 0
+                : stream.SafeGetLengthOrDefault();
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesReported);
         }
 
         /// <summary>
@@ -71,7 +74,10 @@ namespace Unity.Netcode
             if (context != null)
             {
                 using var nonNullContext = (InternalCommandContext)context;
-                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, messageBuffer.Position);
+                var bytesReported = m_NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : messageBuffer.Position;
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, bytesReported);
                 messageBuffer.Position = 0;
                 messageBuffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
             }
@@ -197,7 +203,10 @@ namespace Unity.Netcode
 
                 var size = bufferSizeCapture.StopMeasureSegment();
 
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+                var bytesReported = m_NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : size;
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, bytesReported);
             }
         }
 

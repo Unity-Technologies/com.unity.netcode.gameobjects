@@ -25,8 +25,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var networkVariableDeltaSent = metricValues.First();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
-            Assert.AreEqual(Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
-            Assert.AreNotEqual(0, networkVariableDeltaSent.BytesCount);
+            AssertLocalAndRemoteMetricsSent(metricValues);
         }
 
         [UnityTest]
