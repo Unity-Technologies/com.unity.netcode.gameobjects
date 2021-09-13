@@ -1,0 +1,4 @@
+{
+    "displayName": "ClientNetworkTransform",
+    "description": "A sample to demonstrate how client-driven NetworkTransform can be implemented"
+}
