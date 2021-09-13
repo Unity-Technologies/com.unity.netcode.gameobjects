@@ -18,7 +18,6 @@ GameObject:
   - component: {fileID: 8685790303553767876}
   - component: {fileID: 3809075828520557319}
   - component: {fileID: 7138389085065872747}
-  - component: {fileID: -4978466230159947418}
   - component: {fileID: 5715768330125915997}
   m_Layer: 0
   m_Name: PlayerCube

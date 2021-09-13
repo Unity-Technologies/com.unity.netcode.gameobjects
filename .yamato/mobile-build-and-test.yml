@@ -1,0 +1,93 @@
+2021.2_Build_Android_player:
+  name: 2021.2 Build Android player
+  agent:
+      type: Unity::VM
+      image: package-ci/win10:stable
+      flavor: b1.large
+  commands:
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - | 
+       mkdir C:\TMP
+       cd C:\TMP
+       unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
+    - |
+       set UTR_VERSION=0.12.0
+       utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests --extra-editor-arg=-nographics --timeout=1800 --extra-editor-arg=-batchmode --reruncount=2
+  artifacts:
+    players:
+        paths:
+          - "build/players/**"
+    logs:
+        paths:
+          - "build/logs/**"
+
+2021.2_Build_iOS_player:
+  name: 2021.2 Build iOS player
+  agent:
+    type: Unity::VM::osx
+    image: mobile/macos-10.15-testing:stable
+    flavor: b1.large
+  commands:
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - unity-downloader-cli -u 2021.2 -c editor -c iOS -w --fast
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    - chmod +x ./utr
+    - export UTR_VERSION=0.12.0
+    - ./utr --suite=playmode --platform=iOS --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --build-only --testfilter=Unity.Netcode.RuntimeTests
+  artifacts:
+    players:
+        paths:
+          - "build/players/**"
+    logs:
+        paths:
+          - "build/logs/**"
+
+
+2021.2_Run_iOS_Player_With_Tests:
+  name: 2021.2 Run iOS player with tests
+  agent:
+      type: Unity::mobile::iPhone
+      model: SE
+      image: mobile/macos-10.15-testing:stable
+      flavor: b1.medium
+  # Set a dependency on the build job
+  dependencies:
+    - .yamato/mobile-build-and-test.yml#2021.2_Build_iOS_player
+  commands:
+    # Download standalone UnityTestRunner
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    # Give UTR execution permissions
+    - chmod +x ./utr
+    # Run the test build on the device
+    - export UTR_VERSION=0.12.0
+    - ./utr --suite=playmode --platform=iOS --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
+  artifacts:
+    logs:
+        paths:
+          - "build/test-results/**"
+    
+2021.2_Run_Android_Player_With_Tests:
+  name: 2021.2 Run Android player with tests
+  agent:
+      type: Unity::mobile::shield
+      image: mobile/android-execution-r19:stable
+      flavor: b1.medium
+  # Skip repository cloning
+  skip_checkout: true
+  # Set a dependency on the build job
+  dependencies:
+    - .yamato/mobile-build-and-test.yml#2021.2_Build_Android_player
+  commands:
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - |
+       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
+       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
+       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
+       set UTR_VERSION=0.12.0
+       ./utr --suite=playmode --platform=android --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
+  # Set uploadable artifact paths
+  artifacts:
+    logs:
+      paths:
+        - "build/test-results/**"

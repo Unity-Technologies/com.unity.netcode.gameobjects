@@ -3,7 +3,7 @@
     "rootNamespace": "Unity.Netcode.Editor",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Prototyping"
+        "Unity.Netcode.Components"
     ],
     "includePlatforms": [
         "Editor"
