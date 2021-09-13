@@ -213,7 +213,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null; // todo move access to callbackcomponent to singleton
 
-                void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
+                    void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
                     {
                         if (OneNetVar.InstanceCount == 0)
                         {
