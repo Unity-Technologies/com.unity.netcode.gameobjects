@@ -4,5 +4,5 @@
 Profiling/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/server-team
 /com.unity.netcode.gameobjects/Runtime/SceneManagement/ @NoelStephensUnity
-/com.unity.multiplayer.transport.utp/ @Unity-Technologies/server-team
+/com.unity.netcode.adapter.utp/ @Unity-Technologies/server-team
 Documentation~/ @Briancoughlin
