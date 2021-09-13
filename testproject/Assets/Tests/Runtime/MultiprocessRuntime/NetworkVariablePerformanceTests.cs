@@ -231,7 +231,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override void TeardownSuite()
         {
             base.TeardownSuite();
-            if (!ShouldIgnoreTests)
+            if (!IsPerformanceTest)
             {
                 s_ServerObjectPool.Dispose();
             }
