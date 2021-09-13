@@ -12,7 +12,7 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        protected struct NetworkState : INetworkSerializable
+        public struct NetworkTransformState : INetworkSerializable
         {
             internal const int InLocalSpaceBit = 0;
             internal const int PositionXBit = 1;
@@ -262,9 +262,9 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
-        protected readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
-        protected NetworkState PrevNetworkState;
-        protected NetworkState LocalAuthoritativeNetworkState;
+        protected readonly NetworkVariable<NetworkTransformState> ReplNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        protected NetworkTransformState PrevNetworkState;
+        protected NetworkTransformState LocalAuthoritativeNetworkState;
 
         protected virtual bool CanWriteToTransform => IsServer;
 
@@ -283,12 +283,12 @@ namespace Unity.Netcode.Components
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
-        protected bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
+        protected bool UpdateNetworkStateCheckDirty(ref NetworkTransformState networkState, double dirtyTime)
         {
             return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
         }
 
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateCheckDirtyWithInfo(ref NetworkState networkState, double dirtyTime)
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateCheckDirtyWithInfo(ref NetworkTransformState networkState, double dirtyTime)
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
@@ -398,7 +398,7 @@ namespace Unity.Netcode.Components
             return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
         }
 
-        protected void ApplyNetworkStateFromAuthority(NetworkState networkState)
+        protected void ApplyNetworkStateFromAuthority(NetworkTransformState networkState)
         {
             PrevNetworkState = networkState;
 
@@ -504,20 +504,8 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
+        protected void AddInterpolatedState(NetworkTransformState newState)
         {
-            if (!NetworkObject.IsSpawned)
-            {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
-                return;
-            }
-
-            if (CanWriteToTransform)
-            {
-                // we're the authority, we ignore incoming changes
-                return;
-            }
-
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
 
             if (newState.HasPositionX)
@@ -551,6 +539,23 @@ namespace Unity.Netcode.Components
             {
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
+        }
+
+        private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
+        {
+            if (!NetworkObject.IsSpawned)
+            {
+                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
+                return;
+            }
+
+            if (CanWriteToTransform)
+            {
+                // we're the authority, we ignore incoming changes
+                return;
+            }
+
+            AddInterpolatedState(newState);
 
             if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
             {
@@ -578,7 +583,7 @@ namespace Unity.Netcode.Components
             // set initial value for spawn
             if (CanWriteToTransform)
             {
-                DoUpdateToGhosts();
+                UpdateNetworkVariable();
             }
 
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
@@ -599,12 +604,7 @@ namespace Unity.Netcode.Components
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        protected virtual void DoUpdateToGhosts()
-        {
-            UpdateNetworkVariable();
-        }
-
-        protected void UpdateNetworkVariable()
+        private void UpdateNetworkVariable()
         {
             if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
@@ -637,16 +637,16 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if (!NetworkObject.IsSpawned)
             {
                 return;
             }
 
-            if (CanWriteToTransform)
+            if (IsServer)
             {
-                DoUpdateToGhosts();
+                UpdateNetworkVariable();
             }
 
             // apply interpolated value

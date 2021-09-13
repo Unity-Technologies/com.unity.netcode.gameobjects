@@ -6,24 +6,26 @@ namespace Unity.Netcode.Samples
     {
         protected override bool CanWriteToTransform => IsClient && IsOwner;
 
-        protected override void DoUpdateToGhosts()
+        protected override void Update()
         {
-            if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+            base.Update();
+            if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                SubmitNetworkStateServerRpc(LocalAuthoritativeNetworkState);
+                if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+                {
+                    SubmitNetworkStateServerRpc(LocalAuthoritativeNetworkState);
+                }
             }
         }
 
         [ServerRpc]
-        private void SubmitNetworkStateServerRpc(NetworkState networkState)
+        private void SubmitNetworkStateServerRpc(NetworkTransformState networkState)
         {
             LocalAuthoritativeNetworkState = networkState;
 
-            // as a server, apply whatever networkstate owner client sent to us, to make NetworkTransform move locally on the server
-            ApplyNetworkStateFromAuthority(networkState);
+            AddInterpolatedState(networkState);
 
-            // as a server, update netvar<networkstate> to cause it to be replicated down to other non-owner clients
-            UpdateNetworkVariable();
+            // state application and state sending to other clients will be done in next update
         }
     }
 }

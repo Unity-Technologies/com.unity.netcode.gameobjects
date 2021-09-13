@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
         private class TestNetworkTransform : NetworkTransform
         {
             // needed to test protected methods
-            public bool ExposedUpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
+            public bool ExposedUpdateNetworkStateCheckDirty(ref NetworkTransformState networkState, double dirtyTime)
             {
                 return UpdateNetworkStateCheckDirty(ref networkState, dirtyTime);
             }
@@ -45,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.SyncScaleZ = syncScaZ;
             networkTransform.InLocalSpace = inLocalSpace;
 
-            var networkTransformState = new TestNetworkTransform.NetworkState
+            var networkTransformState = new TestNetworkTransform.NetworkTransformState
             {
                 PositionX = initialPosition.x,
                 PositionY = initialPosition.y,
@@ -207,7 +207,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.RotAngleThreshold = rotAngleThreshold;
             networkTransform.ScaleThreshold = scaleThreshold;
 
-            var networkTransformState = new TestNetworkTransform.NetworkState
+            var networkTransformState = new TestNetworkTransform.NetworkTransformState
             {
                 PositionX = initialPosition.x,
                 PositionY = initialPosition.y,
