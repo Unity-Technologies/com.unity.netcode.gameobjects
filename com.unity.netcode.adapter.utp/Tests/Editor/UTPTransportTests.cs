@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.UTP.EditorTests
 {
-    public class UTPTransportTests
+    public class UnityTransportTests
     {
         // Check that starting a server doesn't immediately result in faulted tasks.
         [Test]

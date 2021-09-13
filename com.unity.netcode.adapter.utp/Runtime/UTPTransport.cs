@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-using NGONetworkEvent = Unity.Netcode.NetworkEvent;
-using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
+using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Networking.Transport;
@@ -19,10 +19,10 @@ namespace Unity.Netcode
     /// </summary>
     public interface INetworkStreamDriverConstructor
     {
-        void CreateDriver(UTPTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
+        void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
     }
 
-    public class UTPTransport : NetworkTransport, INetworkStreamDriverConstructor
+    public class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         public enum ProtocolType
         {
@@ -49,7 +49,7 @@ namespace Unity.Netcode
         [SerializeField] private int m_ReciveQueueSize = 128;
         [SerializeField] private int m_SendQueueSize = 128;
 
-        [Tooltip("The maximum size of the send queue for batching NGO events")]
+        [Tooltip("The maximum size of the send queue for batching Netcode events")]
         [SerializeField] private int m_SendQueueBatchSize = 4096;
 
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
@@ -150,7 +150,7 @@ namespace Unity.Netcode
                     return m_ReliableSequencedFragmentedPipeline;
 
                 default:
-                    Debug.LogError($"Unknown NetworkDelivery value: {delivery}");
+                    Debug.LogError($"Unknown {nameof(NetworkDelivery)} value: {delivery}");
                     return NetworkPipeline.Null;
             }
         }
@@ -327,7 +327,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            InvokeOnTransportEvent(NGONetworkEvent.Connect,
+            InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                 ParseClientId(connection),
                 default(ArraySegment<byte>),
                 Time.realtimeSinceStartup);
@@ -342,21 +342,21 @@ namespace Unity.Netcode
 
             switch (eventType)
             {
-                case UTPNetworkEvent.Type.Connect:
-                    InvokeOnTransportEvent(NGONetworkEvent.Connect,
+                case TransportNetworkEvent.Type.Connect:
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case UTPNetworkEvent.Type.Disconnect:
-                    InvokeOnTransportEvent(NGONetworkEvent.Disconnect,
+                case TransportNetworkEvent.Type.Disconnect:
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                         ParseClientId(networkConnection),
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
                     return true;
 
-                case UTPNetworkEvent.Type.Data:
+                case TransportNetworkEvent.Type.Data:
                     var isBatched = reader.ReadByte();
                     if (isBatched == 1)
                     {
@@ -395,7 +395,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                InvokeOnTransportEvent(NGONetworkEvent.Data,
+                InvokeOnTransportEvent(NetcodeNetworkEvent.Data,
                     ParseClientId(networkConnection),
                     new ArraySegment<byte>(m_MessageBuffer, 0, size),
                     Time.realtimeSinceStartup
@@ -500,12 +500,12 @@ namespace Unity.Netcode
             m_MessageBuffer = new byte[m_MessageBufferSize];
         }
 
-        public override NGONetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             payload = default;
             receiveTime = default;
-            return NGONetworkEvent.Nothing;
+            return NetcodeNetworkEvent.Nothing;
         }
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
@@ -675,7 +675,7 @@ namespace Unity.Netcode
             m_SendQueue.Clear();
         }
 
-        public void CreateDriver(UTPTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
+        public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
