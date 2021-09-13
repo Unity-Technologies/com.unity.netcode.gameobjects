@@ -12,7 +12,7 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        internal struct NetworkState : INetworkSerializable
+        protected struct NetworkState : INetworkSerializable
         {
             internal const int InLocalSpaceBit = 0;
             internal const int PositionXBit = 1;
@@ -262,9 +262,11 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
-        internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
-        internal NetworkState PrevNetworkState;
-        internal NetworkState LocalAuthoritativeNetworkState;
+        protected readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
+        protected NetworkState PrevNetworkState;
+        protected NetworkState LocalAuthoritativeNetworkState;
+
+        protected virtual bool CanWriteToTransform => IsServer;
 
         public void ResetCurrentInterpolatedState()
         {
@@ -281,7 +283,7 @@ namespace Unity.Netcode.Components
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
-        internal bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
+        protected bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
         {
             return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
         }
@@ -396,7 +398,7 @@ namespace Unity.Netcode.Components
             return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
         }
 
-        internal void ApplyNetworkStateFromAuthority(NetworkState networkState)
+        protected void ApplyNetworkStateFromAuthority(NetworkState networkState)
         {
             PrevNetworkState = networkState;
 
@@ -510,9 +512,10 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (IsServer)
+            if (CanWriteToTransform)
             {
-                return; // todo use authority
+                // we're the authority, we ignore incoming changes
+                return;
             }
 
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
@@ -573,7 +576,7 @@ namespace Unity.Netcode.Components
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
             // set initial value for spawn
-            if (IsServer)
+            if (CanWriteToTransform)
             {
                 DoUpdateToGhosts();
             }
@@ -583,7 +586,7 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
-            if (!IsServer)
+            if (!CanWriteToTransform)
             {
                 ResetCurrentInterpolatedState(); // useful for late joining
 
@@ -596,7 +599,12 @@ namespace Unity.Netcode.Components
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void DoUpdateToGhosts()
+        protected virtual void DoUpdateToGhosts()
+        {
+            UpdateNetworkVariable();
+        }
+
+        protected void UpdateNetworkVariable()
         {
             if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
@@ -615,7 +623,7 @@ namespace Unity.Netcode.Components
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
             // we apply the latest ReplNetworkState again to revert our changes
-            if (!IsServer)
+            if (!CanWriteToTransform)
             {
                 var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref PrevNetworkState, 0);
                 if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
@@ -636,13 +644,13 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (IsServer)
+            if (CanWriteToTransform)
             {
                 DoUpdateToGhosts();
             }
 
             // apply interpolated value
-            if (!IsServer && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
+            if (!CanWriteToTransform && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {

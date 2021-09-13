@@ -6,6 +6,15 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkTransformStateTests
     {
+        private class TestNetworkTransform : NetworkTransform
+        {
+            // needed to test protected methods
+            public bool ExposedUpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
+            {
+                return UpdateNetworkStateCheckDirty(ref networkState, dirtyTime);
+            }
+        }
+
         [Test]
         public void TestSyncAxes(
             [Values] bool inLocalSpace,
@@ -15,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            var networkTransform = gameObject.AddComponent<NetworkTransform>();
+            var networkTransform = gameObject.AddComponent<TestNetworkTransform>();
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
 
             var initialPosition = Vector3.zero;
@@ -36,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.SyncScaleZ = syncScaZ;
             networkTransform.InLocalSpace = inLocalSpace;
 
-            var networkTransformState = new NetworkTransform.NetworkState
+            var networkTransformState = new TestNetworkTransform.NetworkState
             {
                 PositionX = initialPosition.x,
                 PositionY = initialPosition.y,
@@ -67,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (syncPosX || syncPosY || syncPosZ || syncRotX || syncRotY || syncRotZ || syncScaX || syncScaY || syncScaZ)
                 {
-                    Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
             }
 
@@ -84,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
                     position.x++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncPositionY
                 {
@@ -93,7 +102,7 @@ namespace Unity.Netcode.RuntimeTests
                     position.y++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncPositionZ
                 {
@@ -102,7 +111,7 @@ namespace Unity.Netcode.RuntimeTests
                     position.z++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
 
                 // SyncRotAngleX
@@ -112,7 +121,7 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.x++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncRotAngleY
                 {
@@ -121,7 +130,7 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.y++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncRotAngleZ
                 {
@@ -130,7 +139,7 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.z++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
 
                 // SyncScaleX
@@ -140,7 +149,7 @@ namespace Unity.Netcode.RuntimeTests
                     scale.x++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncScaleY
                 {
@@ -149,7 +158,7 @@ namespace Unity.Netcode.RuntimeTests
                     scale.y++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
                 // SyncScaleZ
                 {
@@ -158,7 +167,7 @@ namespace Unity.Netcode.RuntimeTests
                     scale.z++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                    Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                 }
             }
 
@@ -174,7 +183,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestThresholds)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            var networkTransform = gameObject.AddComponent<NetworkTransform>();
+            var networkTransform = gameObject.AddComponent<TestNetworkTransform>();
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
 
             var initialPosition = Vector3.zero;
@@ -198,7 +207,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.RotAngleThreshold = rotAngleThreshold;
             networkTransform.ScaleThreshold = scaleThreshold;
 
-            var networkTransformState = new NetworkTransform.NetworkState
+            var networkTransformState = new TestNetworkTransform.NetworkState
             {
                 PositionX = initialPosition.x,
                 PositionY = initialPosition.y,
@@ -218,7 +227,7 @@ namespace Unity.Netcode.RuntimeTests
                 networkTransform.transform.eulerAngles = new Vector3(30, 45, 90);
                 networkTransform.transform.localScale = new Vector3(1.1f, 0.5f, 2.5f);
 
-                Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
             }
 
             // Step 2: make changes below and above thresholds
@@ -234,33 +243,33 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         position.x += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         position.x += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // PositionY
                     {
                         position.y += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         position.y += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // PositionZ
                     {
                         position.z += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         position.z += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
                 }
 
@@ -273,33 +282,33 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         rotAngles.x += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         rotAngles.x += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // RotAngleY
                     {
                         rotAngles.y += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         rotAngles.y += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // RotAngleZ
                     {
                         rotAngles.z += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         rotAngles.z += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
                 }
 
@@ -312,33 +321,33 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         scale.x += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         scale.x += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // ScaleY
                     {
                         scale.y += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         scale.y += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
 
                     // ScaleZ
                     {
                         scale.z += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsFalse(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
 
                         scale.z += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkStateCheckDirty(ref networkTransformState, 0));
+                        Assert.IsTrue(networkTransform.ExposedUpdateNetworkStateCheckDirty(ref networkTransformState, 0));
                     }
                 }
             }
