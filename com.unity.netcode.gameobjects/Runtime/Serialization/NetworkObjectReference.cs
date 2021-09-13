@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A helper struct for serializing <see cref="NetworkObject"/>s over the network. Can be used in RPCs.
+    /// A helper struct for serializing <see cref="NetworkObject"/>s over the network. Can be used in RPCs and <see cref="NetworkVariable{T}"/>.
     /// </summary>
     public struct NetworkObjectReference : INetworkSerializable, IEquatable<NetworkObjectReference>
     {
