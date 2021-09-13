@@ -6795,7 +6795,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  Channels: []
   MessageSendMode: 0
 --- !u!114 &620561611
 MonoBehaviour:
@@ -6814,7 +6813,7 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 620561610}
+    NetworkTransport: {fileID: 620561613}
     PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
       type: 3}
     NetworkPrefabs: []
@@ -6866,7 +6865,6 @@ MonoBehaviour:
   DisconnectTimeout: 5
   ReconnectDelay: 0.5
   MaxConnectAttempts: 10
-  channels: []
   MessageBufferSize: 5120
   SimulatePacketLossChance: 0
   SimulateMinLatency: 70
