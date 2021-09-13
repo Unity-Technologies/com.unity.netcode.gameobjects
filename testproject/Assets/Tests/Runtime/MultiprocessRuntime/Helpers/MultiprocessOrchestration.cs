@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -13,6 +14,15 @@ public class MultiprocessOrchestration
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static List<Process> Processes = new List<Process>();
+
+    /// <summary>
+    /// This is to detect if we should ignore Multiprocess tests
+    /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
+    /// </summary>
+    public static bool ShouldIgnoreUTRTests()
+    {
+        return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
 
     public static void StartWorkerNode()
     {

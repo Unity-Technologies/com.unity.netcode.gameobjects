@@ -17,6 +17,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        // TODO: Remove UTR check once we have Multiprocess tests fully working
+        protected bool IgnorMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
+
+
         protected virtual bool IsPerformanceTest => true;
 
         /// <summary>
@@ -34,6 +38,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            if (IgnorMultiprocessTests)
+            {
+                Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
+            }
+
             if (IsPerformanceTest)
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
@@ -117,20 +126,26 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            TestCoordinator.Instance.TestRunTeardown();
+            if (!IgnorMultiprocessTests)
+            {
+                TestCoordinator.Instance.TestRunTeardown();
+            }
         }
 
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiprocessOrchestration.ShutdownAllProcesses();
-            NetworkManager.Singleton.Shutdown();
-            Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-            if (m_OriginalActiveScene.IsValid())
+            if (!IgnorMultiprocessTests)
             {
-                SceneManager.SetActiveScene(m_OriginalActiveScene);
+                MultiprocessOrchestration.ShutdownAllProcesses();
+                NetworkManager.Singleton.Shutdown();
+                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                if (m_OriginalActiveScene.IsValid())
+                {
+                    SceneManager.SetActiveScene(m_OriginalActiveScene);
+                }
+                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
             }
-            SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
         }
     }
 }
