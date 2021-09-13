@@ -3,18 +3,18 @@ using UnityEngine;
 
 public class OnCollisionColor : MonoBehaviour
 {
-    private int CollisionCount;
+    private int m_CollisionCount;
 
     public void OnCollisionEnter(Collision other)
     {
-        CollisionCount++;
+        m_CollisionCount++;
         HandleCollisionCountChanged();
         StartCoroutine(StayColored());
     }
 
     private void HandleCollisionCountChanged()
     {
-        if (CollisionCount > 0)
+        if (m_CollisionCount > 0)
         {
             GetComponent<Renderer>().material.color = Color.red;
         }
@@ -27,7 +27,7 @@ public class OnCollisionColor : MonoBehaviour
     private IEnumerator StayColored()
     {
         yield return new WaitForSeconds(0.2f);
-        CollisionCount--;
+        m_CollisionCount--;
         HandleCollisionCountChanged();
     }
 }
