@@ -5,12 +5,11 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
 
-
 namespace Unity.Netcode.RuntimeTests
 {
     public struct FixedString32Struct : INetworkSerializable
     {
-        public FixedString32 FixedString;
+        public FixedString32Bytes FixedString;
         public void NetworkSerialize(NetworkSerializer serializer)
         {
             if (serializer.IsReading)
@@ -43,13 +42,9 @@ namespace Unity.Netcode.RuntimeTests
             serializer.Serialize(ref SomeBool);
         }
     }
+
     public class NetworkVariableTest : NetworkBehaviour
     {
-        public readonly ClientNetworkVariable<int> ClientVar = new ClientNetworkVariable<int>();
-
-        public readonly ClientNetworkVariable<int> ClientVarPrivate =
-            new ClientNetworkVariable<int>(NetworkVariableReadPermission.OwnerOnly);
-
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
@@ -232,38 +227,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
         }
 
-        [Test]
-        public void ServerWritePermissionTest([Values(true, false)] bool useHost)
-        {
-            m_TestWithHost = useHost;
-
-            // server must not be allowed to write to a client auth variable
-            Assert.Throws<InvalidOperationException>(() => m_Player1OnServer.ClientVar.Value = k_TestVal1);
-        }
-
-        [UnityTest]
-        public IEnumerator ClientTest([Values(true, false)] bool useHost)
-        {
-            m_TestWithHost = useHost;
-
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
-                    m_Player2OnClient2.ClientVar.Value = k_TestVal3;
-                },
-                () =>
-                {
-                    // the client's values should win on the objects it owns
-                    return
-                        m_Player1OnServer.ClientVar.Value == k_TestVal2 &&
-                        m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
-                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
-                        m_Player2OnClient2.ClientVar.Value == k_TestVal3;
-                }
-            );
-        }
-
         [UnityTest]
         public IEnumerator FixedString32StructTest([Values(true, false)] bool useHost)
         {
@@ -285,33 +248,6 @@ namespace Unity.Netcode.RuntimeTests
                     //  but the public variable everywhere
                     return
                         m_Player1OnClient1.FixedStringStruct.Value.FixedString == k_FixedStringTestValue;
-                }
-            );
-        }
-
-        [UnityTest]
-        public IEnumerator PrivateClientTest([Values(true, false)] bool useHost)
-        {
-            m_TestWithHost = useHost;
-
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    // we are writing to the private and public variables on player 1's object...
-                    m_Player1OnClient1.ClientVarPrivate.Value = k_TestVal1;
-                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
-                },
-                () =>
-                {
-                    // ...and we should see the writes to the private var only on the server & the owner,
-                    //  but the public variable everywhere
-                    return
-                        m_Player1OnClient2.ClientVarPrivate.Value != k_TestVal1 &&
-                        m_Player1OnClient1.ClientVarPrivate.Value == k_TestVal1 &&
-                        m_Player1OnClient2.ClientVar.Value != k_TestVal2 &&
-                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
-                        m_Player1OnServer.ClientVarPrivate.Value == k_TestVal1 &&
-                        m_Player1OnServer.ClientVar.Value == k_TestVal2;
                 }
             );
         }
