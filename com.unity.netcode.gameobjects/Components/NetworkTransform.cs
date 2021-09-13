@@ -604,9 +604,9 @@ namespace Unity.Netcode.Components
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void UpdateNetworkVariable()
+        protected void UpdateNetworkVariable()
         {
-            if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+            if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
                 ReplNetworkState.Value = LocalAuthoritativeNetworkState;
                 ReplNetworkState.SetDirty(true);
@@ -644,7 +644,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (IsServer)
+            if (CanWriteToTransform && IsServer)
             {
                 UpdateNetworkVariable();
             }

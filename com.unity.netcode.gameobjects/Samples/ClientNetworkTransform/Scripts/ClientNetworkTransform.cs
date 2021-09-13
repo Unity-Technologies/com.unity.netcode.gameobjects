@@ -22,10 +22,9 @@ namespace Unity.Netcode.Samples
         private void SubmitNetworkStateServerRpc(NetworkTransformState networkState)
         {
             LocalAuthoritativeNetworkState = networkState;
-
+            ReplNetworkState.Value = networkState;
+            ReplNetworkState.SetDirty(true);
             AddInterpolatedState(networkState);
-
-            // state application and state sending to other clients will be done in next update
         }
     }
 }
