@@ -11,7 +11,6 @@ namespace Unity.Netcode.Components
     [RequireComponent(typeof(NetworkTransform))]
     public class NetworkRigidbody2D : NetworkBehaviour
     {
-        private NetworkTransform m_NetworkTransform;
         private Rigidbody2D m_Rigidbody;
 
         private bool m_OriginalKinematic;
@@ -27,7 +26,6 @@ namespace Unity.Netcode.Components
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody2D>();
-            m_NetworkTransform = GetComponent<NetworkTransform>();
         }
 
         // Currently commented out because it is not needed as authority currently can't change at runtime.
@@ -44,7 +42,7 @@ namespace Unity.Netcode.Components
         // }
 
         // Puts the rigidbody in a kinematic non-interpolated mode on everyone but the server.
-        public void UpdateRigidbodyKinematicMode()
+        private void UpdateRigidbodyKinematicMode()
         {
             if (m_IsAuthority == false)
             {
@@ -62,6 +60,7 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
             m_IsAuthority = HasAuthority;
+            m_OriginalKinematic = m_Rigidbody.isKinematic;
             UpdateRigidbodyKinematicMode();
         }
 
