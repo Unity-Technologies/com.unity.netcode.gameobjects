@@ -11,9 +11,9 @@ namespace Unity.Netcode.Samples
             base.Update();
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+                if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
                 {
-                    SubmitNetworkStateServerRpc(LocalAuthoritativeNetworkState);
+                    SubmitNetworkStateServerRpc(m_LocalAuthoritativeNetworkState);
                 }
             }
         }
@@ -21,9 +21,9 @@ namespace Unity.Netcode.Samples
         [ServerRpc]
         private void SubmitNetworkStateServerRpc(NetworkTransformState networkState)
         {
-            LocalAuthoritativeNetworkState = networkState;
-            ReplNetworkState.Value = networkState;
-            ReplNetworkState.SetDirty(true);
+            m_LocalAuthoritativeNetworkState = networkState;
+            m_ReplicatedNetworkState.Value = networkState;
+            m_ReplicatedNetworkState.SetDirty(true);
             AddInterpolatedState(networkState);
         }
     }

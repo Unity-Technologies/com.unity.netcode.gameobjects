@@ -14,120 +14,120 @@ namespace Unity.Netcode.Components
     {
         public struct NetworkTransformState : INetworkSerializable
         {
-            internal const int InLocalSpaceBit = 0;
-            internal const int PositionXBit = 1;
-            internal const int PositionYBit = 2;
-            internal const int PositionZBit = 3;
-            internal const int RotAngleXBit = 4;
-            internal const int RotAngleYBit = 5;
-            internal const int RotAngleZBit = 6;
-            internal const int ScaleXBit = 7;
-            internal const int ScaleYBit = 8;
-            internal const int ScaleZBit = 9;
+            private const int k_InLocalSpaceBit = 0;
+            private const int k_PositionXBit = 1;
+            private const int k_PositionYBit = 2;
+            private const int k_PositionZBit = 3;
+            private const int k_RotAngleXBit = 4;
+            private const int k_RotAngleYBit = 5;
+            private const int k_RotAngleZBit = 6;
+            private const int k_ScaleXBit = 7;
+            private const int k_ScaleYBit = 8;
+            private const int k_ScaleZBit = 9;
 
             // 10-15: <unused>
-            public ushort Bitset;
+            private ushort m_Bitset;
 
             public bool InLocalSpace
             {
-                get => (Bitset & (1 << InLocalSpaceBit)) != 0;
+                get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << InLocalSpaceBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << InLocalSpaceBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_InLocalSpaceBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_InLocalSpaceBit));
                 }
             }
 
             // Position
             public bool HasPositionX
             {
-                get => (Bitset & (1 << PositionXBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionXBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << PositionXBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << PositionXBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionXBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionXBit));
                 }
             }
 
             public bool HasPositionY
             {
-                get => (Bitset & (1 << PositionYBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionYBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << PositionYBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << PositionYBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionYBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionYBit));
                 }
             }
 
             public bool HasPositionZ
             {
-                get => (Bitset & (1 << PositionZBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionZBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << PositionZBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << PositionZBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionZBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionZBit));
                 }
             }
 
             // RotAngles
             public bool HasRotAngleX
             {
-                get => (Bitset & (1 << RotAngleXBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleXBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleXBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleXBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleXBit));
                 }
             }
 
             public bool HasRotAngleY
             {
-                get => (Bitset & (1 << RotAngleYBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleYBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleYBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleYBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleYBit));
                 }
             }
 
             public bool HasRotAngleZ
             {
-                get => (Bitset & (1 << RotAngleZBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << RotAngleZBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << RotAngleZBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleZBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleZBit));
                 }
             }
 
             // Scale
             public bool HasScaleX
             {
-                get => (Bitset & (1 << ScaleXBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleXBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << ScaleXBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleXBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleXBit));
                 }
             }
 
             public bool HasScaleY
             {
-                get => (Bitset & (1 << ScaleYBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleYBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << ScaleYBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleYBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleYBit));
                 }
             }
 
             public bool HasScaleZ
             {
-                get => (Bitset & (1 << ScaleZBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
                 set
                 {
-                    if (value) Bitset = (ushort) (Bitset | (1 << ScaleZBit));
-                    else Bitset = (ushort) (Bitset & ~(1 << ScaleZBit));
+                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleZBit));
+                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleZBit));
                 }
             }
 
@@ -173,7 +173,7 @@ namespace Unity.Netcode.Components
             {
                 serializer.Serialize(ref SentTime);
                 // InLocalSpace + HasXXX Bits
-                serializer.Serialize(ref Bitset);
+                serializer.Serialize(ref m_Bitset);
                 // Position Values
                 if (HasPositionX)
                 {
@@ -247,6 +247,12 @@ namespace Unity.Netcode.Components
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
+        protected virtual bool CanWriteToTransform => IsServer;
+
+        protected readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        protected NetworkTransformState m_LocalAuthoritativeNetworkState;
+
+        private NetworkTransformState m_PrevNetworkState;
 
         private const int k_DebugDrawLineTime = 10;
 
@@ -262,23 +268,17 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
-        protected readonly NetworkVariable<NetworkTransformState> ReplNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
-        protected NetworkTransformState PrevNetworkState;
-        protected NetworkTransformState LocalAuthoritativeNetworkState;
-
-        protected virtual bool CanWriteToTransform => IsServer;
-
         public void ResetCurrentInterpolatedState()
         {
-            m_PositionXInterpolator.ResetTo(ReplNetworkState.Value.PositionX);
-            m_PositionYInterpolator.ResetTo(ReplNetworkState.Value.PositionY);
-            m_PositionZInterpolator.ResetTo(ReplNetworkState.Value.PositionZ);
+            m_PositionXInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionX);
+            m_PositionYInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionY);
+            m_PositionZInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionZ);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(ReplNetworkState.Value.Rotation));
+            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_ReplicatedNetworkState.Value.Rotation));
 
-            m_ScaleXInterpolator.ResetTo(ReplNetworkState.Value.ScaleX);
-            m_ScaleYInterpolator.ResetTo(ReplNetworkState.Value.ScaleY);
-            m_ScaleZInterpolator.ResetTo(ReplNetworkState.Value.ScaleZ);
+            m_ScaleXInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleX);
+            m_ScaleYInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleY);
+            m_ScaleZInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleZ);
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
@@ -398,9 +398,9 @@ namespace Unity.Netcode.Components
             return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
         }
 
-        protected void ApplyNetworkStateFromAuthority(NetworkTransformState networkState)
+        private void ApplyNetworkStateFromAuthority(NetworkTransformState networkState)
         {
-            PrevNetworkState = networkState;
+            m_PrevNetworkState = networkState;
 
             var interpolatedPosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var interpolatedRotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
@@ -467,7 +467,7 @@ namespace Unity.Netcode.Components
                     m_Transform.position = interpolatedPosition;
                 }
 
-                PrevNetworkState.Position = interpolatedPosition;
+                m_PrevNetworkState.Position = interpolatedPosition;
             }
 
             // RotAngles Apply
@@ -482,7 +482,7 @@ namespace Unity.Netcode.Components
                     m_Transform.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
 
-                PrevNetworkState.Rotation = interpolatedRotAngles;
+                m_PrevNetworkState.Rotation = interpolatedRotAngles;
             }
 
             // Scale Apply
@@ -500,7 +500,7 @@ namespace Unity.Netcode.Components
                     m_Transform.localScale = new Vector3(networkState.ScaleX / lossyScale.x, networkState.ScaleY / lossyScale.y, networkState.ScaleZ / lossyScale.z);
                 }
 
-                PrevNetworkState.Scale = interpolatedScale;
+                m_PrevNetworkState.Scale = interpolatedScale;
             }
         }
 
@@ -586,7 +586,7 @@ namespace Unity.Netcode.Components
                 UpdateNetworkVariable();
             }
 
-            ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
         public override void OnNetworkSpawn()
@@ -595,21 +595,21 @@ namespace Unity.Netcode.Components
             {
                 ResetCurrentInterpolatedState(); // useful for late joining
 
-                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+                ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
             }
         }
 
         private void OnDestroy()
         {
-            ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        protected void UpdateNetworkVariable()
+        private void UpdateNetworkVariable()
         {
-            if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+            if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
-                ReplNetworkState.Value = LocalAuthoritativeNetworkState;
-                ReplNetworkState.SetDirty(true);
+                m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                m_ReplicatedNetworkState.SetDirty(true);
             }
         }
 
@@ -625,14 +625,14 @@ namespace Unity.Netcode.Components
             // we apply the latest ReplNetworkState again to revert our changes
             if (!CanWriteToTransform)
             {
-                var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref PrevNetworkState, 0);
+                var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref m_PrevNetworkState, 0);
                 if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                 {
                     // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                     // from an unauthorized transform change or euler to quaternion conversion artifacts.
                     var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                     Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
-                    ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+                    ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
                 }
             }
         }
@@ -665,7 +665,7 @@ namespace Unity.Netcode.Components
                     Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
                 }
 
-                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+                ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
             }
         }
 

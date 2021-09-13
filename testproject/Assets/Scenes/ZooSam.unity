@@ -1363,7 +1363,7 @@ MonoBehaviour:
   RotAngleThreshold: 0
   ScaleThreshold: 0
   InLocalSpace: 0
-  Interpolate: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!114 &108150033
 MonoBehaviour:
