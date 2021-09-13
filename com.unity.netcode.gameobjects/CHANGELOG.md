@@ -20,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
 - Added `SnapshotSystem`. This internal system will allow variables and (de)spawn commands to be sent in blocks. Will leverage unreliable messages and offer efficient transfer with eventual consistency. Off by default for now and only implemented for spawns and despawns.
 - NetworkBehaviour and NetworkObject NetworkManager instance can now be overriden (#762)
+- Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
 
 ### Changed
 
@@ -65,6 +66,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Scene Registrations no longer exists
   - Allow Runtime Scene Changes was no longer needed and was removed
 - Removed the NetworkObject.Spawn payload parameter (#1005)
+- Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
 
 ### Fixed
 - Fixed parenting not being preserved during scene transitions (#1148)
@@ -96,35 +98,23 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### TODO
 
-- [96309fb7] (2021-08-31) Benoit Doyon / Add metrics for transport bytes sent and received (#1104)
+
 - [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
 - [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
-- [75609cd1] (2021-08-31) Benoit Doyon / feat: Change MetricNames for a more complex value type (#1109)
-- [7fbc65cb] (2021-08-31) Josie Messa / feat: Track scene event metrics (#1089)
-- [bef00ff6] (2021-08-27) JS Fauteux / fix: MTT-1124 Counters are now reported in sync with other metrics (#1096)
-- [4dfc7601] (2021-08-27) becksebenius-unity / chore: updated all of the namespaces to match the tools package change (#1095)
 - [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
-- [f733bec4] (2021-08-25) becksebenius-unity / feat: fulfilling interface for tools to find network objects from an id (#1086)
 - [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
 - [611678a2] (2021-08-25) Matt Walsh / feat!: network variables - client auth, permission cleanup, containers (#1074)
-- [fd44d53a] (2021-08-24) Benoit Doyon / feat: Add a test to validate registration of metric types (#1072)
 - [93c8db00] (2021-08-24) Jesse Olmer / chore!: Remove unsupported UNET Relay behavior (MTT-1000) (#1081)
-- [94a4bf68] (2021-08-23) becksebenius-unity / fix: 2+ inheritance from network behaviour causes compilation exception (#1078) (#1079)
 - [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
 - [0d956059] (2021-08-19) Luke Stampfli / fix: networkmanager destroy on app quit (#1011)
-- [43d4494c] (2021-08-18) becksebenius-unity / feat: report network behaviour name to the profiler (#1058)
 - [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTime properties (#1053)
-- [24cebfb2] (2021-08-17) becksebenius-unity / feat: expose network behaviour type name internally (#1057)
-- [fffc11f2] (2021-08-16) becksebenius-unity / chore: remove all the old profiling code (#1048)
 - [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
-- [6b58eeb0] (2021-08-11) becksebenius-unity / feat: Implement metrics for the new network profiler (#960)
 - [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
 - [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTimeField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
 - [1da76b29] (2021-08-05) Matt Walsh / fix!: added plainly-callable Add() method to NetworkSet [MTT-1005] (#1022)
 - [5b9f953b] (2021-08-04) Matt Walsh / test: add network collections, struct and class tests MTT-936 (#1000)
 - [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
 - [cbe74c2e] (2021-07-30) Luke Stampfli / fix: Client throw exception when destroying spawned object (invalid operation) (#981)
-- [4b900723] (2021-07-29) Benoit Doyon / fix: Fix named message stream copy to (#987)
 - [c25821d2] (2021-07-27) Jaedyn Draper / fix: Fixes for a few things discovered from the message ordering refactor: (#985)
 - [4fad5915] (2021-07-27) Phil Deschain / fix: Network animator server authority fixes (#972)
 - [82e1c33e] (2021-07-26) Luke Stampfli / fix: Remove assert which is currently broken (#984)
@@ -143,14 +133,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [e122376f] (2021-06-29) Sam Bellomo / refactor: move NetworkBehaviour update to a separate non-static class (#917)
 - [0855557e] (2021-06-29) Sam Bellomo / test: add utils for multi instance tests (#914)
 - [9a47c661] (2021-06-29) Sam Bellomo / test: downgrading testproject to 2020.3.12f1 (#927)
-- [27112250] (2021-06-29) Josie Messa / chore: Change function signature of OnDespawnObject to accept NetworkObject (#928)
 - [f14de778] (2021-06-28) James / fix: Empty prefab removal (#919)
 - [459c041c] (2021-06-14) Luke Stampfli / feat!: OnNetworkSpawn / OnNetworkDespawn (#865)
-- [376ed36b] (2021-06-10) Benoit Doyon / feat: Add missing XMLdoc comment (#897)
-- [28e1d85c] (2021-06-09) Benoit Doyon / feat: Add name property for network variables (#891)
 - [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
 - [3e96cf95] (2021-06-08) Jean-Sébastien Fauteux / feat: Add RPC Name Lookup Table Provided by NetworkBehaviourILPP (#875)
-- [59994781] (2021-06-04) Benoit Doyon / feat: Add profiling decorator pattern (#878)
 - [3495445e] (2021-06-03) Jesse Olmer / fix: update package version to 0.2.0 because of unity minversion change (#881)
 - [0444c039] (2021-06-02) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
 - [fa15fc6f] (2021-06-01) Jesse Olmer / docs: Fix typo in changelog version title
@@ -158,7 +144,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [39b56366] (2021-06-01) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
 - [22c8db80] (2021-05-24) Matt Walsh / refactor!: tick param removal (#853)
 - [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
-
 - [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
 - [e2b17b10] (2021-05-21) Samuel Bellomo / some cleanup
@@ -178,22 +163,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [0f7d388b] (2021-04-14) Jesse Olmer / Merge tag '0.1.0' into develop
 - [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
 - [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
-- [d9969907] (2021-04-07) kvassall-unity / chore: add CODEOWNERS (#697)
 - [e9c826fc] (2021-03-27) Sean Stolberg / ci: streamline PR and nightly CI jobs (#671)
-- [1e650bbb] (2021-03-25) kvassall-unity / Merge pull request #646 from Unity-Technologies/feature/initial_barebones_proflier_test
-- [bee8bcaa] (2021-03-25) kvassall-unity / More PR feedback
-- [93437ad1] (2021-03-25) kvassall-unity / More PR feedback
-- [bcd35b96] (2021-03-24) kvassall-unity / Merge branch 'develop' into feature/initial_barebones_proflier_test
-- [537067cc] (2021-03-23) kvassall-unity / Cleaning up the tests some more
-- [749a9459] (2021-03-22) kvassall-unity / Updating to make tests more explicit on the type of things we should be testing
-- [fdeb073c] (2021-03-22) kvassall-unity / Hooking the Network manager up to the ProfilerNotifier
-- [d549d4c6] (2021-03-19) kvassall-unity / Updating to have a more testable interface and have reusable code that MLAPI could use directly
-- [551c3536] (2021-03-18) kvassall-unity / test: Building out a test to get some surface coverage of the mlapi profiler functionality
 - [5a5fc055] (2021-03-23) Matt Walsh / Merge pull request #651 from Unity-Technologies/fix/destroyobjectspam
 - [22523476] (2021-03-16) Sean Stolberg / ci: Add code coverage that depends on the pack job (#633)
 - [8619b338] (2021-03-16) Matt Walsh / Merge pull request #623 from Unity-Technologies/tmp/release-to-develop-mergeback
 - [ef830abe] (2021-03-15) Matt Walsh / Merge remote-tracking branch 'origin/release/0.1.0' into tmp/release-to-develop-mergeback
-- [992354e0] (2021-03-11) kvassall-unity / fix: prevent OnPerformanceTickData from sending data on null (#586)
 - [26ffe4bd] (2021-03-09) Matt Walsh / chore: merge release0.1.0 back to mainline (#575)
 - [caff1f6b] (2021-03-04) Matt Walsh / revert: Add NetworkAddress and NetworkPort properties to Transport. (#512) (#530)
 
