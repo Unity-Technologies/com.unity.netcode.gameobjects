@@ -28,15 +28,12 @@ public class ConnectionModeScript : MonoBehaviour
 
     private CommandLineProcessor m_CommandLineProcessor;
 
-    private bool m_UsingRelay = false;
-
-#if ENABLE_RELAY_SERVICE
+    //[NSS] This is never used?  Do we need it still?
     [SerializeField]
     private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
 
     [HideInInspector]
     public string RelayJoinCode { get; set; }
-#endif
 
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
@@ -72,10 +69,14 @@ public class ConnectionModeScript : MonoBehaviour
         yield return null;
     }
 
+    /// <summary>
+    /// Check whether we are even using UnityTransport and
+    /// if so whether it is using the RelayUnityTransport
+    /// </summary>
     private bool HasRelaySupport()
     {
-        var hasUnityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        if (hasUnityTransport != null && hasUnityTransport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        var unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        if (unityTransport != null && unityTransport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
         {
             return true;
         }
@@ -88,10 +89,9 @@ public class ConnectionModeScript : MonoBehaviour
         //If we have a NetworkManager instance and we are not listening and m_ConnectionModeButtons is not null then show the connection mode buttons
         if (m_ConnectionModeButtons && m_AuthenticationButtons)
         {
-#if ENABLE_RELAY_SERVICE
+
             if (HasRelaySupport())
             {
-                m_UsingRelay = true;
                 m_JoinCodeInput.SetActive(true);
                 //If Start() is called on the first frame update, it's not likely that the AuthenticationService is going to be instantiated yet
                 //Moved old logic for this out to OnServicesInitialized
@@ -99,7 +99,6 @@ public class ConnectionModeScript : MonoBehaviour
                 m_AuthenticationButtons.SetActive(true);
             }
             else
-#endif
             {
 
                 m_JoinCodeInput.SetActive(false);
@@ -111,14 +110,12 @@ public class ConnectionModeScript : MonoBehaviour
 
     private void OnServicesInitialized()
     {
-#if ENABLE_RELAY_SERVICE
         if (HasRelaySupport())
         {
             m_JoinCodeInput.SetActive(true);
             m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
             m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
         }
-#endif
     }
 
     /// <summary>
@@ -266,12 +263,13 @@ public class ConnectionModeScript : MonoBehaviour
 #endif
     }
 
+    //[NSS]- Is this still being used?  There are no references to it anywhere.
+#if ENABLE_RELAY_SERVICE
     /// <summary>
     /// Handles authenticating UnityServices, needed for Relay
     /// </summary>
     public async void OnSignIn()
     {
-#if ENABLE_RELAY_SERVICE
         await UnityServices.InitializeAsync();
         OnServicesInitialized();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -283,8 +281,8 @@ public class ConnectionModeScript : MonoBehaviour
             m_ConnectionModeButtons.SetActive(true);
             m_AuthenticationButtons.SetActive(false);
         }
-#endif
     }
+#endif
 
     public void Reset()
     {
