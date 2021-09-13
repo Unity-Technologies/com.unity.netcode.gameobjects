@@ -4,15 +4,15 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// NetworkRigidbody allows for the use of <see cref="Rigidbody"/> on network objects. By controlling the kinematic
+    /// NetworkRigidbody allows for the use of <see cref="Rigidbody2D"/> on network objects. By controlling the kinematic
     /// mode of the rigidbody and disabling it on all peers but the authoritative one.
     /// </summary>
-    [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(NetworkTransform))]
-    public class NetworkRigidbody : NetworkBehaviour
+    public class NetworkRigidbody2D : NetworkBehaviour
     {
         private NetworkTransform m_NetworkTransform;
-        private Rigidbody m_Rigidbody;
+        private Rigidbody2D m_Rigidbody;
 
         private bool m_OriginalKinematic;
 
@@ -20,13 +20,13 @@ namespace Unity.Netcode.Components
         private bool m_IsAuthority;
 
         /// <summary>
-        /// Gets a bool value indicating whether this <see cref="NetworkRigidbody"/> on this peer currently holds authority.
+        /// Gets a bool value indicating whether this <see cref="NetworkRigidbody2D"/> on this peer currently holds authority.
         /// </summary>
         internal bool HasAuthority => NetworkManager.IsServer; // TODO update this once we support owner authoritative NetworkTransform.
 
         private void Awake()
         {
-            m_Rigidbody = GetComponent<Rigidbody>();
+            m_Rigidbody = GetComponent<Rigidbody2D>();
             m_NetworkTransform = GetComponent<NetworkTransform>();
         }
 
