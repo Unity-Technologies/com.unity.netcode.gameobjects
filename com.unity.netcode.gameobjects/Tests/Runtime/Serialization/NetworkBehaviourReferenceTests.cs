@@ -18,12 +18,12 @@ namespace Unity.Netcode.RuntimeTests.Serialization
         {
             public NetworkVariable<NetworkBehaviourReference> TestVariable = new NetworkVariable<NetworkBehaviourReference>();
 
-            public TestNetworkBehaviour rpcReceivedBehaviour;
+            public TestNetworkBehaviour RpcReceivedBehaviour;
 
             [ServerRpc]
             public void SendReferenceServerRpc(NetworkBehaviourReference value)
             {
-                rpcReceivedBehaviour = (TestNetworkBehaviour)value;
+                RpcReceivedBehaviour = (TestNetworkBehaviour)value;
             }
         }
 
@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests.Serialization
 
             // wait for rpc completion
             float t = 0;
-            while (testNetworkBehaviour.rpcReceivedBehaviour == null)
+            while (testNetworkBehaviour.RpcReceivedBehaviour == null)
             {
                 t += Time.deltaTime;
                 if (t > 5f)
@@ -53,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             }
 
             // validate
-            Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.rpcReceivedBehaviour);
+            Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
         }
 
         [Test]
