@@ -43,7 +43,7 @@ namespace TestProject.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single,LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
+        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = "AdditiveScene1";
