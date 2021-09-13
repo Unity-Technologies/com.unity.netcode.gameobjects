@@ -8,9 +8,9 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
-    public class NetworkList<T> : NetworkVariableBase, IList<T> where T : unmanaged
+    public class NetworkList<T> : NetworkVariableBase where T : unmanaged
     {
-        private readonly IList<T> m_List = new List<T>();
+        private readonly List<T> m_List = new List<T>();
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkList</param>
         /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm, IList<T> value) : base(readPerm)
+        public NetworkList(NetworkVariableReadPermission readPerm, List<T> value) : base(readPerm)
         {
             m_List = value;
         }
@@ -49,7 +49,7 @@ namespace Unity.Netcode
         /// Creates a NetworkList with a custom value and the default settings
         /// </summary>
         /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(IList<T> value)
+        public NetworkList(List<T> value)
         {
             m_List = value;
         }
@@ -315,11 +315,6 @@ namespace Unity.Netcode
             return m_List.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)m_List).GetEnumerator();
-        }
-
         /// <inheritdoc />
         public void Add(T item)
         {
@@ -377,9 +372,6 @@ namespace Unity.Netcode
 
         /// <inheritdoc />
         public int Count => m_List.Count;
-
-        /// <inheritdoc />
-        public bool IsReadOnly => m_List.IsReadOnly;
 
         /// <inheritdoc />
         public int IndexOf(T item)
