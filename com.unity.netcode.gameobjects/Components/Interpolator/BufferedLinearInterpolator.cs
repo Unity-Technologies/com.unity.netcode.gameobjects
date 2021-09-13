@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BufferedLinearInterpolator<T> where T : struct
+    internal abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
@@ -177,7 +177,7 @@ namespace Unity.Netcode
         // protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
     }
 
-    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
@@ -192,7 +192,7 @@ namespace Unity.Netcode
         // protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
-    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
