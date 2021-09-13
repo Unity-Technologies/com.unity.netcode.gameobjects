@@ -12,8 +12,8 @@ namespace Unity.Netcode.RuntimeTests
     {
         // For tests using multiple clients.
         private const int k_NumClients = 5;
-        private UTPTransport m_Server;
-        private UTPTransport[] m_Clients = new UTPTransport[k_NumClients];
+        private UnityTransport m_Server;
+        private UnityTransport[] m_Clients = new UnityTransport[k_NumClients];
         private List<TransportEvent> m_ServerEvents;
         private List<TransportEvent>[] m_ClientsEvents = new List<TransportEvent>[k_NumClients];
 

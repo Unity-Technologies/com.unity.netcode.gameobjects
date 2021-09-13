@@ -79,7 +79,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons && m_AuthenticationButtons)
         {
 #if ENABLE_RELAY_SERVICE
-            if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
+            if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
             {
                 m_UsingRelay = true;
                 m_JoinCodeInput.SetActive(true);
@@ -101,7 +101,7 @@ public class ConnectionModeScript : MonoBehaviour
     private void OnServicesInitialized()
     {
 #if ENABLE_RELAY_SERVICE
-        if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
+        if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
         {
             m_JoinCodeInput.SetActive(true);
             m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
@@ -160,7 +160,7 @@ public class ConnectionModeScript : MonoBehaviour
         RelayJoinCode = joinCode;
 
         //When starting a relay server, both instances of connection data are identical.
-        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData);
+        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData);
 
         postAllocationAction();
 #else
@@ -243,7 +243,7 @@ public class ConnectionModeScript : MonoBehaviour
         var (ipv4address, port, allocationIdBytes, connectionData, hostConnectionData, key) = clientRelayUtilityTask.Result;
 
         //When connecting as a client to a relay server, connectionData and hostConnectionData are different.
-        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData, hostConnectionData);
+        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData, hostConnectionData);
 
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();

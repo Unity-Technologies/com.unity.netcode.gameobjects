@@ -12,12 +12,12 @@ public class UIController : MonoBehaviour
     public GameObject AuthButton;
     public GameObject JoinCode;
 
-    public UTPTransport Transport;
+    public UnityTransport Transport;
 
     private void Awake()
     {
 #if ENABLE_RELAY_SERVICE
-        if (Transport.Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
+        if (Transport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
         {
             HideButtons();
             JoinCode.SetActive(false);

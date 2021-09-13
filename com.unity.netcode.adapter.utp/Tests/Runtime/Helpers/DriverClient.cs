@@ -9,8 +9,8 @@ using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
-    // Thin wrapper around a UTP NetworkDriver that can act as a client to a UTPTransport server.
-    // In particular that means the pipelines are set up the same way as in UTPTransport.
+    // Thin wrapper around a UTP NetworkDriver that can act as a client to a UnityTransport server.
+    // In particular that means the pipelines are set up the same way as in UnityTransport.
     //
     // The only reason it's defined as a MonoBehaviour is that OnDestroy is the only reliable way
     // to get the driver's Dispose method called from a UnityTest. Making it disposable would be
@@ -35,7 +35,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         private void Awake()
         {
-            var maxCap = UTPTransport.MaximumMessageLength + 128;
+            var maxCap = UnityTransport.MaximumMessageLength + 128;
             var fragParams = new FragmentationUtility.Parameters() { PayloadCapacity = maxCap };
 
             m_Driver = NetworkDriver.Create(fragParams);

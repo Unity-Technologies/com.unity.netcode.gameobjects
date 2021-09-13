@@ -12,7 +12,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class TransportTests
     {
-        private UTPTransport m_Server, m_Client1, m_Client2;
+        private UnityTransport m_Server, m_Client1, m_Client2;
         private List<TransportEvent> m_ServerEvents, m_Client1Events, m_Client2Events;
 
         [UnityTearDown]

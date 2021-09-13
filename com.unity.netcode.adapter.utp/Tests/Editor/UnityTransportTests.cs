@@ -9,7 +9,7 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void BasicInitServer()
         {
-            UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             var tasks = transport.StartServer();
@@ -22,7 +22,7 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void BasicInitClient()
         {
-            UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             var tasks = transport.StartClient();
@@ -35,7 +35,7 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void NoRestartServer()
         {
-            UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             transport.StartServer();
@@ -49,7 +49,7 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void NoRestartClient()
         {
-            UTPTransport transport = new GameObject().AddComponent<UTPTransport>();
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             transport.StartClient();
@@ -63,11 +63,11 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void NotBothServerAndClient()
         {
-            UTPTransport transport;
+            UnityTransport transport;
             SocketTasks tasks;
 
             // Start server then client.
-            transport = new GameObject().AddComponent<UTPTransport>();
+            transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             transport.StartServer();
@@ -77,7 +77,7 @@ namespace Unity.Netcode.UTP.EditorTests
             transport.Shutdown();
 
             // Start client then server.
-            transport = new GameObject().AddComponent<UTPTransport>();
+            transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             transport.StartClient();
