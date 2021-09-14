@@ -241,12 +241,6 @@ namespace Unity.Netcode.Components
 
         public bool Interpolate = true;
 
-        /// <summary>
-        /// The base amount of sends per seconds to use when range is disabled
-        /// </summary>
-        [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
-        public float FixedSendsPerSecond = 30f;
-
         protected virtual bool CanWriteToTransform => IsServer;
 
         protected readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
@@ -255,6 +249,8 @@ namespace Unity.Netcode.Components
         private NetworkTransformState m_PrevNetworkState;
 
         private const int k_DebugDrawLineTime = 10;
+
+        private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
         private BufferedLinearInterpolator<float> m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
@@ -294,10 +290,10 @@ namespace Unity.Netcode.Components
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
-            bool isDirty = false;
-            bool isPositionDirty = false;
-            bool isRotationDirty = false;
-            bool isScaleDirty = false;
+            var isDirty = false;
+            var isPositionDirty = false;
+            var isRotationDirty = false;
+            var isScaleDirty = false;
 
             // hasPositionZ set to false when it should be true?
 
@@ -618,7 +614,6 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private bool hasSentLastValue = false;
         private void UpdateNetworkVariable()
         {
             if (CanWriteToTransform)
@@ -633,17 +628,18 @@ namespace Unity.Netcode.Components
                     m_ReplicatedNetworkState.SetDirty(true);
                     AddInterpolatedState(m_LocalAuthoritativeNetworkState);
                 }
+
                 var isDirty = UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
                 if (isDirty)
                 {
                     Send();
-                    hasSentLastValue = false;
+                    m_HasSentLastValue = false;
                 }
-                else if (!hasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
+                else if (!m_HasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
                 {
                     m_LocalAuthoritativeNetworkState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
                     Send();
-                    hasSentLastValue = true;
+                    m_HasSentLastValue = true;
                 }
             }
         }
