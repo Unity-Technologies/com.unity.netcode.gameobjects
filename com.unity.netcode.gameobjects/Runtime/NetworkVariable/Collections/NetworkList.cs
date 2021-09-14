@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
@@ -35,6 +34,7 @@ namespace Unity.Netcode
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkList</param>
+        /// <param name="values">The initial value to use for the NetworkList</param>
         public NetworkList(NetworkVariableReadPermission readPerm, IEnumerable<T> values) : base(readPerm)
         {
             foreach (var value in values)
