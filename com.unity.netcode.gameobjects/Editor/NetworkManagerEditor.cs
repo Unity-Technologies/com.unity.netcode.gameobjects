@@ -208,7 +208,7 @@ namespace Unity.Netcode.Editor
             CheckNullProperties();
 
 #if !MULTIPLAYER_TOOLS
-            DrawMultiplayerToolsInfoTip();
+            DrawInstallMultiplayerToolsTip();
 #endif
 
             {
@@ -365,7 +365,7 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        void DrawMultiplayerToolsInfoTip()
+        void DrawInstallMultiplayerToolsTip()
         {
             const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
