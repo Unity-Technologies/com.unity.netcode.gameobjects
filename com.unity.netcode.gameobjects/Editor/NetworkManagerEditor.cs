@@ -394,7 +394,7 @@ namespace Unity.Netcode.Editor
             const float boxMargin = 4f;
             float boxHeight = buttonHeight * 2 + elementMargin + boxMargin * 2 + boxPadding * 2;
 
-            const string getToolsText = "Get access to additional tools for multiplayer development by installing the Multiplayer Tools package in the package manager.";
+            const string getToolsText = "Get access to additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
             const string dismissButtonText = "Dismiss";
             const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
