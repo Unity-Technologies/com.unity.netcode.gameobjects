@@ -360,10 +360,10 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.IsTrue(m_Player1OnServer.TheList.Count == 3);
 
-            int now = 0;
+            int index = 0;
             foreach (var val in m_Player1OnServer.TheList)
             {
-                if (val != correctVals[now++])
+                if (val != correctVals[index++])
                 {
                     Assert.Fail();
                 }
