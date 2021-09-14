@@ -193,16 +193,6 @@ namespace Unity.Netcode
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream)
         {
-            if (!NetworkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Network variable delta received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
-                }
-
-                return;
-            }
-
             using var reader = PooledNetworkReader.Get(stream);
             ulong networkObjectId = reader.ReadUInt64Packed();
             ushort networkBehaviourIndex = reader.ReadUInt16Packed();
