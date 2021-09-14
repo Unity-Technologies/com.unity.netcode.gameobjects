@@ -10,7 +10,7 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
-        internal const string k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
+        internal const string installMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
 
@@ -358,7 +358,7 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        void DrawInstallMultiplayerToolsTip()
+        private static void DrawInstallMultiplayerToolsTip()
         {
             const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
@@ -366,7 +366,7 @@ namespace Unity.Netcode.Editor
             const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
             const string infoIconName = "console.infoicon";
 
-            if (PlayerPrefs.GetInt(k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey, 0) != 0)
+            if (PlayerPrefs.GetInt(installMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)
             {
                 return;
             }
@@ -412,7 +412,7 @@ namespace Unity.Netcode.Editor
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
                 {
-                    PlayerPrefs.SetInt(k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey, 1);
+                    PlayerPrefs.SetInt(installMultiplayerToolsTipDismissedPlayerPrefKey, 1);
                 }
                 EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
                 GUILayout.FlexibleSpace();

@@ -7,9 +7,9 @@ namespace Unity.Netcode.EditorTests
     static class UITestHelpers
     {
         [MenuItem("Netcode/UI/Reset Multiplayer Tools Tip Status")]
-        static void ResetMultiplayerToolsTipStatus()
+        private static void ResetMultiplayerToolsTipStatus()
         {
-            PlayerPrefs.DeleteKey(NetworkManagerEditor.k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey);
+            PlayerPrefs.DeleteKey(NetworkManagerEditor.installMultiplayerToolsTipDismissedPlayerPrefKey);
         }
     }
 }
