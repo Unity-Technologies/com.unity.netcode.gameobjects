@@ -852,6 +852,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkVariablesDirty()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.MarkVariablesDirty();
+            }
+        }
+
         internal void SetNetworkVariableData(Stream stream)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
