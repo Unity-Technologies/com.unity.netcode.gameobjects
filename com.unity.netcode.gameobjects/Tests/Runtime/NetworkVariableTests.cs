@@ -80,22 +80,12 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_TestVal3 = 333;
 
         private const int k_TestKey1 = 0x0f0f;
-        private const int k_TestKey2 = 0xf0f0;
 
         // Player1 component on the server
         private NetworkVariableTest m_Player1OnServer;
 
-        // Player2 component on the server
-        private NetworkVariableTest m_Player2OnServer;
-
         // Player1 component on client1
         private NetworkVariableTest m_Player1OnClient1;
-
-        // Player2 component on client1
-        private NetworkVariableTest m_Player2OnClient2;
-
-        // client2's version of client1's player object
-        private NetworkVariableTest m_Player1OnClient2;
 
         private bool m_TestWithHost;
 
@@ -116,32 +106,12 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager, result));
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
-                m_ServerNetworkManager, result));
-            m_Player2OnServer = result.Result.GetComponent<NetworkVariableTest>();
-
             // This is client1's view of itself
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], result));
 
             m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
-
-            // This is client2's view of itself
-            result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
-                m_ClientNetworkManagers[1], result));
-
-            m_Player2OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
-
-            // This is client2's view of client 1's object
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ClientNetworkManagers[1], result));
-
-            m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();
 
