@@ -1171,7 +1171,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_SceneMenuToLoad
       value: 
-      objectReference: {fileID: 11400000, guid: c10d995498e0c514a853c3506031d3fb,
+      objectReference: {fileID: 11400000, guid: 4a3cdce12e998384f8aca207b5a2c700,
         type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3200770c16e3b2b4ebe7f604154faac7, type: 3}
@@ -3023,7 +3023,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_SceneMenuToLoad
       value: 
-      objectReference: {fileID: 11400000, guid: c10d995498e0c514a853c3506031d3fb,
+      objectReference: {fileID: 11400000, guid: 4a3cdce12e998384f8aca207b5a2c700,
         type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3200770c16e3b2b4ebe7f604154faac7, type: 3}
