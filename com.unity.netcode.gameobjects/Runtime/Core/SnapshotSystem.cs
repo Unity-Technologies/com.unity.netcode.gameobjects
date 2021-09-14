@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using PlasticGui.Configuration;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -409,6 +406,7 @@ namespace Unity.Netcode
                             fixed (byte* buffer = RecvBuffer)
                             {
                                 var reader = new FastBufferReader(buffer, Collections.Allocator.None, RecvBuffer.Length);
+#pragma warning disable CS0728 // Warns that reader may be reassigned within ReadDelta, but ReadDelta does not reassign it.
                                 using (reader)
                                 {
                                     reader.Seek(Entries[pos].Position);
@@ -417,6 +415,7 @@ namespace Unity.Netcode
                                     // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
                                     networkVariable.ReadDelta(ref reader, false);
                                 }
+#pragma warning restore CS0728 // Warns that reader may be reassigned within ReadDelta, but ReadDelta does not reassign it.
                             }
                         }
                     }
@@ -946,6 +945,7 @@ namespace Unity.Netcode
         {
             // write var into buffer, possibly adjusting entry's position and Length
             var varBuffer = new FastBufferWriter(1300, Allocator.Temp);
+#pragma warning disable CS0728 // Warns that varBuffer may be reassigned within ReadDelta, but ReadDelta does not reassign it.
             using (varBuffer)
             {
                 networkVariable.WriteDelta(ref varBuffer);
@@ -960,6 +960,7 @@ namespace Unity.Netcode
                     UnsafeUtility.MemCpy(buffer + snapshot.Entries[index].Position, varBuffer.GetUnsafePtr(), varBuffer.Length);
                 }
             }
+#pragma warning restore CS0728 // Warns that varBuffer may be reassigned within ReadDelta, but ReadDelta does not reassign it.
         }
 
 

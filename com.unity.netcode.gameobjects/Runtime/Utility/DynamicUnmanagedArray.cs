@@ -48,7 +48,7 @@ namespace Unity.Netcode
         {
             m_Capacity *= 2;
             var data = (T*)UnsafeUtility.Malloc(m_Capacity * sizeof(T), UnsafeUtility.AlignOf<T>(), m_Allocator);
-            UnsafeUtility.MemCpy(data, m_Data, m_Length);
+            UnsafeUtility.MemCpy(data, m_Data, m_Length*sizeof(T));
             UnsafeUtility.Free(m_Data, m_Allocator);
             m_Data = data;
         }

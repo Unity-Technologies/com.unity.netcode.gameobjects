@@ -227,8 +227,8 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Check to make sure all clients are connected
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
-            Assert.True(m_ClientConnectedInvocations == 3);
-            Assert.True(m_ServerClientConnectedInvocations == 4);
+            Assert.AreEqual(3, m_ClientConnectedInvocations);
+            Assert.AreEqual(4, m_ServerClientConnectedInvocations);
         }
 
         private void Client_OnClientConnectedCallback(ulong clientId)

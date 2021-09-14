@@ -475,7 +475,7 @@ namespace Unity.Netcode
                             // We store off the trailing in-scene placed serialized NetworkObject data to
                             // be processed once we are done loading.
                             m_HasInternalBuffer = true;
-                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, reader.Length + reader.Position);
+                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, reader.Length - reader.Position);
                         }
                         break;
                     }
@@ -531,7 +531,7 @@ namespace Unity.Netcode
             try
             {
                 // is not packed!
-                InternalBuffer.ReadValueSafe(out uint newObjectsCount);
+                InternalBuffer.ReadValueSafe(out ushort newObjectsCount);
             
                 for (ushort i = 0; i < newObjectsCount; i++)
                 {
@@ -738,7 +738,7 @@ namespace Unity.Netcode
             ClientsCompleted = new List<ulong>();
             for (int i = 0; i < completedCount; i++)
             {
-                reader.ReadValue(out ulong clientId);
+                reader.ReadValueSafe(out ulong clientId);
                 ClientsCompleted.Add(clientId);
             }
 
@@ -746,7 +746,7 @@ namespace Unity.Netcode
             ClientsTimedOut = new List<ulong>();
             for (int i = 0; i < timedOutCount; i++)
             {
-                reader.ReadValue(out ulong clientId);
+                reader.ReadValueSafe(out ulong clientId);
                 ClientsTimedOut.Add(clientId);
             }
         }

@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NamedMessageIsReceivedOnClientWithContent()
         {
             var messageName = Guid.NewGuid().ToString();
-            var messageContent = Guid.NewGuid().ToString();
+            var messageContent = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -53,9 +53,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NamedMessageIsReceivedOnMultipleClientsWithContent()
         {
             var messageName = Guid.NewGuid().ToString();
-            var messageContent = Guid.NewGuid().ToString();
-            using var messageStream = new MemoryStream(Encoding.UTF8.GetBytes(messageContent));
-            
+            var messageContent = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {

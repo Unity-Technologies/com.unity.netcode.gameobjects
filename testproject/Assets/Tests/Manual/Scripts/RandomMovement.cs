@@ -4,26 +4,6 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
-    class Foo
-    {
-        public int I;
-    }
-
-    static class FastBufferWriterExtensions
-    {
-        public static void WriteValueSafe(this ref FastBufferWriter writer, in Foo value)
-        {
-            writer.WriteValueSafe(value.I);
-        }
-        
-        
-        public static void ReadValueSafe(this ref FastBufferReader reader, out Foo value)
-        {
-            value = new Foo();
-            reader.ReadValueSafe(out value.I);
-        }
-
-    }
     
     /// <summary>
     /// Used with GenericObjects to randomly move them around
@@ -102,68 +82,7 @@ namespace TestProject.ManualTests
         {
             m_Direction = direction;
         }
-        private void ChangeDirectionClientRpcManual(Vector3 direction)
-        {
-            //IL_00d1: Unknown result type (might be due to invalid IL or missing references)
-            //IL_00d2: Unknown result type (might be due to invalid IL or missing references)
-            NetworkManager networkManager = base.NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
-            {
-                FastBufferWriter writer = new FastBufferWriter(1300, (Allocator)2, 1300);
-                try
-                {
-                    writer.WriteValueSafe<Vector3>(in direction);
-                    ClientRpcParams sendParams = default(ClientRpcParams);
-                    SendClientRpc(ref writer, 4099941514u, sendParams, RpcDelivery.Reliable);
-                }
-                finally
-                {
-                    writer.Dispose();
-                }
-            }
-            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
-            {
-                m_Direction = direction;
-            }
-        }
-
-        [ClientRpc]
-        private void ChangeDirectionClientRpc(Foo testFoo)
-        {
-        }
-        private void ChangeDirectionClientRpcManual(NetworkBehaviour testFoo)
-        {
-            //IL_00d1: Unknown result type (might be due to invalid IL or missing references)
-            //IL_00d2: Unknown result type (might be due to invalid IL or missing references)
-            NetworkManager networkManager = base.NetworkManager;
-            if (networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
-            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
-            {
-                FastBufferWriter writer = new FastBufferWriter(1300, (Allocator)2, 1300);
-                try
-                {
-                    writer.WriteValueSafe(testFoo);
-                    ClientRpcParams sendParams = default(ClientRpcParams);
-                    SendClientRpc(ref writer, 4099941514u, sendParams, RpcDelivery.Reliable);
-                }
-                finally
-                {
-                    writer.Dispose();
-                }
-            }
-            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
-            {
-            }
-        }
-
-
+        
         private void OnCollisionStay(Collision collision)
         {
             if (IsServer)

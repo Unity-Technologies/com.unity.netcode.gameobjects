@@ -19,15 +19,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             var networkObjectsToTest = new List<GameObject>();
 
-            var writer = new FastBufferWriter(1300, Allocator.Temp, 65536);
+            var writer = new FastBufferWriter(1300, Allocator.Temp, 4096000);
             var invalidNetworkObjectOffsets = new List<long>();
             var invalidNetworkObjectIdCount = new List<int>();
             var invalidNetworkObjects = new List<GameObject>();
             var invalidNetworkObjectFrequency = 3;
             using (writer)
             {
-
-
                 // Construct 50 NetworkObjects
                 for (int i = 0; i < 50; i++)
                 {
@@ -55,13 +53,14 @@ namespace Unity.Netcode.RuntimeTests
 
                         invalidNetworkObjects.Add(gameObject);
 
-                        writer.WriteValue((int) networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe((int) networkObject.gameObject.scene.handle);
                         // Serialize the invalid NetworkObject
                         var sceneObject = networkObject.GetMessageSceneObject(0);
+                        var prePosition = writer.Position;
                         sceneObject.Serialize(ref writer);
 
                         Debug.Log(
-                            $"Invalid {nameof(NetworkObject)} Size {writer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
+                            $"Invalid {nameof(NetworkObject)} Size {writer.Position - prePosition}");
 
                         // Now adjust how frequent we will inject invalid NetworkObjects
                         invalidNetworkObjectFrequency = Random.Range(2, 5);
@@ -85,7 +84,7 @@ namespace Unity.Netcode.RuntimeTests
 
                         networkObjectsToTest.Add(gameObject);
 
-                        writer.WriteValue((int) networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe((int) networkObject.gameObject.scene.handle);
 
                         // Handle populating the scenes loaded list
                         var scene = networkObject.gameObject.scene;
@@ -151,7 +150,7 @@ namespace Unity.Netcode.RuntimeTests
                         }
 
 
-                        reader.ReadValue(out int handle);
+                        reader.ReadValueSafe(out int handle);
                         NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(handle);
                         var sceneObject = new NetworkObject.SceneObject();
                         sceneObject.Deserialize(ref reader);

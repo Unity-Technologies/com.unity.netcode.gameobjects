@@ -32,7 +32,16 @@ namespace Unity.Netcode
 
         internal void InvokeUnnamedMessage(ulong clientId, ref FastBufferReader reader)
         {
-            OnUnnamedMessage?.Invoke(clientId, ref reader);
+            if (OnUnnamedMessage != null)
+            {
+                var pos = reader.Position;
+                var delegates = OnUnnamedMessage.GetInvocationList();
+                foreach (var handler in delegates)
+                {
+                    reader.Seek(pos);
+                    ((UnnamedMessageDelegate)handler).Invoke(clientId, ref reader);
+                }
+            }
             m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length);
         }
 

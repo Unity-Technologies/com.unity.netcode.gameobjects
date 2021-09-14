@@ -132,7 +132,7 @@ namespace Unity.Netcode
                     RegisterMessageType(type);
                 }
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 Dispose();
                 throw;
@@ -223,7 +223,6 @@ namespace Unity.Netcode
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
                     {
-                        Debug.Log($"Receiving a batch:  {BitConverter.ToString(batchReader.ToArray())}");
                         if (!batchReader.TryBeginRead(sizeof(MessageHeader)))
                         {
                             NetworkLog.LogWarning("Received a batch that didn't have enough data for all of its batches, ending early!");
@@ -288,8 +287,8 @@ namespace Unity.Netcode
             {
                 m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
             }
-            Debug.Log($"Processing {type} ({header.MessageType}): {BitConverter.ToString(reader.ToArray())}");
             var handler = m_MessageHandlers[header.MessageType];
+#pragma warning disable CS0728 // Warns that reader may be reassigned within the handler, but the handler does not reassign it.
             using (reader)
             {
                 // No user-land message handler exceptions should escape the receive loop.
@@ -306,6 +305,7 @@ namespace Unity.Netcode
                     Debug.LogError(e);
                 }
             }
+#pragma warning restore CS0728 // Warns that reader may be reassigned within the handler, but the handler does not reassign it.
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
                 m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
@@ -360,6 +360,7 @@ namespace Unity.Netcode
         {
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? 64000 : 1300;
             var tmpSerializer = new FastBufferWriter(1300, Allocator.Temp, maxSize);
+#pragma warning disable CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
             using (tmpSerializer)
             {
                 message.Serialize(ref tmpSerializer);
@@ -377,9 +378,7 @@ namespace Unity.Netcode
                     {
                         m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(T), delivery);
                     }
-                    
-                    Debug.Log($"Sending {typeof(T)} ({m_MessageTypes[typeof(T)]}) to {clientId}:  {BitConverter.ToString(tmpSerializer.ToArray())}");
-                    
+
                     ref var sendQueueItem = ref m_SendQueues[clientId].Value;
                     if (sendQueueItem.Count == 0)
                     {
@@ -427,9 +426,8 @@ namespace Unity.Netcode
                     {
                         m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(T), delivery, tmpSerializer.Length + sizeof(MessageHeader));
                     }
-                    Debug.Log($"Sented {typeof(T)} to {clientId} batch size is now {writeQueueItem.BatchHeader.BatchSize}");
-                    Debug.Log(BitConverter.ToString(writeQueueItem.Writer.ToArray()));
                 }
+#pragma warning restore CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
 
                 return tmpSerializer.Length;
             }
@@ -477,8 +475,7 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
-            ulong clientId)
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T: INetworkMessage
         {
             ulong* clientIds = stackalloc ulong[] {clientId};
@@ -506,10 +503,11 @@ namespace Unity.Netcode
                     }
                     
                     queueItem.Writer.Seek(0);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.AllowedWriteMark = 2;
+#endif
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
-                    Debug.Log($"Sending a batch to {clientId}:  {BitConverter.ToString(queueItem.Writer.ToArray())}");
                     
                     m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
                     queueItem.Writer.Dispose();

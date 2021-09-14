@@ -113,7 +113,7 @@ namespace Unity.Netcode
         public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
         {
             T previousValue = m_InternalValue;
-            reader.ReadValue(out m_InternalValue);
+            reader.ReadValueSafe(out m_InternalValue);
             
             if (keepDirtyDelta)
             {
@@ -132,7 +132,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(ref FastBufferWriter writer)
         {
-            writer.WriteValue(m_InternalValue);
+            writer.WriteValueSafe(m_InternalValue);
         }
     }
 }

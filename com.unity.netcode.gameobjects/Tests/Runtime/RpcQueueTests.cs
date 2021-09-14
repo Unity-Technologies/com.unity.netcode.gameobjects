@@ -57,16 +57,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(testsAreComplete);
         }
 
-        /// <summary>
-        /// This tests the RpcQueueContainer and RpcQueueHistoryFrame
-        /// ***NOTE: We want to run this test always LAST!
-        /// </summary>
-        [Test, Order(3)]
-        public void RpcQueueContainerClass()
-        {
-        }
-
-
         [TearDown]
         public void TearDown()
         {

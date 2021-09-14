@@ -71,37 +71,37 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteDelta(ref FastBufferWriter writer)
         {
-            writer.WriteValue((ushort)m_DirtyEvents.Count);
+            writer.WriteValueSafe((ushort)m_DirtyEvents.Count);
             for (int i = 0; i < m_DirtyEvents.Count; i++)
             {
-                writer.WriteValue(m_DirtyEvents[i].Type);
+                writer.WriteValueSafe(m_DirtyEvents[i].Type);
                 switch (m_DirtyEvents[i].Type)
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            writer.WriteValue(m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            writer.WriteValue(m_DirtyEvents[i].Index);
-                            writer.WriteValue(m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            writer.WriteValue(m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            writer.WriteValue(m_DirtyEvents[i].Index);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            writer.WriteValue(m_DirtyEvents[i].Index);
-                            writer.WriteValue(m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Clear:
@@ -116,10 +116,10 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(ref FastBufferWriter writer)
         {
-            writer.WriteValue((ushort)m_List.Count);
+            writer.WriteValueSafe((ushort)m_List.Count);
             for (int i = 0; i < m_List.Count; i++)
             {
-                writer.WriteValue(m_List[i]);
+                writer.WriteValueSafe(m_List[i]);
             }
         }
 
@@ -127,10 +127,10 @@ namespace Unity.Netcode
         public override void ReadField(ref FastBufferReader reader)
         {
             m_List.Clear();
-            reader.ReadValue(out ushort count);
+            reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
-                reader.ReadValue(out T value);
+                reader.ReadValueSafe(out T value);
                 m_List.Add(value);
             }
         }
@@ -138,15 +138,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
         {
-            reader.ReadValue(out ushort deltaCount);
+            reader.ReadValueSafe(out ushort deltaCount);
             for (int i = 0; i < deltaCount; i++)
             {
-                reader.ReadValue(out NetworkListEvent<T>.EventType eventType);
+                reader.ReadValueSafe(out NetworkListEvent<T>.EventType eventType);
                 switch (eventType)
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out T value);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -172,8 +172,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            reader.ReadValue(out int index);
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out int index);
+                            reader.ReadValueSafe(out T value);
                             m_List.Insert(index, value);
 
                             if (OnListChanged != null)
@@ -199,7 +199,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out T value);
                             int index = m_List.IndexOf(value);
                             m_List.RemoveAt(index);
 
@@ -226,7 +226,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            reader.ReadValue(out int index);
+                            reader.ReadValueSafe(out int index);
                             T value = m_List[index];
                             m_List.RemoveAt(index);
 
@@ -253,8 +253,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            reader.ReadValue(out int index);
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out int index);
+                            reader.ReadValueSafe(out T value);
                             if (index < m_List.Count)
                             {
                                 m_List[index] = value;

@@ -839,6 +839,8 @@ namespace Unity.Netcode
             Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
+            m_MessagingSystem.ClientConnected(ServerClientId);
+            LocalClientId = ServerClientId;
 
             IsServer = true;
             IsClient = true;
@@ -1249,12 +1251,12 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds)
+        public unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds, bool serverCanSendToServerId = false)
             where T : INetworkMessage
             where U : IReadOnlyList<ulong>
         {
             // Prevent server sending to itself
-            if (IsServer)
+            if (IsServer && !serverCanSendToServerId)
             {
                 ulong* nonServerIds = stackalloc ulong[clientIds.Count];
                 int newIdx = 0;
@@ -1278,11 +1280,11 @@ namespace Unity.Netcode
         }
 
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
-            ulong* clientIds, int numClientIds)
+            ulong* clientIds, int numClientIds, bool serverCanSendToServerId = false)
             where T: INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer)
+            if (IsServer && !serverCanSendToServerId)
             {
                 ulong* nonServerIds = stackalloc ulong[numClientIds];
                 int newIdx = 0;
@@ -1306,11 +1308,11 @@ namespace Unity.Netcode
             return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
             where T: INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer && clientId == ServerClientId)
+            if (IsServer && clientId == ServerClientId && !serverCanSendToServerId)
             {
                 return 0;
             }
@@ -1479,21 +1481,24 @@ namespace Unity.Netcode
                     };
                     if (!NetworkConfig.EnableSceneManagement)
                     {
-                        if (SpawnManager.SpawnedObjectsList.Count == 0)
+                        if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            return;
+                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
+                            message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
+                    }
 
-                        message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
-                        message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
+                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+
+                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
+                    if (!NetworkConfig.EnableSceneManagement)
+                    {
                         InvokeOnClientConnectedCallback(ownerClientId);
                     }
-                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     else
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
-                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
@@ -1537,6 +1542,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
+                message.ObjectInfo.Metadata.Hash = playerPrefabHash;
+                message.ObjectInfo.Metadata.IsSceneObject = false;
+                message.ObjectInfo.Metadata.HasParent = false;
+                message.ObjectInfo.Metadata.IsPlayerObject = true;
+                message.ObjectInfo.Metadata.OwnerClientId = clientId;
                 SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
             }
         }

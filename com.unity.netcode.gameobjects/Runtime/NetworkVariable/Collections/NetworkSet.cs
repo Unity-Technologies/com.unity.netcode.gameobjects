@@ -71,32 +71,32 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(ref FastBufferWriter writer)
         {
-            writer.WriteValue((ushort)m_Set.Count);
+            writer.WriteValueSafe((ushort)m_Set.Count);
 
             foreach (T value in m_Set)
             {
-                writer.WriteValue(value);
+                writer.WriteValueSafe(value);
             }
         }
 
         /// <inheritdoc />
         public override void WriteDelta(ref FastBufferWriter writer)
         {
-            writer.WriteValue((ushort)m_DirtyEvents.Count);
+            writer.WriteValueSafe((ushort)m_DirtyEvents.Count);
             for (int i = 0; i < m_DirtyEvents.Count; i++)
             {
-                writer.WriteValue(m_DirtyEvents[i].Type);
+                writer.WriteValueSafe(m_DirtyEvents[i].Type);
 
                 switch (m_DirtyEvents[i].Type)
                 {
                     case NetworkSetEvent<T>.EventType.Add:
                     {
-                        writer.WriteValue(m_DirtyEvents[i].Value);
+                        writer.WriteValueSafe(m_DirtyEvents[i].Value);
                     }
                         break;
                     case NetworkSetEvent<T>.EventType.Remove:
                     {
-                        writer.WriteValue(m_DirtyEvents[i].Value);
+                        writer.WriteValueSafe(m_DirtyEvents[i].Value);
                     }
                         break;
                     case NetworkSetEvent<T>.EventType.Clear:
@@ -112,11 +112,11 @@ namespace Unity.Netcode
         public override void ReadField(ref FastBufferReader reader)
         {
             m_Set.Clear();
-            reader.ReadValue(out ushort count);
+            reader.ReadValueSafe(out ushort count);
 
             for (int i = 0; i < count; i++)
             {
-                reader.ReadValue(out T obj);
+                reader.ReadValueSafe(out T obj);
                 m_Set.Add(obj);
             }
         }
@@ -124,15 +124,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
         {
-            reader.ReadValue(out ushort deltaCount);
+            reader.ReadValueSafe(out ushort deltaCount);
             for (int i = 0; i < deltaCount; i++)
             {
-                reader.ReadValue(out NetworkSetEvent<T>.EventType eventType);
+                reader.ReadValueSafe(out NetworkSetEvent<T>.EventType eventType);
                 switch (eventType)
                 {
                     case NetworkSetEvent<T>.EventType.Add:
                         {
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out T value);
                             m_Set.Add(value);
 
                             if (OnSetChanged != null)
@@ -156,7 +156,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkSetEvent<T>.EventType.Remove:
                         {
-                            reader.ReadValue(out T value);
+                            reader.ReadValueSafe(out T value);
                             m_Set.Remove(value);
 
                             if (OnSetChanged != null)

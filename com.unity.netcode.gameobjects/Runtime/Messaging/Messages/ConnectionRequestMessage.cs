@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using UnityEditor.VersionControl;
-using UnityEngine;
 
 namespace Unity.Netcode.Messages
 {

@@ -28,6 +28,7 @@ namespace Unity.Netcode.RuntimeTests
             
             public override void WriteDelta(ref FastBufferWriter writer)
             {
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBits((byte)1, 1);
@@ -39,6 +40,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void WriteField(ref FastBufferWriter writer)
             {
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
                     bitWriter.WriteBits((byte)1, 1);
@@ -50,6 +52,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void ReadField(ref FastBufferReader reader)
             {
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitReader = reader.EnterBitwiseContext())
                 {
                     bitReader.ReadBits(out byte b, 1);
@@ -63,6 +66,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
             {
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitReader = reader.EnterBitwiseContext())
                 {
                     bitReader.ReadBits(out byte b, 1);

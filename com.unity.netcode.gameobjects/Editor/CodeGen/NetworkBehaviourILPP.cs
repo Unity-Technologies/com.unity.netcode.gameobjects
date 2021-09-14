@@ -912,11 +912,11 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                // var writer = new FastBufferWriter(1300, Allocator.Temp, 1300);
+                // var writer = new FastBufferWriter(1300, Allocator.Temp, 65536);
                 instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4_2));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 65536));
                 instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Constructor));
 
                 var firstInstruction = processor.Create(OpCodes.Nop);
@@ -1081,8 +1081,9 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
 
                 {
+                    // TODO: Figure out why try/catch here cause the try block not to execute at all.
                     // End try block
-                    instructions.Add(processor.Create(OpCodes.Leave, lastInstr));
+                    //instructions.Add(processor.Create(OpCodes.Leave, lastInstr));
                     
                     // writer.Dispose();
                     var handlerFirst = processor.Create(OpCodes.Ldloca, serializerLocIdx);
@@ -1090,17 +1091,17 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Dispose));
                     
                     // End finally block
-                    instructions.Add(processor.Create(OpCodes.Endfinally));
+                    //instructions.Add(processor.Create(OpCodes.Endfinally));
                     
                     // try { ... serialization code ... } finally { writer.Dispose(); }
-                    var handler = new ExceptionHandler(ExceptionHandlerType.Finally)
+                    /*var handler = new ExceptionHandler(ExceptionHandlerType.Finally)
                     {
                         TryStart = firstInstruction,
                         TryEnd = handlerFirst,
                         HandlerStart = handlerFirst,
                         HandlerEnd = lastInstr
                     };
-                    processor.Body.ExceptionHandlers.Add(handler);
+                    processor.Body.ExceptionHandlers.Add(handler);*/
                 }
 
                 instructions.Add(lastInstr);

@@ -523,13 +523,13 @@ namespace Unity.Netcode
 
             if (!TryBeginReadInternal(sizeof(int)))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
             ReadValue(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
             if (!TryBeginReadInternal(sizeInBytes))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
             array = new T[sizeInTs];
             fixed (T* native = array)

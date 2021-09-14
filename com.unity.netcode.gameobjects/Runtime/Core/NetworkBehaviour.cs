@@ -45,9 +45,13 @@ namespace Unity.Netcode
             switch (delivery)
             {
                 case RpcDelivery.Reliable:
-                    networkDelivery = NetworkDelivery.ReliableSequenced;
+                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
+                    if (writer.Length > 1300)
+                    {
+                        throw new OverflowException("RPC parameters are too large for unreliable delivery.");
+                    }
                     networkDelivery = NetworkDelivery.Unreliable;
                     break;
             }
@@ -63,7 +67,7 @@ namespace Unity.Netcode
                 },
                 RPCData = writer
             };
-            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
+            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -83,9 +87,13 @@ namespace Unity.Netcode
             switch (delivery)
             {
                 case RpcDelivery.Reliable:
-                    networkDelivery = NetworkDelivery.ReliableSequenced;
+                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
+                    if (writer.Length > 1300)
+                    {
+                        throw new OverflowException("RPC parameters are too large for unreliable delivery.");
+                    }
                     networkDelivery = NetworkDelivery.Unreliable;
                     break;
             }
@@ -105,7 +113,7 @@ namespace Unity.Netcode
             
             if (sendParams.Send.TargetClientIds != null)
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIds);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIds, true);
             }
             else if (sendParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -117,7 +125,7 @@ namespace Unity.Netcode
             }
             else
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds, true);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -429,7 +437,25 @@ namespace Unity.Netcode
                             ClientId = clientId,
                             DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
                         };
-                        NetworkManager.SendMessage(message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
+                        // TODO: Serialization is where the IsDirty flag gets changed.
+                        // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
+                        // we still have to actually serialize the message even though we're not sending it, otherwise
+                        // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
+                        // so we don't have to do this serialization work if we're not going to use the result.
+                        if (IsServer && clientId == NetworkManager.ServerClientId)
+                        {
+                            var tmpWriter = new FastBufferWriter(1300, Allocator.Temp);
+#pragma warning disable CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
+                            using (tmpWriter)
+                            {
+                                message.Serialize(ref tmpWriter);
+                            }
+#pragma warning restore CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
+                        }
+                        else
+                        {
+                            NetworkManager.SendMessage(message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
+                        }
                     }
                 }
             }
@@ -460,33 +486,22 @@ namespace Unity.Netcode
             {
                 bool canClientRead = NetworkVariableFields[j].CanClientRead(clientId);
 
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                if (canClientRead)
                 {
-                    if (!canClientRead)
-                    {
-                        writer.WriteValue((ushort)0);
-                    }
+                    var writePos = writer.Position;
+                    writer.WriteValueSafe((ushort)0);
+                    var startPos = writer.Position;
+                    NetworkVariableFields[j].WriteField(ref writer);
+                    var size = writer.Position - startPos;
+                    writer.Seek(writePos);
+                    writer.WriteValueSafe((ushort)size);
+                    writer.Seek(startPos + size);
                 }
                 else
                 {
-                    writer.WriteValue(canClientRead);
+                    writer.WriteValueSafe((ushort)0);
                 }
-
-                if (canClientRead)
-                {
-                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                    {
-                        var tmpWriter = new FastBufferWriter(1300, Allocator.Temp, Int16.MaxValue);
-                        NetworkVariableFields[j].WriteField(ref tmpWriter);
-
-                        writer.WriteValue((ushort)tmpWriter.Length);
-                        tmpWriter.CopyTo(ref writer);
-                    }
-                    else
-                    {
-                        NetworkVariableFields[j].WriteField(ref writer);
-                    }
-                }
+                writer.WriteValueSafe((ushort)0x12AB);
             }
         }
         
@@ -499,24 +514,16 @@ namespace Unity.Netcode
 
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                ushort varSize = 0;
-
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                reader.ReadValueSafe(out ushort varSize);
+                ushort magic;
+                if (varSize == 0)
                 {
-                    reader.ReadValue(out varSize);
-
-                    if (varSize == 0)
+                    reader.ReadValueSafe(out magic);
+                    if (magic != (ushort) 0x12AB)
                     {
-                        continue;
+                        NetworkLog.LogWarning($"Var data ended not on the magic value.");
                     }
-                }
-                else
-                {
-                    reader.ReadValue(out bool clientCanRead);
-                    if (!clientCanRead)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 var readStartPos = reader.Position;
@@ -542,6 +549,11 @@ namespace Unity.Netcode
 
                         reader.Seek(readStartPos + varSize);
                     }
+                }
+                reader.ReadValueSafe(out magic);
+                if (magic != (ushort) 0x12AB)
+                {
+                    NetworkLog.LogWarning($"Var data ended not on the magic value.");
                 }
             }
         }

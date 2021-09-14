@@ -16,14 +16,14 @@
         
         public void Serialize(ref FastBufferWriter writer)
         {
-            writer.WriteValue(NetworkObjectId);
-            writer.WriteValue(IsReparented);
+            writer.WriteValueSafe(NetworkObjectId);
+            writer.WriteValueSafe(IsReparented);
             if (IsReparented)
             {
-                writer.WriteValue(IsLatestParentSet);
+                writer.WriteValueSafe(IsLatestParentSet);
                 if (IsLatestParentSet)
                 {
-                    writer.WriteValue((ulong)LatestParent);
+                    writer.WriteValueSafe((ulong)LatestParent);
                 }
             }
         }

@@ -65,16 +65,16 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
         {
-            reader.ReadValue(out ushort deltaCount);
+            reader.ReadValueSafe(out ushort deltaCount);
             for (int i = 0; i < deltaCount; i++)
             {
-                reader.ReadValue(out NetworkDictionaryEvent<TKey, TValue>.EventType eventType);
+                reader.ReadValueSafe(out NetworkDictionaryEvent<TKey, TValue>.EventType eventType);
                 switch (eventType)
                 {
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
                         {
-                            reader.ReadValue(out TKey key);
-                            reader.ReadValue(out TValue value);
+                            reader.ReadValueSafe(out TKey key);
+                            reader.ReadValueSafe(out TValue value);
                             m_Dictionary.Add(key, value);
 
                             if (OnDictionaryChanged != null)
@@ -100,7 +100,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
                         {
-                            reader.ReadValue(out TKey key);
+                            reader.ReadValueSafe(out TKey key);
                             TValue value;
                             m_Dictionary.TryGetValue(key, out value);
                             m_Dictionary.Remove(key);
@@ -128,8 +128,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
                         {
-                            reader.ReadValue(out TKey key);
-                            reader.ReadValue(out TValue value);
+                            reader.ReadValueSafe(out TKey key);
+                            reader.ReadValueSafe(out TValue value);
                             m_Dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
 
                             if (OnDictionaryChanged != null)
@@ -177,8 +177,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
                         {
-                            reader.ReadValue(out TKey key);
-                            reader.ReadValue(out TValue value);
+                            reader.ReadValueSafe(out TKey key);
+                            reader.ReadValueSafe(out TValue value);
 
                             m_Dictionary[key] = value;
 
@@ -211,11 +211,11 @@ namespace Unity.Netcode
         public override void ReadField(ref FastBufferReader reader)
         {
             m_Dictionary.Clear();
-            reader.ReadValue(out ushort entryCount);
+            reader.ReadValueSafe(out ushort entryCount);
             for (int i = 0; i < entryCount; i++)
             {
-                reader.ReadValue(out TKey key);
-                reader.ReadValue(out TValue value);
+                reader.ReadValueSafe(out TKey key);
+                reader.ReadValueSafe(out TValue value);
                 m_Dictionary.Add(key, value);
             }
         }

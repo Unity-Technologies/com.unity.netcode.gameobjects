@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator UnnamedMessageIsReceivedOnClientWithContent()
         {
-            var messageContent = Guid.NewGuid().ToString();
+            var messageContent = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -31,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong receivedMessageSender = 0;
-            string receivedMessageContent = null;
+            Guid receivedMessageContent;
             FirstClient.CustomMessagingManager.OnUnnamedMessage += 
                 (ulong sender, ref FastBufferReader reader) =>
                 {
@@ -42,7 +42,6 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return new WaitForSeconds(0.2f);
 
-            Assert.NotNull(receivedMessageContent);
             Assert.AreEqual(messageContent, receivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, receivedMessageSender);
         }
@@ -50,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator UnnamedMessageIsReceivedOnMultipleClientsWithContent()
         {
-            var messageContent = Guid.NewGuid().ToString();
+            var messageContent = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -61,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong firstReceivedMessageSender = 0;
-            string firstReceivedMessageContent = null;
+            Guid firstReceivedMessageContent;
             FirstClient.CustomMessagingManager.OnUnnamedMessage += 
                 (ulong sender, ref FastBufferReader reader) =>
                 {
@@ -71,22 +70,20 @@ namespace Unity.Netcode.RuntimeTests
                 };
 
             ulong secondReceivedMessageSender = 0;
-            string secondReceivedMessageContent = null;
+            Guid secondReceivedMessageContent;
             SecondClient.CustomMessagingManager.OnUnnamedMessage += 
                 (ulong sender, ref FastBufferReader reader) =>
                 {
                     secondReceivedMessageSender = sender;
 
-                    reader.ReadValueSafe(out firstReceivedMessageContent);
+                    reader.ReadValueSafe(out secondReceivedMessageContent);
                 };
 
             yield return new WaitForSeconds(0.2f);
 
-            Assert.NotNull(firstReceivedMessageContent);
             Assert.AreEqual(messageContent, firstReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, firstReceivedMessageSender);
 
-            Assert.NotNull(secondReceivedMessageContent);
             Assert.AreEqual(messageContent, secondReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, secondReceivedMessageSender);
         }

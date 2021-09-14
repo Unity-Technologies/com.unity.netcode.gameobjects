@@ -109,6 +109,12 @@ namespace Unity.Netcode.Messages
             }
 
             var message = new NetworkVariableDeltaMessage();
+            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.NetworkObjectId) +
+                                      FastBufferWriter.GetWriteSize(message.NetworkBehaviourIndex)))
+            {
+                throw new OverflowException(
+                    $"Not enough data in the buffer to read {nameof(NetworkVariableDeltaMessage)}");
+            }
             reader.ReadValue(out message.NetworkObjectId);
             reader.ReadValue(out message.NetworkBehaviourIndex);
             message.Handle(context.SenderId, ref reader, networkManager);
@@ -135,7 +141,7 @@ namespace Unity.Netcode.Messages
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            reader.ReadValue(out varSize);
+                            reader.ReadValueSafe(out varSize);
 
                             if (varSize == 0)
                             {
@@ -144,7 +150,7 @@ namespace Unity.Netcode.Messages
                         }
                         else
                         {
-                            reader.ReadValue(out bool deltaExists);
+                            reader.ReadValueSafe(out bool deltaExists);
                             if (!deltaExists)
                             {
                                 continue;

@@ -7,7 +7,7 @@
         
         public void Serialize(ref FastBufferWriter writer)
         {
-            writer.WriteValue(this);
+            writer.WriteValueSafe(this);
         }
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
@@ -17,7 +17,7 @@
             {
                 return;
             }
-            reader.ReadValue(out ChangeOwnershipMessage message);
+            reader.ReadValueSafe(out ChangeOwnershipMessage message);
             message.Handle(context.SenderId, networkManager, reader.Length);
         }
 
