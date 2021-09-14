@@ -40,6 +40,8 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log($"ListEvent received: type {listEvent.Type}, index {listEvent.Index}, value {listEvent.Value}");
             ListChangeCount++;
 
+            Debug.Log($"Expecting {ExpectedSize}, got {MyNetworkList.Count}");
+
             Debug.Assert(ExpectedSize == MyNetworkList.Count);
         }
     }
