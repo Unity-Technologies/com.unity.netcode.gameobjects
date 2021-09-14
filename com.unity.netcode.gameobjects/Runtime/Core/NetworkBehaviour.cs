@@ -639,7 +639,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (NetworkManager.IsServer && !NetworkVariableFields[i].CanClientWrite(clientId))
+                if (NetworkManager.IsClient)
                 {
                     // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

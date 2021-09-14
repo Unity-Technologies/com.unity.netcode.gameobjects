@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
@@ -34,18 +35,11 @@ namespace Unity.Netcode
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm) : base(readPerm) { }
-
-        /// <summary>
-        /// Creates a NetworkList with a custom value and custom settings
-        /// </summary>
-        /// <param name="readPerm">The read permission to use for the NetworkList</param>
-        /// <param name="values">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm, List<T> values) : base(readPerm)
+        public NetworkList(NetworkVariableReadPermission readPerm, IEnumerable<T> values) : base(readPerm)
         {
-            foreach (var val in values)
+            foreach (var value in values)
             {
-                m_List.Add(val);
+                m_List.Add(value);
             }
         }
 
@@ -53,22 +47,12 @@ namespace Unity.Netcode
         /// Creates a NetworkList with a custom value and the default settings
         /// </summary>
         /// <param name="values">The initial value to use for the NetworkList</param>
-        public NetworkList(List<T> values)
+        public NetworkList(IEnumerable<T> values)
         {
-            foreach (var val in values)
+            foreach (var value in values)
             {
-                m_List.Add(val);
+                m_List.Add(value);
             }
-        }
-
-        public NetworkList(NetworkVariableReadPermission readPerm, NativeList<T> values) : base(readPerm)
-        {
-            m_List = values;
-        }
-
-        public NetworkList(NativeList<T> values)
-        {
-            m_List = values;
         }
 
         /// <inheritdoc />

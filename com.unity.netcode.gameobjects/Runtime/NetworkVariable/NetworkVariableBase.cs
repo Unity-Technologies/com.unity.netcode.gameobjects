@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Unity.Netcode
@@ -5,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Interface for network value containers
     /// </summary>
-    public abstract class NetworkVariableBase
+    public abstract class NetworkVariableBase : IDisposable
     {
         /// <summary>
         /// The delivery type (QoS) to send data with
@@ -82,16 +83,6 @@ namespace Unity.Netcode
                     return m_NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
-        }
-
-        /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
-        public virtual bool CanClientWrite(ulong clientId)
-        {
-            return false;
         }
 
         /// <summary>
