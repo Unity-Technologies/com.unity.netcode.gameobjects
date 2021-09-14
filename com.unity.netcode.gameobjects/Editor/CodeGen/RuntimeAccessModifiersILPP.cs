@@ -87,7 +87,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     fieldDefinition.IsPublic = true;
                 }
-                
+
                 if (fieldDefinition.Name == nameof(NetworkManager.RpcReceive))
                 {
                     fieldDefinition.IsPublic = true;

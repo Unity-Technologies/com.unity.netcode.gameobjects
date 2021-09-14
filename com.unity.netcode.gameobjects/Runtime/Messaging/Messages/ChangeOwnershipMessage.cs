@@ -1,10 +1,10 @@
-﻿namespace Unity.Netcode.Messages
+namespace Unity.Netcode.Messages
 {
-    internal struct ChangeOwnershipMessage: INetworkMessage
+    internal struct ChangeOwnershipMessage : INetworkMessage
     {
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
-        
+
         public void Serialize(ref FastBufferWriter writer)
         {
             writer.WriteValueSafe(this);
@@ -12,7 +12,7 @@
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return;

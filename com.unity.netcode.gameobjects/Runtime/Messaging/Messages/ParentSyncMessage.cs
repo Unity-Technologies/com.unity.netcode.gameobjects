@@ -1,19 +1,19 @@
-﻿namespace Unity.Netcode.Messages
+namespace Unity.Netcode.Messages
 {
     public struct ParentSyncMessage : INetworkMessage
     {
         public ulong NetworkObjectId;
-        
+
         public bool IsReparented;
-        
+
         #region If(Metadata.IsReparented)
-            public bool IsLatestParentSet;
-    
-            #region If(IsLatestParentSet)
-                public ulong? LatestParent;
-            #endregion
+        public bool IsLatestParentSet;
+
+        #region If(IsLatestParentSet)
+        public ulong? LatestParent;
         #endregion
-        
+        #endregion
+
         public void Serialize(ref FastBufferWriter writer)
         {
             writer.WriteValueSafe(NetworkObjectId);
@@ -30,7 +30,7 @@
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return;
@@ -48,7 +48,7 @@
                     message.LatestParent = latestParent;
                 }
             }
-            
+
             message.Handle(networkManager);
         }
 

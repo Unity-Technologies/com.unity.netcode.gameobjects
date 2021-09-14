@@ -11,7 +11,7 @@ namespace TestProject.ManualTests
     {
         public List<float> StatValues;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
         {
             if (serializer.IsReader)
             {

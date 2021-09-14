@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Unity.Netcode
 {
@@ -12,8 +12,8 @@ namespace Unity.Netcode
         void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
         void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
         void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
-        
-        
+
+
         bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery);
         bool OnVerifyCanReceive(ulong senderId, Type messageType);
     }

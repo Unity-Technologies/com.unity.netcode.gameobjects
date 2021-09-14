@@ -1,13 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
-using Unity.Collections;
 using Unity.Netcode.Messages;
 using UnityEngine;
-using UnityEngine.Profiling.Memory.Experimental;
 
 namespace Unity.Netcode
 {
@@ -897,7 +892,7 @@ namespace Unity.Netcode
                 public ulong NetworkObjectId;
                 public ulong OwnerClientId;
                 public uint Hash;
-            
+
                 public bool IsPlayerObject;
                 public bool HasParent;
                 public bool IsSceneObject;
@@ -907,27 +902,27 @@ namespace Unity.Netcode
             }
 
             public SceneObjectMetadata Metadata;
-            
-            #region If(Metadata.HasParent)
-                public ulong ParentObjectId;
-            #endregion
-            
-            #region If(Metadata.HasTransform)
-                public struct TransformData
-                {
-                    public Vector3 Position;
-                    public Quaternion Rotation;
-                }
 
-                public TransformData Transform;
+            #region If(Metadata.HasParent)
+            public ulong ParentObjectId;
             #endregion
-            
+
+            #region If(Metadata.HasTransform)
+            public struct TransformData
+            {
+                public Vector3 Position;
+                public Quaternion Rotation;
+            }
+
+            public TransformData Transform;
+            #endregion
+
             #region If(Metadata.IsReparented)
-                public bool IsLatestParentSet;
-    
-                #region If(IsLatestParentSet)
-                    public ulong? LatestParent;
-                #endregion
+            public bool IsLatestParentSet;
+
+            #region If(IsLatestParentSet)
+            public ulong? LatestParent;
+            #endregion
             #endregion
 
             #region If(data.HasNetworkVariables)
@@ -948,7 +943,7 @@ namespace Unity.Netcode
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
-                
+
                 writer.WriteValue(Metadata);
 
                 if (Metadata.HasParent)
@@ -1032,9 +1027,9 @@ namespace Unity.Netcode
                 OwnerObject = this,
                 TargetClientId = targetClientId
             };
-            
+
             NetworkObject parentNetworkObject = null;
-            
+
             if (!AlwaysReplicateAsRoot && transform.parent != null)
             {
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
@@ -1097,7 +1092,7 @@ namespace Unity.Netcode
 
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
-                sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.Hash, 
+                sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.Hash,
                 sceneObject.Metadata.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Metadata.IsReparented);
 
             networkObject?.SetNetworkParenting(sceneObject.Metadata.IsReparented, sceneObject.LatestParent);
@@ -1112,9 +1107,9 @@ namespace Unity.Netcode
                     // If we failed to load this NetworkObject, then skip past the network variable data
                     variableData.ReadValueSafe(out ushort varSize);
                     variableData.Seek(variableData.Position + varSize);
-                    
+
                     variableData.ReadValueSafe(out ushort magic);
-                    if (magic != (ushort) 0x12AB)
+                    if (magic != (ushort)0x12AB)
                     {
                         NetworkLog.LogWarning($"Var data ended not on the magic value.");
                     }

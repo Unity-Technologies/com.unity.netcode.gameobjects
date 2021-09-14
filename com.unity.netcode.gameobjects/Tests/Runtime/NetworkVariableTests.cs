@@ -11,8 +11,8 @@ namespace Unity.Netcode.RuntimeTests
     public struct FixedString32Struct : INetworkSerializable
     {
         public FixedString32 FixedString;
-        
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
         {
             serializer.SerializeValue(ref FixedString);
         }
@@ -23,7 +23,7 @@ namespace Unity.Netcode.RuntimeTests
         public uint SomeInt;
         public bool SomeBool;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
         {
             serializer.SerializeValue(ref SomeInt);
             serializer.SerializeValue(ref SomeBool);

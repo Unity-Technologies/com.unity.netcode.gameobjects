@@ -48,12 +48,12 @@ namespace Unity.Netcode.RuntimeTests
                         // that we know will be thrown
                         invalidNetworkObjectOffsets.Add(writer.Position);
 
-                        networkObject.GlobalObjectIdHash = (uint) (i);
+                        networkObject.GlobalObjectIdHash = (uint)(i);
                         invalidNetworkObjectIdCount.Add(i);
 
                         invalidNetworkObjects.Add(gameObject);
 
-                        writer.WriteValueSafe((int) networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
                         // Serialize the invalid NetworkObject
                         var sceneObject = networkObject.GetMessageSceneObject(0);
                         var prePosition = writer.Position;
@@ -80,11 +80,11 @@ namespace Unity.Netcode.RuntimeTests
 
                         Assert.IsNotNull(networkObject);
 
-                        networkObject.GlobalObjectIdHash = (uint) (i + 4096);
+                        networkObject.GlobalObjectIdHash = (uint)(i + 4096);
 
                         networkObjectsToTest.Add(gameObject);
 
-                        writer.WriteValueSafe((int) networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
 
                         // Handle populating the scenes loaded list
                         var scene = networkObject.gameObject.scene;

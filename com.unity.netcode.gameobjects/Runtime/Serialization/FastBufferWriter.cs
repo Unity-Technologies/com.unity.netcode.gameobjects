@@ -76,7 +76,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(buffer, 0, size);
 #endif
-            BufferPointer = (byte*) buffer;
+            BufferPointer = (byte*)buffer;
             PositionInternal = 0;
             m_Length = 0;
             CapacityInternal = size;
@@ -176,7 +176,7 @@ namespace Unity.Netcode
 #endif
             UnsafeUtility.MemCpy(buffer, BufferPointer, Length);
             UnsafeUtility.Free(BufferPointer, m_Allocator);
-            BufferPointer = (byte*) buffer;
+            BufferPointer = (byte*)buffer;
             CapacityInternal = newSize;
         }
 
@@ -370,7 +370,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to write</param>
         /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(in T value) where T: INetworkSerializable
+        public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref this));
             value.NetworkSerialize(bufferSerializer);
@@ -381,7 +381,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to write</param>
         /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T: INetworkSerializable
+        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             WriteValueSafe(sizeInTs);
@@ -714,8 +714,8 @@ namespace Unity.Netcode
         {
             WriteBytes(other.BufferPointer, other.PositionInternal);
         }
-        
-        
+
+
         /// <summary>
         /// Get the size required to write a FixedUnmanagedArray
         /// </summary>
@@ -723,7 +723,7 @@ namespace Unity.Netcode
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count) 
+        public static unsafe int GetWriteSize<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
             where TStorageType : unmanaged, IFixedArrayStorage
         {
@@ -785,7 +785,7 @@ namespace Unity.Netcode
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            
+
             BytewiseUtility.FastCopyBytes(BufferPointer + PositionInternal, (byte*)value.GetArrayPtr(), len);
             PositionInternal += len;
         }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Unity.Netcode.Messages;
 
 namespace Unity.Netcode

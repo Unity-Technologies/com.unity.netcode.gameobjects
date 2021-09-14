@@ -1,12 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
-using Unity.Netcode.Transports.UNET;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Unity.Netcode
 {
@@ -16,10 +13,10 @@ namespace Unity.Netcode
         public InvalidMessageStructureException() { }
         public InvalidMessageStructureException(string issue) : base(issue) { }
     }
-    
-    public class MessagingSystem: IDisposable
+
+    public class MessagingSystem : IDisposable
     {
-#region Internal Types
+        #region Internal Types
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -41,16 +38,16 @@ namespace Unity.Netcode
                 BatchHeader = default;
             }
         }
-        
-        internal delegate void MessageHandler(ref FastBufferReader reader, NetworkContext context);
-#endregion
 
-#region Private Members
+        internal delegate void MessageHandler(ref FastBufferReader reader, NetworkContext context);
+        #endregion
+
+        #region Private Members
         private DynamicUnmanagedArray<ReceiveQueueItem> m_IncomingMessageQueue = new DynamicUnmanagedArray<ReceiveQueueItem>(16);
 
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
         private Type[] m_ReverseTypeMap = new Type[255];
-                
+
         private Dictionary<Type, byte> m_MessageTypes = new Dictionary<Type, byte>();
         private NativeHashMap<ulong, Ref<DynamicUnmanagedArray<SendQueueItem>>> m_SendQueues = new NativeHashMap<ulong, Ref<DynamicUnmanagedArray<SendQueueItem>>>(64, Allocator.Persistent);
 
@@ -61,7 +58,7 @@ namespace Unity.Netcode
         private IMessageSender m_MessageSender;
         private ulong m_LocalClientId;
         private bool m_Disposed;
-#endregion
+        #endregion
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
@@ -72,14 +69,14 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = Int64.MaxValue)
+        public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = long.MaxValue)
         {
             try
             {
                 m_LocalClientId = localClientId;
                 m_MessageSender = messageSender;
                 m_Owner = owner;
-                
+
                 var interfaceType = typeof(INetworkMessage);
                 var implementationTypes = new List<Type>();
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -105,7 +102,7 @@ namespace Unity.Netcode
                             var allowedToBind = attributes.Length == 0 && m_Owner is NetworkManager;
                             for (var i = 0; i < attributes.Length; ++i)
                             {
-                                Bind bindAttribute = (Bind) attributes[i];
+                                var bindAttribute = (Bind)attributes[i];
                                 if (
                                     (bindAttribute.BoundType != null &&
                                      bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
@@ -126,13 +123,13 @@ namespace Unity.Netcode
                     }
                 }
 
-                implementationTypes.Sort((a, b) => String.CompareOrdinal(a.FullName, b.FullName));
-                foreach(var type in implementationTypes)
+                implementationTypes.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
+                foreach (var type in implementationTypes)
                 {
                     RegisterMessageType(type);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Dispose();
                 throw;
@@ -147,7 +144,7 @@ namespace Unity.Netcode
             }
 
             var keys = m_SendQueues.GetKeyArray(Allocator.Temp);
-            using(keys)
+            using (keys)
             {
                 foreach (var key in keys)
                 {
@@ -173,14 +170,14 @@ namespace Unity.Netcode
         {
             m_Hooks.Add(hooks);
         }
-        
+
         private void RegisterMessageType(Type messageType)
         {
             if (!typeof(INetworkMessage).IsAssignableFrom(messageType))
             {
                 throw new ArgumentException("RegisterMessageType types must be INetworkMessage types.");
             }
-            
+
             var method = messageType.GetMethod("Receive");
             if (method == null)
             {
@@ -195,18 +192,18 @@ namespace Unity.Netcode
                     $"{messageType.Name}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
             }
 
-            m_MessageHandlers[m_HighMessageType] = (MessageHandler) asDelegate;
+            m_MessageHandlers[m_HighMessageType] = (MessageHandler)asDelegate;
             m_ReverseTypeMap[m_HighMessageType] = messageType;
             m_MessageTypes[messageType] = m_HighMessageType++;
         }
-        
+
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
         {
             unsafe
             {
                 fixed (byte* nativeData = data.Array)
                 {
-                    FastBufferReader batchReader =
+                    var batchReader =
                         new FastBufferReader(nativeData, Allocator.None, data.Count, data.Offset);
                     if (!batchReader.TryBeginRead(sizeof(BatchHeader)))
                     {
@@ -282,7 +279,7 @@ namespace Unity.Netcode
                 reader.Dispose();
                 return;
             }
-            
+
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
                 m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
@@ -354,9 +351,9 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds) 
-            where T: INetworkMessage
-            where U: IReadOnlyList<ulong>
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+            where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? 64000 : 1300;
             var tmpSerializer = new FastBufferWriter(1300, Allocator.Temp, maxSize);
@@ -369,14 +366,14 @@ namespace Unity.Netcode
                 {
                     var clientId = clientIds[i];
 
-                    if (!CanSend(clientId, typeof(T), delivery))
+                    if (!CanSend(clientId, typeof(TMessageType), delivery))
                     {
                         continue;
                     }
-                    
+
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(T), delivery);
+                        m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(TMessageType), delivery);
                     }
 
                     ref var sendQueueItem = ref m_SendQueues[clientId].Value;
@@ -400,10 +397,10 @@ namespace Unity.Netcode
 
                     ref var writeQueueItem = ref sendQueueItem.GetValueRef(sendQueueItem.Count - 1);
                     writeQueueItem.Writer.TryBeginWrite(sizeof(MessageHeader) + tmpSerializer.Length);
-                    MessageHeader header = new MessageHeader
+                    var header = new MessageHeader
                     {
-                        MessageSize = (short) tmpSerializer.Length,
-                        MessageType = m_MessageTypes[typeof(T)],
+                        MessageSize = (short)tmpSerializer.Length,
+                        MessageType = m_MessageTypes[typeof(TMessageType)],
                     };
 
 
@@ -424,7 +421,7 @@ namespace Unity.Netcode
                     writeQueueItem.BatchHeader.BatchSize++;
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(T), delivery, tmpSerializer.Length + sizeof(MessageHeader));
+                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
                     }
                 }
 #pragma warning restore CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
@@ -432,7 +429,7 @@ namespace Unity.Netcode
                 return tmpSerializer.Length;
             }
         }
-        
+
         private struct PointerListWrapper<T> : IReadOnlyList<T>
             where T : unmanaged
         {
@@ -470,15 +467,15 @@ namespace Unity.Netcode
 
         internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
-            where T: INetworkMessage
+            where T : INetworkMessage
         {
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
         internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
-            where T: INetworkMessage
+            where T : INetworkMessage
         {
-            ulong* clientIds = stackalloc ulong[] {clientId};
+            ulong* clientIds = stackalloc ulong[] { clientId };
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
@@ -496,22 +493,22 @@ namespace Unity.Netcode
                         queueItem.Writer.Dispose();
                         continue;
                     }
-                    
+
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
                         m_Hooks[hookIdx].OnBeforeSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
-                    
+
                     queueItem.Writer.Seek(0);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.AllowedWriteMark = 2;
 #endif
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
-                    
+
                     m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
                     queueItem.Writer.Dispose();
-                    
+
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
                         m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);

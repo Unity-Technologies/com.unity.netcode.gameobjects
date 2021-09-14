@@ -1,5 +1,4 @@
-﻿using System;
-using System.Transactions;
+using System;
 
 namespace Unity.Netcode.Messages
 {
@@ -41,7 +40,7 @@ namespace Unity.Netcode.Messages
                 throw new OverflowException("Not enough space in the buffer to read RPC data.");
             }
             reader.ReadValue(out message.Data);
-            message.Handle(ref reader, (NetworkManager) context.SystemOwner, context.SenderId);
+            message.Handle(ref reader, (NetworkManager)context.SystemOwner, context.SenderId);
         }
 
         public void Handle(ref FastBufferReader reader, NetworkManager networkManager, ulong senderId)

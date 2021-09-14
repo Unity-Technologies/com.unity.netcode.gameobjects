@@ -1,11 +1,9 @@
-﻿using AOT;
-
 namespace Unity.Netcode.Messages
 {
     internal struct TimeSyncMessage : INetworkMessage
     {
         public int Tick;
-        
+
         public void Serialize(ref FastBufferWriter writer)
         {
             writer.WriteValueSafe(this);
@@ -13,7 +11,7 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return;

@@ -1,16 +1,16 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Unity.Netcode.Messages
 {
-    internal struct SnapshotDataMessage: INetworkMessage
+    internal struct SnapshotDataMessage : INetworkMessage
     {
         public int CurrentTick;
         public ushort Sequence;
-        
+
         public ushort Range;
-        
+
         public byte[] SendMainBuffer;
         public NativeArray<byte> ReceiveMainBuffer;
 
@@ -21,7 +21,7 @@ namespace Unity.Netcode.Messages
         }
 
         public AckData Ack;
-        
+
         public struct EntryData
         {
             public ulong NetworkObjectId;
@@ -64,28 +64,28 @@ namespace Unity.Netcode.Messages
         {
             writer.WriteValue(CurrentTick);
             writer.WriteValue(Sequence);
-            
+
             writer.WriteValue(Range);
             writer.WriteBytes(SendMainBuffer, Range);
             writer.WriteValue(Ack);
-            
+
             writer.WriteValue((ushort)Entries.Length);
             writer.WriteBytes((byte*)Entries.GetUnsafePtr(), Entries.Length * sizeof(EntryData));
-            
+
             writer.WriteValue((ushort)Spawns.Length);
             writer.WriteBytes((byte*)Spawns.GetUnsafePtr(), Spawns.Length * sizeof(SpawnData));
-            
+
             writer.WriteValue((ushort)Despawns.Length);
             writer.WriteBytes((byte*)Despawns.GetUnsafePtr(), Despawns.Length * sizeof(DespawnData));
         }
 
         public static unsafe void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            NetworkManager networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             var message = new SnapshotDataMessage();
             reader.ReadValue(out message.CurrentTick);
             reader.ReadValue(out message.Sequence);
-            
+
             reader.ReadValue(out message.Range);
             message.ReceiveMainBuffer = new NativeArray<byte>(message.Range, Allocator.Temp);
             reader.ReadBytes((byte*)message.ReceiveMainBuffer.GetUnsafePtr(), message.Range);
@@ -94,11 +94,11 @@ namespace Unity.Netcode.Messages
             reader.ReadValue(out ushort length);
             message.Entries = new NativeArray<EntryData>(length, Allocator.Temp);
             reader.ReadBytes((byte*)message.Entries.GetUnsafePtr(), message.Entries.Length * sizeof(EntryData));
-            
+
             reader.ReadValue(out length);
             message.Spawns = new NativeArray<SpawnData>(length, Allocator.Temp);
             reader.ReadBytes((byte*)message.Spawns.GetUnsafePtr(), message.Spawns.Length * sizeof(SpawnData));
-            
+
             reader.ReadValue(out length);
             message.Despawns = new NativeArray<DespawnData>(length, Allocator.Temp);
             reader.ReadBytes((byte*)message.Despawns.GetUnsafePtr(), message.Despawns.Length * sizeof(DespawnData));

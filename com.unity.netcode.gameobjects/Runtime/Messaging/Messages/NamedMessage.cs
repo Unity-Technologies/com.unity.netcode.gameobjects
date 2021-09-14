@@ -1,6 +1,6 @@
-﻿namespace Unity.Netcode.Messages
+namespace Unity.Netcode.Messages
 {
-    internal struct NamedMessage: INetworkMessage
+    internal struct NamedMessage : INetworkMessage
     {
         public ulong Hash;
         public FastBufferWriter Data;

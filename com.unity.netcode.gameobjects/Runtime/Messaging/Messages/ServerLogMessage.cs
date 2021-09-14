@@ -1,5 +1,3 @@
-﻿using System;
-
 namespace Unity.Netcode.Messages
 {
     internal struct ServerLogMessage : INetworkMessage
@@ -21,7 +19,7 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (networkManager.IsServer && networkManager.NetworkConfig.EnableNetworkLogs)
             {
                 var message = new ServerLogMessage();
@@ -33,7 +31,7 @@ namespace Unity.Netcode.Messages
 
         public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
         {
-            
+
             networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, messageSize);
 
             switch (LogType)

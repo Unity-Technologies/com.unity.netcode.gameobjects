@@ -1,18 +1,18 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace Unity.Netcode.Messages
 {
-    internal struct ConnectionRequestMessage: INetworkMessage
+    internal struct ConnectionRequestMessage : INetworkMessage
     {
         public ulong ConfigHash;
-        
+
         [StructLayout(LayoutKind.Explicit, Size = 512)]
-        public struct ConnectionDataStorage: IFixedArrayStorage
+        public struct ConnectionDataStorage : IFixedArrayStorage
         {
-            
+
         }
-        
+
         public FixedUnmanagedArray<byte, ConnectionDataStorage> ConnectionData;
 
         public bool ShouldSendConnectionData;
@@ -21,7 +21,7 @@ namespace Unity.Netcode.Messages
         {
             if (ShouldSendConnectionData)
             {
-                if(!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash) +
+                if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash) +
                                      FastBufferWriter.GetWriteSize(ConnectionData)))
                 {
                     throw new OverflowException(
@@ -33,7 +33,7 @@ namespace Unity.Netcode.Messages
             }
             else
             {
-                if(!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash)))
+                if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash)))
                 {
                     throw new OverflowException(
                         $"Not enough space in the write buffer to serialize {nameof(ConnectionRequestMessage)}");
@@ -44,13 +44,13 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsServer)
             {
                 return;
             }
-            
-            ConnectionRequestMessage message = new ConnectionRequestMessage();
+
+            var message = new ConnectionRequestMessage();
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
                 if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.ConfigHash) +
@@ -65,7 +65,7 @@ namespace Unity.Netcode.Messages
                     return;
                 }
                 reader.ReadValue(out message.ConfigHash);
-                
+
                 if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -76,7 +76,7 @@ namespace Unity.Netcode.Messages
                     networkManager.DisconnectClient(context.SenderId);
                     return;
                 }
-                
+
                 reader.ReadValue(out int length);
                 if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize<byte>() * length))
                 {
@@ -103,7 +103,7 @@ namespace Unity.Netcode.Messages
                     return;
                 }
                 reader.ReadValue(out message.ConfigHash);
-                
+
                 if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

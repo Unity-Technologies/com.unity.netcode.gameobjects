@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
@@ -380,7 +378,7 @@ namespace Unity.Netcode
 
             // Write the number of NetworkObjects we are serializing
             writer.WriteValueSafe(m_NetworkObjectsSync.Count());
-            for(var i = 0; i < m_NetworkObjectsSync.Count(); ++i)
+            for (var i = 0; i < m_NetworkObjectsSync.Count(); ++i)
             {
                 var noStart = writer.Position;
                 var sceneObject = m_NetworkObjectsSync[i].GetMessageSceneObject(TargetClientId);
@@ -515,7 +513,7 @@ namespace Unity.Netcode
                 {
                     throw new OverflowException("Not enough space in the buffer to read recorded synchronization data size.");
                 }
-                
+
                 m_HasInternalBuffer = true;
                 InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, sizeToCopy);
             }
@@ -532,7 +530,7 @@ namespace Unity.Netcode
             {
                 // is not packed!
                 InternalBuffer.ReadValueSafe(out ushort newObjectsCount);
-            
+
                 for (ushort i = 0; i < newObjectsCount; i++)
                 {
                     InternalBuffer.ReadValueSafe(out int sceneHandle);
@@ -540,7 +538,7 @@ namespace Unity.Netcode
                     m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneHandle);
 
                     // Deserialize the NetworkObject
-                    NetworkObject.SceneObject sceneObject = new NetworkObject.SceneObject();
+                    var sceneObject = new NetworkObject.SceneObject();
                     sceneObject.Deserialize(ref InternalBuffer);
                     NetworkObject.AddSceneObject(sceneObject, ref InternalBuffer, m_NetworkManager);
                 }
@@ -692,9 +690,9 @@ namespace Unity.Netcode
                     InternalBuffer.ReadValueSafe(out int handle);
                     m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(handle);
 
-                    NetworkObject.SceneObject sceneObject = new NetworkObject.SceneObject();
+                    var sceneObject = new NetworkObject.SceneObject();
                     sceneObject.Deserialize(ref InternalBuffer);
-                    
+
                     var spawnedNetworkObject = NetworkObject.AddSceneObject(sceneObject, ref InternalBuffer, networkManager);
                     if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                     {

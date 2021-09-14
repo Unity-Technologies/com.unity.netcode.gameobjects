@@ -1,11 +1,9 @@
-﻿using UnityEngine;
-
 namespace Unity.Netcode.Messages
 {
     internal struct CreateObjectMessage : INetworkMessage
     {
         public NetworkObject.SceneObject ObjectInfo;
-        
+
         public void Serialize(ref FastBufferWriter writer)
         {
             ObjectInfo.Serialize(ref writer);
@@ -13,7 +11,7 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return;

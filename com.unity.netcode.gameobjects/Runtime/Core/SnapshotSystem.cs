@@ -733,7 +733,7 @@ namespace Unity.Netcode
                 // this sends the whole buffer
                 // we'll need to build a per-client list
                 SendMainBuffer = m_Snapshot.MainBuffer,
-                
+
                 Ack = new SnapshotDataMessage.AckData
                 {
                     LastReceivedSequence = m_ClientData[clientId].LastReceivedSequence,
@@ -741,7 +741,7 @@ namespace Unity.Netcode
                 }
             };
 
-            
+
             // write the snapshot: buffer, index, spawns, despawns
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
@@ -836,7 +836,7 @@ namespace Unity.Netcode
                     }
                     var sentSpawn = m_Snapshot.GetSpawnData(clientData, in m_Snapshot.Spawns[index], out var spawn);
                     message.Spawns[j] = spawn;
-                    
+
                     m_Snapshot.Spawns[index].TimesWritten++;
                     clientData.SentSpawns.Add(sentSpawn);
                     spawnWritten++;
@@ -866,7 +866,7 @@ namespace Unity.Netcode
                     {
                         overSize = true;
                         break;
-                    } 
+                    }
                     var sentDespawn = m_Snapshot.GetDespawnData(clientData, in m_Snapshot.Despawns[index], out var despawn);
                     message.Despawns[j] = despawn;
                     m_Snapshot.Despawns[index].TimesWritten++;

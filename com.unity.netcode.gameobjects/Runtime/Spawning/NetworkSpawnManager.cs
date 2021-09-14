@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Unity.Collections;
 using Unity.Netcode.Messages;
 using UnityEngine;
 
@@ -144,7 +142,7 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
-            
+
             var message = new ChangeOwnershipMessage
             {
                 NetworkObjectId = networkObject.NetworkObjectId,
@@ -285,7 +283,7 @@ namespace Unity.Netcode
             {
                 throw new SpawnStateException("Object is already spawned");
             }
-            
+
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
         }
 
@@ -307,7 +305,7 @@ namespace Unity.Netcode
             {
                 networkObject.SetNetworkVariableData(ref variableData);
             }
-            
+
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Metadata.NetworkObjectId, sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.IsPlayerObject, sceneObject.Metadata.OwnerClientId, destroyWithScene);
         }
 

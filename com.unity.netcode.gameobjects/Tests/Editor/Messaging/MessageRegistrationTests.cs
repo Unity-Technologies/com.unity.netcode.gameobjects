@@ -1,28 +1,27 @@
-﻿
+
 using NUnit.Framework;
-using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.EditorTests
 {
     public class MessageRegistrationTests
     {
-        class MessagingSystemOwnerOne
+        private class MessagingSystemOwnerOne
         {
-            
+
         }
 
-        class MessagingSystemOwnerTwo
+        private class MessagingSystemOwnerTwo
         {
-            
+
         }
-        
+
         [Bind(typeof(MessagingSystemOwnerOne))]
-        struct TestMessageOne : INetworkMessage
+        private struct TestMessageOne : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -30,17 +29,17 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(ref FastBufferReader reader, NetworkContext context)
             {
-                
+
             }
         }
-        
+
         [Bind(typeof(MessagingSystemOwnerOne))]
-        struct TestMessageTwo : INetworkMessage
+        private struct TestMessageTwo : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -48,17 +47,17 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(ref FastBufferReader reader, NetworkContext context)
             {
-                
+
             }
         }
-        
+
         [Bind(typeof(MessagingSystemOwnerTwo))]
-        struct TestMessageThree : INetworkMessage
+        private struct TestMessageThree : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -66,17 +65,17 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(ref FastBufferReader reader, NetworkContext context)
             {
-                
+
             }
         }
-        
+
         [Bind(null)]
-        struct TestMessageFour : INetworkMessage
+        private struct TestMessageFour : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -84,7 +83,7 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(ref FastBufferReader reader, NetworkContext context)
             {
-                
+
             }
         }
 
@@ -135,7 +134,7 @@ namespace Unity.Netcode.EditorTests
                 MessagingSystem.MessageHandler handlerFour = TestMessageFour.Receive;
 
                 var foundHandlerOne = systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))];
-                
+
                 Assert.AreEqual(handlerOne,
                     systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))]);
                 Assert.AreEqual(handlerTwo,
@@ -148,18 +147,18 @@ namespace Unity.Netcode.EditorTests
         }
 
         #region WhenCreatingMessageSystem_MissingReceiveHandlerThrowsException
-        class BrokenSystemOwnerOne
+        private class BrokenSystemOwnerOne
         {
-            
+
         }
-        
+
         [Bind(typeof(BrokenSystemOwnerOne))]
-        struct TestMessageFive : INetworkMessage
+        private struct TestMessageFive : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -176,18 +175,18 @@ namespace Unity.Netcode.EditorTests
         #endregion
 
         #region WhenCreatingMessageSystem_ReceiveHandlerWithIncorrectParametersThrowsException
-        class BrokenSystemOwnerTwo
+        private class BrokenSystemOwnerTwo
         {
-            
+
         }
-        
+
         [Bind(typeof(BrokenSystemOwnerTwo))]
-        struct TestMessageSix : INetworkMessage
+        private struct TestMessageSix : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -195,7 +194,7 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(ref FastBufferReader reader)
             {
-                
+
             }
         }
 
@@ -209,18 +208,18 @@ namespace Unity.Netcode.EditorTests
         #endregion
 
         #region WhenCreatingMessageSystem_ReceiveHandlerWithMissingRefSpecifierThrowsException
-        class BrokenSystemOwnerThree
+        private class BrokenSystemOwnerThree
         {
-            
+
         }
-        
+
         [Bind(typeof(BrokenSystemOwnerThree))]
-        struct TestMessageSeven : INetworkMessage
+        private struct TestMessageSeven : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-            
+
             public void Serialize(ref FastBufferWriter writer)
             {
                 writer.WriteValue(this);
@@ -228,7 +227,7 @@ namespace Unity.Netcode.EditorTests
 
             public static void Receive(FastBufferReader reader, NetworkContext context)
             {
-                
+
             }
         }
 

@@ -17,7 +17,7 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 
 namespace Unity.Netcode.Editor.CodeGen
 {
-    
+
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;
@@ -92,7 +92,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private ModuleDefinition m_MainModule;
         private PostProcessorAssemblyResolver m_AssemblyResolver;
-        
+
         private MethodReference m_Debug_LogError_MethodRef;
         private TypeReference m_NetworkManager_TypeRef;
         private MethodReference m_NetworkManager_getLocalClientId_MethodRef;
@@ -119,7 +119,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private FieldReference m_ServerRpcParams_Receive_FieldRef;
         private FieldReference m_ServerRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference m_ClientRpcParams_TypeRef;
-        
+
         private TypeReference m_FastBufferWriter_TypeRef;
         private MethodReference m_FastBufferWriter_Constructor;
         private MethodReference m_FastBufferWriter_Dispose;
@@ -297,15 +297,15 @@ namespace Unity.Netcode.Editor.CodeGen
             m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterType);
 
             m_FastBufferWriter_Constructor = moduleDefinition.ImportReference(
-                fastBufferWriterType.GetConstructor(new[] {typeof(int), typeof(Allocator), typeof(int)}));
+                fastBufferWriterType.GetConstructor(new[] { typeof(int), typeof(Allocator), typeof(int) }));
             m_FastBufferWriter_Dispose = moduleDefinition.ImportReference(fastBufferWriterType.GetMethod("Dispose"));
-            
-            var FstBufferReaderType = typeof(FastBufferReader);
-            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(FstBufferReaderType);
-            
+
+            var fastBufferReaderType = typeof(FastBufferReader);
+            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(fastBufferReaderType);
+
             // Find all extension methods for FastBufferReader and FastBufferWriter to enable user-implemented
             // methods to be called.
-            List<AssemblyDefinition> assemblies = new List<AssemblyDefinition>();
+            var assemblies = new List<AssemblyDefinition>();
             assemblies.Add(m_MainModule.Assembly);
             foreach (var reference in m_MainModule.AssemblyReferences)
             {
@@ -314,7 +314,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             var extensionConstructor =
                 moduleDefinition.ImportReference(typeof(ExtensionAttribute).GetConstructor(new Type[] { }));
-            foreach(var assembly in assemblies)
+            foreach (var assembly in assemblies)
             {
                 foreach (var module in assembly.Modules)
                 {
@@ -333,7 +333,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
 
                             var isExtension = false;
-                            
+
                             foreach (var attr in method.CustomAttributes)
                             {
                                 if (attr.Constructor.Resolve() == extensionConstructor.Resolve())
@@ -348,7 +348,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
 
                             var parameters = method.Parameters;
-                        
+
                             if (parameters.Count == 2
                                 && parameters[0].ParameterType.Resolve() == m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
                             {
@@ -363,7 +363,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -472,7 +472,7 @@ namespace Unity.Netcode.Editor.CodeGen
             var moduleName = m_MainModule.Name;
             if (moduleName.EndsWith(".dll") || moduleName.EndsWith(".exe"))
             {
-                moduleName = moduleName.Substring(0, moduleName.Length-4);
+                moduleName = moduleName.Substring(0, moduleName.Length - 4);
             }
 
             foreach (var reference in m_MainModule.AssemblyReferences)
@@ -480,7 +480,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 var referenceName = reference.Name.Split(',')[0];
                 if (referenceName.EndsWith(".dll") || referenceName.EndsWith(".exe"))
                 {
-                    referenceName = referenceName.Substring(0, referenceName.Length-4);
+                    referenceName = referenceName.Substring(0, referenceName.Length - 4);
                 }
 
                 if (moduleName == referenceName)
@@ -568,7 +568,7 @@ namespace Unity.Netcode.Editor.CodeGen
             // serializer OR extension method exists for it.
             return rpcAttribute;
         }
-        
+
         private MethodInfo GetWriteMethodViaSystemReflection(Type objectType, string name, Type paramType)
         {
             foreach (var method in objectType.GetMethods())
@@ -581,13 +581,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         continue;
                     }
-                    
+
                     var checkType = paramType;
                     if (paramType.IsArray)
                     {
                         checkType = paramType.GetElementType();
                     }
-                    
+
                     if ((parameters[0].ParameterType == checkType) || (parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsIn) && parameters[0].ParameterType.IsArray == paramType.IsArray)
                     {
                         return method;
@@ -653,7 +653,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                     }
                 }
-                
+
                 var systemType = Type.GetType(paramType.FullName);
                 if (systemType == null)
                 {
@@ -681,7 +681,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             return foundMethodRef;
         }
-        
+
         private static MethodInfo GetReadMethodViaSystemReflection(Type objectType, string name, Type paramType)
         {
             foreach (var method in objectType.GetMethods())
@@ -693,13 +693,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         continue;
                     }
-                    
+
                     var checkType = paramType;
                     if (paramType.IsArray)
                     {
                         checkType = paramType.GetElementType();
                     }
-                    
+
                     if ((parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsOut) && parameters[0].ParameterType.IsArray == paramType.IsArray)
                     {
                         return method;
@@ -740,7 +740,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var parameters = method.Resolve().Parameters;
                     if (
-                        method.Name == "ReadValueSafe" 
+                        method.Name == "ReadValueSafe"
                         && parameters[1].IsOut
                         && parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve()
                         && ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
@@ -750,7 +750,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         return true;
                     }
                 }
-                
+
                 var systemType = Type.GetType(paramType.FullName);
                 if (systemType == null)
                 {
@@ -894,7 +894,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         // if (LogLevel.Normal > networkManager.LogLevel)
                         instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef));
-                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int) LogLevel.Normal));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
                         instructions.Add(processor.Create(OpCodes.Cgt));
                         instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                         instructions.Add(processor.Create(OpCodes.Ceq));
@@ -947,16 +947,16 @@ namespace Unity.Netcode.Editor.CodeGen
                             m_Diagnostics.AddError(methodDefinition, $"Couldn't find boolean serializer! Something's wrong!");
                             return;
                         }
-                        
+
                         methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
                         int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
-                        
+
                         // bool isSet = (param != null);
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
                         instructions.Add(processor.Create(OpCodes.Ldnull));
                         instructions.Add(processor.Create(OpCodes.Cgt_Un));
                         instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
-                        
+
                         // writer.WriteValueSafe(isSet);
                         instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
@@ -1084,15 +1084,15 @@ namespace Unity.Netcode.Editor.CodeGen
                     // TODO: Figure out why try/catch here cause the try block not to execute at all.
                     // End try block
                     //instructions.Add(processor.Create(OpCodes.Leave, lastInstr));
-                    
+
                     // writer.Dispose();
                     var handlerFirst = processor.Create(OpCodes.Ldloca, serializerLocIdx);
                     instructions.Add(handlerFirst);
                     instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Dispose));
-                    
+
                     // End finally block
                     //instructions.Add(processor.Create(OpCodes.Endfinally));
-                    
+
                     // try { ... serialization code ... } finally { writer.Dispose(); }
                     /*var handler = new ExceptionHandler(ExceptionHandlerType.Finally)
                     {
@@ -1265,18 +1265,18 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         m_Diagnostics.AddError(methodDefinition, $"Couldn't find boolean deserializer! Something's wrong!");
                     }
-                    
+
                     // reader.ReadValueSafe(out bool isSet)
                     nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
                     int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
                     processor.Emit(OpCodes.Call, boolMethodRef);
-                    
+
                     // paramType param = null;
                     processor.Emit(OpCodes.Ldnull);
                     processor.Emit(OpCodes.Stloc, localIndex);
-                    
+
                     // if(isSet) {
                     jumpInstruction = processor.Create(OpCodes.Nop);
                     processor.Emit(OpCodes.Ldloc, isSetLocalIndex);

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System;
-using System.IO;
 using System.Linq;
 using Unity.Netcode.Messages;
 using UnityEngine;
@@ -572,13 +571,13 @@ namespace Unity.Netcode
         /// <returns></returns>
         private bool OnSceneEventProgressCompleted(SceneEventProgress sceneEventProgress)
         {
-            
+
             ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
             ClientSynchEventData.SceneIndex = sceneEventProgress.SceneBuildIndex;
             ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
             ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
             ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
-            
+
             var message = new SceneEventMessage
             {
                 EventData = ClientSynchEventData
@@ -1146,9 +1145,9 @@ namespace Unity.Netcode
             foreach (var sceneIndex in ClientSynchEventData.ScenesToSynchronize)
             {
                 m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    clientId, (uint) ClientSynchEventData.SceneEventType, ScenesInBuild[(int) sceneIndex], size);
+                    clientId, (uint)ClientSynchEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], size);
             }
-            
+
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1281,8 +1280,8 @@ namespace Unity.Netcode
             ClientSynchEventData.LoadSceneMode = loadSceneMode;
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete;
             ClientSynchEventData.SceneIndex = sceneIndex;
-            
-            
+
+
             var message = new SceneEventMessage
             {
                 EventData = ClientSynchEventData

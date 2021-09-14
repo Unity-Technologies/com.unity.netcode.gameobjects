@@ -48,7 +48,7 @@ namespace Unity.Netcode
             LengthInternal = Math.Max(1, length == -1 ? buffer.Length : length);
             if (allocator == Allocator.None)
             {
-                BufferPointer = (byte*) buffer.GetUnsafePtr() + offset;
+                BufferPointer = (byte*)buffer.GetUnsafePtr() + offset;
             }
             else
             {
@@ -88,7 +88,7 @@ namespace Unity.Netcode
                     UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
                 }
 
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
@@ -123,7 +123,7 @@ namespace Unity.Netcode
                     UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
                 }
 
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
@@ -148,13 +148,13 @@ namespace Unity.Netcode
             LengthInternal = Math.Max(1, length);
             if (allocator == Allocator.None)
             {
-                    BufferPointer = buffer + offset;
+                BufferPointer = buffer + offset;
             }
             else
             {
                 void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
                 UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
@@ -401,7 +401,7 @@ namespace Unity.Netcode
         {
             ReadValueSafe(out int size);
             value = new T[size];
-            for(var i = 0; i < size; ++i)
+            for (var i = 0; i < size; ++i)
             {
                 ReadNetworkSerializable(out value[i]);
             }
@@ -709,7 +709,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to copy</param>
         /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count) 
+        public unsafe void ReadValue<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
             where TStorageType : unmanaged, IFixedArrayStorage
         {
@@ -741,7 +741,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to copy</param>
         /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count) 
+        public unsafe void ReadValueSafe<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
             where TStorageType : unmanaged, IFixedArrayStorage
         {

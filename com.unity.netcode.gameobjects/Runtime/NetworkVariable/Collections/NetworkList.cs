@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Unity.Netcode
 {
@@ -459,7 +458,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Enum representing the different operations available for triggering an event.
         /// </summary>
-        public enum EventType: byte
+        public enum EventType : byte
         {
             /// <summary>
             /// Add

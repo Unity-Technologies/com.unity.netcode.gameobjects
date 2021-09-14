@@ -1,10 +1,9 @@
-using Unity.Collections;
 using UnityEngine;
 using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
-    
+
     /// <summary>
     /// Used with GenericObjects to randomly move them around
     /// </summary>
@@ -82,7 +81,7 @@ namespace TestProject.ManualTests
         {
             m_Direction = direction;
         }
-        
+
         private void OnCollisionStay(Collision collision)
         {
             if (IsServer)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
@@ -10,7 +10,7 @@ namespace Unity.Netcode.EditorTests
     public class MessageReceivingTests
     {
         [Bind(typeof(MessageReceivingTests))]
-        struct TestMessage : INetworkMessage
+        private struct TestMessage : INetworkMessage
         {
             public int A;
             public int B;
@@ -32,13 +32,13 @@ namespace Unity.Netcode.EditorTests
         }
 
         private MessagingSystem m_MessagingSystem;
-        
+
         [SetUp]
         public void SetUp()
         {
             TestMessage.Deserialized = false;
             TestMessage.DeserializedValues.Clear();
-         
+
             m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this);
         }
 
@@ -61,10 +61,10 @@ namespace Unity.Netcode.EditorTests
 
         [Test]
         public void WhenHandlingAMessage_ReceiveMethodIsCalled()
-        { 
+        {
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -74,7 +74,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
                 writer.WriteValue(message);
-                
+
                 var reader = new FastBufferReader(ref writer, Allocator.Temp);
                 using (reader)
                 {
@@ -95,7 +95,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -103,19 +103,19 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) + 
-                                     FastBufferWriter.GetWriteSize(messageHeader) + 
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) +
+                                     FastBufferWriter.GetWriteSize(messageHeader) +
                                      FastBufferWriter.GetWriteSize(message));
                 writer.WriteValue(batchHeader);
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
-                
+
                 var reader = new FastBufferReader(ref writer, Allocator.Temp);
                 using (reader)
                 {
                     m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
                     Assert.IsFalse(TestMessage.Deserialized);
-                    Assert.IsEmpty(TestMessage.DeserializedValues);;
+                    Assert.IsEmpty(TestMessage.DeserializedValues); ;
                 }
             }
         }
@@ -129,7 +129,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -137,13 +137,13 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) + 
-                                     FastBufferWriter.GetWriteSize(messageHeader) + 
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) +
+                                     FastBufferWriter.GetWriteSize(messageHeader) +
                                      FastBufferWriter.GetWriteSize(message));
                 writer.WriteValue(batchHeader);
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
-                
+
                 var reader = new FastBufferReader(ref writer, Allocator.Temp);
                 using (reader)
                 {
@@ -165,7 +165,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short) UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -174,22 +174,22 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) + 
-                                     FastBufferWriter.GetWriteSize(messageHeader) * 2 + 
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) +
+                                     FastBufferWriter.GetWriteSize(messageHeader) * 2 +
                                      FastBufferWriter.GetWriteSize(message) * 2);
                 writer.WriteValue(batchHeader);
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message2);
-                
+
                 var reader = new FastBufferReader(ref writer, Allocator.Temp);
                 using (reader)
                 {
                     m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
                     Assert.IsFalse(TestMessage.Deserialized);
                     Assert.IsEmpty(TestMessage.DeserializedValues);
-                    
+
                     m_MessagingSystem.ProcessIncomingMessageQueue();
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.AreEqual(2, TestMessage.DeserializedValues.Count);

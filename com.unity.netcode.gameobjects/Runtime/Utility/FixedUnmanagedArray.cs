@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
@@ -23,10 +21,10 @@ namespace Unity.Netcode
     /// </summary>
     public interface IFixedArrayStorage
     {
-        
+
     }
 
-    public struct FixedUnmanagedArray<TPropertyType, TStorageType> : IReadOnlyList<TPropertyType> 
+    public struct FixedUnmanagedArray<TPropertyType, TStorageType> : IReadOnlyList<TPropertyType>
         where TPropertyType : unmanaged
         where TStorageType : unmanaged, IFixedArrayStorage
     {
@@ -36,16 +34,16 @@ namespace Unity.Netcode
         public int Count
         {
             get { return m_Length; }
-            set { m_Length = value;  }
+            set { m_Length = value; }
         }
 
-        public unsafe int Capacity => sizeof(TStorageType)/sizeof(TPropertyType);
+        public unsafe int Capacity => sizeof(TStorageType) / sizeof(TPropertyType);
 
         public bool IsReadOnly => false;
 
         public unsafe TPropertyType[] ToArray()
         {
-            TPropertyType[] ret = new TPropertyType[Count];
+            var ret = new TPropertyType[Count];
             fixed (TPropertyType* b = ret)
             {
                 fixed (TStorageType* ptr = &m_Data)
@@ -55,14 +53,14 @@ namespace Unity.Netcode
             }
             return ret;
         }
-        
+
         public unsafe FixedUnmanagedArray(TPropertyType* seedData, int size)
         {
             if (size > sizeof(TStorageType))
             {
                 throw new OverflowException("Seed data was larger than provided storage class.");
             }
-            
+
             m_Data = new TStorageType();
             fixed (TStorageType* ptr = &m_Data)
             {
@@ -99,7 +97,7 @@ namespace Unity.Netcode
             {
                 throw new ArgumentException("Size cannot be greater than seed data's length.");
             }
-            
+
             m_Data = new TStorageType();
             fixed (TStorageType* ptr = &m_Data)
             fixed (TPropertyType* seedPtr = seedData)
@@ -114,7 +112,7 @@ namespace Unity.Netcode
         {
             fixed (TStorageType* ptr = &m_Data)
             {
-                return (TPropertyType*) ptr;
+                return (TPropertyType*)ptr;
             }
         }
 
@@ -125,7 +123,7 @@ namespace Unity.Netcode
             {
                 fixed (TStorageType* ptr = &m_Data)
                 {
-                    TPropertyType* reinterpretPtr = (TPropertyType*) ptr;
+                    var reinterpretPtr = (TPropertyType*)ptr;
                     return reinterpretPtr[index];
                 }
             }
@@ -134,7 +132,7 @@ namespace Unity.Netcode
             {
                 fixed (TStorageType* ptr = &m_Data)
                 {
-                    TPropertyType* reinterpretPtr = (TPropertyType*) ptr;
+                    var reinterpretPtr = (TPropertyType*)ptr;
                     reinterpretPtr[index] = value;
                 }
             }
@@ -145,7 +143,7 @@ namespace Unity.Netcode
         {
             fixed (TStorageType* ptr = &m_Data)
             {
-                TPropertyType* reinterpretPtr = (TPropertyType*) ptr;
+                var reinterpretPtr = (TPropertyType*)ptr;
                 return ref reinterpretPtr[index];
             }
         }
@@ -172,7 +170,7 @@ namespace Unity.Netcode
 
         public IEnumerator<TPropertyType> GetEnumerator()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

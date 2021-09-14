@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using Unity.Profiling;
 
 namespace Unity.Netcode
 {
@@ -14,7 +11,7 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
         }
 
-        
+
         public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
         {
         }

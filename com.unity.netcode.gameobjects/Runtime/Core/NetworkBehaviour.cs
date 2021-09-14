@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
-using System.IO;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
@@ -38,7 +37,7 @@ namespace Unity.Netcode
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-        
+
         public void SendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams sendParams, RpcDelivery delivery)
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
@@ -110,7 +109,7 @@ namespace Unity.Netcode
                 RPCData = writer
             };
             int messageSize;
-            
+
             if (sendParams.Send.TargetClientIds != null)
             {
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIds, true);
@@ -120,7 +119,7 @@ namespace Unity.Netcode
                 // NativeArray doesn't implement required IReadOnlyList interface, but that's ok, pointer + length
                 // will be more efficient anyway.
                 messageSize = NetworkManager.SendMessage(message, networkDelivery,
-                    (ulong*) sendParams.Send.TargetClientIdsNativeArray.Value.GetUnsafePtr(),
+                    (ulong*)sendParams.Send.TargetClientIdsNativeArray.Value.GetUnsafePtr(),
                     sendParams.Send.TargetClientIdsNativeArray.Value.Length);
             }
             else
@@ -504,7 +503,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe((ushort)0x12AB);
             }
         }
-        
+
         internal void SetNetworkVariableData(ref FastBufferReader reader)
         {
             if (NetworkVariableFields.Count == 0)
@@ -519,7 +518,7 @@ namespace Unity.Netcode
                 if (varSize == 0)
                 {
                     reader.ReadValueSafe(out magic);
-                    if (magic != (ushort) 0x12AB)
+                    if (magic != (ushort)0x12AB)
                     {
                         NetworkLog.LogWarning($"Var data ended not on the magic value.");
                     }
@@ -551,7 +550,7 @@ namespace Unity.Netcode
                     }
                 }
                 reader.ReadValueSafe(out magic);
-                if (magic != (ushort) 0x12AB)
+                if (magic != (ushort)0x12AB)
                 {
                     NetworkLog.LogWarning($"Var data ended not on the magic value.");
                 }

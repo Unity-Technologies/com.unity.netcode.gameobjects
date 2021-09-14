@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
 using Unity.Netcode.Messages;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -76,7 +75,7 @@ namespace Unity.Netcode
             {
                 m_NetworkManager = manager;
             }
-            
+
             public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
             {
             }
@@ -116,8 +115,8 @@ namespace Unity.Netcode
 
             public bool OnVerifyCanReceive(ulong senderId, Type messageType)
             {
-                if(m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
-                       (client.ConnectionState == PendingClient.State.PendingApproval || 
+                if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
+                       (client.ConnectionState == PendingClient.State.PendingApproval ||
                         (client.ConnectionState == PendingClient.State.PendingConnection &&
                          messageType != typeof(ConnectionRequestMessage))))
                 {
@@ -132,7 +131,7 @@ namespace Unity.Netcode
                 return true;
             }
         }
-        
+
         private class NetworkManagerMessageSender : IMessageSender
         {
             private NetworkManager m_NetworkManager;
@@ -141,10 +140,10 @@ namespace Unity.Netcode
             {
                 m_NetworkManager = manager;
             }
-        
+
             public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
             {
-            
+
                 var length = batchData.Length;
                 //TODO: Transport needs to have a way to send it data without copying and allocating here.
                 var bytes = batchData.ToArray();
@@ -450,16 +449,16 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, UInt64.MaxValue);
-            
+            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
+
             m_MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_MessagingSystem.Hook(new ProfilingHooks());
 #endif
             m_MessagingSystem.Hook(new MetricHooks(this));
 
-            LocalClientId = UInt64.MaxValue;
-            
+            LocalClientId = ulong.MaxValue;
+
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -1010,7 +1009,7 @@ namespace Unity.Netcode
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
-            
+
             if (m_MessagingSystem != null)
             {
                 m_MessagingSystem.Dispose();
@@ -1251,9 +1250,9 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds, bool serverCanSendToServerId = false)
-            where T : INetworkMessage
-            where U : IReadOnlyList<ulong>
+        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, bool serverCanSendToServerId = false)
+            where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
             // Prevent server sending to itself
             if (IsServer && !serverCanSendToServerId)
@@ -1281,7 +1280,7 @@ namespace Unity.Netcode
 
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds, bool serverCanSendToServerId = false)
-            where T: INetworkMessage
+            where T : INetworkMessage
         {
             // Prevent server sending to itself
             if (IsServer && !serverCanSendToServerId)
@@ -1304,12 +1303,12 @@ namespace Unity.Netcode
                 }
                 return m_MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
-            
+
             return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
         public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
-            where T: INetworkMessage
+            where T : INetworkMessage
         {
             // Prevent server sending to itself
             if (IsServer && clientId == ServerClientId && !serverCanSendToServerId)

@@ -1,7 +1,6 @@
 #if !NET35
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Unity.Netcode
 {
@@ -90,19 +89,19 @@ namespace Unity.Netcode
                 switch (m_DirtyEvents[i].Type)
                 {
                     case NetworkSetEvent<T>.EventType.Add:
-                    {
-                        writer.WriteValueSafe(m_DirtyEvents[i].Value);
-                    }
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                        }
                         break;
                     case NetworkSetEvent<T>.EventType.Remove:
-                    {
-                        writer.WriteValueSafe(m_DirtyEvents[i].Value);
-                    }
+                        {
+                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                        }
                         break;
                     case NetworkSetEvent<T>.EventType.Clear:
-                    {
-                        //Nothing has to be written
-                    }
+                        {
+                            //Nothing has to be written
+                        }
                         break;
                 }
             }

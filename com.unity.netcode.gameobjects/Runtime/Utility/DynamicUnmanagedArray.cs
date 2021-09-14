@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -48,7 +47,7 @@ namespace Unity.Netcode
         {
             m_Capacity *= 2;
             var data = (T*)UnsafeUtility.Malloc(m_Capacity * sizeof(T), UnsafeUtility.AlignOf<T>(), m_Allocator);
-            UnsafeUtility.MemCpy(data, m_Data, m_Length*sizeof(T));
+            UnsafeUtility.MemCpy(data, m_Data, m_Length * sizeof(T));
             UnsafeUtility.Free(m_Data, m_Allocator);
             m_Data = data;
         }
@@ -74,7 +73,7 @@ namespace Unity.Netcode
 
         public IEnumerator<T> GetEnumerator()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -84,11 +83,11 @@ namespace Unity.Netcode
 
         public static unsafe Ref<DynamicUnmanagedArray<T>> CreateRef(int capacity = 16)
         {
-            DynamicUnmanagedArray<T>* array =
-                (DynamicUnmanagedArray<T>*) UnsafeUtility.Malloc(
+            var array =
+                (DynamicUnmanagedArray<T>*)UnsafeUtility.Malloc(
                     sizeof(DynamicUnmanagedArray<T>),
                     UnsafeUtility.AlignOf<DynamicUnmanagedArray<T>>(), Allocator.Persistent);
-            
+
             array->m_Data = (T*)UnsafeUtility.Malloc(capacity * sizeof(T), UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
             array->m_Allocator = Allocator.Persistent;
             array->m_Length = 0;

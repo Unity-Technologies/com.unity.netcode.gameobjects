@@ -1,43 +1,42 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Unity.Profiling;
 
 namespace Unity.Netcode
 {
     internal class ProfilingHooks : INetworkHooks
     {
-        private Dictionary<Type, ProfilerMarker> m_handlerProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
-        private Dictionary<Type, ProfilerMarker> m_senderProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
+        private Dictionary<Type, ProfilerMarker> m_HandlerProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
+        private Dictionary<Type, ProfilerMarker> m_SenderProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
         private readonly ProfilerMarker m_SendBatch = new ProfilerMarker($"{nameof(MessagingSystem)}.SendBatch");
         private readonly ProfilerMarker m_ReceiveBatch = new ProfilerMarker($"{nameof(MessagingSystem)}.ReceiveBatchBatch");
 
         private ProfilerMarker GetHandlerProfilerMarker(Type type)
         {
-            var result = m_handlerProfilerMarkers.TryGetValue(type, out var marker);
+            var result = m_HandlerProfilerMarkers.TryGetValue(type, out var marker);
             if (result)
             {
                 return marker;
             }
 
             marker = new ProfilerMarker($"{nameof(MessagingSystem)}.DeserializeAndHandle.{type.Name}");
-            m_handlerProfilerMarkers[type] = marker;
+            m_HandlerProfilerMarkers[type] = marker;
             return marker;
         }
 
         private ProfilerMarker GetSenderProfilerMarker(Type type)
         {
-            var result = m_senderProfilerMarkers.TryGetValue(type, out var marker);
+            var result = m_SenderProfilerMarkers.TryGetValue(type, out var marker);
             if (result)
             {
                 return marker;
             }
 
             marker = new ProfilerMarker($"{nameof(MessagingSystem)}.SerializeAndEnqueue.{type.Name}");
-            m_senderProfilerMarkers[type] = marker;
+            m_SenderProfilerMarkers[type] = marker;
             return marker;
         }
-        
+
         public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
         {
             GetSenderProfilerMarker(messageType).Begin();

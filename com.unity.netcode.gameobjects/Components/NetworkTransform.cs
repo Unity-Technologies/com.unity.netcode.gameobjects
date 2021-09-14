@@ -82,7 +82,7 @@ namespace Unity.Netcode.Components
             public float RotAngleX, RotAngleY, RotAngleZ;
             public float ScaleX, ScaleY, ScaleZ;
 
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
             {
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref Bitset);

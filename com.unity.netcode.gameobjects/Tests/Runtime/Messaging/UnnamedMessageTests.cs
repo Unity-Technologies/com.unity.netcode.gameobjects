@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
@@ -32,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
 
             ulong receivedMessageSender = 0;
             Guid receivedMessageContent;
-            FirstClient.CustomMessagingManager.OnUnnamedMessage += 
+            FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
                     receivedMessageSender = sender;
@@ -61,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
 
             ulong firstReceivedMessageSender = 0;
             Guid firstReceivedMessageContent;
-            FirstClient.CustomMessagingManager.OnUnnamedMessage += 
+            FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
                     firstReceivedMessageSender = sender;
@@ -71,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
             ulong secondReceivedMessageSender = 0;
             Guid secondReceivedMessageContent;
-            SecondClient.CustomMessagingManager.OnUnnamedMessage += 
+            SecondClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
                     secondReceivedMessageSender = sender;

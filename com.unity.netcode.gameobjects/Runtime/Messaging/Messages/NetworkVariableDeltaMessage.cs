@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Unity.Collections;
 
@@ -14,11 +14,11 @@ namespace Unity.Netcode.Messages
     {
         public ulong NetworkObjectId;
         public ushort NetworkBehaviourIndex;
-        
+
         public HashSet<int> DeliveryMappedNetworkVariableIndex;
         public ulong ClientId;
         public NetworkBehaviour NetworkBehaviour;
-        
+
         public void Serialize(ref FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) +
@@ -36,7 +36,7 @@ namespace Unity.Netcode.Messages
                     // This var does not belong to the currently iterating delivery group.
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        writer.WriteValueSafe((short) 0);
+                        writer.WriteValueSafe((short)0);
                     }
                     else
                     {
@@ -54,7 +54,7 @@ namespace Unity.Netcode.Messages
                 {
                     if (!shouldWrite)
                     {
-                        writer.WriteValueSafe((ushort) 0);
+                        writer.WriteValueSafe((ushort)0);
                     }
                 }
                 else
@@ -66,7 +66,7 @@ namespace Unity.Netcode.Messages
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tmpWriter = new FastBufferWriter(1300, Allocator.Temp, Int16.MaxValue);
+                        var tmpWriter = new FastBufferWriter(1300, Allocator.Temp, short.MaxValue);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(ref tmpWriter);
 
                         writer.WriteValueSafe((ushort)tmpWriter.Length);
@@ -96,7 +96,7 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.NetworkConfig.EnableNetworkVariable)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -119,7 +119,7 @@ namespace Unity.Netcode.Messages
             reader.ReadValue(out message.NetworkBehaviourIndex);
             message.Handle(context.SenderId, ref reader, networkManager);
         }
-        
+
         public void Handle(ulong senderId, ref FastBufferReader reader, NetworkManager networkManager)
         {
             if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))

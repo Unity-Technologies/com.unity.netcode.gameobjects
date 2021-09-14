@@ -1,6 +1,6 @@
-﻿namespace Unity.Netcode.Messages
+namespace Unity.Netcode.Messages
 {
-    internal struct UnnamedMessage: INetworkMessage
+    internal struct UnnamedMessage : INetworkMessage
     {
         public FastBufferWriter Data;
 

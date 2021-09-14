@@ -1,6 +1,6 @@
-﻿namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
-    class NopMessageSender : IMessageSender
+    internal class NopMessageSender : IMessageSender
     {
         public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
         {

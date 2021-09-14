@@ -175,7 +175,7 @@ namespace Unity.Netcode
 
             value = null;
         }
-        
+
         /// <summary>
         /// Read an array of GameObjects
         /// </summary>
@@ -236,7 +236,7 @@ namespace Unity.Netcode
 
             value = null;
         }
-        
+
         /// <summary>
         /// Read an array of NetworkObjects
         /// </summary>
@@ -299,7 +299,7 @@ namespace Unity.Netcode
 
             value = null;
         }
-        
+
         /// <summary>
         /// Read an array of NetworkBehaviours
         /// </summary>

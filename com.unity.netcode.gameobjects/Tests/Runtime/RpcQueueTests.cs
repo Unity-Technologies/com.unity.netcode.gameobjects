@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -21,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
             // Create, instantiate, and host
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
         }
-        
+
         /// <summary>
         /// This tests the RPC Queue outbound and inbound buffer capabilities.
         /// </summary>

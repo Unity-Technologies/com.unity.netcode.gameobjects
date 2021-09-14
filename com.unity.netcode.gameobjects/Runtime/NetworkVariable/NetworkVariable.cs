@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.IO;
 using System;
 
 namespace Unity.Netcode
@@ -114,7 +113,7 @@ namespace Unity.Netcode
         {
             T previousValue = m_InternalValue;
             reader.ReadValueSafe(out m_InternalValue);
-            
+
             if (keepDirtyDelta)
             {
                 m_IsDirty = true;

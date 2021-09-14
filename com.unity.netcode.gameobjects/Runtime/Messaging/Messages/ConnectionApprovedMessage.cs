@@ -1,16 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode.Messages
 {
-    internal struct ConnectionApprovedMessage: INetworkMessage
+    internal struct ConnectionApprovedMessage : INetworkMessage
     {
         public ulong OwnerClientId;
         public int NetworkTick;
         public int SceneObjectCount;
-        
+
         // Not serialized, held as references to serialize NetworkVariable data
         public HashSet<NetworkObject> SpawnedObjectsList;
 
@@ -24,8 +22,8 @@ namespace Unity.Netcode.Messages
             writer.WriteValue(OwnerClientId);
             writer.WriteValue(NetworkTick);
             writer.WriteValue(SceneObjectCount);
-            
-            if(SceneObjectCount != 0)
+
+            if (SceneObjectCount != 0)
             {
                 // Serialize NetworkVariable data
                 foreach (var sobj in SpawnedObjectsList)
@@ -42,12 +40,12 @@ namespace Unity.Netcode.Messages
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
-            var networkManager = (NetworkManager) context.SystemOwner;
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return;
             }
-            
+
             if (!reader.TryBeginRead(sizeof(ulong) + sizeof(int) + sizeof(int)))
             {
                 throw new OverflowException(

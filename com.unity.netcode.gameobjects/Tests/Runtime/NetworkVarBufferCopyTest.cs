@@ -1,5 +1,4 @@
 using System.Collections;
-using System.IO;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -25,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return Dirty;
             }
-            
+
             public override void WriteDelta(ref FastBufferWriter writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);

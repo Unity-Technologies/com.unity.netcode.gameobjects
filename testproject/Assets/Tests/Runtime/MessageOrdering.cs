@@ -4,7 +4,6 @@ using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
