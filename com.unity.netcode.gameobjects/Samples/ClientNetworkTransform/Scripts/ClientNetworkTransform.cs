@@ -15,9 +15,12 @@ namespace Unity.Netcode.Samples
             base.Update();
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+                if (CanWriteToTransform && UpdateNetworkStateWithTransform(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
                 {
-                    SubmitNetworkStateServerRpc(m_LocalAuthoritativeNetworkState);
+                    SendToGhosts(m_LocalAuthoritativeNetworkState, true, () =>
+                    {
+                        SubmitNetworkStateServerRpc(m_LocalAuthoritativeNetworkState);
+                    });
                 }
             }
         }
@@ -28,9 +31,7 @@ namespace Unity.Netcode.Samples
             if (serverParams.Receive.SenderClientId == OwnerClientId) // RPC call when not authorized to write could happen during the RTT interval during which a server's ownership change hasn't reached the client yet
             {
                 m_LocalAuthoritativeNetworkState = networkState;
-                m_ReplicatedNetworkState.Value = networkState;
-                m_ReplicatedNetworkState.SetDirty(true);
-                AddInterpolatedState(networkState);
+                SendToGhosts(networkState, true);
             }
         }
     }

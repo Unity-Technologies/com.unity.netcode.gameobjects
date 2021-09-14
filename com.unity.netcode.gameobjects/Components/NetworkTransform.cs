@@ -243,7 +243,8 @@ namespace Unity.Netcode.Components
 
         protected virtual bool CanWriteToTransform => IsServer;
 
-        protected readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+
         protected NetworkTransformState m_LocalAuthoritativeNetworkState;
 
         private NetworkTransformState m_PrevNetworkState;
@@ -279,7 +280,7 @@ namespace Unity.Netcode.Components
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
-        protected bool UpdateNetworkStateCheckDirty(ref NetworkTransformState networkState, double dirtyTime)
+        protected bool UpdateNetworkStateWithTransform(ref NetworkTransformState networkState, double dirtyTime)
         {
             return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
         }
@@ -579,7 +580,8 @@ namespace Unity.Netcode.Components
             // set initial value for spawn
             if (CanWriteToTransform)
             {
-                UpdateNetworkVariable();
+                var isDirty = UpdateNetworkStateWithTransform(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
+                SendToGhosts(m_LocalAuthoritativeNetworkState, isDirty);
             }
 
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
@@ -614,7 +616,7 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void UpdateNetworkVariable()
+        protected void SendToGhosts(NetworkTransformState newState, bool isDirty, Action sendToGhosts = null)
         {
             if (CanWriteToTransform)
             {
@@ -623,22 +625,37 @@ namespace Unity.Netcode.Components
                 // if not dirty and has already sent last value, don't do anything
                 void Send()
                 {
-                    m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
-                    m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                    m_PrevNetworkState = newState;
+                    m_ReplicatedNetworkState.Value = newState;
                     m_ReplicatedNetworkState.SetDirty(true);
-                    AddInterpolatedState(m_LocalAuthoritativeNetworkState);
+                    AddInterpolatedState(newState);
                 }
 
-                var isDirty = UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
                 if (isDirty)
                 {
-                    Send();
+                    if (sendToGhosts != null)
+                    {
+                        sendToGhosts.Invoke();
+                    }
+                    else
+                    {
+                        Send();
+                    }
+
                     m_HasSentLastValue = false;
                 }
                 else if (!m_HasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
                 {
-                    m_LocalAuthoritativeNetworkState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
-                    Send();
+                    newState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
+                    if (sendToGhosts != null)
+                    {
+                        sendToGhosts.Invoke();
+                    }
+                    else
+                    {
+                        Send();
+                    }
+
                     m_HasSentLastValue = true;
                 }
             }
@@ -655,7 +672,8 @@ namespace Unity.Netcode.Components
 
             if (CanWriteToTransform && IsServer)
             {
-                UpdateNetworkVariable();
+                var isDirty = UpdateNetworkStateWithTransform(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
+                SendToGhosts(m_LocalAuthoritativeNetworkState, isDirty);
             }
 
             // apply interpolated value
