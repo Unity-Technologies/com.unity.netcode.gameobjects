@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -57,11 +58,6 @@ namespace Unity.Netcode.RuntimeTests
             ListDelegateTriggered = true;
         }
 
-        public void OnDestroy()
-        {
-            TheList.Dispose();
-        }
-
         public void Awake()
         {
             TheList.OnListChanged += ListChanged;
@@ -109,7 +105,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                    playerPrefab.AddComponent<NetworkVariableTest>();
+                    var variable = playerPrefab.AddComponent<NetworkVariableTest>();
+                    // This normally gets called when a NetworkBehaviour gets spawned but we are manually setting
+                    // this up here so we need to make sure the internal NetworkVariableFields gets filled in.
+                    variable.InitializeVariables();
                 });
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
