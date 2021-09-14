@@ -1,11 +1,11 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
+
+// TODO: guard write operations
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -57,6 +57,10 @@ namespace Unity.Netcode.RuntimeTests
             ListDelegateTriggered = true;
         }
 
+        public void OnDestroy()
+        {
+            TheList.Dispose();
+        }
 
         public void Awake()
         {
@@ -262,22 +266,168 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator NetworkListRemove([Values(true, false)] bool useHost)
+        public IEnumerator NetworkListContains([Values(true, false)] bool useHost)
         {
             m_TestWithHost = useHost;
-            // first put some stuff in; re-use the add test
-            yield return NetworkListAdd(useHost);
-
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () => m_Player1OnServer.TheList.RemoveAt(0),
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                },
                 () =>
                 {
                     return m_Player1OnServer.TheList.Count == 1 &&
                            m_Player1OnClient1.TheList.Count == 1 &&
+                           m_Player1OnServer.TheList.Contains(k_TestKey1) &&
+                           m_Player1OnClient1.TheList.Contains(k_TestKey1);
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListRemoveValue([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                    m_Player1OnServer.TheList.Add(k_TestVal2);
+                    m_Player1OnServer.TheList.Add(k_TestVal3);
+                    m_Player1OnServer.TheList.Remove(k_TestVal2);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 2 &&
+                           m_Player1OnClient1.TheList.Count == 2 &&
+                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal1 &&
+                           m_Player1OnServer.TheList[1] == k_TestVal3 &&
+                           m_Player1OnClient1.TheList[1] == k_TestVal3;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListInsert([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                    m_Player1OnServer.TheList.Add(k_TestVal2);
+                    m_Player1OnServer.TheList.Insert(1, k_TestVal3);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 3 &&
+                           m_Player1OnClient1.TheList.Count == 3 &&
                            m_Player1OnServer.ListDelegateTriggered &&
                            m_Player1OnClient1.ListDelegateTriggered &&
-                           m_Player1OnServer.TheList[0] == k_TestVal2 &&
-                           m_Player1OnClient1.TheList[0] == k_TestVal2;
+                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal1 &&
+                           m_Player1OnServer.TheList[1] == k_TestVal3 &&
+                           m_Player1OnClient1.TheList[1] == k_TestVal3 &&
+                           m_Player1OnServer.TheList[2] == k_TestVal2 &&
+                           m_Player1OnClient1.TheList[2] == k_TestVal2;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListIndexOf([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                    m_Player1OnServer.TheList.Add(k_TestVal2);
+                    m_Player1OnServer.TheList.Add(k_TestVal3);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.IndexOf(k_TestVal1) == 0 &&
+                           m_Player1OnClient1.TheList.IndexOf(k_TestVal1) == 0 &&
+                           m_Player1OnServer.TheList.IndexOf(k_TestVal2) == 1 &&
+                           m_Player1OnClient1.TheList.IndexOf(k_TestVal2) == 1 &&
+                           m_Player1OnServer.TheList.IndexOf(k_TestVal3) == 2 &&
+                           m_Player1OnClient1.TheList.IndexOf(k_TestVal3) == 2;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListArrayOperator([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal3);
+                    m_Player1OnServer.TheList.Add(k_TestVal3);
+                    m_Player1OnServer.TheList[0] = k_TestVal1;
+                    m_Player1OnServer.TheList[1] = k_TestVal2;
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 2 &&
+                           m_Player1OnClient1.TheList.Count == 2 &&
+                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal1 &&
+                           m_Player1OnServer.TheList[1] == k_TestVal2 &&
+                           m_Player1OnClient1.TheList[1] == k_TestVal2;
+                }
+            );
+        }
+
+        [Test]
+        public void NetworkListIEnumerator([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            var correctVals = new int[3];
+            correctVals[0] = k_TestVal1;
+            correctVals[1] = k_TestVal2;
+            correctVals[2] = k_TestVal3;
+
+            m_Player1OnServer.TheList.Add(correctVals[0]);
+            m_Player1OnServer.TheList.Add(correctVals[1]);
+            m_Player1OnServer.TheList.Add(correctVals[2]);
+
+            Assert.IsTrue(m_Player1OnServer.TheList.Count == 3);
+
+            int now = 0;
+            foreach (var val in m_Player1OnServer.TheList)
+            {
+                if (val != correctVals[now++])
+                {
+                    Assert.Fail();
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListRemoveAt([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                    m_Player1OnServer.TheList.Add(k_TestVal2);
+                    m_Player1OnServer.TheList.Add(k_TestVal3);
+                    m_Player1OnServer.TheList.RemoveAt(1);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 2 &&
+                           m_Player1OnClient1.TheList.Count == 2 &&
+                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal1 &&
+                           m_Player1OnServer.TheList[1] == k_TestVal3 &&
+                           m_Player1OnClient1.TheList[1] == k_TestVal3;
                 }
             );
         }
