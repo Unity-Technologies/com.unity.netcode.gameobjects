@@ -1294,21 +1294,12 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            ConnectedClients.Remove(clientId);
-            PendingClients.Remove(clientId);
-
-            for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
-            {
-                if (ConnectedClientsList[i].ClientId == clientId)
-                {
-                    ConnectedClientsList.RemoveAt(i);
-                }
-            }
+            OnClientDisconnectFromServer(clientId);
 
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
         }
 
-        internal void OnClientDisconnectFromServer(ulong clientId)
+        private void OnClientDisconnectFromServer(ulong clientId)
         {
             PendingClients.Remove(clientId);
 
