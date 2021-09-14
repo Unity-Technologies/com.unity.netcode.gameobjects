@@ -825,12 +825,14 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
-//        public void OnDestroy()
-//        {
-//            for (int i = 0; i < NetworkVariableFields.Count; i++)
-//            {
-//                NetworkVariableFields[i].Dispose();
-//            }
-//        }
+        /*
+        public void OnDestroy()
+        {
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].Dispose();
+            }
+        }
+        */
     }
 }

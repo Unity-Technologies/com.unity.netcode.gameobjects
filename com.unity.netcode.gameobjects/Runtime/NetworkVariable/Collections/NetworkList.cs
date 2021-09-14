@@ -210,7 +210,10 @@ namespace Unity.Netcode
                         {
                             var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
                             int index = NativeArrayExtensions.IndexOf(m_List, value);
-                            if (index == -1) break;
+                            if (index == -1)
+                            {
+                                break;
+                            }
 
                             m_List.RemoveAt(index);
 
