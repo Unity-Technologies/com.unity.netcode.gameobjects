@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -13,6 +14,15 @@ public class MultiprocessOrchestration
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static List<Process> Processes = new List<Process>();
+
+    /// <summary>
+    /// This is to detect if we should ignore Multiprocess tests
+    /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
+    /// </summary>
+    public static bool ShouldIgnoreUTRTests()
+    {
+        return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
 
     public static void StartWorkerNode()
     {
@@ -83,11 +93,13 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}");
 
+
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
+
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
-        // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
+
         try
         {
             Debug.Log($"Attempting to start new process, current process count: {Processes.Count}");
@@ -104,25 +116,29 @@ public class MultiprocessOrchestration
         }
     }
 
-    public static void KillAllProcesses()
+    public static void ShutdownAllProcesses()
     {
-        Debug.Log("Killing processes...");
+        Debug.Log("Shutting down all processes..");
         foreach (var process in Processes)
         {
-            Debug.Log($"Killing process {process.Id} with state {process.HasExited}");
-            if (!process.HasExited)
+            Debug.Log($"Shutting down process {process.Id} with state {process.HasExited}");
+            try
             {
-                try
+                if (!process.HasExited)
                 {
-                    process.Kill();
+                    // Close process by sending a close message to its main window.
+                    process.CloseMainWindow();
+
+                    // Free resources associated with process.
+                    process.Close();
                 }
-                catch(Exception e)
-                {
-                    Debug.LogError(e.Message);
-                }
-                
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
         }
+
         Processes.Clear();
     }
 }
