@@ -50,6 +50,8 @@ namespace Unity.Netcode.EditorTests
 
         public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
 
+        public void HandleSnapshot(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSnapshot));
+
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
 
         private void VerifyCalled(string method)

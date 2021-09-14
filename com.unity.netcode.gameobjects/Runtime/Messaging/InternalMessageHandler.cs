@@ -306,9 +306,9 @@ namespace Unity.Netcode
             }
         }
 
-        internal static void HandleSnapshot(ulong clientId, Stream messageStream)
+        public void HandleSnapshot(ulong clientId, Stream messageStream)
         {
-            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
+            m_NetworkManager.SnapshotSystem.ReadSnapshot(clientId, messageStream);
         }
     }
 }

@@ -1,14 +1,11 @@
 {
-    "name": "Unity.Netcode.RuntimeTests",
-    "rootNamespace": "Unity.Netcode.RuntimeTests",
+    "name": "Unity.Netcode.Adapter.UTP.RuntimeTests",
+    "rootNamespace": "Unity.Netcode.UTP.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
-        "Unity.Netcode.Components",
-        "Unity.Collections",
+        "Unity.Networking.Transport",
         "UnityEngine.TestRunner",
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
+        "UnityEditor.TestRunner",
         "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
@@ -20,14 +17,9 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [
-        {
-            "name": "com.unity.multiplayer.tools",
-            "expression": "",
-            "define": "MULTIPLAYER_TOOLS"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }
