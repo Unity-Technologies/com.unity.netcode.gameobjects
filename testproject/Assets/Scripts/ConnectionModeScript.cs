@@ -28,7 +28,8 @@ public class ConnectionModeScript : MonoBehaviour
 
     private CommandLineProcessor m_CommandLineProcessor;
 
-    //[NSS] This is never used?  Do we need it still?
+    // Will be used for Relay support when it becomes available.
+    // TODO: Remove this comment once relay support is available.
     [SerializeField]
     private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
 
@@ -263,7 +264,8 @@ public class ConnectionModeScript : MonoBehaviour
 #endif
     }
 
-    //[NSS]- Is this still being used?  There are no references to it anywhere.
+    // Will be used for Relay support when it becomes available.
+    // TODO: Remove this comment once relay support is available.
 #if ENABLE_RELAY_SERVICE
     /// <summary>
     /// Handles authenticating UnityServices, needed for Relay
