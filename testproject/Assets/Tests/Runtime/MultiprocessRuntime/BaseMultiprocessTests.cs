@@ -18,7 +18,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         // TODO: Remove UTR check once we have Multiprocess tests fully working
-        protected bool IgnorMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
+        protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
 
 
         protected virtual bool IsPerformanceTest => true;
