@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -41,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
             server.DisconnectClient(clients[0].LocalClientId);
 
             // ensure the object was destroyed
-            Assert.That(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsLocalPlayer && x.Value.OwnerClientId == clients[0].LocalClientId));
+            Assert.That(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
 
             // cleanup
             MultiInstanceHelpers.Destroy();
