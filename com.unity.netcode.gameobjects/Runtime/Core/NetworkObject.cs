@@ -968,44 +968,38 @@ namespace Unity.Netcode
                 WriteNetworkParenting(writer, isReparented, latestParent);
             }
 
-            // Write whether we are including network variable data
-            writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
+            // NetworkVariable section
+            var buffer = writer.GetStream() as NetworkBuffer;
 
-            //If we are including NetworkVariable data
-            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
+            // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
+            writer.WriteUInt32(0);
+
+            // Mark our current position before we potentially write any NetworkVariable data
+            var positionBeforeNetworkVariableData = buffer.Position;
+
+            // Write network variable data
+            WriteNetworkVariableData(buffer, targetClientId);
+
+            // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
+            // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
+            // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
+            // constructed (See Part 2 below in the DeserializeSceneObject method)
+            if (buffer.Position > positionBeforeNetworkVariableData)
             {
-                var buffer = writer.GetStream() as NetworkBuffer;
+                // Store our current stream buffer position
+                var endOfNetworkVariableData = buffer.Position;
 
-                // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
-                writer.WriteUInt32(0);
+                // Calculate the total NetworkVariable data size written
+                var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
 
-                // Mark our current position before we potentially write any NetworkVariable data
-                var positionBeforeNetworkVariableData = buffer.Position;
+                // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
+                buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
 
-                // Write network variable data
-                WriteNetworkVariableData(buffer, targetClientId);
+                // Now write the actual data size written into our unpacked UInt32 placeholder position
+                writer.WriteUInt32((uint)(networkVariableDataSize));
 
-                // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
-                // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
-                // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method)
-                if (buffer.Position > positionBeforeNetworkVariableData)
-                {
-                    // Store our current stream buffer position
-                    var endOfNetworkVariableData = buffer.Position;
-
-                    // Calculate the total NetworkVariable data size written
-                    var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
-
-                    // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
-                    buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
-
-                    // Now write the actual data size written into our unpacked UInt32 placeholder position
-                    writer.WriteUInt32((uint)(networkVariableDataSize));
-
-                    // Finally, revert the buffer position back to the end of the network variable data written
-                    buffer.Position = endOfNetworkVariableData;
-                }
+                // Finally, revert the buffer position back to the end of the network variable data written
+                buffer.Position = endOfNetworkVariableData;
             }
         }
 
