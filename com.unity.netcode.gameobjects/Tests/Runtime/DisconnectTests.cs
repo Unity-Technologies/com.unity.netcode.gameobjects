@@ -39,8 +39,12 @@ namespace Unity.Netcode.RuntimeTests
             // disconnect the remote client
             server.DisconnectClient(clients[0].LocalClientId);
 
+            // wait 1 frame because destroys are delayed
+            var nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
             // ensure the object was destroyed
-            Assert.That(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
+            Assert.False(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
 
             // cleanup
             MultiInstanceHelpers.Destroy();
