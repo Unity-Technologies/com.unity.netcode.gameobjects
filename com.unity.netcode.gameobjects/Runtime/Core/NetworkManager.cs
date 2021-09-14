@@ -1320,7 +1320,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
+                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)
