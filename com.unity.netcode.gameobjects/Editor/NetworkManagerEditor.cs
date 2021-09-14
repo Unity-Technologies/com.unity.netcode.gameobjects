@@ -10,7 +10,7 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
-        internal const string installMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
+        internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
 
@@ -366,7 +366,7 @@ namespace Unity.Netcode.Editor
             const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
             const string infoIconName = "console.infoicon";
 
-            if (PlayerPrefs.GetInt(installMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)
+            if (PlayerPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)
             {
                 return;
             }
@@ -381,7 +381,7 @@ namespace Unity.Netcode.Editor
             if (s_HelpBoxStyle == null)
             {
                 s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
-                s_HelpBoxStyle.padding = new RectOffset(10,10,10,10);
+                s_HelpBoxStyle.padding = new RectOffset(10, 10, 10, 10);
             }
 
             var openDocsButtonStyle = GUI.skin.button;
@@ -412,7 +412,7 @@ namespace Unity.Netcode.Editor
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
                 {
-                    PlayerPrefs.SetInt(installMultiplayerToolsTipDismissedPlayerPrefKey, 1);
+                    PlayerPrefs.SetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 1);
                 }
                 EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
                 GUILayout.FlexibleSpace();
