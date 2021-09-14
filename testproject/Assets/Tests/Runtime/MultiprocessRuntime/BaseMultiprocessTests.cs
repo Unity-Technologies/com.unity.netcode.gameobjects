@@ -38,7 +38,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            if (IgnorMultiprocessTests)
+            if (IgnoreMultiprocessTests)
             {
                 Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
             }
@@ -126,7 +126,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            if (!IgnorMultiprocessTests)
+            if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
             }
@@ -135,7 +135,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            if (!IgnorMultiprocessTests)
+            if (!IgnoreMultiprocessTests)
             {
                 MultiprocessOrchestration.ShutdownAllProcesses();
                 NetworkManager.Singleton.Shutdown();

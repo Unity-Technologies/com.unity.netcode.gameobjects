@@ -46,7 +46,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override void SetupTestSuite()
         {
             base.SetupTestSuite();
-            if (!IgnorMultiprocessTests)
+            if (!IgnoreMultiprocessTests)
             {
                 SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
             }
@@ -193,7 +193,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown, MultiprocessContextBasedTest]
         public IEnumerator UnityTeardown()
         {
-            if (!IgnorMultiprocessTests)
+            if (!IgnoreMultiprocessTests)
             {
                 InitializeContextSteps();
 
@@ -238,7 +238,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override void TeardownSuite()
         {
             base.TeardownSuite();
-            if (!IsPerformanceTest && !IgnorMultiprocessTests)
+            if (!IsPerformanceTest && !IgnoreMultiprocessTests)
             {
                 s_ServerObjectPool.Dispose();
             }
