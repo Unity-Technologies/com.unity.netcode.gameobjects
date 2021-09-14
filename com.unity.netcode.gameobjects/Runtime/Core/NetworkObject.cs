@@ -1069,8 +1069,8 @@ namespace Unity.Netcode
         /// Used to deserialize a serialized scene object which occurs
         /// when the client is approved or during a scene transition
         /// </summary>
-        /// <param name="objectStream">inbound stream</param>
-        /// <param name="reader">reader for the stream</param>
+        /// <param name="sceneObject">Deserialized scene object data</param>
+        /// <param name="variableData">reader for the NetworkVariable data</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <returns>optional to use NetworkObject deserialized</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, ref FastBufferReader variableData, NetworkManager networkManager)

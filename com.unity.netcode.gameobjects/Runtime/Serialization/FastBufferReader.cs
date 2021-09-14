@@ -707,7 +707,7 @@ namespace Unity.Netcode
         /// Read a value of type FixedUnmanagedArray from the buffer.
         /// </summary>
         /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
+        /// <param name="count"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValue<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
@@ -734,12 +734,12 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Read a value of type FixedUnmanagedArray from the buffer.
-        ///
+        /// 
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
+        /// <param name="count"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValueSafe<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged

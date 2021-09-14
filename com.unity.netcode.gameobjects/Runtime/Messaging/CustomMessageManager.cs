@@ -21,7 +21,7 @@ namespace Unity.Netcode
         /// Delegate used for incoming unnamed messages
         /// </summary>
         /// <param name="clientId">The clientId that sent the message</param>
-        /// <param name="stream">The stream containing the message data</param>
+        /// <param name="reader">The stream containing the message data</param>
         public delegate void UnnamedMessageDelegate(ulong clientId, ref FastBufferReader reader);
 
         /// <summary>

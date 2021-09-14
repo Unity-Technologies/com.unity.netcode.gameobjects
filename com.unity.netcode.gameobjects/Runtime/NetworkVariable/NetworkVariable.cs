@@ -97,7 +97,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Writes the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the value to</param>
+        /// <param name="writer">The stream to write the value to</param>
         public override void WriteDelta(ref FastBufferWriter writer)
         {
             WriteField(ref writer);
@@ -107,7 +107,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Reads value from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the value from</param>
+        /// <param name="reader">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
         {

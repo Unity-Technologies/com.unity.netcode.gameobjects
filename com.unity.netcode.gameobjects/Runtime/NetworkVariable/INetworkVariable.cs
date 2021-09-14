@@ -41,60 +41,27 @@ namespace Unity.Netcode
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
-        void WriteDelta(Stream stream);
-
-        /// <summary>
-        /// Writes the complete state of the variable to the writer
-        /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
-        void WriteField(Stream stream);
-
-        /// <summary>
-        /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
-        /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
+        /// <param name="writer">The stream to write the dirty changes to</param>
         void WriteDelta(ref FastBufferWriter writer);
 
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
+        /// <param name="writer">The stream to write the state to</param>
         void WriteField(ref FastBufferWriter writer);
-
-        /// <summary>
-        /// Reads the complete state from the reader and applies it
-        /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        void ReadField(Stream stream);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
+        /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta);
 
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
+        /// <param name="reader">The stream to read the state from</param>
         void ReadField(ref FastBufferReader reader);
-
-        /// <summary>
-        /// Reads delta from the reader and applies them to the internal value
-        /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
-        /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        void ReadDelta(Stream stream, bool keepDirtyDelta);
 
         /// <summary>
         /// Sets NetworkBehaviour the container belongs to.

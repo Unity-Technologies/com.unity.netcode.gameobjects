@@ -11,6 +11,7 @@ namespace Unity.Netcode
         /// Writes a boxed object in a standard format
         /// Named differently from other WriteValue methods to avoid accidental boxing
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The object to write</param>
         /// <param name="isNullable">
         /// If true, an extra byte will be written to indicate whether or not the value is null.
@@ -133,6 +134,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write a GameObject
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         public static void WriteValue(this ref FastBufferWriter writer, in GameObject value)
         {
@@ -153,6 +155,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write an array of GameObjects
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -161,7 +164,7 @@ namespace Unity.Netcode
             writer.WriteValue((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValue(value);
+                writer.WriteValue(item);
             }
         }
 
@@ -171,6 +174,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         public static void WriteValueSafe(this ref FastBufferWriter writer, in GameObject value)
         {
@@ -194,6 +198,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -202,7 +207,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValueSafe(value);
+                writer.WriteValueSafe(item);
             }
         }
 
@@ -229,6 +234,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write a NetworkObject
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         public static void WriteValue(this ref FastBufferWriter writer, in NetworkObject value)
         {
@@ -243,6 +249,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write an array of NetworkObjects
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -251,7 +258,7 @@ namespace Unity.Netcode
             writer.WriteValue((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValue(value);
+                writer.WriteValue(item);
             }
         }
 
@@ -261,6 +268,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         public static void WriteValueSafe(this ref FastBufferWriter writer, in NetworkObject value)
         {
@@ -277,6 +285,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -285,7 +294,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValueSafe(value);
+                writer.WriteValueSafe(item);
             }
         }
 
@@ -313,6 +322,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write a NetworkBehaviour
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         public static void WriteValue(this ref FastBufferWriter writer, in NetworkBehaviour value)
         {
@@ -328,6 +338,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write an array of NetworkBehaviours
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -336,7 +347,7 @@ namespace Unity.Netcode
             writer.WriteValue((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValue(value);
+                writer.WriteValue(item);
             }
         }
 
@@ -346,6 +357,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -370,6 +382,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
+        /// <param name="writer">The writer to use to write the value</param>
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
@@ -378,7 +391,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe((int)value.Length);
             foreach (var item in value)
             {
-                writer.WriteValueSafe(value);
+                writer.WriteValueSafe(item);
             }
         }
 

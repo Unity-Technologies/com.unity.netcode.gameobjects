@@ -379,7 +379,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Write an array of INetworkSerializables
         /// </summary>
-        /// <param name="value">The value to write</param>
+        /// <param name="array">The value to write</param>
+        /// <param name="count"></param>
+        /// <param name="offset"></param>
         /// <typeparam name="T"></typeparam>
         public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
@@ -720,7 +722,7 @@ namespace Unity.Netcode
         /// Get the size required to write a FixedUnmanagedArray
         /// </summary>
         /// <param name="value"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="count"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe int GetWriteSize<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
@@ -734,7 +736,7 @@ namespace Unity.Netcode
         /// Write a value of type FixedUnmanagedArray to the buffer.
         /// </summary>
         /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
+        /// <param name="count"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteValue<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
@@ -760,12 +762,12 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Write a value of type FixedUnmanagedArray to the buffer.
-        ///
+        /// 
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
+        /// <param name="count"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteValueSafe<TPropertyType, TStorageType>(in FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
             where TPropertyType : unmanaged
@@ -823,7 +825,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
         /// </summary>
-        /// <param name="value"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public static unsafe int GetWriteSize<T>() where T : unmanaged

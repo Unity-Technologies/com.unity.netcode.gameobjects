@@ -6,8 +6,8 @@ namespace Unity.Netcode
     {
         /// <summary>
         /// Helper function optimized for quickly copying small numbers of bytes.
-        /// Faster than UnsafeUtil.Memcpy and other alternatives for amount <= 8
-        /// Slower for amount > 8
+        /// Faster than UnsafeUtil.Memcpy and other alternatives for amount &lt;= 8
+        /// Slower for amount &gt; 8
         /// </summary>
         /// <param name="source">Pointer to the source value</param>
         /// <param name="dest">Pointer to the destination value</param>

@@ -11,6 +11,7 @@ namespace Unity.Netcode
         /// Reads a boxed object in a standard format
         /// Named differently from other ReadValue methods to avoid accidental boxing
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">The object to read</param>
         /// <param name="type">The type to be read</param>
         /// <param name="isNullable">
@@ -132,6 +133,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read a GameObject
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValue(this ref FastBufferReader reader, out GameObject value)
         {
@@ -157,6 +159,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out GameObject value)
         {
@@ -179,6 +182,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read an array of GameObjects
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out GameObject[] value)
         {
@@ -193,6 +197,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read a NetworkObject
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValue(this ref FastBufferReader reader, out NetworkObject value)
         {
@@ -218,6 +223,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkObject value)
         {
@@ -240,6 +246,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read an array of NetworkObjects
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkObject[] value)
         {
@@ -254,6 +261,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read a NetworkBehaviour
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValue(this ref FastBufferReader reader, out NetworkBehaviour value)
         {
@@ -280,6 +288,7 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkBehaviour value)
         {
@@ -303,6 +312,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Read an array of NetworkBehaviours
         /// </summary>
+        /// <param name="reader">The reader to use to read the value</param>
         /// <param name="value">value to read</param>
         public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkBehaviour[] value)
         {

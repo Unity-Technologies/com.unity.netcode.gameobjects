@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using Unity.Collections;
+using Unity.Netcode.Messages;
 using UnityEngine.SceneManagement;
 
 
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Used by <see cref="NetworkSceneManager"/> for <see cref="MessageQueueContainer.MessageType.SceneEvent"/> messages
+    /// Used by <see cref="NetworkSceneManager"/> for <see cref="SceneEventMessage"/> messages
     /// Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled
     /// </summary>
     public class SceneEventData : IDisposable
@@ -305,7 +306,7 @@ namespace Unity.Netcode
         /// Client and Server Side:
         /// Serializes data based on the SceneEvent type (<see cref="SceneEventTypes"/>)
         /// </summary>
-        /// <param name="writer"><see cref="NetworkWriter"/> to write the scene event data</param>
+        /// <param name="writer"><see cref="FastBufferWriter"/> to write the scene event data</param>
         internal void Serialize(ref FastBufferWriter writer)
         {
             // Write the scene event type
@@ -673,7 +674,6 @@ namespace Unity.Netcode
         /// it is finished loading.  The client will also build a list of NetworkObjects that it spawned during
         /// this process which will be used as part of the Event_Sync_Complete response.
         /// </summary>
-        /// <param name="sceneId"></param>
         /// <param name="networkManager"></param>
         internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
@@ -684,9 +684,9 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
-                    /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
-                    /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
+                    // We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
+                    // currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
+                    // from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
                     InternalBuffer.ReadValueSafe(out int handle);
                     m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(handle);
 

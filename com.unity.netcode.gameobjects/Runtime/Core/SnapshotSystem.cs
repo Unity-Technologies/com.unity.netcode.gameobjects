@@ -101,8 +101,6 @@ namespace Unity.Netcode
         /// Constructor
         /// Allocated a MemoryStream to be reused for this Snapshot
         /// </summary>
-        /// <param name="networkManager">The NetworkManaher this Snapshot uses. Needed upon receive to set Variables</param>
-        /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
         internal Snapshot()
         {
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
@@ -280,7 +278,7 @@ namespace Unity.Netcode
         /// Read a received Entry
         /// Must match WriteEntry
         /// </summary>
-        /// <param name="reader">The readed to read the entry from</param>
+        /// <param name="data">Deserialized snapshot entry data</param>
         internal Entry ReadEntry(SnapshotDataMessage.EntryData data)
         {
             Entry entry;
@@ -354,18 +352,17 @@ namespace Unity.Netcode
         /// Must match WriteBuffer
         /// The stream is actually a memory stream and we seek to each variable position as we deserialize them
         /// </summary>
-        /// <param name="reader">The NetworkReader to read our buffer of variables from</param>
-        /// <param name="snapshotStream">The stream to read our buffer of variables from</param>
+        /// <param name="message">The message to pull the buffer from</param>
         internal void ReadBuffer(in SnapshotDataMessage message)
         {
-            RecvBuffer = message.ReceiveMainBuffer.ToArray();
+            RecvBuffer = message.ReceiveMainBuffer.ToArray(); // Note: Allocates
         }
 
         /// <summary>
         /// Read the snapshot index from a buffer
         /// Stores the entry. Allocates memory if needed. The actual buffer will be read later
         /// </summary>
-        /// <param name="reader">The reader to read the index from</param>
+        /// <param name="message">The message to read the index from</param>
         internal void ReadIndex(in SnapshotDataMessage message)
         {
             Entry entry;
@@ -880,7 +877,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Write the snapshot index to a buffer
         /// </summary>
-        /// <param name="buffer">The buffer to write the index to</param>
+        /// <param name="message">The message to write the index to</param>
         private void WriteIndex(ref SnapshotDataMessage message)
         {
             message.Entries = new NativeArray<SnapshotDataMessage.EntryData>(m_Snapshot.LastEntry, Allocator.TempJob);
@@ -968,8 +965,8 @@ namespace Unity.Netcode
         /// Entry point when a Snapshot is received
         /// This is where we read and store the received snapshot
         /// </summary>
-        /// <param name="clientId">
-        /// <param name="snapshotStream">The stream to read from</param>
+        /// <param name="clientId"></param>
+        /// <param name="message">The message to read from</param>
         internal void HandleSnapshot(ulong clientId, in SnapshotDataMessage message)
         {
             // make sure we have a ClientData entry for each client

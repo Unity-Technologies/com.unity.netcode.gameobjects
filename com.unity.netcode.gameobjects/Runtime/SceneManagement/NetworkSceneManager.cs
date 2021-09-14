@@ -83,7 +83,7 @@ namespace Unity.Netcode
 
     /// <summary>
     /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
-    /// Uses the <see cref="MessageQueueContainer.MessageType.SceneEvent"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
+    /// Uses the <see cref="SceneEventMessage"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
     public class NetworkSceneManager : IDisposable
     {
@@ -118,6 +118,7 @@ namespace Unity.Netcode
         /// </summary>
         public event SceneEventDelegate OnSceneEvent;
 
+        /// <summary>
         /// Delegate declaration for the <see cref="VerifySceneBeforeLoading"/> handler that provides
         /// an additional level of scene loading security and/or validation to assure the scene being loaded
         /// is valid scene to be loaded in the LoadSceneMode specified.
@@ -282,7 +283,6 @@ namespace Unity.Netcode
         /// loading mode is "a valid scene to be loaded in the LoadSceneMode specified".
         /// </summary>
         /// <param name="sceneIndex">index into ScenesInBuild</param>
-        /// <param name="sceneName">Name of the scene</param>
         /// <param name="loadSceneMode">LoadSceneMode the scene is going to be loaded</param>
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool ValidateSceneBeforeLoading(uint sceneIndex, LoadSceneMode loadSceneMode)
@@ -1472,7 +1472,7 @@ namespace Unity.Netcode
         /// Both Client and Server: Incoming scene event entry point
         /// </summary>
         /// <param name="clientId">client who sent the scene event</param>
-        /// <param name="stream">data associated with the scene event</param>
+        /// <param name="reader">data associated with the scene event</param>
         internal void HandleSceneEvent(ulong clientId, ref FastBufferReader reader)
         {
             if (m_NetworkManager != null)
