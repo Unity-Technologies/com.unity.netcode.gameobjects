@@ -268,7 +268,7 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
-        public void ResetCurrentInterpolatedState()
+        public void ResetInterpolatedStateToCurrentNetworkState()
         {
             m_PositionXInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionX);
             m_PositionYInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionY);
@@ -591,10 +591,24 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
-            if (!CanWriteToTransform)
-            {
-                ResetCurrentInterpolatedState(); // useful for late joining
+            Initialize();
+        }
 
+        public override void OnGainedOwnership()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            ResetInterpolatedStateToCurrentNetworkState(); // useful for late joining
+
+            if (CanWriteToTransform)
+            {
+                m_ReplicatedNetworkState.SetDirty(true);
+            }
+            else
+            {
                 ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
             }
         }
@@ -608,8 +622,10 @@ namespace Unity.Netcode.Components
         {
             if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
             {
+                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
                 m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
                 m_ReplicatedNetworkState.SetDirty(true);
+                AddInterpolatedState(m_LocalAuthoritativeNetworkState);
             }
         }
 
@@ -650,7 +666,7 @@ namespace Unity.Netcode.Components
             }
 
             // apply interpolated value
-            if (!CanWriteToTransform && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
+            if ((NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
@@ -659,13 +675,16 @@ namespace Unity.Netcode.Components
 
                 m_RotationInterpolator.Update(Time.deltaTime);
 
-                if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+                if (!CanWriteToTransform)
                 {
-                    var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
-                    Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
-                }
+                    if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+                    {
+                        var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
+                        Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
+                    }
 
-                ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
+                    ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
+                }
             }
         }
 

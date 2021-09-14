@@ -18,13 +18,16 @@ namespace Unity.Netcode.Samples
             }
         }
 
-        [ServerRpc]
-        private void SubmitNetworkStateServerRpc(NetworkTransformState networkState)
+        [ServerRpc(RequireOwnership = false)]
+        private void SubmitNetworkStateServerRpc(NetworkTransformState networkState, ServerRpcParams serverParams = default)
         {
-            m_LocalAuthoritativeNetworkState = networkState;
-            m_ReplicatedNetworkState.Value = networkState;
-            m_ReplicatedNetworkState.SetDirty(true);
-            AddInterpolatedState(networkState);
+            if (serverParams.Receive.SenderClientId == OwnerClientId) // RPC call when not authorized to write could happen during the RTT interval during which a server's ownership change hasn't reached the client yet
+            {
+                m_LocalAuthoritativeNetworkState = networkState;
+                m_ReplicatedNetworkState.Value = networkState;
+                m_ReplicatedNetworkState.SetDirty(true);
+                AddInterpolatedState(networkState);
+            }
         }
     }
 }

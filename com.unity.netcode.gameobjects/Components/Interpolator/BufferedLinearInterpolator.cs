@@ -108,7 +108,7 @@ namespace Unity.Netcode
         {
             TryConsumeFromBuffer();
 
-            if (m_LifetimeConsumedCount == 0 && m_Buffer.Count == 0)
+            if (InvalidState)
             {
                 throw new InvalidOperationException("trying to update interpolator when no data has been added to it yet");
             }
@@ -165,6 +165,8 @@ namespace Unity.Netcode
                 m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
             }
         }
+
+        public bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
         public T GetInterpolatedValue()
         {
