@@ -680,16 +680,10 @@ namespace Unity.Netcode.Components
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
                     }
 
-                    // Apply updated interpolated value
-                    ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
-
                     // try to update previously consumed NetworkState
                     // if we have any changes, that means made some updates locally
                     // we apply the latest ReplNetworkState again to revert our changes
-                    Debug.Log($"updating dadou prev {m_PrevNetworkState.ScaleZ}, transform is now {transform.localScale.z}");
                     var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref m_PrevNetworkState, 0);
-                    Debug.Log($"now is dadou prev {m_PrevNetworkState.ScaleZ}, tansform is nwo {transform.localScale.z}");
-
                     if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                     {
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
@@ -697,6 +691,9 @@ namespace Unity.Netcode.Components
                         var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                         Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     }
+
+                    // Apply updated interpolated value
+                    ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
                 }
             }
         }
