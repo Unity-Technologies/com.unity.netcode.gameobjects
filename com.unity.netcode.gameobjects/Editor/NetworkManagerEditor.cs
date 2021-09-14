@@ -10,8 +10,9 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
-        private static GUIStyle s_CenteredWordWrappedLabel;
-        private static GUIStyle s_RightAlignedLinkLabel;
+        internal const string k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
+        private static GUIStyle s_CenteredWordWrappedLabelStyle;
+        private static GUIStyle s_HelpBoxStyle;
 
         // Properties
         private SerializedProperty m_DontDestroyOnLoadProperty;
@@ -366,77 +367,73 @@ namespace Unity.Netcode.Editor
 
         void DrawMultiplayerToolsInfoTip()
         {
-            const string dismissedKey = "NGO_Tools_Tip_Dismissed";
-
-            if (PlayerPrefs.GetInt(dismissedKey, 0) != 0)
-            {
-                return;
-            }
-
-            if (s_CenteredWordWrappedLabel == null)
-            {
-                s_CenteredWordWrappedLabel = new GUIStyle(GUI.skin.label);
-                s_CenteredWordWrappedLabel.wordWrap = true;
-            }
-
-            if (s_RightAlignedLinkLabel == null)
-            {
-                s_RightAlignedLinkLabel = new GUIStyle(EditorStyles.linkLabel);
-                s_RightAlignedLinkLabel.alignment = TextAnchor.MiddleRight;
-            }
-
-            const float buttonWidth = 65f;
-            float buttonHeight = s_RightAlignedLinkLabel.lineHeight;
-
-            const float elementMargin = 4f;
-
-            const float boxPadding = 10f;
-            const float boxMargin = 4f;
-            float boxHeight = buttonHeight * 2 + elementMargin + boxMargin * 2 + boxPadding * 2;
-
-            const string getToolsText = "Get access to additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
+            const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
             const string dismissButtonText = "Dismiss";
             const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
             const string infoIconName = "console.infoicon";
 
-            void ShrinkRect(ref Rect rect, float amount) =>
-                rect = new Rect(
-                    rect.x + amount,
-                    rect.y + amount,
-                    rect.width - amount * 2,
-                    rect.height - amount * 2);
-
-            var helpBoxRect = GUILayoutUtility.GetRect(0f, boxHeight, GUILayout.ExpandWidth(true));
-            ShrinkRect(ref helpBoxRect, boxMargin);
-            GUI.Box(helpBoxRect, GUIContent.none, EditorStyles.helpBox);
-            ShrinkRect(ref helpBoxRect, boxPadding);
-
-            var iconRect = helpBoxRect;
-            iconRect.width = iconRect.height;
-            GUI.Label(iconRect, new GUIContent(EditorGUIUtility.IconContent(infoIconName)));
-
-            var labelRect = iconRect;
-            labelRect.x += labelRect.width + elementMargin;
-            labelRect.width = helpBoxRect.width - iconRect.width - elementMargin * 3 - buttonWidth;
-            GUI.Label(labelRect, getToolsText, s_CenteredWordWrappedLabel);
-
-            var buttonRect = labelRect;
-            buttonRect.x += labelRect.width + elementMargin;
-            buttonRect.width = buttonWidth;
-            buttonRect.height = buttonHeight;
-
-            if (GUI.Button(buttonRect, openDocsButtonText, s_RightAlignedLinkLabel))
+            if (PlayerPrefs.GetInt(k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey, 0) != 0)
             {
-                Application.OpenURL(targetUrl);
+                return;
             }
 
-            buttonRect.y += buttonRect.height + elementMargin;
-
-            if (GUI.Button(buttonRect, dismissButtonText, s_RightAlignedLinkLabel))
+            if (s_CenteredWordWrappedLabelStyle == null)
             {
-                PlayerPrefs.SetInt(dismissedKey, 1);
+                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label);
+                s_CenteredWordWrappedLabelStyle.wordWrap = true;
+                s_CenteredWordWrappedLabelStyle.alignment = TextAnchor.MiddleLeft;
             }
+
+            if (s_HelpBoxStyle == null)
+            {
+                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
+                s_HelpBoxStyle.padding = new RectOffset(10,10,10,10);
+            }
+
+            var openDocsButtonStyle = GUI.skin.button;
+            var dismissButtonStyle = EditorStyles.linkLabel;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginHorizontal(s_HelpBoxStyle, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
+            {
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(infoIconName)), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true));
+                GUILayout.Space(4);
+                GUILayout.Label(getToolsText, s_CenteredWordWrappedLabelStyle, GUILayout.ExpandHeight(true));
+
+                GUILayout.Space(4);
+
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(openDocsButtonText, openDocsButtonStyle, GUILayout.Width(90), GUILayout.Height(30)))
+                {
+                    Application.OpenURL(targetUrl);
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+
+                GUILayout.Space(4);
+
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
+                {
+                    PlayerPrefs.SetInt(k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey, 1);
+                }
+                EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
+                GUILayout.EndHorizontal();
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
         }
     }
 }
