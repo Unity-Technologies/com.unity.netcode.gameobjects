@@ -106,7 +106,7 @@ namespace Unity.Netcode
 
                         break;
                     case MessageQueueContainer.MessageType.SnapshotData:
-                        InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
+                        m_NetworkManager.MessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);

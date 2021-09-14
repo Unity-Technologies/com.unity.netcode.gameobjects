@@ -1,10 +1,10 @@
 {
-    "name": "Unity.Multiplayer.Transport.UTP.EditorTests",
+    "name": "Unity.Netcode.Adapter.UTP.EditorTests",
     "rootNamespace": "Unity.Netcode.UTP.EditorTests",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport",
-        "Unity.Multiplayer.Transport.UTP"
+        "Unity.Netcode.Adapter.UTP"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
