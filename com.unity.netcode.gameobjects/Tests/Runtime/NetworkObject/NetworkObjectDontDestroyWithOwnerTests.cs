@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -45,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
 
             // network objects
-            List<NetworkObject> networkObjects = new List<NetworkObject>();
+            var networkObjects = new List<NetworkObject>();
 
             // create instances
             for (int i = 0; i < 32; i++)
