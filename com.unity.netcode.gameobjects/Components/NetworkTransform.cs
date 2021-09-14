@@ -496,7 +496,7 @@ namespace Unity.Netcode.Components
                 {
                     m_Transform.localScale = Vector3.one;
                     var lossyScale = m_Transform.lossyScale;
-                    // todo this conversion is messing with interpolation. local scale interpolates fine, lossy scale is jittery. must investigate
+                    // todo this conversion is messing with interpolation. local scale interpolates fine, lossy scale is jittery. must investigate. MTT-1208
                     m_Transform.localScale = new Vector3(networkState.ScaleX / lossyScale.x, networkState.ScaleY / lossyScale.y, networkState.ScaleZ / lossyScale.z);
                 }
 

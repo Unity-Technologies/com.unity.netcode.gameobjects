@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BufferedLinearInterpolator<T> where T : struct
+    internal abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
@@ -64,7 +64,6 @@ namespace Unity.Netcode
             m_EndTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
             m_StartTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
 
-            // SimpleInterpolator.ResetTo(targetValue); // for statically placed objects, so we don't interpolate from 0 to current position
             Update(0);
         }
 
@@ -175,11 +174,9 @@ namespace Unity.Netcode
 
         protected abstract T Interpolate(T start, T end, float time);
         protected abstract T InterpolateUnclamped(T start, T end, float time);
-
-        // protected abstract SimpleInterpolator<T> SimpleInterpolator { get; }
     }
 
-    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
@@ -190,11 +187,9 @@ namespace Unity.Netcode
         {
             return Mathf.Lerp(start, end, time);
         }
-
-        // protected override SimpleInterpolator<float> SimpleInterpolator { get; } = new SimpleInterpolatorFloat();
     }
 
-    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
@@ -205,7 +200,5 @@ namespace Unity.Netcode
         {
             return Quaternion.SlerpUnclamped(start, end, time);
         }
-
-        // protected override SimpleInterpolator<Quaternion> SimpleInterpolator { get; } = new SimpleInterpolatorQuaternion();
     }
 }
