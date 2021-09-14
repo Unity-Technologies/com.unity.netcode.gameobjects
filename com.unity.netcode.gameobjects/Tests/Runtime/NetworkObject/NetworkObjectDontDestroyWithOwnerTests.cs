@@ -17,8 +17,8 @@ namespace Unity.Netcode.RuntimeTests
             MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
 
             // create prefab
-            GameObject gameObject = new GameObject("ClientOwnedObject");
-            NetworkObject networkObject = gameObject.AddComponent<NetworkObject>();
+            var gameObject = new GameObject("ClientOwnedObject");
+            var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.DontDestroyWithOwner = true;
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
             // create instances
             for (int i = 0; i < 32; i++)
             {
-                NetworkObject no = Object.Instantiate(gameObject).GetComponent<NetworkObject>();
+                var no = Object.Instantiate(gameObject).GetComponent<NetworkObject>();
                 no.NetworkManagerOwner = server;
                 networkObjects.Add(no);
                 no.SpawnWithOwnership(clients[0].LocalClientId);
