@@ -26,7 +26,6 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
-        private SerializedProperty m_EnableNetworkVariableProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
         private SerializedProperty m_ForceSamePrefabsProperty;
         private SerializedProperty m_EnableSceneManagementProperty;
@@ -94,7 +93,6 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
@@ -122,7 +120,6 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
@@ -260,12 +257,8 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_TickRateProperty);
 
                 EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
 
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableNetworkVariable))
-                {
-                    EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
-                }
+                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
 
                 EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
