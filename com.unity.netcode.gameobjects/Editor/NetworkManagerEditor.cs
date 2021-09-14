@@ -406,12 +406,10 @@ namespace Unity.Netcode.Editor
 
                 GUILayout.BeginVertical();
                 GUILayout.FlexibleSpace();
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button(openDocsButtonText, openDocsButtonStyle, GUILayout.Width(90), GUILayout.Height(30)))
                 {
                     Application.OpenURL(targetUrl);
                 }
-                GUILayout.EndHorizontal();
                 GUILayout.FlexibleSpace();
                 GUILayout.EndVertical();
 
@@ -419,13 +417,11 @@ namespace Unity.Netcode.Editor
 
                 GUILayout.BeginVertical();
                 GUILayout.FlexibleSpace();
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
                 {
                     PlayerPrefs.SetInt(k_InstallMultiplayerToolsTipDismissed_PlayerPrefKey, 1);
                 }
                 EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
-                GUILayout.EndHorizontal();
                 GUILayout.FlexibleSpace();
                 GUILayout.EndVertical();
             }
