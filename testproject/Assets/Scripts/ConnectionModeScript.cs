@@ -28,15 +28,13 @@ public class ConnectionModeScript : MonoBehaviour
 
     private CommandLineProcessor m_CommandLineProcessor;
 
-    private bool m_UsingRelay = false;
-
-#if ENABLE_RELAY_SERVICE
+    // Will be used for Relay support when it becomes available.
+    // TODO: Remove this comment once relay support is available.
     [SerializeField]
     private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
 
     [HideInInspector]
     public string RelayJoinCode { get; set; }
-#endif
 
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
@@ -72,16 +70,29 @@ public class ConnectionModeScript : MonoBehaviour
         yield return null;
     }
 
+    /// <summary>
+    /// Check whether we are even using UnityTransport and
+    /// if so whether it is using the RelayUnityTransport
+    /// </summary>
+    private bool HasRelaySupport()
+    {
+        var unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        if (unityTransport != null && unityTransport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        {
+            return true;
+        }
+        return false;
+    }
+
     // Start is called before the first frame update
     private void Start()
     {
         //If we have a NetworkManager instance and we are not listening and m_ConnectionModeButtons is not null then show the connection mode buttons
         if (m_ConnectionModeButtons && m_AuthenticationButtons)
         {
-#if ENABLE_RELAY_SERVICE
-            if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+
+            if (HasRelaySupport())
             {
-                m_UsingRelay = true;
                 m_JoinCodeInput.SetActive(true);
                 //If Start() is called on the first frame update, it's not likely that the AuthenticationService is going to be instantiated yet
                 //Moved old logic for this out to OnServicesInitialized
@@ -89,8 +100,8 @@ public class ConnectionModeScript : MonoBehaviour
                 m_AuthenticationButtons.SetActive(true);
             }
             else
-#endif
             {
+
                 m_JoinCodeInput.SetActive(false);
                 m_AuthenticationButtons.SetActive(false);
                 m_ConnectionModeButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening);
@@ -100,14 +111,12 @@ public class ConnectionModeScript : MonoBehaviour
 
     private void OnServicesInitialized()
     {
-#if ENABLE_RELAY_SERVICE
-        if (NetworkManager.Singleton.GetComponent<UnityTransport>().Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        if (HasRelaySupport())
         {
             m_JoinCodeInput.SetActive(true);
             m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
             m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
         }
-#endif
     }
 
     /// <summary>
@@ -117,7 +126,7 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            if (m_UsingRelay)
+            if (HasRelaySupport())
             {
                 StartCoroutine(StartRelayServer(StartServer));
             }
@@ -176,7 +185,7 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            if (m_UsingRelay)
+            if (HasRelaySupport())
             {
                 StartCoroutine(StartRelayServer(StartHost));
             }
@@ -201,11 +210,14 @@ public class ConnectionModeScript : MonoBehaviour
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-#if ENABLE_RELAY_SERVICE
-            StartCoroutine(StartRelayClient());
-#else
-             StartClient();
-#endif
+            if (HasRelaySupport())
+            {
+                StartCoroutine(StartRelayClient());
+            }
+            else
+            {
+                StartClient();
+            }
         }
     }
 
@@ -252,12 +264,14 @@ public class ConnectionModeScript : MonoBehaviour
 #endif
     }
 
+    // Will be used for Relay support when it becomes available.
+    // TODO: Remove this comment once relay support is available.
+#if ENABLE_RELAY_SERVICE
     /// <summary>
     /// Handles authenticating UnityServices, needed for Relay
     /// </summary>
     public async void OnSignIn()
     {
-#if ENABLE_RELAY_SERVICE
         await UnityServices.InitializeAsync();
         OnServicesInitialized();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -269,8 +283,8 @@ public class ConnectionModeScript : MonoBehaviour
             m_ConnectionModeButtons.SetActive(true);
             m_AuthenticationButtons.SetActive(false);
         }
-#endif
     }
+#endif
 
     public void Reset()
     {
