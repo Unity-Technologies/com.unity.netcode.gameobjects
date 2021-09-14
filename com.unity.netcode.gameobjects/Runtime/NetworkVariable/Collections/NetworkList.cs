@@ -41,7 +41,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkList</param>
         /// <param name="values">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm, NativeList<T> values) : base(readPerm)
+        public NetworkList(NetworkVariableReadPermission readPerm, List<T> values) : base(readPerm)
         {
             foreach (var val in values)
             {
@@ -59,6 +59,16 @@ namespace Unity.Netcode
             {
                 m_List.Add(val);
             }
+        }
+
+        public NetworkList(NetworkVariableReadPermission readPerm, NativeList<T> values) : base(readPerm)
+        {
+            m_List = values;
+        }
+
+        public NetworkList(NativeList<T> values)
+        {
+            m_List = values;
         }
 
         /// <inheritdoc />
