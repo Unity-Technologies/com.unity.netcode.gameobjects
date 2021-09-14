@@ -533,9 +533,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 10
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!1 &403665142
 GameObject:
@@ -854,12 +865,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  ServerWebsocketListenPort: 8887
-  SupportWebsocket: 0
-  Channels: []
-  UseNetcodeRelay: 0
-  NetcodeRelayAddress: 127.0.0.1
-  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!114 &620561611
 MonoBehaviour:
@@ -879,9 +884,6 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 620561613}
-    RegisteredScenes:
-    - SampleScene
-    AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
       type: 3}
     NetworkPrefabs: []
@@ -933,9 +935,8 @@ MonoBehaviour:
   DisconnectTimeout: 5
   ReconnectDelay: 0.5
   MaxConnectAttempts: 10
-  channels: []
   MessageBufferSize: 5120
-  SimulatePacketLossChance: 5
+  SimulatePacketLossChance: 0
   SimulateMinLatency: 60
   SimulateMaxLatency: 100
 --- !u!1001 &627808638
@@ -1166,6 +1167,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveSpeed: 5
   m_RotationSpeed: 30
+  m_RunServerOnly: 0
+  m_RunInUpdate: 0
 --- !u!114 &678326394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1194,9 +1197,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 6
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!65 &678326396
 BoxCollider:
@@ -1954,9 +1968,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 10
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!114 &963826006
 MonoBehaviour:
@@ -2410,9 +2435,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 10
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!114 &1397037319
 MonoBehaviour:
@@ -2667,9 +2703,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 10
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!114 &1402467446
 MonoBehaviour:
@@ -3110,9 +3157,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
-  Channel: 10
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   InLocalSpace: 0
+  Interpolate: 1
   FixedSendsPerSecond: 30
 --- !u!224 &1536251758 stripped
 RectTransform:
@@ -3329,42 +3387,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df4fbe773fc544428171994e08b0483f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FixedSendsPerSecond: 20
-  AssumeSyncedSends: 1
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  ExtrapolatePosition: 0
-  MaxSendsToExtrapolate: 5
-  Channel: 
-  EnableRange: 0
-  EnableNonProvokedResendChecks: 0
-  DistanceSendrate:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 500
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!65 &1643885208
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3471,6 +3493,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveSpeed: 5
   m_RotationSpeed: 30
+  m_RunServerOnly: 0
+  m_RunInUpdate: 0
 --- !u!1 &1815329519
 GameObject:
   m_ObjectHideFlags: 0
