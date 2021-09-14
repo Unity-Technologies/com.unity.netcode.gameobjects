@@ -82,13 +82,6 @@ namespace Unity.Netcode
         public int TimeResyncInterval = 30;
 
         /// <summary>
-        /// Whether or not to enable the NetworkVariable system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
-        /// Only turn it off if you have no need for the NetworkVariable system.
-        /// </summary>
-        [Tooltip("Whether or not to enable the NetworkVariable system")]
-        public bool EnableNetworkVariable = true;
-
-        /// <summary>
         /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwidth.
         /// </summary>
         [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
@@ -180,7 +173,6 @@ namespace Unity.Netcode
             writer.WriteBool(EnableSceneManagement);
             writer.WriteBool(RecycleNetworkIds);
             writer.WriteSinglePacked(NetworkIdRecycleDelay);
-            writer.WriteBool(EnableNetworkVariable);
             writer.WriteBool(EnableNetworkLogs);
             buffer.PadBuffer();
 
@@ -211,7 +203,6 @@ namespace Unity.Netcode
             config.EnableSceneManagement = reader.ReadBool();
             config.RecycleNetworkIds = reader.ReadBool();
             config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
-            config.EnableNetworkVariable = reader.ReadBool();
             config.EnableNetworkLogs = reader.ReadBool();
         }
 
@@ -246,7 +237,6 @@ namespace Unity.Netcode
                 }
             }
             writer.WriteBool(ConnectionApproval);
-            writer.WriteBool(EnableNetworkVariable);
             writer.WriteBool(ForceSamePrefabs);
             writer.WriteBool(EnableSceneManagement);
             writer.WriteBool(EnsureNetworkVariableLengthSafety);
