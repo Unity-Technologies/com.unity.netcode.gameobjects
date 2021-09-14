@@ -10,6 +10,9 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
+        private static GUIStyle s_CenteredWordWrappedLabel;
+        private static GUIStyle s_RightAlignedLinkLabel;
+
         // Properties
         private SerializedProperty m_DontDestroyOnLoadProperty;
         private SerializedProperty m_RunInBackgroundProperty;
@@ -203,6 +206,10 @@ namespace Unity.Netcode.Editor
             Initialize();
             CheckNullProperties();
 
+#if !MULTIPLAYER_TOOLS
+            DrawMultiplayerToolsInfoTip();
+#endif
+
             {
                 var iterator = serializedObject.GetIterator();
 
@@ -354,6 +361,81 @@ namespace Unity.Netcode.Editor
                 {
                     m_NetworkManager.Shutdown();
                 }
+            }
+        }
+
+        void DrawMultiplayerToolsInfoTip()
+        {
+            const string dismissedKey = "NGO_Tools_Tip_Dismissed";
+
+            if (PlayerPrefs.GetInt(dismissedKey, 0) != 0)
+            {
+                return;
+            }
+
+            if (s_CenteredWordWrappedLabel == null)
+            {
+                s_CenteredWordWrappedLabel = new GUIStyle(GUI.skin.label);
+                s_CenteredWordWrappedLabel.wordWrap = true;
+            }
+
+            if (s_RightAlignedLinkLabel == null)
+            {
+                s_RightAlignedLinkLabel = new GUIStyle(EditorStyles.linkLabel);
+                s_RightAlignedLinkLabel.alignment = TextAnchor.MiddleRight;
+            }
+
+            const float buttonWidth = 65f;
+            float buttonHeight = s_RightAlignedLinkLabel.lineHeight;
+
+            const float elementMargin = 4f;
+
+            const float boxPadding = 10f;
+            const float boxMargin = 4f;
+            float boxHeight = buttonHeight * 2 + elementMargin + boxMargin * 2 + boxPadding * 2;
+
+            const string getToolsText = "Get access to additional tools for multiplayer development by installing the Multiplayer Tools package in the package manager.";
+            const string openDocsButtonText = "Open Docs";
+            const string dismissButtonText = "Dismiss";
+            const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
+            const string infoIconName = "console.infoicon";
+
+            void ShrinkRect(ref Rect rect, float amount) =>
+                rect = new Rect(
+                    rect.x + amount,
+                    rect.y + amount,
+                    rect.width - amount * 2,
+                    rect.height - amount * 2);
+
+            var helpBoxRect = GUILayoutUtility.GetRect(0f, boxHeight, GUILayout.ExpandWidth(true));
+            ShrinkRect(ref helpBoxRect, boxMargin);
+            GUI.Box(helpBoxRect, GUIContent.none, EditorStyles.helpBox);
+            ShrinkRect(ref helpBoxRect, boxPadding);
+
+            var iconRect = helpBoxRect;
+            iconRect.width = iconRect.height;
+            GUI.Label(iconRect, new GUIContent(EditorGUIUtility.IconContent(infoIconName)));
+
+            var labelRect = iconRect;
+            labelRect.x += labelRect.width + elementMargin;
+            labelRect.width = helpBoxRect.width - iconRect.width - elementMargin * 3 - buttonWidth;
+            GUI.Label(labelRect, getToolsText, s_CenteredWordWrappedLabel);
+
+            var buttonRect = labelRect;
+            buttonRect.x += labelRect.width + elementMargin;
+            buttonRect.width = buttonWidth;
+            buttonRect.height = buttonHeight;
+
+            if (GUI.Button(buttonRect, openDocsButtonText, s_RightAlignedLinkLabel))
+            {
+                Application.OpenURL(targetUrl);
+            }
+
+            buttonRect.y += buttonRect.height + elementMargin;
+
+            if (GUI.Button(buttonRect, dismissButtonText, s_RightAlignedLinkLabel))
+            {
+                PlayerPrefs.SetInt(dismissedKey, 1);
             }
         }
     }
