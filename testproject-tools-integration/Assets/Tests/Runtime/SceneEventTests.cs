@@ -1,10 +1,11 @@
+using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using TestProject.ToolsIntegration.RuntimeTests.Utility;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -14,7 +15,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
     {
         // scenes referenced in this test must also be in the build settings of the project.
         private const string SimpleSceneName = "SimpleScene";
-        private const string EmptySceneName = "EmptyScene";
 
         private NetworkSceneManager m_ClientNetworkSceneManager;
         private NetworkSceneManager m_ServerNetworkSceneManager;
@@ -35,7 +35,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
                 if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle)) return;
 
-                // As we are running the client and the server using the multi-process test runner we need to sync the
+                // As we are running the client and the server using the multi-instance test runner we need to sync the
                 // scene handles manually here, as they share a SceneManager.
                 m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
                 m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
@@ -45,23 +45,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
-            if (m_LoadedScene.isLoaded) m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
-            {
-                var sceneUnloaded = false;
-                m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-                {
-                    if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete) sceneUnloaded = true;
-                };
-                for (int i = 0; i < 240; i++)
-                {
-                    if (sceneUnloaded)
-                        break;
-                    yield return null;
-                }
-
-                Assert.IsTrue(sceneUnloaded);
-            }
-
+            yield return UnloadTestScene(m_LoadedScene);
             yield return base.Teardown();
         }
 
@@ -82,22 +66,16 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 }
             };
 
+            ////////// ACT //////////
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
-            ////////// ACT //////////
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
 
             ////////// ASSERT //////////
 
             // Don't wait for metrics until the server has finished loading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (serverSceneLoaded)
-                    break;
-                yield return null;
-            }
-
+            yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
 
 
@@ -144,12 +122,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
             // Wait for the server to finish loading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (clientSceneLoaded)
-                    break;
-                yield return null;
-            }
+            yield return WaitForCondition(() => clientSceneLoaded);
 
             Assert.IsTrue(clientSceneLoaded);
 
@@ -208,12 +181,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             ////////// ASSERT //////////
 
             // Don't wait for metrics until the server has finished loading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (serverSceneLoadComplete)
-                    break;
-                yield return null;
-            }
+            yield return WaitForCondition(() => serverSceneLoadComplete);
 
             Assert.IsTrue(serverSceneLoadComplete);
 
@@ -289,12 +257,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
             // Don't wait for metrics until the server has finished unloading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (serverSceneUnloaded)
-                    break;
-                yield return null;
-            }
+            yield return WaitForCondition(() => serverSceneUnloaded);
 
             Assert.IsTrue(serverSceneUnloaded);
 
@@ -324,7 +287,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestSceneEventMetrics_UnloadScene_C2S_UnLoadComplete()
+        public IEnumerator TestSceneEventMetrics_UnloadScene_C2S_UnloadComplete()
         {
             ////////// ARRANGE /////////
 
@@ -338,9 +301,15 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             };
 
             // Now we can start the test!
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
+            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+                ClientMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventSent,
+                metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+                ServerMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventReceived,
+                metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
 
             ////////// ACT //////////
 
@@ -348,12 +317,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
             // Don't wait for metrics until the server has finished unloading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (clientSceneUnloaded)
-                    break;
-                yield return null;
-            }
+            yield return WaitForCondition(() => clientSceneUnloaded);
 
             Assert.IsTrue(clientSceneUnloaded);
 
@@ -383,7 +347,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestSceneEventMetrics_UnloadScene_S2C_UnLoadComplete()
+        public IEnumerator TestSceneEventMetrics_UnloadScene_S2C_UnloadComplete()
         {
             ////////// ARRANGE //////////
 
@@ -413,12 +377,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
             // Don't wait for metrics until the server has finished unloading the scene locally
-            for (int i = 0; i < 240; i++)
-            {
-                if (serverUnloadComplete)
-                    break;
-                yield return null;
-            }
+            yield return WaitForCondition(() => serverUnloadComplete);
 
             Assert.IsTrue(serverUnloadComplete);
 
@@ -464,8 +423,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestSceneEventMetrics_SyncScenes_S2C_Sync()
         {
-            // Load multiple scenes so we can ensure we get a metric for each when syncing
-            yield return LoadTestScene(EmptySceneName);
+            // Loading an additional scene here would be best as this should support multiple scenes, but right now
+            // this causes an issue with the teardown so leaving it out as not necessary for this test
+            // yield return LoadTestScene(SimpleSceneName);
 
             // Now we can start the test!
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -513,8 +473,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestSceneEventMetrics_SyncScenes_C2S_SyncComplete()
         {
-            // Load multiple scenes so we can ensure we get a metric for each when syncing
-            yield return LoadTestScene(EmptySceneName);
+            // Loading an additional scene here would be best as this should support multiple scenes, but right now
+            // this causes an issue with the teardown so leaving it out as not necessary for this test
+            // yield return LoadTestScene(SimpleSceneName);
 
             // Now we can start the test!
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -572,14 +533,37 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             // load the scene
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(sceneName, LoadSceneMode.Additive));
-            for (int i = 0; i < 240; i++)
+
+            yield return WaitForCondition(() => sceneLoadComplete);
+
+            Assert.IsTrue(sceneLoadComplete);
+        }
+
+        // Unloads a loaded scene. If the scene is not loaded, this is a no-op
+        private IEnumerator UnloadTestScene(Scene scene)
+        {
+            if (!m_LoadedScene.isLoaded) yield break;
+
+            m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+            var sceneUnloaded = false;
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneLoadComplete)
+                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete) sceneUnloaded = true;
+            };
+
+            yield return WaitForCondition(() => sceneUnloaded);
+
+            Assert.IsTrue(sceneUnloaded);
+        }
+
+        private IEnumerator WaitForCondition(Func<bool> condition, int maxFrames = 240)
+        {
+            for (int i = 0; i < maxFrames; i++)
+            {
+                if (condition.Invoke())
                     break;
                 yield return null;
             }
-
-            Assert.IsTrue(sceneLoadComplete);
         }
     }
 }
