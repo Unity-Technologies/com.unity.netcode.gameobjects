@@ -17,7 +17,7 @@ namespace Unity.Netcode
         public InvalidMessageStructureException(string issue) : base(issue) { }
     }
     
-    public class MessagingSystem: IMessageHandler, IDisposable
+    public class MessagingSystem: IDisposable
     {
 #region Internal Types
         private struct ReceiveQueueItem
