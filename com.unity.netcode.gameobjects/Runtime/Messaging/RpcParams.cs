@@ -1,34 +1,13 @@
+using Unity.Collections;
+
 namespace Unity.Netcode
 {
-    public interface IHasUpdateStage
+    public struct ServerRpcSendParams
     {
-        NetworkUpdateStage UpdateStage
-        {
-            get;
-            set;
-        }
     }
 
-    public struct ServerRpcSendParams : IHasUpdateStage
+    public struct ServerRpcReceiveParams
     {
-        private NetworkUpdateStage m_UpdateStage;
-
-        public NetworkUpdateStage UpdateStage
-        {
-            get => m_UpdateStage;
-            set => m_UpdateStage = value;
-        }
-    }
-
-    public struct ServerRpcReceiveParams : IHasUpdateStage
-    {
-        private NetworkUpdateStage m_UpdateStage;
-
-        public NetworkUpdateStage UpdateStage
-        {
-            get => m_UpdateStage;
-            set => m_UpdateStage = value;
-        }
         public ulong SenderClientId;
     }
 
@@ -38,27 +17,22 @@ namespace Unity.Netcode
         public ServerRpcReceiveParams Receive;
     }
 
-    public struct ClientRpcSendParams : IHasUpdateStage
+    public struct ClientRpcSendParams
     {
-        private NetworkUpdateStage m_UpdateStage;
-
-        public NetworkUpdateStage UpdateStage
-        {
-            get => m_UpdateStage;
-            set => m_UpdateStage = value;
-        }
+        /// <summary>
+        /// ulong array version of target id list - use either this OR TargetClientIdsNativeArray
+        /// </summary>
         public ulong[] TargetClientIds;
+
+        /// <summary>
+        /// NativeArray version of target id list - use either this OR TargetClientIds
+        /// This option avoids any GC allocations but is a bit trickier to use.
+        /// </summary>
+        public NativeArray<ulong>? TargetClientIdsNativeArray;
     }
 
-    public struct ClientRpcReceiveParams : IHasUpdateStage
+    public struct ClientRpcReceiveParams
     {
-        private NetworkUpdateStage m_UpdateStage;
-
-        public NetworkUpdateStage UpdateStage
-        {
-            get => m_UpdateStage;
-            set => m_UpdateStage = value;
-        }
     }
 
     public struct ClientRpcParams

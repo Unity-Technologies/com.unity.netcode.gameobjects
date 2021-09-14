@@ -11,24 +11,10 @@ namespace Unity.Netcode.RuntimeTests
     public struct FixedString32Struct : INetworkSerializable
     {
         public FixedString32 FixedString;
-        public void NetworkSerialize(NetworkSerializer serializer)
+        
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
         {
-            if (serializer.IsReading)
-            {
-                var stringArraySize = 0;
-                serializer.Serialize(ref stringArraySize);
-                var stringArray = new char[stringArraySize];
-                serializer.Serialize(ref stringArray);
-                var asString = new string(stringArray);
-                FixedString.CopyFrom(asString);
-            }
-            else
-            {
-                var stringArray = FixedString.Value.ToCharArray();
-                var stringArraySize = stringArray.Length;
-                serializer.Serialize(ref stringArraySize);
-                serializer.Serialize(ref stringArray);
-            }
+            serializer.SerializeValue(ref FixedString);
         }
     }
 
@@ -37,10 +23,10 @@ namespace Unity.Netcode.RuntimeTests
         public uint SomeInt;
         public bool SomeBool;
 
-        public void NetworkSerialize(NetworkSerializer serializer)
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
         {
-            serializer.Serialize(ref SomeInt);
-            serializer.Serialize(ref SomeBool);
+            serializer.SerializeValue(ref SomeInt);
+            serializer.SerializeValue(ref SomeBool);
         }
     }
     public class NetworkVariableTest : NetworkBehaviour

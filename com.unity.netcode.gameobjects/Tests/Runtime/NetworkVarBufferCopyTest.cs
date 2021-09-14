@@ -25,25 +25,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return Dirty;
             }
-
-            public override void WriteDelta(Stream stream)
-            {
-                using var writer = PooledNetworkWriter.Get(stream);
-                writer.WriteBits((byte)1, 1);
-                writer.WriteInt32(k_DummyValue);
-
-                DeltaWritten = true;
-            }
-
-            public override void WriteField(Stream stream)
-            {
-                using var writer = PooledNetworkWriter.Get(stream);
-                writer.WriteBits((byte)1, 1);
-                writer.WriteInt32(k_DummyValue);
-
-                FieldWritten = true;
-            }
-
+            
             public override void WriteDelta(ref FastBufferWriter writer)
             {
                 using (var bitWriter = writer.EnterBitwiseContext())
@@ -64,24 +46,6 @@ namespace Unity.Netcode.RuntimeTests
                 writer.WriteValue(k_DummyValue);
 
                 FieldWritten = true;
-            }
-
-            public override void ReadField(Stream stream)
-            {
-                using var reader = PooledNetworkReader.Get(stream);
-                reader.ReadBits(1);
-                Assert.AreEqual(k_DummyValue, reader.ReadInt32());
-
-                FieldRead = true;
-            }
-
-            public override void ReadDelta(Stream stream, bool keepDirtyDelta)
-            {
-                using var reader = PooledNetworkReader.Get(stream);
-                reader.ReadBits(1);
-                Assert.AreEqual(k_DummyValue, reader.ReadInt32());
-
-                DeltaRead = true;
             }
 
             public override void ReadField(ref FastBufferReader reader)

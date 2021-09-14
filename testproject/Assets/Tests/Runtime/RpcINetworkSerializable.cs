@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -381,19 +382,22 @@ namespace TestProject.RuntimeTests
         public ulong MyulongValue;
         public List<byte> MyByteListValues;
 
-        public void NetworkSerialize(NetworkSerializer serializer)
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation
         {
-            if (serializer.IsReading)
+            serializer.SerializeValue(ref MyintValue);
+            serializer.SerializeValue(ref MyulongValue);
+            int size = MyByteListValues.Count;
+            serializer.SerializeValue(ref size);
+            if (serializer.IsReader)
             {
-                MyintValue = serializer.Reader.ReadInt32Packed();
-                MyulongValue = serializer.Reader.ReadUInt64Packed();
-                MyByteListValues = new List<byte>(serializer.Reader.ReadByteArray());
+                var b = new byte[size];
+                serializer.GetFastBufferReader().ReadBytesSafe(ref b, size);
+                MyByteListValues = new List<byte>(b);
             }
             else
             {
-                serializer.Writer.WriteInt32Packed(MyintValue);
-                serializer.Writer.WriteUInt64Packed(MyulongValue);
-                serializer.Writer.WriteByteArray(MyByteListValues.ToArray());
+                
+                serializer.GetFastBufferWriter().WriteBytesSafe(MyByteListValues.ToArray());
             }
         }
 

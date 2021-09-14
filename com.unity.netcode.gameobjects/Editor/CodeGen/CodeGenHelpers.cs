@@ -264,9 +264,9 @@ namespace Unity.Netcode.Editor.CodeGen
             });
         }
 
-        public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
+        public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly, out PostProcessorAssemblyResolver assemblyResolver)
         {
-            var assemblyResolver = new PostProcessorAssemblyResolver(compiledAssembly);
+            assemblyResolver = new PostProcessorAssemblyResolver(compiledAssembly);
             var readerParameters = new ReaderParameters
             {
                 SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),

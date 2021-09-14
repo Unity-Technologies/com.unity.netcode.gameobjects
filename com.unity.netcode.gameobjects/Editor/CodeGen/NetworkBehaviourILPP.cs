@@ -3,9 +3,11 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
@@ -15,6 +17,7 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 
 namespace Unity.Netcode.Editor.CodeGen
 {
+    
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;
@@ -30,10 +33,11 @@ namespace Unity.Netcode.Editor.CodeGen
                 return null;
             }
 
+
             m_Diagnostics.Clear();
 
             // read
-            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly, out m_AssemblyResolver);
             if (assemblyDefinition == null)
             {
                 m_Diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
@@ -44,13 +48,21 @@ namespace Unity.Netcode.Editor.CodeGen
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
+                m_MainModule = mainModule;
                 if (ImportReferences(mainModule))
                 {
                     // process `NetworkBehaviour` types
-                    mainModule.GetTypes()
-                        .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
-                        .ToList()
-                        .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
+                    try
+                    {
+                        mainModule.GetTypes()
+                            .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
+                            .ToList()
+                            .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
+                    }
+                    catch (Exception e)
+                    {
+                        m_Diagnostics.AddError((e.ToString() + e.StackTrace.ToString()).Replace("\n", "|").Replace("\r", "|"));
+                    }
                 }
                 else
                 {
@@ -78,6 +90,9 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
+        private ModuleDefinition m_MainModule;
+        private PostProcessorAssemblyResolver m_AssemblyResolver;
+        
         private MethodReference m_Debug_LogError_MethodRef;
         private TypeReference m_NetworkManager_TypeRef;
         private MethodReference m_NetworkManager_getLocalClientId_MethodRef;
@@ -91,10 +106,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private FieldReference m_NetworkManager_rpc_name_table_FieldRef;
         private MethodReference m_NetworkManager_rpc_name_table_Add_MethodRef;
         private TypeReference m_NetworkBehaviour_TypeRef;
-        private MethodReference m_NetworkBehaviour_BeginSendServerRpc_MethodRef;
-        private MethodReference m_NetworkBehaviour_EndSendServerRpc_MethodRef;
-        private MethodReference m_NetworkBehaviour_BeginSendClientRpc_MethodRef;
-        private MethodReference m_NetworkBehaviour_EndSendClientRpc_MethodRef;
+        private MethodReference m_NetworkBehaviour_SendServerRpc_MethodRef;
+        private MethodReference m_NetworkBehaviour_SendClientRpc_MethodRef;
         private FieldReference m_NetworkBehaviour_rpc_exec_stage_FieldRef;
         private MethodReference m_NetworkBehaviour_getNetworkManager_MethodRef;
         private MethodReference m_NetworkBehaviour_getOwnerClientId_MethodRef;
@@ -106,49 +119,16 @@ namespace Unity.Netcode.Editor.CodeGen
         private FieldReference m_ServerRpcParams_Receive_FieldRef;
         private FieldReference m_ServerRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference m_ClientRpcParams_TypeRef;
-        private TypeReference m_NetworkSerializer_TypeRef;
-        private MethodReference m_NetworkSerializer_SerializeBool_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeChar_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeSbyte_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeByte_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeShort_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUshort_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeInt_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUint_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeLong_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUlong_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeFloat_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeDouble_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeString_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeColor_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeColor32_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector2_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector3_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector4_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeQuaternion_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeRay_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeRay2D_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeBoolArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeCharArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeSbyteArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeByteArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeShortArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUshortArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeIntArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUintArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeLongArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeUlongArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeFloatArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeDoubleArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeStringArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeColorArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeColor32Array_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector2Array_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector3Array_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeVector4Array_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeQuaternionArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeRayArray_MethodRef;
-        private MethodReference m_NetworkSerializer_SerializeRay2DArray_MethodRef;
+        
+        private TypeReference m_FastBufferWriter_TypeRef;
+        private MethodReference m_FastBufferWriter_Constructor;
+        private MethodReference m_FastBufferWriter_Dispose;
+        private Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new Dictionary<string, MethodReference>();
+        private List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new List<MethodReference>();
+
+        private TypeReference m_FastBufferReader_TypeRef;
+        private Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new Dictionary<string, MethodReference>();
+        private List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new List<MethodReference>();
 
         private const string k_Debug_LogError = nameof(Debug.LogError);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
@@ -160,11 +140,9 @@ namespace Unity.Netcode.Editor.CodeGen
         private const string k_NetworkManager_rpc_func_table = nameof(NetworkManager.__rpc_func_table);
         private const string k_NetworkManager_rpc_name_table = nameof(NetworkManager.__rpc_name_table);
 
-        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkBehaviour.__beginSendServerRpc);
-        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkBehaviour.__endSendServerRpc);
-        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkBehaviour.__beginSendClientRpc);
-        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkBehaviour.__endSendClientRpc);
         private const string k_NetworkBehaviour_rpc_exec_stage = nameof(NetworkBehaviour.__rpc_exec_stage);
+        private const string k_NetworkBehaviour_SendServerRpc = nameof(NetworkBehaviour.SendServerRpc);
+        private const string k_NetworkBehaviour_SendClientRpc = nameof(NetworkBehaviour.SendClientRpc);
         private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkBehaviour.NetworkManager);
         private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkBehaviour.OwnerClientId);
 
@@ -253,17 +231,11 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case k_NetworkBehaviour_BeginSendServerRpc:
-                        m_NetworkBehaviour_BeginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case k_NetworkBehaviour_SendServerRpc:
+                        m_NetworkBehaviour_SendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case k_NetworkBehaviour_EndSendServerRpc:
-                        m_NetworkBehaviour_EndSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case k_NetworkBehaviour_BeginSendClientRpc:
-                        m_NetworkBehaviour_BeginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case k_NetworkBehaviour_EndSendClientRpc:
-                        m_NetworkBehaviour_EndSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case k_NetworkBehaviour_SendClientRpc:
+                        m_NetworkBehaviour_SendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
             }
@@ -278,7 +250,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(Action<NetworkBehaviour, NetworkSerializer, __RpcParams>);
+            var networkHandlerDelegateType = typeof(NetworkManager.RpcReceive);
             m_NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var rpcParamsType = typeof(__RpcParams);
@@ -321,199 +293,77 @@ namespace Unity.Netcode.Editor.CodeGen
             var clientRpcParamsType = typeof(ClientRpcParams);
             m_ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
 
-            var networkSerializerType = typeof(NetworkSerializer);
-            m_NetworkSerializer_TypeRef = moduleDefinition.ImportReference(networkSerializerType);
-            foreach (var methodInfo in networkSerializerType.GetMethods())
+            var fastBufferWriterType = typeof(FastBufferWriter);
+            m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterType);
+
+            m_FastBufferWriter_Constructor = moduleDefinition.ImportReference(
+                fastBufferWriterType.GetConstructor(new[] {typeof(int), typeof(Allocator), typeof(int)}));
+            m_FastBufferWriter_Dispose = moduleDefinition.ImportReference(fastBufferWriterType.GetMethod("Dispose"));
+            
+            var FstBufferReaderType = typeof(FastBufferReader);
+            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(FstBufferReaderType);
+            
+            // Find all extension methods for FastBufferReader and FastBufferWriter to enable user-implemented
+            // methods to be called.
+            List<AssemblyDefinition> assemblies = new List<AssemblyDefinition>();
+            assemblies.Add(m_MainModule.Assembly);
+            foreach (var reference in m_MainModule.AssemblyReferences)
             {
-                if (methodInfo.Name != nameof(NetworkSerializer.Serialize))
-                {
-                    continue;
-                }
-
-                var methodParams = methodInfo.GetParameters();
-                if (methodParams.Length != 1)
-                {
-                    continue;
-                }
-
-                var paramType = methodParams[0].ParameterType;
-                if (paramType.IsByRef == false)
-                {
-                    continue;
-                }
-
-                var paramTypeName = paramType.Name;
-
-                if (paramTypeName == typeof(bool).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(char).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(byte).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(short).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(ushort).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(int).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(uint).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(long).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(ulong).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(float).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(double).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(string).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Color).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Color32).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Ray).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(char[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(short[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(int[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(long[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(float[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(double[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(string[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
-                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name)
-                {
-                    m_NetworkSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                }
+                assemblies.Add(m_AssemblyResolver.Resolve(reference));
             }
 
+            var extensionConstructor =
+                moduleDefinition.ImportReference(typeof(ExtensionAttribute).GetConstructor(new Type[] { }));
+            foreach(var assembly in assemblies)
+            {
+                foreach (var module in assembly.Modules)
+                {
+                    foreach (var type in module.Types)
+                    {
+                        var resolvedType = type.Resolve();
+                        if (!resolvedType.IsSealed || !resolvedType.IsAbstract || resolvedType.IsNested)
+                        {
+                            continue;
+                        }
+                        foreach (var method in type.Methods)
+                        {
+                            if (!method.IsStatic)
+                            {
+                                continue;
+                            }
+
+                            var isExtension = false;
+                            
+                            foreach (var attr in method.CustomAttributes)
+                            {
+                                if (attr.Constructor.Resolve() == extensionConstructor.Resolve())
+                                {
+                                    isExtension = true;
+                                }
+                            }
+
+                            if (!isExtension)
+                            {
+                                continue;
+                            }
+
+                            var parameters = method.Parameters;
+                        
+                            if (parameters.Count == 2
+                                && parameters[0].ParameterType.Resolve() == m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
+                            {
+                                m_FastBufferWriter_ExtensionMethodRefs.Add(m_MainModule.ImportReference(method));
+                            }
+                            else if (parameters.Count == 2
+                                && parameters[0].ParameterType.Resolve() == m_FastBufferReader_TypeRef.MakeByReferenceType().Resolve())
+                            {
+                                m_FastBufferReader_ExtensionMethodRefs.Add(m_MainModule.ImportReference(method));
+                            }
+                        }
+                    }
+                }
+            }
+            
             return true;
         }
 
@@ -613,6 +463,39 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 typeDefinition.Methods.Add(newGetTypeNameMethod);
             }
+
+            // Weird behavior from Cecil: When importing a reference to a specific implementation of a generic
+            // method, it's importing the main module as a reference into itself. This causes Unity to have issues
+            // when attempting to iterate the assemblies to discover unit tests, as it goes into infinite recursion
+            // and eventually hits a stack overflow. I wasn't able to find any way to stop Cecil from importing the module
+            // into itself, so at the end of it all, we're just going to go back and remove it again.
+            var moduleName = m_MainModule.Name;
+            if (moduleName.EndsWith(".dll") || moduleName.EndsWith(".exe"))
+            {
+                moduleName = moduleName.Substring(0, moduleName.Length-4);
+            }
+
+            foreach (var reference in m_MainModule.AssemblyReferences)
+            {
+                var referenceName = reference.Name.Split(',')[0];
+                if (referenceName.EndsWith(".dll") || referenceName.EndsWith(".exe"))
+                {
+                    referenceName = referenceName.Substring(0, referenceName.Length-4);
+                }
+
+                if (moduleName == referenceName)
+                {
+                    try
+                    {
+                        m_MainModule.AssemblyReferences.Remove(reference);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        //
+                    }
+                }
+            }
         }
 
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
@@ -681,34 +564,219 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 return null;
             }
-
-            int paramCount = methodDefinition.Parameters.Count;
-            for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
+            // Checks for IsSerializable are moved to later as the check is now done by dynamically seeing if any valid
+            // serializer OR extension method exists for it.
+            return rpcAttribute;
+        }
+        
+        private MethodInfo GetWriteMethodViaSystemReflection(Type objectType, string name, Type paramType)
+        {
+            foreach (var method in objectType.GetMethods())
             {
-                var paramDef = methodDefinition.Parameters[paramIndex];
-                var paramType = paramDef.ParameterType;
+                if (method.Name == name)
+                {
+                    var parameters = method.GetParameters();
 
-                // Serializable
-                if (paramType.IsSerializable())
-                {
-                    continue;
-                }
-                // ServerRpcParams
-                if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
-                {
-                    continue;
-                }
-                // ClientRpcParams
-                if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
-                {
-                    continue;
-                }
+                    if (parameters.Length == 0 || (parameters.Length > 1 && !parameters[1].IsOptional))
+                    {
+                        continue;
+                    }
+                    
+                    var checkType = paramType;
+                    if (paramType.IsArray)
+                    {
+                        checkType = paramType.GetElementType();
+                    }
+                    
+                    if ((parameters[0].ParameterType == checkType) || (parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsIn) && parameters[0].ParameterType.IsArray == paramType.IsArray)
+                    {
+                        return method;
+                    }
+                    if (method.IsGenericMethod)
+                    {
+                        var genericParamType = parameters[0].ParameterType;
+                        if (genericParamType.IsByRef)
+                        {
+                            genericParamType = genericParamType.GetElementType();
+                        }
 
-                m_Diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
-                rpcAttribute = null;
+                        if (genericParamType.IsArray == paramType.IsArray)
+                        {
+                            try
+                            {
+                                return method.MakeGenericMethod(checkType);
+                            }
+                            catch (Exception e)
+                            {
+                            }
+                        }
+                    }
+                }
             }
 
-            return rpcAttribute;
+            return null;
+        }
+
+        private bool GetWriteMethodForParameter(TypeReference paramType, out MethodReference methodRef)
+        {
+            var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
+            var foundMethodRef = m_FastBufferWriter_WriteValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);
+
+            if (!foundMethodRef)
+            {
+                foreach (var method in m_FastBufferWriter_ExtensionMethodRefs)
+                {
+                    var parameters = method.Resolve().Parameters;
+
+                    if (method.Name == "WriteValueSafe")
+                    {
+                        if (parameters[1].IsIn)
+                        {
+                            if (parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve()
+                                && ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
+                            {
+                                methodRef = method;
+                                m_FastBufferWriter_WriteValue_MethodRefs[assemblyQualifiedName] = methodRef;
+                                return true;
+                            }
+                        }
+                        else
+                        {
+
+                            if (parameters[1].ParameterType.Resolve() == paramType.Resolve()
+                                && parameters[1].ParameterType.IsArray == paramType.IsArray)
+                            {
+                                methodRef = method;
+                                m_FastBufferWriter_WriteValue_MethodRefs[assemblyQualifiedName] = methodRef;
+                                return true;
+                            }
+                        }
+                    }
+                }
+                
+                var systemType = Type.GetType(paramType.FullName);
+                if (systemType == null)
+                {
+                    systemType = Type.GetType(assemblyQualifiedName);
+                    if (systemType == null)
+                    {
+                        throw new Exception("Couldn't find type for " + paramType.FullName + ", " +
+                                            paramType.Resolve().Module.Assembly.FullName);
+                    }
+                }
+                // Try NetworkSerializable first because INetworkSerializable may also be valid for WriteValueSafe
+                // and that would cause boxing if so.
+                var systemMethod = GetWriteMethodViaSystemReflection(typeof(FastBufferWriter), "WriteNetworkSerializable", systemType);
+                if (systemMethod == null)
+                {
+                    systemMethod = GetWriteMethodViaSystemReflection(typeof(FastBufferWriter), "WriteValueSafe", systemType);
+                }
+                if (systemMethod != null)
+                {
+                    methodRef = m_MainModule.ImportReference(systemMethod);
+                    m_FastBufferWriter_WriteValue_MethodRefs[assemblyQualifiedName] = methodRef;
+                    foundMethodRef = true;
+                }
+            }
+
+            return foundMethodRef;
+        }
+        
+        private static MethodInfo GetReadMethodViaSystemReflection(Type objectType, string name, Type paramType)
+        {
+            foreach (var method in objectType.GetMethods())
+            {
+                if (method.Name == name)
+                {
+                    var parameters = method.GetParameters();
+                    if (parameters.Length == 0 || (parameters.Length > 1 && !parameters[1].IsOptional))
+                    {
+                        continue;
+                    }
+                    
+                    var checkType = paramType;
+                    if (paramType.IsArray)
+                    {
+                        checkType = paramType.GetElementType();
+                    }
+                    
+                    if ((parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsOut) && parameters[0].ParameterType.IsArray == paramType.IsArray)
+                    {
+                        return method;
+                    }
+                    if (method.IsGenericMethod)
+                    {
+                        var genericParamType = parameters[0].ParameterType;
+                        if (genericParamType.IsByRef)
+                        {
+                            genericParamType = genericParamType.GetElementType();
+                        }
+                        if (genericParamType.IsArray == paramType.IsArray)
+                        {
+                            try
+                            {
+                                return method.MakeGenericMethod(checkType);
+                            }
+                            catch (Exception e)
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private bool GetReadMethodForParameter(TypeReference paramType, out MethodReference methodRef)
+        {
+            var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
+
+            var foundMethodRef = m_FastBufferReader_ReadValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);
+            if (!foundMethodRef)
+            {
+                foreach (var method in m_FastBufferReader_ExtensionMethodRefs)
+                {
+                    var parameters = method.Resolve().Parameters;
+                    if (
+                        method.Name == "ReadValueSafe" 
+                        && parameters[1].IsOut
+                        && parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve()
+                        && ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
+                    {
+                        methodRef = method;
+                        m_FastBufferReader_ReadValue_MethodRefs[assemblyQualifiedName] = methodRef;
+                        return true;
+                    }
+                }
+                
+                var systemType = Type.GetType(paramType.FullName);
+                if (systemType == null)
+                {
+                    systemType = Type.GetType(assemblyQualifiedName);
+                    if (systemType == null)
+                    {
+                        throw new Exception("Couldn't find type for " + paramType.FullName + ", " +
+                                            paramType.Resolve().Module.Assembly.FullName);
+                    }
+                }
+                // Try NetworkSerializable first because INetworkSerializable may also be valid for ReadValueSafe
+                // and that would cause boxing if so.
+                var systemMethod = GetReadMethodViaSystemReflection(typeof(FastBufferReader), "ReadNetworkSerializable", systemType);
+                if (systemMethod == null)
+                {
+                    systemMethod = GetReadMethodViaSystemReflection(typeof(FastBufferReader), "ReadValueSafe", systemType);
+                }
+                if (systemMethod != null)
+                {
+                    methodRef = m_MainModule.ImportReference(systemMethod);
+                    m_FastBufferReader_ReadValue_MethodRefs[assemblyQualifiedName] = methodRef;
+                    foundMethodRef = true;
+                }
+            }
+
+            return foundMethodRef;
         }
 
         private void InjectWriteAndCallBlocks(MethodDefinition methodDefinition, CustomAttribute rpcAttribute, uint rpcMethodId)
@@ -743,8 +811,9 @@ namespace Unity.Netcode.Editor.CodeGen
             methodDefinition.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
             int netManLocIdx = methodDefinition.Body.Variables.Count - 1;
             // NetworkSerializer serializer;
-            methodDefinition.Body.Variables.Add(new VariableDefinition(m_NetworkSerializer_TypeRef));
+            methodDefinition.Body.Variables.Add(new VariableDefinition(m_FastBufferWriter_TypeRef));
             int serializerLocIdx = methodDefinition.Body.Variables.Count - 1;
+
             // XXXRpcParams
             if (!hasRpcParams)
             {
@@ -813,7 +882,8 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldarg_0));
                         instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_getOwnerClientId_MethodRef));
                         instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getLocalClientId_MethodRef));
+                        instructions.Add(
+                            processor.Create(OpCodes.Callvirt, m_NetworkManager_getLocalClientId_MethodRef));
                         instructions.Add(processor.Create(OpCodes.Ceq));
                         instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                         instructions.Add(processor.Create(OpCodes.Ceq));
@@ -824,14 +894,15 @@ namespace Unity.Netcode.Editor.CodeGen
                         // if (LogLevel.Normal > networkManager.LogLevel)
                         instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef));
-                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int) LogLevel.Normal));
                         instructions.Add(processor.Create(OpCodes.Cgt));
                         instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                         instructions.Add(processor.Create(OpCodes.Ceq));
                         instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
 
                         // Debug.LogError(...);
-                        instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!"));
+                        instructions.Add(processor.Create(OpCodes.Ldstr,
+                            "Only the owner can invoke a ServerRpc that requires ownership!"));
                         instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
 
                         instructions.Add(logNextInstr);
@@ -839,834 +910,125 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(roReturnInstr);
                         instructions.Add(roLastInstr);
                     }
-
-                    // var serializer = BeginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery);
-                    instructions.Add(processor.Create(OpCodes.Ldarg_0));
-
-                    // rpcMethodId
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
-
-                    // rpcParams
-                    instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
-
-                    // rpcDelivery
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
-
-                    // BeginSendServerRpc
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_BeginSendServerRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
-                }
-                else
-                {
-                    // ClientRpc
-                    // var serializer = BeginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery);
-                    instructions.Add(processor.Create(OpCodes.Ldarg_0));
-
-                    // rpcMethodId
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
-
-                    // rpcParams
-                    instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
-
-                    // rpcDelivery
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
-
-                    // BeginSendClientRpc
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_BeginSendClientRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
                 }
 
-                // if (serializer != null)
-                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                instructions.Add(processor.Create(OpCodes.Brfalse, endInstr));
+                // var writer = new FastBufferWriter(1300, Allocator.Temp, 1300);
+                instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4_2));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300));
+                instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Constructor));
+
+                var firstInstruction = processor.Create(OpCodes.Nop);
+                instructions.Add(firstInstruction);
 
                 // write method parameters into stream
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
-
-                    // C# primitives (+arrays)
-
-                    if (paramType == typeSystem.Boolean)
+                    // ServerRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef));
+                        continue;
+                    }
+                    // ClientRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
+                    {
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
+                    Instruction jumpInstruction = null;
+
+                    if (!paramType.IsValueType)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeBoolArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Char)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeChar_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeCharArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.SByte)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyteArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Byte)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeByteArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Int16)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeShortArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.UInt16)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshortArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Int32)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeIntArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.UInt32)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUintArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Int64)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeLongArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.UInt64)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlongArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Single)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeFloat_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeFloatArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.Double)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeDouble_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeDoubleArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType == typeSystem.String)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeString_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeStringArray_MethodRef));
-                        continue;
-                    }
-
-                    // Unity primitives (+arrays)
-
-                    if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeColorArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor32_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor32Array_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector2_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector2Array_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector3_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector3Array_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector4_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector4Array_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeQuaternion_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeQuaternionArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeRayArray_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay2D_MethodRef));
-                        continue;
-                    }
-
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay2DArray_MethodRef));
-                        continue;
-                    }
-
-                    // Enum
-
-                    {
-                        var paramEnumIntType = paramType.GetEnumAsInt();
-                        if (paramEnumIntType != null)
+                        if (!GetWriteMethodForParameter(typeSystem.Boolean, out var boolMethodRef))
                         {
-                            if (paramEnumIntType == typeSystem.Int32)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.UInt32)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.Byte)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.SByte)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.Int16)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.UInt16)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.Int64)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef));
-                                continue;
-                            }
-
-                            if (paramEnumIntType == typeSystem.UInt64)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
-                                int localIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef));
-                                continue;
-                            }
+                            m_Diagnostics.AddError(methodDefinition, $"Couldn't find boolean serializer! Something's wrong!");
+                            return;
                         }
+                        
+                        methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                        int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
+                        
+                        // bool isSet = (param != null);
+                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Ldnull));
+                        instructions.Add(processor.Create(OpCodes.Cgt_Un));
+                        instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
+                        
+                        // writer.WriteValueSafe(isSet);
+                        instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
+                        instructions.Add(processor.Create(OpCodes.Call, boolMethodRef));
+
+                        // if(isSet) {
+                        jumpInstruction = processor.Create(OpCodes.Nop);
+                        instructions.Add(processor.Create(OpCodes.Ldloc, isSetLocalIndex));
+                        instructions.Add(processor.Create(OpCodes.Brfalse, jumpInstruction));
                     }
 
-                    // Enum array
-
-                    if (paramType.IsArray)
+                    var foundMethodRef = GetWriteMethodForParameter(paramType, out var methodRef);
+                    if (foundMethodRef)
                     {
-                        var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
-                        if (paramElemEnumIntType != null)
+                        // writer.WriteNetworkSerializable(param) for INetworkSerializable, OR
+                        // writer.WriteNetworkSerializable(param, -1, 0) for INetworkSerializable arrays, OR
+                        // writer.WriteValueSafe(param) for value types, OR
+                        // writer.WriteValueSafe(param, -1, 0) for arrays of value types, OR
+                        // writer.WriteValueSafe(param, false) for strings
+                        instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                        var method = methodRef.Resolve();
+                        var checkParameter = method.Parameters[0];
+                        if (checkParameter.ParameterType.Resolve() ==
+                            m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
                         {
-                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                            var endifInstr = processor.Create(OpCodes.Nop);
-                            var arrLenInstr = processor.Create(OpCodes.Nop);
-
+                            checkParameter = method.Parameters[1];
+                        }
+                        if (checkParameter.IsIn)
+                        {
+                            instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        }
+                        else
+                        {
                             instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            instructions.Add(processor.Create(OpCodes.Brtrue, arrLenInstr));
+                        }
+                        // Special handling for WriteValue() on arrays and strings since they have additional arguments.
+                        if (paramType.IsArray)
+                        {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
-                            instructions.Add(processor.Create(OpCodes.Br, endifInstr));
-                            instructions.Add(arrLenInstr);
-                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            instructions.Add(processor.Create(OpCodes.Ldlen));
-                            instructions.Add(processor.Create(OpCodes.Conv_I4));
-                            instructions.Add(endifInstr);
-                            instructions.Add(processor.Create(OpCodes.Stloc, arrLenLocalIndex));
-
-                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                            instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef));
-
-                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                            var forBodyInstr = processor.Create(OpCodes.Nop);
-                            var forCheckInstr = processor.Create(OpCodes.Nop);
-
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
-                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Br, forCheckInstr));
-                            instructions.Add(forBodyInstr);
-
-                            if (paramElemEnumIntType == typeSystem.Int32)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_I4));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.UInt32)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_U4));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.Byte)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_U1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.SByte)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_I1));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.Int16)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_I2));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.UInt16)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_U2));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.Int64)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef));
-                            }
-                            else if (paramElemEnumIntType == typeSystem.UInt64)
-                            {
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
-                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
-                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef));
-                            }
-
-                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Ldc_I4_1));
-                            instructions.Add(processor.Create(OpCodes.Add));
-                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
-                            instructions.Add(forCheckInstr);
-                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Ldloc, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Clt));
-                            instructions.Add(processor.Create(OpCodes.Brtrue, forBodyInstr));
-
-                            continue;
                         }
+                        else if (paramType == typeSystem.String)
+                        {
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
+                        }
+                        instructions.Add(processor.Create(OpCodes.Call, methodRef));
+                    }
+                    else
+                    {
+                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement INetworkSerializable or add an extension method to FastBufferWriter to define serialization.");
+                        continue;
                     }
 
-                    // INetworkSerializable
-
-                    if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                    if (jumpInstruction != null)
                     {
-                        var paramTypeDef = paramType.Resolve();
-                        var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                        var paramTypeNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramTypeNetworkSerialize_MethodDef);
-                        if (paramTypeNetworkSerialize_MethodRef != null)
-                        {
-                            if (paramType.IsValueType)
-                            {
-                                // struct (pass by value)
-                                instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkSerialize_MethodRef));
-                            }
-                            else
-                            {
-                                // class (pass by reference)
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
-                                int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldnull));
-                                instructions.Add(processor.Create(OpCodes.Cgt_Un));
-                                instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef));
-
-                                var notSetInstr = processor.Create(OpCodes.Nop);
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Brfalse, notSetInstr));
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodRef));
-
-                                instructions.Add(notSetInstr);
-                            }
-
-                            continue;
-                        }
-                    }
-
-                    // INetworkSerializable[]
-                    if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
-                    {
-                        var paramElemType = paramType.GetElementType();
-                        var paramElemTypeDef = paramElemType.Resolve();
-                        var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                        var paramElemNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramElemNetworkSerialize_MethodDef);
-                        if (paramElemNetworkSerialize_MethodRef != null)
-                        {
-                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                            var endifInstr = processor.Create(OpCodes.Nop);
-                            var arrLenInstr = processor.Create(OpCodes.Nop);
-
-                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            instructions.Add(processor.Create(OpCodes.Brtrue, arrLenInstr));
-                            instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
-                            instructions.Add(processor.Create(OpCodes.Br, endifInstr));
-                            instructions.Add(arrLenInstr);
-                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            instructions.Add(processor.Create(OpCodes.Ldlen));
-                            instructions.Add(processor.Create(OpCodes.Conv_I4));
-                            instructions.Add(endifInstr);
-                            instructions.Add(processor.Create(OpCodes.Stloc, arrLenLocalIndex));
-
-                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                            instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef));
-
-                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                            var forBodyInstr = processor.Create(OpCodes.Nop);
-                            var forCheckInstr = processor.Create(OpCodes.Nop);
-
-                            instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
-                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Br, forCheckInstr));
-                            instructions.Add(forBodyInstr);
-
-                            if (paramElemType.IsValueType)
-                            {
-                                // struct (pass by value)
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelema, paramElemType));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramElemNetworkSerialize_MethodRef));
-                            }
-                            else
-                            {
-                                // class (pass by reference)
-                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
-                                int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_Ref));
-                                instructions.Add(processor.Create(OpCodes.Ldnull));
-                                instructions.Add(processor.Create(OpCodes.Cgt_Un));
-                                instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef));
-
-                                var notSetInstr = processor.Create(OpCodes.Nop);
-
-                                instructions.Add(processor.Create(OpCodes.Ldloc, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Brfalse, notSetInstr));
-
-                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Ldelem_Ref));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramElemNetworkSerialize_MethodRef));
-
-                                instructions.Add(notSetInstr);
-                            }
-
-                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Ldc_I4_1));
-                            instructions.Add(processor.Create(OpCodes.Add));
-                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
-                            instructions.Add(forCheckInstr);
-                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Ldloc, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Clt));
-                            instructions.Add(processor.Create(OpCodes.Brtrue, forBodyInstr));
-
-                            continue;
-                        }
+                        // }
+                        instructions.Add(jumpInstruction);
                     }
                 }
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(serializer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
-                // EndSendClientRpc(serializer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
+                // SendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // SendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(serializer, rpcMethodId, serverRpcParams, rpcDelivery);
+                    // SendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
@@ -1686,16 +1048,16 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendServerRpc
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_EndSendServerRpc_MethodRef));
+                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_SendServerRpc_MethodRef));
                 }
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(serializer, rpcMethodId, clientRpcParams, rpcDelivery);
+                    // SendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
@@ -1715,7 +1077,30 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendClientRpc
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_EndSendClientRpc_MethodRef));
+                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_SendClientRpc_MethodRef));
+                }
+
+                {
+                    // End try block
+                    instructions.Add(processor.Create(OpCodes.Leave, lastInstr));
+                    
+                    // writer.Dispose();
+                    var handlerFirst = processor.Create(OpCodes.Ldloca, serializerLocIdx);
+                    instructions.Add(handlerFirst);
+                    instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Dispose));
+                    
+                    // End finally block
+                    instructions.Add(processor.Create(OpCodes.Endfinally));
+                    
+                    // try { ... serialization code ... } finally { writer.Dispose(); }
+                    var handler = new ExceptionHandler(ExceptionHandlerType.Finally)
+                    {
+                        TryStart = firstInstruction,
+                        TryEnd = handlerFirst,
+                        HandlerStart = handlerFirst,
+                        HandlerEnd = lastInstr
+                    };
+                    processor.Body.ExceptionHandlers.Add(handler);
                 }
 
                 instructions.Add(lastInstr);
@@ -1758,7 +1143,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, m_NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, m_NetworkSerializer_TypeRef));
+            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, m_FastBufferReader_TypeRef.MakeByReferenceType()));
             nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, m_RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
@@ -1850,776 +1235,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 int localIndex = nhandler.Body.Variables.Count - 1;
                 paramLocalMap[paramIndex] = localIndex;
 
-                // C# primitives (+arrays)
-
-                if (paramType == typeSystem.Boolean)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeBoolArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Char)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeChar_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeCharArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.SByte)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyteArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Byte)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeByteArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Int16)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeShortArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.UInt16)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshortArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Int32)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeIntArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.UInt32)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUintArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Int64)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeLongArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.UInt64)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlongArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Single)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeFloat_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeFloatArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.Double)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeDouble_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeDoubleArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType == typeSystem.String)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeString_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeStringArray_MethodRef);
-                    continue;
-                }
-
-                // Unity primitives (+arrays)
-
-                if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeColorArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor32_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeColor32Array_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector2_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector2Array_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector3_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector3Array_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector4_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeVector4Array_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeQuaternion_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeQuaternionArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeRayArray_MethodRef);
-                    continue;
-                }
-
-                if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay2D_MethodRef);
-                    continue;
-                }
-
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeRay2DArray_MethodRef);
-                    continue;
-                }
-
-                // Enum
-
-                {
-                    var paramEnumIntType = paramType.GetEnumAsInt();
-                    if (paramEnumIntType != null)
-                    {
-                        if (paramEnumIntType == typeSystem.Int32)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.UInt32)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.Byte)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.SByte)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.Int16)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.UInt16)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.Int64)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-
-                        if (paramEnumIntType == typeSystem.UInt64)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
-                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
-                            processor.Emit(OpCodes.Stloc, localIndex);
-                            continue;
-                        }
-                    }
-                }
-
-                // Enum array
-
-                if (paramType.IsArray)
-                {
-                    var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
-                    if (paramElemEnumIntType != null)
-                    {
-                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                        int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                        processor.Emit(OpCodes.Ldarg_1);
-                        processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef);
-
-                        var postForInstr = processor.Create(OpCodes.Nop);
-
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Ldc_I4_M1);
-                        processor.Emit(OpCodes.Cgt);
-                        processor.Emit(OpCodes.Brfalse, postForInstr);
-
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Newarr, paramType.GetElementType());
-                        processor.Emit(OpCodes.Stloc, localIndex);
-
-                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                        int counterLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                        var forBodyInstr = processor.Create(OpCodes.Nop);
-                        var forCheckInstr = processor.Create(OpCodes.Nop);
-
-                        processor.Emit(OpCodes.Ldc_I4_0);
-                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Br, forCheckInstr);
-                        processor.Append(forBodyInstr);
-
-                        if (paramElemEnumIntType == typeSystem.Int32)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I4);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.UInt32)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I4);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.Byte)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeByte_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I1);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.SByte)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeSbyte_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I1);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.Int16)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeShort_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I2);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.UInt16)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUshort_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I2);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.Int64)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeLong_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I8);
-                        }
-                        else if (paramElemEnumIntType == typeSystem.UInt64)
-                        {
-                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
-                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeUlong_MethodRef);
-
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
-                            processor.Emit(OpCodes.Stelem_I8);
-                        }
-
-                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Ldc_I4_1);
-                        processor.Emit(OpCodes.Add);
-                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
-                        processor.Append(forCheckInstr);
-                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Clt);
-                        processor.Emit(OpCodes.Brtrue, forBodyInstr);
-
-                        processor.Append(postForInstr);
-                        continue;
-                    }
-                }
-
-                // INetworkSerializable
-
-                if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
-                {
-                    var paramTypeDef = paramType.Resolve();
-                    var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                    var paramTypeNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramTypeNetworkSerialize_MethodDef);
-                    if (paramTypeNetworkSerialize_MethodRef != null)
-                    {
-                        if (paramType.IsValueType)
-                        {
-                            // struct (pass by value)
-                            processor.Emit(OpCodes.Ldloca, localIndex);
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodRef);
-                        }
-                        else
-                        {
-                            // class (pass by reference)
-                            var paramTypeDefCtor = paramTypeDef.GetConstructors().FirstOrDefault(m => m.Parameters.Count == 0);
-                            if (paramTypeDefCtor != null)
-                            {
-                                nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
-                                int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                                processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
-                                processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef);
-
-                                var notSetInstr = processor.Create(OpCodes.Nop);
-
-                                processor.Emit(OpCodes.Ldloc, isSetLocalIndex);
-                                processor.Emit(OpCodes.Brfalse, notSetInstr);
-
-                                // new INetworkSerializable()
-                                processor.Emit(OpCodes.Newobj, paramTypeDefCtor);
-                                processor.Emit(OpCodes.Stloc, localIndex);
-
-                                // INetworkSerializable.NetworkSerialize(serializer)
-                                processor.Emit(OpCodes.Ldloc, localIndex);
-                                processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodRef);
-
-                                processor.Append(notSetInstr);
-                            }
-                        }
-
-                        continue;
-                    }
-                }
-
-                // INetworkSerializable[]
-                if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
-                {
-                    var paramElemType = paramType.GetElementType();
-                    var paramElemTypeDef = paramElemType.Resolve();
-                    var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                    var paramElemNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramElemNetworkSerialize_MethodDef);
-                    if (paramElemNetworkSerialize_MethodRef != null)
-                    {
-                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                        int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                        processor.Emit(OpCodes.Ldarg_1);
-                        processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeInt_MethodRef);
-
-                        var postForInstr = processor.Create(OpCodes.Nop);
-
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Ldc_I4_M1);
-                        processor.Emit(OpCodes.Cgt);
-                        processor.Emit(OpCodes.Brfalse, postForInstr);
-
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Newarr, paramElemType);
-                        processor.Emit(OpCodes.Stloc, localIndex);
-
-                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
-                        int counterLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                        var forBodyInstr = processor.Create(OpCodes.Nop);
-                        var forCheckInstr = processor.Create(OpCodes.Nop);
-
-                        processor.Emit(OpCodes.Ldc_I4_0);
-                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Br, forCheckInstr);
-                        processor.Append(forBodyInstr);
-
-                        if (paramElemType.IsValueType)
-                        {
-                            // struct (pass by value)
-                            processor.Emit(OpCodes.Ldloc, localIndex);
-                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                            processor.Emit(OpCodes.Ldelema, paramElemType);
-                            processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodRef);
-                        }
-                        else
-                        {
-                            // class (pass by reference)
-                            var paramElemTypeDefCtor = paramElemTypeDef.GetConstructors().FirstOrDefault(m => m.Parameters.Count == 0);
-                            if (paramElemTypeDefCtor != null)
-                            {
-                                nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
-                                int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
-
-                                processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
-                                processor.Emit(OpCodes.Callvirt, m_NetworkSerializer_SerializeBool_MethodRef);
-
-                                var notSetInstr = processor.Create(OpCodes.Nop);
-
-                                processor.Emit(OpCodes.Ldloc, isSetLocalIndex);
-                                processor.Emit(OpCodes.Brfalse, notSetInstr);
-
-                                processor.Emit(OpCodes.Ldloc, localIndex);
-                                processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                                processor.Emit(OpCodes.Newobj, paramElemTypeDefCtor);
-                                processor.Emit(OpCodes.Stelem_Ref);
-
-                                processor.Emit(OpCodes.Ldloc, localIndex);
-                                processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                                processor.Emit(OpCodes.Ldelem_Ref);
-                                processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodRef);
-
-                                processor.Append(notSetInstr);
-                            }
-                        }
-
-                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Ldc_I4_1);
-                        processor.Emit(OpCodes.Add);
-                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
-                        processor.Append(forCheckInstr);
-                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
-                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Clt);
-                        processor.Emit(OpCodes.Brtrue, forBodyInstr);
-
-                        processor.Append(postForInstr);
-                        continue;
-                    }
-                }
-
                 // ServerRpcParams, ClientRpcParams
                 {
                     // ServerRpcParams
@@ -2639,6 +1254,56 @@ namespace Unity.Netcode.Editor.CodeGen
                         processor.Emit(OpCodes.Stloc, localIndex);
                         continue;
                     }
+                }
+
+                Instruction jumpInstruction = null;
+
+                if (!paramType.IsValueType)
+                {
+                    if (!GetReadMethodForParameter(typeSystem.Boolean, out var boolMethodRef))
+                    {
+                        m_Diagnostics.AddError(methodDefinition, $"Couldn't find boolean deserializer! Something's wrong!");
+                    }
+                    
+                    // reader.ReadValueSafe(out bool isSet)
+                    nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                    int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
+                    processor.Emit(OpCodes.Call, boolMethodRef);
+                    
+                    // paramType param = null;
+                    processor.Emit(OpCodes.Ldnull);
+                    processor.Emit(OpCodes.Stloc, localIndex);
+                    
+                    // if(isSet) {
+                    jumpInstruction = processor.Create(OpCodes.Nop);
+                    processor.Emit(OpCodes.Ldloc, isSetLocalIndex);
+                    processor.Emit(OpCodes.Brfalse, jumpInstruction);
+                }
+
+                var foundMethodRef = GetReadMethodForParameter(paramType, out var methodRef);
+                if (foundMethodRef)
+                {
+                    // reader.ReadValueSafe(out localVar);
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    if (paramType == typeSystem.String)
+                    {
+                        processor.Emit(OpCodes.Ldc_I4_0);
+                    }
+                    processor.Emit(OpCodes.Call, methodRef);
+                }
+                else
+                {
+                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement INetworkSerializable or add an extension method to FastBufferReader to define serialization.");
+                    continue;
+                }
+
+                if (jumpInstruction != null)
+                {
+                    // }
+                    processor.Append(jumpInstruction);
                 }
             }
 

@@ -21,49 +21,7 @@ namespace Unity.Netcode.RuntimeTests
             // Create, instantiate, and host
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
         }
-
-        /// <summary>
-        /// Tests to make sure providing different
-        /// ** This does not include any of the Netcode to Transport code **
-        /// </summary>
-        /// <returns>IEnumerator</returns>
-        [UnityTest, Order(1)]
-        public IEnumerator UpdateStagesInvocation()
-        {
-            Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
-            var rpcPipelineTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkUpdateStagesComponent>(updateStagesTestId);
-
-            NetworkManagerHelper.SpawnNetworkObject(updateStagesTestId);
-
-            var testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
-            var exceededMaximumStageIterations = rpcPipelineTestComponent.ExceededMaxIterations();
-
-            // Start testing
-            rpcPipelineTestComponent.EnableTesting = true;
-
-            Debug.Log("Running TestNetworkUpdateStages: ");
-
-            // Wait for the RPC pipeline test to complete or if we exceeded the maximum iterations bail
-            while (!testsAreComplete && !exceededMaximumStageIterations)
-            {
-                yield return new WaitForSeconds(0.003f);
-
-                testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
-                Assert.IsFalse(rpcPipelineTestComponent.ExceededMaxIterations());
-            }
-            var testsAreValidated = rpcPipelineTestComponent.ValidateUpdateStages();
-
-            // Stop testing
-            rpcPipelineTestComponent.EnableTesting = false;
-
-            Debug.Log($"Exiting status => {nameof(testsAreComplete)}: {testsAreComplete} - {nameof(testsAreValidated)}: {testsAreValidated} -{nameof(exceededMaximumStageIterations)}: {exceededMaximumStageIterations}");
-
-            Assert.IsTrue(testsAreComplete && testsAreValidated);
-
-            // Disable this so it isn't running any longer.
-            rpcPipelineTestComponent.gameObject.SetActive(false);
-        }
-
+        
         /// <summary>
         /// This tests the RPC Queue outbound and inbound buffer capabilities.
         /// </summary>
@@ -106,60 +64,6 @@ namespace Unity.Netcode.RuntimeTests
         [Test, Order(3)]
         public void RpcQueueContainerClass()
         {
-            // Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
-            var rpcQueueContainer = new MessageQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
-
-            // Make sure we set testing mode so we don't try to invoke RPCs
-            rpcQueueContainer.SetTestingState(true);
-
-            const int maxRpcEntries = 8;
-            const int messageChunkSize = 2048;
-
-            var preCalculatedBufferValues = new List<byte>(messageChunkSize);
-            for (int i = 0; i < messageChunkSize; i++)
-            {
-                preCalculatedBufferValues.AddRange(BitConverter.GetBytes(UnityEngine.Random.Range(0, ulong.MaxValue)));
-            }
-
-            ulong senderNetworkId = 1;
-
-            var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
-            // Create fictitious list of clients to send to
-            var pseudoClients = new ulong[] { 0 };
-            // Testing outbound side of the RpcQueueContainer
-            for (int i = 0; i < maxRpcEntries; i++)
-            {
-                // Increment our offset into our randomly generated data for next entry;
-
-                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkDelivery.Reliable,
-                    senderNetworkId, pseudoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                writer.WriteByteArray(randomGeneratedDataArray, messageChunkSize);
-
-                rpcQueueContainer.EndAddQueueItemToFrame(writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-            }
-
-            // Now verify the data by obtaining the RpcQueueHistoryFrame we just wrote to
-            var currentFrame = rpcQueueContainer.GetLoopBackHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-            // Reset our index offset
-            // Parse through the entries written to the current RpcQueueHistoryFrame
-            var currentQueueItem = currentFrame.GetFirstQueueItem();
-            while (currentQueueItem.MessageType != MessageQueueContainer.MessageType.None)
-            {
-                // Check to make sure the wrapper information is accurate for the entry
-                Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
-                Assert.AreEqual(currentQueueItem.MessageType, MessageQueueContainer.MessageType.ServerRpc);
-                Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
-                Assert.AreEqual(currentQueueItem.Delivery, NetworkDelivery.Reliable);
-
-                // Validate the data in the queue
-                Assert.IsTrue(NetworkManagerHelper.BuffersMatch(currentQueueItem.MessageData.Offset, messageChunkSize, currentQueueItem.MessageData.Array, randomGeneratedDataArray));
-
-                // Prepare for next queue item
-                currentQueueItem = currentFrame.GetNextQueueItem();
-            }
-
-            rpcQueueContainer.Dispose();
         }
 
 

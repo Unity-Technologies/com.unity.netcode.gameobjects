@@ -365,8 +365,30 @@ namespace Unity.Netcode
             return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
         }
 
-        public void WriteUnknownSafe<T>(in T value)
+        /// <summary>
+        /// Write an INetworkSerializable
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(in T value) where T: INetworkSerializable
         {
+            var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
+        /// Write an array of INetworkSerializables
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T: INetworkSerializable
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            WriteValueSafe(sizeInTs);
+            foreach (var item in array)
+            {
+                WriteNetworkSerializable(item);
+            }
         }
 
         /// <summary>
@@ -643,11 +665,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytes(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytes(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytes(ptr, size, offset);
+                WriteBytes(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 
@@ -661,11 +683,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytesSafe(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytesSafe(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytesSafe(ptr, size, offset);
+                WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 

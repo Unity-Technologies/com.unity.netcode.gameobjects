@@ -84,33 +84,14 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Serialize an INetworkSerializable
-        /// If your INetworkSerializable is implemented by a struct, as opposed to a class, use this
-        /// function instead of SerializeValue. SerializeValue will incur a boxing allocation,
-        /// SerializeNetworkSerializable will not.
-        ///
-        /// A definition of SerializeValue that doesn't allocate can't be created because C#
-        /// doesn't allow overriding generics based solely on the constraint, so this would conflict
-        /// with WriteValue&lt;T&gt;(ref T value) where T: unmanaged
         /// 
         /// Throws OverflowException if the end of the buffer has been reached.
         /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
         /// </summary>
         /// <param name="value">Value to serialize</param>
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Implementation.SerializeNetworkSerializable(ref value);
-        }
-
-        /// <summary>
-        /// Serialize an INetworkSerializable
-        /// 
-        /// Throws OverflowException if the end of the buffer has been reached.
-        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
-        /// </summary>
-        /// <param name="value">Value to serialize</param>
-        public void SerializeValue(ref INetworkSerializable value)
-        {
-            m_Implementation.SerializeValue(ref value);
         }
 
         /// <summary>

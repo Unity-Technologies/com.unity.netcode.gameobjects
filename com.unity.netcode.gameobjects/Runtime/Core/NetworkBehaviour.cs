@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Linq;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
 
 namespace Unity.Netcode
@@ -16,25 +17,12 @@ namespace Unity.Netcode
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum __RpcExecStage
+        public enum __RpcExecStage
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
             Server = 1,
             Client = 2
-        }
-
-        private static void SetUpdateStage<T>(ref T param) where T : IHasUpdateStage
-        {
-            if (param.UpdateStage == NetworkUpdateStage.Unset)
-            {
-                param.UpdateStage = NetworkUpdateLoop.UpdateStage;
-
-                if (param.UpdateStage == NetworkUpdateStage.Initialization)
-                {
-                    param.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                }
-            }
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -46,66 +34,36 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+        public __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#pragma warning disable IDE1006 // disable naming rule violation check
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#pragma warning restore IDE1006 // restore naming rule violation check
+        
+        public void SendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams sendParams, RpcDelivery delivery)
         {
-            PooledNetworkWriter writer;
-
-            SetUpdateStage(ref serverRpcParams.Send);
-
-            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
+            switch (delivery)
             {
-                throw new NotSupportedException(
-                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
+                case RpcDelivery.Reliable:
+                    networkDelivery = NetworkDelivery.ReliableSequenced;
+                    break;
+                case RpcDelivery.Unreliable:
+                    networkDelivery = NetworkDelivery.Unreliable;
+                    break;
             }
 
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var networkDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
-
-            if (IsHost)
+            var message = new RpcMessage
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, networkDelivery,
-                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
-            }
-            else
-            {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, networkDelivery,
-                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
-                writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
-            }
-
-            writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
-            writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
-            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
-
-
-            return writer.Serializer;
-        }
-
-#pragma warning disable IDE1006 // disable naming rule violation check
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(NetworkSerializer serializer, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#pragma warning restore IDE1006 // restore naming rule violation check
-        {
-            if (serializer == null)
-            {
-                return;
-            }
-
-            SetUpdateStage(ref serverRpcParams.Send);
-
-            var rpcMessageSize = IsHost
-                ? NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage)
-                : NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
+                Data = new RpcMessage.Metadata
+                {
+                    Type = RpcMessage.RpcType.Server,
+                    NetworkObjectId = NetworkObjectId,
+                    NetworkBehaviourId = NetworkBehaviourId,
+                    NetworkMethodId = rpcMethodId
+                },
+                RPCData = writer
+            };
+            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -119,107 +77,48 @@ namespace Unity.Netcode
 #endif
         }
 
-#pragma warning disable IDE1006 // disable naming rule violation check
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendClientRpc(uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#pragma warning restore IDE1006 // restore naming rule violation check
+        public unsafe void SendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams sendParams, RpcDelivery delivery)
         {
-            PooledNetworkWriter writer;
-
-            SetUpdateStage(ref clientRpcParams.Send);
-
-            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
+            switch (delivery)
             {
-                throw new NotSupportedException(
-                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
+                case RpcDelivery.Reliable:
+                    networkDelivery = NetworkDelivery.ReliableSequenced;
+                    break;
+                case RpcDelivery.Unreliable:
+                    networkDelivery = NetworkDelivery.Unreliable;
+                    break;
             }
 
-            // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var networkDelivery = rpcDelivery == RpcDelivery.Reliable ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
-
-            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
-            if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
+            var message = new RpcMessage
             {
-                clientIds = NetworkManager.ConnectedClientsIds;
+                Data = new RpcMessage.Metadata
+                {
+                    Type = RpcMessage.RpcType.Client,
+                    NetworkObjectId = NetworkObjectId,
+                    NetworkBehaviourId = NetworkBehaviourId,
+                    NetworkMethodId = rpcMethodId
+                },
+                RPCData = writer
+            };
+            int messageSize;
+            
+            if (sendParams.Send.TargetClientIds != null)
+            {
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIds);
             }
-
-            //NOTES ON BELOW CHANGES:
-            //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
-            //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
-            //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
-            bool addHeader = true;
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            if (IsHost && containsServerClientId)
+            else if (sendParams.Send.TargetClientIdsNativeArray != null)
             {
-                //Always write to the next frame's inbound queue
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery,
-                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
-
-                //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
-                if (clientIds.Length > 1)
-                {
-                    //Set the loopback frame
-                    messageQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
-
-                    //Switch to the outbound queue
-                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery, NetworkObjectId,
-                        clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                }
-                else
-                {
-                    addHeader = false;
-                }
+                // NativeArray doesn't implement required IReadOnlyList interface, but that's ok, pointer + length
+                // will be more efficient anyway.
+                messageSize = NetworkManager.SendMessage(message, networkDelivery,
+                    (ulong*) sendParams.Send.TargetClientIdsNativeArray.Value.GetUnsafePtr(),
+                    sendParams.Send.TargetClientIdsNativeArray.Value.Length);
             }
             else
             {
-                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, networkDelivery, NetworkObjectId,
-                    clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
             }
-
-            if (addHeader)
-            {
-                writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
-                writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
-            }
-            writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
-            writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
-            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
-
-
-            return writer.Serializer;
-        }
-
-#pragma warning disable IDE1006 // disable naming rule violation check
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(NetworkSerializer serializer, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#pragma warning restore IDE1006 // restore naming rule violation check
-        {
-            if (serializer == null)
-            {
-                return;
-            }
-
-            SetUpdateStage(ref clientRpcParams.Send);
-
-            if (IsHost)
-            {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
-                if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
-                {
-                    clientIds = NetworkManager.ConnectedClientsIds;
-                }
-
-                var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
-                if (containsServerClientId && clientIds.Length == 1)
-                {
-                    NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
-
-                    return;
-                }
-            }
-
-            var messageSize = NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -550,50 +449,6 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal void WriteNetworkVariableData(Stream stream, ulong clientId)
-        {
-            if (NetworkVariableFields.Count == 0)
-            {
-                return;
-            }
-
-            using var writer = PooledNetworkWriter.Get(stream);
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
-            {
-                bool canClientRead = NetworkVariableFields[j].CanClientRead(clientId);
-
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                {
-                    if (!canClientRead)
-                    {
-                        writer.WriteUInt16Packed(0);
-                    }
-                }
-                else
-                {
-                    writer.WriteBool(canClientRead);
-                }
-
-                if (canClientRead)
-                {
-                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                    {
-                        using var varBuffer = PooledNetworkBuffer.Get();
-                        NetworkVariableFields[j].WriteField(varBuffer);
-                        varBuffer.PadBuffer();
-
-                        writer.WriteUInt16Packed((ushort)varBuffer.Length);
-                        varBuffer.CopyTo(stream);
-                    }
-                    else
-                    {
-                        NetworkVariableFields[j].WriteField(stream);
-                        writer.WritePadBits();
-                    }
-                }
-            }
-        }
-
         internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
         {
             if (NetworkVariableFields.Count == 0)
@@ -630,69 +485,6 @@ namespace Unity.Netcode
                     else
                     {
                         NetworkVariableFields[j].WriteField(ref writer);
-                    }
-                }
-            }
-        }
-
-        internal void SetNetworkVariableData(Stream stream)
-        {
-            if (NetworkVariableFields.Count == 0)
-            {
-                return;
-            }
-
-            using var reader = PooledNetworkReader.Get(stream);
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
-            {
-                ushort varSize = 0;
-
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                {
-                    varSize = reader.ReadUInt16Packed();
-
-                    if (varSize == 0)
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (!reader.ReadBool())
-                    {
-                        continue;
-                    }
-                }
-
-                long readStartPos = stream.Position;
-
-                NetworkVariableFields[j].ReadField(stream);
-                reader.SkipPadBits();
-
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                {
-                    if (stream is NetworkBuffer networkBuffer)
-                    {
-                        networkBuffer.SkipPadBits();
-                    }
-
-                    if (stream.Position > (readStartPos + varSize))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"Var data read too far. {stream.Position - (readStartPos + varSize)} bytes.");
-                        }
-
-                        stream.Position = readStartPos + varSize;
-                    }
-                    else if (stream.Position < (readStartPos + varSize))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"Var data read too little. {(readStartPos + varSize) - stream.Position} bytes.");
-                        }
-
-                        stream.Position = readStartPos + varSize;
                     }
                 }
             }

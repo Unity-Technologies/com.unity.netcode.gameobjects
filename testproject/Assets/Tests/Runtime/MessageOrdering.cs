@@ -4,6 +4,7 @@ using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
@@ -97,19 +98,14 @@ namespace TestProject.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator SpawnRpcDespawn([Values] NetworkUpdateStage testStage)
+        public IEnumerator SpawnRpcDespawn()
         {
-            // Neither of these is supported for sending RPCs.
-            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization || testStage == NetworkUpdateStage.FixedUpdate)
-            {
-                yield break;
-            }
             // Must be 1 for this test.
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             m_Prefab.AddComponent<SpawnRpcDespawn>();
-            Support.SpawnRpcDespawn.TestStage = testStage;
+            Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
@@ -168,7 +164,7 @@ namespace TestProject.RuntimeTests
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
+            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
             var lastFrameNumber = Time.frameCount + 1;

@@ -99,38 +99,11 @@ namespace Unity.Netcode
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public override void WriteDelta(Stream stream)
-        {
-            WriteField(stream);
-        }
-
-        /// <summary>
-        /// Writes the variable to the writer
-        /// </summary>
-        /// <param name="stream">The stream to write the value to</param>
         public override void WriteDelta(ref FastBufferWriter writer)
         {
             WriteField(ref writer);
         }
 
-        /// <summary>
-        /// Reads value from the reader and applies it
-        /// </summary>
-        /// <param name="stream">The stream to read the value from</param>
-        /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
-        {
-            using var reader = PooledNetworkReader.Get(stream);
-            T previousValue = m_InternalValue;
-            m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
-
-            if (keepDirtyDelta)
-            {
-                m_IsDirty = true;
-            }
-
-            OnValueChanged?.Invoke(previousValue, m_InternalValue);
-        }
 
         /// <summary>
         /// Reads value from the reader and applies it
@@ -151,22 +124,9 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void ReadField(Stream stream)
-        {
-            ReadDelta(stream, false);
-        }
-
-        /// <inheritdoc />
         public override void ReadField(ref FastBufferReader reader)
         {
             ReadDelta(ref reader, false);
-        }
-
-        /// <inheritdoc />
-        public override void WriteField(Stream stream)
-        {
-            using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteObjectPacked(m_InternalValue); //BOX
         }
 
         /// <inheritdoc />

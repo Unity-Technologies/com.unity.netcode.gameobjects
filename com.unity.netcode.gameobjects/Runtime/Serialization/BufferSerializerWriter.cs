@@ -30,11 +30,6 @@ namespace Unity.Netcode
             m_Writer.Value.WriteObject(value, isNullable);
         }
 
-        public void SerializeValue(ref INetworkSerializable value)
-        {
-            m_Writer.Value.WriteNetworkSerializable(value);
-        }
-
         public void SerializeValue(ref GameObject value)
         {
             m_Writer.Value.WriteValueSafe(value);
@@ -70,7 +65,7 @@ namespace Unity.Netcode
             m_Writer.Value.WriteValueSafe(value);
         }
 
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Writer.Value.WriteNetworkSerializable(value);
         }

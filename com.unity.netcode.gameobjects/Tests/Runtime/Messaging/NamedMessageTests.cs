@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -21,29 +22,29 @@ namespace Unity.Netcode.RuntimeTests
         {
             var messageName = Guid.NewGuid().ToString();
             var messageContent = Guid.NewGuid().ToString();
-            using var messageStream = new MemoryStream(Encoding.UTF8.GetBytes(messageContent));
-
-            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
-                messageName,
-                FirstClient.LocalClientId,
-                messageStream);
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                    messageName,
+                    FirstClient.LocalClientId,
+                    ref writer);
+            }
 
             ulong receivedMessageSender = 0;
-            string receivedMessageContent = null;
+            Guid receivedMessageContent;
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (sender, stream) =>
+                (ulong sender, ref FastBufferReader reader) =>
                 {
                     receivedMessageSender = sender;
 
-                    using var memoryStream = new MemoryStream();
-                    stream.CopyTo(memoryStream);
-                    receivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
+                    reader.ReadValueSafe(out receivedMessageContent);
                 });
 
             yield return new WaitForSeconds(0.2f);
 
-            Assert.NotNull(receivedMessageContent);
             Assert.AreEqual(messageContent, receivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, receivedMessageSender);
         }
@@ -54,45 +55,44 @@ namespace Unity.Netcode.RuntimeTests
             var messageName = Guid.NewGuid().ToString();
             var messageContent = Guid.NewGuid().ToString();
             using var messageStream = new MemoryStream(Encoding.UTF8.GetBytes(messageContent));
-
-            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
-                messageName,
-                new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
-                messageStream);
+            
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                    messageName,
+                    new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
+                    ref writer);
+            }
 
             ulong firstReceivedMessageSender = 0;
-            string firstReceivedMessageContent = null;
+            Guid firstReceivedMessageContent;
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (sender, stream) =>
+                (ulong sender, ref FastBufferReader reader) =>
                 {
                     firstReceivedMessageSender = sender;
 
-                    using var memoryStream = new MemoryStream();
-                    stream.CopyTo(memoryStream);
-                    firstReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
+                    reader.ReadValueSafe(out firstReceivedMessageContent);
                 });
 
             ulong secondReceivedMessageSender = 0;
-            string secondReceivedMessageContent = null;
+            Guid secondReceivedMessageContent;
             SecondClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (sender, stream) =>
+                (ulong sender, ref FastBufferReader reader) =>
                 {
                     secondReceivedMessageSender = sender;
 
-                    using var memoryStream = new MemoryStream();
-                    stream.CopyTo(memoryStream);
-                    secondReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
+                    reader.ReadValueSafe(out secondReceivedMessageContent);
                 });
 
             yield return new WaitForSeconds(0.2f);
 
-            Assert.NotNull(firstReceivedMessageContent);
             Assert.AreEqual(messageContent, firstReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, firstReceivedMessageSender);
 
-            Assert.NotNull(secondReceivedMessageContent);
             Assert.AreEqual(messageContent, secondReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, secondReceivedMessageSender);
         }

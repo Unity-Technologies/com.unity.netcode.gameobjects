@@ -100,12 +100,12 @@ namespace Unity.Netcode
                 ((GameObject)value).TryGetComponent<NetworkObject>(out var networkObject);
                 if (networkObject == null)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(BytePacker)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 if (!networkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(BytePacker)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteValuePacked(ref writer, networkObject.NetworkObjectId);
@@ -115,7 +115,7 @@ namespace Unity.Netcode
             {
                 if (!((NetworkObject)value).IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((NetworkObject)value).gameObject.name}");
+                    throw new ArgumentException($"{nameof(BytePacker)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((NetworkObject)value).gameObject.name}");
                 }
 
                 WriteValuePacked(ref writer, ((NetworkObject)value).NetworkObjectId);
@@ -125,7 +125,7 @@ namespace Unity.Netcode
             {
                 if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
+                    throw new ArgumentException($"{nameof(BytePacker)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
                 }
 
                 WriteValuePacked(ref writer, ((NetworkBehaviour)value).NetworkObjectId);
@@ -138,7 +138,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
+            throw new ArgumentException($"{nameof(BytePacker)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
         #endregion
 

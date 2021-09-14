@@ -130,17 +130,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Read an INetworkSerializable
-        /// </summary>
-        /// <param name="value">INetworkSerializable instance</param>
-        /// <typeparam name="T"></typeparam>
-        /// <exception cref="NotImplementedException"></exception>
-        public static void ReadNetworkSerializable<T>(this ref FastBufferReader reader, out T value) where T : INetworkSerializable
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Read a GameObject
         /// </summary>
         /// <param name="value">value to read</param>
@@ -185,6 +174,20 @@ namespace Unity.Netcode
             }
 
             value = null;
+        }
+        
+        /// <summary>
+        /// Read an array of GameObjects
+        /// </summary>
+        /// <param name="value">value to read</param>
+        public static void ReadValueSafe(this ref FastBufferReader reader, out GameObject[] value)
+        {
+            reader.ReadValueSafe(out int size);
+            value = new GameObject[size];
+            for (var i = 0; i < size; ++i)
+            {
+                reader.ReadValueSafe(out value[i]);
+            }
         }
 
         /// <summary>
@@ -232,6 +235,20 @@ namespace Unity.Netcode
             }
 
             value = null;
+        }
+        
+        /// <summary>
+        /// Read an array of NetworkObjects
+        /// </summary>
+        /// <param name="value">value to read</param>
+        public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkObject[] value)
+        {
+            reader.ReadValueSafe(out int size);
+            value = new NetworkObject[size];
+            for (var i = 0; i < size; ++i)
+            {
+                reader.ReadValueSafe(out value[i]);
+            }
         }
 
         /// <summary>
@@ -281,6 +298,20 @@ namespace Unity.Netcode
             }
 
             value = null;
+        }
+        
+        /// <summary>
+        /// Read an array of NetworkBehaviours
+        /// </summary>
+        /// <param name="value">value to read</param>
+        public static void ReadValueSafe(this ref FastBufferReader reader, out NetworkBehaviour[] value)
+        {
+            reader.ReadValueSafe(out int size);
+            value = new NetworkBehaviour[size];
+            for (var i = 0; i < size; ++i)
+            {
+                reader.ReadValueSafe(out value[i]);
+            }
         }
     }
 }

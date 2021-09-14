@@ -379,6 +379,35 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Read an INetworkSerializable
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable, new()
+        {
+            value = new T();
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
+        /// Read an array of INetworkSerializables
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializable<T>(out T[] value) where T : INetworkSerializable, new()
+        {
+            ReadValueSafe(out int size);
+            value = new T[size];
+            for(var i = 0; i < size; ++i)
+            {
+                ReadNetworkSerializable(out value[i]);
+            }
+        }
+
+        /// <summary>
         /// Reads a string
         /// NOTE: ALLOCATES
         /// </summary>

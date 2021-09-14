@@ -97,18 +97,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
-        public abstract void WriteDelta(Stream stream);
-
-        /// <summary>
-        /// Writes the complete state of the variable to the writer
-        /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
-        public abstract void WriteField(Stream stream);
-
-        /// <summary>
-        /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
-        /// </summary>
         /// <param name="writer">The stream to write the dirty changes to</param>
         public abstract void WriteDelta(ref FastBufferWriter writer);
 
@@ -117,19 +105,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer">The stream to write the state to</param>
         public abstract void WriteField(ref FastBufferWriter writer);
-
-        /// <summary>
-        /// Reads the complete state from the reader and applies it
-        /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        public abstract void ReadField(Stream stream);
-
-        /// <summary>
-        /// Reads delta from the reader and applies them to the internal value
-        /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
-        /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
 
         /// <summary>
         /// Reads the complete state from the reader and applies it

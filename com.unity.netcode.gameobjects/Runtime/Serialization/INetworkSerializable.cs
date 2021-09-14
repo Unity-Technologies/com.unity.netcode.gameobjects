@@ -2,6 +2,6 @@ namespace Unity.Netcode
 {
     public interface INetworkSerializable
     {
-        void NetworkSerialize(NetworkSerializer serializer);
+        void NetworkSerialize<T>(BufferSerializer<T> serializer) where T: IBufferSerializerImplementation;
     }
 }

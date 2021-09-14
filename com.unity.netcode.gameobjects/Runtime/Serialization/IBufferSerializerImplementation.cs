@@ -12,7 +12,6 @@ namespace Unity.Netcode
         ref FastBufferWriter GetFastBufferWriter();
 
         void SerializeValue(ref object value, Type type, bool isNullable = false);
-        void SerializeValue(ref INetworkSerializable value);
         void SerializeValue(ref GameObject value);
         void SerializeValue(ref NetworkObject value);
         void SerializeValue(ref NetworkBehaviour value);
@@ -24,7 +23,7 @@ namespace Unity.Netcode
         // Has to have a different name to avoid conflicting with "where T: unmananged"
         // Using SerializeValue(INetworkSerializable) will result in boxing on struct INetworkSerializables
         // So this is provided as an alternative to avoid boxing allocations.
-        void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable;
+        void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
 
         bool PreCheck(int amount);
         void SerializeValuePreChecked(ref GameObject value);

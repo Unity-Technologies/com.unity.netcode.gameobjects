@@ -30,11 +30,6 @@ namespace Unity.Netcode
             m_Reader.Value.ReadObject(out value, type, isNullable);
         }
 
-        public void SerializeValue(ref INetworkSerializable value)
-        {
-            m_Reader.Value.ReadNetworkSerializable(out value);
-        }
-
         public void SerializeValue(ref GameObject value)
         {
             m_Reader.Value.ReadValueSafe(out value);
@@ -70,7 +65,7 @@ namespace Unity.Netcode
             m_Reader.Value.ReadValueSafe(out value);
         }
 
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Reader.Value.ReadNetworkSerializable(out value);
         }

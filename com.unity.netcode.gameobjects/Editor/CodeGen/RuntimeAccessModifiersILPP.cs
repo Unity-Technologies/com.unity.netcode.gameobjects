@@ -26,7 +26,7 @@ namespace Unity.Netcode.Editor.CodeGen
             m_Diagnostics.Clear();
 
             // read
-            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly, out var unused);
             if (assemblyDefinition == null)
             {
                 m_Diagnostics.AddError($"Cannot read Netcode Runtime assembly definition: {compiledAssembly.Name}");
@@ -87,6 +87,11 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     fieldDefinition.IsPublic = true;
                 }
+                
+                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceive))
+                {
+                    fieldDefinition.IsPublic = true;
+                }
 
                 if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
                 {
@@ -110,19 +115,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage))
                 {
                     fieldDefinition.IsFamily = true;
-                }
-            }
-
-            foreach (var methodDefinition in typeDefinition.Methods)
-            {
-                switch (methodDefinition.Name)
-                {
-                    case nameof(NetworkBehaviour.__beginSendServerRpc):
-                    case nameof(NetworkBehaviour.__endSendServerRpc):
-                    case nameof(NetworkBehaviour.__beginSendClientRpc):
-                    case nameof(NetworkBehaviour.__endSendClientRpc):
-                        methodDefinition.IsFamily = true;
-                        break;
                 }
             }
         }

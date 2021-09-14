@@ -26,7 +26,10 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
+        internal delegate void RpcReceive(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
+
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, RpcReceive> __rpc_func_table = new Dictionary<uint, RpcReceive>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
@@ -41,12 +44,9 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
-        private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
-        internal MessageQueueContainer MessageQueueContainer { get; private set; }
-
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
@@ -222,9 +222,6 @@ namespace Unity.Netcode
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
         public NetworkSceneManager SceneManager { get; private set; }
-
-        // Has to have setter for tests
-        internal IInternalMessageHandler MessageHandler { get; set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -450,10 +447,6 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Initialize));
             }
 
-            // Register INetworkUpdateSystem for receiving data from the wire
-            // Must always be registered before any other systems or messages can end up being re-ordered by frame timing
-            // Cannot allow any new data to arrive from the wire after MessageQueueContainer's Initialization update
-            // has run
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
@@ -481,8 +474,6 @@ namespace Unity.Netcode
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
 
-            // Only create this if it's not already set (like in test cases)
-            MessageHandler ??= CreateMessageHandler();
 
             if (NetworkMetrics == null)
             {
@@ -531,20 +522,6 @@ namespace Unity.Netcode
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
             NetworkTickSystem.Tick += OnNetworkManagerTick;
 
-            // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
-            if (MessageQueueContainer != null)
-            {
-                Debug.LogError(
-                    "Init was invoked, but messageQueueContainer was already initialized! (destroying previous instance)");
-                MessageQueueContainer.Dispose();
-                MessageQueueContainer = null;
-            }
-
-            // The MessageQueueContainer must be initialized within the Init method ONLY
-            // It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
-            MessageQueueContainer = new MessageQueueContainer(this);
-
-            // Register INetworkUpdateSystem (always register this after messageQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             // This is used to remove entries not needed or invalid
@@ -969,11 +946,9 @@ namespace Unity.Netcode
             if (IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
-                if (MessageQueueContainer != null)
+                if (m_MessagingSystem != null)
                 {
-                    MessageQueueContainer.ProcessAndFlushMessageQueue(
-                        queueType: MessageQueueContainer.MessageQueueProcessingTypes.Send,
-                        NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
+                    m_MessagingSystem.ProcessSendQueues();
                 }
 
                 var disconnectedIds = new HashSet<ulong>();
@@ -1020,15 +995,7 @@ namespace Unity.Netcode
             IsServer = false;
             IsClient = false;
 
-            // Unregister INetworkUpdateSystem before shutting down the MessageQueueContainer
             this.UnregisterAllNetworkUpdates();
-
-            //If an instance of the MessageQueueContainer is still around, then shut it down and remove the reference
-            if (MessageQueueContainer != null)
-            {
-                MessageQueueContainer.Dispose();
-                MessageQueueContainer = null;
-            }
 
             if (SnapshotSystem != null)
             {
@@ -1065,17 +1032,10 @@ namespace Unity.Netcode
                 SceneManager = null;
             }
 
-            if (MessageHandler != null)
-            {
-                MessageHandler = null;
-            }
-
             if (CustomMessagingManager != null)
             {
                 CustomMessagingManager = null;
             }
-
-            m_MessageBatcher.Shutdown();
 
             if (BehaviourUpdater != null)
             {
@@ -1289,9 +1249,6 @@ namespace Unity.Netcode
             }
         }
 
-        private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
-        private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
-
         public unsafe int SendMessage<T, U>(in T message, NetworkDelivery delivery, in U clientIds)
             where T : INetworkMessage
             where U : IReadOnlyList<ulong>
@@ -1362,117 +1319,15 @@ namespace Unity.Netcode
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
-            var firstByte = payload.Array[0];
-            if (firstByte != 0b11111111)
-            {
-                m_MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
-                return;
-            }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
 
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo("Unwrapping Data Header");
-            }
+            m_MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
 
-            m_InputBufferWrapper.SetTarget(payload.Array);
-            m_InputBufferWrapper.SetLength(payload.Count + payload.Offset);
-            m_InputBufferWrapper.Position = payload.Offset + 1;
-
-            using var messageStream = m_InputBufferWrapper;
-            // Client tried to send a network message that was not the connection request before he was accepted.
-
-            if (MessageQueueContainer.IsUsingBatching())
-            {
-                m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime);
-            }
-            else
-            {
-                var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
-                MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
-                NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), payload.Count);
-            }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
 #endif
-        }
-
-        private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId, float receiveTime)
-        {
-            MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
-            NetworkMetrics.TrackNetworkMessageReceived(clientId, MessageQueueContainer.GetMessageTypeName(messageType), messageBuffer.Length);
-        }
-
-        /// <summary>
-        /// Called when an inbound queued RPC is invoked
-        /// </summary>
-#pragma warning disable 618
-        internal void InvokeRpc(MessageFrameItem item, NetworkUpdateStage networkUpdateStage)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_InvokeRpc.Begin();
-#endif
-            using var reader = PooledNetworkReader.Get(item.NetworkBuffer);
-            var networkObjectId = reader.ReadUInt64Packed();
-            var networkBehaviourId = reader.ReadUInt16Packed();
-            var networkMethodId = reader.ReadUInt32Packed();
-
-            if (__rpc_func_table.ContainsKey(networkMethodId))
-            {
-                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                {
-                    return;
-                }
-
-                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
-
-                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                if (networkBehaviour == null)
-                {
-                    return;
-                }
-
-                var rpcParams = new __RpcParams();
-                switch (item.MessageType)
-                {
-                    case MessageQueueContainer.MessageType.ServerRpc:
-                        rpcParams.Server = new ServerRpcParams
-                        {
-                            Receive = new ServerRpcReceiveParams
-                            {
-                                UpdateStage = networkUpdateStage,
-                                SenderClientId = item.NetworkId
-                            }
-                        };
-                        break;
-                    case MessageQueueContainer.MessageType.ClientRpc:
-                        rpcParams.Client = new ClientRpcParams
-                        {
-                            Receive = new ClientRpcReceiveParams
-                            {
-                                UpdateStage = networkUpdateStage
-                            }
-                        };
-                        break;
-                }
-
-                __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
-                {
-                    NetworkMetrics.TrackRpcReceived(
-                        item.NetworkId,
-                        networkObjectId,
-                        rpcMethodName,
-                        networkBehaviour.__getTypeName(),
-                        item.StreamSize);
-                }
-                s_InvokeRpc.End();
-#endif
-            }
         }
 
         /// <summary>
@@ -1609,7 +1464,7 @@ namespace Unity.Netcode
                 if (createPlayerObject)
                 {
                     var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, false);
+                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
@@ -1684,17 +1539,6 @@ namespace Unity.Netcode
                 };
                 SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
             }
-        }
-
-        private IInternalMessageHandler CreateMessageHandler()
-        {
-            IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
-#endif
-
-            return messageHandler;
         }
     }
 }

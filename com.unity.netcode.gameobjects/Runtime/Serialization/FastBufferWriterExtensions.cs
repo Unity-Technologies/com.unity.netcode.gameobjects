@@ -112,16 +112,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Write an INetworkSerializable
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        /// <typeparam name="T"></typeparam>
-        public static void WriteNetworkSerializable<T>(this ref FastBufferWriter writer, in T value) where T : INetworkSerializable
-        {
-            // TODO
-        }
-
-        /// <summary>
         /// Get the required amount of space to write a GameObject
         /// </summary>
         /// <param name="value"></param>
@@ -144,7 +134,7 @@ namespace Unity.Netcode
         /// Write a GameObject
         /// </summary>
         /// <param name="value">The value to write</param>
-        public static void WriteValue(this ref FastBufferWriter writer, GameObject value)
+        public static void WriteValue(this ref FastBufferWriter writer, in GameObject value)
         {
             value.TryGetComponent<NetworkObject>(out var networkObject);
             if (networkObject == null)
@@ -161,13 +151,28 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Write an array of GameObjects
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValue(this ref FastBufferWriter writer, GameObject[] value)
+        {
+            writer.WriteValue((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValue(value);
+            }
+        }
+
+        /// <summary>
         /// Write a GameObject
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">The value to write</param>
-        public static void WriteValueSafe(this ref FastBufferWriter writer, GameObject value)
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in GameObject value)
         {
             value.TryGetComponent<NetworkObject>(out var networkObject);
             if (networkObject == null)
@@ -181,6 +186,24 @@ namespace Unity.Netcode
             }
 
             writer.WriteValueSafe(networkObject.NetworkObjectId);
+        }
+
+        /// <summary>
+        /// Write an array of GameObjects
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValueSafe(this ref FastBufferWriter writer, GameObject[] value)
+        {
+            writer.WriteValueSafe((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValueSafe(value);
+            }
         }
 
         /// <summary>
@@ -218,19 +241,52 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Write an array of NetworkObjects
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValue(this ref FastBufferWriter writer, NetworkObject[] value)
+        {
+            writer.WriteValue((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValue(value);
+            }
+        }
+
+        /// <summary>
         /// Write a NetworkObject
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple writes at once by calling TryBeginWrite.
         /// </summary>
         /// <param name="value">The value to write</param>
-        public static void WriteValueSafe(this ref FastBufferWriter writer, NetworkObject value)
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in NetworkObject value)
         {
             if (!value.IsSpawned)
             {
                 throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
             }
             writer.WriteValueSafe(value.NetworkObjectId);
+        }
+
+        /// <summary>
+        /// Write an array of NetworkObjects
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValueSafe(this ref FastBufferWriter writer, NetworkObject[] value)
+        {
+            writer.WriteValueSafe((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValueSafe(value);
+            }
         }
 
         /// <summary>
@@ -258,7 +314,7 @@ namespace Unity.Netcode
         /// Write a NetworkBehaviour
         /// </summary>
         /// <param name="value">The value to write</param>
-        public static void WriteValue(this ref FastBufferWriter writer, NetworkBehaviour value)
+        public static void WriteValue(this ref FastBufferWriter writer, in NetworkBehaviour value)
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
@@ -270,6 +326,21 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Write an array of NetworkBehaviours
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValue(this ref FastBufferWriter writer, NetworkBehaviour[] value)
+        {
+            writer.WriteValue((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValue(value);
+            }
+        }
+
+        /// <summary>
         /// Write a NetworkBehaviour
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -278,7 +349,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to write</param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OverflowException"></exception>
-        public static void WriteValueSafe(this ref FastBufferWriter writer, NetworkBehaviour value)
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in NetworkBehaviour value)
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
@@ -291,6 +362,24 @@ namespace Unity.Netcode
             }
             writer.WriteValue(value.NetworkObjectId);
             writer.WriteValue(value.NetworkBehaviourId);
+        }
+
+        /// <summary>
+        /// Write an array of NetworkBehaviours
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        public static void WriteValueSafe(this ref FastBufferWriter writer, NetworkBehaviour[] value)
+        {
+            writer.WriteValueSafe((int)value.Length);
+            foreach (var item in value)
+            {
+                writer.WriteValueSafe(value);
+            }
         }
 
     }

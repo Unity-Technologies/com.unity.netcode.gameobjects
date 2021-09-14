@@ -26,12 +26,6 @@ namespace Unity.Netcode.RuntimeTests
         // Start is called before the first frame update
         private void Start()
         {
-            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-            m_ClientParams.Send.UpdateStage = NetworkUpdateStage.Update;
-
-            m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-            m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-
             m_MaxStagesSent = Enum.GetValues(typeof(NetworkUpdateStage)).Length * MaxIterations;
 
             //Start out with this being true (for first sequence)
@@ -82,34 +76,9 @@ namespace Unity.Netcode.RuntimeTests
                 m_ClientReceivedRpc = false;
 
                 //As long as testing isn't completed, keep testing
-                if (!IsTestComplete() && m_StagesSent.Count < m_MaxStagesSent)
+                if (!IsTestComplete())
                 {
-                    m_LastUpdateStage = m_ServerParams.Send.UpdateStage;
-                    m_StagesSent.Add(m_LastUpdateStage);
-
                     PingMySelfServerRpc(m_StagesSent.Count, m_ServerParams);
-
-                    switch (m_ServerParams.Send.UpdateStage)
-                    {
-                        case NetworkUpdateStage.EarlyUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
-                            break;
-                        case NetworkUpdateStage.FixedUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
-                            break;
-                        case NetworkUpdateStage.PreUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
-                            break;
-                        case NetworkUpdateStage.Update:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PreLateUpdate;
-                            break;
-                        case NetworkUpdateStage.PreLateUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-                            break;
-                        case NetworkUpdateStage.PostLateUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                            break;
-                    }
                 }
             }
         }
@@ -159,10 +128,7 @@ namespace Unity.Netcode.RuntimeTests
         [ServerRpc]
         private void PingMySelfServerRpc(int currentCount, ServerRpcParams parameters = default)
         {
-            Debug.Log($"{nameof(PingMySelfServerRpc)}: [HostClient][ServerRpc][{currentCount}] invoked during the {parameters.Receive.UpdateStage} stage.");
-
-            m_ClientParams.Send.UpdateStage = parameters.Receive.UpdateStage;
-            m_ServerStagesReceived.Add(parameters.Receive.UpdateStage);
+            Debug.Log($"{nameof(PingMySelfServerRpc)}: [HostClient][ServerRpc][{currentCount}] invoked.");
 
             PingMySelfClientRpc(currentCount, m_ClientParams);
         }
@@ -174,15 +140,7 @@ namespace Unity.Netcode.RuntimeTests
         [ClientRpc]
         private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters = default)
         {
-            Debug.Log($"{nameof(PingMySelfClientRpc)}: [HostServer][ClientRpc][{currentCount}]  invoked during the {parameters.Receive.UpdateStage} stage. (previous output line should confirm this)");
-
-            m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
-
-            //If we reached the last update state, then go ahead and increment our iteration counter
-            if (parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
-            {
-                m_Counter++;
-            }
+            Debug.Log($"{nameof(PingMySelfClientRpc)}: [HostServer][ClientRpc][{currentCount}]  invoked. (previous output line should confirm this)");
 
             m_ClientReceivedRpc = true;
         }

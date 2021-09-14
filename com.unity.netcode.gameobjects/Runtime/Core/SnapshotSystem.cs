@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using PlasticGui.Configuration;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
 using UnityEditor.VersionControl;
 using UnityEngine;
@@ -93,7 +94,6 @@ namespace Unity.Netcode
         internal SnapshotDespawnCommand[] Despawns;
         internal int NumDespawns = 0;
 
-        private MemoryStream m_BufferStream;
         internal NetworkManager NetworkManager;
 
         // indexed by ObjectId
@@ -108,7 +108,6 @@ namespace Unity.Netcode
         /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
         internal Snapshot()
         {
-            m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             Spawns = new SnapshotSpawnCommand[m_MaxSpawns];
@@ -404,11 +403,22 @@ namespace Unity.Netcode
                     var networkVariable = FindNetworkVar(Entries[pos].Key);
                     if (networkVariable != null)
                     {
-                        m_BufferStream.Seek(Entries[pos].Position, SeekOrigin.Begin);
-                        // todo: consider refactoring out in its own function to accomodate
-                        // other ways to (de)serialize
-                        // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
-                        networkVariable.ReadDelta(m_BufferStream, false);
+                        unsafe
+                        {
+                            // This avoids copies - using Allocator.None creates a direct memory view into the buffer.
+                            fixed (byte* buffer = RecvBuffer)
+                            {
+                                var reader = new FastBufferReader(buffer, Collections.Allocator.None, RecvBuffer.Length);
+                                using (reader)
+                                {
+                                    reader.Seek(Entries[pos].Position);
+                                    // todo: consider refactoring out in its own function to accomodate
+                                    // other ways to (de)serialize
+                                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
+                                    networkVariable.ReadDelta(ref reader, false);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -436,12 +446,12 @@ namespace Unity.Netcode
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
                     var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
                 else
                 {
                     var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
             }
             for (var i = 0; i < message.Despawns.Length; i++)
@@ -713,8 +723,6 @@ namespace Unity.Netcode
 
             m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.SnapshotData, NetworkDelivery.Unreliable, new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
             var sequence = m_ClientData[clientId].SequenceNumber;
             var message = new SnapshotDataMessage
             {
@@ -738,6 +746,8 @@ namespace Unity.Netcode
             // write the snapshot: buffer, index, spawns, despawns
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
+
+            m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
 
             m_ClientData[clientId].LastReceivedSequence = 0;
 
@@ -932,19 +942,24 @@ namespace Unity.Netcode
             WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
         }
 
-        private void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
+        private unsafe void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
-            using var varBuffer = PooledNetworkBuffer.Get();
-            networkVariable.WriteDelta(varBuffer);
-            if (varBuffer.Length > snapshot.Entries[index].Length)
+            var varBuffer = new FastBufferWriter(1300, Allocator.Temp);
+            using (varBuffer)
             {
-                // allocate this Entry's buffer
-                snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
-            }
+                networkVariable.WriteDelta(ref varBuffer);
+                if (varBuffer.Length > snapshot.Entries[index].Length)
+                {
+                    // allocate this Entry's buffer
+                    snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
+                }
 
-            // Copy the serialized NetworkVariable into our buffer
-            Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.MainBuffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
+                fixed (byte* buffer = snapshot.MainBuffer)
+                {
+                    UnsafeUtility.MemCpy(buffer + snapshot.Entries[index].Position, varBuffer.GetUnsafePtr(), varBuffer.Length);
+                }
+            }
         }
 
 

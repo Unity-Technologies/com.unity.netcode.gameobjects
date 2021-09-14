@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -20,20 +21,24 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator UnnamedMessageIsReceivedOnClientWithContent()
         {
             var messageContent = Guid.NewGuid().ToString();
-            var buffer = new NetworkBuffer(Encoding.UTF8.GetBytes(messageContent));
-
-            m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(FirstClient.LocalClientId, buffer);
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(
+                    FirstClient.LocalClientId,
+                    ref writer);
+            }
 
             ulong receivedMessageSender = 0;
             string receivedMessageContent = null;
-            FirstClient.CustomMessagingManager.OnUnnamedMessage += (sender, stream) =>
-            {
-                receivedMessageSender = sender;
+            FirstClient.CustomMessagingManager.OnUnnamedMessage += 
+                (ulong sender, ref FastBufferReader reader) =>
+                {
+                    receivedMessageSender = sender;
 
-                using var memoryStream = new MemoryStream();
-                stream.CopyTo(memoryStream);
-                receivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
-            };
+                    reader.ReadValueSafe(out receivedMessageContent);
+                };
 
             yield return new WaitForSeconds(0.2f);
 
@@ -46,31 +51,34 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator UnnamedMessageIsReceivedOnMultipleClientsWithContent()
         {
             var messageContent = Guid.NewGuid().ToString();
-            var buffer = new NetworkBuffer(Encoding.UTF8.GetBytes(messageContent));
-
-            m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, buffer);
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(
+                    new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
+                    ref writer);
+            }
 
             ulong firstReceivedMessageSender = 0;
             string firstReceivedMessageContent = null;
-            FirstClient.CustomMessagingManager.OnUnnamedMessage += (sender, stream) =>
-            {
-                firstReceivedMessageSender = sender;
+            FirstClient.CustomMessagingManager.OnUnnamedMessage += 
+                (ulong sender, ref FastBufferReader reader) =>
+                {
+                    firstReceivedMessageSender = sender;
 
-                using var memoryStream = new MemoryStream();
-                stream.CopyTo(memoryStream);
-                firstReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
-            };
+                    reader.ReadValueSafe(out firstReceivedMessageContent);
+                };
 
             ulong secondReceivedMessageSender = 0;
             string secondReceivedMessageContent = null;
-            SecondClient.CustomMessagingManager.OnUnnamedMessage += (sender, stream) =>
-            {
-                secondReceivedMessageSender = sender;
+            SecondClient.CustomMessagingManager.OnUnnamedMessage += 
+                (ulong sender, ref FastBufferReader reader) =>
+                {
+                    secondReceivedMessageSender = sender;
 
-                using var memoryStream = new MemoryStream();
-                stream.CopyTo(memoryStream);
-                secondReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
-            };
+                    reader.ReadValueSafe(out firstReceivedMessageContent);
+                };
 
             yield return new WaitForSeconds(0.2f);
 
