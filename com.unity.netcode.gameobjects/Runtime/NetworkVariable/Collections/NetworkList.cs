@@ -12,7 +12,7 @@ namespace Unity.Netcode
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
-        private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
+        private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
         /// Delegate type for list changed event
@@ -72,15 +72,15 @@ namespace Unity.Netcode
         public override bool IsDirty()
         {
             // we call the base class to allow the SetDirty() mechanism to work
-            return base.IsDirty() || m_DirtyEvents.Count > 0;
+            return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
         /// <inheritdoc />
         public override void WriteDelta(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
-            for (int i = 0; i < m_DirtyEvents.Count; i++)
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Length);
+            for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
                 writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
                 switch (m_DirtyEvents[i].Type)
@@ -458,6 +458,7 @@ namespace Unity.Netcode
         public override void Dispose()
         {
             m_List.Dispose();
+            m_DirtyEvents.Dispose();
         }
     }
 

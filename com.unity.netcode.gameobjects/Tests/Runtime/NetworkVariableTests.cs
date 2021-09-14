@@ -105,10 +105,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                    var variable = playerPrefab.AddComponent<NetworkVariableTest>();
-                    // This normally gets called when a NetworkBehaviour gets spawned but we are manually setting
-                    // this up here so we need to make sure the internal NetworkVariableFields gets filled in.
-                    variable.InitializeVariables();
+                    playerPrefab.AddComponent<NetworkVariableTest>();
                 });
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*

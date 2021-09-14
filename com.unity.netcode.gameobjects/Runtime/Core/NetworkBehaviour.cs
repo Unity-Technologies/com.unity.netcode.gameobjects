@@ -827,6 +827,17 @@ namespace Unity.Netcode
 
         public void OnDestroy()
         {
+            // this seems odd to do here, but in fact especially in tests we can find ourselves
+            //  here without having called InitializedVariables, which causes problems if any
+            //  of those variables use native containers (e.g. NetworkList) as they won't be
+            //  registered here and therefore won't be cleaned up.
+            //
+            // we should study to understand the initialization patterns
+            if (!m_VarInit)
+            {
+                InitializeVariables();
+            }
+
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
                 NetworkVariableFields[i].Dispose();
