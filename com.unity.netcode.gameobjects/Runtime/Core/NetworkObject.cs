@@ -969,6 +969,10 @@ namespace Unity.Netcode
             }
 
             // NetworkVariable section
+
+            // todo: remove this WriteBool and the matching read
+            writer.WriteBool(true);
+
             var buffer = writer.GetStream() as NetworkBuffer;
 
             // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
