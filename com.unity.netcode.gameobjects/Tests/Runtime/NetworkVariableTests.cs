@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public struct FixedString32Struct : INetworkSerializable
     {
-        public FixedString32 FixedString;
+        public FixedString32Bytes FixedString;
         public void NetworkSerialize(NetworkSerializer serializer)
         {
             if (serializer.IsReading)

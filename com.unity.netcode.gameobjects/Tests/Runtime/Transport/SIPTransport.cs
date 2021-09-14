@@ -230,17 +230,15 @@ namespace Unity.Netcode.RuntimeTests
                 byte[] copy = new byte[payload.Count];
                 Buffer.BlockCopy(payload.Array, payload.Offset, copy, 0, payload.Count);
 
-                if (!m_Peers.ContainsKey(clientId))
+                if (m_Peers.ContainsKey(clientId))
                 {
-                    throw new KeyNotFoundException($"peer id {clientId} not in peer list");
+                    m_Peers[clientId].IncomingBuffer.Enqueue(new Event
+                    {
+                        Type = NetworkEvent.Data,
+                        ConnectionId = m_LocalConnection.ConnectionId,
+                        Data = new ArraySegment<byte>(copy)
+                    });
                 }
-
-                m_Peers[clientId].IncomingBuffer.Enqueue(new Event
-                {
-                    Type = NetworkEvent.Data,
-                    ConnectionId = m_LocalConnection.ConnectionId,
-                    Data = new ArraySegment<byte>(copy)
-                });
             }
         }
 
