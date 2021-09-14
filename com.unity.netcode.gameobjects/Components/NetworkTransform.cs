@@ -497,7 +497,7 @@ namespace Unity.Netcode.Components
                     m_Transform.localScale = Vector3.one;
                     var lossyScale = m_Transform.lossyScale;
                     // todo this conversion is messing with interpolation. local scale interpolates fine, lossy scale is jittery. must investigate. MTT-1208
-                    m_Transform.localScale = new Vector3(networkState.ScaleX / lossyScale.x, networkState.ScaleY / lossyScale.y, networkState.ScaleZ / lossyScale.z);
+                    m_Transform.localScale = new Vector3(interpolatedScale.x / lossyScale.x, interpolatedScale.y / lossyScale.y, interpolatedScale.z / lossyScale.z);
                 }
 
                 m_PrevNetworkState.Scale = interpolatedScale;
@@ -618,41 +618,38 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        private bool hasSentLastValue = false;
         private void UpdateNetworkVariable()
         {
-            if (CanWriteToTransform && UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
+            if (CanWriteToTransform)
             {
-                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
-                m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
-                m_ReplicatedNetworkState.SetDirty(true);
-                AddInterpolatedState(m_LocalAuthoritativeNetworkState);
-            }
-        }
-
-        private void FixedUpdate()
-        {
-            if (!NetworkObject.IsSpawned)
-            {
-                return;
-            }
-
-            // try to update previously consumed NetworkState
-            // if we have any changes, that means made some updates locally
-            // we apply the latest ReplNetworkState again to revert our changes
-            if (!CanWriteToTransform)
-            {
-                var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref m_PrevNetworkState, 0);
-                if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
+                // if dirty, send
+                // if not dirty anymore, but hasn't sent last value for extrapolation, still set isDirty
+                // if not dirty and has already sent last value, don't do anything
+                void Send()
                 {
-                    // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
-                    // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                    var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                    Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
-                    ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
+                    m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
+                    m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                    m_ReplicatedNetworkState.SetDirty(true);
+                    AddInterpolatedState(m_LocalAuthoritativeNetworkState);
+                }
+                var isDirty = UpdateNetworkStateCheckDirty(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
+                if (isDirty)
+                {
+                    Send();
+                    hasSentLastValue = false;
+                }
+                else if (!hasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
+                {
+                    m_LocalAuthoritativeNetworkState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
+                    Send();
+                    hasSentLastValue = true;
                 }
             }
         }
 
+        // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
+        // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
         {
             if (!NetworkObject.IsSpawned)
@@ -683,7 +680,23 @@ namespace Unity.Netcode.Components
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
                     }
 
+                    // Apply updated interpolated value
                     ApplyNetworkStateFromAuthority(m_ReplicatedNetworkState.Value);
+
+                    // try to update previously consumed NetworkState
+                    // if we have any changes, that means made some updates locally
+                    // we apply the latest ReplNetworkState again to revert our changes
+                    Debug.Log($"updating dadou prev {m_PrevNetworkState.ScaleZ}, transform is now {transform.localScale.z}");
+                    var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref m_PrevNetworkState, 0);
+                    Debug.Log($"now is dadou prev {m_PrevNetworkState.ScaleZ}, tansform is nwo {transform.localScale.z}");
+
+                    if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
+                    {
+                        // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
+                        // from an unauthorized transform change or euler to quaternion conversion artifacts.
+                        var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
+                        Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
+                    }
                 }
             }
         }
