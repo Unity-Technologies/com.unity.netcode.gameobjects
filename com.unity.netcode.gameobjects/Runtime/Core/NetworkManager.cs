@@ -1040,11 +1040,8 @@ namespace Unity.Netcode
         /// </summary>
         private void OnNetworkManagerTick()
         {
-            if (NetworkConfig.EnableNetworkVariable)
-            {
-                // Do NetworkVariable updates
-                BehaviourUpdater.NetworkBehaviourUpdate(this);
-            }
+            // Do NetworkVariable updates
+            BehaviourUpdater.NetworkBehaviourUpdate(this);
 
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
@@ -1329,7 +1326,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
+                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)
@@ -1523,10 +1520,7 @@ namespace Unity.Netcode
 
                     nonNullContext.NetworkWriter.WriteBool(false); //No payload data
 
-                    if (NetworkConfig.EnableNetworkVariable)
-                    {
-                        ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
-                    }
+                    ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
                 }
             }
         }
