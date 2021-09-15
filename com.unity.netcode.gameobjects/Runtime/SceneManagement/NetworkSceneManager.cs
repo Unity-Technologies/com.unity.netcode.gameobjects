@@ -195,10 +195,25 @@ namespace Unity.Netcode
         /// </summary>
         internal List<SceneEventData> SceneEventDataPool;
 
-        private const int k_MaximumSceneEventDataPoolSizeThreshold = 100;
-        private const int k_DefaultSceneEventDataPoolSize = 10;
+        /// <summary>
+        /// The maximum size you can grow your <see cref="ScneeEventData"/> pool (100)
+        /// </summary>
+        public const int MaximumSceneEventDataPoolSizeThreshold = 100;
+
+        /// <summary>
+        /// The default size of the <see cref="ScneeEventData"/> pool (10)
+        /// </summary>
+        public const int DefaultSceneEventDataPoolSize = 10;
+
+        /// <summary>
+        /// Current maximum <see cref="ScneeEventData"/> pool size
+        /// </summary>
         private int m_MaxSceneEventDataPoolSize;
-        private int m_CurrentSceneEventDataIndex;
+
+        /// <summary>
+        /// Next <see cref="ScneeEventData"/> pool index
+        /// </summary>
+        private int m_NextSceneEventDataIndex;
 
 
         /// <summary>
@@ -240,11 +255,21 @@ namespace Unity.Netcode
             ClientSynchEventData = null;
         }
 
+        /// <summary>
+        /// Depending upon how many users are connected, you might need to adjust
+        /// the <see cref="ScneeEventData"/> pool size to a larger value on a host
+        /// or a server under the situation where you are loading and/or unloading
+        /// many additive scenes over a short period of time.
+        /// The default <see cref="ScneeEventData"/> pool size is 10 (<see cref="DefaultSceneEventDataPoolSize"/>)
+        /// The maximum <see cref="ScneeEventData"/> pool size can grow to is 100 (<see cref="MaximumSceneEventDataPoolSizeThreshold"/>)
+        /// </summary>
+        /// <param name="sceneEventDataPoolSize"></param>
+        /// <returns></returns>
         public bool SetSceneEventDataPoolSize(int sceneEventDataPoolSize)
         {
-            if (sceneEventDataPoolSize > k_DefaultSceneEventDataPoolSize)
+            if (sceneEventDataPoolSize > MaximumSceneEventDataPoolSizeThreshold)
             {
-                if (sceneEventDataPoolSize < k_MaximumSceneEventDataPoolSizeThreshold)
+                if (sceneEventDataPoolSize < MaximumSceneEventDataPoolSizeThreshold)
                 {
                     if (sceneEventDataPoolSize > m_MaxSceneEventDataPoolSize)
                     {
@@ -261,24 +286,26 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value large than the maximum pool size of ({k_MaximumSceneEventDataPoolSizeThreshold}).");
+                    Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value large than the maximum pool size of ({MaximumSceneEventDataPoolSizeThreshold}).");
                 }
             }
             else
             {
-                Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value smaller than the default size of ({k_DefaultSceneEventDataPoolSize}).");
+                Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value smaller than the default size of ({DefaultSceneEventDataPoolSize}).");
             }
             return false;
         }
 
+        /// <summary>
+        /// Gets the next <see cref="SceneEventData"/> pool item index number
+        /// </summary>
         private int GetNextSceneEventDataIndexToUse()
         {
-            var nextIndex = m_CurrentSceneEventDataIndex;
-            m_CurrentSceneEventDataIndex++;
-            m_CurrentSceneEventDataIndex %= m_MaxSceneEventDataPoolSize;
+            var nextIndex = m_NextSceneEventDataIndex;
+            m_NextSceneEventDataIndex++;
+            m_NextSceneEventDataIndex %= m_MaxSceneEventDataPoolSize;
             return nextIndex;
         }
-
 
         /// <summary>
         /// Gets the scene name from full path to the scene
@@ -334,7 +361,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkManager">one <see cref="NetworkManager"/> instance per <see cref="NetworkSceneManager"/> instance</param>
         /// <param name="sceneEventDataPoolSize">maximum <see cref="SceneEventData"/> pool size</param>
-        internal NetworkSceneManager(NetworkManager networkManager, int sceneEventDataPoolSize = k_DefaultSceneEventDataPoolSize)
+        internal NetworkSceneManager(NetworkManager networkManager, int sceneEventDataPoolSize = DefaultSceneEventDataPoolSize)
         {
             m_MaxSceneEventDataPoolSize = sceneEventDataPoolSize;
             m_NetworkManager = networkManager;
