@@ -51,7 +51,7 @@ namespace Unity.Netcode
             foreach (var value in values)
             {
                 m_List.Add(value);
-                
+
             }
         }
 

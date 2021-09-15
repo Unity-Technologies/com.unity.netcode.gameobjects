@@ -887,7 +887,7 @@ namespace Unity.Netcode
 
         internal struct SceneObject
         {
-            public struct SceneObjectMetadata
+            public struct HeaderData
             {
                 public ulong NetworkObjectId;
                 public ulong OwnerClientId;
@@ -900,13 +900,12 @@ namespace Unity.Netcode
                 public bool IsReparented;
             }
 
-            public SceneObjectMetadata Metadata;
+            public HeaderData Header;
 
-            #region If(Metadata.HasParent)
+            //If(Metadata.HasParent)
             public ulong ParentObjectId;
-            #endregion
 
-            #region If(Metadata.HasTransform)
+            //If(Metadata.HasTransform)
             public struct TransformData
             {
                 public Vector3 Position;
@@ -914,15 +913,12 @@ namespace Unity.Netcode
             }
 
             public TransformData Transform;
-            #endregion
 
-            #region If(Metadata.IsReparented)
+            //If(Metadata.IsReparented)
             public bool IsLatestParentSet;
 
-            #region If(IsLatestParentSet)
+            //If(IsLatestParentSet)
             public ulong? LatestParent;
-            #endregion
-            #endregion
 
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
@@ -930,10 +926,10 @@ namespace Unity.Netcode
             public unsafe void Serialize(ref FastBufferWriter writer)
             {
                 if (!writer.TryBeginWrite(
-                    sizeof(SceneObjectMetadata) +
-                    (Metadata.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Metadata.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Metadata.IsReparented
+                    sizeof(HeaderData) +
+                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
+                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
+                    (Header.IsReparented
                         ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
                           (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
                         : 0)))
@@ -941,19 +937,19 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
 
-                writer.WriteValue(Metadata);
+                writer.WriteValue(Header);
 
-                if (Metadata.HasParent)
+                if (Header.HasParent)
                 {
                     writer.WriteValue(ParentObjectId);
                 }
 
-                if (Metadata.HasTransform)
+                if (Header.HasTransform)
                 {
                     writer.WriteValue(Transform);
                 }
 
-                if (Metadata.IsReparented)
+                if (Header.IsReparented)
                 {
                     writer.WriteValue(IsLatestParentSet);
                     if (IsLatestParentSet)
@@ -967,15 +963,15 @@ namespace Unity.Netcode
 
             public unsafe void Deserialize(ref FastBufferReader reader)
             {
-                if (!reader.TryBeginRead(sizeof(SceneObjectMetadata)))
+                if (!reader.TryBeginRead(sizeof(HeaderData)))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
-                reader.ReadValue(out Metadata);
+                reader.ReadValue(out Header);
                 if (!reader.TryBeginRead(
-                    (Metadata.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Metadata.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Metadata.IsReparented
+                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
+                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
+                    (Header.IsReparented
                         ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
                           (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
                         : 0)))
@@ -983,17 +979,17 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
 
-                if (Metadata.HasParent)
+                if (Header.HasParent)
                 {
                     reader.ReadValue(out ParentObjectId);
                 }
 
-                if (Metadata.HasTransform)
+                if (Header.HasTransform)
                 {
                     reader.ReadValue(out Transform);
                 }
 
-                if (Metadata.IsReparented)
+                if (Header.IsReparented)
                 {
                     reader.ReadValue(out IsLatestParentSet);
                     if (IsLatestParentSet)
@@ -1009,7 +1005,7 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
-                Metadata = new SceneObject.SceneObjectMetadata
+                Header = new SceneObject.HeaderData
                 {
                     IsPlayerObject = IsPlayerObject,
                     NetworkObjectId = NetworkObjectId,
@@ -1030,12 +1026,12 @@ namespace Unity.Netcode
 
             if (parentNetworkObject)
             {
-                obj.Metadata.HasParent = true;
+                obj.Header.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
             }
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.Metadata.HasTransform = true;
+                obj.Header.HasTransform = true;
                 obj.Transform = new SceneObject.TransformData
                 {
                     Position = transform.position,
@@ -1044,7 +1040,7 @@ namespace Unity.Netcode
             }
 
             var (isReparented, latestParent) = GetNetworkParenting();
-            obj.Metadata.IsReparented = isReparented;
+            obj.Header.IsReparented = isReparented;
             if (isReparented)
             {
                 var isLatestParentSet = latestParent != null && latestParent.HasValue;
@@ -1072,38 +1068,32 @@ namespace Unity.Netcode
             Quaternion? rotation = null;
             ulong? parentNetworkId = null;
 
-            if (sceneObject.Metadata.HasTransform)
+            if (sceneObject.Header.HasTransform)
             {
                 position = sceneObject.Transform.Position;
                 rotation = sceneObject.Transform.Rotation;
             }
 
-            if (sceneObject.Metadata.HasParent)
+            if (sceneObject.Header.HasParent)
             {
                 parentNetworkId = sceneObject.ParentObjectId;
             }
 
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
-                sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.Hash,
-                sceneObject.Metadata.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Metadata.IsReparented);
+                sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
+                sceneObject.Header.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Header.IsReparented);
 
-            networkObject?.SetNetworkParenting(sceneObject.Metadata.IsReparented, sceneObject.LatestParent);
+            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
 
             if (networkObject == null)
             {
                 // Log the error that the NetworkObject failed to construct
-                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Metadata.Hash}.");
+                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Header.Hash}.");
 
                 // If we failed to load this NetworkObject, then skip past the network variable data
                 variableData.ReadValueSafe(out ushort varSize);
                 variableData.Seek(variableData.Position + varSize);
-
-                variableData.ReadValueSafe(out ushort magic);
-                if (magic != (ushort)0x12AB)
-                {
-                    NetworkLog.LogWarning($"Var data ended not on the magic value.");
-                }
 
                 // We have nothing left to do here.
                 return null;

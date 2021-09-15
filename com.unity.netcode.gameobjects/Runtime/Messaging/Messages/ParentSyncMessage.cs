@@ -6,13 +6,11 @@ namespace Unity.Netcode.Messages
 
         public bool IsReparented;
 
-        #region If(Metadata.IsReparented)
+        //If(Metadata.IsReparented)
         public bool IsLatestParentSet;
 
-        #region If(IsLatestParentSet)
+        //If(IsLatestParentSet)
         public ulong? LatestParent;
-        #endregion
-        #endregion
 
         public void Serialize(ref FastBufferWriter writer)
         {

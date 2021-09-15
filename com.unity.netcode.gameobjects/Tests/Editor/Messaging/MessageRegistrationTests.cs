@@ -1,4 +1,4 @@
-﻿
+
 using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests

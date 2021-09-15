@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -16,7 +17,6 @@ namespace Unity.Netcode
 
     public class MessagingSystem : IDisposable
     {
-        #region Internal Types
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -40,9 +40,7 @@ namespace Unity.Netcode
         }
 
         internal delegate void MessageHandler(ref FastBufferReader reader, NetworkContext context);
-        #endregion
 
-        #region Private Members
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
@@ -58,7 +56,6 @@ namespace Unity.Netcode
         private IMessageSender m_MessageSender;
         private ulong m_LocalClientId;
         private bool m_Disposed;
-        #endregion
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
@@ -261,8 +258,14 @@ namespace Unity.Netcode
             return true;
         }
 
-        public unsafe void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
+        public void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
         {
+            if (header.MessageType >= m_HighMessageType)
+            {
+                Debug.LogWarning($"Received a message with invalid message type value {header.MessageType}");
+                reader.Dispose();
+                return;
+            }
             var context = new NetworkContext
             {
                 SystemOwner = m_Owner,
@@ -489,6 +492,12 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage(message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
+        }
+
         internal unsafe void ProcessSendQueues()
         {
             foreach (var kvp in m_SendQueues)
@@ -516,8 +525,14 @@ namespace Unity.Netcode
 #endif
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
 
-                    m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
-                    queueItem.Writer.Dispose();
+                    try
+                    {
+                        m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
+                    }
+                    finally
+                    {
+                        queueItem.Writer.Dispose();
+                    }
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {

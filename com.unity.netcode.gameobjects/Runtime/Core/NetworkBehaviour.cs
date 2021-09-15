@@ -4,7 +4,6 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
 
 namespace Unity.Netcode
@@ -16,7 +15,7 @@ namespace Unity.Netcode
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        public enum __RpcExecStage
+        internal enum __RpcExecStage
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
@@ -33,7 +32,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
-        public __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
@@ -47,7 +46,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > 1300)
+                    if (writer.Length > 1300 - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -57,7 +56,7 @@ namespace Unity.Netcode
 
             var message = new RpcMessage
             {
-                Data = new RpcMessage.Metadata
+                Header = new RpcMessage.HeaderData
                 {
                     Type = RpcMessage.RpcType.Server,
                     NetworkObjectId = NetworkObjectId,
@@ -89,7 +88,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > 1300)
+                    if (writer.Length > 1300 - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -99,7 +98,7 @@ namespace Unity.Netcode
 
             var message = new RpcMessage
             {
-                Data = new RpcMessage.Metadata
+                Header = new RpcMessage.HeaderData
                 {
                     Type = RpcMessage.RpcType.Client,
                     NetworkObjectId = NetworkObjectId,
@@ -125,9 +124,7 @@ namespace Unity.Netcode
             {
                 // NativeArray doesn't implement required IReadOnlyList interface, but that's ok, pointer + length
                 // will be more efficient anyway.
-                messageSize = NetworkManager.SendMessage(message, networkDelivery,
-                    (ulong*)sendParams.Send.TargetClientIdsNativeArray.Value.GetUnsafePtr(),
-                    sendParams.Send.TargetClientIdsNativeArray.Value.Length);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
@@ -507,7 +504,6 @@ namespace Unity.Netcode
                 {
                     writer.WriteValueSafe((ushort)0);
                 }
-                writer.WriteValueSafe((ushort)0x12AB);
             }
         }
 
@@ -521,14 +517,8 @@ namespace Unity.Netcode
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 reader.ReadValueSafe(out ushort varSize);
-                ushort magic;
                 if (varSize == 0)
                 {
-                    reader.ReadValueSafe(out magic);
-                    if (magic != (ushort)0x12AB)
-                    {
-                        NetworkLog.LogWarning($"Var data ended not on the magic value.");
-                    }
                     continue;
                 }
 
@@ -555,11 +545,6 @@ namespace Unity.Netcode
 
                         reader.Seek(readStartPos + varSize);
                     }
-                }
-                reader.ReadValueSafe(out magic);
-                if (magic != (ushort)0x12AB)
-                {
-                    NetworkLog.LogWarning($"Var data ended not on the magic value.");
                 }
             }
         }

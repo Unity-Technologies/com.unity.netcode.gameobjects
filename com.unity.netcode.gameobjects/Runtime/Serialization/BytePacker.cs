@@ -9,7 +9,6 @@ namespace Unity.Netcode
     /// </summary>
     public static class BytePacker
     {
-        #region Managed TypePacking
 
         /// <summary>
         /// Writes a boxed object in a packed format
@@ -140,9 +139,7 @@ namespace Unity.Netcode
 
             throw new ArgumentException($"{nameof(BytePacker)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
-        #endregion
 
-        #region Unmanaged Type Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -409,9 +406,7 @@ namespace Unity.Netcode
             }
         }
 #endif
-        #endregion
 
-        #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -547,9 +542,7 @@ namespace Unity.Netcode
             writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
         }
 #endif
-        #endregion
 
-        #region Private Methods
         private static void WriteUInt64Packed(ref FastBufferWriter writer, ulong value)
         {
             if (value <= 240)
@@ -612,6 +605,5 @@ namespace Unity.Netcode
             ulong* asUlong = (ulong*)&value;
             return *asUlong;
         }
-        #endregion
     }
 }

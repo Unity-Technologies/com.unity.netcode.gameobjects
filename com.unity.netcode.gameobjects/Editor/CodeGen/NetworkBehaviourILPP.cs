@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Mono.Collections.Generic;
 using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
@@ -570,7 +569,7 @@ namespace Unity.Netcode.Editor.CodeGen
             return rpcAttribute;
         }
 
-        private MethodReference GetWriteMethodViaSystemReflection(string name, TypeReference paramType)
+        private MethodReference GetFastBufferWriterWriteMethod(string name, TypeReference paramType)
         {
             foreach (var method in m_FastBufferWriter_TypeRef.Resolve().Methods)
             {
@@ -595,7 +594,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
 
                     if (
-                        (parameters[0].ParameterType.Resolve() == checkType 
+                        (parameters[0].ParameterType.Resolve() == checkType
                         || (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
                     {
                         return method;
@@ -607,7 +606,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
                                 var resolvedConstraint = constraint.Resolve();
-                                
+
                                 if (
                                     (resolvedConstraint.IsInterface &&
                                      checkType.HasInterface(resolvedConstraint.FullName))
@@ -664,22 +663,12 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                /*var systemType = Type.GetType(paramType.FullName);
-                if (systemType == null)
-                {
-                    systemType = Type.GetType(assemblyQualifiedName);
-                    if (systemType == null)
-                    {
-                        throw new Exception("Couldn't find type for " + paramType.FullName + ", " +
-                                            paramType.Resolve().Module.Assembly.FullName);
-                    }
-                }*/
                 // Try NetworkSerializable first because INetworkSerializable may also be valid for WriteValueSafe
                 // and that would cause boxing if so.
-                var typeMethod = GetWriteMethodViaSystemReflection("WriteNetworkSerializable", paramType);
+                var typeMethod = GetFastBufferWriterWriteMethod("WriteNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetWriteMethodViaSystemReflection("WriteValueSafe", paramType);
+                    typeMethod = GetFastBufferWriterWriteMethod("WriteValueSafe", paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -691,7 +680,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             return foundMethodRef;
         }
-        private MethodReference GetReadMethodViaSystemReflection(string name, TypeReference paramType)
+        private MethodReference GetFastBufferReaderReadMethod(string name, TypeReference paramType)
         {
             foreach (var method in m_FastBufferReader_TypeRef.Resolve().Methods)
             {
@@ -710,7 +699,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         return null;
                     }
 
-                    var methodParam = ((ByReferenceType) parameters[0].ParameterType).ElementType;
+                    var methodParam = ((ByReferenceType)parameters[0].ParameterType).ElementType;
 
                     if (methodParam.IsArray != paramType.IsArray)
                     {
@@ -734,7 +723,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
                                 var resolvedConstraint = constraint.Resolve();
-                                
+
                                 if (
                                     (resolvedConstraint.IsInterface &&
                                      checkType.HasInterface(resolvedConstraint.FullName))
@@ -778,10 +767,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // Try NetworkSerializable first because INetworkSerializable may also be valid for ReadValueSafe
                 // and that would cause boxing if so.
-                var typeMethod = GetReadMethodViaSystemReflection("ReadNetworkSerializable", paramType);
+                var typeMethod = GetFastBufferReaderReadMethod("ReadNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetReadMethodViaSystemReflection("ReadValueSafe", paramType);
+                    typeMethod = GetFastBufferReaderReadMethod("ReadValueSafe", paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -927,11 +916,11 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                // var writer = new FastBufferWriter(1300, Allocator.Temp, 65536);
+                // var writer = new FastBufferWriter(1285, Allocator.Temp, 63985);
                 instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 1300 - sizeof(byte) - sizeof(ulong) - sizeof(uint) - sizeof(ushort)));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4_2));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, 65536));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 64000 - sizeof(byte) - sizeof(ulong) - sizeof(uint) - sizeof(ushort)));
                 instructions.Add(processor.Create(OpCodes.Call, m_FastBufferWriter_Constructor));
 
                 var firstInstruction = processor.Create(OpCodes.Nop);
@@ -1010,15 +999,15 @@ namespace Unity.Netcode.Editor.CodeGen
                             instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
                         }
                         // Special handling for WriteValue() on arrays and strings since they have additional arguments.
-                        if (paramType.IsArray 
-                            && ((!isExtensionMethod && methodRef.Parameters.Count == 3) 
+                        if (paramType.IsArray
+                            && ((!isExtensionMethod && methodRef.Parameters.Count == 3)
                                 || (isExtensionMethod && methodRef.Parameters.Count == 4)))
                         {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
                         }
-                        else if (paramType == typeSystem.String 
-                             && ((!isExtensionMethod && methodRef.Parameters.Count == 2) 
+                        else if (paramType == typeSystem.String
+                             && ((!isExtensionMethod && methodRef.Parameters.Count == 2)
                                  || (isExtensionMethod && methodRef.Parameters.Count == 3)))
                         {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));

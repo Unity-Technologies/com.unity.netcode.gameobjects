@@ -640,7 +640,7 @@ namespace TestProject.ManualTests
         [ServerRpc(RequireOwnership = false)]
         private void OnSendNoParametersServerRpc(ServerRpcParams parameters = default)
         {
-            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new []{parameters.Receive.SenderClientId};
+            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
             OnSendNoParametersClientRpc(m_ClientRpcParamsMultiParameter);
         }
 
@@ -652,7 +652,7 @@ namespace TestProject.ManualTests
         [ServerRpc(RequireOwnership = false)]
         private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
         {
-            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new []{parameters.Receive.SenderClientId};
+            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
             OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);
         }
 

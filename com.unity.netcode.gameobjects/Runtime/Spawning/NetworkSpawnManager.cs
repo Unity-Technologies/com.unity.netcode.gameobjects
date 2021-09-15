@@ -303,7 +303,7 @@ namespace Unity.Netcode
 
             networkObject.SetNetworkVariableData(ref variableData);
 
-            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Metadata.NetworkObjectId, sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.IsPlayerObject, sceneObject.Metadata.OwnerClientId, destroyWithScene);
+            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
 
         private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)

@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.Messages;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -1303,6 +1305,12 @@ namespace Unity.Netcode
             return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+        }
+
         public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
             where T : INetworkMessage
         {
@@ -1529,11 +1537,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Metadata.Hash = playerPrefabHash;
-                message.ObjectInfo.Metadata.IsSceneObject = false;
-                message.ObjectInfo.Metadata.HasParent = false;
-                message.ObjectInfo.Metadata.IsPlayerObject = true;
-                message.ObjectInfo.Metadata.OwnerClientId = clientId;
+                message.ObjectInfo.Header.Hash = playerPrefabHash;
+                message.ObjectInfo.Header.IsSceneObject = false;
+                message.ObjectInfo.Header.HasParent = false;
+                message.ObjectInfo.Header.IsPlayerObject = true;
+                message.ObjectInfo.Header.OwnerClientId = clientId;
                 SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
             }
         }

@@ -201,8 +201,8 @@ namespace TestProject.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
 
-            var objs = new[]{new MyObject(256), new MyObject(512)};
-            var objs2 =  new[]{new MySharedObjectReferencedById(256), new MySharedObjectReferencedById(512)};
+            var objs = new[] { new MyObject(256), new MyObject(512) };
+            var objs2 = new[] { new MySharedObjectReferencedById(256), new MySharedObjectReferencedById(512) };
             bool clientMyObjCalled = false;
             bool clientMySharedObjCalled = true;
             bool serverMyObjCalled = false;
@@ -253,7 +253,7 @@ namespace TestProject.RuntimeTests
                 m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
                                  serverMySharedObjCalled;
             };
-            
+
             clientSideNetworkBehaviourClass.SendMyObjectServerRpc(objs);
             clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(objs2);
 
@@ -278,7 +278,7 @@ namespace TestProject.RuntimeTests
             m_ClientNetworkManagers[0].Shutdown();
             m_ServerNetworkManager.Shutdown();
         }
-        
+
         /// <summary>
         /// Delegate handler invoked towards the end of the when the NetworkSerializableTest
         /// </summary>
@@ -460,10 +460,10 @@ namespace TestProject.RuntimeTests
     {
         public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
         public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
-        
+
         public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
         public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
-        
+
         public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
         public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
 
@@ -562,10 +562,10 @@ namespace TestProject.RuntimeTests
 
         public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById[] obj);
         public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
-        
+
         public delegate void OnMyObjectUpdatedDelgateHandler(MyObject[] obj);
         public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
-        
+
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedServerRpc;
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
 
@@ -685,7 +685,7 @@ namespace TestProject.RuntimeTests
     public class MyObject
     {
         public int I;
-        
+
         public MyObject(int i)
         {
             I = i;
@@ -697,7 +697,7 @@ namespace TestProject.RuntimeTests
         public static Dictionary<int, MySharedObjectReferencedById> Values =
             new Dictionary<int, MySharedObjectReferencedById>();
         public int I;
-        
+
         public MySharedObjectReferencedById(int i)
         {
             I = i;
@@ -717,7 +717,7 @@ namespace TestProject.RuntimeTests
         {
             writer.WriteValueSafe(value.I);
         }
-        
+
         public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById value)
         {
             reader.ReadValueSafe(out int i);
@@ -746,7 +746,7 @@ namespace TestProject.RuntimeTests
                 writer.WriteValueSafe(values[i]);
             }
         }
-        
+
         public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById[] values)
         {
             reader.ReadValueSafe(out int length);
@@ -765,7 +765,7 @@ namespace TestProject.RuntimeTests
                 writer.WriteValueSafe(values[i]);
             }
         }
-        
+
     }
 }
 

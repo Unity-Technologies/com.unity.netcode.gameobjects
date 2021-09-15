@@ -6,7 +6,6 @@ namespace Unity.Netcode
 {
     public static class ByteUnpacker
     {
-        #region Managed TypePacking
 
         /// <summary>
         /// Reads a boxed object in a packed format
@@ -135,9 +134,6 @@ namespace Unity.Netcode
 
             throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
         }
-        #endregion
-
-        #region Unmanaged Type Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -432,9 +428,6 @@ namespace Unity.Netcode
             }
         }
 #endif
-        #endregion
-
-        #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -628,9 +621,6 @@ namespace Unity.Netcode
             value = returnValue >> 3;
         }
 #endif
-        #endregion
-
-        #region Private Methods
         private static void ReadUInt64Packed(ref FastBufferReader reader, out ulong value)
         {
             reader.ReadByteSafe(out byte firstByte);
@@ -692,6 +682,5 @@ namespace Unity.Netcode
             double* asDouble = (double*)&value;
             return *asDouble;
         }
-        #endregion
     }
 }
