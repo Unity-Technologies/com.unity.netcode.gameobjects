@@ -6,7 +6,6 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class HiddenVariableTest : NetworkBehaviour
     {
-
     }
 
     public class HiddenVariableObject : NetworkBehaviour

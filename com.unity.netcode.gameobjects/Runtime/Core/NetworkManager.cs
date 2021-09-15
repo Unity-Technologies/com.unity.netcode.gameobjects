@@ -987,7 +987,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (IsClient)
+            if (IsClient && IsConnectedClient)
             {
                 // Client only, send disconnect to server
                 NetworkConfig.NetworkTransport.DisconnectLocalClient();
@@ -1123,11 +1123,8 @@ namespace Unity.Netcode
         /// </summary>
         private void OnNetworkManagerTick()
         {
-            if (NetworkConfig.EnableNetworkVariable)
-            {
-                // Do NetworkVariable updates
-                BehaviourUpdater.NetworkBehaviourUpdate(this);
-            }
+            // Do NetworkVariable updates
+            BehaviourUpdater.NetworkBehaviourUpdate(this);
 
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
@@ -1343,21 +1340,12 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            ConnectedClients.Remove(clientId);
-            PendingClients.Remove(clientId);
-
-            for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
-            {
-                if (ConnectedClientsList[i].ClientId == clientId)
-                {
-                    ConnectedClientsList.RemoveAt(i);
-                }
-            }
+            OnClientDisconnectFromServer(clientId);
 
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
         }
 
-        internal void OnClientDisconnectFromServer(ulong clientId)
+        private void OnClientDisconnectFromServer(ulong clientId)
         {
             PendingClients.Remove(clientId);
 
@@ -1378,7 +1366,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
+                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)

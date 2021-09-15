@@ -83,13 +83,6 @@ namespace Unity.Netcode
         public int TimeResyncInterval = 30;
 
         /// <summary>
-        /// Whether or not to enable the NetworkVariable system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
-        /// Only turn it off if you have no need for the NetworkVariable system.
-        /// </summary>
-        [Tooltip("Whether or not to enable the NetworkVariable system")]
-        public bool EnableNetworkVariable = true;
-
-        /// <summary>
         /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwidth.
         /// </summary>
         [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
@@ -182,7 +175,6 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(EnableSceneManagement);
                 writer.WriteValueSafe(RecycleNetworkIds);
                 writer.WriteValueSafe(NetworkIdRecycleDelay);
-                writer.WriteValueSafe(EnableNetworkVariable);
                 writer.WriteValueSafe(EnableNetworkLogs);
 
                 // Allocates
@@ -213,7 +205,6 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out config.EnableSceneManagement);
                 reader.ReadValueSafe(out config.RecycleNetworkIds);
                 reader.ReadValueSafe(out config.NetworkIdRecycleDelay);
-                reader.ReadValueSafe(out config.EnableNetworkVariable);
                 reader.ReadValueSafe(out config.EnableNetworkLogs);
             }
         }
@@ -249,7 +240,6 @@ namespace Unity.Netcode
                     }
                 }
                 writer.WriteValueSafe(ConnectionApproval);
-                writer.WriteValueSafe(EnableNetworkVariable);
                 writer.WriteValueSafe(ForceSamePrefabs);
                 writer.WriteValueSafe(EnableSceneManagement);
                 writer.WriteValueSafe(EnsureNetworkVariableLengthSafety);

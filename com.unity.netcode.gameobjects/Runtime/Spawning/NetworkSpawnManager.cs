@@ -301,10 +301,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            if (sceneObject.Metadata.HasNetworkVariables && NetworkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                networkObject.SetNetworkVariableData(ref variableData);
-            }
+            networkObject.SetNetworkVariableData(ref variableData);
 
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Metadata.NetworkObjectId, sceneObject.Metadata.IsSceneObject, sceneObject.Metadata.IsPlayerObject, sceneObject.Metadata.OwnerClientId, destroyWithScene);
         }

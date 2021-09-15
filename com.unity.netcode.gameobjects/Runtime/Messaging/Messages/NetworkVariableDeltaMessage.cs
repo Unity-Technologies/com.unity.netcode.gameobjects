@@ -97,16 +97,6 @@ namespace Unity.Netcode.Messages
         public static void Receive(ref FastBufferReader reader, NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (!networkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning(
-                        $"Network variable delta received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
-                }
-
-                return;
-            }
 
             var message = new NetworkVariableDeltaMessage();
             if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.NetworkObjectId) +
@@ -157,7 +147,7 @@ namespace Unity.Netcode.Messages
                             }
                         }
 
-                        if (networkManager.IsServer && !behaviour.NetworkVariableFields[i].CanClientWrite(senderId))
+                        if (networkManager.IsServer)
                         {
                             // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                             if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

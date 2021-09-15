@@ -898,7 +898,6 @@ namespace Unity.Netcode
                 public bool IsSceneObject;
                 public bool HasTransform;
                 public bool IsReparented;
-                public bool HasNetworkVariables;
             }
 
             public SceneObjectMetadata Metadata;
@@ -925,10 +924,8 @@ namespace Unity.Netcode
             #endregion
             #endregion
 
-            #region If(data.HasNetworkVariables)
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
-            #endregion
 
             public unsafe void Serialize(ref FastBufferWriter writer)
             {
@@ -965,10 +962,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (Metadata.HasNetworkVariables)
-                {
-                    OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
-                }
+                OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
             }
 
             public unsafe void Deserialize(ref FastBufferReader reader)
@@ -1021,7 +1015,6 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
-                    HasNetworkVariables = NetworkManager.NetworkConfig.EnableNetworkVariable,
                     Hash = HostCheckForGlobalObjectIdHashOverride()
                 },
                 OwnerObject = this,
@@ -1097,26 +1090,23 @@ namespace Unity.Netcode
 
             networkObject?.SetNetworkParenting(sceneObject.Metadata.IsReparented, sceneObject.LatestParent);
 
-            if (sceneObject.Metadata.HasNetworkVariables)
+            if (networkObject == null)
             {
-                if (networkObject == null)
+                // Log the error that the NetworkObject failed to construct
+                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Metadata.Hash}.");
+
+                // If we failed to load this NetworkObject, then skip past the network variable data
+                variableData.ReadValueSafe(out ushort varSize);
+                variableData.Seek(variableData.Position + varSize);
+
+                variableData.ReadValueSafe(out ushort magic);
+                if (magic != (ushort)0x12AB)
                 {
-                    // Log the error that the NetworkObject failed to construct
-                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Metadata.Hash}.");
-
-                    // If we failed to load this NetworkObject, then skip past the network variable data
-                    variableData.ReadValueSafe(out ushort varSize);
-                    variableData.Seek(variableData.Position + varSize);
-
-                    variableData.ReadValueSafe(out ushort magic);
-                    if (magic != (ushort)0x12AB)
-                    {
-                        NetworkLog.LogWarning($"Var data ended not on the magic value.");
-                    }
-
-                    // We have nothing left to do here.
-                    return null;
+                    NetworkLog.LogWarning($"Var data ended not on the magic value.");
                 }
+
+                // We have nothing left to do here.
+                return null;
             }
 
             // Spawn the NetworkObject

@@ -31,9 +31,9 @@ We follow the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/compari
 This repository is broken into multiple components, each one implemented as a Unity Package.
 ```
     .
-    ├── com.unity.multiplayer.mlapi            # The core netcode SDK unity package (source + tests)
-    ├── com.unity.multiplayer.transport.utp    # Transport wrapper for com.unity.transport experimental package (not currently supported)
-    └── testproject                            # A Unity project with various test implementations & scenes which exercise the features in the above package(s).
+    ├── com.unity.multiplayer.mlapi             # The core netcode SDK unity package (source + tests)
+    ├── com.unity.netcode.adapter.utp           # Transport wrapper for com.unity.transport experimental package (not currently supported)
+    └── testproject                             # A Unity project with various test implementations & scenes which exercise the features in the above package(s).
 ```
 
 ### Contributing

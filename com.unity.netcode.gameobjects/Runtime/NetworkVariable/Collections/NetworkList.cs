@@ -1,5 +1,6 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -7,10 +8,10 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
-    public class NetworkList<T> : NetworkVariableBase, IList<T> where T : unmanaged
+    public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
-        private readonly IList<T> m_List = new List<T>();
-        private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
+        private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
+        private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
         /// Delegate type for list changed event
@@ -32,25 +33,26 @@ namespace Unity.Netcode
         /// Creates a NetworkList with the default value and custom settings
         /// </summary>
         /// <param name="readPerm">The read permission to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm) : base(readPerm) { }
-
-        /// <summary>
-        /// Creates a NetworkList with a custom value and custom settings
-        /// </summary>
-        /// <param name="readPerm">The read permission to use for the NetworkList</param>
-        /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm, IList<T> value) : base(readPerm)
+        /// <param name="values">The initial value to use for the NetworkList</param>
+        public NetworkList(NetworkVariableReadPermission readPerm, IEnumerable<T> values) : base(readPerm)
         {
-            m_List = value;
+            foreach (var value in values)
+            {
+                m_List.Add(value);
+            }
         }
 
         /// <summary>
         /// Creates a NetworkList with a custom value and the default settings
         /// </summary>
-        /// <param name="value">The initial value to use for the NetworkList</param>
-        public NetworkList(IList<T> value)
+        /// <param name="values">The initial value to use for the NetworkList</param>
+        public NetworkList(IEnumerable<T> values)
         {
-            m_List = value;
+            foreach (var value in values)
+            {
+                m_List.Add(value);
+                
+            }
         }
 
         /// <inheritdoc />
@@ -64,14 +66,14 @@ namespace Unity.Netcode
         public override bool IsDirty()
         {
             // we call the base class to allow the SetDirty() mechanism to work
-            return base.IsDirty() || m_DirtyEvents.Count > 0;
+            return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
         /// <inheritdoc />
         public override void WriteDelta(ref FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_DirtyEvents.Count);
-            for (int i = 0; i < m_DirtyEvents.Count; i++)
+            writer.WriteValueSafe((ushort)m_DirtyEvents.Length);
+            for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
                 writer.WriteValueSafe(m_DirtyEvents[i].Type);
                 switch (m_DirtyEvents[i].Type)
@@ -115,8 +117,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(ref FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_List.Count);
-            for (int i = 0; i < m_List.Count; i++)
+            writer.WriteValueSafe((ushort)m_List.Length);
+            for (int i = 0; i < m_List.Length; i++)
             {
                 writer.WriteValueSafe(m_List[i]);
             }
@@ -153,8 +155,8 @@ namespace Unity.Netcode
                                 OnListChanged(new NetworkListEvent<T>
                                 {
                                     Type = eventType,
-                                    Index = m_List.Count - 1,
-                                    Value = m_List[m_List.Count - 1]
+                                    Index = m_List.Length - 1,
+                                    Value = m_List[m_List.Length - 1]
                                 });
                             }
 
@@ -163,8 +165,8 @@ namespace Unity.Netcode
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
                                     Type = eventType,
-                                    Index = m_List.Count - 1,
-                                    Value = m_List[m_List.Count - 1]
+                                    Index = m_List.Length - 1,
+                                    Value = m_List[m_List.Length - 1]
                                 });
                             }
                         }
@@ -173,7 +175,8 @@ namespace Unity.Netcode
                         {
                             reader.ReadValueSafe(out int index);
                             reader.ReadValueSafe(out T value);
-                            m_List.Insert(index, value);
+                            m_List.InsertRangeWithBeginEnd(index, index + 1);
+                            m_List[index] = value;
 
                             if (OnListChanged != null)
                             {
@@ -200,6 +203,11 @@ namespace Unity.Netcode
                         {
                             reader.ReadValueSafe(out T value);
                             int index = m_List.IndexOf(value);
+                            if (index == -1)
+                            {
+                                break;
+                            }
+
                             m_List.RemoveAt(index);
 
                             if (OnListChanged != null)
@@ -254,7 +262,7 @@ namespace Unity.Netcode
                         {
                             reader.ReadValueSafe(out int index);
                             reader.ReadValueSafe(out T value);
-                            if (index < m_List.Count)
+                            if (index < m_List.Length)
                             {
                                 m_List[index] = value;
                             }
@@ -312,11 +320,6 @@ namespace Unity.Netcode
             return m_List.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)m_List).GetEnumerator();
-        }
-
         /// <inheritdoc />
         public void Add(T item)
         {
@@ -326,7 +329,7 @@ namespace Unity.Netcode
             {
                 Type = NetworkListEvent<T>.EventType.Add,
                 Value = item,
-                Index = m_List.Count - 1
+                Index = m_List.Length - 1
             };
 
             HandleAddListEvent(listEvent);
@@ -348,20 +351,20 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Contains(T item)
         {
-            return m_List.Contains(item);
-        }
-
-        /// <inheritdoc />
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            m_List.CopyTo(array, arrayIndex);
+            int index = NativeArrayExtensions.IndexOf(m_List, item);
+            return index == -1;
         }
 
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            m_List.Remove(item);
+            int index = NativeArrayExtensions.IndexOf(m_List, item);
+            if (index == -1)
+            {
+                return false;
+            }
 
+            m_List.RemoveAt(index);
             var listEvent = new NetworkListEvent<T>()
             {
                 Type = NetworkListEvent<T>.EventType.Remove,
@@ -373,10 +376,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public int Count => m_List.Count;
-
-        /// <inheritdoc />
-        public bool IsReadOnly => m_List.IsReadOnly;
+        public int Count => m_List.Length;
 
         /// <inheritdoc />
         public int IndexOf(T item)
@@ -387,7 +387,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            m_List.Insert(index, item);
+            m_List.InsertRangeWithBeginEnd(index, index + 1);
+            m_List[index] = item;
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -412,7 +413,6 @@ namespace Unity.Netcode
 
             HandleAddListEvent(listEvent);
         }
-
 
         /// <inheritdoc />
         public T this[int index]
@@ -446,6 +446,12 @@ namespace Unity.Netcode
                 // todo: implement proper network tick for NetworkList
                 return NetworkTickSystem.NoTick;
             }
+        }
+
+        public override void Dispose()
+        {
+            m_List.Dispose();
+            m_DirtyEvents.Dispose();
         }
     }
 

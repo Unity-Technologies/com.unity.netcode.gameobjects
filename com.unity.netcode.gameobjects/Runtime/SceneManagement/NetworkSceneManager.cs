@@ -136,6 +136,11 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
+        /// <summary>
+        /// This will squelch the warning about a scene failing validation
+        /// </summary>
+        internal bool IgnoreSceneValidationWarning;
+
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
         /// <summary>
@@ -200,6 +205,22 @@ namespace Unity.Netcode
         internal Scene DontDestroyOnLoadScene;
 
         /// <summary>
+        /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
+        /// the server's currently active scene will be loaded in single mode on the client
+        /// unless it was already loaded.
+        ///
+        /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
+        /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
+        /// <see cref="VerifySceneBeforeLoading"/> method.
+        /// </summary>
+        public LoadSceneMode ClientSynchronizationMode { get; internal set; }
+
+        /// <summary>
+        /// When true, the <see cref="Debug.LogWarning(object)"/> messages will be turned off
+        /// </summary>
+        private bool m_DisableValidationWarningMessages;
+
+        /// <summary>
         /// Handle NetworkSeneManager clean up
         /// </summary>
         public void Dispose()
@@ -231,6 +252,32 @@ namespace Unity.Netcode
             {
                 ScenesInBuild.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
             }
+        }
+
+        /// <summary>
+        /// When set to true, this will disable the console warnings about
+        /// a scene being invalidated.
+        /// </summary>
+        /// <param name="disabled"></param>
+        public void DisableValidationWarnings(bool disabled)
+        {
+            m_DisableValidationWarningMessages = disabled;
+        }
+
+        /// <summary>
+        /// This will change how clients are initially synchronized.
+        /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
+        /// the server's currently active scene will be loaded in single mode on the client
+        /// unless it was already loaded.
+        ///
+        /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
+        /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
+        /// <see cref="VerifySceneBeforeLoading"/> method.
+        /// </summary>
+        /// <param name="mode"><see cref="LoadSceneMode"/> for initial client synchronization</param>
+        public void SetClientSynchronizationMode(LoadSceneMode mode)
+        {
+            ClientSynchronizationMode = mode;
         }
 
         /// <summary>
@@ -292,14 +339,17 @@ namespace Unity.Netcode
             {
                 validated = VerifySceneBeforeLoading.Invoke((int)sceneIndex, sceneName, loadSceneMode);
             }
-            if (!validated)
+            if (!validated && !m_DisableValidationWarningMessages)
             {
                 var serverHostorClient = "Client";
                 if (m_NetworkManager.IsServer)
                 {
                     serverHostorClient = m_NetworkManager.IsHost ? "Host" : "Server";
                 }
-                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                if (!IgnoreSceneValidationWarning)
+                {
+                    Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+                }
             }
             return validated;
         }
@@ -974,7 +1024,7 @@ namespace Unity.Netcode
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 // Move all objects to the new scene
-                MoveObjectsToScene(nextScene);
+                MoveObjectsFromDontDestroyOnLoadToScene(nextScene);
             }
 
             // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
@@ -1099,7 +1149,7 @@ namespace Unity.Netcode
 
             ClientSynchEventData.InitializeForSynch();
             ClientSynchEventData.TargetClientId = clientId;
-            ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
+            ClientSynchEventData.LoadSceneMode = ClientSynchronizationMode;
             var activeScene = SceneManager.GetActiveScene();
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Sync;
 
@@ -1118,7 +1168,7 @@ namespace Unity.Netcode
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if (!ValidateSceneBeforeLoading(sceneIndex, LoadSceneMode.Single))
+                    if (!ValidateSceneBeforeLoading(sceneIndex, ClientSynchEventData.LoadSceneMode))
                     {
                         continue;
                     }
@@ -1141,11 +1191,8 @@ namespace Unity.Netcode
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
 
-            foreach (var sceneIndex in ClientSynchEventData.ScenesToSynchronize)
-            {
-                m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    clientId, (uint)ClientSynchEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], size);
-            }
+            m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
+                clientId, (uint)ClientSynchEventData.SceneEventType, "", size);
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1478,23 +1525,9 @@ namespace Unity.Netcode
             {
                 SceneEventData.Deserialize(ref reader);
 
-                if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.S2C_Sync)
-                {
-                    // For this event the server may be sending scene event data about multiple scenes, so we need
-                    // to track a metric for each one.
-                    foreach (var sceneIndex in SceneEventData.ScenesToSynchronize)
-                    {
-                        m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                           clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)sceneIndex], reader.Length);
-                    }
-                }
-                else
-                {
-                    // For all other scene event types, we are only dealing with one scene at a time, so we can read it
-                    // from the SceneEventData directly.
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                       clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], reader.Length);
-                }
+
+                m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
+                   clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], reader.Length);
 
                 if (SceneEventData.IsSceneEventClientSide())
                 {
@@ -1522,15 +1555,15 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
-                if (sobj.gameObject.transform.parent != null)
-                {
-                    sobj.gameObject.transform.parent = null;
-                }
-
                 if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
                 {
-                    UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                    // Only move objects with no parent as child objects will follow
+                    if (sobj.gameObject.transform.parent == null)
+                    {
+                        UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                        // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
+                        sobj.gameObject.SetActive(false);
+                    }
                 }
                 else if (m_NetworkManager.IsServer)
                 {
@@ -1592,25 +1625,25 @@ namespace Unity.Netcode
         /// Moves all spawned NetworkObjects (from do not destroy on load) to the scene specified
         /// </summary>
         /// <param name="scene">scene to move the NetworkObjects to</param>
-        private void MoveObjectsToScene(Scene scene)
+        private void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = m_NetworkManager.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
-                //In case an object has been set as a child of another object it has to be removed from the parent in order to be moved from one scene to another.
-                if (sobj.gameObject.transform.parent != null)
-                {
-                    sobj.gameObject.transform.parent = null;
-                }
-
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
                 {
                     continue;
                 }
 
-                SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                // Only move objects with no parent as child objects will follow
+                if (sobj.gameObject.transform.parent == null)
+                {
+                    // set it back to active at this point
+                    sobj.gameObject.SetActive(true);
+                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                }
             }
         }
     }
