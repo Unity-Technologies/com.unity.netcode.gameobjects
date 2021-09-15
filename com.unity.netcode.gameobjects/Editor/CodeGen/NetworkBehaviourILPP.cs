@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Mono.Collections.Generic;
 using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
@@ -569,45 +570,54 @@ namespace Unity.Netcode.Editor.CodeGen
             return rpcAttribute;
         }
 
-        private MethodInfo GetWriteMethodViaSystemReflection(Type objectType, string name, Type paramType)
+        private MethodReference GetWriteMethodViaSystemReflection(string name, TypeReference paramType)
         {
-            foreach (var method in objectType.GetMethods())
+            foreach (var method in m_FastBufferWriter_TypeRef.Resolve().Methods)
             {
                 if (method.Name == name)
                 {
-                    var parameters = method.GetParameters();
+                    var parameters = method.Parameters;
 
-                    if (parameters.Length == 0 || (parameters.Length > 1 && !parameters[1].IsOptional))
+                    if (parameters.Count == 0 || (parameters.Count > 1 && !parameters[1].IsOptional))
                     {
                         continue;
                     }
 
-                    var checkType = paramType;
-                    if (paramType.IsArray)
+                    if (parameters[0].ParameterType.IsArray != paramType.IsArray)
                     {
-                        checkType = paramType.GetElementType();
+                        continue;
                     }
 
-                    if ((parameters[0].ParameterType == checkType) || (parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsIn) && parameters[0].ParameterType.IsArray == paramType.IsArray)
+                    var checkType = paramType.Resolve();
+                    if (paramType.IsArray)
+                    {
+                        checkType = paramType.GetElementType().Resolve();
+                    }
+
+                    if (
+                        (parameters[0].ParameterType.Resolve() == checkType 
+                        || (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
                     {
                         return method;
                     }
-                    if (method.IsGenericMethod)
+                    if (method.HasGenericParameters && method.GenericParameters.Count == 1)
                     {
-                        var genericParamType = parameters[0].ParameterType;
-                        if (genericParamType.IsByRef)
+                        if (method.GenericParameters[0].HasConstraints)
                         {
-                            genericParamType = genericParamType.GetElementType();
-                        }
-
-                        if (genericParamType.IsArray == paramType.IsArray)
-                        {
-                            try
+                            foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
-                                return method.MakeGenericMethod(checkType);
-                            }
-                            catch (Exception e)
-                            {
+                                var resolvedConstraint = constraint.Resolve();
+                                
+                                if (
+                                    (resolvedConstraint.IsInterface &&
+                                     checkType.HasInterface(resolvedConstraint.FullName))
+                                    || (resolvedConstraint.IsClass &&
+                                        checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName)))
+                                {
+                                    var instanceMethod = new GenericInstanceMethod(method);
+                                    instanceMethod.GenericArguments.Add(checkType);
+                                    return instanceMethod;
+                                }
                             }
                         }
                     }
@@ -654,7 +664,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                var systemType = Type.GetType(paramType.FullName);
+                /*var systemType = Type.GetType(paramType.FullName);
                 if (systemType == null)
                 {
                     systemType = Type.GetType(assemblyQualifiedName);
@@ -663,17 +673,17 @@ namespace Unity.Netcode.Editor.CodeGen
                         throw new Exception("Couldn't find type for " + paramType.FullName + ", " +
                                             paramType.Resolve().Module.Assembly.FullName);
                     }
-                }
+                }*/
                 // Try NetworkSerializable first because INetworkSerializable may also be valid for WriteValueSafe
                 // and that would cause boxing if so.
-                var systemMethod = GetWriteMethodViaSystemReflection(typeof(FastBufferWriter), "WriteNetworkSerializable", systemType);
-                if (systemMethod == null)
+                var typeMethod = GetWriteMethodViaSystemReflection("WriteNetworkSerializable", paramType);
+                if (typeMethod == null)
                 {
-                    systemMethod = GetWriteMethodViaSystemReflection(typeof(FastBufferWriter), "WriteValueSafe", systemType);
+                    typeMethod = GetWriteMethodViaSystemReflection("WriteValueSafe", paramType);
                 }
-                if (systemMethod != null)
+                if (typeMethod != null)
                 {
-                    methodRef = m_MainModule.ImportReference(systemMethod);
+                    methodRef = m_MainModule.ImportReference(typeMethod);
                     m_FastBufferWriter_WriteValue_MethodRefs[assemblyQualifiedName] = methodRef;
                     foundMethodRef = true;
                 }
@@ -681,45 +691,60 @@ namespace Unity.Netcode.Editor.CodeGen
 
             return foundMethodRef;
         }
-
-        private static MethodInfo GetReadMethodViaSystemReflection(Type objectType, string name, Type paramType)
+        private MethodReference GetReadMethodViaSystemReflection(string name, TypeReference paramType)
         {
-            foreach (var method in objectType.GetMethods())
+            foreach (var method in m_FastBufferReader_TypeRef.Resolve().Methods)
             {
+                var paramTypeDef = paramType.Resolve();
                 if (method.Name == name)
                 {
-                    var parameters = method.GetParameters();
-                    if (parameters.Length == 0 || (parameters.Length > 1 && !parameters[1].IsOptional))
+                    var parameters = method.Parameters;
+
+                    if (parameters.Count == 0 || (parameters.Count > 1 && !parameters[1].IsOptional))
                     {
                         continue;
                     }
 
-                    var checkType = paramType;
-                    if (paramType.IsArray)
+                    if (!parameters[0].IsOut)
                     {
-                        checkType = paramType.GetElementType();
+                        return null;
                     }
 
-                    if ((parameters[0].ParameterType == checkType.MakeByRefType() && parameters[0].IsOut) && parameters[0].ParameterType.IsArray == paramType.IsArray)
+                    var methodParam = ((ByReferenceType) parameters[0].ParameterType).ElementType;
+
+                    if (methodParam.IsArray != paramType.IsArray)
+                    {
+                        continue;
+                    }
+
+                    var checkType = paramType.Resolve();
+                    if (paramType.IsArray)
+                    {
+                        checkType = paramType.GetElementType().Resolve();
+                    }
+
+                    if (methodParam.Resolve() == checkType.Resolve() || methodParam.Resolve() == checkType.MakeByReferenceType().Resolve())
                     {
                         return method;
                     }
-                    if (method.IsGenericMethod)
+                    if (method.HasGenericParameters && method.GenericParameters.Count == 1)
                     {
-                        var genericParamType = parameters[0].ParameterType;
-                        if (genericParamType.IsByRef)
+                        if (method.GenericParameters[0].HasConstraints)
                         {
-                            genericParamType = genericParamType.GetElementType();
-                        }
-                        if (genericParamType.IsArray == paramType.IsArray)
-                        {
-                            try
+                            foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
-                                return method.MakeGenericMethod(checkType);
-                            }
-                            catch (Exception e)
-                            {
-
+                                var resolvedConstraint = constraint.Resolve();
+                                
+                                if (
+                                    (resolvedConstraint.IsInterface &&
+                                     checkType.HasInterface(resolvedConstraint.FullName))
+                                    || (resolvedConstraint.IsClass &&
+                                        checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName)))
+                                {
+                                    var instanceMethod = new GenericInstanceMethod(method);
+                                    instanceMethod.GenericArguments.Add(checkType);
+                                    return instanceMethod;
+                                }
                             }
                         }
                     }
@@ -751,26 +776,16 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                var systemType = Type.GetType(paramType.FullName);
-                if (systemType == null)
-                {
-                    systemType = Type.GetType(assemblyQualifiedName);
-                    if (systemType == null)
-                    {
-                        throw new Exception("Couldn't find type for " + paramType.FullName + ", " +
-                                            paramType.Resolve().Module.Assembly.FullName);
-                    }
-                }
                 // Try NetworkSerializable first because INetworkSerializable may also be valid for ReadValueSafe
                 // and that would cause boxing if so.
-                var systemMethod = GetReadMethodViaSystemReflection(typeof(FastBufferReader), "ReadNetworkSerializable", systemType);
-                if (systemMethod == null)
+                var typeMethod = GetReadMethodViaSystemReflection("ReadNetworkSerializable", paramType);
+                if (typeMethod == null)
                 {
-                    systemMethod = GetReadMethodViaSystemReflection(typeof(FastBufferReader), "ReadValueSafe", systemType);
+                    typeMethod = GetReadMethodViaSystemReflection("ReadValueSafe", paramType);
                 }
-                if (systemMethod != null)
+                if (typeMethod != null)
                 {
-                    methodRef = m_MainModule.ImportReference(systemMethod);
+                    methodRef = m_MainModule.ImportReference(typeMethod);
                     m_FastBufferReader_ReadValue_MethodRefs[assemblyQualifiedName] = methodRef;
                     foundMethodRef = true;
                 }
