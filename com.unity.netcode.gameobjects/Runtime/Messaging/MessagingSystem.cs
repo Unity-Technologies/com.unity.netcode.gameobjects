@@ -43,13 +43,13 @@ namespace Unity.Netcode
         #endregion
 
         #region Private Members
-        private DynamicUnmanagedArray<ReceiveQueueItem> m_IncomingMessageQueue = new DynamicUnmanagedArray<ReceiveQueueItem>(16);
+        private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
         private Type[] m_ReverseTypeMap = new Type[255];
 
         private Dictionary<Type, byte> m_MessageTypes = new Dictionary<Type, byte>();
-        private NativeHashMap<ulong, Ref<DynamicUnmanagedArray<SendQueueItem>>> m_SendQueues = new NativeHashMap<ulong, Ref<DynamicUnmanagedArray<SendQueueItem>>>(64, Allocator.Persistent);
+        private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
 
         private List<INetworkHooks> m_Hooks = new List<INetworkHooks>();
 
@@ -143,15 +143,12 @@ namespace Unity.Netcode
                 return;
             }
 
-            var keys = m_SendQueues.GetKeyArray(Allocator.Temp);
-            using (keys)
+            // Can't just iterate SendQueues or SendQueues.Keys because ClientDisconnected removes
+            // from the queue.
+            foreach (var kvp in m_SendQueues)
             {
-                foreach (var key in keys)
-                {
-                    ClientDisconnected(key);
-                }
+                CleanupDisconnectedClient(kvp.Key);
             }
-            m_SendQueues.Dispose();
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
         }
@@ -264,7 +261,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
+        public unsafe void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
         {
             var context = new NetworkContext
             {
@@ -309,12 +306,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal void ProcessIncomingMessageQueue()
+        internal unsafe void ProcessIncomingMessageQueue()
         {
-            for (var i = 0; i < m_IncomingMessageQueue.Count; ++i)
+            for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetValueRef(i);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
                 HandleMessage(item.Header, ref item.Reader, item.SenderId, item.Timestamp);
             }
 
@@ -323,19 +320,32 @@ namespace Unity.Netcode
 
         internal void ClientConnected(ulong clientId)
         {
-            m_SendQueues[clientId] = DynamicUnmanagedArray<SendQueueItem>.CreateRef();
+            if (m_SendQueues.ContainsKey(clientId))
+            {
+                return;
+            }
+            m_SendQueues[clientId] = new NativeList<SendQueueItem>(16, Allocator.Persistent);
         }
 
         internal void ClientDisconnected(ulong clientId)
         {
-            var queue = m_SendQueues[clientId];
-            for (var i = 0; i < queue.Value.Count; ++i)
+            if (!m_SendQueues.ContainsKey(clientId))
             {
-                queue.Value.GetValueRef(i).Writer.Dispose();
+                return;
+            }
+            CleanupDisconnectedClient(clientId);
+            m_SendQueues.Remove(clientId);
+        }
+
+        private unsafe void CleanupDisconnectedClient(ulong clientId)
+        {
+            var queue = m_SendQueues[clientId];
+            for (var i = 0; i < queue.Length; ++i)
+            {
+                queue.GetUnsafeList()->ElementAt(i).Writer.Dispose();
             }
 
-            DynamicUnmanagedArray<SendQueueItem>.ReleaseRef(queue);
-            m_SendQueues.Remove(clientId);
+            queue.Dispose();
         }
 
         private bool CanSend(ulong clientId, Type messageType, NetworkDelivery delivery)
@@ -376,26 +386,26 @@ namespace Unity.Netcode
                         m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(TMessageType), delivery);
                     }
 
-                    ref var sendQueueItem = ref m_SendQueues[clientId].Value;
-                    if (sendQueueItem.Count == 0)
+                    var sendQueueItem = m_SendQueues[clientId];
+                    if (sendQueueItem.Length == 0)
                     {
                         sendQueueItem.Add(new SendQueueItem(delivery, 1300, Allocator.TempJob,
                             maxSize));
-                        sendQueueItem.GetValueRef(0).Writer.Seek(sizeof(BatchHeader));
+                        sendQueueItem.GetUnsafeList()->ElementAt(0).Writer.Seek(sizeof(BatchHeader));
                     }
                     else
                     {
-                        ref var lastQueueItem = ref sendQueueItem.GetValueRef(sendQueueItem.Count - 1);
+                        ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
                         if (lastQueueItem.NetworkDelivery != delivery ||
                             lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length)
                         {
                             sendQueueItem.Add(new SendQueueItem(delivery, 1300, Allocator.TempJob,
                                 maxSize));
-                            sendQueueItem.GetValueRef(sendQueueItem.Count - 1).Writer.Seek(sizeof(BatchHeader));
+                            sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
                         }
                     }
 
-                    ref var writeQueueItem = ref sendQueueItem.GetValueRef(sendQueueItem.Count - 1);
+                    ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
                     writeQueueItem.Writer.TryBeginWrite(sizeof(MessageHeader) + tmpSerializer.Length);
                     var header = new MessageHeader
                     {
@@ -479,15 +489,15 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
-        internal void ProcessSendQueues()
+        internal unsafe void ProcessSendQueues()
         {
             foreach (var kvp in m_SendQueues)
             {
                 var clientId = kvp.Key;
-                ref var sendQueueItem = ref kvp.Value.Value;
-                for (var i = 0; i < sendQueueItem.Count; ++i)
+                var sendQueueItem = kvp.Value;
+                for (var i = 0; i < sendQueueItem.Length; ++i)
                 {
-                    ref var queueItem = ref sendQueueItem.GetValueRef(i);
+                    ref var queueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(i);
                     if (queueItem.BatchHeader.BatchSize == 0)
                     {
                         queueItem.Writer.Dispose();

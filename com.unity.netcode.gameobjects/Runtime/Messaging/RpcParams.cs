@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -20,9 +21,11 @@ namespace Unity.Netcode
     public struct ClientRpcSendParams
     {
         /// <summary>
-        /// ulong array version of target id list - use either this OR TargetClientIdsNativeArray
+        /// IEnumerable version of target id list - use either this OR TargetClientIdsNativeArray
+        /// Note: Even if you provide a value such as NativeArray, enumerating it will cause boxing.
+        /// If you want to avoid boxing, use TargetClientIdsNativeArray
         /// </summary>
-        public ulong[] TargetClientIds;
+        public IEnumerable<ulong> TargetClientIds;
 
         /// <summary>
         /// NativeArray version of target id list - use either this OR TargetClientIds

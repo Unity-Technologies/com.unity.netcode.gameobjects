@@ -112,7 +112,14 @@ namespace Unity.Netcode
 
             if (sendParams.Send.TargetClientIds != null)
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIds, true);
+                // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
+                ulong* localArray = stackalloc ulong[sendParams.Send.TargetClientIds.Count()];
+                var idx = 0;
+                foreach (var clientId in sendParams.Send.TargetClientIds)
+                {
+                    localArray[idx++] = clientId;
+                }
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, idx, true);
             }
             else if (sendParams.Send.TargetClientIdsNativeArray != null)
             {
