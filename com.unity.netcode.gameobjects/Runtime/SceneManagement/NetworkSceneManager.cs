@@ -132,17 +132,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate handler defined by <see cref="VerifySceneBeforeLoadingDelegateHandler"/> that is invoked before the
         /// server or client loads a scene during an active netcode game session.
-        /// Client Side: In order for clients to be notified of this condition you must subscribe to the <see cref="OnSceneVerificationFailed"/> event.
+        /// Client Side: In order for clients to be notified of this condition you must assign the <see cref="VerifySceneBeforeLoading"/> delegate handler.
         /// Server Side: <see cref="LoadScene(string, LoadSceneMode)"/> will return <see cref="SceneEventProgressStatus.SceneFailedVerification"/>.
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
-        /// <summary>
-        /// This will squelch the warning about a scene failing validation
-        /// </summary>
-        internal bool IgnoreSceneValidationWarning;
-
-        internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
+        internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new ();
 
         /// <summary>
         /// Used to track in-scene placed NetworkObjects
@@ -151,7 +146,7 @@ namespace Unity.Netcode
         /// The Scene.Handle aspect allows us to distinguish duplicated in-scene placed NetworkObjects created by the loading
         /// of the same additive scene multiple times.
         /// </summary>
-        internal readonly Dictionary<uint, Dictionary<int, NetworkObject>> ScenePlacedObjects = new Dictionary<uint, Dictionary<int, NetworkObject>>();
+        internal readonly Dictionary<uint, Dictionary<int, NetworkObject>> ScenePlacedObjects = new ();
 
         /// <summary>
         /// This is used for the deserialization of in-scene placed NetworkObjects in order to distinguish duplicated in-scene
@@ -167,18 +162,18 @@ namespace Unity.Netcode
         /// The client links the server scene handle to the client local scene handle upon a scene being loaded
         /// <see cref="GetAndAddNewlyLoadedSceneByName"/>
         /// </summary>
-        internal Dictionary<int, Scene> ScenesLoaded = new Dictionary<int, Scene>();
+        internal Dictionary<int, Scene> ScenesLoaded = new ();
 
         /// <summary>
         /// Since Scene.handle is unique per client, we create a look-up table between the client and server to associate server unique scene
         /// instances with client unique scene instances
         /// </summary>
-        internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
+        internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new ();
 
         /// <summary>
         /// The scenes in the build without their path
         /// </summary>
-        internal List<string> ScenesInBuild = new List<string>();
+        internal List<string> ScenesInBuild = new ();
 
         /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
@@ -187,7 +182,7 @@ namespace Unity.Netcode
         /// When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
         /// not destroy temporary scene are moved into the active scene
         /// </summary>
-        internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+        internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad;
 
         /// <summary>
         /// Client and Server:
@@ -196,22 +191,22 @@ namespace Unity.Netcode
         internal List<SceneEventData> SceneEventDataPool;
 
         /// <summary>
-        /// The maximum size you can grow your <see cref="ScneeEventData"/> pool (100)
+        /// The maximum size you can grow your <see cref="SceneEventData"/> pool (100)
         /// </summary>
         public const int MaximumSceneEventDataPoolSizeThreshold = 100;
 
         /// <summary>
-        /// The default size of the <see cref="ScneeEventData"/> pool (10)
+        /// The default size of the <see cref="SceneEventData"/> pool (10)
         /// </summary>
         public const int DefaultSceneEventDataPoolSize = 10;
 
         /// <summary>
-        /// Current maximum <see cref="ScneeEventData"/> pool size
+        /// Current maximum <see cref="SceneEventData"/> pool size
         /// </summary>
         private int m_MaxSceneEventDataPoolSize;
 
         /// <summary>
-        /// Next <see cref="ScneeEventData"/> pool index
+        /// Next <see cref="SceneEventData"/> pool index
         /// </summary>
         private int m_NextSceneEventDataIndex;
 
@@ -259,11 +254,11 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Depending upon how many users are connected, you might need to adjust
-        /// the <see cref="ScneeEventData"/> pool size to a larger value on a host
+        /// the <see cref="SceneEventData"/> pool size to a larger value on a host
         /// or a server under the situation where you are loading and/or unloading
         /// many additive scenes over a short period of time.
-        /// The default <see cref="ScneeEventData"/> pool size is 10 (<see cref="DefaultSceneEventDataPoolSize"/>)
-        /// The maximum <see cref="ScneeEventData"/> pool size can grow to is 100 (<see cref="MaximumSceneEventDataPoolSizeThreshold"/>)
+        /// The default <see cref="SceneEventData"/> pool size is 10 (<see cref="DefaultSceneEventDataPoolSize"/>)
+        /// The maximum <see cref="SceneEventData"/> pool size can grow to is 100 (<see cref="MaximumSceneEventDataPoolSizeThreshold"/>)
         /// </summary>
         /// <param name="sceneEventDataPoolSize"></param>
         /// <returns></returns>
@@ -312,7 +307,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the scene name from full path to the scene
         /// </summary>
-        /// <returns></returns>
         internal string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
@@ -336,7 +330,7 @@ namespace Unity.Netcode
         /// When set to true, this will disable the console warnings about
         /// a scene being invalidated.
         /// </summary>
-        /// <param name="disabled"></param>
+        /// <param name="disabled">true/false</param>
         public void DisableValidationWarnings(bool disabled)
         {
             m_DisableValidationWarningMessages = disabled;
@@ -432,10 +426,8 @@ namespace Unity.Netcode
                 {
                     serverHostorClient = m_NetworkManager.IsHost ? "Host" : "Server";
                 }
-                if (!IgnoreSceneValidationWarning)
-                {
-                    Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {sceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
-                }
+
+                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {sceneIndex} being loaded in {loadSceneMode} mode failed validation on the {serverHostorClient}!");
             }
             return validated;
         }
@@ -678,20 +670,23 @@ namespace Unity.Netcode
         /// <returns><see cref="SceneEventProgress"/> that should have a <see cref="SceneEventProgress.Status"/> of <see cref="SceneEventProgressStatus.Started"/> otherwise it failed.</returns>
         private SceneEventProgress ValidateSceneEvent(string sceneName, bool isUnloading = false)
         {
-            // Return scene event already in progress if one is already in progress... :)
+            // Return scene event already in progress if one is already in progress
             if (s_IsSceneEventActive)
             {
                 return new SceneEventProgress(null, SceneEventProgressStatus.SceneEventInProgress);
             }
 
-            // Return invalid scene name status if the scene name is invalid... :)
+            // Return invalid scene name status if the scene name is invalid
             if (!IsSceneNameValid(sceneName))
             {
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
-            var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
-            sceneEventProgress.SceneBuildIndex = GetBuildIndexFromSceneName(sceneName);
+            var sceneEventProgress = new SceneEventProgress(m_NetworkManager)
+            {
+                SceneBuildIndex = GetBuildIndexFromSceneName(sceneName)
+            };
+
             SceneEventProgressTracking.Add(sceneEventProgress.Guid, sceneEventProgress);
 
             if (!isUnloading)
@@ -1584,7 +1579,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">client who sent the event</param>
         /// <param name="stream">data associated with the event</param>
-        private void HandleServerSceneEvent(int sceneEventDataIndex, ulong clientId, Stream stream)
+        private void HandleServerSceneEvent(int sceneEventDataIndex, ulong clientId)
         {
             var sceneEventData = SceneEventDataPool[sceneEventDataIndex];
             switch (sceneEventData.SceneEventType)
@@ -1687,7 +1682,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        HandleServerSceneEvent(sceneEventDataIndex, clientId, stream);
+                        HandleServerSceneEvent(sceneEventDataIndex, clientId);
                     }
                 }
                 else
