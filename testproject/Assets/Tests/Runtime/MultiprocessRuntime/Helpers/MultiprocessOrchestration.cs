@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -23,14 +23,14 @@ public class MultiprocessOrchestration
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
     }
-    
+
     public static void StartWorkerNode()
     {
         if (Processes == null)
         {
             Processes = new List<Process>();
         }
-        Debug.Log("Determine whether to start on local or remote nodes");
+
         string userprofile = "";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -41,12 +41,10 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        Debug.Log($"userprofile is {userprofile}");
+        // Debug.Log($"userprofile is {userprofile}");
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
 
         var workerProcess = new Process();
-        Processes.Add(workerProcess);
-
         if (Processes.Count > 0)
         {
             string message = "";
@@ -92,13 +90,13 @@ public class MultiprocessOrchestration
             Debug.LogError($"Could not find build info file. {buildInstructions}");
             throw;
         }
-        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
+
+        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}");
+
 
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -nographics -batchmode -logFile {logPath}"; // Let each process log to a different file
-        // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
 
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
 

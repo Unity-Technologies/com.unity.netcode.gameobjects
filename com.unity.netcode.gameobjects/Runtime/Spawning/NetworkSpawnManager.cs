@@ -296,7 +296,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            if (readNetworkVariable && NetworkManager.NetworkConfig.EnableNetworkVariable)
+            if (readNetworkVariable)
             {
                 networkObject.SetNetworkVariableData(dataStream);
             }
@@ -451,10 +451,7 @@ namespace Unity.Netcode
                 var (isReparented, latestParent) = networkObject.GetNetworkParenting();
                 NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
             }
-            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                networkObject.WriteNetworkVariableData(writer.GetStream(), clientId);
-            }
+            networkObject.WriteNetworkVariableData(writer.GetStream(), clientId);
         }
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
