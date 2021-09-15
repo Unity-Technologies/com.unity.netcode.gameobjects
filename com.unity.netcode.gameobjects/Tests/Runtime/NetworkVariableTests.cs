@@ -8,6 +8,18 @@ using Unity.Collections;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public struct TestMessageOne : INetworkMessage
+    {
+        public int A;
+        public int B;
+        public int C;
+
+        public void Serialize(ref FastBufferWriter writer)
+        {
+            writer.WriteValueSafe(this);
+        }
+    }
+
     public struct FixedString32Struct : INetworkSerializable
     {
         public FixedString32 FixedString;
@@ -246,6 +258,27 @@ namespace Unity.Netcode.RuntimeTests
                         m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
                         m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
                         m_Player2OnClient2.ClientVar.Value == k_TestVal3;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator WTF([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    var msg = new TestMessageOne { A = 1, B = 2, C = 3 };
+                    m_ServerNetworkManager.SendMessage(msg, NetworkDelivery.Unreliable,
+                        m_Player1OnClient1.NetworkManager.LocalClientId);
+
+                },
+                () =>
+                {
+                    // the client's values should win on the objects it owns
+                    return true;
                 }
             );
         }
