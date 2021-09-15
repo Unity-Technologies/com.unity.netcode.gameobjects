@@ -1228,7 +1228,6 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
-                    m_MessagingSystem.ClientDisconnected(clientId);
 
                     if (IsServer)
                     {
@@ -1409,6 +1408,7 @@ namespace Unity.Netcode
 
                 ConnectedClients.Remove(clientId);
             }
+            m_MessagingSystem.ClientDisconnected(clientId);
         }
 
         private void SyncTime()
