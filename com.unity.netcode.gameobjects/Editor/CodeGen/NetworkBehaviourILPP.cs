@@ -979,9 +979,11 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
                         var method = methodRef.Resolve();
                         var checkParameter = method.Parameters[0];
+                        var isExtensionMethod = false;
                         if (checkParameter.ParameterType.Resolve() ==
                             m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
                         {
+                            isExtensionMethod = true;
                             checkParameter = method.Parameters[1];
                         }
                         if (checkParameter.IsIn)
@@ -993,12 +995,16 @@ namespace Unity.Netcode.Editor.CodeGen
                             instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
                         }
                         // Special handling for WriteValue() on arrays and strings since they have additional arguments.
-                        if (paramType.IsArray)
+                        if (paramType.IsArray 
+                            && ((!isExtensionMethod && methodRef.Parameters.Count == 3) 
+                                || (isExtensionMethod && methodRef.Parameters.Count == 4)))
                         {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
                         }
-                        else if (paramType == typeSystem.String)
+                        else if (paramType == typeSystem.String 
+                             && ((!isExtensionMethod && methodRef.Parameters.Count == 2) 
+                                 || (isExtensionMethod && methodRef.Parameters.Count == 3)))
                         {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
                         }

@@ -8,7 +8,7 @@ using Unity.Netcode.RuntimeTests;
 
 namespace TestProject.RuntimeTests
 {
-    public class RpcINetworkSerializable : BaseMultiInstanceTest
+    public class RpcUserSerializableTypesTest : BaseMultiInstanceTest
     {
         private UserSerializableClass m_UserSerializableClass;
         private List<UserSerializableClass> m_UserSerializableClassArray;
@@ -91,6 +91,194 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.Shutdown();
         }
 
+        /// <summary>
+        /// Tests that INetworkSerializable can be used through RPCs by a user
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ExtensionMethodRpcTest()
+        {
+            m_FinishedTest = false;
+            var startTime = Time.realtimeSinceStartup;
+
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
+            {
+                playerPrefab.AddComponent<TestSerializationComponent>();
+            });
+
+            // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
+
+            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
+
+            var obj = new MyObject(256);
+            var obj2 = new MySharedObjectReferencedById(256);
+            bool clientMyObjCalled = false;
+            bool clientMySharedObjCalled = true;
+            bool serverMyObjCalled = false;
+            bool serverMySharedObjCalled = true;
+            clientSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObj) =>
+            {
+                Assert.AreEqual(obj.I, receivedObj.I);
+                Assert.AreNotSame(obj, receivedObj);
+                clientMyObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObj) =>
+            {
+                Assert.AreEqual(obj.I, receivedObj.I);
+                Assert.AreNotSame(obj, receivedObj);
+                serverMyObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            clientSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObj) =>
+            {
+                Assert.AreSame(obj2, receivedObj);
+                clientMySharedObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObj) =>
+            {
+                Assert.AreSame(obj2, receivedObj);
+                serverMySharedObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            
+            clientSideNetworkBehaviourClass.SendMyObjectServerRpc(obj);
+            clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(obj2);
+
+            // Wait until the test has finished or we time out
+            var timeOutPeriod = Time.realtimeSinceStartup + 5;
+            var timedOut = false;
+            while (!m_FinishedTest)
+            {
+                if (Time.realtimeSinceStartup > timeOutPeriod)
+                {
+                    timedOut = true;
+                    break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // Verify the test passed
+            Assert.False(timedOut);
+
+            // End of test
+            m_ClientNetworkManagers[0].Shutdown();
+            m_ServerNetworkManager.Shutdown();
+        }
+
+        /// <summary>
+        /// Tests that INetworkSerializable can be used through RPCs by a user
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ExtensionMethodArrayRpcTest()
+        {
+            m_FinishedTest = false;
+            var startTime = Time.realtimeSinceStartup;
+
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
+            {
+                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            });
+
+            // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
+
+            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
+
+            var objs = new[]{new MyObject(256), new MyObject(512)};
+            var objs2 =  new[]{new MySharedObjectReferencedById(256), new MySharedObjectReferencedById(512)};
+            bool clientMyObjCalled = false;
+            bool clientMySharedObjCalled = true;
+            bool serverMyObjCalled = false;
+            bool serverMySharedObjCalled = true;
+            clientSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreEqual(objs[i].I, receivedObjs[i].I);
+                    Assert.AreNotSame(objs[i], receivedObjs[i]);
+                }
+                clientMyObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreEqual(objs[i].I, receivedObjs[i].I);
+                    Assert.AreNotSame(objs[i], receivedObjs[i]);
+                }
+                serverMyObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            clientSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreSame(objs2[i], receivedObjs[i]);
+                }
+                clientMySharedObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreSame(objs2[i], receivedObjs[i]);
+                }
+                serverMySharedObjCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
+                                 serverMySharedObjCalled;
+            };
+            
+            clientSideNetworkBehaviourClass.SendMyObjectServerRpc(objs);
+            clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(objs2);
+
+            // Wait until the test has finished or we time out
+            var timeOutPeriod = Time.realtimeSinceStartup + 5;
+            var timedOut = false;
+            while (!m_FinishedTest)
+            {
+                if (Time.realtimeSinceStartup > timeOutPeriod)
+                {
+                    timedOut = true;
+                    break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // Verify the test passed
+            Assert.False(timedOut);
+
+            // End of test
+            m_ClientNetworkManagers[0].Shutdown();
+            m_ServerNetworkManager.Shutdown();
+        }
+        
         /// <summary>
         /// Delegate handler invoked towards the end of the when the NetworkSerializableTest
         /// </summary>
@@ -271,8 +459,13 @@ namespace TestProject.RuntimeTests
     public class TestSerializationComponent : NetworkBehaviour
     {
         public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
-
         public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
+        
+        public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
+        public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
+        
+        public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
+        public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
 
         /// <summary>
         /// Starts the unit test and passes the UserSerializableClass from the client to the server
@@ -317,6 +510,44 @@ namespace TestProject.RuntimeTests
                 OnSerializableClassUpdated.Invoke(userSerializableClass);
             }
         }
+
+        [ClientRpc]
+        public void SendMyObjectClientRpc(MyObject obj)
+        {
+            if (OnMyObjectUpdated != null)
+            {
+                OnMyObjectUpdated.Invoke(obj);
+            }
+        }
+
+        [ClientRpc]
+        public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById obj)
+        {
+            if (OnMySharedObjectReferencedByIdUpdated != null)
+            {
+                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
+            }
+        }
+
+        [ServerRpc]
+        public void SendMyObjectServerRpc(MyObject obj)
+        {
+            if (OnMyObjectUpdated != null)
+            {
+                OnMyObjectUpdated.Invoke(obj);
+            }
+            SendMyObjectClientRpc(obj);
+        }
+
+        [ServerRpc]
+        public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById obj)
+        {
+            if (OnMySharedObjectReferencedByIdUpdated != null)
+            {
+                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
+            }
+            SendMySharedObjectReferencedByIdClientRpc(obj);
+        }
     }
 
     /// <summary>
@@ -329,6 +560,12 @@ namespace TestProject.RuntimeTests
     {
         public delegate void OnSerializableClassesUpdatedDelgateHandler(UserSerializableClass[] userSerializableClasses);
 
+        public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById[] obj);
+        public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
+        
+        public delegate void OnMyObjectUpdatedDelgateHandler(MyObject[] obj);
+        public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
+        
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedServerRpc;
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
 
@@ -370,6 +607,45 @@ namespace TestProject.RuntimeTests
                 OnSerializableClassesUpdatedClientRpc.Invoke(userSerializableClasses);
             }
         }
+
+        [ClientRpc]
+        public void SendMyObjectClientRpc(MyObject[] objs)
+        {
+            if (OnMyObjectUpdated != null)
+            {
+                OnMyObjectUpdated.Invoke(objs);
+            }
+        }
+
+        [ClientRpc]
+        public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById[] objs)
+        {
+            if (OnMySharedObjectReferencedByIdUpdated != null)
+            {
+                OnMySharedObjectReferencedByIdUpdated.Invoke(objs);
+            }
+        }
+
+        [ServerRpc]
+        public void SendMyObjectServerRpc(MyObject[] objs)
+        {
+            if (OnMyObjectUpdated != null)
+            {
+                OnMyObjectUpdated.Invoke(objs);
+            }
+            SendMyObjectClientRpc(objs);
+        }
+
+
+        [ServerRpc]
+        public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById[] objs)
+        {
+            if (OnMySharedObjectReferencedByIdUpdated != null)
+            {
+                OnMySharedObjectReferencedByIdUpdated.Invoke(objs);
+            }
+            SendMySharedObjectReferencedByIdClientRpc(objs);
+        }
     }
 
     /// <summary>
@@ -404,6 +680,92 @@ namespace TestProject.RuntimeTests
         {
             MyByteListValues = new List<byte>();
         }
+    }
+
+    public class MyObject
+    {
+        public int I;
+        
+        public MyObject(int i)
+        {
+            I = i;
+        }
+    }
+
+    public class MySharedObjectReferencedById
+    {
+        public static Dictionary<int, MySharedObjectReferencedById> Values =
+            new Dictionary<int, MySharedObjectReferencedById>();
+        public int I;
+        
+        public MySharedObjectReferencedById(int i)
+        {
+            I = i;
+            Values[I] = this;
+        }
+    }
+
+    public static class TestSerializationExtensions
+    {
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObject value)
+        {
+            reader.ReadValueSafe(out int i);
+            value = new MyObject(i);
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObject value)
+        {
+            writer.WriteValueSafe(value.I);
+        }
+        
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById value)
+        {
+            reader.ReadValueSafe(out int i);
+            value = MySharedObjectReferencedById.Values[i];
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, MySharedObjectReferencedById value)
+        {
+            writer.WriteValueSafe(value.I);
+        }
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObject[] values)
+        {
+            reader.ReadValueSafe(out int length);
+            values = new MyObject[length];
+            for (var i = 0; i < length; ++i)
+            {
+                reader.ReadValueSafe(out values[i]);
+            }
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObject[] values)
+        {
+            writer.WriteValueSafe(values.Length);
+            for (var i = 0; i < values.Length; ++i)
+            {
+                writer.WriteValueSafe(values[i]);
+            }
+        }
+        
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById[] values)
+        {
+            reader.ReadValueSafe(out int length);
+            values = new MySharedObjectReferencedById[length];
+            for (var i = 0; i < length; ++i)
+            {
+                reader.ReadValueSafe(out values[i]);
+            }
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, MySharedObjectReferencedById[] values)
+        {
+            writer.WriteValueSafe(values.Length);
+            for (var i = 0; i < values.Length; ++i)
+            {
+                writer.WriteValueSafe(values[i]);
+            }
+        }
+        
     }
 }
 
