@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -24,9 +23,7 @@ public class MultiprocessOrchestration
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
     }
-    private static DirectoryInfo s_MultiprocessDirInfo;
-    public static List<Process> Processes = new List<Process>();
-
+    
     public static void StartWorkerNode()
     {
         if (Processes == null)
@@ -65,9 +62,9 @@ public class MultiprocessOrchestration
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
         // run performance tests with more realistic conditions.
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
+        string extraArgs = "";
         try
         {
-            string extraArgs = "";
             var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
             switch (Application.platform)
             {
