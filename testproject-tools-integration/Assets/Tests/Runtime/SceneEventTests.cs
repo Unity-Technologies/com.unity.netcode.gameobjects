@@ -6,8 +6,10 @@ using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace TestProject.ToolsIntegration.RuntimeTests
 {
@@ -511,38 +513,40 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestSceneEventMetrics_SyncScenes_S2C_ReSync()
         {
+            yield return LoadTestScene(SimpleSceneName);
+
             var syncStarted = false;
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
                 if (sceneEvent.SceneEventType != SceneEventData.SceneEventTypes.S2C_Sync) syncStarted = true;
             };
-
-            ////////// ACT //////////
-            // Creating and starting a client now will trigger a sync between the server and client.
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            // As we are running the client and the server using the multi-instance test runner we need to sync the
-            // scene handles manually here, as they share a SceneManager.
-            newClient.StartClient();
-            newClient.SceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
-
-            // Wait for the client to start the sync
-            yield return WaitForCondition(() => syncStarted);
-
-            yield return LoadTestScene(SimpleSceneName);
-
-            var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
-
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_ReSync));
+
+            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
+            var newClient = newClients[0];
+            newClient.NetworkConfig.EnableSceneManagement = true;
+            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            // As we are running the client and the server using the multi-instance test runner we need to sync the
+            // scene handles manually here, as they share a SceneManager.
+            newClient.StartClient();
+            var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 newClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_ReSync));
+
+            // Wait for the client to start the sync
+            yield return WaitForCondition(() => syncStarted);
+
+            // now spawn a network object on the server side.
+            var go = Object.FindObjectOfType<NetworkObject>();
+            var newNetworkObject = Object.Instantiate(go);
+            newNetworkObject.NetworkManagerOwner = Server;
+            newNetworkObject.Spawn();
 
             yield return waitForSentMetric.WaitForMetricsReceived();
             yield return waitForReceivedMetric.WaitForMetricsReceived();
