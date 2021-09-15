@@ -491,7 +491,7 @@ namespace TestProject.RuntimeTests
         private const string k_MultiInstanceTestScenename = "AdditiveSceneMultiInstance";
 
         [UnityTest]
-        public IEnumerator SceneEventDataPoolTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
+        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
         {
             m_MultiSceneTest = true;
             m_ClientVerificationAction = DataPoolVerifySceneClient;
@@ -506,18 +506,6 @@ namespace TestProject.RuntimeTests
 
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(clientSynchronizationMode, true);
-
-            // Test the bounds of the default SceneEventDataPool
-            var maximumRollOver = NetworkSceneManager.DefaultSceneEventDataPoolSize * 10;
-            for (int i = 0; i < maximumRollOver; i++)
-            {
-                var index = m_ServerNetworkManager.SceneManager.GetNextSceneEventDataIndexToUse();
-
-                // Assure we did not return an invalid SceneEventData pool index
-                Assert.IsTrue(index < m_ServerNetworkManager.SceneManager.SceneEventDataPool.Count());
-                // Assure we allocated a SceneEventData for the index
-                Assert.IsTrue(m_ServerNetworkManager.SceneManager.SceneEventDataPool[index] != null);
-            }
 
             Scene currentlyActiveScene = SceneManager.GetActiveScene();
 
@@ -547,5 +535,62 @@ namespace TestProject.RuntimeTests
             m_MultiSceneTest = false;
             yield break;
         }
+
+
+    }
+
+    public class SceneEventDataPoolTests : BaseMultiInstanceTest
+    {
+        protected override int NbClients => 1;
+
+
+        internal const int MinSize = NetworkSceneManager.DefaultSceneEventDataPoolSize;
+        internal const int MaxSize = NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
+
+        /// <summary>
+        /// Tests that the bounds checking will prevent users from selecting a data pool size outside of the possible bounds
+        /// </summary>
+        /// <param name="sceneEventDataPoolSize"></param>
+        [Test]
+        public void SceneEventDataPoolBoundsTest([Values(MinSize - 5, MinSize, MinSize + MinSize, MaxSize - 1, MaxSize, MaxSize + 1)] int sceneEventDataPoolSize)
+        {
+            bool shouldFail = sceneEventDataPoolSize <= NetworkSceneManager.DefaultSceneEventDataPoolSize && sceneEventDataPoolSize >= NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
+            bool success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize);
+            Assert.IsTrue(success == shouldFail);
+
+            // Each time try to reduce the size of the SceneEventData pool after increasing the size (which is not allowed)
+            success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize-10);
+            Assert.False(success);
+        }
+
+
+        private void GetNextIndex(NetworkManager networkManager)
+        {
+            var index = m_ServerNetworkManager.SceneManager.GetNextSceneEventDataIndexToUse();
+
+            // Assure we did not return an invalid SceneEventData pool index
+            Assert.IsTrue(index < m_ServerNetworkManager.SceneManager.SceneEventDataPool.Count());
+            // Assure we allocated a SceneEventData for the index
+            Assert.IsTrue(m_ServerNetworkManager.SceneManager.SceneEventDataPool[index] != null);
+        }
+
+        /// <summary>
+        /// Tests that the rollover for the indices values of the scene event data pool is working
+        /// and won't return a bad index value
+        /// </summary>
+        /// <param name="sceneEventDataPoolSize"></param>
+        [Test]
+        public void SceneEventDataPoolRolloverTest([Values(MinSize+MinSize, MaxSize)] int sceneEventDataPoolSize)
+        {
+            // Test the bounds of the default SceneEventDataPool
+            var maximumRollOver = NetworkSceneManager.DefaultSceneEventDataPoolSize * 10;
+
+            for (int i = 0; i < maximumRollOver; i++)
+            {
+                GetNextIndex(m_ServerNetworkManager);
+                GetNextIndex(m_ClientNetworkManagers[0]);
+            }
+        }
+
     }
 }
