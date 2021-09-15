@@ -296,7 +296,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the next <see cref="SceneEventData"/> pool item index number
         /// </summary>
-        private int GetNextSceneEventDataIndexToUse()
+        internal int GetNextSceneEventDataIndexToUse()
         {
             var nextIndex = m_NextSceneEventDataIndex;
             m_NextSceneEventDataIndex++;

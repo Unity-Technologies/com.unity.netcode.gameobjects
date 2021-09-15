@@ -37,10 +37,16 @@ namespace TestProject.RuntimeTests
 
         private float m_TimeOutMarker;
         private bool m_TimedOut;
+        private bool m_MultiSceneTest;
         private string m_CurrentSceneName;
         private List<SceneTestInfo> m_ShouldWaitList;
         private Scene m_CurrentScene;
 
+        private List<Scene> m_ScenesLoaded = new List<Scene>();
+
+
+        private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
+        private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
 
         [UnityTest]
         public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
@@ -144,8 +150,12 @@ namespace TestProject.RuntimeTests
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = m_ServerNetworkManager.ServerClientId, ShouldWait = false });
             if (enableSceneVerification)
             {
-                m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = ServerVerifySceneBeforeLoading;
+                m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = m_ServerVerificationAction;
                 m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
+                if (m_MultiSceneTest)
+                {
+                    m_ScenesLoaded.Clear();
+                }
             }
 
             foreach (var manager in m_ClientNetworkManagers)
@@ -153,7 +163,7 @@ namespace TestProject.RuntimeTests
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
                 if (enableSceneVerification)
                 {
-                    manager.SceneManager.VerifySceneBeforeLoading = ClientVerifySceneBeforeLoading;
+                    manager.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
                     manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
                 }
             }
@@ -267,7 +277,6 @@ namespace TestProject.RuntimeTests
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
-
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
@@ -277,18 +286,24 @@ namespace TestProject.RuntimeTests
                     {
                         if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId)
                         {
-                            m_CurrentScene = sceneEvent.Scene;
-                            var sceneHandle = m_CurrentScene.handle;
+                            var sceneHandle = sceneEvent.Scene.handle;
+                            var scene = sceneEvent.Scene;
+                            m_CurrentScene = scene;
+                            if (m_MultiSceneTest)
+                            {
+                                m_ScenesLoaded.Add(scene);
+                            }
+
                             foreach (var manager in m_ClientNetworkManagers)
                             {
                                 if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
                                 {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, m_CurrentScene);
+                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
                                 }
 
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(m_CurrentScene.handle))
+                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
                                 {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(m_CurrentScene.handle, m_CurrentScene.handle);
+                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
                                 }
                             }
                         }
@@ -353,6 +368,9 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SceneVerifyBeforeLoadTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
+            m_ClientVerificationAction = ClientVerifySceneBeforeLoading;
+            m_ServerVerificationAction = ServerVerifySceneBeforeLoading;
+
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = "AdditiveScene1";
 
@@ -417,5 +435,117 @@ namespace TestProject.RuntimeTests
             yield break;
         }
 
+        private IEnumerator LoadScene(string sceneName)
+        {
+            // Test VerifySceneBeforeLoading with both server and client set to true
+            ResetWait();
+            m_ServerVerifyScene = m_ClientVerifyScene = true;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneName = m_CurrentSceneName;
+            m_ExpectedLoadMode = LoadSceneMode.Additive;
+            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Wait for all clients to load the scene
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+        }
+
+        private IEnumerator UnloadScene(Scene scene)
+        {
+            // Unload the scene
+            ResetWait();
+
+            m_CurrentSceneName = scene.name;
+
+            var result = m_ServerNetworkManager.SceneManager.UnloadScene(scene);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Wait for all clients to unload the scene
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+        }
+
+        /// <summary>
+        /// Server will only allow the base unit test scene to load once in SceneEventDataPoolTest
+        /// since clients share the same scene space.
+        /// </summary>
+        private bool DataPoolVerifySceneServer(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            if (sceneName == k_BaseUnitTestSceneName)
+            {
+                return !SceneManager.GetSceneByBuildIndex(sceneIndex).isLoaded;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Clients always load whatever the server tells them to load for SceneEventDataPoolTest
+        /// </summary>
+        private bool DataPoolVerifySceneClient(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            return true;
+        }
+
+        private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
+        private const string k_MultiInstanceTestScenename = "AdditiveSceneMultiInstance";
+
+        [UnityTest]
+        public IEnumerator SceneEventDataPoolTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
+        {
+            m_MultiSceneTest = true;
+            m_ClientVerificationAction = DataPoolVerifySceneClient;
+            m_ServerVerificationAction = DataPoolVerifySceneServer;
+
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.SceneManager.DisableValidationWarnings(true);
+            }
+
+            // Now prepare for the loading and unloading additive scene testing
+            InitializeSceneTestInfo(clientSynchronizationMode, true);
+
+            // Test the bounds of the default SceneEventDataPool
+            var maximumRollOver = NetworkSceneManager.DefaultSceneEventDataPoolSize * 10;
+            for (int i = 0; i < maximumRollOver; i++)
+            {
+                var index = m_ServerNetworkManager.SceneManager.GetNextSceneEventDataIndexToUse();
+
+                // Assure we did not return an invalid SceneEventData pool index
+                Assert.IsTrue(index < m_ServerNetworkManager.SceneManager.SceneEventDataPool.Count());
+                // Assure we allocated a SceneEventData for the index
+                Assert.IsTrue(m_ServerNetworkManager.SceneManager.SceneEventDataPool[index] != null);
+            }
+
+            Scene currentlyActiveScene = SceneManager.GetActiveScene();
+
+            // Now load the base scene
+            m_CurrentSceneName = k_BaseUnitTestSceneName;
+            yield return LoadScene(m_CurrentSceneName);
+
+            var firstScene = m_CurrentScene;
+
+            m_CurrentSceneName = k_MultiInstanceTestScenename;
+            SceneManager.SetActiveScene(m_CurrentScene);
+            // Now load the scene(s)
+            for (int i = 0; i < numberOfScenesToLoad; i++)
+            {
+                yield return LoadScene(m_CurrentSceneName);
+            }
+
+            // Reverse how we unload the scenes
+            m_ScenesLoaded.Reverse();
+
+            // Now unload the scene(s)
+            foreach (var scene in m_ScenesLoaded)
+            {
+                yield return UnloadScene(scene);
+            }
+            SceneManager.SetActiveScene(currentlyActiveScene);
+            m_MultiSceneTest = false;
+            yield break;
+        }
     }
 }
