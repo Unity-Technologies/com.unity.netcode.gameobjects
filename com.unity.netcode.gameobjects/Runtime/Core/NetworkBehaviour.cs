@@ -639,7 +639,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (NetworkManager.IsServer && !NetworkVariableFields[i].CanClientWrite(clientId))
+                if (NetworkManager.IsServer)
                 {
                     // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -823,6 +823,25 @@ namespace Unity.Netcode
         protected NetworkObject GetNetworkObject(ulong networkId)
         {
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
+
+        public void OnDestroy()
+        {
+            // this seems odd to do here, but in fact especially in tests we can find ourselves
+            //  here without having called InitializedVariables, which causes problems if any
+            //  of those variables use native containers (e.g. NetworkList) as they won't be
+            //  registered here and therefore won't be cleaned up.
+            //
+            // we should study to understand the initialization patterns
+            if (!m_VarInit)
+            {
+                InitializeVariables();
+            }
+
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].Dispose();
+            }
         }
     }
 }

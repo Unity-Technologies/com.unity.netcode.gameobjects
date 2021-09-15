@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Unity.Netcode
@@ -5,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Interface for network value containers
     /// </summary>
-    public abstract class NetworkVariableBase
+    public abstract class NetworkVariableBase : IDisposable
     {
         /// <summary>
         /// The delivery type (QoS) to send data with
@@ -85,16 +86,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
-        public virtual bool CanClientWrite(ulong clientId)
-        {
-            return false;
-        }
-
-        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="stream">The stream to write the dirty changes to</param>
@@ -118,5 +109,9 @@ namespace Unity.Netcode
         /// <param name="stream">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
         public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
+
+        public virtual void Dispose()
+        {
+        }
     }
 }
