@@ -241,6 +241,12 @@ namespace Unity.Netcode.Components
 
         public bool Interpolate = true;
 
+        /// <summary>
+        /// Used to determine who can write to this transform. Server side only.
+        /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients. See the NetworkClientTransform Sample
+        /// in the package samples for how to implement a NetworkTransform with client write support.
+        /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
+        /// </summary>
         protected virtual bool CanWriteToTransform => IsServer;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
@@ -265,27 +271,29 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
-        public void ResetInterpolatedStateToCurrentNetworkState()
+        public void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            m_PositionXInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionX);
-            m_PositionYInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionY);
-            m_PositionZInterpolator.ResetTo(m_ReplicatedNetworkState.Value.PositionZ);
+            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX);
+            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY);
+            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_ReplicatedNetworkState.Value.Rotation));
+            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.Rotation));
 
-            m_ScaleXInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleX);
-            m_ScaleYInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleY);
-            m_ScaleZInterpolator.ResetTo(m_ReplicatedNetworkState.Value.ScaleZ);
+            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX);
+            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY);
+            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ);
+            Debug.Log($"Resetting interpolated state to {m_PositionXInterpolator.GetInterpolatedValue()}, prev transform is {m_PrevNetworkState.PositionX}");
+
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         protected bool UpdateNetworkStateWithTransform(ref NetworkTransformState networkState, double dirtyTime)
         {
-            return UpdateNetworkStateCheckDirtyWithInfo(ref networkState, dirtyTime).isDirty;
+            return UpdateNetworkStateWithTransformWithInfo(ref networkState, dirtyTime).isDirty;
         }
 
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateCheckDirtyWithInfo(ref NetworkTransformState networkState, double dirtyTime)
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) UpdateNetworkStateWithTransformWithInfo(ref NetworkTransformState networkState, double dirtyTime)
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
@@ -304,6 +312,9 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
+            Debug.Log($"update before {m_PrevNetworkState.PositionX}");
+
+
             if (SyncPositionX &&
                 Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold &&
                 !Mathf.Approximately(networkState.PositionX, position.x))
@@ -312,6 +323,7 @@ namespace Unity.Netcode.Components
                 networkState.HasPositionX = true;
                 isPositionDirty = true;
             }
+            Debug.Log($"update after {m_PrevNetworkState.PositionX}");
 
             if (SyncPositionY &&
                 Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
@@ -397,7 +409,9 @@ namespace Unity.Netcode.Components
 
         private void ApplyNetworkStateFromAuthority(NetworkTransformState networkState)
         {
+            Debug.Log($"before {m_PrevNetworkState.PositionX}");
             m_PrevNetworkState = networkState;
+            Debug.Log($"after {m_PrevNetworkState.PositionX}");
 
             var interpolatedPosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var interpolatedRotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
@@ -465,6 +479,8 @@ namespace Unity.Netcode.Components
                 }
 
                 m_PrevNetworkState.Position = interpolatedPosition;
+                Debug.Log($"after after {m_PrevNetworkState.PositionX}");
+
             }
 
             // RotAngles Apply
@@ -589,6 +605,7 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
         }
 
@@ -597,9 +614,14 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
+        public override void OnLostOwnership()
+        {
+            Initialize();
+        }
+
         private void Initialize()
         {
-            ResetInterpolatedStateToCurrentNetworkState(); // useful for late joining
+            ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
 
             if (CanWriteToTransform)
             {
@@ -618,46 +640,42 @@ namespace Unity.Netcode.Components
 
         protected void SendToGhosts(NetworkTransformState newState, bool isDirty, Action sendToGhosts = null)
         {
-            if (CanWriteToTransform)
+            // if dirty, send
+            // if not dirty anymore, but hasn't sent last value for extrapolation, still set isDirty
+            // if not dirty and has already sent last value, don't do anything
+            void Send()
             {
-                // if dirty, send
-                // if not dirty anymore, but hasn't sent last value for extrapolation, still set isDirty
-                // if not dirty and has already sent last value, don't do anything
-                void Send()
+                m_ReplicatedNetworkState.Value = newState;
+                m_ReplicatedNetworkState.SetDirty(true);
+                AddInterpolatedState(newState);
+            }
+
+            if (isDirty)
+            {
+                if (sendToGhosts != null)
                 {
-                    m_PrevNetworkState = newState;
-                    m_ReplicatedNetworkState.Value = newState;
-                    m_ReplicatedNetworkState.SetDirty(true);
-                    AddInterpolatedState(newState);
+                    sendToGhosts.Invoke();
+                }
+                else
+                {
+                    Send();
                 }
 
-                if (isDirty)
+                m_HasSentLastValue = false;
+            }
+            else if (!m_HasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
+            {
+                newState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
+                if (sendToGhosts != null)
                 {
-                    if (sendToGhosts != null)
-                    {
-                        sendToGhosts.Invoke();
-                    }
-                    else
-                    {
-                        Send();
-                    }
-
-                    m_HasSentLastValue = false;
+                    sendToGhosts.Invoke();
                 }
-                else if (!m_HasSentLastValue && !m_ReplicatedNetworkState.IsDirty()) // check for state.IsDirty since update can happen more than once per tick
+                else
                 {
-                    newState.SentTime = NetworkManager.LocalTime.Time; // time one tick later
-                    if (sendToGhosts != null)
-                    {
-                        sendToGhosts.Invoke();
-                    }
-                    else
-                    {
-                        Send();
-                    }
-
-                    m_HasSentLastValue = true;
+                    Send();
                 }
+
+                m_HasSentLastValue = true;
             }
         }
 
@@ -670,10 +688,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanWriteToTransform && IsServer)
+            if (CanWriteToTransform)
             {
-                var isDirty = UpdateNetworkStateWithTransform(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
-                SendToGhosts(m_LocalAuthoritativeNetworkState, isDirty);
+                if (IsServer)
+                {
+                    var isDirty = UpdateNetworkStateWithTransform(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time);
+                    SendToGhosts(m_LocalAuthoritativeNetworkState, isDirty);
+                }
+                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
@@ -697,7 +719,7 @@ namespace Unity.Netcode.Components
                     // try to update previously consumed NetworkState
                     // if we have any changes, that means made some updates locally
                     // we apply the latest ReplNetworkState again to revert our changes
-                    var oldStateDirtyInfo = UpdateNetworkStateCheckDirtyWithInfo(ref m_PrevNetworkState, 0);
+                    var oldStateDirtyInfo = UpdateNetworkStateWithTransformWithInfo(ref m_PrevNetworkState, 0);
                     if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                     {
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
