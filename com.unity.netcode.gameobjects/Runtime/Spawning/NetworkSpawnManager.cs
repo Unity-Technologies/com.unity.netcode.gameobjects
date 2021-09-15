@@ -165,7 +165,8 @@ namespace Unity.Netcode
 
                 var size = bufferSizeCapture.StopMeasureSegment();
                 foreach (var client in NetworkManager.ConnectedClients)
-                {    var bytesReported = NetworkManager.LocalClientId == client.Key
+                {
+                    var bytesReported = NetworkManager.LocalClientId == client.Key
                         ? 0
                         : size;
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
