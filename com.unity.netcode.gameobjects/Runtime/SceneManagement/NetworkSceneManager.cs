@@ -137,7 +137,7 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
-        internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new ();
+        internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress> ();
 
         /// <summary>
         /// Used to track in-scene placed NetworkObjects
@@ -146,7 +146,7 @@ namespace Unity.Netcode
         /// The Scene.Handle aspect allows us to distinguish duplicated in-scene placed NetworkObjects created by the loading
         /// of the same additive scene multiple times.
         /// </summary>
-        internal readonly Dictionary<uint, Dictionary<int, NetworkObject>> ScenePlacedObjects = new ();
+        internal readonly Dictionary<uint, Dictionary<int, NetworkObject>> ScenePlacedObjects = new Dictionary<uint, Dictionary<int, NetworkObject>> ();
 
         /// <summary>
         /// This is used for the deserialization of in-scene placed NetworkObjects in order to distinguish duplicated in-scene
@@ -162,18 +162,18 @@ namespace Unity.Netcode
         /// The client links the server scene handle to the client local scene handle upon a scene being loaded
         /// <see cref="GetAndAddNewlyLoadedSceneByName"/>
         /// </summary>
-        internal Dictionary<int, Scene> ScenesLoaded = new ();
+        internal Dictionary<int, Scene> ScenesLoaded = new Dictionary<int, Scene> ();
 
         /// <summary>
         /// Since Scene.handle is unique per client, we create a look-up table between the client and server to associate server unique scene
         /// instances with client unique scene instances
         /// </summary>
-        internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new ();
+        internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int> ();
 
         /// <summary>
         /// The scenes in the build without their path
         /// </summary>
-        internal List<string> ScenesInBuild = new ();
+        internal List<string> ScenesInBuild = new List<string> ();
 
         /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
