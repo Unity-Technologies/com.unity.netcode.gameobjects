@@ -251,6 +251,8 @@ namespace Unity.Netcode
             {
                 sceneEventData.Dispose();
             }
+            SceneEventDataPool.Clear();
+            SceneEventDataPool = null;
             ClientSynchEventData.Dispose();
             ClientSynchEventData = null;
         }
