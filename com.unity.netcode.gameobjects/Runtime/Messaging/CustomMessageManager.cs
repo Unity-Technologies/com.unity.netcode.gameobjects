@@ -39,56 +39,48 @@ namespace Unity.Netcode
         /// Sends unnamed message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="buffer">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="messageBuffer">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
             }
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
-                clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.UnnamedMessage, networkDelivery, clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    buffer.Position = 0;
-                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                messageBuffer.Position = 0;
+                messageBuffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
             }
 
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, buffer.Length);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, messageBuffer.Length);
         }
 
         /// <summary>
         /// Sends a unnamed message to a specific client
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
-        /// <param name="buffer">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel tos end the data on</param>
-        public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="messageBuffer">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendUnnamedMessage(ulong clientId, NetworkBuffer messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.UnnamedMessage, networkDelivery, new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Position);
-                    buffer.Position = 0;
-                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, messageBuffer.Position);
+                messageBuffer.Position = 0;
+                messageBuffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
             }
         }
 
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
-        public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
+        public delegate void HandleNamedMessageDelegate(ulong senderClientId, Stream messagePayload);
 
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
@@ -174,53 +166,49 @@ namespace Unity.Netcode
         /// <summary>
         /// Sends a named message
         /// </summary>
-        /// <param name="name">The message name to send</param>
+        /// <param name="messageName">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="messageStream">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendNamedMessage(string messageName, ulong clientId, Stream messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntFourBytes:
-                    hash = XXHash.Hash32(name);
+                    hash = XXHash.Hash32(messageName);
                     break;
                 case HashSize.VarIntEightBytes:
-                    hash = XXHash.Hash64(name);
+                    hash = XXHash.Hash64(messageName);
                     break;
             }
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.NamedMessage, networkDelivery, new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
 
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    stream.Position = 0;
-                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+                messageStream.Position = 0;
+                messageStream.CopyTo(nonNullContext.NetworkWriter.GetStream());
 
-                    var size = bufferSizeCapture.StopMeasureSegment();
+                var size = bufferSizeCapture.StopMeasureSegment();
 
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, size);
-                }
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
             }
         }
 
         /// <summary>
         /// Sends the named message
         /// </summary>
-        /// <param name="name">The message name to send</param>
+        /// <param name="messageName">The message name to send</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        /// <param name="messageStream">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendNamedMessage(string messageName, List<ulong> clientIds, Stream messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -231,31 +219,29 @@ namespace Unity.Netcode
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntFourBytes:
-                    hash = XXHash.Hash32(name);
+                    hash = XXHash.Hash32(messageName);
                     break;
                 case HashSize.VarIntEightBytes:
-                    hash = XXHash.Hash64(name);
+                    hash = XXHash.Hash64(messageName);
                     break;
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                MessageQueueContainer.MessageType.NamedMessage, networkDelivery,
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
+                using var nonNullContext = (InternalCommandContext)context;
+                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                bufferSizeCapture.StartMeasureSegment();
 
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    stream.Position = 0;
-                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+                messageStream.Position = 0;
+                messageStream.CopyTo(nonNullContext.NetworkWriter.GetStream());
 
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, size);
-                }
+                var size = bufferSizeCapture.StopMeasureSegment();
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, size);
             }
         }
     }

@@ -28,9 +28,7 @@ namespace Unity.Netcode.EditorTests
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkVariableDelta));
 
-        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime,
-            MessageQueueContainer.MessageType messageType,
-            NetworkChannel receiveChannel)
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType)
         {
             VerifyCalled(nameof(MessageReceiveQueueItem));
             if (NetworkManager)
@@ -40,10 +38,8 @@ namespace Unity.Netcode.EditorTests
                 // MessageQueueContainer.ProcessMessage, which is where the actual code handling the message lives.
                 // That's what will then call back into this for the others.
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
-                messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId,
-                    (NetworkBuffer)stream, receiveChannel);
-                messageQueueContainer.ProcessAndFlushMessageQueue(
-                    MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
+                messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream);
+                messageQueueContainer.ProcessAndFlushMessageQueue(MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
                 messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
             }
         }
@@ -53,6 +49,8 @@ namespace Unity.Netcode.EditorTests
         public void HandleNamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNamedMessage));
 
         public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
+
+        public void HandleSnapshot(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSnapshot));
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
 

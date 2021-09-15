@@ -22,11 +22,13 @@ namespace Unity.Netcode.EditorTests
                 {
                     NetworkId = 123,
                     ClientNetworkIds = new ulong[] { 123 },
-                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    Delivery = NetworkDelivery.Reliable,
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem,
+                sendBatcher.QueueItem(
+                    queueItem.ClientNetworkIds,
+                    queueItem,
                     k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
@@ -50,7 +52,7 @@ namespace Unity.Netcode.EditorTests
             foreach (var recvStream in sendStreamQueue)
             {
                 recvStream.Position = 0;
-                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
+                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time) => ++recvItemCounter, default, default);
             }
 
             Assert.AreEqual(k_QueueItemCount, recvItemCounter);
@@ -71,11 +73,13 @@ namespace Unity.Netcode.EditorTests
                 {
                     NetworkId = 123,
                     ClientNetworkIds = new ulong[] { 123 },
-                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    Delivery = NetworkDelivery.Reliable,
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem,
+                sendBatcher.QueueItem(
+                    queueItem.ClientNetworkIds,
+                    queueItem,
                     k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
@@ -99,7 +103,7 @@ namespace Unity.Netcode.EditorTests
             foreach (var recvStream in sendStreamQueue)
             {
                 recvStream.Position = 0;
-                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
+                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time) => ++recvItemCounter, default, default);
             }
 
             Assert.AreEqual(k_QueueItemCount, recvItemCounter);

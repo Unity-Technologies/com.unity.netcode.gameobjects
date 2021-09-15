@@ -13,9 +13,10 @@ namespace Unity.Netcode
         void HandleChangeOwner(ulong clientId, Stream stream);
         void HandleTimeSync(ulong clientId, Stream stream);
         void HandleNetworkVariableDelta(ulong clientId, Stream stream);
-        void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkChannel receiveChannel);
+        void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType);
         void HandleUnnamedMessage(ulong clientId, Stream stream);
         void HandleNamedMessage(ulong clientId, Stream stream);
         void HandleNetworkLog(ulong clientId, Stream stream);
+        void HandleSnapshot(ulong clientId, Stream messageStream);
     }
 }

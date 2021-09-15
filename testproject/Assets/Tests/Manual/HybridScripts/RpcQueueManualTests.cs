@@ -333,15 +333,16 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Unregister for the client connected and disconnected events upon being destroyed
+        /// Unregister for the client connected and disconnected events upon being despawned
         /// </summary>
-        private void OnDestroy()
+        public override void OnNetworkDespawn()
         {
             if (IsServer)
             {
                 NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
                 NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
             }
+            base.OnNetworkDespawn();
         }
 
         /// <summary>

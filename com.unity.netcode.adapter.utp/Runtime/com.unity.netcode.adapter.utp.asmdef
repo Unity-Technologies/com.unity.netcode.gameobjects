@@ -1,0 +1,20 @@
+{
+    "name": "Unity.Netcode.Adapter.UTP",
+    "rootNamespace": "Unity.Netcode.UTP",
+    "references": [
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Burst",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

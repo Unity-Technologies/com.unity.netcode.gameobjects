@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
+using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaSentMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkVariableDeltaSent);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
@@ -32,7 +32,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkVariableDeltaReceived);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 

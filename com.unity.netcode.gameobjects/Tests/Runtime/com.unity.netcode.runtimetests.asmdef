@@ -4,11 +4,12 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping",
+        "Unity.Netcode.Components",
+        "Unity.Collections",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats"
+        "Unity.Multiplayer.NetStats",
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -19,8 +20,6 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS",
-        "UNITY_EDITOR",
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [

@@ -11,7 +11,7 @@ using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
-    public class NetworkSceneManagerTests: BaseMultiInstanceTest
+    public class NetworkSceneManagerTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 9;
 
@@ -43,7 +43,7 @@ namespace TestProject.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator SceneLoadingAndNotifications()
+        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = "AdditiveScene1";
@@ -85,7 +85,7 @@ namespace TestProject.RuntimeTests
 
 
             // Now prepare for the loading and unloading additive scene testing
-            InitializeSceneTestInfo();
+            InitializeSceneTestInfo(clientSynchronizationMode);
 
             // Test loading additive scenes and the associated event messaging and notification pipelines
             ResetWait();
@@ -139,22 +139,22 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Initializes the m_ShouldWaitList
         /// </summary>
-        private void InitializeSceneTestInfo()
+        private void InitializeSceneTestInfo(LoadSceneMode clientSynchronizationMode, bool enableSceneVerification = false)
         {
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = m_ServerNetworkManager.ServerClientId, ShouldWait = false });
-            if (!m_ServerNetworkManager.NetworkConfig.RegisteredScenes.Contains(m_CurrentSceneName))
+            if (enableSceneVerification)
             {
-                m_ServerNetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
-                m_ServerNetworkManager.SceneManager.AddRuntimeSceneName(m_CurrentSceneName, (uint)(m_ServerNetworkManager.NetworkConfig.RegisteredScenes.Count + 1));
+                m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = ServerVerifySceneBeforeLoading;
+                m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             }
 
             foreach (var manager in m_ClientNetworkManagers)
             {
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
-                if (!manager.NetworkConfig.RegisteredScenes.Contains(m_CurrentSceneName))
+                if (enableSceneVerification)
                 {
-                    manager.NetworkConfig.AllowRuntimeSceneChanges = true;
-                    manager.SceneManager.AddRuntimeSceneName(m_CurrentSceneName, (uint)(manager.NetworkConfig.RegisteredScenes.Count + 1));
+                    manager.SceneManager.VerifySceneBeforeLoading = ClientVerifySceneBeforeLoading;
+                    manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
                 }
             }
         }
@@ -182,7 +182,15 @@ namespace TestProject.RuntimeTests
         private bool ShouldWait()
         {
             m_TimedOut = m_TimeOutMarker < Time.realtimeSinceStartup;
-            return (m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true).Count() > 0) && !m_TimedOut;
+            if (!m_IsTestingVerifyScene)
+            {
+                return (m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true).Count() > 0) && !m_TimedOut;
+            }
+            else
+            {
+                return (m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
+                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && !m_TimedOut && m_ClientsThatFailedVerification != NbClients;
+            }
         }
 
         /// <summary>
@@ -224,15 +232,15 @@ namespace TestProject.RuntimeTests
         private bool ContainsAllClients(List<ulong> clients)
         {
             // First, make sure we have the expected client count
-            if(clients.Count != m_ShouldWaitList.Count)
+            if (clients.Count != m_ShouldWaitList.Count)
             {
                 return false;
             }
 
             // Next, make sure we have all client identifiers
-            foreach(var sceneTestInfo in m_ShouldWaitList)
+            foreach (var sceneTestInfo in m_ShouldWaitList)
             {
-                if(!clients.Contains(sceneTestInfo.ClientId))
+                if (!clients.Contains(sceneTestInfo.ClientId))
                 {
                     return false;
                 }
@@ -248,12 +256,19 @@ namespace TestProject.RuntimeTests
         /// <param name="sceneEvent"></param>
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch(sceneEvent.SceneEventType)
+            switch (sceneEvent.SceneEventType)
             {
+                case SceneEventData.SceneEventTypes.S2C_Sync:
+                    {
+                        // Verify that the Client Synchronization Mode set by the server is being received by the client (which means it is applied when loading the first scene)
+                        Assert.AreEqual(m_ClientNetworkManagers.ToArray().Where(c => c.LocalClientId == sceneEvent.ClientId).First().SceneManager.ClientSynchronizationMode, sceneEvent.LoadSceneMode);
+                        break;
+                    }
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName,m_CurrentSceneName);
+
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
@@ -300,5 +315,107 @@ namespace TestProject.RuntimeTests
                     }
             }
         }
+
+        private bool m_IsTestingVerifyScene;
+        private bool m_ServerVerifyScene;
+        private bool m_ClientVerifyScene;
+        private int m_ExpectedSceneIndex;
+        private int m_ClientsThatFailedVerification;
+        private string m_ExpectedSceneName;
+        private LoadSceneMode m_ExpectedLoadMode;
+
+        private bool ServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            Assert.IsTrue(m_ExpectedSceneIndex == sceneIndex);
+            Assert.IsTrue(m_ExpectedSceneName == sceneName);
+            Assert.IsTrue(m_ExpectedLoadMode == loadSceneMode);
+
+            return m_ServerVerifyScene;
+        }
+
+        private bool ClientVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            Assert.IsTrue(m_ExpectedSceneIndex == sceneIndex);
+            Assert.IsTrue(m_ExpectedSceneName == sceneName);
+            Assert.IsTrue(m_ExpectedLoadMode == loadSceneMode);
+            if (!m_ClientVerifyScene)
+            {
+                m_ClientsThatFailedVerification++;
+            }
+            return m_ClientVerifyScene;
+        }
+
+        /// <summary>
+        /// Unit test to verify that user defined scene verification works on both the client and
+        /// the server side.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator SceneVerifyBeforeLoadTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
+        {
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            m_CurrentSceneName = "AdditiveScene1";
+
+            // Now prepare for the loading and unloading additive scene testing
+            InitializeSceneTestInfo(clientSynchronizationMode, true);
+
+            // Test VerifySceneBeforeLoading with both server and client set to true
+            ResetWait();
+            m_ServerVerifyScene = m_ClientVerifyScene = true;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneName = m_CurrentSceneName;
+            m_ExpectedLoadMode = LoadSceneMode.Additive;
+            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Wait for all clients to load the scene
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            // Unload the scene
+            ResetWait();
+            result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to false
+            // Server will notify it failed scene verification and no client should load
+            ResetWait();
+            m_ServerVerifyScene = false;
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.SceneFailedVerification);
+
+            // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to true and m_ClientVerifyScene set to false
+            // Server should load and clients will notify they failed scene verification
+            ResetWait();
+            m_CurrentSceneName = "AdditiveScene2";
+            m_ExpectedSceneName = m_CurrentSceneName;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ServerVerifyScene = true;
+            m_ClientVerifyScene = false;
+            m_IsTestingVerifyScene = true;
+            m_ClientsThatFailedVerification = 0;
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Now wait for server to complete and all clients to fail
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            // Now unload the scene the server loaded from last test
+            ResetWait();
+            m_IsTestingVerifyScene = false;
+            result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Now wait for server to unload and clients will fake unload
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            yield break;
+        }
+
     }
 }

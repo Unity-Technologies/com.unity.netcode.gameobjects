@@ -93,7 +93,16 @@ namespace Unity.Netcode
             m_HandleNetworkVariableDelta.End();
         }
 
-        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkChannel receiveChannel)
+        public void HandleSnapshot(ulong clientId, Stream stream)
+        {
+            m_HandleNetworkVariableDelta.Begin();
+
+            m_MessageHandler.HandleSnapshot(clientId, stream);
+
+            m_HandleNetworkVariableDelta.End();
+        }
+
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType)
         {
             switch (messageType)
             {
@@ -108,7 +117,7 @@ namespace Unity.Netcode
                     break;
             }
 
-            m_MessageHandler.MessageReceiveQueueItem(clientId, stream, receiveTime, messageType, receiveChannel);
+            m_MessageHandler.MessageReceiveQueueItem(clientId, stream, receiveTime, messageType);
 
             switch (messageType)
             {

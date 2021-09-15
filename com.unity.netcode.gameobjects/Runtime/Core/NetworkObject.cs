@@ -19,10 +19,6 @@ namespace Unity.Netcode
         internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
-        // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
-        internal uint TempGlobalObjectIdHashOverride = 0;
-        // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
-
         private void OnValidate()
         {
             GenerateGlobalObjectIdHash();
@@ -30,14 +26,6 @@ namespace Unity.Netcode
 
         internal void GenerateGlobalObjectIdHash()
         {
-            // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
-            if (TempGlobalObjectIdHashOverride != 0)
-            {
-                GlobalObjectIdHash = TempGlobalObjectIdHashOverride;
-                return;
-            }
-            // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
-
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
@@ -142,7 +130,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
-        public bool DestroyWithScene { get; internal set; }
+        public bool DestroyWithScene { get; set; }
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -241,7 +229,7 @@ namespace Unity.Netcode
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
         /// <summary>
@@ -324,21 +312,17 @@ namespace Unity.Netcode
             else
             {
                 // Send destroy call
-                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                    new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
+                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        bufferSizeCapture.StartMeasureSegment();
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
 
-                        var size = bufferSizeCapture.StopMeasureSegment();
-                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
-                    }
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
                 }
             }
         }
@@ -408,17 +392,15 @@ namespace Unity.Netcode
 
         private SnapshotDespawnCommand GetDespawnCommand()
         {
-            SnapshotDespawnCommand command;
+            var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }
 
         private SnapshotSpawnCommand GetSpawnCommand()
         {
-            SnapshotSpawnCommand command;
+            var command = new SnapshotSpawnCommand();
             command.NetworkObjectId = NetworkObjectId;
             command.OwnerClientId = OwnerClientId;
             command.IsPlayerObject = IsPlayerObject;
@@ -440,8 +422,6 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
-            command.TickWritten = default; // value will be set internally by SnapshotSystem
-            command.TargetClientIds = default;
 
             return command;
         }
@@ -499,7 +479,7 @@ namespace Unity.Netcode
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
                 }
             }
         }
@@ -737,18 +717,12 @@ namespace Unity.Netcode
             m_IsReparented = true;
             ApplyNetworkParenting();
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ParentSync, NetworkChannel.Internal,
-                NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
-                NetworkUpdateLoop.UpdateStage);
-
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ParentSync, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds.Where(id => Observers.Contains(id)).ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
-                    WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
-                }
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
             }
         }
 
@@ -872,8 +846,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId, NetworkManager);
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.InitializeVariables();
+                behavior.WriteNetworkVariableData(stream, clientId);
             }
         }
 
@@ -881,8 +856,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, NetworkManager);
+                var behaviour = ChildNetworkBehaviours[i];
+                behaviour.InitializeVariables();
+                behaviour.SetNetworkVariableData(stream);
             }
         }
 
@@ -992,44 +968,42 @@ namespace Unity.Netcode
                 WriteNetworkParenting(writer, isReparented, latestParent);
             }
 
-            // Write whether we are including network variable data
-            writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
+            // NetworkVariable section
 
-            //If we are including NetworkVariable data
-            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
+            // todo: remove this WriteBool and the matching read
+            writer.WriteBool(true);
+
+            var buffer = writer.GetStream() as NetworkBuffer;
+
+            // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
+            writer.WriteUInt32(0);
+
+            // Mark our current position before we potentially write any NetworkVariable data
+            var positionBeforeNetworkVariableData = buffer.Position;
+
+            // Write network variable data
+            WriteNetworkVariableData(buffer, targetClientId);
+
+            // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
+            // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
+            // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
+            // constructed (See Part 2 below in the DeserializeSceneObject method)
+            if (buffer.Position > positionBeforeNetworkVariableData)
             {
-                var buffer = writer.GetStream() as NetworkBuffer;
+                // Store our current stream buffer position
+                var endOfNetworkVariableData = buffer.Position;
 
-                // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
-                writer.WriteUInt32(0);
+                // Calculate the total NetworkVariable data size written
+                var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
 
-                // Mark our current position before we potentially write any NetworkVariable data
-                var positionBeforeNetworkVariableData = buffer.Position;
+                // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
+                buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
 
-                // Write network variable data
-                WriteNetworkVariableData(buffer, targetClientId);
+                // Now write the actual data size written into our unpacked UInt32 placeholder position
+                writer.WriteUInt32((uint)(networkVariableDataSize));
 
-                // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
-                // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
-                // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method)
-                if (buffer.Position > positionBeforeNetworkVariableData)
-                {
-                    // Store our current stream buffer position
-                    var endOfNetworkVariableData = buffer.Position;
-
-                    // Calculate the total NetworkVariable data size written
-                    var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
-
-                    // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
-                    buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
-
-                    // Now write the actual data size written into our unpacked UInt32 placeholder position
-                    writer.WriteUInt32((uint)(networkVariableDataSize));
-
-                    // Finally, revert the buffer position back to the end of the network variable data written
-                    buffer.Position = endOfNetworkVariableData;
-                }
+                // Finally, revert the buffer position back to the end of the network variable data written
+                buffer.Position = endOfNetworkVariableData;
             }
         }
 
