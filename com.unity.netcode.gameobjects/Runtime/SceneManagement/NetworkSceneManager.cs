@@ -87,8 +87,7 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager : IDisposable
     {
-        private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableSequenced;
-        private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
+        private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
 
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
