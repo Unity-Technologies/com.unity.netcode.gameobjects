@@ -17,6 +17,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
+        public static readonly string INetworkMessage_FullName = typeof(INetworkMessage).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;

@@ -1,4 +1,4 @@
-
+﻿
 using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
@@ -145,99 +145,5 @@ namespace Unity.Netcode.EditorTests
                     systemThree.MessageHandlers[systemThree.GetMessageType(typeof(TestMessageFour))]);
             }
         }
-
-        #region WhenCreatingMessageSystem_MissingReceiveHandlerThrowsException
-        private class BrokenSystemOwnerOne
-        {
-
-        }
-
-        [Bind(typeof(BrokenSystemOwnerOne))]
-        private struct TestMessageFive : INetworkMessage
-        {
-            public int A;
-            public int B;
-            public int C;
-
-            public void Serialize(ref FastBufferWriter writer)
-            {
-                writer.WriteValue(this);
-            }
-        }
-
-        [Test]
-        public void WhenCreatingMessageSystem_MissingReceiveHandlerThrowsException()
-        {
-            var owner = new BrokenSystemOwnerOne();
-            var sender = new NopMessageSender();
-            Assert.Throws<InvalidMessageStructureException>(() => new MessagingSystem(sender, owner));
-        }
-        #endregion
-
-        #region WhenCreatingMessageSystem_ReceiveHandlerWithIncorrectParametersThrowsException
-        private class BrokenSystemOwnerTwo
-        {
-
-        }
-
-        [Bind(typeof(BrokenSystemOwnerTwo))]
-        private struct TestMessageSix : INetworkMessage
-        {
-            public int A;
-            public int B;
-            public int C;
-
-            public void Serialize(ref FastBufferWriter writer)
-            {
-                writer.WriteValue(this);
-            }
-
-            public static void Receive(ref FastBufferReader reader)
-            {
-
-            }
-        }
-
-        [Test]
-        public void WhenCreatingMessageSystem_ReceiveHandlerWithIncorrectParametersThrowsException()
-        {
-            var owner = new BrokenSystemOwnerTwo();
-            var sender = new NopMessageSender();
-            Assert.Throws<InvalidMessageStructureException>(() => new MessagingSystem(sender, owner));
-        }
-        #endregion
-
-        #region WhenCreatingMessageSystem_ReceiveHandlerWithMissingRefSpecifierThrowsException
-        private class BrokenSystemOwnerThree
-        {
-
-        }
-
-        [Bind(typeof(BrokenSystemOwnerThree))]
-        private struct TestMessageSeven : INetworkMessage
-        {
-            public int A;
-            public int B;
-            public int C;
-
-            public void Serialize(ref FastBufferWriter writer)
-            {
-                writer.WriteValue(this);
-            }
-
-            public static void Receive(FastBufferReader reader, NetworkContext context)
-            {
-
-            }
-        }
-
-        [Test]
-        public void WhenCreatingMessageSystem_ReceiveHandlerWithMissingRefSpecifierThrowsException()
-        {
-            var owner = new BrokenSystemOwnerThree();
-            var sender = new NopMessageSender();
-            Assert.Throws<InvalidMessageStructureException>(() => new MessagingSystem(sender, owner));
-        }
-        #endregion
     }
 }

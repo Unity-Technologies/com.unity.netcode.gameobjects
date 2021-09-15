@@ -182,14 +182,14 @@ namespace Unity.Netcode
             if (method == null)
             {
                 throw new InvalidMessageStructureException(
-                    $"{messageType.Name}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
             }
 
             var asDelegate = Delegate.CreateDelegate(typeof(MessageHandler), method, false);
             if (asDelegate == null)
             {
                 throw new InvalidMessageStructureException(
-                    $"{messageType.Name}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
             }
 
             m_MessageHandlers[m_HighMessageType] = (MessageHandler)asDelegate;
