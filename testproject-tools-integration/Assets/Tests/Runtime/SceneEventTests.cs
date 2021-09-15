@@ -542,11 +542,10 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Wait for the client to start the sync
             yield return WaitForCondition(() => syncStarted);
 
-            // now spawn a network object on the server side.
+            // now despawn the network object on the server side.
             var go = Object.FindObjectOfType<NetworkObject>();
-            var newNetworkObject = Object.Instantiate(go);
-            newNetworkObject.NetworkManagerOwner = Server;
-            newNetworkObject.Spawn();
+            go.NetworkManagerOwner = Server;
+            go.Despawn();
 
             yield return waitForSentMetric.WaitForMetricsReceived();
             yield return waitForReceivedMetric.WaitForMetricsReceived();
