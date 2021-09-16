@@ -833,6 +833,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkVariablesDirty()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.MarkVariablesDirty();
+            }
+        }
+
         internal void SetNetworkVariableData(ref FastBufferReader reader)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -898,6 +907,7 @@ namespace Unity.Netcode
                 public bool IsSceneObject;
                 public bool HasTransform;
                 public bool IsReparented;
+                public bool HasNetworkVariables;
             }
 
             public HeaderData Header;
@@ -958,7 +968,10 @@ namespace Unity.Netcode
                     }
                 }
 
-                OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
+                if (Header.HasNetworkVariables)
+                {
+                    OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
+                }
             }
 
             public unsafe void Deserialize(ref FastBufferReader reader)
@@ -1001,7 +1014,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal SceneObject GetMessageSceneObject(ulong targetClientId)
+        internal SceneObject GetMessageSceneObject(ulong targetClientId, bool includeNetworkVariableData = true)
         {
             var obj = new SceneObject
             {
@@ -1011,7 +1024,8 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
-                    Hash = HostCheckForGlobalObjectIdHashOverride()
+                    Hash = HostCheckForGlobalObjectIdHashOverride(),
+                    HasNetworkVariables = includeNetworkVariableData
                 },
                 OwnerObject = this,
                 TargetClientId = targetClientId
@@ -1099,7 +1113,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            // Spawn the NetworkObject
+            // Spawn the NetworkObject(
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, ref variableData, false);
 
             return networkObject;

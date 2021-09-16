@@ -182,6 +182,12 @@ namespace Unity.Netcode
         public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
 
         /// <summary>
+        /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
+        /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
+        /// </summary>
+        public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
+
+        /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkObject NetworkObject
@@ -476,6 +482,14 @@ namespace Unity.Netcode
             }
 
             return false;
+        }
+
+        internal void MarkVariablesDirty()
+        {
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                NetworkVariableFields[j].SetDirty(true);
+            }
         }
 
         internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)

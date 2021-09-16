@@ -301,7 +301,10 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            networkObject.SetNetworkVariableData(ref variableData);
+            if (sceneObject.Header.HasNetworkVariables)
+            {
+                networkObject.SetNetworkVariableData(ref variableData);
+            }
 
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
@@ -386,10 +389,12 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
+
+                networkObject.MarkVariablesDirty();
             }
         }
 
