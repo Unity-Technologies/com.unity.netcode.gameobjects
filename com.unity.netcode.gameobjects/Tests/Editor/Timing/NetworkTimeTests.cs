@@ -16,7 +16,7 @@ namespace Unity.Netcode.EditorTests
         [TestCase(0d, -20)]
         [TestCase(5d, int.MinValue)]
         [TestCase(-5d, -1)]
-        public void TestFailCreateInvalidTime(double time, int tickrate)
+        public void TestFailCreateInvalidTime(double time, uint tickrate)
         {
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => new NetworkTime(tickrate, time));
         }
@@ -37,7 +37,7 @@ namespace Unity.Netcode.EditorTests
         [TestCase(float.MaxValue, float.MaxValue, 20)]
         [TestCase(float.MaxValue, float.MaxValue, 30)]
         [TestCase(float.MaxValue, float.MaxValue, 60)]
-        public void TestTimeAsFloat(double d, float f, int tickRate)
+        public void TestTimeAsFloat(double d, float f, uint tickRate)
         {
             var networkTime = new NetworkTime(tickRate, d);
             Assert.True(Mathf.Approximately(networkTime.TimeAsFloat, f));
@@ -53,7 +53,7 @@ namespace Unity.Netcode.EditorTests
         [TestCase(1013553.55d, 1013553.54d, 50)]
         [TestCase(0d, 0d, 50)]
         [TestCase(-27.4133d, -27.42d, 50)]
-        public void TestToFixedTime(double time, double expectedFixedTime, int tickRate)
+        public void TestToFixedTime(double time, double expectedFixedTime, uint tickRate)
         {
             Assert.AreEqual(expectedFixedTime, new NetworkTime(tickRate, time).ToFixedTime().Time);
         }
@@ -243,7 +243,7 @@ namespace Unity.Netcode.EditorTests
             NetworkTimeAdvanceTestInternal(shortSteps, 144, 1000000f);
         }
 
-        private void NetworkTimeAdvanceTestInternal(IEnumerable<float> steps, int tickRate, float start, float start2 = 0f)
+        private void NetworkTimeAdvanceTestInternal(IEnumerable<float> steps, uint tickRate, float start, float start2 = 0f)
         {
             float maxAcceptableTotalOffset = 0.005f;
 
