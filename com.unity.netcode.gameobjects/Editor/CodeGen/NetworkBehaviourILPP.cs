@@ -250,7 +250,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(NetworkManager.RpcReceive);
+            var networkHandlerDelegateType = typeof(NetworkManager.RpcReceiveHandler);
             m_NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var rpcParamsType = typeof(__RpcParams);

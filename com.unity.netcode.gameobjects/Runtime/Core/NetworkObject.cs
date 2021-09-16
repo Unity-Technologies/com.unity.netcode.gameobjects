@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Netcode.Messages;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -11,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
-    public sealed class NetworkObject : MonoBehaviour, INetworkSerializable
+    public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
         [SerializeField]
@@ -60,7 +59,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
         /// </summary>
-        public ulong NetworkObjectId { get => m_NetworkObjectId; internal set => m_NetworkObjectId = value; }
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
@@ -1142,11 +1141,6 @@ namespace Unity.Netcode
             }
 
             return GlobalObjectIdHash;
-        }
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
-        {
-            serializer.SerializeValue(ref m_NetworkObjectId);
         }
     }
 }

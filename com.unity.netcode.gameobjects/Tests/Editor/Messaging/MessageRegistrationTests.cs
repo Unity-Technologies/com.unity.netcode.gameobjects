@@ -15,7 +15,7 @@ namespace Unity.Netcode.EditorTests
 
         }
 
-        [Bind(typeof(MessagingSystemOwnerOne))]
+        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerOne))]
         private struct TestMessageOne : INetworkMessage
         {
             public int A;
@@ -33,7 +33,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        [Bind(typeof(MessagingSystemOwnerOne))]
+        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerOne))]
         private struct TestMessageTwo : INetworkMessage
         {
             public int A;
@@ -51,7 +51,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        [Bind(typeof(MessagingSystemOwnerTwo))]
+        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerTwo))]
         private struct TestMessageThree : INetworkMessage
         {
             public int A;
@@ -69,7 +69,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        [Bind(null)]
+        [IgnoreMessageIfSystemOwnerIsNotOfType(null)]
         private struct TestMessageFour : INetworkMessage
         {
             public int A;

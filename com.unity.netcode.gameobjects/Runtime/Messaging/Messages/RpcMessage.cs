@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     internal struct RpcMessage : INetworkMessage
     {
@@ -19,17 +19,17 @@ namespace Unity.Netcode.Messages
         }
 
         public HeaderData Header;
-        public FastBufferWriter RPCData;
+        public FastBufferWriter RpcData;
 
 
         public unsafe void Serialize(ref FastBufferWriter writer)
         {
-            if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(Header) + RPCData.Length))
+            if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(Header) + RpcData.Length))
             {
                 throw new OverflowException("Not enough space in the buffer to store RPC data.");
             }
             writer.WriteValue(Header);
-            writer.WriteBytes(RPCData.GetUnsafePtr(), RPCData.Length);
+            writer.WriteBytes(RpcData.GetUnsafePtr(), RpcData.Length);
         }
 
         public static void Receive(ref FastBufferReader reader, NetworkContext context)

@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using Unity.Netcode.EditorTests;
 using UnityEngine;
 using Random = System.Random;
 
@@ -77,8 +76,7 @@ namespace Unity.Netcode
         public enum WriteType
         {
             WriteDirect,
-            WriteSafe,
-            WriteAsObject
+            WriteSafe
         }
         #endregion
 
@@ -87,13 +85,9 @@ namespace Unity.Netcode
 
         protected abstract void RunTypeTestSafe<T>(T valueToTest) where T : unmanaged;
 
-        protected abstract void RunObjectTypeTest<T>(T valueToTest) where T : unmanaged;
-
         protected abstract void RunTypeArrayTest<T>(T[] valueToTest) where T : unmanaged;
 
         protected abstract void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged;
-
-        protected abstract void RunObjectTypeArrayTest<T>(T[] valueToTest) where T : unmanaged;
 
         #region Helpers
         protected TestStruct GetTestStruct()
@@ -118,37 +112,6 @@ namespace Unity.Netcode
             return testStruct;
         }
 
-        protected delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
-            NetworkObject networkObject);
-        protected void RunGameObjectTest(GameObjectTestDelegate testCode)
-        {
-            var obj = new GameObject("Object");
-            var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
-            var networkObject = obj.AddComponent<NetworkObject>();
-            // Create networkManager component
-            var networkManager = obj.AddComponent<NetworkManager>();
-            networkManager.SetSingleton();
-            networkObject.NetworkManagerOwner = networkManager;
-
-            // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set transport
-                NetworkTransport = obj.AddComponent<DummyTransport>()
-            };
-
-            networkManager.StartHost();
-
-            try
-            {
-                testCode(obj, networkBehaviour, networkObject);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(obj);
-                networkManager.Shutdown();
-            }
-        }
         #endregion
 
         public void BaseTypeTest(Type testType, WriteType writeType)
@@ -164,9 +127,6 @@ namespace Unity.Netcode
                         break;
                     case WriteType.WriteSafe:
                         RunTypeTestSafe(val);
-                        break;
-                    default:
-                        RunObjectTypeTest(val);
                         break;
                 }
             }
@@ -290,24 +250,7 @@ namespace Unity.Netcode
             }
             else if (testType == typeof(TestStruct))
             {
-                SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
-                {
-                    writer.WriteValueSafe((TestStruct)obj);
-                };
-                SerializationTypeTable.Deserializers[typeof(TestStruct)] = (ref FastBufferReader reader, out object obj) =>
-                {
-                    reader.ReadValueSafe(out TestStruct value);
-                    obj = value;
-                };
-                try
-                {
-                    RunTypeTestLocal(GetTestStruct(), writeType);
-                }
-                finally
-                {
-                    SerializationTypeTable.Serializers.Remove(typeof(TestStruct));
-                    SerializationTypeTable.Deserializers.Remove(typeof(TestStruct));
-                }
+                RunTypeTestLocal(GetTestStruct(), writeType);
             }
             else
             {
@@ -327,9 +270,6 @@ namespace Unity.Netcode
                         break;
                     case WriteType.WriteSafe:
                         RunTypeArrayTestSafe(val);
-                        break;
-                    default:
-                        RunObjectTypeArrayTest(val);
                         break;
                 }
             }
@@ -632,28 +572,11 @@ namespace Unity.Netcode
             }
             else if (testType == typeof(TestStruct))
             {
-                SerializationTypeTable.Serializers[typeof(TestStruct)] = (ref FastBufferWriter writer, object obj) =>
-                {
-                    writer.WriteValueSafe((TestStruct)obj);
-                };
-                SerializationTypeTable.Deserializers[typeof(TestStruct)] = (ref FastBufferReader reader, out object obj) =>
-                {
-                    reader.ReadValueSafe(out TestStruct value);
-                    obj = value;
-                };
-                try
-                {
-                    RunTypeTestLocal(new[] {
-                        GetTestStruct(),
-                        GetTestStruct(),
-                        GetTestStruct(),
-                    }, writeType);
-                }
-                finally
-                {
-                    SerializationTypeTable.Serializers.Remove(typeof(TestStruct));
-                    SerializationTypeTable.Deserializers.Remove(typeof(TestStruct));
-                }
+                RunTypeTestLocal(new[] {
+                    GetTestStruct(),
+                    GetTestStruct(),
+                    GetTestStruct(),
+                }, writeType);
             }
             else
             {

@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     internal struct NamedMessage : INetworkMessage
     {

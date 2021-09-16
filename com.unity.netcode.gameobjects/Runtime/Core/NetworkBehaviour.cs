@@ -4,7 +4,6 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using Unity.Collections;
-using Unity.Netcode.Messages;
 
 namespace Unity.Netcode
 {
@@ -37,7 +36,7 @@ namespace Unity.Netcode
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 
-        public void SendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams sendParams, RpcDelivery delivery)
+        internal void SendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
@@ -46,7 +45,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > 1300 - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
+                    if (writer.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -63,7 +62,7 @@ namespace Unity.Netcode
                     NetworkBehaviourId = NetworkBehaviourId,
                     NetworkMethodId = rpcMethodId
                 },
-                RPCData = writer
+                RpcData = writer
             };
             var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -79,7 +78,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        public unsafe void SendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams sendParams, RpcDelivery delivery)
+        internal unsafe void SendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
@@ -88,7 +87,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > 1300 - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
+                    if (writer.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -105,26 +104,24 @@ namespace Unity.Netcode
                     NetworkBehaviourId = NetworkBehaviourId,
                     NetworkMethodId = rpcMethodId
                 },
-                RPCData = writer
+                RpcData = writer
             };
             int messageSize;
 
-            if (sendParams.Send.TargetClientIds != null)
+            if (rpcParams.Send.TargetClientIds != null)
             {
                 // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
-                ulong* localArray = stackalloc ulong[sendParams.Send.TargetClientIds.Count()];
-                var idx = 0;
-                foreach (var clientId in sendParams.Send.TargetClientIds)
+                ulong* localArray = stackalloc ulong[rpcParams.Send.TargetClientIds.Count()];
+                var index = 0;
+                foreach (var clientId in rpcParams.Send.TargetClientIds)
                 {
-                    localArray[idx++] = clientId;
+                    localArray[index++] = clientId;
                 }
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, idx, true);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index, true);
             }
-            else if (sendParams.Send.TargetClientIdsNativeArray != null)
+            else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
-                // NativeArray doesn't implement required IReadOnlyList interface, but that's ok, pointer + length
-                // will be more efficient anyway.
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, sendParams.Send.TargetClientIdsNativeArray.Value);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
@@ -453,7 +450,7 @@ namespace Unity.Netcode
                         // so we don't have to do this serialization work if we're not going to use the result.
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
-                            var tmpWriter = new FastBufferWriter(1300, Allocator.Temp);
+                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
 #pragma warning disable CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                             using (tmpWriter)
                             {

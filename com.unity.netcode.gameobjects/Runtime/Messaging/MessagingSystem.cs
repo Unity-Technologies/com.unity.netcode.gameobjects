@@ -9,13 +9,13 @@ using UnityEngine;
 namespace Unity.Netcode
 {
 
-    public class InvalidMessageStructureException : SystemException
+    internal class InvalidMessageStructureException : SystemException
     {
         public InvalidMessageStructureException() { }
         public InvalidMessageStructureException(string issue) : base(issue) { }
     }
 
-    public class MessagingSystem : IDisposable
+    internal class MessagingSystem : IDisposable
     {
         private struct ReceiveQueueItem
         {
@@ -66,6 +66,9 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
+        public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
+        public const int FRAGMENTED_MESSAGE_MAX_SIZE = 64000;
+
         public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = long.MaxValue)
         {
             try
@@ -87,7 +90,7 @@ namespace Unity.Netcode
 
                         if (interfaceType.IsAssignableFrom(type))
                         {
-                            var attributes = type.GetCustomAttributes(typeof(Bind), false);
+                            var attributes = type.GetCustomAttributes(typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute), false);
                             // If [Bind(ownerType)] isn't provided, it defaults to being bound to NetworkManager
                             // This is technically a breach of domain by having MessagingSystem know about the existence
                             // of NetworkManager... but ultimately, Bind is provided to support testing, not to support
@@ -99,7 +102,7 @@ namespace Unity.Netcode
                             var allowedToBind = attributes.Length == 0 && m_Owner is NetworkManager;
                             for (var i = 0; i < attributes.Length; ++i)
                             {
-                                var bindAttribute = (Bind)attributes[i];
+                                var bindAttribute = (IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute)attributes[i];
                                 if (
                                     (bindAttribute.BoundType != null &&
                                      bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
@@ -299,7 +302,7 @@ namespace Unity.Netcode
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError(e);
+                    Debug.LogException(e);
                 }
             }
 #pragma warning restore CS0728 // Warns that reader may be reassigned within the handler, but the handler does not reassign it.
@@ -368,8 +371,8 @@ namespace Unity.Netcode
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
-            var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? 64000 : 1300;
-            var tmpSerializer = new FastBufferWriter(1300, Allocator.Temp, maxSize);
+            var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
+            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, maxSize);
 #pragma warning disable CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
             using (tmpSerializer)
             {
@@ -392,7 +395,7 @@ namespace Unity.Netcode
                     var sendQueueItem = m_SendQueues[clientId];
                     if (sendQueueItem.Length == 0)
                     {
-                        sendQueueItem.Add(new SendQueueItem(delivery, 1300, Allocator.TempJob,
+                        sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                             maxSize));
                         sendQueueItem.GetUnsafeList()->ElementAt(0).Writer.Seek(sizeof(BatchHeader));
                     }
@@ -402,7 +405,7 @@ namespace Unity.Netcode
                         if (lastQueueItem.NetworkDelivery != delivery ||
                             lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length)
                         {
-                            sendQueueItem.Add(new SendQueueItem(delivery, 1300, Allocator.TempJob,
+                            sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                                 maxSize));
                             sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
                         }

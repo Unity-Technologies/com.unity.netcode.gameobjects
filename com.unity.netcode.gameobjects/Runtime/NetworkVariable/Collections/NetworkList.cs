@@ -81,7 +81,7 @@ namespace Unity.Netcode
 
                 return;
             }
-            
+
             writer.WriteValueSafe((ushort)m_DirtyEvents.Length);
             for (int i = 0; i < m_DirtyEvents.Length; i++)
             {

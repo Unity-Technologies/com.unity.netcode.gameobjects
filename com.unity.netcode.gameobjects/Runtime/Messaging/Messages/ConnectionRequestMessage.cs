@@ -1,19 +1,10 @@
-using System;
-using System.Runtime.InteropServices;
-
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     internal struct ConnectionRequestMessage : INetworkMessage
     {
         public ulong ConfigHash;
 
-        [StructLayout(LayoutKind.Explicit, Size = 512)]
-        public struct ConnectionDataStorage : IFixedArrayStorage
-        {
-
-        }
-
-        public FixedUnmanagedArray<byte, ConnectionDataStorage> ConnectionData;
+        public byte[] ConnectionData;
 
         public bool ShouldSendConnectionData;
 
@@ -21,24 +12,12 @@ namespace Unity.Netcode.Messages
         {
             if (ShouldSendConnectionData)
             {
-                if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash) +
-                                     FastBufferWriter.GetWriteSize(ConnectionData)))
-                {
-                    throw new OverflowException(
-                        $"Not enough space in the write buffer to serialize {nameof(ConnectionRequestMessage)}");
-                }
-                writer.WriteValue(ConfigHash);
-                writer.WriteValue(ConnectionData.Count);
-                writer.WriteValue(ConnectionData, ConnectionData.Count);
+                writer.WriteValueSafe(ConfigHash);
+                writer.WriteValueSafe(ConnectionData);
             }
             else
             {
-                if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(ConfigHash)))
-                {
-                    throw new OverflowException(
-                        $"Not enough space in the write buffer to serialize {nameof(ConnectionRequestMessage)}");
-                }
-                writer.WriteValue(ConfigHash);
+                writer.WriteValueSafe(ConfigHash);
             }
         }
 
@@ -77,18 +56,7 @@ namespace Unity.Netcode.Messages
                     return;
                 }
 
-                reader.ReadValue(out int length);
-                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize<byte>() * length))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"Incomplete connection request message.");
-                    }
-
-                    networkManager.DisconnectClient(context.SenderId);
-                    return;
-                }
-                reader.ReadValue(out message.ConnectionData, length);
+                reader.ReadValueSafe(out message.ConnectionData);
             }
             else
             {
@@ -130,7 +98,7 @@ namespace Unity.Netcode.Messages
             {
                 // Note: Delegate creation allocates.
                 // Note: ToArray() also allocates. :(
-                networkManager.InvokeConnectionApproval(ConnectionData.ToArray(), senderId,
+                networkManager.InvokeConnectionApproval(ConnectionData, senderId,
                     (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
                     {
                         var localCreatePlayerObject = createPlayerObject;

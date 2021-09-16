@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Netcode.Messages;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -27,10 +26,10 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal delegate void RpcReceive(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
+        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, RpcReceive> __rpc_func_table = new Dictionary<uint, RpcReceive>();
+        internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
@@ -1143,9 +1142,7 @@ namespace Unity.Netcode
             {
                 ConfigHash = NetworkConfig.GetConfig(),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
-                ConnectionData =
-                    new FixedUnmanagedArray<byte, ConnectionRequestMessage.ConnectionDataStorage>(NetworkConfig
-                        .ConnectionData)
+                ConnectionData = NetworkConfig.ConnectionData
             };
             SendMessage(message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }
