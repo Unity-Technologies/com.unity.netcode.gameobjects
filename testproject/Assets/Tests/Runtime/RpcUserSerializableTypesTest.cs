@@ -151,7 +151,7 @@ namespace TestProject.RuntimeTests
                 m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
                                  serverMySharedObjCalled;
             };
-            
+
             clientSideNetworkBehaviourClass.SendMyObjectServerRpc(obj);
             clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(obj2);
 
