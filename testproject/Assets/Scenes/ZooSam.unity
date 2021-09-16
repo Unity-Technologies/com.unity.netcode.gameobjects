@@ -1336,7 +1336,6 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
 --- !u!114 &108150033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3412,7 +3411,6 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
 --- !u!114 &240282451
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8130,7 +8128,6 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 1
   Interpolate: 1
-  FixedSendsPerSecond: 50
 --- !u!65 &678326396
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25139,7 +25136,6 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 50
 --- !u!114 &1934616766
 MonoBehaviour:
   m_ObjectHideFlags: 0
