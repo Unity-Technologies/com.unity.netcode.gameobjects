@@ -69,6 +69,7 @@ namespace Unity.Netcode
             Update(0);
         }
 
+
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer()
         {
@@ -133,6 +134,7 @@ namespace Unity.Netcode
 
                 if (t > 3) // max extrapolation
                 {
+                    // TODO this causes issues with teleport, investigate
                     // todo make this configurable
                     t = 1;
                 }
