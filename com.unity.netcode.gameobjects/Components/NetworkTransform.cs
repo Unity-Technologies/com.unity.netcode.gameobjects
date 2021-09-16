@@ -14,7 +14,7 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public struct NetworkTransformState : INetworkSerializable
+        internal struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
             private const int k_PositionXBit = 1;
@@ -245,7 +245,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Used to determine who can write to this transform. Server side only.
-        /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients. See the NetworkClientTransform Sample
+        /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients. See the ClientNetworkTransform Sample
         /// in the package samples for how to implement a NetworkTransform with client write support.
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
@@ -268,12 +268,11 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
-
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
         // private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+        private int m_LastSentTick;
 
-        private int lastSentTick;
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
@@ -302,9 +301,9 @@ namespace Unity.Netcode.Components
             {
                 Send();
                 m_HasSentLastValue = false;
-                lastSentTick = NetworkManager.LocalTime.Tick;
+                m_LastSentTick = NetworkManager.LocalTime.Tick;
             }
-            else if (!m_HasSentLastValue && NetworkManager.LocalTime.Tick >= lastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
+            else if (!m_HasSentLastValue && NetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
                 m_LocalAuthoritativeNetworkState.SentTime = NetworkManager.LocalTime.Time; // time 1+ tick later
                 Send();

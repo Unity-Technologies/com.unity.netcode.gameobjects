@@ -54,6 +54,8 @@ namespace Unity.Netcode
 
         private int m_LifetimeConsumedCount;
 
+        private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
+
         public void ResetTo(T targetValue)
         {
             m_LifetimeConsumedCount = 1;
@@ -66,7 +68,6 @@ namespace Unity.Netcode
 
             Update(0);
         }
-
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer()
@@ -163,8 +164,6 @@ namespace Unity.Netcode
                 m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
             }
         }
-
-        public bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
         public T GetInterpolatedValue()
         {
