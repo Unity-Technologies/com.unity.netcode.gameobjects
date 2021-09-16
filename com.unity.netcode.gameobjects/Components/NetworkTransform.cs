@@ -273,6 +273,13 @@ namespace Unity.Netcode.Components
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
 
+        /// <summary>
+        /// Tries updating the server authoritative transform, only if allowed.
+        /// If this called server side, this will commit directly.
+        /// If no update is needed, nothing will be sent. This method should still be called every update, it'll self manage when it should and shouldn't send
+        /// </summary>
+        /// <param name="transformToCommit"></param>
+        /// <param name="dirtyTime"></param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
