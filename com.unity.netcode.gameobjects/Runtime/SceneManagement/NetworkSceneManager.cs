@@ -1212,7 +1212,7 @@ namespace Unity.Netcode
                         var bytesReported = m_NetworkManager.LocalClientId == clientId
                             ? 0
                             : size;
-                        m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, bytesReported);
+                        m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, bytesReported);
                     }
                     else
                     {
@@ -1688,7 +1688,7 @@ namespace Unity.Netcode
                         : stream.Length;
 
                     m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                       clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], bytesReported);
+                       clientId, (uint)sceneEventData.SceneEventType, ScenesInBuild[(int)sceneEventData.SceneIndex], bytesReported);
 
                     if (sceneEventData.IsSceneEventClientSide())
                     {
