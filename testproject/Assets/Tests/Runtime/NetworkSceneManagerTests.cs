@@ -559,7 +559,7 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(success == shouldFail);
 
             // Each time try to reduce the size of the SceneEventData pool after increasing the size (which is not allowed)
-            success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize-10);
+            success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize - 10);
             Assert.False(success);
         }
 
@@ -580,7 +580,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="sceneEventDataPoolSize"></param>
         [Test]
-        public void SceneEventDataPoolRolloverTest([Values(MinSize+MinSize, MaxSize)] int sceneEventDataPoolSize)
+        public void SceneEventDataPoolRolloverTest([Values(MinSize + MinSize, MaxSize)] int sceneEventDataPoolSize)
         {
             // Test the bounds of the default SceneEventDataPool
             var maximumRollOver = NetworkSceneManager.DefaultSceneEventDataPoolSize * 10;
