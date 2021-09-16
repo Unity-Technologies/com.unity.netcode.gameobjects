@@ -274,7 +274,7 @@ namespace Unity.Netcode.Components
         // private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
         private int lastSentTick;
-        public void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
+        protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
 
