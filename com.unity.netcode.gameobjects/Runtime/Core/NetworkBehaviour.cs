@@ -35,8 +35,8 @@ namespace Unity.Netcode
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-
-        internal void SendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void __sendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
@@ -78,7 +78,8 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal unsafe void SendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal unsafe void __sendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
