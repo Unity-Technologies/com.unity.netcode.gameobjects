@@ -13,7 +13,7 @@ public class SetIsOwner : MonoBehaviour
     [CustomEditor(typeof(SetIsOwner))]
     public class GameEventEditor : Editor
     {
-        private string clientID = "clientID (ulong)";
+        private string m_ClientID = "clientID (ulong)";
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -24,12 +24,12 @@ public class SetIsOwner : MonoBehaviour
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 GUILayout.TextArea($"Current owner: {gameEvent.GetComponent<NetworkObject>().OwnerClientId}");
-                clientID = GUILayout.TextField(clientID);
+                m_ClientID = GUILayout.TextField(m_ClientID);
             }
 
             if (GUILayout.Button("Set"))
             {
-                gameEvent.Set(Convert.ToUInt64(clientID));
+                gameEvent.Set(Convert.ToUInt64(m_ClientID));
             }
         }
     }

@@ -17,6 +17,7 @@ public class MoveInCircle : NetworkBehaviour
     private bool m_RunInUpdate;
 
     private NetworkTransform m_NetworkTransform;
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -30,6 +31,7 @@ public class MoveInCircle : NetworkBehaviour
         {
             return;
         }
+
         Tick(true);
     }
 
@@ -39,6 +41,7 @@ public class MoveInCircle : NetworkBehaviour
         {
             return;
         }
+
         Tick(false);
     }
 
