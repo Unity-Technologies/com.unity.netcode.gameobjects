@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.ObjectModel;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
@@ -48,7 +47,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
                 {
                     serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += op => serverSceneLoaded = true;
+                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
                 }
             };
 
@@ -78,7 +77,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
                 {
                     serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += op => serverSceneLoaded = true;
+                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
                 }
             };
 
@@ -102,21 +101,17 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SLoadCompleteSent()
         {
-            var clientSceneLoaded = false;
-            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.C2S_LoadComplete))
-                {
-                    clientSceneLoaded = true;
-                }
-            };
+            var waitForClientLoadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.C2S_LoadComplete);
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
-            yield return WaitForCondition(() => clientSceneLoaded);
 
-            Assert.IsTrue(clientSceneLoaded);
+            yield return waitForClientLoadComplete.Wait();
+            Assert.IsTrue(waitForClientLoadComplete.Done);
+
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -131,21 +126,16 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SLoadCompleteReceived()
         {
-            var clientSceneLoaded = false;
-            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.C2S_LoadComplete))
-                {
-                    clientSceneLoaded = true;
-                }
-            };
+            var waitForClientLoadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.C2S_LoadComplete);
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
-            yield return WaitForCondition(() => clientSceneLoaded);
 
-            Assert.IsTrue(clientSceneLoaded);
+            yield return waitForClientLoadComplete.Wait();
+            Assert.IsTrue(waitForClientLoadComplete.Done);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
@@ -161,14 +151,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CLoadCompleteSent()
         {
-            var serverSceneLoadComplete = false;
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_LoadComplete))
-                {
-                    serverSceneLoadComplete = true;
-                }
-            };
+            var waitForServerLoadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.S2C_LoadComplete);
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
@@ -176,31 +161,26 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_LoadComplete));
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
 
-            yield return WaitForCondition(() => serverSceneLoadComplete);
-
-            Assert.IsTrue(serverSceneLoadComplete);
+            yield return waitForServerLoadComplete.Wait();
+            Assert.IsTrue(waitForServerLoadComplete.Done);
 
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(Server.ConnectedClients.Count, sentMetrics.Count);
 
-            var filteredSentMetrics = sentMetrics.Where(
-                metric => metric.SceneEventType == SceneEventType.S2C_LoadComplete && metric.SceneName == SimpleSceneName);
+            var filteredSentMetrics = sentMetrics
+                .Where(metric => metric.SceneEventType == SceneEventType.S2C_LoadComplete)
+                .Where(metric => metric.SceneName == SimpleSceneName);
             CollectionAssert.AreEquivalent(filteredSentMetrics.Select(x => x.Connection.Id), Server.ConnectedClients.Select(x => x.Key));
         }
 
         [UnityTest]
         public IEnumerator TestS2CLoadCompleteReceived()
         {
-            var serverSceneLoadComplete = false;
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_LoadComplete))
-                {
-                    serverSceneLoadComplete = true;
-                }
-            };
+            var waitForServerLoadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.S2C_LoadComplete);
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
@@ -209,9 +189,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
 
-            yield return WaitForCondition(() => serverSceneLoadComplete);
-
-            Assert.IsTrue(serverSceneLoadComplete);
+            yield return waitForServerLoadComplete.Wait();
+            Assert.IsTrue(waitForServerLoadComplete.Done);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
@@ -307,14 +286,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             yield return LoadTestScene(SimpleSceneName);
 
-            var clientSceneUnloaded = false;
-            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete)
-                {
-                    clientSceneUnloaded = true;
-                }
-            };
+            var waitForClientUnloadComplete = new WaitForSceneEvent(
+                m_ClientNetworkSceneManager,
+                SceneEventData.SceneEventTypes.C2S_UnloadComplete);
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
@@ -322,9 +296,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
-            yield return WaitForCondition(() => clientSceneUnloaded);
-
-            Assert.IsTrue(clientSceneUnloaded);
+            yield return waitForClientUnloadComplete.Wait();
+            Assert.IsTrue(waitForClientUnloadComplete.Done);
 
             yield return waitForSentMetric.WaitForMetricsReceived();
 
@@ -342,14 +315,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             yield return LoadTestScene(SimpleSceneName);
 
-            var clientSceneUnloaded = false;
-            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete)
-                {
-                    clientSceneUnloaded = true;
-                }
-            };
+            var waitForClientUnloadComplete = new WaitForSceneEvent(
+                m_ClientNetworkSceneManager,
+                SceneEventData.SceneEventTypes.C2S_UnloadComplete);
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
@@ -358,9 +326,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
-            yield return WaitForCondition(() => clientSceneUnloaded);
-
-            Assert.IsTrue(clientSceneUnloaded);
+            yield return waitForClientUnloadComplete.Wait();
+            Assert.IsTrue(waitForClientUnloadComplete.Done);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
@@ -378,14 +345,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             yield return LoadTestScene(SimpleSceneName);
 
-            var serverUnloadComplete = false;
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_UnLoadComplete)
-                {
-                    serverUnloadComplete = true;
-                }
-            };
+            var waitForServerUnloadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.S2C_UnLoadComplete);
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
@@ -394,17 +356,17 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
-            yield return WaitForCondition(() => serverUnloadComplete);
-
-            Assert.IsTrue(serverUnloadComplete);
+            yield return waitForServerUnloadComplete.Wait();
+            Assert.IsTrue(waitForServerUnloadComplete.Done);
 
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(Server.ConnectedClients.Count, sentMetrics.Count);
 
-            var filteredSentMetrics = sentMetrics.Where(
-                metric => metric.SceneEventType == SceneEventType.S2C_UnLoadComplete && metric.SceneName == SimpleSceneName);
+            var filteredSentMetrics = sentMetrics
+                .Where(metric => metric.SceneEventType == SceneEventType.S2C_UnLoadComplete)
+                .Where(metric => metric.SceneName == SimpleSceneName);
             CollectionAssert.AreEquivalent(filteredSentMetrics.Select(x => x.Connection.Id), Server.ConnectedClients.Select(x => x.Key));
         }
 
@@ -413,14 +375,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             yield return LoadTestScene(SimpleSceneName);
 
-            var serverUnloadComplete = false;
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_UnLoadComplete)
-                {
-                    serverUnloadComplete = true;
-                }
-            };
+            var waitForServerUnloadComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.S2C_UnLoadComplete);
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
@@ -429,9 +386,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
 
-            yield return WaitForCondition(() => serverUnloadComplete);
-
-            Assert.IsTrue(serverUnloadComplete);
+            yield return waitForServerUnloadComplete.Wait();
+            Assert.IsTrue(waitForServerUnloadComplete.Done);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
@@ -622,6 +578,27 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // scene handles manually here, as they share a SceneManager.
             m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
             m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
+        }
+
+        private class WaitForSceneEvent
+        {
+            public WaitForSceneEvent(NetworkSceneManager sceneManager, SceneEventData.SceneEventTypes sceneEventType)
+            {
+                sceneManager.OnSceneEvent += sceneEvent => 
+                {
+                    if (sceneEvent.SceneEventType == sceneEventType)
+                    {
+                        Done = true;
+                    }
+                };
+            }
+
+            public bool Done { get; private set; }
+
+            public IEnumerator Wait()
+            {
+                yield return WaitForCondition(() => Done);
+            }
         }
     }
 }
