@@ -1,22 +1,30 @@
+using System;
 using System.Collections;
 using Unity.Netcode.Components;
 using NUnit.Framework;
+using Unity.Netcode.Samples;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(true)]
-    [TestFixture(false)]
+    [TestFixture(true, true)]
+    [TestFixture(true, false)]
+    [TestFixture(false, true)]
+    [TestFixture(false, false)]
     public class NetworkTransformTests : BaseMultiInstanceTest
     {
         private NetworkObject m_ClientSideClientPlayer;
         private NetworkObject m_ServerSideClientPlayer;
 
+        private readonly bool m_TestWithClientNetworkTransform;
+
         private readonly bool m_TestWithHost;
 
-        public NetworkTransformTests(bool testWithHost)
+        public NetworkTransformTests(bool testWithHost, bool testWithClientNetworkTransform)
         {
             m_TestWithHost = testWithHost; // from test fixture
+            m_TestWithClientNetworkTransform = testWithClientNetworkTransform;
         }
 
         protected override int NbClients => 1;
@@ -26,7 +34,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients, updatePlayerPrefab: playerPrefab =>
             {
-                var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
+                if (m_TestWithClientNetworkTransform)
+                {
+                    playerPrefab.AddComponent<ClientNetworkTransform>();
+                }
+                else
+                {
+                    playerPrefab.AddComponent<NetworkTransform>();
+                }
             });
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
@@ -42,36 +57,83 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // TODO: rewrite after perms & authority changes
-        /*
+        //*
         [UnityTest]
-        [TestCase(true, NetworkAuthority.Client, ExpectedResult = null)]
-        [TestCase(true, NetworkAuthority.Server, ExpectedResult = null)]
-        [TestCase(false, NetworkAuthority.Client, ExpectedResult = null)]
-        [TestCase(false, NetworkAuthority.Server, ExpectedResult = null)]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime(bool testLocalTransform, NetworkAuthority authorityToTest)
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
         {
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
 
-            var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
-            networkTransform.SetAuthority(authorityToTest);
-            networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
-
-            var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
-            otherSideNetworkTransform.SetAuthority(authorityToTest);
-            otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
-
-            static bool HasAuthorityFunc(NetworkTransform transform)
+            NetworkTransform authoritativeNetworkTransform;
+            NetworkTransform otherSideNetworkTransform;
+            if (m_TestWithClientNetworkTransform)
             {
-                return transform.NetworkObject.NetworkManager.IsServer && transform.Authority == NetworkAuthority.Server ||
-                    transform.NetworkObject.NetworkManager.IsClient && transform.Authority == NetworkAuthority.Client;
+                // client auth net transform can write from client, not from server
+                otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+                authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            }
+            else
+            {
+                // server auth net transform can't write from client, not from client
+                authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+                otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            }
+            Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
+            Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
+
+            // // server auth net transform can't write from client, not from client
+            // var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            // Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
+            // var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            // Assert.That(otherSideNetworkTransform.CanCommitToTransform);
+
+            // if (testClientAuthority)
+            // {
+            //     if (m_TestWithClientNetworkTransform)
+            //     {
+            //         // client auth net transform can write from client, not from server
+            //         authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //         Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
+            //         otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //         Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
+            //     }
+            //     else
+            //     {
+            //         // server auth net transform can't write from client, not from client
+            //         authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            //         Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
+            //         otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            //         Assert.That(otherSideNetworkTransform.CanCommitToTransform);
+            //     }
+            // }
+            // else
+            // {
+            //     if (m_TestWithClientNetworkTransform)
+            //     {
+            //         // client auth net transform can write from client, not from server
+            //         authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //         Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
+            //         otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //         Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
+            //     }
+            //     else
+            //     {
+            //         // server auth net transform can't write from client, not from client
+            //         authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            //         Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
+            //         otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            //         Assert.That(otherSideNetworkTransform.CanCommitToTransform);
+            //     }
+            // }
+
+            authoritativeNetworkTransform.Interpolate = false;
+            otherSideNetworkTransform.Interpolate = false;
+
+            if (authoritativeNetworkTransform.CanCommitToTransform)
+            {
+                authoritativeNetworkTransform.InLocalSpace = testLocalTransform;
             }
 
-            if (HasAuthorityFunc(networkTransform))
-            {
-                networkTransform.InLocalSpace = testLocalTransform;
-            }
-
-            if (HasAuthorityFunc(otherSideNetworkTransform))
+            if (otherSideNetworkTransform.CanCommitToTransform)
             {
                 otherSideNetworkTransform.InLocalSpace = testLocalTransform;
             }
@@ -79,8 +141,8 @@ namespace Unity.Netcode.RuntimeTests
             float approximation = 0.05f;
 
             // test position
-            var playerTransform = networkTransform.transform;
-            playerTransform.position = new Vector3(10, 20, 30);
+            var authPlayerTransform = authoritativeNetworkTransform.transform;
+            authPlayerTransform.position = new Vector3(10, 20, 30);
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, maxFrames: 120));
             if (!waitResult.Result)
@@ -90,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 
             // test rotation
-            playerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
+            authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult, maxFrames: 120));
             if (!waitResult.Result)
@@ -106,7 +168,7 @@ namespace Unity.Netcode.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
-            playerTransform.localScale = new Vector3(2, 3, 4);
+            authPlayerTransform.localScale = new Vector3(2, 3, 4);
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult, maxFrames: 120));
             if (!waitResult.Result)
             {
@@ -121,18 +183,47 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [TestCase(NetworkAuthority.Client, ExpectedResult = null)]
-        [TestCase(NetworkAuthority.Server, ExpectedResult = null)]
-        public IEnumerator TestCantChangeTransformFromOtherSideAuthority(NetworkAuthority authorityToTest)
+        public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
         {
             // test server can't change client authoritative transform
-            var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
-            networkTransform.SetAuthority(authorityToTest);
-            networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
+            NetworkTransform networkTransform;
+            NetworkTransform otherSideNetworkTransform;
+            // var networkTransform = (testClientAuthority ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
+            if (testClientAuthority)
+            {
+                if (m_TestWithClientNetworkTransform)
+                {
+                    networkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+                }
+                else
+                {
+                    networkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+                }
+            }
+            else
+            {
+                if (m_TestWithClientNetworkTransform)
+                {
+                    networkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
 
-            var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
-            otherSideNetworkTransform.SetAuthority(authorityToTest);
-            otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
+                }
+                else
+                {
+                    networkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+                }
+            }
+            networkTransform.Interpolate = false;
+            otherSideNetworkTransform.Interpolate = false;
+            // networkTransform.SetAuthority(authorityToTest);
+            // networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
+
+            // var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
+            // otherSideNetworkTransform.SetAuthority(authorityToTest);
+            // otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
