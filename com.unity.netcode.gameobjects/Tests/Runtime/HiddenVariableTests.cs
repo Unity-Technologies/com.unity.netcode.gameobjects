@@ -8,7 +8,6 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class HiddenVariableTest : NetworkBehaviour
     {
-
     }
 
     public class HiddenVariableObject : NetworkBehaviour
@@ -98,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void VerifyLists()
         {
-            List<int> prev = null;
+            NetworkList<int> prev = null;
             int numComparison = 0;
 
             // for all the instances of NetworkList
@@ -110,26 +109,18 @@ namespace Unity.Netcode.RuntimeTests
                     // if we've seen another one before
                     if (prev != null)
                     {
-                        var curr = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList.ToList();
+                        var curr = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList;
 
-                        string output = "curr ";
-                        foreach (var c in curr)
+                        // check that the two lists are identical
+                        Debug.Assert(curr.Count == prev.Count);
+                        for (int index = 0; index < curr.Count; index++)
                         {
-                            output += c.ToString() + ", ";
+                            Debug.Assert(curr[index] == prev[index]);
                         }
-                        output += "\nprev ";
-                        foreach (var c in prev)
-                        {
-                            output += c.ToString() + ", ";
-                        }
-                        Debug.Log(output);
-
-                        // make sure the list is the same on that instance, too
-                        Debug.Assert(!curr.Except(prev).Any() && !prev.Except(curr).Any());
                         numComparison++;
                     }
                     // store the list
-                    prev = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList.ToList();
+                    prev = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList;
                 }
             }
             Debug.Log($"{numComparison} comparisons done.");
