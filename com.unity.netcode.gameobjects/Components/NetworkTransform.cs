@@ -324,7 +324,9 @@ namespace Unity.Netcode.Components
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
             m_LocalAuthoritativeNetworkState = networkState;
-            ReplicateToGhosts(networkState);
+            m_ReplicatedNetworkState.Value = networkState;
+            m_ReplicatedNetworkState.SetDirty(true);
+            AddInterpolatedState(networkState);
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
@@ -690,14 +692,6 @@ namespace Unity.Netcode.Components
         private void OnDestroy()
         {
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-        }
-
-        // todo method only used once
-        private void ReplicateToGhosts(NetworkTransformState newState)
-        {
-            m_ReplicatedNetworkState.Value = newState;
-            m_ReplicatedNetworkState.SetDirty(true);
-            AddInterpolatedState(newState);
         }
 
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
