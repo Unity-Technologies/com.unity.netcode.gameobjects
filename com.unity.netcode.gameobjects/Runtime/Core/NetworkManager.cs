@@ -43,6 +43,8 @@ namespace Unity.Netcode
 #endif
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
+        private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
+
         internal MessageQueueContainer MessageQueueContainer { get; private set; }
 
 
@@ -420,7 +422,7 @@ namespace Unity.Netcode
             }
             else
             {
-                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, 1.0 / NetworkConfig.TickRate, 0.2);
+                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, k_DefaultBufferSizeSec, 0.2);
             }
 
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
