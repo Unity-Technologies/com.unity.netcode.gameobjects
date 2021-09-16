@@ -33,7 +33,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 MultiInstanceHelpers.Destroy();
             }
-            catch (Exception e) { throw e; }
             finally
             {
                 if (m_PlayerPrefab != null)
