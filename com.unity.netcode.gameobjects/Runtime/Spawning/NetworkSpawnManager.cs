@@ -114,6 +114,14 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Helper function to get a network client for a clientId from the NetworkManager.
+        /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
+        /// On a non-server this will check the <see cref="NetworkManager.LocalClient"/> only.
+        /// </summary>
+        /// <param name="clientId">The clientId for which to try getting the NetworkClient for.</param>
+        /// <param name="networkClient">The found NetworkClient. Null if no client was found.</param>
+        /// <returns>True if a NetworkClient with a matching id was found else false.</returns>
         private bool TryGetNetworkClient(ulong clientId, out NetworkClient networkClient)
         {
             if (NetworkManager.IsServer)

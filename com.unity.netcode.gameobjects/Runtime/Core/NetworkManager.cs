@@ -254,7 +254,7 @@ namespace Unity.Netcode
         internal List<ulong> connectedClientIds = new List<ulong>();
 
         /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
+        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
         /// </summary>
         public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
         {
@@ -266,7 +266,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a list of connected clients. This is only populated on the server.
+        /// Gets a list of connected clients. This is only accessible on the server.
         /// </summary>
         public IReadOnlyList<NetworkClient> ConnectedClientsList
         {
@@ -278,7 +278,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a list of just the IDs of all connected clients.
+        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
         /// </summary>
         public IReadOnlyList<ulong> ConnectedClientsIds
         {
@@ -289,6 +289,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Gets the local <see cref="NetworkClient"/> for this client.
+        /// </summary>
         public NetworkClient LocalClient { get; internal set; }
 
         /// <summary>
