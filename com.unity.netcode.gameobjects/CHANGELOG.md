@@ -69,6 +69,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed the NetworkObject.Spawn payload parameter (#1005)
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
 - Removed NetworkSet, NetworkDictionary
+- Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
 
 ### Fixed
 - Fixed parenting not being preserved during scene transitions (#1148)
@@ -102,8 +103,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 - [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
-- [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
-- [93c8db00] (2021-08-24) Jesse Olmer / chore!: Remove unsupported UNET Relay behavior (MTT-1000) (#1081)
 - [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
 - [0d956059] (2021-08-19) Luke Stampfli / fix: networkmanager destroy on app quit (#1011)
 - [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTime properties (#1053)
@@ -134,11 +133,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [459c041c] (2021-06-14) Luke Stampfli / feat!: OnNetworkSpawn / OnNetworkDespawn (#865)
 - [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
 - [3e96cf95] (2021-06-08) Jean-Sébastien Fauteux / feat: Add RPC Name Lookup Table Provided by NetworkBehaviourILPP (#875)
-- [3495445e] (2021-06-03) Jesse Olmer / fix: update package version to 0.2.0 because of unity minversion change (#881)
-- [0444c039] (2021-06-02) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
-- [fa15fc6f] (2021-06-01) Jesse Olmer / docs: Fix typo in changelog version title
 - [bd223cfb] (2021-06-01) Lori Krell / docs: Hotfix Changelog for 0.1.1 and manual update (#873)
-- [39b56366] (2021-06-01) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
 - [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
 - [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
@@ -153,12 +148,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [11b2d250] (2021-05-10) Luke Stampfli / refactor: reduce dictionary lookups (#584)
 - [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
 - [b7357f85] (2021-04-19) Andrew Spiering / ci: Enabling MLAPI UTP Transport package (#736)
-- [c0386eb3] (2021-04-15) Jesse Olmer / Merge branch 'master' into develop
 - [68482608] (2021-04-15) Cosmin / docs: Remove MIT license hyperlink in the main README.md (#732)
-- [644c71a1] (2021-04-14) Jesse Olmer / Merge branch 'master' into develop
-- [0f7d388b] (2021-04-14) Jesse Olmer / Merge tag '0.1.0' into develop
 - [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
-- [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
 
 ## [0.2.0] - 2021-06-03
 
