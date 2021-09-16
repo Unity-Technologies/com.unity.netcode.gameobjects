@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using System.Reflection;
-using System.Linq;
 using Unity.Collections;
 using Unity.Netcode.Messages;
 
@@ -112,7 +112,7 @@ namespace Unity.Netcode
             if (sendParams.Send.TargetClientIds != null)
             {
                 // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
-                ulong* localArray = stackalloc ulong[sendParams.Send.TargetClientIds.Count()];
+                ulong* localArray = stackalloc ulong[sendParams.Send.TargetClientIds.Count];
                 var idx = 0;
                 foreach (var clientId in sendParams.Send.TargetClientIds)
                 {

@@ -13,6 +13,7 @@ using UnityEditor;
 using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
@@ -246,20 +247,49 @@ namespace Unity.Netcode
 
         private ulong m_LocalClientId;
 
+        internal Dictionary<ulong, NetworkClient> connectedClients = new Dictionary<ulong, NetworkClient>();
+
+        internal List<NetworkClient> connectedClientsList = new List<NetworkClient>();
+
+        internal List<ulong> connectedClientIds = new List<ulong>();
+
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
         /// </summary>
-        public readonly Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
+        {
+            get
+            {
+                Assert.IsTrue(IsServer, $"{nameof(ConnectedClients)} should only be accessed on server.");
+                return connectedClients;
+            }
+        }
 
         /// <summary>
         /// Gets a list of connected clients. This is only populated on the server.
         /// </summary>
-        public readonly List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
+        public IReadOnlyList<NetworkClient> ConnectedClientsList
+        {
+            get
+            {
+                Assert.IsTrue(IsServer, $"{nameof(ConnectedClientsList)} should only be accessed on server.");
+                return connectedClientsList;
+            }
+        }
 
         /// <summary>
         /// Gets a list of just the IDs of all connected clients.
         /// </summary>
-        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
+        public IReadOnlyList<ulong> ConnectedClientsIds
+        {
+            get
+            {
+                Assert.IsTrue(IsServer, $"{nameof(connectedClientIds)} should only be accessed on server.");
+                return connectedClientIds;
+            }
+        }
+
+        public NetworkClient LocalClient { get; internal set; }
 
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
@@ -462,8 +492,9 @@ namespace Unity.Netcode
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
-            ConnectedClients.Clear();
-            ConnectedClientsList.Clear();
+            connectedClients.Clear();
+            connectedClientsList.Clear();
+            connectedClientIds.Clear();
             NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
@@ -1408,12 +1439,21 @@ namespace Unity.Netcode
                 {
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
-                        ConnectedClientsList.RemoveAt(i);
+                        connectedClientsList.RemoveAt(i);
                         break;
                     }
                 }
 
-                ConnectedClients.Remove(clientId);
+                for (int i = 0; i < ConnectedClientsIds.Count; i++)
+                {
+                    if (ConnectedClientsIds[i] == clientId)
+                    {
+                        connectedClientIds.RemoveAt(i);
+                        break;
+                    }
+                }
+
+                connectedClients.Remove(clientId);
             }
             m_MessagingSystem.ClientDisconnected(clientId);
         }
@@ -1455,8 +1495,9 @@ namespace Unity.Netcode
                 PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
-                ConnectedClients.Add(ownerClientId, client);
-                ConnectedClientsList.Add(client);
+                connectedClients.Add(ownerClientId, client);
+                connectedClientsList.Add(client);
+                connectedClientIds.Add(client.ClientId);
 
                 if (createPlayerObject)
                 {
