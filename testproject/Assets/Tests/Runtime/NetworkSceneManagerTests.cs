@@ -48,6 +48,10 @@ namespace TestProject.RuntimeTests
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
 
+        /// <summary>
+        /// Tests the different types of NetworkSceneManager notifications (including exceptions) generated
+        /// Also tests invalid loading scenarios (i.e. client trying to load a scene)
+        /// </summary>
         [UnityTest]
         public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
@@ -361,7 +365,7 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Unit test to verify that user defined scene verification works on both the client and
+        /// Unit test to verify that user defined scene verification process works on both the client and
         /// the server side.
         /// </summary>
         /// <returns></returns>
@@ -490,6 +494,10 @@ namespace TestProject.RuntimeTests
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
         private const string k_MultiInstanceTestScenename = "AdditiveSceneMultiInstance";
 
+        /// <summary>
+        /// Small to heavy scene loading scenario to test the SceneEventData pool under a load.
+        /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
+        /// </summary>
         [UnityTest]
         public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
         {
@@ -535,15 +543,15 @@ namespace TestProject.RuntimeTests
             m_MultiSceneTest = false;
             yield break;
         }
-
-
     }
 
+    /// <summary>
+    /// General SceneEventData pool bounds checking
+    /// General SceneEventData pool indices roll-over checking
+    /// </summary>
     public class SceneEventDataPoolTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 1;
-
-
         internal const int MinSize = NetworkSceneManager.DefaultSceneEventDataPoolSize;
         internal const int MaxSize = NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
 
@@ -587,7 +595,10 @@ namespace TestProject.RuntimeTests
             }
         }
 
-
+        /// <summary>
+        /// Gets the next SceneEventData Pool Index
+        /// </summary>
+        /// <param name="networkManager">relative NetworkManager instance</param>
         private void GetNextIndex(NetworkManager networkManager)
         {
             var index = m_ServerNetworkManager.SceneManager.GetNextSceneEventDataIndexToUse();
@@ -613,6 +624,5 @@ namespace TestProject.RuntimeTests
                 GetNextIndex(m_ClientNetworkManagers[0]);
             }
         }
-
     }
 }
