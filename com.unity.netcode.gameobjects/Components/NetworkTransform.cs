@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -26,9 +28,12 @@ namespace Unity.Netcode.Components
             private const int k_ScaleXBit = 7;
             private const int k_ScaleYBit = 8;
             private const int k_ScaleZBit = 9;
+            private const int k_TeleportingBit = 10;
 
-            // 10-15: <unused>
+            // 11-15: <unused>
             private ushort m_Bitset;
+
+
 
             public bool InLocalSpace
             {
@@ -130,6 +135,16 @@ namespace Unity.Netcode.Components
                 {
                     if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleZBit)); }
                     else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleZBit)); }
+                }
+            }
+
+            public bool IsTeleporting
+            {
+                get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
+                set
+                {
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_TeleportingBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_TeleportingBit)); }
                 }
             }
 
@@ -273,6 +288,10 @@ namespace Unity.Netcode.Components
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
+        private NetworkTransformState m_LastSentState;
+
+        private const string k_NoAuthorityMessage = "was changed locally without authority, reverting back to latest interpolated network state! Please use CommitUpdate() or your own [ServerRpc]";
+
 
         /// <summary>
         /// Tries updating the server authoritative transform, only if allowed.
@@ -284,17 +303,28 @@ namespace Unity.Netcode.Components
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
+            TryCommit(isDirty);
+        }
 
-            void Send()
+        private void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
+        {
+            var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
+
+            TryCommit(isDirty.isDirty);
+        }
+
+        private void TryCommit(bool isDirty)
+        {
+            void Send(NetworkTransformState stateToSend)
             {
                 if (IsServer)
                 {
                     // server RPC takes a few frames to execute server side, we want this to execute immediately
-                    CommitLocallyAndReplicate(m_LocalAuthoritativeNetworkState);
+                    CommitLocallyAndReplicate(stateToSend);
                 }
                 else
                 {
-                    CommitTransformServerRpc(m_LocalAuthoritativeNetworkState);
+                    CommitTransformServerRpc(stateToSend);
                 }
             }
 
@@ -307,14 +337,15 @@ namespace Unity.Netcode.Components
             // making it immobile.
             if (isDirty)
             {
-                Send();
+                Send(m_LocalAuthoritativeNetworkState);
                 m_HasSentLastValue = false;
                 m_LastSentTick = NetworkManager.LocalTime.Tick;
+                m_LastSentState = m_LocalAuthoritativeNetworkState;
             }
             else if (!m_HasSentLastValue && NetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
-                m_LocalAuthoritativeNetworkState.SentTime = NetworkManager.LocalTime.Time; // time 1+ tick later
-                Send();
+                m_LastSentState.SentTime = NetworkManager.LocalTime.Time; // time 1+ tick later
+                Send(m_LastSentState);
                 m_HasSentLastValue = true;
             }
         }
@@ -330,7 +361,7 @@ namespace Unity.Netcode.Components
 
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
-            m_LocalAuthoritativeNetworkState = networkState;
+            // m_LocalAuthoritativeNetworkState = networkState;
             m_ReplicatedNetworkState.Value = networkState;
             AddInterpolatedState(networkState);
         }
@@ -360,7 +391,11 @@ namespace Unity.Netcode.Components
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
             var scale = InLocalSpace ? transformToUse.localScale : transformToUse.lossyScale;
+            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
+        }
 
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Vector3 position, Vector3 rotAngles, Vector3 scale)
+        {
             var isDirty = false;
             var isPositionDirty = false;
             var isRotationDirty = false;
@@ -478,48 +513,48 @@ namespace Unity.Netcode.Components
             // Position Read
             if (SyncPositionX)
             {
-                interpolatedPosition.x = Interpolate ? m_PositionXInterpolator.GetInterpolatedValue() : networkState.Position.x;
+                interpolatedPosition.x = networkState.IsTeleporting || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
             }
 
             if (SyncPositionY)
             {
-                interpolatedPosition.y = Interpolate ? m_PositionYInterpolator.GetInterpolatedValue() : networkState.Position.y;
+                interpolatedPosition.y = networkState.IsTeleporting || !Interpolate ? networkState.Position.y : m_PositionYInterpolator.GetInterpolatedValue();
             }
 
             if (SyncPositionZ)
             {
-                interpolatedPosition.z = Interpolate ? m_PositionZInterpolator.GetInterpolatedValue() : networkState.Position.z;
+                interpolatedPosition.z = networkState.IsTeleporting || !Interpolate ? networkState.Position.z : m_PositionZInterpolator.GetInterpolatedValue();
             }
 
             if (SyncRotAngleX)
             {
-                interpolatedRotAngles.x = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x : networkState.Rotation.x;
+                interpolatedRotAngles.x = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.x : m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x;
             }
 
             if (SyncRotAngleY)
             {
-                interpolatedRotAngles.y = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y : networkState.Rotation.y;
+                interpolatedRotAngles.y = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.y : m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
             }
 
             if (SyncRotAngleZ)
             {
-                interpolatedRotAngles.z = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z : networkState.Rotation.z;
+                interpolatedRotAngles.z = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.z : m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z;
             }
 
             // Scale Read
             if (SyncScaleX)
             {
-                interpolatedScale.x = Interpolate ? m_ScaleXInterpolator.GetInterpolatedValue() : networkState.Scale.x;
+                interpolatedScale.x = networkState.IsTeleporting || !Interpolate ? networkState.Scale.x : m_ScaleXInterpolator.GetInterpolatedValue();
             }
 
             if (SyncScaleY)
             {
-                interpolatedScale.y = Interpolate ? m_ScaleYInterpolator.GetInterpolatedValue() : networkState.Scale.y;
+                interpolatedScale.y = networkState.IsTeleporting || !Interpolate ? networkState.Scale.y : m_ScaleYInterpolator.GetInterpolatedValue();
             }
 
             if (SyncScaleZ)
             {
-                interpolatedScale.z = Interpolate ? m_ScaleZInterpolator.GetInterpolatedValue() : networkState.Scale.z;
+                interpolatedScale.z = networkState.IsTeleporting || !Interpolate ? networkState.Scale.z : m_ScaleZInterpolator.GetInterpolatedValue();
             }
 
             // Position Apply
@@ -738,7 +773,7 @@ namespace Unity.Netcode.Components
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                         // from an unauthorized transform change or euler to quaternion conversion artifacts.
                         var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                        Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state! Please use CommitUpdate() or your own [ServerRpc]", this);
+                        Debug.LogWarning(dirtyField + k_NoAuthorityMessage, this);
                     }
 
                     // Apply updated interpolated value
@@ -750,11 +785,25 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Teleports the transform to the given values without interpolating
         /// </summary>
-        public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
+        public void Teleport(Vector3 newPosition, Vector3 newRotationEuler, Vector3 newScale)
         {
+            if (!CanCommitToTransform)
+            {
+                Debug.LogWarning("Teleport not allowed, "+k_NoAuthorityMessage);
+                return;
+            }
+
+            var stateToSend = m_LocalAuthoritativeNetworkState;
+            stateToSend.IsTeleporting = true;
+            stateToSend.Position = newPosition;
+            stateToSend.Rotation = newRotationEuler;
+            stateToSend.Scale = newScale;
+            ApplyInterpolatedNetworkStateToTransform(stateToSend, transform);
+            // set teleport flag in state to signal to ghosts not to interpolate
+            m_LocalAuthoritativeNetworkState.IsTeleporting = true;
             // check server side
-            // set teleport flag in state
-            throw new NotImplementedException(); // TODO MTT-769
+            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, NetworkManager.LocalTime.Time);
+            m_LocalAuthoritativeNetworkState.IsTeleporting = false;
         }
     }
 }
