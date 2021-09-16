@@ -270,7 +270,7 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
-        // private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+        private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
 
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
@@ -629,6 +629,7 @@ namespace Unity.Netcode.Components
 
         private void Awake()
         {
+            m_Transform = transform;
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -643,7 +644,7 @@ namespace Unity.Netcode.Components
 
             if (CanWriteToTransform)
             {
-                TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
 
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
@@ -675,7 +676,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, transform);
+                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
         }
 
@@ -697,9 +698,7 @@ namespace Unity.Netcode.Components
             {
                 if (IsServer)
                 {
-                    TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-                    // var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time, transform);
-                    // ReplicateToGhosts(m_LocalAuthoritativeNetworkState, isDirty);
+                    TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
                 }
 
                 m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
@@ -726,7 +725,7 @@ namespace Unity.Netcode.Components
                     // try to update previously consumed NetworkState
                     // if we have any changes, that means made some updates locally
                     // we apply the latest ReplNetworkState again to revert our changes
-                    var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, transform);
+                    var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
                     if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                     {
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
@@ -736,7 +735,7 @@ namespace Unity.Netcode.Components
                     }
 
                     // Apply updated interpolated value
-                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, transform);
+                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
         }
