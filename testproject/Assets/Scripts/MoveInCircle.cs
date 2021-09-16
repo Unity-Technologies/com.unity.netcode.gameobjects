@@ -46,7 +46,7 @@ public class MoveInCircle : NetworkBehaviour
             var deltaTime = isFixed ? Time.fixedDeltaTime : Time.deltaTime;
             transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);
             transform.Rotate(0, m_RotationSpeed * deltaTime, 0);
-            transform.localScale = ((Mathf.Sin(isFixed ? Time.fixedTime : Time.time)+1) * Vector3.one);
+            transform.localScale = ((Mathf.Sin(isFixed ? Time.fixedTime : Time.time) + 1) * Vector3.one);
         }
     }
 }

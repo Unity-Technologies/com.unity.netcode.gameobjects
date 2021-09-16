@@ -812,8 +812,7 @@ namespace Unity.Netcode
             Initialize(maxFrameHistory);
         }
 
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
         /// <summary>
         /// Enables testing of the MessageQueueContainer
         /// </summary>

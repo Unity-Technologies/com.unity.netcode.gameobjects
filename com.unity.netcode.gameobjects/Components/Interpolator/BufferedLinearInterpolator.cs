@@ -12,7 +12,7 @@ namespace Unity.Netcode
     internal abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // interface for mock testing, abstracting away external systems
-        public interface IInterpolatorTime
+        internal interface IInterpolatorTime
         {
             double BufferedServerTime { get; }
             double BufferedServerFixedTime { get; }
@@ -128,7 +128,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    t = (float) ((RenderTime - m_StartTimeConsumed.Time) / range);
+                    t = (float)((RenderTime - m_StartTimeConsumed.Time) / range);
                 }
 
                 if (t > 3) // max extrapolation
@@ -160,7 +160,7 @@ namespace Unity.Netcode
 
             if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
-                m_Buffer.Add(new BufferedItem {Item = newMeasurement, TimeSent = sentTime});
+                m_Buffer.Add(new BufferedItem { Item = newMeasurement, TimeSent = sentTime });
                 m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
             }
         }

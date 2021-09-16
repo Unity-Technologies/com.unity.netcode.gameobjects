@@ -11,7 +11,7 @@ namespace Unity.Netcode.Components
     /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
-    [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
+    [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         internal struct NetworkTransformState : INetworkSerializable
@@ -35,8 +35,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_InLocalSpaceBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_InLocalSpaceBit));
+                    if (value) { m_Bitset = (ushort) m_Bitset | (1 << k_InLocalSpaceBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_InLocalSpaceBit)); }
                 }
             }
 
@@ -46,8 +46,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_PositionXBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionXBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionXBit));
+                    if (value) { Bitset = (ushort) (Bitset | (1 << PositionXBit)); }
+                    else { Bitset = ushort) (Bitset & ~(1 << PositionXBit)); }
                 }
             }
 
@@ -56,8 +56,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_PositionYBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionYBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionYBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << PositionYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << PositionYBit)); }
                 }
             }
 
@@ -66,8 +66,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_PositionZBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_PositionZBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_PositionZBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << PositionZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << PositionZBit)); }
                 }
             }
 
@@ -77,8 +77,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleXBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleXBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << RotAngleXBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << RotAngleXBit)); }
                 }
             }
 
@@ -87,8 +87,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleYBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleYBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << RotAngleYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << RotAngleYBit)); }
                 }
             }
 
@@ -97,8 +97,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_RotAngleZBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_RotAngleZBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << RotAngleZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << RotAngleZBit)); }
                 }
             }
 
@@ -108,8 +108,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleXBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleXBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << ScaleXBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << ScaleXBit)); }
                 }
             }
 
@@ -118,8 +118,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleYBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleYBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << ScaleYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << ScaleYBit)); }
                 }
             }
 
@@ -128,8 +128,8 @@ namespace Unity.Netcode.Components
                 get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
                 set
                 {
-                    if (value) m_Bitset = (ushort) (m_Bitset | (1 << k_ScaleZBit));
-                    else m_Bitset = (ushort) (m_Bitset & ~(1 << k_ScaleZBit));
+                    if (value) { Bitset = (ushort)(Bitset | (1 << ScaleZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << ScaleZBit)); }
                 }
             }
 
