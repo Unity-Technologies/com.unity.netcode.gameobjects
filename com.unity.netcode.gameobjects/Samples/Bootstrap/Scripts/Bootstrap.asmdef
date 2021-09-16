@@ -2,7 +2,6 @@
 	"name": "Bootstrap",
     "rootNamespace": "Unity.Netcode.Samples",
     "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Netcode.Prototyping"
+        "Unity.Netcode.Runtime"
     ]
 }
