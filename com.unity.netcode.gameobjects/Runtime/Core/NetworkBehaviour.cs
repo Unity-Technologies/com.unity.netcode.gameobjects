@@ -270,6 +270,12 @@ namespace Unity.Netcode
         public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
 
         /// <summary>
+        /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
+        /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
+        /// </summary>
+        public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
+
+        /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkObject NetworkObject
@@ -337,21 +343,13 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
-        /// <summary>
-        /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
-        /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
-        /// </summary>
-        public bool IsSpawned { get; internal set; }
-
         internal void InternalOnNetworkSpawn()
         {
-            IsSpawned = true;
             InitializeVariables();
         }
 
         internal void InternalOnNetworkDespawn()
         {
-            IsSpawned = false;
         }
 
         /// <summary>
