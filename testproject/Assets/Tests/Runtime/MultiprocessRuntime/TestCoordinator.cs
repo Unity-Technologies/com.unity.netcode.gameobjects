@@ -41,24 +41,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Instance != null)
         {
-            Debug.LogError("Multiple test coordinators detected, destroying this instance");
-            var loadedScenes = "Loaded Scenes:\n";
-            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
-            {
-                var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
-                var sceneName = scene.name;
-                loadedScenes += sceneName + "\n";
-                if (sceneName == Unity.Netcode.MultiprocessRuntimeTests.BuildMultiprocessTestPlayer.MainSceneName)
-                {
-                    var gameObjectList = scene.GetRootGameObjects();
-                    foreach (var gameObject in gameObjectList)
-                    {
-                        loadedScenes += gameObject.name + ", ";
-                    }
-                    loadedScenes += "\n";
-                }
-            }
-            Debug.LogError(loadedScenes);
+            Debug.LogError("Multiple test coordinator, destroying this instance");
             Destroy(gameObject);
             return;
         }
@@ -118,21 +101,12 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal.Clear();
     }
 
-    private void OnDisable()
-    {
-        //Remove our reference
-        Instance = null;
-    }
-
     public void OnDestroy()
     {
         if (NetworkObject != null && NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
-
-        //Remove our reference
-        Instance = null;
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
