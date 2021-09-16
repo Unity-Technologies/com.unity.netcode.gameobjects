@@ -52,7 +52,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             };
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+
+            StartServerLoadScene();
 
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
@@ -82,7 +83,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             };
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+
+            StartServerLoadScene();
 
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
@@ -105,7 +107,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_LoadComplete);
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+            StartServerLoadScene();
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
 
@@ -130,7 +132,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_LoadComplete);
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+            StartServerLoadScene();
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
@@ -159,7 +161,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_LoadComplete));
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+
+            StartServerLoadScene();
 
             yield return waitForServerLoadComplete.Wait();
             Assert.IsTrue(waitForServerLoadComplete.Done);
@@ -187,7 +190,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_LoadComplete));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive));
+            StartServerLoadScene();
 
             yield return waitForServerLoadComplete.Wait();
             Assert.IsTrue(waitForServerLoadComplete.Done);
@@ -225,7 +228,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Unload));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+            StartServerUnloadScene();
 
             yield return WaitForCondition(() => serverSceneUnloaded);
 
@@ -264,7 +267,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Unload));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+            StartServerUnloadScene();
 
             yield return WaitForCondition(() => serverSceneUnloaded);
 
@@ -294,7 +297,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+
+            StartServerUnloadScene();
 
             yield return waitForClientUnloadComplete.Wait();
             Assert.IsTrue(waitForClientUnloadComplete.Done);
@@ -324,7 +328,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+            StartServerUnloadScene();
 
             yield return waitForClientUnloadComplete.Wait();
             Assert.IsTrue(waitForClientUnloadComplete.Done);
@@ -354,7 +358,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_UnLoadComplete));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+            StartServerUnloadScene();
 
             yield return waitForServerUnloadComplete.Wait();
             Assert.IsTrue(waitForServerUnloadComplete.Done);
@@ -384,7 +388,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_UnLoadComplete));
 
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene));
+            StartServerUnloadScene();
 
             yield return waitForServerUnloadComplete.Wait();
             Assert.IsTrue(waitForServerUnloadComplete.Done);
@@ -507,6 +511,18 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(newClient.LocalClientId, receivedMetric.Connection.Id);
         }
 
+        private void StartServerLoadScene()
+        {
+            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(SimpleSceneName, LoadSceneMode.Additive);
+            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
+        }
+
+        private void StartServerUnloadScene()
+        {
+            var unloadSceneResult = m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+            Assert.AreEqual(SceneEventProgressStatus.Started, unloadSceneResult);
+        }
+
         // Loads a scene, then waits for the client to notify the server
         // that it has finished loading the scene, as this is the last thing that happens.
         private IEnumerator LoadTestScene(string sceneName)
@@ -520,8 +536,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 }
             };
 
-            // load the scene
-            Assert.AreEqual(SceneEventProgressStatus.Started, m_ServerNetworkSceneManager.LoadScene(sceneName, LoadSceneMode.Additive));
+            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
 
             yield return WaitForCondition(() => sceneLoadComplete);
 
