@@ -264,9 +264,9 @@ namespace Unity.Netcode
         /// <returns></returns>
         public bool SetSceneEventDataPoolSize(int sceneEventDataPoolSize)
         {
-            if (sceneEventDataPoolSize > MaximumSceneEventDataPoolSizeThreshold)
+            if (sceneEventDataPoolSize > DefaultSceneEventDataPoolSize)
             {
-                if (sceneEventDataPoolSize < MaximumSceneEventDataPoolSizeThreshold)
+                if (sceneEventDataPoolSize <= MaximumSceneEventDataPoolSizeThreshold)
                 {
                     if (sceneEventDataPoolSize > m_MaxSceneEventDataPoolSize)
                     {
@@ -274,21 +274,25 @@ namespace Unity.Netcode
                         {
                             SceneEventDataPool.Add(new SceneEventData(m_NetworkManager));
                         }
+                        m_MaxSceneEventDataPoolSize = sceneEventDataPoolSize;
                         return true;
                     }
                     else
                     {
-                        Debug.LogWarning($"During runtime you can only increase the {nameof(SceneEventData)} pool size relative to its last set value of ({m_MaxSceneEventDataPoolSize}).");
+                        Debug.LogWarning($"Invalid size [{sceneEventDataPoolSize}], during runtime you can only increase the {nameof(SceneEventData)} " +
+                            $"pool size relative to its last set value of [{m_MaxSceneEventDataPoolSize}].");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value large than the maximum pool size of ({MaximumSceneEventDataPoolSizeThreshold}).");
+                    Debug.LogWarning($"Invalid size [{sceneEventDataPoolSize}], you cannot set the {nameof(SceneEventData)} pool size to a value larger" +
+                        $" than the maximum pool size of [{MaximumSceneEventDataPoolSizeThreshold}].");
                 }
             }
             else
             {
-                Debug.LogWarning($"You cannot set the {nameof(SceneEventData)} pool size to a value smaller than the default size of ({DefaultSceneEventDataPoolSize}).");
+                Debug.LogWarning($"Invalid size [{sceneEventDataPoolSize}], you cannot set the {nameof(SceneEventData)} pool size to a value smaller " +
+                    $"than or equal to the default size of [{DefaultSceneEventDataPoolSize}].");
             }
             return false;
         }

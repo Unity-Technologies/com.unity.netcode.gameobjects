@@ -547,6 +547,7 @@ namespace TestProject.RuntimeTests
         internal const int MinSize = NetworkSceneManager.DefaultSceneEventDataPoolSize;
         internal const int MaxSize = NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
 
+        private int m_CurrentPoolSize = NetworkSceneManager.DefaultSceneEventDataPoolSize;
         /// <summary>
         /// Tests that the bounds checking will prevent users from selecting a data pool size outside of the possible bounds
         /// </summary>
@@ -554,13 +555,36 @@ namespace TestProject.RuntimeTests
         [Test]
         public void SceneEventDataPoolBoundsTest([Values(MinSize - 5, MinSize, MinSize + MinSize, MaxSize - 1, MaxSize, MaxSize + 1)] int sceneEventDataPoolSize)
         {
-            bool shouldFail = sceneEventDataPoolSize <= NetworkSceneManager.DefaultSceneEventDataPoolSize && sceneEventDataPoolSize >= NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
+            bool shouldFail = sceneEventDataPoolSize <= NetworkSceneManager.DefaultSceneEventDataPoolSize || sceneEventDataPoolSize > NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold;
             bool success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize);
-            Assert.IsTrue(success == shouldFail);
+            if (success)
+            {
+                m_CurrentPoolSize = sceneEventDataPoolSize;
+            }
 
-            // Each time try to reduce the size of the SceneEventData pool after increasing the size (which is not allowed)
-            success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize - 10);
-            Assert.False(success);
+            if (shouldFail)
+            {
+                if (sceneEventDataPoolSize <= NetworkSceneManager.DefaultSceneEventDataPoolSize)
+                {
+                    LogAssert.Expect(LogType.Warning, $"Invalid size [{sceneEventDataPoolSize}], you cannot set the {nameof(SceneEventData)} pool size to a value smaller " +
+                    $"than or equal to the default size of [{NetworkSceneManager.DefaultSceneEventDataPoolSize}].");
+                }
+                else
+                {
+                    LogAssert.Expect(LogType.Warning, $"Invalid size [{sceneEventDataPoolSize}], you cannot set the {nameof(SceneEventData)} pool size to a value larger" +
+                        $" than the maximum pool size of [{NetworkSceneManager.MaximumSceneEventDataPoolSizeThreshold}].");
+                }
+            }
+
+            Assert.IsTrue(!success == shouldFail);
+            if (success)
+            {
+                LogAssert.Expect(LogType.Warning, $"Invalid size [{sceneEventDataPoolSize - 5}], during runtime you can only increase the {nameof(SceneEventData)} " +
+                            $"pool size relative to its last set value of [{m_CurrentPoolSize}].");
+                // Each time try to reduce the size of the SceneEventData pool after increasing the size (which is not allowed)
+                success = m_ServerNetworkManager.SceneManager.SetSceneEventDataPoolSize(sceneEventDataPoolSize - 5);
+                Assert.False(success);
+            }
         }
 
 
@@ -580,12 +604,10 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="sceneEventDataPoolSize"></param>
         [Test]
-        public void SceneEventDataPoolRolloverTest([Values(MinSize + MinSize, MaxSize)] int sceneEventDataPoolSize)
+        public void SceneEventDataPoolRolloverTest([Values(MinSize * 2, MaxSize * 2)] int sceneEventDataPoolSize)
         {
             // Test the bounds of the default SceneEventDataPool
-            var maximumRollOver = NetworkSceneManager.DefaultSceneEventDataPoolSize * 10;
-
-            for (int i = 0; i < maximumRollOver; i++)
+            for (int i = 0; i < sceneEventDataPoolSize; i++)
             {
                 GetNextIndex(m_ServerNetworkManager);
                 GetNextIndex(m_ClientNetworkManagers[0]);
