@@ -35,8 +35,12 @@ namespace Unity.Netcode
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+#pragma warning disable 414 // disable assigned but its value is never used
+#pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __sendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
+#pragma warning restore 414 // restore assigned but its value is never used
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
@@ -78,8 +82,12 @@ namespace Unity.Netcode
 #endif
         }
 
+#pragma warning disable 414 // disable assigned but its value is never used
+#pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal unsafe void __sendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
+#pragma warning disable 414 // disable assigned but its value is never used
+#pragma warning disable IDE1006 // disable naming rule violation check
         {
             NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
             switch (delivery)
