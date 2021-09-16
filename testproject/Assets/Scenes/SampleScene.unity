@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641275, b: 0.5748172, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -181,6 +181,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -439,6 +440,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -650,6 +652,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -746,6 +749,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -854,7 +858,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 620561609}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
@@ -886,7 +890,13 @@ MonoBehaviour:
     NetworkTransport: {fileID: 620561613}
     PlayerPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
       type: 3}
-    NetworkPrefabs: []
+    NetworkPrefabs:
+    - Override: 0
+      Prefab: {fileID: 8133991607019124060, guid: 421bcf732fe69486d8abecfa5eee63bb,
+        type: 3}
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -926,19 +936,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 620561609}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db28424c2ae12f64da25c9ecccded6b1, type: 3}
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Port: 7777
-  Address: 127.0.0.1
-  PingInterval: 1
-  DisconnectTimeout: 5
-  ReconnectDelay: 0.5
-  MaxConnectAttempts: 10
-  MessageBufferSize: 5120
-  SimulatePacketLossChance: 5
-  SimulateMinLatency: 60
-  SimulateMaxLatency: 100
+  m_ProtocolType: 1
+  m_MessageBufferSize: 1024
+  m_ReciveQueueSize: 128
+  m_SendQueueSize: 128
+  m_SendQueueBatchSize: 4096
+  m_ServerAddress: 127.0.0.1
+  m_ServerPort: 7777
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1055,6 +1062,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: ExitButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221156307247795, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5266522511616468950, guid: 3200770c16e3b2b4ebe7f604154faac7,
         type: 3}
@@ -1713,6 +1725,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1751,6 +1764,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 878759701}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &889928732 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1075789770412922203, guid: d725b5588e1b956458798319e6541d84,
+    type: 3}
+  m_PrefabInstance: {fileID: 1928839749}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &963826002
 GameObject:
   m_ObjectHideFlags: 0
@@ -1785,7 +1804,7 @@ Transform:
   m_LocalScale: {x: 0.42366, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &963826004
 MonoBehaviour:
@@ -1866,6 +1885,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1904,6 +1924,51 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963826002}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1202924672
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1202924674}
+  - component: {fileID: 1202924673}
+  m_Layer: 0
+  m_Name: UnityChanSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1202924673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202924672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05037a80244af4174806bc7f242e4432, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnityChanPrefab: {fileID: 8133991607019124060, guid: 421bcf732fe69486d8abecfa5eee63bb,
+    type: 3}
+--- !u!4 &1202924674
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202924672}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -10, y: -0.1, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1237561005
 GameObject:
   m_ObjectHideFlags: 0
@@ -2095,7 +2160,6 @@ GameObject:
   - component: {fileID: 1333567165}
   - component: {fileID: 1333567164}
   - component: {fileID: 1333567163}
-  - component: {fileID: 1333567167}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -2185,20 +2249,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1333567167
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1333567162}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4390d966eb8724ba2907f775b34e94ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NetworkManager: {fileID: 620561611}
-  ButtonsRoot: {fileID: 0}
 --- !u!1 &1345111612
 GameObject:
   m_ObjectHideFlags: 0
@@ -2228,7 +2278,7 @@ Transform:
   m_Children:
   - {fileID: 1475593094}
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1397037315
 GameObject:
@@ -2349,6 +2399,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2400,7 +2451,7 @@ Transform:
   m_Children:
   - {fileID: 772203958}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1398767341
 GameObject:
@@ -2460,6 +2511,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2617,6 +2669,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2668,7 +2721,7 @@ Transform:
   m_Children:
   - {fileID: 1237561006}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1463459130
 GameObject:
@@ -2714,6 +2767,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2824,6 +2878,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2920,6 +2975,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3158,6 +3214,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3236,6 +3293,46 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1333567166}
     m_Modifications:
+    - target: {fileID: 2956145122089128464, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartServerButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122089128464, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122546206394, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartClientButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122546206394, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122624039697, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartHostButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122624039697, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
+    - target: {fileID: 4850072633501053442, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_JoinCodeInput
+      value: 
+      objectReference: {fileID: 889928732}
+    - target: {fileID: 4850072633501053442, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_RelayAllocationBasePath
+      value: https://relay-allocations-stg.services.api.unity.com
+      objectReference: {fileID: 0}
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3406,6 +3503,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
