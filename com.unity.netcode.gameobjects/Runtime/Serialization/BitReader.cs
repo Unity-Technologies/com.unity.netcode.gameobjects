@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -105,7 +106,7 @@ namespace Unity.Netcode
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
             ulong val = 0;
@@ -142,7 +143,7 @@ namespace Unity.Netcode
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
             value = ReadByteBits((int)bitCount);
@@ -159,7 +160,7 @@ namespace Unity.Netcode
             int checkPos = (m_BitPosition + 1);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginReadBits()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginReadBits)}()");
             }
 #endif
 
@@ -175,7 +176,7 @@ namespace Unity.Netcode
             var val = new T();
             byte* ptr = ((byte*)&val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
+            UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
             m_BitPosition += bytesToRead * k_BitsPerByte;
             value = val;

@@ -559,7 +559,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + bytesToRead > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 
@@ -587,7 +587,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + 1 > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             value = BufferPointer[PositionInternal++];
@@ -635,7 +635,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + size > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
@@ -801,13 +801,13 @@ namespace Unity.Netcode
             }
             if (PositionInternal + len > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }
@@ -842,7 +842,7 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }

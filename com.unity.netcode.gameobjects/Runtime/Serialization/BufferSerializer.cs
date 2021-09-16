@@ -204,6 +204,9 @@ namespace Unity.Netcode
         /// go past the point you've marked using PreCheck(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using PreCheck is to avoid bounds checking in the following
         /// operations in release builds.
+        ///
+        /// To get the correct size to check for, use FastBufferWriter.GetWriteSize(value) or
+        /// FastBufferWriter.GetWriteSize&lt;type&gt;()
         /// </summary>
         /// <param name="amount">Number of bytes you plan to read or write</param>
         /// <returns>True if the read/write can proceed, false otherwise.</returns>
@@ -213,7 +216,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Serialize a GameObject
+        /// Serialize a GameObject.
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="value">Value to serialize</param>
         public void SerializeValuePreChecked(ref GameObject value)
@@ -223,6 +230,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Serialize a NetworkObject
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="value">Value to serialize</param>
         public void SerializeValuePreChecked(ref NetworkObject value)
@@ -232,6 +243,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Serialize a NetworkBehaviour
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="value">Value to serialize</param>
         public void SerializeValuePreChecked(ref NetworkBehaviour value)
@@ -243,6 +258,10 @@ namespace Unity.Netcode
         /// Serialize a string.
         /// 
         /// Note: Will ALWAYS allocate a new string when reading.
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="s">Value to serialize</param>
         /// <param name="oneByteChars">
@@ -264,6 +283,10 @@ namespace Unity.Netcode
         /// (This is because C# doesn't allow setting an array's length value, so deserializing
         /// into an existing array of larger size would result in an array that doesn't have as many values
         /// as its Length indicates it should.)
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="array">Value to serialize</param>
         public void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged
@@ -273,6 +296,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Serialize a single byte
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="value">Value to serialize</param>
         public void SerializeValuePreChecked(ref byte value)
@@ -283,6 +310,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Serialize an unmanaged type. Supports basic value types as well as structs.
         /// The provided type will be copied to/from the buffer as it exists in memory.
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
         /// </summary>
         /// <param name="value">Value to serialize</param>
         public void SerializeValuePreChecked<T>(ref T value) where T : unmanaged
