@@ -40,12 +40,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [TestCase(60, 30, ExpectedResult = null)]
-        [TestCase(30, 30, ExpectedResult = null)]
-        [TestCase(40, 30, ExpectedResult = null)]
-        [TestCase(10, 30, ExpectedResult = null)]
-        [TestCase(60, 60, ExpectedResult = null)]
-        [TestCase(60, 10, ExpectedResult = null)]
+        [TestCase(60, 30u, ExpectedResult = null)]
+        [TestCase(30, 30u, ExpectedResult = null)]
+        [TestCase(40, 30u, ExpectedResult = null)]
+        [TestCase(10, 30u, ExpectedResult = null)]
+        [TestCase(60, 60u, ExpectedResult = null)]
+        [TestCase(60, 10u, ExpectedResult = null)]
         public IEnumerator TestTimeMultiInstance(int targetFrameRate, uint tickRate)
         {
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, targetFrameRate, tickRate);
