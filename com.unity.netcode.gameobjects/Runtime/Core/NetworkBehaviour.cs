@@ -714,6 +714,14 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkVariablesDirty()
+        {
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                NetworkVariableFields[j].SetDirty(true);
+            }
+        }
+
         internal void WriteNetworkVariableData(Stream stream, ulong clientId)
         {
             if (NetworkVariableFields.Count == 0)
