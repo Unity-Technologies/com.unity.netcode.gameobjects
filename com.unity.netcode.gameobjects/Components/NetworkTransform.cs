@@ -9,7 +9,7 @@ namespace Unity.Netcode.Components
     /// A component for syncing transforms
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
-    [DefaultExecutionOrder(1000)] // this is needed to catch the update time after the transform was updated by user scripts
+    [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         internal struct NetworkState : INetworkSerializable
