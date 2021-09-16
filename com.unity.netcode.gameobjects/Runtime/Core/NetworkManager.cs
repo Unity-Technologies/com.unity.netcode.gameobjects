@@ -795,6 +795,7 @@ namespace Unity.Netcode
             }
 
             Initialize(false);
+            m_MessagingSystem.ClientConnected(ServerClientId);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
