@@ -9,18 +9,19 @@ namespace Unity.Netcode.Samples
     public class ClientNetworkTransform : NetworkTransform
     {
         /// <summary>
-        /// Used to determine who can write to this transform. Owner client only
+        /// Used to determine who can write to this transform. Owner client only.
         /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients.
         /// We're using RPCs to send updated values from client to server. Netcode doesn't support client side network variable writing
         /// </summary>
-        protected override bool CanWriteToTransform => IsClient && IsOwner;
+        // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
+        public override bool CanCommitToTransform => IsClient && IsOwner;
 
         protected override void Update()
         {
             base.Update();
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
-                if (CanWriteToTransform)
+                if (CanCommitToTransform)
                 {
                     TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
                 }

@@ -244,12 +244,13 @@ namespace Unity.Netcode.Components
         public bool Interpolate = true;
 
         /// <summary>
-        /// Used to determine who can write to this transform. Server side only.
-        /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients. See the ClientNetworkTransform Sample
+        /// Used to determine who can write to this transform. Server only for this transform.
+        /// Changing this value alone in a child implementation will not allow you to create a NetworkTransform which can be written to by clients. See the ClientNetworkTransform Sample
         /// in the package samples for how to implement a NetworkTransform with client write support.
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
-        protected virtual bool CanWriteToTransform => IsServer;
+        // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
+        public virtual bool CanCommitToTransform => IsServer;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
@@ -617,7 +618,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanWriteToTransform)
+            if (CanCommitToTransform)
             {
                 // we're the authority, we ignore incoming changes
                 return;
@@ -649,7 +650,7 @@ namespace Unity.Netcode.Components
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
-            if (CanWriteToTransform)
+            if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
@@ -677,7 +678,7 @@ namespace Unity.Netcode.Components
         {
             ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
 
-            if (CanWriteToTransform)
+            if (CanCommitToTransform)
             {
                 m_ReplicatedNetworkState.SetDirty(true);
             }
@@ -701,7 +702,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanWriteToTransform)
+            if (CanCommitToTransform)
             {
                 if (IsServer)
                 {
@@ -721,7 +722,7 @@ namespace Unity.Netcode.Components
 
                 m_RotationInterpolator.Update(Time.deltaTime);
 
-                if (!CanWriteToTransform)
+                if (!CanCommitToTransform)
                 {
                     if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
                     {
