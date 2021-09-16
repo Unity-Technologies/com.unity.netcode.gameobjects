@@ -15,11 +15,10 @@ GameObject:
   - component: {fileID: 8685790303553767872}
   - component: {fileID: -745482209883575862}
   - component: {fileID: 947981134}
-  - component: {fileID: 7023392397975834761}
   - component: {fileID: 8685790303553767876}
   - component: {fileID: 3809075828520557319}
   - component: {fileID: 7138389085065872747}
-  - component: {fileID: -8876012781836178769}
+  - component: {fileID: 5715768330125915997}
   m_Layer: 0
   m_Name: PlayerCube
   m_TagString: Target
@@ -233,33 +232,6 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &7023392397975834761
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8685790303553767886}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0
-  RotAngleThreshold: 0
-  ScaleThreshold: 0
-  InLocalSpace: 0
-  Interpolate: 1
-  FixedSendsPerSecond: 30
 --- !u!114 &8685790303553767876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299,7 +271,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Range: 10
---- !u!114 &-8876012781836178769
+--- !u!114 &-4978466230159947418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8685790303553767886}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9548116c10df1486ea12b7329b77c5cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5715768330125915997
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -308,6 +292,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8685790303553767886}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Authority: 1
+  InLocalSpace: 0
+  FixedSendsPerSecond: 30
+  m_PositionInterpolatorFactory: {fileID: 0}
