@@ -2,25 +2,32 @@
   name: 2021.2 Build Android player
   agent:
       type: Unity::VM
-      image: package-ci/win10:stable
-      flavor: b1.large
+      image: desktop/android-execution-r19:v0.1.1-860408
+      flavor: b1.xlarge
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-    - | 
-       mkdir C:\TMP
-       cd C:\TMP
-       unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
+    - python .yamato/disable-burst-if-requested.py --project-path testproject --platform Android
+    - unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
     - |
        set UTR_VERSION=0.12.0
-       utr.bat --suite=playmode --platform=Android --editor-location=C:\TMP\.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=il2cpp --build-only --testfilter=Unity.Netcode.RuntimeTests --extra-editor-arg=-nographics --timeout=1800 --extra-editor-arg=-batchmode --reruncount=2
+       utr.bat --artifacts_path=artifacts --timeout=1800 --testproject=testproject --editor-location=.Editor --suite=playmode --platform=android --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
-    players:
-        paths:
-          - "build/players/**"
     logs:
-        paths:
-          - "build/logs/**"
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
+      - build/test-results/**
+      - artifacts/**
+      - build/players/**
+  variables:
+    CI: true
+    ENABLE_BURST_COMPILATION: False
 
 2021.2_Build_iOS_player:
   name: 2021.2 Build iOS player
@@ -34,14 +41,20 @@
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
     - export UTR_VERSION=0.12.0
-    - ./utr --suite=playmode --platform=iOS --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --build-only --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr --artifacts_path=artifacts --timeout=1800 --testproject=testproject --editor-location=.Editor --suite=playmode --platform=iOS --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
-    players:
-        paths:
-          - "build/players/**"
     logs:
-        paths:
-          - "build/logs/**"
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
+      - build/test-results/**
+      - artifacts/**
+      - build/players/**
 
 
 2021.2_Run_iOS_Player_With_Tests:
@@ -61,11 +74,20 @@
     - chmod +x ./utr
     # Run the test build on the device
     - export UTR_VERSION=0.12.0
-    - ./utr --suite=playmode --platform=iOS --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     logs:
-        paths:
-          - "build/test-results/**"
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
+      - build/test-results/**
+      - artifacts/**
+      - build/players/**
     
 2021.2_Run_Android_Player_With_Tests:
   name: 2021.2 Run Android player with tests
@@ -85,9 +107,18 @@
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
        set UTR_VERSION=0.12.0
-       ./utr --suite=playmode --platform=android --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests
+       ./utr --artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=android --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   # Set uploadable artifact paths
   artifacts:
     logs:
       paths:
-        - "build/test-results/**"
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
+      - build/test-results/**
+      - artifacts/**
+      - build/players/**

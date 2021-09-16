@@ -1,0 +1,22 @@
+{
+  "name": "Unity.Netcode.Adapter.UTP.Editor",
+  "rootNamespace": "",
+  "references": [
+    "Unity.Collections",
+    "Unity.Jobs",
+    "Unity.Burst",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
