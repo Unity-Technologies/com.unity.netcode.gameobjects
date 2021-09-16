@@ -38,7 +38,7 @@ public class SetIsOwner : MonoBehaviour
     {
         if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
         {
-            Debug.Log(NetworkManager.Singleton.LocalClientId);
+            // Debug.Log(NetworkManager.Singleton.LocalClientId);
         }
     }
 }

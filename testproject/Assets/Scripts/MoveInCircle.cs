@@ -47,7 +47,7 @@ public class MoveInCircle : NetworkBehaviour
 
     private void Tick(bool isFixed)
     {
-        if (m_NetworkTransform.CanCommitToTransform || !m_RunServerOnly)
+        if (m_NetworkTransform != null && m_NetworkTransform.CanCommitToTransform || !m_RunServerOnly)
         {
             var deltaTime = isFixed ? Time.fixedDeltaTime : Time.deltaTime;
             transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);

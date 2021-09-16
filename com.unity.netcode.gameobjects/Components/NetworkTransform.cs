@@ -332,7 +332,6 @@ namespace Unity.Netcode.Components
         {
             m_LocalAuthoritativeNetworkState = networkState;
             m_ReplicatedNetworkState.Value = networkState;
-            m_ReplicatedNetworkState.SetDirty(true);
             AddInterpolatedState(networkState);
         }
 
