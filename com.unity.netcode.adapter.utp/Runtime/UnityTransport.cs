@@ -461,7 +461,7 @@ namespace Unity.Netcode
                 }
 
                 // we need to cleanup any SendQueues for this connectionID;
-                var keys = new NativeList<SendTarget>(Allocator.Temp); // use nativelist and manual foreach to avoid allocations
+                var keys = new NativeList<SendTarget>(16, Allocator.Temp); // use nativelist and manual foreach to avoid allocations
                 foreach (var key in m_SendQueue.Keys)
                 {
                     if (key.ClientId == clientId)
