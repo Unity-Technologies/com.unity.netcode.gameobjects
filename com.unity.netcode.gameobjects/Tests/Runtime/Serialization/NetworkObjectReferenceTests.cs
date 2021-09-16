@@ -112,6 +112,36 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
             otherObjectContext.Object.Spawn();
 
+            testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference(otherObjectContext.Object));
+
+            // wait for rpc completion
+            float t = 0;
+            while (testNetworkBehaviour.RpcReceivedGameObject == null)
+            {
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(otherObjectContext.Object, testNetworkBehaviour.RpcReceivedNetworkObject);
+            Assert.AreEqual(otherObjectContext.Object.gameObject, testNetworkBehaviour.RpcReceivedGameObject);
+        }
+
+        [UnityTest]
+        public IEnumerator TestRpcImplicitNetworkObject()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
+
             testNetworkBehaviour.SendReferenceServerRpc(otherObjectContext.Object);
 
             // wait for rpc completion
@@ -130,6 +160,55 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             // validate
             Assert.AreEqual(otherObjectContext.Object, testNetworkBehaviour.RpcReceivedNetworkObject);
             Assert.AreEqual(otherObjectContext.Object.gameObject, testNetworkBehaviour.RpcReceivedGameObject);
+        }
+
+        [UnityTest]
+        public IEnumerator TestRpcImplicitGameObject()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
+
+            testNetworkBehaviour.SendReferenceServerRpc(otherObjectContext.Object.gameObject);
+
+            // wait for rpc completion
+            float t = 0;
+            while (testNetworkBehaviour.RpcReceivedGameObject == null)
+            {
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(otherObjectContext.Object, testNetworkBehaviour.RpcReceivedNetworkObject);
+            Assert.AreEqual(otherObjectContext.Object.gameObject, testNetworkBehaviour.RpcReceivedGameObject);
+        }
+
+        [Test]
+        public void TestNetworkVariable()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
+
+            // check default value is null
+            Assert.IsNull((NetworkObject)testNetworkBehaviour.TestVariable.Value);
+
+            testNetworkBehaviour.TestVariable.Value = networkObjectContext.Object;
+
+            Assert.AreEqual((GameObject)testNetworkBehaviour.TestVariable.Value, networkObjectContext.Object.gameObject);
+            Assert.AreEqual((NetworkObject)testNetworkBehaviour.TestVariable.Value, networkObjectContext.Object);
         }
 
         [Test]

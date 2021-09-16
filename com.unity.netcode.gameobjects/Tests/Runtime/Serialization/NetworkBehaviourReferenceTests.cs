@@ -37,6 +37,35 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
             otherObjectContext.Object.Spawn();
 
+            testNetworkBehaviour.SendReferenceServerRpc(new NetworkBehaviourReference(testNetworkBehaviour));
+
+            // wait for rpc completion
+            float t = 0;
+            while (testNetworkBehaviour.RpcReceivedBehaviour == null)
+            {
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
+        }
+
+        [UnityTest]
+        public IEnumerator TestRpcImplicitNetworkBehaviour()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
+
             testNetworkBehaviour.SendReferenceServerRpc(testNetworkBehaviour);
 
             // wait for rpc completion
@@ -54,6 +83,24 @@ namespace Unity.Netcode.RuntimeTests.Serialization
 
             // validate
             Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
+        }
+
+        [Test]
+        public void TestNetworkVariable()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            using var otherObjectContext = UnityObjectContext.CreateNetworkObject();
+            otherObjectContext.Object.Spawn();
+
+            // check default value is null
+            Assert.IsNull((NetworkBehaviour)testNetworkBehaviour.TestVariable.Value);
+
+            testNetworkBehaviour.TestVariable.Value = testNetworkBehaviour;
+
+            Assert.AreEqual((NetworkBehaviour)testNetworkBehaviour.TestVariable.Value, testNetworkBehaviour);
         }
 
         [Test]
