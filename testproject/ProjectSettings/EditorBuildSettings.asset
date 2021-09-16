@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/MainMenu.unity
     guid: 21c7fd68cda9dd9488fc0cc01f885e39
   - enabled: 1
+    path: Assets/Scenes/ZooSam.unity
+    guid: 4683469c9a191411fbda5e426765b2fc
+  - enabled: 1
     path: Assets/Samples/SamplesMenu.unity
     guid: 037562c9b1a469f498dfb34256ddf86f
   - enabled: 1

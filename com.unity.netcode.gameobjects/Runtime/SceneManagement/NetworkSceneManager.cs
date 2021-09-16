@@ -1209,7 +1209,10 @@ namespace Unity.Netcode
                         sceneEventData.OnWrite(nonNullContext.NetworkWriter);
 
                         var size = bufferSizeCapture.StopMeasureSegment();
-                        m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, size);
+                        var bytesReported = m_NetworkManager.LocalClientId == clientId
+                            ? 0
+                            : size;
+                        m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, bytesReported);
                     }
                     else
                     {
@@ -1324,8 +1327,11 @@ namespace Unity.Netcode
                 ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
 
                 var size = bufferSizeCapture.StopMeasureSegment();
+                var bytesReported = m_NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : size;
                 m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    clientId, (uint)ClientSynchEventData.SceneEventType, "", size);
+                    clientId, (uint)ClientSynchEventData.SceneEventType, "", bytesReported);
             }
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
@@ -1677,8 +1683,12 @@ namespace Unity.Netcode
                     sceneEventData.OnRead(reader);
                     NetworkReaderPool.PutBackInPool(reader);
 
+                    var bytesReported = m_NetworkManager.LocalClientId == clientId
+                        ? 0
+                        : stream.Length;
+
                     m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                       clientId, (uint)sceneEventData.SceneEventType, ScenesInBuild[(int)sceneEventData.SceneIndex], stream.Length);
+                       clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], bytesReported);
 
                     if (sceneEventData.IsSceneEventClientSide())
                     {
