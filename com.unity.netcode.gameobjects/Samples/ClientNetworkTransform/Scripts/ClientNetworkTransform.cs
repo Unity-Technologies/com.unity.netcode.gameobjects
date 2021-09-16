@@ -24,7 +24,7 @@ namespace Unity.Netcode.Samples
             {
                 if (CanCommitToTransform)
                 {
-                    TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+                    TryCommitTransformToServer(transform);
                 }
             }
         }

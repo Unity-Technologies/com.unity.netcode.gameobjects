@@ -281,9 +281,44 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="transformToCommit"></param>
         /// <param name="dirtyTime"></param>
-        protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
+        public void TryCommitTransformToServer(Transform transformToCommit)
+        {
+            TryCommitTransformToServer(transformToCommit, NetworkManager.LocalTime.Time);
+        }
+
+        private void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
+            TryCommit(isDirty);
+        }
+
+        public void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            TryCommitValuesToServer(position, rotation, scale, NetworkManager.LocalTime.Time);
+        }
+
+        private void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
+        {
+            var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
+
+            TryCommit(isDirty.isDirty);
+        }
+
+        private void TryCommit(bool isDirty)
+        {
+            if (!IsOwner && !IsServer)
+            {
+                Debug.LogWarning("Only owner or server can try to update a NetworkTransform");
+                return;
+            }
+
+            if (CanCommitToTransform)
+            {
+                var oldIsTeleporting = m_LocalAuthoritativeNetworkState.IsTeleporting;
+                m_LocalAuthoritativeNetworkState.IsTeleporting = true;
+                ApplyInterpolatedNetworkStateToTransform(m_LocalAuthoritativeNetworkState, transform);
+                m_LocalAuthoritativeNetworkState.IsTeleporting = oldIsTeleporting;
+            }
 
             void Send()
             {
@@ -319,13 +354,11 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void CommitTransformServerRpc(NetworkTransformState networkState, ServerRpcParams serverParams = default)
+        // If switching owner server side at runtime, some of these in flight RPCs could trigger some warnings about trying to call an RPC when you're not allowed
+        [ServerRpc]
+        private void CommitTransformServerRpc(NetworkTransformState networkState)
         {
-            if (serverParams.Receive.SenderClientId == OwnerClientId) // RPC call when not authorized to write could happen during the RTT interval during which a server's ownership change hasn't reached the client yet
-            {
-                CommitLocallyAndReplicate(networkState);
-            }
+            CommitLocallyAndReplicate(networkState);
         }
 
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
@@ -360,7 +393,11 @@ namespace Unity.Netcode.Components
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
             var scale = InLocalSpace ? transformToUse.localScale : transformToUse.lossyScale;
+            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
+        }
 
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Vector3 position, Vector3 rotAngles, Vector3 scale)
+        {
             var isDirty = false;
             var isPositionDirty = false;
             var isRotationDirty = false;
