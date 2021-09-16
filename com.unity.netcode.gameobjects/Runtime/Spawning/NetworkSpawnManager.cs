@@ -116,7 +116,10 @@ namespace Unity.Netcode
 
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
+                    var bytesReported = NetworkManager.LocalClientId == client.Key
+                        ? 0
+                        : size;
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
                 }
             }
         }
@@ -163,7 +166,10 @@ namespace Unity.Netcode
                 var size = bufferSizeCapture.StopMeasureSegment();
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
+                    var bytesReported = NetworkManager.LocalClientId == client.Key
+                        ? 0
+                        : size;
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
                 }
             }
         }
@@ -328,6 +334,7 @@ namespace Unity.Netcode
             SpawnedObjectsList.Add(networkObject);
 
             NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
+            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject.NetworkObjectId, networkObject.name, 0);
 
             if (ownerClientId != null)
             {
@@ -389,8 +396,13 @@ namespace Unity.Netcode
                     WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
 
                     var size = bufferSizeCapture.StopMeasureSegment();
-                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
+                    var bytesReported = NetworkManager.LocalClientId == clientId
+                        ? 0
+                        : size;
+                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
                 }
+
+                networkObject.MarkVariablesDirty();
             }
         }
 
@@ -451,7 +463,6 @@ namespace Unity.Netcode
                 var (isReparented, latestParent) = networkObject.GetNetworkParenting();
                 NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
             }
-            networkObject.WriteNetworkVariableData(writer.GetStream(), clientId);
         }
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
@@ -668,7 +679,13 @@ namespace Unity.Netcode
                                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
                                     var size = bufferSizeCapture.StopMeasureSegment();
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                    foreach (var targetClientId in m_TargetClientIds)
+                                    {
+                                        var bytesReported = NetworkManager.LocalClientId == targetClientId
+                                            ? 0
+                                            : size;
+                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                                    }
                                 }
                             }
                         }

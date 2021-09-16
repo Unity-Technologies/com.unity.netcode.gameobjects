@@ -322,7 +322,10 @@ namespace Unity.Netcode
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
 
                     var size = bufferSizeCapture.StopMeasureSegment();
-                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
+                    var bytesReported = NetworkManager.LocalClientId == clientId
+                        ? 0
+                        : size;
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, bytesReported);
                 }
             }
         }
@@ -849,6 +852,15 @@ namespace Unity.Netcode
                 var behavior = ChildNetworkBehaviours[i];
                 behavior.InitializeVariables();
                 behavior.WriteNetworkVariableData(stream, clientId);
+            }
+        }
+
+        internal void MarkVariablesDirty()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.MarkVariablesDirty();
             }
         }
 
