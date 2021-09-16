@@ -5,12 +5,10 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A prototype component for syncing animations
+    /// A prototype base-class component for syncing the state of Mecanim Animators
     /// </summary>
-    [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
-    public class NetworkAnimator : NetworkBehaviour
+    public abstract class NetworkAnimator : NetworkBehaviour
     {
-
         private class AnimatorSnapshot : INetworkSerializable
         {
             public Dictionary<int, bool> BoolParameters;
@@ -229,26 +227,10 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Server authority only allows the server to update this animator
-        /// Client authority only allows the client owner to update this animator
-        /// </summary>
-        public enum Authority
-        {
-            Server = 0,
-            Owner
-        }
-
-        /// <summary>
         /// This constant is used to force the resync if the delta between current
         /// and last synced normalized state time goes above it
         /// </summary>
         private const float k_NormalizedTimeResyncThreshold = 0.15f;
-
-        /// <summary>
-        /// Specifies who can update this animator
-        /// </summary>
-        [Tooltip("Defines who can update this animator.")]
-        public Authority AnimatorAuthority = Authority.Owner;
 
         [SerializeField]
         private float m_SendRate = 0.1f;
@@ -260,9 +242,46 @@ namespace Unity.Netcode.Components
         private AnimatorSnapshot m_AnimatorSnapshot;
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
 
-        public bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Owner && IsOwner) || (IsServer && AnimatorAuthority == Authority.Server);
+        private ulong[] m_ServerMessagingTargetClientIds;
+        private Dictionary<ulong, ulong[]> m_ClientIdsExcludingThemselvesCache;
+
+        public abstract bool IsAuthorityOverAnimator { get; }
 
         public override void OnNetworkSpawn()
+        {
+            TryInitialize(m_Animator);
+        }
+
+        /// <summary>
+        /// This function call will attempt to (re)initialize the NetworkAnimator object.
+        /// It will succeed if NetworkObject.IsSpawned is true and if the animator is not null.
+        /// </summary>
+        /// <returns></returns>
+        public bool TryInitialize(Animator animator)
+        {
+            if (!NetworkObject.IsSpawned)
+            {
+                return false;
+            }
+
+            if (animator == null)
+            {
+                return false;
+            }
+
+            if (m_Animator != null)
+            {
+                m_CachedAnimatorParameters = null;
+                m_AnimatorSnapshot = null;
+            }
+
+            m_Animator = animator;
+
+            Initialize();
+            return true;
+        }
+
+        private void Initialize()
         {
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new List<(int, AnimatorControllerParameterType)>(parameters.Length);
@@ -303,7 +322,8 @@ namespace Unity.Netcode.Components
             var triggerParameters = new HashSet<int>();
             var states = new LayerState[m_Animator.layerCount];
 
-            m_AnimatorSnapshot = new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
+            m_AnimatorSnapshot =
+                new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
 
             if (!IsAuthorityOverAnimator)
             {
@@ -327,8 +347,32 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private ulong[] ServerToClientMessagingTargetClientIds
+        {
+            get
+            {
+                if (m_ServerMessagingTargetClientIds == null)
+                {
+                    m_ServerMessagingTargetClientIds = NetworkManager.ConnectedClientsList
+                        .Where(c => c.ClientId != NetworkManager.ServerClientId)
+                        .Select(c => c.ClientId)
+                        .ToArray();
+                }
+
+                return m_ServerMessagingTargetClientIds;
+            }
+        }
+
+        private void InvalidateCachedClientIds()
+        {
+            m_ServerMessagingTargetClientIds = null;
+            m_ClientIdsExcludingThemselvesCache = null;
+        }
+
         private void ServerOnClientConnectedCallback(ulong clientId)
         {
+            InvalidateCachedClientIds();
+
             if (IsAuthorityOverAnimator)
             {
                 m_ServerRequestsAnimationResync = true;
@@ -338,10 +382,7 @@ namespace Unity.Netcode.Components
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
+                    TargetClientIds = ServerToClientMessagingTargetClientIds
                 }
             };
 
@@ -470,10 +511,7 @@ namespace Unity.Netcode.Components
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = NetworkManager.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                            .Select(c => c.ClientId)
-                            .ToArray()
+                        TargetClientIds = ServerToClientMessagingTargetClientIds
                     }
                 };
 
@@ -483,6 +521,25 @@ namespace Unity.Netcode.Components
             {
                 SendParamsAndLayerStatesServerRpc(m_AnimatorSnapshot);
             }
+        }
+
+        private ulong[] GetTargetClientIds(ulong originClientId)
+        {
+            if (m_ClientIdsExcludingThemselvesCache == null)
+            {
+                m_ClientIdsExcludingThemselvesCache = new Dictionary<ulong, ulong[]>();
+            }
+
+            if (!m_ClientIdsExcludingThemselvesCache.TryGetValue(originClientId, out var ids))
+            {
+                ids = NetworkManager.ConnectedClientsList
+                    .Where(c => c.ClientId != originClientId)
+                    .Select(c => c.ClientId)
+                    .ToArray();
+                m_ClientIdsExcludingThemselvesCache[originClientId] = ids;
+            }
+
+            return ids;
         }
 
         [ServerRpc]
@@ -497,10 +554,7 @@ namespace Unity.Netcode.Components
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
+                    TargetClientIds = GetTargetClientIds(serverRpcParams.Receive.SenderClientId)
                 }
             };
 
