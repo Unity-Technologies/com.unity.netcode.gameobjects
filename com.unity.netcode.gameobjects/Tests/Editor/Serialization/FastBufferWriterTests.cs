@@ -480,10 +480,8 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 writer.TryBeginWrite(100);
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteByte(1); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteByte(1); });
             }
         }
 
@@ -496,10 +494,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
             }
         }
 
@@ -512,10 +508,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 int i = 1;
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(i); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(i); });
             }
         }
 
@@ -528,10 +522,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteBytes(bytes, bytes.Length); });
             }
         }
 
@@ -545,10 +537,8 @@ namespace Unity.Netcode.EditorTests
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
                 int i = 1;
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(""); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(""); });
             }
         }
 
@@ -560,10 +550,8 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 writer.TryBeginWrite(100);
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteByteSafe(1); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteByteSafe(1); });
             }
         }
 
@@ -576,10 +564,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
             }
         }
 
@@ -592,10 +578,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 int i = 1;
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(i); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(i); });
             }
         }
 
@@ -608,10 +592,8 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteBytesSafe(bytes, bytes.Length); });
             }
         }
 
@@ -623,10 +605,8 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 writer.TryBeginWrite(100);
-                using (var context = writer.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(""); });
-                }
+                using var context = writer.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { writer.WriteValueSafe(""); });
             }
         }
 

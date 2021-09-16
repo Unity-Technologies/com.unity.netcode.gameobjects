@@ -317,26 +317,20 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitReader = reader.EnterBitwiseContext())
-                    {
-                        bitReader.ReadBit(out bool b);
-                    }
+                    using var bitReader = reader.EnterBitwiseContext();
+                    bitReader.ReadBit(out bool b);
                 });
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitReader = reader.EnterBitwiseContext())
-                    {
-                        bitReader.ReadBits(out byte b, 1);
-                    }
+                    using var bitReader = reader.EnterBitwiseContext();
+                    bitReader.ReadBits(out byte b, 1);
                 });
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitReader = reader.EnterBitwiseContext())
-                    {
-                        bitReader.ReadBits(out ulong ul, 1);
-                    }
+                    using var bitReader = reader.EnterBitwiseContext();
+                    bitReader.ReadBits(out ulong ul, 1);
                 });
 
                 Assert.AreEqual(0, reader.Position);
@@ -344,21 +338,19 @@ namespace Unity.Netcode.EditorTests
                 Assert.Throws<OverflowException>(() =>
                 {
                     Assert.IsTrue(reader.TryBeginRead(1));
-                    using (var bitReader = reader.EnterBitwiseContext())
+                    using var bitReader = reader.EnterBitwiseContext();
+                    ulong ul;
+                    try
                     {
-                        ulong ul;
-                        try
-                        {
-                            bitReader.ReadBits(out ul, 4);
-                            bitReader.ReadBits(out ul, 4);
-                        }
-                        catch (OverflowException e)
-                        {
-                            Assert.Fail("Overflow exception was thrown too early.");
-                            throw;
-                        }
+                        bitReader.ReadBits(out ul, 4);
                         bitReader.ReadBits(out ul, 4);
                     }
+                    catch (OverflowException e)
+                    {
+                        Assert.Fail("Overflow exception was thrown too early.");
+                        throw;
+                    }
+                    bitReader.ReadBits(out ul, 4);
                 });
 
             }

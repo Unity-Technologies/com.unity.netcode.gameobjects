@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.EditorTests;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Random = System.Random;
 
 namespace Unity.Netcode

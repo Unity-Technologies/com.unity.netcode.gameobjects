@@ -501,10 +501,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadByte(out byte b); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadByte(out byte b); });
             }
         }
 
@@ -516,11 +514,9 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    byte[] b = { 0, 1, 2 };
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytes(ref b, 3); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                byte[] b = { 0, 1, 2 };
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytes(ref b, 3); });
             }
         }
 
@@ -532,10 +528,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out int i); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out int i); });
             }
         }
 
@@ -547,10 +541,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out byte[] b); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out byte[] b); });
             }
         }
 
@@ -562,10 +554,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out string s); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValue(out string s); });
             }
         }
 
@@ -577,10 +567,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadByteSafe(out byte b); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadByteSafe(out byte b); });
             }
         }
 
@@ -592,11 +580,9 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    byte[] b = { 0, 1, 2 };
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytesSafe(ref b, 3); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                byte[] b = { 0, 1, 2 };
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadBytesSafe(ref b, 3); });
             }
         }
 
@@ -608,10 +594,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out int i); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out int i); });
             }
         }
 
@@ -623,10 +607,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out byte[] b); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out byte[] b); });
             }
         }
 
@@ -638,10 +620,8 @@ namespace Unity.Netcode.EditorTests
 
             using (emptyReader)
             {
-                using (var context = emptyReader.EnterBitwiseContext())
-                {
-                    Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out string s); });
-                }
+                using var context = emptyReader.EnterBitwiseContext();
+                Assert.Throws<InvalidOperationException>(() => { emptyReader.ReadValueSafe(out string s); });
             }
         }
 

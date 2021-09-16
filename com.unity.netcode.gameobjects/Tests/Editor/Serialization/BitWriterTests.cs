@@ -270,34 +270,26 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitWriter = writer.EnterBitwiseContext())
-                    {
-                        bitWriter.WriteBit(true);
-                    }
+                    using var bitWriter = writer.EnterBitwiseContext();
+                    bitWriter.WriteBit(true);
                 });
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitWriter = writer.EnterBitwiseContext())
-                    {
-                        bitWriter.WriteBit(false);
-                    }
+                    using var bitWriter = writer.EnterBitwiseContext();
+                    bitWriter.WriteBit(false);
                 });
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitWriter = writer.EnterBitwiseContext())
-                    {
-                        bitWriter.WriteBits(0b11111111, 1);
-                    }
+                    using var bitWriter = writer.EnterBitwiseContext();
+                    bitWriter.WriteBits(0b11111111, 1);
                 });
 
                 Assert.Throws<OverflowException>(() =>
                 {
-                    using (var bitWriter = writer.EnterBitwiseContext())
-                    {
-                        bitWriter.WriteBits(0b11111111UL, 1);
-                    }
+                    using var bitWriter = writer.EnterBitwiseContext();
+                    bitWriter.WriteBits(0b11111111UL, 1);
                 });
 
                 Assert.AreEqual(0, writer.Position);
@@ -310,20 +302,18 @@ namespace Unity.Netcode.EditorTests
                 Assert.Throws<OverflowException>(() =>
                 {
                     Assert.IsTrue(writer.TryBeginWrite(1));
-                    using (var bitWriter = writer.EnterBitwiseContext())
+                    using var bitWriter = writer.EnterBitwiseContext();
+                    try
                     {
-                        try
-                        {
-                            bitWriter.WriteBits(0b11111111UL, 4);
-                            bitWriter.WriteBits(0b11111111UL, 4);
-                        }
-                        catch (OverflowException e)
-                        {
-                            Assert.Fail("Overflow exception was thrown too early.");
-                            throw;
-                        }
-                        bitWriter.WriteBits(0b11111111UL, 1);
+                        bitWriter.WriteBits(0b11111111UL, 4);
+                        bitWriter.WriteBits(0b11111111UL, 4);
                     }
+                    catch (OverflowException e)
+                    {
+                        Assert.Fail("Overflow exception was thrown too early.");
+                        throw;
+                    }
+                    bitWriter.WriteBits(0b11111111UL, 1);
                 });
 
             }

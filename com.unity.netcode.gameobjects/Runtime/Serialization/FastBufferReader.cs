@@ -48,7 +48,7 @@ namespace Unity.Netcode
             LengthInternal = Math.Max(1, length == -1 ? buffer.Length : length);
             if (allocator == Allocator.None)
             {
-                BufferPointer = (byte*) buffer.GetUnsafePtr() + offset;
+                BufferPointer = (byte*)buffer.GetUnsafePtr() + offset;
             }
             else
             {
@@ -88,7 +88,7 @@ namespace Unity.Netcode
                     UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
                 }
 
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
@@ -123,7 +123,7 @@ namespace Unity.Netcode
                     UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
                 }
 
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
@@ -148,13 +148,13 @@ namespace Unity.Netcode
             LengthInternal = Math.Max(1, length);
             if (allocator == Allocator.None)
             {
-                    BufferPointer = buffer + offset;
+                BufferPointer = buffer + offset;
             }
             else
             {
                 void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
                 UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
-                BufferPointer = (byte*) bufferPtr;
+                BufferPointer = (byte*)bufferPtr;
             }
 
             PositionInternal = 0;
