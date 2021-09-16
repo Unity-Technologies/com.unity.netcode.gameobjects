@@ -51,7 +51,7 @@ public class NetworkObjectLabel : NetworkBehaviour
             m_ObjectLabel = GetComponent<TextMesh>();
         }
 
-        m_ObjectLabel.text = "None";p
+        m_ObjectLabel.text = "None";
 
         base.OnNetworkDespawn();
     }
