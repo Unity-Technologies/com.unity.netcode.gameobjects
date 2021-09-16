@@ -12,7 +12,7 @@ namespace Unity.Netcode
     internal abstract class BufferedLinearInterpolator<T> where T : struct
     {
         // interface for mock testing, abstracting away external systems
-        public interface IInterpolatorTime
+        internal interface IInterpolatorTime
         {
             double BufferedServerTime { get; }
             double BufferedServerFixedTime { get; }
