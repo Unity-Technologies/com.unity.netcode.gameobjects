@@ -132,7 +132,6 @@ namespace Unity.Netcode
 
                 if (t > 3) // max extrapolation
                 {
-                    // TODO this causes issues with teleport, investigate
                     // todo make this configurable
                     t = 1;
                 }

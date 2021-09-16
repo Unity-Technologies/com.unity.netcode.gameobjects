@@ -340,7 +340,6 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX);
             m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY);
             m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ);
-            Debug.Log($"Resetting interpolated state to {m_PositionXInterpolator.GetInterpolatedValue()}, prev transform is {m_PrevNetworkState.PositionX}");
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
@@ -369,9 +368,6 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
-            Debug.Log($"update before {m_PrevNetworkState.PositionX}");
-
-
             if (SyncPositionX &&
                 Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold &&
                 !Mathf.Approximately(networkState.PositionX, position.x))
@@ -380,7 +376,6 @@ namespace Unity.Netcode.Components
                 networkState.HasPositionX = true;
                 isPositionDirty = true;
             }
-            Debug.Log($"update after {m_PrevNetworkState.PositionX}");
 
             if (SyncPositionY &&
                 Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
@@ -466,9 +461,7 @@ namespace Unity.Netcode.Components
 
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
         {
-            Debug.Log($"before {m_PrevNetworkState.PositionX}");
             m_PrevNetworkState = networkState;
-            Debug.Log($"after {m_PrevNetworkState.PositionX}");
 
             var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
             var interpolatedRotAngles = InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
@@ -536,8 +529,6 @@ namespace Unity.Netcode.Components
                 }
 
                 m_PrevNetworkState.Position = interpolatedPosition;
-                Debug.Log($"after after {m_PrevNetworkState.PositionX}");
-
             }
 
             // RotAngles Apply
