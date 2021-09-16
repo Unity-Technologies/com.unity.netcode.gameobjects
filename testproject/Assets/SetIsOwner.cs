@@ -11,14 +11,14 @@ public class SetIsOwner : MonoBehaviour
     }
 
     [CustomEditor(typeof(SetIsOwner))]
-    public class GameEventEditor : UnityEditor.Editor
+    public class GameEventEditor : Editor
     {
         private string clientID = "clientID (ulong)";
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
 
-            var gameEvent = (SetIsOwner) target;
+            var gameEvent = (SetIsOwner)target;
 
 
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
@@ -34,7 +34,7 @@ public class SetIsOwner : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
         {
