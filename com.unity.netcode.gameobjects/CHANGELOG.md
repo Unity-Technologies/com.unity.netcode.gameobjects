@@ -42,10 +42,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
-- `NetworkSceneManager.SwitchScnee` has been replaced by `NetworkSceneManager.LoadScene` (#955)
+- `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
   - Improved newly joined client synchronization
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
+- Network variable cleanup - eliminated shared mode, variables are server-authoritative
 - FindObject(s)OfType now filters NetworkManagers (#763)
 - BufferManager now uses internal NetworkManager (#746)
 - InternalMessageSender is no longer static (#739)
@@ -67,6 +68,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Allow Runtime Scene Changes was no longer needed and was removed
 - Removed the NetworkObject.Spawn payload parameter (#1005)
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
+- Removed NetworkSet, NetworkDictionary
 
 ### Fixed
 - Fixed parenting not being preserved during scene transitions (#1148)
@@ -101,9 +103,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
 - [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
-- [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
-- [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
-- [611678a2] (2021-08-25) Matt Walsh / feat!: network variables - client auth, permission cleanup, containers (#1074)
 - [93c8db00] (2021-08-24) Jesse Olmer / chore!: Remove unsupported UNET Relay behavior (MTT-1000) (#1081)
 - [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
 - [0d956059] (2021-08-19) Luke Stampfli / fix: networkmanager destroy on app quit (#1011)
@@ -111,8 +110,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
 - [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
 - [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTimeField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
-- [1da76b29] (2021-08-05) Matt Walsh / fix!: added plainly-callable Add() method to NetworkSet [MTT-1005] (#1022)
-- [5b9f953b] (2021-08-04) Matt Walsh / test: add network collections, struct and class tests MTT-936 (#1000)
 - [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
 - [cbe74c2e] (2021-07-30) Luke Stampfli / fix: Client throw exception when destroying spawned object (invalid operation) (#981)
 - [c25821d2] (2021-07-27) Jaedyn Draper / fix: Fixes for a few things discovered from the message ordering refactor: (#985)
@@ -142,7 +139,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [fa15fc6f] (2021-06-01) Jesse Olmer / docs: Fix typo in changelog version title
 - [bd223cfb] (2021-06-01) Lori Krell / docs: Hotfix Changelog for 0.1.1 and manual update (#873)
 - [39b56366] (2021-06-01) Jesse Olmer / fix: Update package patch version to allow package registry re-publish
-- [22c8db80] (2021-05-24) Matt Walsh / refactor!: tick param removal (#853)
 - [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
 - [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
 - [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
@@ -163,13 +159,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - [0f7d388b] (2021-04-14) Jesse Olmer / Merge tag '0.1.0' into develop
 - [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
 - [f6cdc679] (2021-04-08) Jesse Olmer / chore: codeowners for transport, scene mgmt, and docs (#712)
-- [e9c826fc] (2021-03-27) Sean Stolberg / ci: streamline PR and nightly CI jobs (#671)
-- [5a5fc055] (2021-03-23) Matt Walsh / Merge pull request #651 from Unity-Technologies/fix/destroyobjectspam
-- [22523476] (2021-03-16) Sean Stolberg / ci: Add code coverage that depends on the pack job (#633)
-- [8619b338] (2021-03-16) Matt Walsh / Merge pull request #623 from Unity-Technologies/tmp/release-to-develop-mergeback
-- [ef830abe] (2021-03-15) Matt Walsh / Merge remote-tracking branch 'origin/release/0.1.0' into tmp/release-to-develop-mergeback
-- [26ffe4bd] (2021-03-09) Matt Walsh / chore: merge release0.1.0 back to mainline (#575)
-- [caff1f6b] (2021-03-04) Matt Walsh / revert: Add NetworkAddress and NetworkPort properties to Transport. (#512) (#530)
 
 ## [0.2.0] - 2021-06-03
 
