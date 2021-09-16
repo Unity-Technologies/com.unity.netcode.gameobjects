@@ -24,6 +24,8 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 enabled = false;
             }
+
+            transform.position += Vector3.up * NetworkObject.NetworkObjectId * 1.1f;
         }
 
         private void Update()

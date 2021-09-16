@@ -25,6 +25,7 @@ namespace Unity.Netcode.Components
                 FloatParamArray = new KeyValuePair<int, float>[floatCount];
                 TriggerParameters = new List<int>(triggerCount);
                 LayerStates = new LayerState[layerStatesCount];
+                SetBuffersToDefaultValues();
             }
 
             public AnimatorSnapshot()
@@ -34,9 +35,10 @@ namespace Unity.Netcode.Components
                 FloatParamArray = new KeyValuePair<int, float>[0];
                 TriggerParameters = new List<int>(0);
                 LayerStates = new LayerState[0];
+                SetBuffersToDefaultValues();
             }
 
-            private void ResetBuffersToDefaultValues()
+            private void SetBuffersToDefaultValues()
             {
                 for (int i = 0; i < BoolParamArray.Length; i++)
                 {
@@ -62,19 +64,26 @@ namespace Unity.Netcode.Components
             {
                 bool setOrUpdatedValue = false;
 
-                for (int i = 0; i < IntParamArray.Length; i++)
+                int existingKvIndex = Array.FindIndex(IntParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    var kv = IntParamArray[i];
-
-                    if (kv.Key != -1 ||
-                        (kv.Key == key && kv.Value != value))
+                    for (int i = 0; i < IntParamArray.Length; i++)
                     {
-                        continue;
-                    }
+                        var kv = IntParamArray[i];
 
-                    IntParamArray[i] = new KeyValuePair<int, int>(key, value);
+                        if (kv.Key == -1)
+                        {
+                            IntParamArray[i] = new KeyValuePair<int, int>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if ( IntParamArray[existingKvIndex].Value != value )
+                {
+                    IntParamArray[existingKvIndex] = new KeyValuePair<int, int>(key, value);
                     setOrUpdatedValue = true;
-                    break;
                 }
 
                 return setOrUpdatedValue;
@@ -84,19 +93,26 @@ namespace Unity.Netcode.Components
             {
                 bool setOrUpdatedValue = false;
 
-                for (int i = 0; i < BoolParamArray.Length; i++)
+                int existingKvIndex = Array.FindIndex(BoolParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    var kv = BoolParamArray[i];
-
-                    if (kv.Key != -1 ||
-                        (kv.Key == key && kv.Value != value))
+                    for (int i = 0; i < BoolParamArray.Length; i++)
                     {
-                        continue;
-                    }
+                        var kv = BoolParamArray[i];
 
-                    BoolParamArray[i] = new KeyValuePair<int, bool>(key, value);
+                        if (kv.Key == -1)
+                        {
+                            BoolParamArray[i] = new KeyValuePair<int, bool>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if ( BoolParamArray[existingKvIndex].Value != value )
+                {
+                    BoolParamArray[existingKvIndex] = new KeyValuePair<int, bool>(key, value);
                     setOrUpdatedValue = true;
-                    break;
                 }
 
                 return setOrUpdatedValue;
@@ -106,19 +122,26 @@ namespace Unity.Netcode.Components
             {
                 bool setOrUpdatedValue = false;
 
-                for (int i = 0; i < FloatParamArray.Length; i++)
+                int existingKvIndex = Array.FindIndex(FloatParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    var kv = FloatParamArray[i];
-
-                    if (kv.Key != -1 ||
-                        (kv.Key == key && Mathf.Abs(kv.Value - value) < Mathf.Epsilon))
+                    for (int i = 0; i < FloatParamArray.Length; i++)
                     {
-                        continue;
-                    }
+                        var kv = FloatParamArray[i];
 
-                    FloatParamArray[i] = new KeyValuePair<int, float>(key, value);
+                        if (kv.Key == -1)
+                        {
+                            FloatParamArray[i] = new KeyValuePair<int, float>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if ( FloatParamArray[existingKvIndex].Value != value )
+                {
+                    FloatParamArray[existingKvIndex] = new KeyValuePair<int, float>(key, value);
                     setOrUpdatedValue = true;
-                    break;
                 }
 
                 return setOrUpdatedValue;
@@ -142,11 +165,6 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
-                if (serializer.IsReading)
-                {
-                    ResetBuffersToDefaultValues();
-                }
-
                 SerializeIntParameters(serializer);
                 SerializeFloatParameters(serializer);
                 SerializeBoolParameters(serializer);
@@ -191,6 +209,11 @@ namespace Unity.Netcode.Components
             {
                 int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
                 serializer.Serialize(ref paramCount);
+
+                if (TriggerParameters.Count != paramCount)
+                {
+                    TriggerParameters = new List<int>(paramCount);
+                }
 
                 for (int i = 0; i < paramCount; i++)
                 {
@@ -555,6 +578,7 @@ namespace Unity.Netcode.Components
         private bool StoreParameters()
         {
             bool changed = false;
+
             foreach (var animParam in m_CachedAnimatorParameters)
             {
                 var animParamHash = animParam.Item1;
