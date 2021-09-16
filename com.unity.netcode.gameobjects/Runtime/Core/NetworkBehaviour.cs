@@ -350,6 +350,7 @@ namespace Unity.Netcode
 
         internal void InternalOnNetworkDespawn()
         {
+
         }
 
         /// <summary>
