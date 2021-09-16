@@ -8,6 +8,6 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/" + nameof(ClientNetworkAnimator))]
     public class ClientNetworkAnimator : NetworkAnimator
     {
-        public override bool IsAuthorityOverAnimator => IsClient && IsOwner;
+        public override bool WillCommitChanges => IsClient && IsOwner;
     }
 }

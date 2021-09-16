@@ -205,7 +205,7 @@ GameObject:
   - component: {fileID: 3078684836441782554}
   - component: {fileID: 3078684836448737212}
   - component: {fileID: 5295167410665083249}
-  - component: {fileID: 8604477742407164331}
+  - component: {fileID: 2947719363456079390}
   m_Layer: 0
   m_Name: NetworkAnimatedCube-Server
   m_TagString: Untagged
@@ -259,7 +259,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b322be05414199349ae9d1aea28228a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &8604477742407164331
+--- !u!114 &2947719363456079390
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -268,11 +268,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 3078684836441482554}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9fb5c4e9bdcb441e87a61e3491906154, type: 3}
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_SendRate: 0.1
-  m_Animator: {fileID: 3078684836448737212}
+  m_Animator: {fileID: 0}
 --- !u!1 &3078684837583100501
 GameObject:
   m_ObjectHideFlags: 0

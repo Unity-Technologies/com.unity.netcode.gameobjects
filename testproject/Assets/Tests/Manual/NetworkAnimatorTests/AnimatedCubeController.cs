@@ -28,7 +28,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private void Update()
         {
-            if (m_NetworkAnimator.IsAuthorityOverAnimator)
+            if (m_NetworkAnimator.WillCommitChanges)
             {
                 if (Input.GetKeyDown(KeyCode.C))
                 {

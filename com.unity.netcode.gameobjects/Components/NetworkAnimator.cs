@@ -5,9 +5,10 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A prototype base-class component for syncing the state of Mecanim Animators
+    /// A prototype component for syncing Mecanim Animator state in a server-driven manner
     /// </summary>
-    public abstract class NetworkAnimator : NetworkBehaviour
+    [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
+    public class NetworkAnimator : NetworkBehaviour
     {
         private class AnimatorSnapshot : INetworkSerializable
         {
@@ -245,7 +246,11 @@ namespace Unity.Netcode.Components
         private ulong[] m_ServerMessagingTargetClientIds;
         private Dictionary<ulong, ulong[]> m_ClientIdsExcludingThemselvesCache;
 
-        public abstract bool IsAuthorityOverAnimator { get; }
+        /// <summary>
+        /// This property tells us if the changes made to the Mecanim Animator will be synced to other peers or not.
+        /// If not - then whatever local changes are done to the Mecanim Animator - they'll get overriden.
+        /// </summary>
+        public virtual bool WillCommitChanges => IsServer;
 
         public override void OnNetworkSpawn()
         {
@@ -325,7 +330,7 @@ namespace Unity.Netcode.Components
             m_AnimatorSnapshot =
                 new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
 
-            if (!IsAuthorityOverAnimator)
+            if (!WillCommitChanges)
             {
                 m_Animator.StopPlayback();
             }
@@ -373,7 +378,7 @@ namespace Unity.Netcode.Components
         {
             InvalidateCachedClientIds();
 
-            if (IsAuthorityOverAnimator)
+            if (WillCommitChanges)
             {
                 m_ServerRequestsAnimationResync = true;
             }
@@ -393,7 +398,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void RequestResyncClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!WillCommitChanges)
             {
                 return;
             }
@@ -408,7 +413,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (IsAuthorityOverAnimator)
+            if (WillCommitChanges)
             {
                 bool shouldSendBasedOnTime = CheckSendRate();
                 bool shouldSendBasedOnChanges = StoreState();
@@ -545,7 +550,7 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SendParamsAndLayerStatesServerRpc(AnimatorSnapshot animSnapshot, ServerRpcParams serverRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!WillCommitChanges)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
@@ -564,7 +569,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendParamsAndLayerStatesClientRpc(AnimatorSnapshot animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!WillCommitChanges)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
