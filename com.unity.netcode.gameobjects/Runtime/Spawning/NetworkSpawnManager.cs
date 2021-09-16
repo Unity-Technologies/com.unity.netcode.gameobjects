@@ -401,6 +401,8 @@ namespace Unity.Netcode
                         : size;
                     NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
                 }
+
+                networkObject.MarkVariablesDirty();
             }
         }
 
@@ -461,7 +463,6 @@ namespace Unity.Netcode
                 var (isReparented, latestParent) = networkObject.GetNetworkParenting();
                 NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
             }
-            networkObject.WriteNetworkVariableData(writer.GetStream(), clientId);
         }
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
