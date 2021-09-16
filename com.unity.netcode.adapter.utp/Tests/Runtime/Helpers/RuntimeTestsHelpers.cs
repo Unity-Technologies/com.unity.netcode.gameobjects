@@ -10,7 +10,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
     public static class RuntimeTestsHelpers
     {
         // 50ms should be plenty enough for any network interaction to occur (even roundtrips).
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         public const float MaxNetworkEventWaitTime = 0.35f;
 #else
         public const float MaxNetworkEventWaitTime = 0.15f;
