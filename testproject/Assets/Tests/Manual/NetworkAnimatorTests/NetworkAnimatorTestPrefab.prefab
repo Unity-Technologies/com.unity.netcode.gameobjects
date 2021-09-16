@@ -272,7 +272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SendRate: 0.1
-  m_Animator: {fileID: 0}
+  m_Animator: {fileID: 3078684836448737212}
 --- !u!1 &3078684837583100501
 GameObject:
   m_ObjectHideFlags: 0
