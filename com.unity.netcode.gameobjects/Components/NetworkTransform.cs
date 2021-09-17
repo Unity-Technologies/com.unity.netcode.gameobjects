@@ -717,6 +717,7 @@ namespace Unity.Netcode.Components
         /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
         /// you can implement an RPC that does the same as this method, with custom movement logic.
         /// It's not recommened to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
+        /// To stop movements, set delta back to 0
         /// </summary>
         /// <param name="deltaPos"></param>
         /// <param name="deltaRot"></param>
