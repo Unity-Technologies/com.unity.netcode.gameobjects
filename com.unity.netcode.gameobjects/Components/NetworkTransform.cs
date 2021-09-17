@@ -615,6 +615,21 @@ namespace Unity.Netcode.Components
             }
         }
 
+        public void ResetInterpolatedTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            if (IsSpawned && !IsServer && Interpolate)
+            {
+                m_PositionXInterpolator.ResetTo(position.x);
+                m_PositionYInterpolator.ResetTo(position.y);
+                m_PositionZInterpolator.ResetTo(position.z);
+                m_ScaleXInterpolator.ResetTo(scale.x);
+                m_ScaleYInterpolator.ResetTo(scale.y);
+                m_ScaleZInterpolator.ResetTo(scale.z);
+                m_RotationInterpolator.ResetTo(rotation);
+                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+            }
+        }
+
         private void DoUpdateToGhosts()
         {
             if (UpdateNetworkStateCheckDirty(ref LocalAuthoritativeNetworkState, NetworkManager.LocalTime.Time))
