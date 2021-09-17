@@ -11,10 +11,10 @@ namespace Unity.Netcode.Samples
 
         private Vector3 m_CurrentDirection;
 
-        const int k_HorizontalPositiveBit = 0;
-        const int k_HorizontalNegativeBit = 1;
-        const int k_VerticalPositiveBit = 2;
-        const int k_VerticalNegativeBit = 3;
+        private const int k_HorizontalPositiveBit = 0;
+        private const int k_HorizontalNegativeBit = 1;
+        private const int k_VerticalPositiveBit = 2;
+        private const int k_VerticalNegativeBit = 3;
 
         private byte m_PreviousBitfield = 0;
 
