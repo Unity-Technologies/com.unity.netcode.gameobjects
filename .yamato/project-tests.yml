@@ -1,3 +1,6 @@
+{% metadata_file .yamato/project.metafile %}
+---
+
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
 # Validation only occurs in editmode.
