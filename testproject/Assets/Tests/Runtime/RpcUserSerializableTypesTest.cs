@@ -657,7 +657,7 @@ namespace TestProject.RuntimeTests
         public ulong MyulongValue;
         public List<byte> MyByteListValues;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref MyintValue);
             serializer.SerializeValue(ref MyulongValue);
