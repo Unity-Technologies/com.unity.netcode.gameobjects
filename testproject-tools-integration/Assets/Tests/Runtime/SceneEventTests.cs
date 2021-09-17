@@ -5,13 +5,13 @@ using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace TestProject.ToolsIntegration.RuntimeTests
 {
-    public class SceneEventTests : SingleClientMetricTestBase
+    class SceneEventTests : SingleClientMetricTestBase
     {
         // scenes referenced in this test must also be in the build settings of the project.
         private const string SimpleSceneName = "SimpleScene";
