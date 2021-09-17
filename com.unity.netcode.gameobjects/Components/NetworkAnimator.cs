@@ -139,7 +139,7 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                else if ( Math.Abs(FloatParamArray[existingKvIndex].Value - value) > Mathf.Epsilon )
+                else if (Math.Abs(FloatParamArray[existingKvIndex].Value - value) > Mathf.Epsilon)
                 {
                     FloatParamArray[existingKvIndex] = new KeyValuePair<int, float>(key, value);
                     setOrUpdatedValue = true;
