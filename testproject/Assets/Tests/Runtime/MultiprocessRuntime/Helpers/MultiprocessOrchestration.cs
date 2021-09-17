@@ -21,7 +21,8 @@ public class MultiprocessOrchestration
     /// </summary>
     public static bool ShouldIgnoreUTRTests()
     {
-        return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+        return false;
+        //return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
     }
 
     public static void StartWorkerNode()
