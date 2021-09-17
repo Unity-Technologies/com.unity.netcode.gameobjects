@@ -430,6 +430,10 @@ namespace Unity.Netcode
                             SenderId = clientId,
                             Timestamp = Time.realtimeSinceStartup
                         });
+                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                        {
+                            m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
+                        }
                         continue;
                     }
 
