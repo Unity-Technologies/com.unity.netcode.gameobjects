@@ -259,7 +259,10 @@ namespace Unity.Netcode
         {
             get
             {
-                Assert.IsTrue(IsServer, $"{nameof(ConnectedClients)} should only be accessed on server.");
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectedClients)} should only be accessed on server.");
+                }
                 return connectedClients;
             }
         }
@@ -271,7 +274,10 @@ namespace Unity.Netcode
         {
             get
             {
-                Assert.IsTrue(IsServer, $"{nameof(ConnectedClientsList)} should only be accessed on server.");
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectedClientsList)} should only be accessed on server.");
+                }
                 return connectedClientsList;
             }
         }
@@ -283,7 +289,10 @@ namespace Unity.Netcode
         {
             get
             {
-                Assert.IsTrue(IsServer, $"{nameof(connectedClientIds)} should only be accessed on server.");
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(connectedClientIds)} should only be accessed on server.");
+                }
                 return connectedClientIds;
             }
         }
