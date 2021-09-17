@@ -42,7 +42,8 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // TODO: rewrite after perms & authority changes
-        /* [UnityTest]
+        /*
+        [UnityTest]
         [TestCase(true, NetworkAuthority.Client, ExpectedResult = null)]
         [TestCase(true, NetworkAuthority.Server, ExpectedResult = null)]
         [TestCase(false, NetworkAuthority.Client, ExpectedResult = null)]
@@ -53,9 +54,11 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
+            networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
             otherSideNetworkTransform.SetAuthority(authorityToTest);
+            otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             static bool HasAuthorityFunc(NetworkTransform transform)
             {
@@ -125,9 +128,11 @@ namespace Unity.Netcode.RuntimeTests
             // test server can't change client authoritative transform
             var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
+            networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
             otherSideNetworkTransform.SetAuthority(authorityToTest);
+            otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
@@ -135,7 +140,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitForFixedUpdate();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
-        } */
+        }
+        //*/
 
         [UnityTearDown]
         public override IEnumerator Teardown()
