@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text.RegularExpressions;
 using Unity.Netcode.Components;
 using NUnit.Framework;
 using Unity.Netcode.Samples;
@@ -136,48 +137,37 @@ namespace Unity.Netcode.RuntimeTests
             // todo test all public API
         }
 
-        [UnityTest, Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
+        [UnityTest]
+        // [Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
         public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
         {
             // test server can't change client authoritative transform
-            NetworkTransform networkTransform;
+            NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
-            if (testClientAuthority)
+
+            if (m_TestWithClientNetworkTransform)
             {
-                if (m_TestWithClientNetworkTransform)
-                {
-                    networkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                }
-                else
-                {
-                    networkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                }
+                // client auth net transform can write from client, not from server
+                otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+                authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
             }
             else
             {
-                if (m_TestWithClientNetworkTransform)
-                {
-                    networkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-
-                }
-                else
-                {
-                    networkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-                }
+                // server auth net transform can't write from client, not from client
+                authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+                otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
             }
-            networkTransform.Interpolate = false;
+
+            authoritativeNetworkTransform.Interpolate = false;
             otherSideNetworkTransform.Interpolate = false;
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return new WaitForFixedUpdate();
+            yield return null; // one frame
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
+            LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
         }
 
         [UnityTearDown]
