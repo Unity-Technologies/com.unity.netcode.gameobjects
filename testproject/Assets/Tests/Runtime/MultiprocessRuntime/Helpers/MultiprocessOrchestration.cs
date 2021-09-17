@@ -91,7 +91,7 @@ public class MultiprocessOrchestration
             throw;
         }
 
-        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}");
+        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}.log");
 
 
         workerProcess.StartInfo.UseShellExecute = false;
