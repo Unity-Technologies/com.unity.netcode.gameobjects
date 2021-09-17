@@ -10,33 +10,30 @@ namespace Unity.Netcode.EditorTests
     public class NetworkTimeTests
     {
         [Test]
-        [TestCase(0d, 0)]
-        [TestCase(5d, 0)]
-        [TestCase(-5d, 0)]
-        [TestCase(0d, -20)]
-        [TestCase(5d, int.MinValue)]
-        [TestCase(-5d, -1)]
+        [TestCase(0d, 0u)]
+        [TestCase(5d, 0u)]
+        [TestCase(-5d, 0u)]
         public void TestFailCreateInvalidTime(double time, uint tickrate)
         {
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => new NetworkTime(tickrate, time));
         }
 
         [Test]
-        [TestCase(0d, 0f, 20)]
-        [TestCase(0d, 0f, 30)]
-        [TestCase(0d, 0f, 60)]
+        [TestCase(0d, 0f, 20u)]
+        [TestCase(0d, 0f, 30u)]
+        [TestCase(0d, 0f, 60u)]
 
-        [TestCase(201d, 201f, 20)]
-        [TestCase(201d, 201f, 30)]
-        [TestCase(201d, 201f, 60)]
+        [TestCase(201d, 201f, 20u)]
+        [TestCase(201d, 201f, 30u)]
+        [TestCase(201d, 201f, 60u)]
 
-        [TestCase(-4301d, -4301f, 20)]
-        [TestCase(-4301d, -4301f, 30)]
-        [TestCase(-4301d, -4301f, 60)]
+        [TestCase(-4301d, -4301f, 20u)]
+        [TestCase(-4301d, -4301f, 30u)]
+        [TestCase(-4301d, -4301f, 60u)]
 
-        [TestCase(float.MaxValue, float.MaxValue, 20)]
-        [TestCase(float.MaxValue, float.MaxValue, 30)]
-        [TestCase(float.MaxValue, float.MaxValue, 60)]
+        [TestCase(float.MaxValue, float.MaxValue, 20u)]
+        [TestCase(float.MaxValue, float.MaxValue, 30u)]
+        [TestCase(float.MaxValue, float.MaxValue, 60u)]
         public void TestTimeAsFloat(double d, float f, uint tickRate)
         {
             var networkTime = new NetworkTime(tickRate, d);
@@ -44,52 +41,33 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        [TestCase(53.55d, 53.5d, 10)]
-        [TestCase(1013553.55d, 1013553.5d, 10)]
-        [TestCase(0d, 0d, 10)]
-        [TestCase(-27.41d, -27.5d, 10)]
+        [TestCase(53.55d, 53.5d, 10u)]
+        [TestCase(1013553.55d, 1013553.5d, 10u)]
+        [TestCase(0d, 0d, 10u)]
+        [TestCase(-27.41d, -27.5d, 10u)]
 
-        [TestCase(53.55d, 53.54d, 50)]
-        [TestCase(1013553.55d, 1013553.54d, 50)]
-        [TestCase(0d, 0d, 50)]
-        [TestCase(-27.4133d, -27.42d, 50)]
+        [TestCase(53.55d, 53.54d, 50u)]
+        [TestCase(1013553.55d, 1013553.54d, 50u)]
+        [TestCase(0d, 0d, 50u)]
+        [TestCase(-27.4133d, -27.42d, 50u)]
         public void TestToFixedTime(double time, double expectedFixedTime, uint tickRate)
         {
             Assert.AreEqual(expectedFixedTime, new NetworkTime(tickRate, time).ToFixedTime().Time);
         }
 
         [Test]
-        public void NetworkTimeCreate()
+        [TestCase(34d, 0)]
+        [TestCase(17.32d, 0.2d / 60d)]
+        [TestCase(-42.44d,  1d / 60d - 0.4d / 60d)]
+        [TestCase(-6d, 0)]
+        [TestCase(int.MaxValue / 61d, 0.00082, 10d)] // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60
+        public void NetworkTimeCreate(double time, double tickOffset, double epsilon = 0.0001d)
         {
-            double a = 34d;
-            double b = 17.32d;
-            double c = -42.44d;
-            double d = -6d;
-            double e = int.MaxValue / 61d;
+            var networkTime = new NetworkTime(60, time);
 
-            var timeA = new NetworkTime(60, a);
-            var timeB = new NetworkTime(60, b);
-            var timeC = new NetworkTime(60, c);
-            var timeD = new NetworkTime(60, d);
-            var timeE = new NetworkTime(60, e);
-
-            Assert.IsTrue(Approximately(a, timeA.Time));
-            Assert.IsTrue(Approximately(b, timeB.Time));
-            Assert.IsTrue(Approximately(c, timeC.Time));
-            Assert.IsTrue(Approximately(d, timeD.Time));
-            Assert.IsTrue(Approximately(e, timeE.Time));
-
-            Assert.IsTrue(Approximately(timeA.Tick * timeA.FixedDeltaTime + timeA.TickOffset, timeA.Time, 0.0001d));
-            Assert.IsTrue(Approximately(timeB.Tick * timeB.FixedDeltaTime + timeB.TickOffset, timeB.Time, 0.0001d));
-            Assert.IsTrue(Approximately(timeC.Tick * timeC.FixedDeltaTime + timeC.TickOffset, timeC.Time, 0.0001d));
-            Assert.IsTrue(Approximately(timeD.Tick * timeD.FixedDeltaTime + timeD.TickOffset, timeD.Time, 0.0001d));
-            Assert.IsTrue(Approximately(timeE.Tick * timeE.FixedDeltaTime + timeE.TickOffset, timeE.Time, 10d));
-
-            Assert.IsTrue(Approximately(timeA.TickOffset, 0));
-            Assert.IsTrue(Approximately(timeB.TickOffset, 0.2d / 60d));
-            Assert.IsTrue(Approximately(timeC.TickOffset, 1d / 60d - 0.4d / 60d));
-            Assert.IsTrue(Approximately(timeD.TickOffset, 0));
-            Assert.IsTrue(Approximately(timeE.TickOffset, 0.00082)); // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60
+            Assert.IsTrue(Approximately(time, networkTime.Time));
+            Assert.IsTrue(Approximately(networkTime.Tick * networkTime.FixedDeltaTime + networkTime.TickOffset, networkTime.Time, epsilon));
+            Assert.IsTrue(Approximately(networkTime.TickOffset, tickOffset));
         }
 
         [Test]
@@ -101,107 +79,70 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void NetworkTimeAddFloatTest()
+        [TestCase(17.32d)]
+        [TestCase(34d)]
+        [TestCase(-42.4d)]
+        [TestCase(-6d)]
+        [TestCase(int.MaxValue / 61d)]
+        public void NetworkTimeAddFloatTest(double time)
         {
             double a = 34d;
-            double b = 17.32d;
-            double c = -42.4d;
-            double d = -6d;
-            double e = int.MaxValue / 61d;
-
-            double floatResultB = a + b;
-            double floatResultC = a + c;
-            double floatResultD = a + d;
-            double floatResultE = a + e;
+            double floatResultB = a + time;
 
             var timeA = new NetworkTime(60, a);
-            NetworkTime timeB = timeA + b;
-            NetworkTime timeC = timeA + c;
-            NetworkTime timeD = timeA + d;
-            NetworkTime timeE = timeA + e;
+            NetworkTime timeB = timeA + time;
 
             Assert.IsTrue(Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
-        public void NetworkTimeSubFloatTest()
+        [TestCase(17.32d)]
+        [TestCase(34d)]
+        [TestCase(-42.4d)]
+        [TestCase(-6d)]
+        [TestCase(int.MaxValue / 61d)]
+        public void NetworkTimeSubFloatTest(double time)
         {
             double a = 34d;
-            double b = 17.32d;
-            double c = -42.4d;
-            double d = -6d;
-            double e = int.MaxValue / 61d;
-
-            double floatResultB = a - b;
-            double floatResultC = a - c;
-            double floatResultD = a - d;
-            double floatResultE = a - e;
+            double floatResultB = a - time;
 
             var timeA = new NetworkTime(60, a);
-            NetworkTime timeB = timeA - b;
-            NetworkTime timeC = timeA - c;
-            NetworkTime timeD = timeA - d;
-            NetworkTime timeE = timeA - e;
+            NetworkTime timeB = timeA - time;
 
             Assert.IsTrue(Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
-        public void NetworkTimeAddNetworkTimeTest()
+        [TestCase(17.32d)]
+        [TestCase(34d)]
+        [TestCase(-42.4d)]
+        [TestCase(-6d)]
+        [TestCase(int.MaxValue / 61d)]
+        public void NetworkTimeAddNetworkTimeTest(double time)
         {
             double a = 34d;
-            double b = 17.32d;
-            double c = -42.4d;
-            double d = -6d;
-            double e = int.MaxValue / 61d;
-
-            double floatResultB = a + b;
-            double floatResultC = a + c;
-            double floatResultD = a + d;
-            double floatResultE = a + e;
+            double floatResultB = a + time;
 
             var timeA = new NetworkTime(60, a);
-            NetworkTime timeB = timeA + new NetworkTime(60, b);
-            NetworkTime timeC = timeA + new NetworkTime(60, c);
-            NetworkTime timeD = timeA + new NetworkTime(60, d);
-            NetworkTime timeE = timeA + new NetworkTime(60, e);
-
+            NetworkTime timeB = timeA + new NetworkTime(60, time);
             Assert.IsTrue(Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
-        public void NetworkTimeSubNetworkTimeTest()
+        [TestCase(17.32d)]
+        [TestCase(34d)]
+        [TestCase(-42.4d)]
+        [TestCase(-6d)]
+        [TestCase(int.MaxValue / 61d)]
+        public void NetworkTimeSubNetworkTimeTest(double time)
         {
             double a = 34d;
-            double b = 17.32d;
-            double c = -42.4d;
-            double d = -6d;
-            double e = int.MaxValue / 61d;
 
-            double floatResultB = a - b;
-            double floatResultC = a - c;
-            double floatResultD = a - d;
-            double floatResultE = a - e;
+            double floatResultB = a - time;
 
             var timeA = new NetworkTime(60, a);
-            NetworkTime timeB = timeA - new NetworkTime(60, b);
-            NetworkTime timeC = timeA - new NetworkTime(60, c);
-            NetworkTime timeD = timeA - new NetworkTime(60, d);
-            NetworkTime timeE = timeA - new NetworkTime(60, e);
-
+            NetworkTime timeB = timeA - new NetworkTime(60, time);
             Assert.IsTrue(Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
