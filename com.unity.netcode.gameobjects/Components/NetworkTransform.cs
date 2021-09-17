@@ -642,10 +642,7 @@ namespace Unity.Netcode.Components
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
-            if (CanCommitToTransform)
-            {
-                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
-            }
+
 
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
@@ -667,6 +664,10 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
+            }
+            if (CanCommitToTransform)
+            {
+                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
