@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 
 namespace TestProject.ManualTests
 {
@@ -225,8 +226,6 @@ namespace TestProject.ManualTests
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
-
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
                 }
@@ -294,7 +293,6 @@ namespace TestProject.ManualTests
 
                     if (!obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
@@ -407,10 +405,9 @@ namespace TestProject.ManualTests
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
-
+                                go.SetActive(true);
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
-
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
@@ -435,6 +432,10 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
+                obj.SetActive(true);
+
+
                 return obj.GetComponent<NetworkObject>();
             }
             return null;
@@ -444,7 +445,6 @@ namespace TestProject.ManualTests
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
             {
-                networkObject.transform.position = Vector3.zero;
                 networkObject.gameObject.SetActive(false);
             }
             else

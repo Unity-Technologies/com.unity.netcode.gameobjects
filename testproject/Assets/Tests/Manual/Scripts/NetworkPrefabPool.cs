@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 
 namespace TestProject.ManualTests
 {
@@ -165,7 +166,7 @@ namespace TestProject.ManualTests
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+            if (IsSpawned && EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -317,7 +318,6 @@ namespace TestProject.ManualTests
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
 
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
@@ -381,7 +381,6 @@ namespace TestProject.ManualTests
                 {
                     if (obj != null && !obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
@@ -464,7 +463,6 @@ namespace TestProject.ManualTests
 
             m_IsSpawningObjects = true;
 
-
             while (m_IsSpawningObjects && !m_IsExitingScene)
             {
                 //Start spawning if auto spawn is enabled
@@ -480,14 +478,13 @@ namespace TestProject.ManualTests
                         //Spawn (n) entities then wait for 1/60th of a second and repeat
                         for (int i = 0; i < entitityCountPerFrame; i++)
                         {
-                            GameObject go = GetObject();
+                            var go = GetObject();
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
-
+                                go.SetActive(true);
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
-
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
@@ -512,6 +509,8 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
+                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;

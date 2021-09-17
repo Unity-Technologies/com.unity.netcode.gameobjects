@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-
+using Unity.Netcode.Components;
 public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabInstanceHandler
 {
     [SerializeField]
@@ -70,9 +70,10 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
     {
         var gameObject = GetNextSpawnObject();
-        gameObject.SetActive(true);
         gameObject.transform.position = position;
         gameObject.transform.rotation = rotation;
+        gameObject.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
+        gameObject.SetActive(true);
         return gameObject.GetComponent<NetworkObject>();
     }
 
@@ -107,11 +108,11 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         {
             entitySpawnUpdateRate = 1.0f / (float)m_SpawnsPerSecond;
 
-            GameObject go = GetNextSpawnObject();
+            var go = GetNextSpawnObject();
             if (go != null)
             {
-                go.SetActive(true);
                 go.transform.position = transform.position;
+                go.SetActive(true);
 
                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                 go.GetComponent<GenericPooledObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), 4);
