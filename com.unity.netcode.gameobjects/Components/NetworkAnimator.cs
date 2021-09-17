@@ -80,7 +80,7 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                else if ( IntParamArray[existingKvIndex].Value != value )
+                else if (IntParamArray[existingKvIndex].Value != value)
                 {
                     IntParamArray[existingKvIndex] = new KeyValuePair<int, int>(key, value);
                     setOrUpdatedValue = true;
@@ -109,7 +109,7 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                else if ( BoolParamArray[existingKvIndex].Value != value )
+                else if (BoolParamArray[existingKvIndex].Value != value)
                 {
                     BoolParamArray[existingKvIndex] = new KeyValuePair<int, bool>(key, value);
                     setOrUpdatedValue = true;
@@ -138,7 +138,7 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                else if ( FloatParamArray[existingKvIndex].Value != value )
+                else if (FloatParamArray[existingKvIndex].Value != value)
                 {
                     FloatParamArray[existingKvIndex] = new KeyValuePair<int, float>(key, value);
                     setOrUpdatedValue = true;
