@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// The maximum size of the buffer to send
         /// </summary>
-        public int MaximumBufferSize = 1 << 20;
+        public int MaximumBufferSize = 1 << 15;
 
         /// <summary>
         /// The rate at which the buffer size increases until it reaches MaximumBufferSize

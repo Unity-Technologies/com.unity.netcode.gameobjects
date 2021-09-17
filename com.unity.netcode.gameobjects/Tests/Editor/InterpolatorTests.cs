@@ -11,9 +11,9 @@ namespace Unity.Netcode.EditorTests
         {
             public double BufferedServerTime { get; set; }
             public double BufferedServerFixedTime { get; }
-            public int TickRate { get; set; }
+            public uint TickRate { get; set; }
 
-            public MockInterpolatorTime(double serverTime, int tickRate)
+            public MockInterpolatorTime(double serverTime, uint tickRate)
             {
                 BufferedServerTime = serverTime;
                 TickRate = tickRate;
@@ -22,7 +22,7 @@ namespace Unity.Netcode.EditorTests
 
         private const int k_MockTickRate = 1;
 
-        private NetworkTime T(float time, int tickRate = k_MockTickRate)
+        private NetworkTime T(float time, uint tickRate = k_MockTickRate)
         {
             return new NetworkTime(tickRate, timeSec: time);
         }
