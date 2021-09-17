@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using Unity.Netcode;
 using UnityEditor;
@@ -42,5 +43,4 @@ public class SetIsOwner : MonoBehaviour
         }
     }
 }
-
-
+#endif
