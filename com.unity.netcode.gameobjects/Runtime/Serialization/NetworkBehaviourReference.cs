@@ -57,13 +57,6 @@ namespace Unity.Netcode
             return networkBehaviour != null;
         }
 
-        /// <inheritdoc/>
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            m_NetworkObjectReference.NetworkSerialize(serializer);
-            serializer.Serialize(ref m_NetworkBehaviourId);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkBehaviour GetInternal(NetworkBehaviourReference networkBehaviourRef, NetworkManager networkManager = null)
         {
@@ -94,6 +87,13 @@ namespace Unity.Netcode
             {
                 return (m_NetworkObjectReference.GetHashCode() * 397) ^ m_NetworkBehaviourId.GetHashCode();
             }
+        }
+
+        /// <inheritdoc/>
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            m_NetworkObjectReference.NetworkSerialize(serializer);
+            serializer.SerializeValue(ref m_NetworkBehaviourId);
         }
 
         public static implicit operator NetworkBehaviour(NetworkBehaviourReference networkBehaviourRef) => GetInternal(networkBehaviourRef);
