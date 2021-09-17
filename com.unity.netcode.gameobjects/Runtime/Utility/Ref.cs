@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
-    public struct Ref<T> where T : unmanaged
+    internal struct Ref<T> where T : unmanaged
     {
         private unsafe T* m_Value;
 

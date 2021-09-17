@@ -8,7 +8,7 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageSendingTests
     {
-        [Bind(typeof(MessageSendingTests))]
+        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessageSendingTests))]
         private struct TestMessage : INetworkMessage
         {
             public int A;

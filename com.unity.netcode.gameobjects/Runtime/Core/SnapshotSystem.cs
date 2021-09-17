@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Netcode.Messages;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -941,7 +940,7 @@ namespace Unity.Netcode
         private unsafe void WriteVariableToSnapshot(Snapshot snapshot, NetworkVariableBase networkVariable, int index)
         {
             // write var into buffer, possibly adjusting entry's position and Length
-            var varBuffer = new FastBufferWriter(1300, Allocator.Temp);
+            var varBuffer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
 #pragma warning disable CS0728 // Warns that varBuffer may be reassigned within ReadDelta, but ReadDelta does not reassign it.
             using (varBuffer)
             {

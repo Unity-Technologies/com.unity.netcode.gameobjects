@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     internal struct ConnectionApprovedMessage : INetworkMessage
     {

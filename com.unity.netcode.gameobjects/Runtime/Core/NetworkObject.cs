@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Netcode.Messages;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -11,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
-    public sealed class NetworkObject : MonoBehaviour, INetworkSerializable
+    public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
         [SerializeField]
@@ -60,7 +59,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
         /// </summary>
-        public ulong NetworkObjectId { get => m_NetworkObjectId; internal set => m_NetworkObjectId = value; }
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
@@ -833,6 +832,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkVariablesDirty()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                var behavior = ChildNetworkBehaviours[i];
+                behavior.MarkVariablesDirty();
+            }
+        }
+
         internal void SetNetworkVariableData(ref FastBufferReader reader)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -898,6 +906,7 @@ namespace Unity.Netcode
                 public bool IsSceneObject;
                 public bool HasTransform;
                 public bool IsReparented;
+                public bool HasNetworkVariables;
             }
 
             public HeaderData Header;
@@ -958,7 +967,10 @@ namespace Unity.Netcode
                     }
                 }
 
-                OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
+                if (Header.HasNetworkVariables)
+                {
+                    OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
+                }
             }
 
             public unsafe void Deserialize(ref FastBufferReader reader)
@@ -1001,7 +1013,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal SceneObject GetMessageSceneObject(ulong targetClientId)
+        internal SceneObject GetMessageSceneObject(ulong targetClientId, bool includeNetworkVariableData = true)
         {
             var obj = new SceneObject
             {
@@ -1011,7 +1023,8 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
-                    Hash = HostCheckForGlobalObjectIdHashOverride()
+                    Hash = HostCheckForGlobalObjectIdHashOverride(),
+                    HasNetworkVariables = includeNetworkVariableData
                 },
                 OwnerObject = this,
                 TargetClientId = targetClientId
@@ -1099,7 +1112,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            // Spawn the NetworkObject
+            // Spawn the NetworkObject(
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, ref variableData, false);
 
             return networkObject;
@@ -1128,11 +1141,6 @@ namespace Unity.Netcode
             }
 
             return GlobalObjectIdHash;
-        }
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
-        {
-            serializer.SerializeValue(ref m_NetworkObjectId);
         }
     }
 }

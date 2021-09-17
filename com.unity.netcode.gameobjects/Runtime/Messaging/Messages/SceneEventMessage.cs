@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     // Todo: Would be lovely to get this one nicely formatted with all the data it sends in the struct
     // like most of the other messages when we have some more time and can come back and refactor this.

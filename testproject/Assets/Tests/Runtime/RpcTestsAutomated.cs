@@ -5,7 +5,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
-using Unity.Collections;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
 using Debug = UnityEngine.Debug;
@@ -22,7 +21,6 @@ namespace TestProject.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            NativeLeakDetection.Mode = NativeLeakDetectionMode.EnabledWithStackTrace;
             yield break;
         }
 

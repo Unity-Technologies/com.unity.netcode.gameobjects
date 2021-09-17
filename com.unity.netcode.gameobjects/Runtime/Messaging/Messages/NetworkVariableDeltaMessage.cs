@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 
-namespace Unity.Netcode.Messages
+namespace Unity.Netcode
 {
     /// <summary>
     /// This particular struct is a little weird because it doesn't actually contain the data
@@ -66,7 +66,7 @@ namespace Unity.Netcode.Messages
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tmpWriter = new FastBufferWriter(1300, Allocator.Temp, short.MaxValue);
+                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(ref tmpWriter);
 
                         writer.WriteValueSafe((ushort)tmpWriter.Length);

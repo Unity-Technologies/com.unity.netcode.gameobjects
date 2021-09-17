@@ -88,7 +88,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     fieldDefinition.IsPublic = true;
                 }
 
-                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceive))
+                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -115,6 +115,15 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage))
                 {
                     fieldDefinition.IsFamily = true;
+                }
+            }
+
+            foreach (var methodDefinition in typeDefinition.Methods)
+            {
+                if (methodDefinition.Name == nameof(NetworkBehaviour.SendServerRpc)
+                    || methodDefinition.Name == nameof(NetworkBehaviour.SendClientRpc))
+                {
+                    methodDefinition.IsPublic = true;
                 }
             }
         }

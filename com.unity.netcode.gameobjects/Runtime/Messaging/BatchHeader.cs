@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    public struct BatchHeader
+    internal struct BatchHeader
     {
         public ushort BatchSize;
     }

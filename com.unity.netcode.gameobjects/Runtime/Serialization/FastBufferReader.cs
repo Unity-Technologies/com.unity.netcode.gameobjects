@@ -559,7 +559,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + bytesToRead > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 
@@ -587,7 +587,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + 1 > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             value = BufferPointer[PositionInternal++];
@@ -635,7 +635,7 @@ namespace Unity.Netcode
             }
             if (PositionInternal + size > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
             UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
@@ -704,85 +704,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Read a value of type FixedUnmanagedArray from the buffer.
-        /// </summary>
-        /// <param name="value">The value to copy</param>
-        /// <param name="count"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
-            where TPropertyType : unmanaged
-            where TStorageType : unmanaged, IFixedArrayStorage
-        {
-            int len = sizeof(TPropertyType) * count;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-            if (PositionInternal + len > AllowedReadMark)
-            {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
-            }
-#endif
-
-            value = new FixedUnmanagedArray<TPropertyType, TStorageType>();
-            BytewiseUtility.FastCopyBytes((byte*)value.GetArrayPtr(), BufferPointer + PositionInternal, len);
-            value.Count = len;
-            PositionInternal += len;
-        }
-
-        /// <summary>
-        /// Read a value of type FixedUnmanagedArray from the buffer.
-        /// 
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">The value to copy</param>
-        /// <param name="count"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value, int count)
-            where TPropertyType : unmanaged
-            where TStorageType : unmanaged, IFixedArrayStorage
-        {
-            int len = sizeof(TPropertyType) * count;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-            if (PositionInternal + len > AllowedReadMark)
-            {
-                throw new OverflowException("Attempted to write without first calling TryBeginWrite()");
-            }
-#endif
-
-            value = new FixedUnmanagedArray<TPropertyType, TStorageType>();
-            BytewiseUtility.FastCopyBytes((byte*)value.GetArrayPtr(), BufferPointer + PositionInternal, len);
-            value.Count = len;
-            PositionInternal += len;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [Obsolete("FixedUnmanagedArray must be written/read using a count.")]
-        public void ReadValue<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value)
-            where TPropertyType : unmanaged
-            where TStorageType : unmanaged, IFixedArrayStorage
-        {
-            throw new NotSupportedException("FixedUnmanagedArray must be written/read using a count.");
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [Obsolete("FixedUnmanagedArray must be written/read using a count.")]
-        public void ReadValueSafe<TPropertyType, TStorageType>(out FixedUnmanagedArray<TPropertyType, TStorageType> value)
-            where TPropertyType : unmanaged
-            where TStorageType : unmanaged, IFixedArrayStorage
-        {
-            throw new NotSupportedException("FixedUnmanagedArray must be written/read using a count.");
-        }
-
-        /// <summary>
         /// Read a value of any unmanaged type to the buffer.
         /// It will be copied from the buffer exactly as it existed in memory on the writing end.
         /// </summary>
@@ -801,13 +722,13 @@ namespace Unity.Netcode
             }
             if (PositionInternal + len > AllowedReadMark)
             {
-                throw new OverflowException("Attempted to read without first calling TryBeginRead()");
+                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }
@@ -842,7 +763,7 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                BytewiseUtility.FastCopyBytes((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
             }
             PositionInternal += len;
         }

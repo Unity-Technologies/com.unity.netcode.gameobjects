@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -23,26 +22,6 @@ namespace Unity.Netcode
         public ref FastBufferWriter GetFastBufferWriter()
         {
             return ref m_Writer.Value;
-        }
-
-        public void SerializeValue(ref object value, Type type, bool isNullable = false)
-        {
-            m_Writer.Value.WriteObject(value, isNullable);
-        }
-
-        public void SerializeValue(ref GameObject value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
-        }
-
-        public void SerializeValue(ref NetworkObject value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
-        }
-
-        public void SerializeValue(ref NetworkBehaviour value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
         }
 
         public void SerializeValue(ref string s, bool oneByteChars = false)
@@ -73,21 +52,6 @@ namespace Unity.Netcode
         public bool PreCheck(int amount)
         {
             return m_Writer.Value.TryBeginWrite(amount);
-        }
-
-        public void SerializeValuePreChecked(ref GameObject value)
-        {
-            m_Writer.Value.WriteValue(value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkObject value)
-        {
-            m_Writer.Value.WriteValue(value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkBehaviour value)
-        {
-            m_Writer.Value.WriteValue(value);
         }
 
         public void SerializeValuePreChecked(ref string s, bool oneByteChars = false)

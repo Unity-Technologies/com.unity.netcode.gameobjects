@@ -1,6 +1,3 @@
-using System;
-using UnityEngine;
-
 namespace Unity.Netcode
 {
     public interface IBufferSerializerImplementation
@@ -11,10 +8,6 @@ namespace Unity.Netcode
         ref FastBufferReader GetFastBufferReader();
         ref FastBufferWriter GetFastBufferWriter();
 
-        void SerializeValue(ref object value, Type type, bool isNullable = false);
-        void SerializeValue(ref GameObject value);
-        void SerializeValue(ref NetworkObject value);
-        void SerializeValue(ref NetworkBehaviour value);
         void SerializeValue(ref string s, bool oneByteChars = false);
         void SerializeValue<T>(ref T[] array) where T : unmanaged;
         void SerializeValue(ref byte value);
@@ -26,9 +19,6 @@ namespace Unity.Netcode
         void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
 
         bool PreCheck(int amount);
-        void SerializeValuePreChecked(ref GameObject value);
-        void SerializeValuePreChecked(ref NetworkObject value);
-        void SerializeValuePreChecked(ref NetworkBehaviour value);
         void SerializeValuePreChecked(ref string s, bool oneByteChars = false);
         void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged;
         void SerializeValuePreChecked(ref byte value);
