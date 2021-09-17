@@ -40,13 +40,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [TestCase(60, 30, ExpectedResult = null)]
-        [TestCase(30, 30, ExpectedResult = null)]
-        [TestCase(40, 30, ExpectedResult = null)]
-        [TestCase(10, 30, ExpectedResult = null)]
-        [TestCase(60, 60, ExpectedResult = null)]
-        [TestCase(60, 10, ExpectedResult = null)]
-        public IEnumerator TestTimeMultiInstance(int targetFrameRate, int tickRate)
+        [TestCase(60, 30u, ExpectedResult = null)]
+        [TestCase(30, 30u, ExpectedResult = null)]
+        [TestCase(40, 30u, ExpectedResult = null)]
+        [TestCase(10, 30u, ExpectedResult = null)]
+        [TestCase(60, 60u, ExpectedResult = null)]
+        [TestCase(60, 10u, ExpectedResult = null)]
+        public IEnumerator TestTimeMultiInstance(int targetFrameRate, uint tickRate)
         {
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, targetFrameRate, tickRate);
 
@@ -92,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // This is from BaseMultiInstanceTest but we need a custom version of this to modifiy the config
-        private IEnumerator StartSomeClientsAndServerWithPlayersCustom(bool useHost, int nbClients, int targetFrameRate, int tickRate)
+        private IEnumerator StartSomeClientsAndServerWithPlayersCustom(bool useHost, int nbClients, int targetFrameRate, uint tickRate)
         {
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))

@@ -18,7 +18,8 @@ GameObject:
   - component: {fileID: 8685790303553767876}
   - component: {fileID: 3809075828520557319}
   - component: {fileID: 7138389085065872747}
-  - component: {fileID: 8585540885791567915}
+  - component: {fileID: 5715768330125915997}
+  - component: {fileID: 2744080254494315543}
   m_Layer: 0
   m_Name: PlayerCube
   m_TagString: Target
@@ -271,7 +272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Range: 10
---- !u!114 &8585540885791567915
+--- !u!114 &5715768330125915997
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -280,7 +281,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8685790303553767886}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54c9647dc784a46bca664910f182491e, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   SyncPositionX: 1
@@ -298,3 +299,15 @@ MonoBehaviour:
   InLocalSpace: 0
   Interpolate: 1
   FixedSendsPerSecond: 30
+--- !u!114 &2744080254494315543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8685790303553767886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

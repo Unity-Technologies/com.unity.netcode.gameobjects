@@ -49,7 +49,7 @@ namespace Unity.Netcode
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
         /// </summary>
         [Tooltip("The tickrate. This value controls how often netcode runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
-        public int TickRate = 30;
+        public uint TickRate = 30;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -162,7 +162,7 @@ namespace Unity.Netcode
             using var buffer = PooledNetworkBuffer.Get();
             using var writer = PooledNetworkWriter.Get(buffer);
             writer.WriteUInt16Packed(config.ProtocolVersion);
-            writer.WriteInt32Packed(config.TickRate);
+            writer.WriteUInt32Packed(config.TickRate);
             writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
             writer.WriteBool(config.ConnectionApproval);
             writer.WriteInt32Packed(config.LoadSceneTimeOut);
@@ -192,7 +192,7 @@ namespace Unity.Netcode
 
             config.ProtocolVersion = reader.ReadUInt16Packed();
             ushort sceneCount = reader.ReadUInt16Packed();
-            config.TickRate = reader.ReadInt32Packed();
+            config.TickRate = reader.ReadUInt32Packed();
             config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
             config.ConnectionApproval = reader.ReadBool();
             config.LoadSceneTimeOut = reader.ReadInt32Packed();
