@@ -360,7 +360,6 @@ namespace Unity.Netcode.Components
 
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
-            // m_LocalAuthoritativeNetworkState = networkState;
             m_ReplicatedNetworkState.Value = networkState;
             AddInterpolatedState(networkState);
         }
