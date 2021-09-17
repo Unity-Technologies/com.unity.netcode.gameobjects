@@ -240,6 +240,8 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
 
         public bool Interpolate = true;
+        private NetworkVariable<bool> m_InterpolateState = new NetworkVariable<bool>();
+
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -575,10 +577,15 @@ namespace Unity.Netcode.Components
             // set initial value for spawn
             if (IsServer)
             {
+                if (m_InterpolateState.Value != Interpolate)
+                {
+                    m_InterpolateState.Value = Interpolate;
+                }
                 DoUpdateToGhosts();
             }
 
             ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
+            m_InterpolateState.OnValueChanged += OnInterpolateStateUpdated;
         }
 
         /// <summary>
@@ -588,6 +595,7 @@ namespace Unity.Netcode.Components
         private void OnDisable()
         {
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            m_InterpolateState.OnValueChanged -= OnInterpolateStateUpdated;
         }
 
         /// <summary>
@@ -603,16 +611,15 @@ namespace Unity.Netcode.Components
                 // interpolators' initial values
                 if (Interpolate)
                 {
-                    m_PositionXInterpolator.ResetTo(transform.position.x);
-                    m_PositionYInterpolator.ResetTo(transform.position.y);
-                    m_PositionZInterpolator.ResetTo(transform.position.z);
-                    m_ScaleXInterpolator.ResetTo(transform.localScale.x);
-                    m_ScaleYInterpolator.ResetTo(transform.localScale.y);
-                    m_ScaleZInterpolator.ResetTo(transform.localScale.z);
-                    m_RotationInterpolator.ResetTo(transform.rotation);
-                    ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+                    ResetInterpolatedTransform(transform.position, transform.rotation, transform.localScale);
                 }
             }
+        }
+
+        private void OnInterpolateStateUpdated(bool previousState, bool newState)
+        {
+            Interpolate = newState;
+            ResetInterpolatedTransform(transform.position, transform.rotation, transform.localScale);
         }
 
         public void ResetInterpolatedTransform(Vector3 position, Quaternion rotation, Vector3 scale)
@@ -659,6 +666,13 @@ namespace Unity.Netcode.Components
                     var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                     Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
+                }
+            }
+            else
+            {
+                if (m_InterpolateState.Value != Interpolate)
+                {
+                    m_InterpolateState.Value = Interpolate;
                 }
             }
         }

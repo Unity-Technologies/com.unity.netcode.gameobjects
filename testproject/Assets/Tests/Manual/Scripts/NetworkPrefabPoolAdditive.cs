@@ -18,10 +18,13 @@ namespace TestProject.ManualTests
         [Tooltip("When enabled, this will despawn or destroy all associated network prefab instances when the additive scene is unloaded.")]
         public bool DestroyOnUnload = false;
 
+        public bool Interpolate = true;
         public float InitialSpawnDelay;
         public int SpawnsPerSecond = 3;
         public int PoolSize;
         public float ObjectSpeed = 10.0f;
+
+
 
 
         [Header("Prefab Instance Handling")]
@@ -79,11 +82,35 @@ namespace TestProject.ManualTests
             }
         }
 
+        private bool m_CurrentInterpolateState;
+        private void OnEnable()
+        {
+            m_CurrentInterpolateState = Interpolate;
+        }
+        private void Update()
+        {
+            if (IsSpawned && IsServer)
+            {
+                if (m_CurrentInterpolateState != Interpolate)
+                {
+                    m_CurrentInterpolateState = Interpolate;
+                    foreach (var obj in m_ObjectPool)
+                    {
+                        if (obj == null)
+                        {
+                            continue;
+                        }
+                        obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// General clean up
         /// The custom prefab handler is unregistered here
         /// </summary>
-        private void OnDestroy()
+        private void OnDisable()
         {
             if (IsServer)
             {
@@ -114,24 +141,28 @@ namespace TestProject.ManualTests
         /// <param name="sceneName"></param>
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch (sceneEvent.SceneEventType)
+            // Only process events for our local client id (this includes server)
+            if (sceneEvent.ClientId == NetworkManager.LocalClientId)
             {
-                case SceneEventData.SceneEventTypes.S2C_Unload:
-                    {
-                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
+                switch (sceneEvent.SceneEventType)
+                {
+                    case SceneEventData.SceneEventTypes.S2C_Unload:
                         {
-                            OnUnloadScene();
+                            if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
+                            {
+                                OnUnloadScene();
+                            }
+                            break;
                         }
-                        break;
-                    }
-                case SceneEventData.SceneEventTypes.S2C_Load:
-                    {
-                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
+                    case SceneEventData.SceneEventTypes.S2C_Load:
                         {
-                            OnUnloadScene();
+                            if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
+                            {
+                                OnUnloadScene();
+                            }
+                            break;
                         }
-                        break;
-                    }
+                }
             }
         }
 
@@ -324,7 +355,7 @@ namespace TestProject.ManualTests
                 // about setting the NetworkObject's scene dependency.
                 SceneManager.MoveGameObjectToScene(obj, gameObject.scene);
             }
-
+            obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
             obj.SetActive(false);
 
 
@@ -363,10 +394,6 @@ namespace TestProject.ManualTests
         }
 
 
-        private void OnDisable()
-        {
-            StopCoroutine(SpawnObjects());
-        }
 
         /// <summary>
         /// Coroutine to spawn boxes

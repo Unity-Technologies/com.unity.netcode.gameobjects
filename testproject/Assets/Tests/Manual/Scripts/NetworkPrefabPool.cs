@@ -12,6 +12,7 @@ namespace TestProject.ManualTests
     {
         [Header("General Settings")]
         public bool AutoSpawnEnable = true;
+        public bool Interpolate = true;
         public float InitialSpawnDelay;
         public int SpawnsPerSecond;
         public int PoolSize;
@@ -46,11 +47,14 @@ namespace TestProject.ManualTests
 
         private static GameObject s_Instance;
 
+        private bool m_CurrentInterpolateState;
+
         /// <summary>
         /// Called when enabled, if already connected we register any custom prefab spawn handler here
         /// </summary>
         private void OnEnable()
         {
+            m_CurrentInterpolateState = Interpolate;
             m_IsExitingScene = false;
             if (DontDestroy)
             {
@@ -76,6 +80,29 @@ namespace TestProject.ManualTests
                 SpawnSlider.gameObject.SetActive(false);
             }
         }
+
+
+
+
+        private void Update()
+        {
+            if (IsSpawned && IsServer)
+            {
+                if (m_CurrentInterpolateState != Interpolate)
+                {
+                    m_CurrentInterpolateState = Interpolate;
+                    foreach (var obj in m_ObjectPool)
+                    {
+                        if (obj == null)
+                        {
+                            continue;
+                        }
+                        obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
+                    }
+                }
+            }
+        }
+
 
         private bool m_IsExitingScene;
         public void OnExitingScene(bool destroyObjects)
@@ -178,16 +205,20 @@ namespace TestProject.ManualTests
 
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch (sceneEvent.SceneEventType)
+            // Only process events for our local client id (this includes server)
+            if (sceneEvent.ClientId == NetworkManager.LocalClientId)
             {
-                case SceneEventData.SceneEventTypes.S2C_Unload:
-                    {
-                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneEvent.SceneName))
+                switch (sceneEvent.SceneEventType)
+                {
+                    case SceneEventData.SceneEventTypes.S2C_Unload:
                         {
-                            OnDestroyObjectPool();
+                            if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneEvent.SceneName))
+                            {
+                                OnDestroyObjectPool();
+                            }
+                            break;
                         }
-                        break;
-                    }
+                }
             }
         }
 
@@ -400,6 +431,7 @@ namespace TestProject.ManualTests
             var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             genericNetworkObjectBehaviour.IsRegisteredPoolObject = true;
+            obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
             m_ObjectPool.Add(obj);
             return m_ObjectPool[m_ObjectPool.Count - 1];
         }
