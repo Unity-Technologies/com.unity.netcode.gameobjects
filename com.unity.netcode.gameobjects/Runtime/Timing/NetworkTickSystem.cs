@@ -17,7 +17,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The TickRate of the tick system. This is used to decide how often a fixed network tick is run.
         /// </summary>
-        public int TickRate { get; }
+        public uint TickRate { get; }
 
         /// <summary>
         /// The current local time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
@@ -40,8 +40,13 @@ namespace Unity.Netcode
         /// <param name="tickRate">The tick rate</param>
         /// <param name="localTimeSec">The initial local time to start at.</param>
         /// <param name="serverTimeSec">The initial server time to start at.</param>
-        public NetworkTickSystem(int tickRate, double localTimeSec, double serverTimeSec)
+        public NetworkTickSystem(uint tickRate, double localTimeSec, double serverTimeSec)
         {
+            if (tickRate == 0)
+            {
+                throw new ArgumentException("Tickrate must be a positive value.", nameof(tickRate));
+            }
+
             TickRate = tickRate;
             Tick = null;
             LocalTime = new NetworkTime(tickRate, localTimeSec);

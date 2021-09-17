@@ -4,10 +4,12 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping",
+        "Unity.Netcode.Components",
+        "Unity.Collections",
+        "UnityEngine.TestRunner",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
-        "UnityEngine.TestRunner"
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

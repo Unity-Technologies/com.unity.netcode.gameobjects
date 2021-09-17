@@ -3,6 +3,7 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
+
     /// <summary>
     /// Used with GenericObjects to randomly move them around
     /// </summary>
@@ -53,6 +54,7 @@ namespace TestProject.ManualTests
                 m_MoveTowardsPosition = Vector3.Lerp(m_MoveTowardsPosition, Vector3.zero, 0.01f);
             }
         }
+
 
         // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()

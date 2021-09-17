@@ -1,22 +1,23 @@
-using System.IO;
+using System;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Interface for network value containers
     /// </summary>
-    public abstract class NetworkVariableBase
+    public abstract class NetworkVariableBase : IDisposable
     {
+        /// <summary>
+        /// The delivery type (QoS) to send data with
+        /// </summary>
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
+
         private protected NetworkBehaviour m_NetworkBehaviour;
 
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
             m_NetworkBehaviour = networkBehaviour;
         }
-        /// <summary>
-        /// The name of the channel to be used for syncing
-        /// </summary>
-        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
 
         protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
         {
@@ -84,38 +85,33 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
-        public virtual bool CanClientWrite(ulong clientId)
-        {
-            return false;
-        }
-
-        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
-        public abstract void WriteDelta(Stream stream);
+        /// <param name="writer">The stream to write the dirty changes to</param>
+        public abstract void WriteDelta(ref FastBufferWriter writer);
 
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
-        public abstract void WriteField(Stream stream);
+        /// <param name="writer">The stream to write the state to</param>
+        public abstract void WriteField(ref FastBufferWriter writer);
 
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        public abstract void ReadField(Stream stream);
+        /// <param name="reader">The stream to read the state from</param>
+        public abstract void ReadField(ref FastBufferReader reader);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
+        /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
+
+        public abstract void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta);
+
+        public virtual void Dispose()
+        {
+        }
     }
 }

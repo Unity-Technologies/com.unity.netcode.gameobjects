@@ -59,10 +59,10 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            m_ServerNetworkManager.StopHost();
+            m_ServerNetworkManager.Shutdown();
             foreach (var networkManager in m_ClientNetworkManagers)
             {
-                networkManager.StopClient();
+                networkManager.Shutdown();
             }
             int nextFrameNumber = Time.frameCount + 4;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -121,8 +121,8 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.IsTrue(spawnedObject.gameObject.scene.name == "DontDestroyOnLoad");
                         var objectToNotDestroyBehaviour = spawnedObject.gameObject.GetComponent<ObjectToNotDestroyBehaviour>();
-                        Assert.IsTrue(objectToNotDestroyBehaviour.CurrentPing > 0);
-                        Assert.IsTrue(objectToNotDestroyBehaviour.CurrentPing == serverobjectToNotDestroyBehaviour.CurrentPing);
+                        Assert.Greater(objectToNotDestroyBehaviour.CurrentPing, 0);
+                        Assert.AreEqual(serverobjectToNotDestroyBehaviour.CurrentPing, objectToNotDestroyBehaviour.CurrentPing);
                     }
                 }
             }

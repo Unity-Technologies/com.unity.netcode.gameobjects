@@ -4,12 +4,12 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class ServerLogsMetricTests : SingleClientMetricTestBase
+    internal class ServerLogsMetricTests : SingleClientMetricTestBase
     {
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()

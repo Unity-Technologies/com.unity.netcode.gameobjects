@@ -34,7 +34,7 @@ namespace Unity.Netcode
         SceneEventInProgress,
         /// <summary>
         /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/>
-        /// or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
+        /// or <see cref="NetworkSceneManager.UnloadScene(Scene)"/>is invalid
         /// </summary>
         InvalidSceneName,
         /// <summary>
@@ -88,7 +88,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AreAllClientsDoneLoading { get; private set; }
 
-        internal uint SceneIndex { get; set; }
+        internal uint SceneBuildIndex { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 

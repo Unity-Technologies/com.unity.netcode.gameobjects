@@ -3,7 +3,7 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Exception thrown when the operation can only be done on the server
+    /// Exception thrown when a change to a configuration is wrong
     /// </summary>
     public class NetworkConfigurationException : Exception
     {

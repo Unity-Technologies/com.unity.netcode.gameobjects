@@ -23,6 +23,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
         /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
+        /// This value must be higher than the tick length client side.
         /// </summary>
         public double ServerBufferSec { get; set; }
 
