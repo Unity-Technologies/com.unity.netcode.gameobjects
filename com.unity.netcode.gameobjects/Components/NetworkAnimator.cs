@@ -336,7 +336,7 @@ namespace Unity.Netcode.Components
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
 
         private ulong[] m_ServerMessagingTargetClientIds;
-        private Dictionary<ulong, ulong[]> m_ClientIdsExcludingThemselvesCache;
+        private Dictionary<ulong, ulong[]> m_TargetClientIdsCache;
 
         private bool m_Initialized = false;
 
@@ -469,7 +469,7 @@ namespace Unity.Netcode.Components
         private void InvalidateCachedClientIds()
         {
             m_ServerMessagingTargetClientIds = null;
-            m_ClientIdsExcludingThemselvesCache = null;
+            m_TargetClientIdsCache = null;
         }
 
         private void ServerOnClientConnectedCallback(ulong clientId)
@@ -629,26 +629,27 @@ namespace Unity.Netcode.Components
 
         private ulong[] GetTargetClientIds(ulong originClientId)
         {
-            if (m_ClientIdsExcludingThemselvesCache == null)
+
+            if (m_TargetClientIdsCache == null)
             {
-                m_ClientIdsExcludingThemselvesCache = new Dictionary<ulong, ulong[]>();
+                m_TargetClientIdsCache = new Dictionary<ulong, ulong[]>();
             }
 
-            if (!m_ClientIdsExcludingThemselvesCache.TryGetValue(originClientId, out var ids))
+            if (!m_TargetClientIdsCache.TryGetValue(originClientId, out var ids))
             {
                 var clientIdsBarOrigin = new List<ulong>();
                 foreach (var connectedClient in NetworkManager.ConnectedClientsList)
                 {
-                    if (connectedClient.ClientId == originClientId)
+                    if (connectedClient.ClientId != originClientId &&
+                        connectedClient.ClientId != NetworkManager.ServerClientId)
                     {
-                        continue;
+                        clientIdsBarOrigin.Add(connectedClient.ClientId);
                     }
-
-                    clientIdsBarOrigin.Add(connectedClient.ClientId);
                 }
 
                 ids = clientIdsBarOrigin.ToArray();
-                m_ClientIdsExcludingThemselvesCache[originClientId] = ids;
+
+                m_TargetClientIdsCache[originClientId] = ids;
             }
 
             return ids;
@@ -676,7 +677,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendParamsAndLayerStatesClientRpc(AnimatorSnapshot animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!WillCommitChanges)
+            if (!WillCommitChanges && !IsHost)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
@@ -684,6 +685,24 @@ namespace Unity.Netcode.Components
 
         private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
         {
+            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
+            {
+                var layerState = animatorSnapshot.LayerStates[layerIndex];
+
+                m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
+
+                var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
+
+                bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
+                bool forceAnimationCatchup = !stateChanged &&
+                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
+
+                if (stateChanged || forceAnimationCatchup)
+                {
+                    m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
+                }
+            }
+
             foreach (var intParameter in animatorSnapshot.IntParamArray)
             {
                 m_Animator.SetInteger(intParameter.Key, intParameter.Value);
@@ -702,24 +721,6 @@ namespace Unity.Netcode.Components
             foreach (var triggerParameter in animatorSnapshot.TriggerParameters)
             {
                 m_Animator.SetTrigger(triggerParameter);
-            }
-
-            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
-            {
-                var layerState = animatorSnapshot.LayerStates[layerIndex];
-
-                m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
-
-                var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
-
-                bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
-                bool forceAnimationCatchup = !stateChanged &&
-                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
-
-                if (stateChanged || forceAnimationCatchup)
-                {
-                    m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
-                }
             }
         }
     }
