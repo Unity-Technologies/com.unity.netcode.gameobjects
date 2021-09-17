@@ -71,7 +71,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.netcode.gameobjects": "0.0.1-preview.1",
-        "com.unity.transport": "1.0.0-pre.4"
+        "com.unity.transport": "1.0.0-pre.5"
       }
     },
     "com.unity.netcode.gameobjects": {
@@ -187,8 +187,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.4",
-      "depth": 0,
+      "version": "1.0.0-pre.5",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.collections": "1.0.0-pre.5",

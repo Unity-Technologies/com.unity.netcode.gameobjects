@@ -40,7 +40,10 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, ref reader);
                 }
             }
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length);
+            var bytesReported = m_NetworkManager.LocalClientId == clientId
+                ? 0
+                : reader.Length;
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesReported);
         }
 
         /// <summary>
@@ -78,6 +81,9 @@ namespace Unity.Netcode
                 Data = messageBuffer
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
+            var bytesReported = m_NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : size;
             m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
         }
 
@@ -193,6 +199,9 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
+                var bytesReported = m_NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : size;
             m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
         }
 

@@ -6,12 +6,12 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class TransportBytesMetricsTests : SingleClientMetricTestBase
+    internal class TransportBytesMetricsTests : SingleClientMetricTestBase
     {
         static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + FastBufferWriter.GetWriteSize<MessageHeader>();
 

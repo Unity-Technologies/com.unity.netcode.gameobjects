@@ -140,12 +140,18 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(
-                    NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(),
-                    NetworkObjectId,
-                    rpcMethodName,
-                    __getTypeName(),
-                    messageSize);
+                foreach (var client in NetworkManager.ConnectedClients)
+                {
+                    var bytesReported = NetworkManager.LocalClientId == client.Key
+                        ? 0
+                        : messageSize;
+                    NetworkManager.NetworkMetrics.TrackRpcSent(
+                        client.Key,
+                        NetworkObjectId,
+                        rpcMethodName,
+                        __getTypeName(),
+                        bytesReported);
+                }
             }
 #endif
         }

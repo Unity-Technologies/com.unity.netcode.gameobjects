@@ -18,12 +18,18 @@ namespace Unity.Netcode
 
         public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
         {
-            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, messageType.Name, messageSizeBytes);
+            var bytesReported = m_NetworkManager.LocalClientId == clientId
+                ? 0
+                : messageSizeBytes;
+            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, messageType.Name, bytesReported);
         }
 
         public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
         {
-            m_NetworkManager.NetworkMetrics.TrackNetworkMessageReceived(senderId, messageType.Name, messageSizeBytes);
+            var bytesReported = m_NetworkManager.LocalClientId == senderId
+                ? 0
+                : messageSizeBytes;
+            m_NetworkManager.NetworkMetrics.TrackNetworkMessageReceived(senderId, messageType.Name, bytesReported);
         }
 
         public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
