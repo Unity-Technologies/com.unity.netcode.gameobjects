@@ -17,6 +17,7 @@ namespace Unity.Netcode.Components
             public KeyValuePair<int, int>[] IntParamArray;
             public List<int> TriggerParameters;
             public LayerState[] LayerStates;
+            private const int k_InvalidKey = -1;
 
             public AnimatorSnapshot(int boolCount, int floatCount, int intCount, int triggerCount, int layerStatesCount)
             {
@@ -42,17 +43,17 @@ namespace Unity.Netcode.Components
             {
                 for (int i = 0; i < BoolParamArray.Length; i++)
                 {
-                    BoolParamArray[i] = new KeyValuePair<int, bool>(-1, false);
+                    BoolParamArray[i] = new KeyValuePair<int, bool>(k_InvalidKey, false);
                 }
 
                 for (int i = 0; i < FloatParamArray.Length; i++)
                 {
-                    FloatParamArray[i] = new KeyValuePair<int, float>(-1, 0);
+                    FloatParamArray[i] = new KeyValuePair<int, float>(k_InvalidKey, 0);
                 }
 
                 for (int i = 0; i < IntParamArray.Length; i++)
                 {
-                    IntParamArray[i] = new KeyValuePair<int, int>(-1, 0);
+                    IntParamArray[i] = new KeyValuePair<int, int>(k_InvalidKey, 0);
                 }
 
                 TriggerParameters.Clear();
@@ -72,7 +73,7 @@ namespace Unity.Netcode.Components
                     {
                         var kv = IntParamArray[i];
 
-                        if (kv.Key == -1)
+                        if (kv.Key == k_InvalidKey)
                         {
                             IntParamArray[i] = new KeyValuePair<int, int>(key, value);
                             setOrUpdatedValue = true;
@@ -101,7 +102,7 @@ namespace Unity.Netcode.Components
                     {
                         var kv = BoolParamArray[i];
 
-                        if (kv.Key == -1)
+                        if (kv.Key == k_InvalidKey)
                         {
                             BoolParamArray[i] = new KeyValuePair<int, bool>(key, value);
                             setOrUpdatedValue = true;
@@ -130,7 +131,7 @@ namespace Unity.Netcode.Components
                     {
                         var kv = FloatParamArray[i];
 
-                        if (kv.Key == -1)
+                        if (kv.Key == k_InvalidKey)
                         {
                             FloatParamArray[i] = new KeyValuePair<int, float>(key, value);
                             setOrUpdatedValue = true;
@@ -138,7 +139,7 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                else if (FloatParamArray[existingKvIndex].Value != value)
+                else if ( Math.Abs(FloatParamArray[existingKvIndex].Value - value) > Mathf.Epsilon )
                 {
                     FloatParamArray[existingKvIndex] = new KeyValuePair<int, float>(key, value);
                     setOrUpdatedValue = true;
