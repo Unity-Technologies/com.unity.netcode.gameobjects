@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -265,7 +262,7 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        public virtual bool CanCommitToTransform => IsServer;
+        public virtual bool CanWriteToTransform => IsServer;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
@@ -307,23 +304,38 @@ namespace Unity.Netcode.Components
 
         private void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
-            var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
+            bool isDirty;
+            if (CanWriteToTransform)
+            {
+                isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
+            }
+            else
+            {
+                isDirty = ApplyTransformToNetworkState(ref m_LocalNonAuthoritativeTransformToCommit, dirtyTime, transformToCommit);
+            }
             TryCommit(isDirty);
         }
-
 
         public void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale)
         {
             TryCommitValuesToServer(position, rotation, scale, NetworkManager.LocalTime.Time);
         }
 
+        private NetworkTransformState m_LocalNonAuthoritativeTransformToCommit;
+
         private void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
         {
-            var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
-
-            TryCommit(isDirty.isDirty);
+            bool isDirty;
+            if (CanWriteToTransform)
+            {
+                isDirty = ApplyValuesToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale).isDirty;
+            }
+            else
+            {
+                isDirty = ApplyValuesToNetworkStateWithInfo(ref m_LocalNonAuthoritativeTransformToCommit, dirtyTime, position, rotation, scale).isDirty;
+            }
+            TryCommit(isDirty);
         }
-
 
         private void TryCommit(bool isDirty)
         {
@@ -333,13 +345,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanCommitToTransform)
+            if (CanWriteToTransform)
             {
                 var oldIsTeleporting = m_LocalAuthoritativeNetworkState.IsTeleporting;
-                m_LocalAuthoritativeNetworkState.IsTeleporting = true;
+                m_LocalAuthoritativeNetworkState.IsTeleporting = true; // disable interpolation
                 ApplyInterpolatedNetworkStateToTransform(m_LocalAuthoritativeNetworkState, transform);
                 m_LocalAuthoritativeNetworkState.IsTeleporting = oldIsTeleporting;
             }
+
             void Send(NetworkTransformState stateToSend)
             {
                 if (IsServer)
@@ -362,10 +375,18 @@ namespace Unity.Netcode.Components
             // making it immobile.
             if (isDirty)
             {
-                Send(m_LocalAuthoritativeNetworkState);
+                if (CanWriteToTransform)
+                {
+                    Send(m_LocalAuthoritativeNetworkState);
+                    m_LastSentState = m_LocalAuthoritativeNetworkState;
+                }
+                else
+                {
+                    Send(m_LocalNonAuthoritativeTransformToCommit);
+                    m_LastSentState = m_LocalNonAuthoritativeTransformToCommit;
+                }
                 m_HasSentLastValue = false;
                 m_LastSentTick = NetworkManager.LocalTime.Tick;
-                m_LastSentState = m_LocalAuthoritativeNetworkState;
             }
             else if (!m_HasSentLastValue && NetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
@@ -379,13 +400,15 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void CommitTransformServerRpc(NetworkTransformState networkState)
         {
+            m_LocalAuthoritativeNetworkState = networkState;
             CommitLocallyAndReplicate(networkState);
         }
 
+        private bool m_CommittingValue;
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
-            // m_LocalAuthoritativeNetworkState = networkState;
             m_ReplicatedNetworkState.Value = networkState;
+            m_CommittingValue = true;
             AddInterpolatedState(networkState);
         }
 
@@ -414,10 +437,10 @@ namespace Unity.Netcode.Components
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
             var scale = InLocalSpace ? transformToUse.localScale : transformToUse.lossyScale;
-            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
+            return ApplyValuesToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
         }
 
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Vector3 position, Vector3 rotAngles, Vector3 scale)
+        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyValuesToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Vector3 position, Vector3 rotAngles, Vector3 scale)
         {
             var isDirty = false;
             var isPositionDirty = false;
@@ -675,7 +698,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanCommitToTransform)
+            if (CanWriteToTransform)
             {
                 // we're the authority, we ignore incoming changes
                 return;
@@ -707,7 +730,7 @@ namespace Unity.Netcode.Components
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
-            if (CanCommitToTransform)
+            if (CanWriteToTransform)
             {
                 TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
@@ -735,7 +758,7 @@ namespace Unity.Netcode.Components
         {
             ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
 
-            if (CanCommitToTransform)
+            if (CanWriteToTransform)
             {
                 m_ReplicatedNetworkState.SetDirty(true);
             }
@@ -759,10 +782,11 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanCommitToTransform)
+            if (CanWriteToTransform && !m_CommittingValue)
             {
                 if (IsServer)
                 {
+                    // If there's no value commit already in progress, take authoritative value from server, this way there's no conflict
                     TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
                 }
 
@@ -779,7 +803,7 @@ namespace Unity.Netcode.Components
 
                 m_RotationInterpolator.Update(Time.deltaTime);
 
-                if (!CanCommitToTransform)
+                if (!CanWriteToTransform || m_CommittingValue)
                 {
                     if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
                     {
@@ -796,13 +820,15 @@ namespace Unity.Netcode.Components
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                         // from an unauthorized transform change or euler to quaternion conversion artifacts.
                         var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                        Debug.LogWarning(dirtyField + k_NoAuthorityMessage, this);
+                        Debug.LogWarning(dirtyField + " " + k_NoAuthorityMessage, this);
                     }
 
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
+
+            // m_CommittingValue = false; // we know there's no more commit anymore, Update executes after RPCs
         }
 
         /// <summary>
@@ -810,7 +836,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public void Teleport(Vector3 newPosition, Vector3 newRotationEuler, Vector3 newScale)
         {
-            if (!CanCommitToTransform)
+            if (!CanWriteToTransform)
             {
                 Debug.LogWarning("Teleport not allowed, "+k_NoAuthorityMessage);
                 return;

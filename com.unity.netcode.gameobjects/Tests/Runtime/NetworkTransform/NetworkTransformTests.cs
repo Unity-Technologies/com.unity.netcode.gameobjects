@@ -77,8 +77,8 @@ namespace Unity.Netcode.RuntimeTests
                 authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
                 otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
             }
-            Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
-            Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
+            Assert.That(!otherSideNetworkTransform.CanWriteToTransform);
+            Assert.That(authoritativeNetworkTransform.CanWriteToTransform);
 
             // // server auth net transform can't write from client, not from client
             // var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
@@ -128,12 +128,12 @@ namespace Unity.Netcode.RuntimeTests
             authoritativeNetworkTransform.Interpolate = false;
             otherSideNetworkTransform.Interpolate = false;
 
-            if (authoritativeNetworkTransform.CanCommitToTransform)
+            if (authoritativeNetworkTransform.CanWriteToTransform)
             {
                 authoritativeNetworkTransform.InLocalSpace = testLocalTransform;
             }
 
-            if (otherSideNetworkTransform.CanCommitToTransform)
+            if (otherSideNetworkTransform.CanWriteToTransform)
             {
                 otherSideNetworkTransform.InLocalSpace = testLocalTransform;
             }
