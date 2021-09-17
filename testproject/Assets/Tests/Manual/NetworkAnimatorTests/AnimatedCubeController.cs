@@ -30,7 +30,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private void Update()
         {
-            if (m_NetworkAnimator.WillCommitChanges)
+            if (m_NetworkAnimator.CanCommitToAnimator)
             {
                 if (Input.GetKeyDown(KeyCode.C))
                 {

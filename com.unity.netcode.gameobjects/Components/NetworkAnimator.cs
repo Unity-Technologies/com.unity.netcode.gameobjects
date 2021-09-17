@@ -345,7 +345,7 @@ namespace Unity.Netcode.Components
         /// This property tells us if the changes made to the Mecanim Animator will be synced to other peers or not.
         /// If not - then whatever local changes are done to the Mecanim Animator - they'll get overriden.
         /// </summary>
-        public virtual bool WillCommitChanges => IsServer;
+        public virtual bool CanCommitToAnimator => IsServer;
 
         public override void OnNetworkSpawn()
         {
@@ -423,7 +423,7 @@ namespace Unity.Netcode.Components
             m_AnimatorSnapshot =
                 new AnimatorSnapshot(boolCount, floatCount, intCount, triggerCount, m_Animator.layerCount);
 
-            if (!WillCommitChanges)
+            if (!CanCommitToAnimator)
             {
                 m_Animator.StopPlayback();
             }
@@ -477,7 +477,7 @@ namespace Unity.Netcode.Components
         {
             InvalidateCachedClientIds();
 
-            if (WillCommitChanges)
+            if (CanCommitToAnimator)
             {
                 m_ServerRequestsAnimationResync = true;
             }
@@ -497,7 +497,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void RequestResyncClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            if (!WillCommitChanges)
+            if (!CanCommitToAnimator)
             {
                 return;
             }
@@ -512,7 +512,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (WillCommitChanges)
+            if (CanCommitToAnimator)
             {
                 bool shouldSendBasedOnTime = CheckSendRate();
                 bool shouldSendBasedOnChanges = StoreState();
@@ -659,7 +659,7 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SendParamsAndLayerStatesServerRpc(AnimatorSnapshot animSnapshot, ServerRpcParams serverRpcParams = default)
         {
-            if (!WillCommitChanges)
+            if (!CanCommitToAnimator)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
@@ -678,7 +678,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendParamsAndLayerStatesClientRpc(AnimatorSnapshot animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!WillCommitChanges && !IsHost)
+            if (!CanCommitToAnimator && !IsHost)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
