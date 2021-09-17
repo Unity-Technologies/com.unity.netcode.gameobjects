@@ -263,13 +263,13 @@ namespace Unity.Netcode.Components
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
 
-        private BufferedLinearInterpolator<float> m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
-        private BufferedLinearInterpolator<float> m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
-        private BufferedLinearInterpolator<float> m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
-        private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
-        private BufferedLinearInterpolator<float> m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
-        private BufferedLinearInterpolator<float> m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
-        private BufferedLinearInterpolator<float> m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<float> m_PositionXInterpolator; // = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<float> m_PositionYInterpolator; // = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<float> m_PositionZInterpolator; // = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator; // = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+        private BufferedLinearInterpolator<float> m_ScaleXInterpolator; // = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<float> m_ScaleYInterpolator; // = new BufferedLinearInterpolatorFloat();
+        private BufferedLinearInterpolator<float> m_ScaleZInterpolator; // = new BufferedLinearInterpolatorFloat();
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
@@ -638,15 +638,7 @@ namespace Unity.Netcode.Components
         private void Awake()
         {
             m_Transform = transform;
-            if (m_AllFloatInterpolators.Count == 0)
-            {
-                m_AllFloatInterpolators.Add(m_PositionXInterpolator);
-                m_AllFloatInterpolators.Add(m_PositionYInterpolator);
-                m_AllFloatInterpolators.Add(m_PositionZInterpolator);
-                m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
-                m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
-                m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
-            }
+
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
@@ -660,6 +652,22 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(NetworkManager); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            if (m_AllFloatInterpolators.Count == 0)
+            {
+                m_AllFloatInterpolators.Add(m_PositionXInterpolator);
+                m_AllFloatInterpolators.Add(m_PositionYInterpolator);
+                m_AllFloatInterpolators.Add(m_PositionZInterpolator);
+                m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
+                m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
+                m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
+            }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
         }

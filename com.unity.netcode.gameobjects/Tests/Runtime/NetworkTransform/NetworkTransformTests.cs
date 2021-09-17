@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // TODO: rewrite after perms & authority changes
-        [UnityTest, Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
+        [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
         {
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
