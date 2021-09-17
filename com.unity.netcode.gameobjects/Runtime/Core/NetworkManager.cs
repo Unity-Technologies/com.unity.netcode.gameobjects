@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -9,10 +8,8 @@ using UnityEngine;
 using UnityEditor;
 #endif
 #if MULTIPLAYER_TOOLS
-using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
-using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
