@@ -20,7 +20,7 @@ public class MultiprocessOrchestration
     /// </summary>
     public static bool ShouldIgnoreUTRTests()
     {
-        return false;
+        return true;
     }
 
     public static void StartWorkerNode()
