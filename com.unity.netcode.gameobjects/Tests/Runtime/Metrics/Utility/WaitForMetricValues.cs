@@ -5,9 +5,8 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using UnityEngine;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
+namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 {
     internal class WaitForMetricValues<TMetric> : IMetricObserver
     {
