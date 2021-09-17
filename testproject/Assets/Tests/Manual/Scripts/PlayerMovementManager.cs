@@ -12,22 +12,10 @@ namespace TestProject.ManualTests
 
         private RandomMovement m_RandomMovement;
 
-        private Rigidbody m_Rigidbody;
-
-
         // Start is called before the first frame update
         private void Start()
         {
             m_RandomMovement = GetComponent<RandomMovement>();
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            m_Rigidbody = GetComponent<Rigidbody>();
-            if (m_Rigidbody != null)
-            {
-                m_Rigidbody.isKinematic = !NetworkObject.NetworkManager.IsServer;
-            }
         }
 
         private void Update()
