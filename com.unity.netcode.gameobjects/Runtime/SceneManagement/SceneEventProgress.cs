@@ -34,7 +34,7 @@ namespace Unity.Netcode
         SceneEventInProgress,
         /// <summary>
         /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/>
-        /// or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
+        /// or <see cref="NetworkSceneManager.UnloadScene(Scene)"/>is invalid
         /// </summary>
         InvalidSceneName,
         /// <summary>

@@ -119,6 +119,7 @@ namespace Unity.Netcode
             {
                 m_Length = PositionInternal;
             }
+
             PositionInternal = where;
         }
 
@@ -139,6 +140,7 @@ namespace Unity.Netcode
             {
                 PositionInternal = where;
             }
+
             if (m_Length > where)
             {
                 m_Length = where;
@@ -166,6 +168,7 @@ namespace Unity.Netcode
             {
                 desiredSize *= 2;
             }
+
             var newSize = Math.Min(desiredSize, MaxCapacityInternal);
             void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -207,6 +210,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(bytes);
@@ -254,6 +258,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(len);
@@ -292,6 +297,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
+
                 if (CapacityInternal < MaxCapacityInternal)
                 {
                     Grow(bytes);
@@ -323,6 +329,7 @@ namespace Unity.Netcode
             {
                 UnsafeUtility.MemCpy(b, BufferPointer, Length);
             }
+
             return ret;
         }
 
@@ -356,6 +363,34 @@ namespace Unity.Netcode
         public static int GetWriteSize(string s, bool oneByteChars = false)
         {
             return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
+        }
+
+        /// <summary>
+        /// Write an INetworkSerializable
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
+        {
+            var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
+        /// Write an array of INetworkSerializables
+        /// </summary>
+        /// <param name="array">The value to write</param>
+        /// <param name="count"></param>
+        /// <param name="offset"></param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            WriteValueSafe(sizeInTs);
+            foreach (var item in array)
+            {
+                WriteNetworkSerializable(item);
+            }
         }
 
         /// <summary>
@@ -632,11 +667,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytes(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytes(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytes(ptr, size, offset);
+                WriteBytes(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 
@@ -650,11 +685,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytesSafe(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytesSafe(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytesSafe(ptr, size, offset);
+                WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 
@@ -665,7 +700,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="other">Writer to copy to</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void CopyTo(FastBufferWriter other)
+        public unsafe void CopyTo(ref FastBufferWriter other)
         {
             other.WriteBytes(BufferPointer, PositionInternal);
         }
@@ -677,7 +712,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="other">Writer to copy to</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void CopyFrom(FastBufferWriter other)
+        public unsafe void CopyFrom(ref FastBufferWriter other)
         {
             WriteBytes(other.BufferPointer, other.PositionInternal);
         }
@@ -697,7 +732,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
         /// </summary>
-        /// <param name="value"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public static unsafe int GetWriteSize<T>() where T : unmanaged

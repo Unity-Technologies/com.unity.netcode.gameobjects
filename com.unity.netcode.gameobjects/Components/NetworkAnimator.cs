@@ -163,7 +163,7 @@ namespace Unity.Netcode.Components
                 TriggerParameters.Clear();
             }
 
-            public void NetworkSerialize(NetworkSerializer serializer)
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 SerializeIntParameters(serializer);
                 SerializeFloatParameters(serializer);
@@ -172,10 +172,10 @@ namespace Unity.Netcode.Components
                 SerializeAnimatorLayerStates(serializer);
             }
 
-            private void SerializeAnimatorLayerStates(NetworkSerializer serializer)
+            private void SerializeAnimatorLayerStates<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int layerCount = serializer.IsReading ? 0 : LayerStates.Length;
-                serializer.Serialize(ref layerCount);
+                int layerCount = serializer.IsReader ? 0 : LayerStates.Length;
+                serializer.SerializeValue(ref layerCount);
 
                 if (LayerStates.Length != layerCount)
                 {
@@ -184,16 +184,16 @@ namespace Unity.Netcode.Components
 
                 for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
                 {
-                    var stateHash = serializer.IsReading ? 0 : LayerStates[paramIndex].StateHash;
-                    serializer.Serialize(ref stateHash);
+                    var stateHash = serializer.IsReader ? 0 : LayerStates[paramIndex].StateHash;
+                    serializer.SerializeValue(ref stateHash);
 
-                    var layerWeight = serializer.IsReading ? 0 : LayerStates[paramIndex].LayerWeight;
-                    serializer.Serialize(ref layerWeight);
+                    var layerWeight = serializer.IsReader ? 0 : LayerStates[paramIndex].LayerWeight;
+                    serializer.SerializeValue(ref layerWeight);
 
-                    var normalizedStateTime = serializer.IsReading ? 0 : LayerStates[paramIndex].NormalizedStateTime;
-                    serializer.Serialize(ref normalizedStateTime);
+                    var normalizedStateTime = serializer.IsReader ? 0 : LayerStates[paramIndex].NormalizedStateTime;
+                    serializer.SerializeValue(ref normalizedStateTime);
 
-                    if (serializer.IsReading)
+                    if (serializer.IsReader)
                     {
                         LayerStates[paramIndex] = new LayerState()
                         {
@@ -205,10 +205,10 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeTriggerParameters(NetworkSerializer serializer)
+            private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
-                serializer.Serialize(ref paramCount);
+                int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
+                serializer.SerializeValue(ref paramCount);
 
                 if (TriggerParameters.Count != paramCount)
                 {
@@ -220,14 +220,14 @@ namespace Unity.Netcode.Components
                     var paramId = serializer.IsReading ? 0 : TriggerParameters[i];
                     serializer.Serialize(ref paramId);
 
-                    if (serializer.IsReading)
+                    if (serializer.IsReader)
                     {
                         TriggerParameters.Add(paramId);
                     }
                 }
             }
 
-            private void SerializeBoolParameters(NetworkSerializer serializer)
+            private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReading ? 0 : BoolParamArray.Length;
                 serializer.Serialize(ref paramCount);
@@ -245,14 +245,14 @@ namespace Unity.Netcode.Components
                     var paramBool = serializer.IsReading ? false : BoolParamArray[paramIndex].Value;
                     serializer.Serialize(ref paramBool);
 
-                    if (serializer.IsReading)
+                    if (serializer.IsReader)
                     {
                         BoolParamArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
                     }
                 }
             }
 
-            private void SerializeFloatParameters(NetworkSerializer serializer)
+            private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReading ? 0 : FloatParamArray.Length;
                 serializer.Serialize(ref paramCount);
@@ -270,14 +270,14 @@ namespace Unity.Netcode.Components
                     var paramFloat = serializer.IsReading ? 0 : FloatParamArray[paramIndex].Value;
                     serializer.Serialize(ref paramFloat);
 
-                    if (serializer.IsReading)
+                    if (serializer.IsReader)
                     {
                         FloatParamArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
                     }
                 }
             }
 
-            private void SerializeIntParameters(NetworkSerializer serializer)
+            private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReading ? 0 : IntParamArray.Length;
                 serializer.Serialize(ref paramCount);
@@ -295,7 +295,7 @@ namespace Unity.Netcode.Components
                     var paramInt = serializer.IsReading ? 0 : IntParamArray[paramIndex].Value;
                     serializer.Serialize(ref paramInt);
 
-                    if (serializer.IsReading)
+                    if (serializer.IsReader)
                     {
                         IntParamArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
                     }
