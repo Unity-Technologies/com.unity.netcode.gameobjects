@@ -22,15 +22,12 @@ namespace Unity.Netcode.EditorTests
         [TestCase(0d, 0f, 20u)]
         [TestCase(0d, 0f, 30u)]
         [TestCase(0d, 0f, 60u)]
-
         [TestCase(201d, 201f, 20u)]
         [TestCase(201d, 201f, 30u)]
         [TestCase(201d, 201f, 60u)]
-
         [TestCase(-4301d, -4301f, 20u)]
         [TestCase(-4301d, -4301f, 30u)]
         [TestCase(-4301d, -4301f, 60u)]
-
         [TestCase(float.MaxValue, float.MaxValue, 20u)]
         [TestCase(float.MaxValue, float.MaxValue, 30u)]
         [TestCase(float.MaxValue, float.MaxValue, 60u)]
@@ -45,7 +42,6 @@ namespace Unity.Netcode.EditorTests
         [TestCase(1013553.55d, 1013553.5d, 10u)]
         [TestCase(0d, 0d, 10u)]
         [TestCase(-27.41d, -27.5d, 10u)]
-
         [TestCase(53.55d, 53.54d, 50u)]
         [TestCase(1013553.55d, 1013553.54d, 50u)]
         [TestCase(0d, 0d, 50u)]
@@ -58,7 +54,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         [TestCase(34d, 0)]
         [TestCase(17.32d, 0.2d / 60d)]
-        [TestCase(-42.44d,  1d / 60d - 0.4d / 60d)]
+        [TestCase(-42.44d, 1d / 60d - 0.4d / 60d)]
         [TestCase(-6d, 0)]
         [TestCase(int.MaxValue / 61d, 0.00082, 10d)] // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60
         public void NetworkTimeCreate(double time, double tickOffset, double epsilon = 0.0001d)
