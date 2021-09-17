@@ -121,8 +121,8 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.IsTrue(spawnedObject.gameObject.scene.name == "DontDestroyOnLoad");
                         var objectToNotDestroyBehaviour = spawnedObject.gameObject.GetComponent<ObjectToNotDestroyBehaviour>();
-                        Assert.IsTrue(objectToNotDestroyBehaviour.CurrentPing > 0);
-                        Assert.IsTrue(objectToNotDestroyBehaviour.CurrentPing == serverobjectToNotDestroyBehaviour.CurrentPing);
+                        Assert.Greater(objectToNotDestroyBehaviour.CurrentPing, 0);
+                        Assert.AreEqual(serverobjectToNotDestroyBehaviour.CurrentPing, objectToNotDestroyBehaviour.CurrentPing);
                     }
                 }
             }

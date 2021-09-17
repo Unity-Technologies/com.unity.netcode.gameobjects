@@ -124,12 +124,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         return null;
     }
 
-    public void OnSynchronizeWrite(NetworkWriter networkWriter, NetworkObject networkObject)
-    {
-        var genericObjectPooledBehaviour = NetworkObject.GetComponent<GenericPooledObjectBehaviour>();
-        networkWriter.WriteInt32Packed(genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex);
-    }
-
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
     {
         var gameObject = GetNextSpawnObject();

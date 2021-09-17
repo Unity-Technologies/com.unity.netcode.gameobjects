@@ -9,12 +9,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
 {
     public static class RuntimeTestsHelpers
     {
-        // 50ms should be plenty enough for any network interaction to occur (even roundtrips).
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
-        public const float MaxNetworkEventWaitTime = 0.35f;
-#else
-        public const float MaxNetworkEventWaitTime = 0.15f;
-#endif
+        // Half a second might seem like a very long time to wait for a network event, but in CI
+        // many of the machines are underpowered (e.g. old Android devices or Macs) and there are
+        // sometimes lag spikes that cause can cause delays upwards of 300ms.
+        public const float MaxNetworkEventWaitTime = 0.5f;
 
         // Wait for an event to appear in the given event list (must be the very next event).
         public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events)
