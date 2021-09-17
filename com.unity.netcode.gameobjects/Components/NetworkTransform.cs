@@ -262,6 +262,7 @@ namespace Unity.Netcode.Components
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
+
         private BufferedLinearInterpolator<float> m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
@@ -692,6 +693,65 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        #region delta input
+
+        public float Speed { get; set; } = 5;
+        private Vector3 m_CurrentDirection;
+        private Vector3 m_PreviousDirection;
+
+        /// <summary>
+        /// Simple way to affect your position server side. For more custom logic, you can implement an RPC that does the same as this method, with custom
+        /// movement logic.
+        /// This is only compatible with deltaPos happening in Update. FixedUpdate will need custom code to be synced with physics items.
+        /// </summary>
+        /// <param name="deltaPos"></param>
+        /// <exception cref="Exception"></exception>
+        public void SendDelta(Vector3 deltaPos)
+        {
+            if (!IsOwner)
+            {
+                throw new Exception("Trying to send a delta to a not owned transform");
+            }
+
+            if (m_PreviousDirection == deltaPos)
+            {
+                return;
+            }
+
+            if (!CanCommitToTransform)
+            {
+                SendDeltaServerRpc(deltaPos);
+            }
+            else
+            {
+                m_CurrentDirection = deltaPos;
+            }
+
+            m_PreviousDirection = deltaPos;
+        }
+
+        [ServerRpc]
+        private void SendDeltaServerRpc(Vector3 deltaPos)
+        {
+            m_CurrentDirection = deltaPos;
+        }
+
+        private void UpdateWithDelta()
+        {
+            if (CanCommitToTransform)
+            {
+                // Custom logic for position update. You can also create your own RPC to have your own custom movement logic
+                // this is resistant to jitter, since the current direction is cached. This way, if we receive jittery inputs, this update still knows what to do
+                // An improvement could be to do input decay, and slowly decrease that direction over time if no new inputs. This is useful for when a client disconnects for example, so we don't
+                // have objects moving forever.
+                // This doesn't "impose" a position on the server from clients (which makes that client have authority), we’re making the client “suggest”
+                // a pos change, but the server could also do what it wants with that transform in between inputs
+                transform.position += m_CurrentDirection.normalized * Speed * Time.deltaTime;
+            }
+        }
+
+        #endregion
+
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
@@ -700,6 +760,8 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+
+            UpdateWithDelta();
 
             if (CanCommitToTransform)
             {
