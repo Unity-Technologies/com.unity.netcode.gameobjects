@@ -106,8 +106,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.Processes.Count;
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
+                    Debug.Log($"Spawning testplayer {i} since {MultiprocessOrchestration.Processes.Count} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                 }
+            } else
+            {
+                Debug.Log("No need to spawn a new test player as there are already existing processes");
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
@@ -129,6 +133,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
+                MultiprocessOrchestration.ShutdownAllProcesses();
             }
         }
 

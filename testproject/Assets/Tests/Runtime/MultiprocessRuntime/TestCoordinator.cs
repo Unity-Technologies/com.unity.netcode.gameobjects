@@ -101,7 +101,7 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal.Clear();
     }
 
-    public void OnDestroy()
+    public new void OnDestroy()
     {
         if (NetworkObject != null && NetworkManager != null)
         {
