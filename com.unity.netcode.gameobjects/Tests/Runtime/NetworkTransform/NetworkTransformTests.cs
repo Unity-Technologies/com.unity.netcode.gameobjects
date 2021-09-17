@@ -170,6 +170,13 @@ namespace Unity.Netcode.RuntimeTests
             LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
         }
 
+        /*
+         * ownership change
+         * test teleport with interpolation
+         * test teleport without interpolation
+         * test dynamic spawning
+         */
+
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
