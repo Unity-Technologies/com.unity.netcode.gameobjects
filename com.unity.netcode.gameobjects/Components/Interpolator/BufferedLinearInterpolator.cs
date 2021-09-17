@@ -16,7 +16,7 @@ namespace Unity.Netcode
         {
             double BufferedServerTime { get; }
             double BufferedServerFixedTime { get; }
-            int TickRate { get; }
+            uint TickRate { get; }
         }
 
         private class InterpolatorTime : IInterpolatorTime
@@ -28,7 +28,7 @@ namespace Unity.Netcode
             }
             public double BufferedServerTime => m_Manager.ServerTime.Time;
             public double BufferedServerFixedTime => m_Manager.ServerTime.FixedTime;
-            public int TickRate => m_Manager.ServerTime.TickRate;
+            public uint TickRate => m_Manager.ServerTime.TickRate;
         }
 
         internal IInterpolatorTime InterpolatorTimeProxy;
