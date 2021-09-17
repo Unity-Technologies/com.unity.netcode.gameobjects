@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong receivedMessageSender = 0;
-            Guid receivedMessageContent = new Guid();
+            var receivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong firstReceivedMessageSender = 0;
-            Guid firstReceivedMessageContent = new Guid();
+            var firstReceivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
                 };
 
             ulong secondReceivedMessageSender = 0;
-            Guid secondReceivedMessageContent = new Guid();
+            var secondReceivedMessageContent = new Guid();
             SecondClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, ref FastBufferReader reader) =>
                 {
