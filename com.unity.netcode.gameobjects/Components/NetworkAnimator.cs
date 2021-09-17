@@ -685,24 +685,6 @@ namespace Unity.Netcode.Components
 
         private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
         {
-            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
-            {
-                var layerState = animatorSnapshot.LayerStates[layerIndex];
-
-                m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
-
-                var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
-
-                bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
-                bool forceAnimationCatchup = !stateChanged &&
-                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
-
-                if (stateChanged || forceAnimationCatchup)
-                {
-                    m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
-                }
-            }
-
             foreach (var intParameter in animatorSnapshot.IntParamArray)
             {
                 m_Animator.SetInteger(intParameter.Key, intParameter.Value);
@@ -721,6 +703,24 @@ namespace Unity.Netcode.Components
             foreach (var triggerParameter in animatorSnapshot.TriggerParameters)
             {
                 m_Animator.SetTrigger(triggerParameter);
+            }
+
+            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
+            {
+                var layerState = animatorSnapshot.LayerStates[layerIndex];
+
+                m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
+
+                var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
+
+                bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
+                bool forceAnimationCatchup = !stateChanged &&
+                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
+
+                if (stateChanged || forceAnimationCatchup)
+                {
+                    m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
+                }
             }
         }
     }
