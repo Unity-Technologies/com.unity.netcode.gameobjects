@@ -888,8 +888,7 @@ namespace Unity.Netcode.Components
         {
             if (!CanCommitToTransform)
             {
-                Debug.LogWarning("Teleport not allowed, " + k_NoAuthorityMessage);
-                return;
+                throw new Exception("Teleport not allowed, " + k_NoAuthorityMessage);
             }
 
             var stateToSend = m_LocalAuthoritativeNetworkState;
