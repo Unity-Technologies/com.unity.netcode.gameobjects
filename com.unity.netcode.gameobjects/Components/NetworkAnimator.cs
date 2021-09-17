@@ -217,8 +217,8 @@ namespace Unity.Netcode.Components
 
                 for (int i = 0; i < paramCount; i++)
                 {
-                    var paramId = serializer.IsReading ? 0 : TriggerParameters[i];
-                    serializer.Serialize(ref paramId);
+                    var paramId = serializer.IsReader ? 0 : TriggerParameters[i];
+                    serializer.SerializeValue(ref paramId);
 
                     if (serializer.IsReader)
                     {
@@ -229,8 +229,8 @@ namespace Unity.Netcode.Components
 
             private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReading ? 0 : BoolParamArray.Length;
-                serializer.Serialize(ref paramCount);
+                int paramCount = serializer.IsReader ? 0 : BoolParamArray.Length;
+                serializer.SerializeValue(ref paramCount);
 
                 if (BoolParamArray.Length != paramCount)
                 {
@@ -239,11 +239,11 @@ namespace Unity.Netcode.Components
 
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReading ? 0 : BoolParamArray[paramIndex].Key;
-                    serializer.Serialize(ref paramId);
+                    var paramId = serializer.IsReader ? 0 : BoolParamArray[paramIndex].Key;
+                    serializer.SerializeValue(ref paramId);
 
-                    var paramBool = serializer.IsReading ? false : BoolParamArray[paramIndex].Value;
-                    serializer.Serialize(ref paramBool);
+                    var paramBool = serializer.IsReader ? false : BoolParamArray[paramIndex].Value;
+                    serializer.SerializeValue(ref paramBool);
 
                     if (serializer.IsReader)
                     {
@@ -254,8 +254,8 @@ namespace Unity.Netcode.Components
 
             private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReading ? 0 : FloatParamArray.Length;
-                serializer.Serialize(ref paramCount);
+                int paramCount = serializer.IsReader ? 0 : FloatParamArray.Length;
+                serializer.SerializeValue(ref paramCount);
 
                 if (FloatParamArray.Length != paramCount)
                 {
@@ -264,11 +264,11 @@ namespace Unity.Netcode.Components
 
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReading ? 0 : FloatParamArray[paramIndex].Key;
-                    serializer.Serialize(ref paramId);
+                    var paramId = serializer.IsReader ? 0 : FloatParamArray[paramIndex].Key;
+                    serializer.SerializeValue(ref paramId);
 
-                    var paramFloat = serializer.IsReading ? 0 : FloatParamArray[paramIndex].Value;
-                    serializer.Serialize(ref paramFloat);
+                    var paramFloat = serializer.IsReader ? 0 : FloatParamArray[paramIndex].Value;
+                    serializer.SerializeValue(ref paramFloat);
 
                     if (serializer.IsReader)
                     {
@@ -279,8 +279,8 @@ namespace Unity.Netcode.Components
 
             private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReading ? 0 : IntParamArray.Length;
-                serializer.Serialize(ref paramCount);
+                int paramCount = serializer.IsReader ? 0 : IntParamArray.Length;
+                serializer.SerializeValue(ref paramCount);
 
                 if (IntParamArray.Length != paramCount)
                 {
@@ -289,11 +289,11 @@ namespace Unity.Netcode.Components
 
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReading ? 0 : IntParamArray[paramIndex].Key;
-                    serializer.Serialize(ref paramId);
+                    var paramId = serializer.IsReader ? 0 : IntParamArray[paramIndex].Key;
+                    serializer.SerializeValue(ref paramId);
 
-                    var paramInt = serializer.IsReading ? 0 : IntParamArray[paramIndex].Value;
-                    serializer.Serialize(ref paramInt);
+                    var paramInt = serializer.IsReader ? 0 : IntParamArray[paramIndex].Value;
+                    serializer.SerializeValue(ref paramInt);
 
                     if (serializer.IsReader)
                     {
