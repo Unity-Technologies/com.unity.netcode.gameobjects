@@ -217,7 +217,6 @@ namespace Unity.Netcode.RuntimeTests
 
             if (NetworkManagerGameObject != null)
             {
-                NetworkManagerObject.connectedClientsList.Clear();
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
                 StopNetworkManagerMode();

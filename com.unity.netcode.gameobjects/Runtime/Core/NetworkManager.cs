@@ -243,11 +243,11 @@ namespace Unity.Netcode
 
         private ulong m_LocalClientId;
 
-        internal Dictionary<ulong, NetworkClient> connectedClients = new Dictionary<ulong, NetworkClient>();
+        private Dictionary<ulong, NetworkClient> m_ConnectedClients = new Dictionary<ulong, NetworkClient>();
 
-        internal List<NetworkClient> connectedClientsList = new List<NetworkClient>();
+        private List<NetworkClient> m_ConnectedClientsList = new List<NetworkClient>();
 
-        internal List<ulong> connectedClientIds = new List<ulong>();
+        private List<ulong> m_ConnectedClientIds = new List<ulong>();
 
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
@@ -260,7 +260,7 @@ namespace Unity.Netcode
                 {
                     throw new NotServerException($"{nameof(ConnectedClients)} should only be accessed on server.");
                 }
-                return connectedClients;
+                return m_ConnectedClients;
             }
         }
 
@@ -275,7 +275,7 @@ namespace Unity.Netcode
                 {
                     throw new NotServerException($"{nameof(ConnectedClientsList)} should only be accessed on server.");
                 }
-                return connectedClientsList;
+                return m_ConnectedClientsList;
             }
         }
 
@@ -288,9 +288,9 @@ namespace Unity.Netcode
             {
                 if (IsServer == false)
                 {
-                    throw new NotServerException($"{nameof(connectedClientIds)} should only be accessed on server.");
+                    throw new NotServerException($"{nameof(m_ConnectedClientIds)} should only be accessed on server.");
                 }
-                return connectedClientIds;
+                return m_ConnectedClientIds;
             }
         }
 
@@ -500,9 +500,9 @@ namespace Unity.Netcode
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
-            connectedClients.Clear();
-            connectedClientsList.Clear();
-            connectedClientIds.Clear();
+            m_ConnectedClients.Clear();
+            m_ConnectedClientsList.Clear();
+            m_ConnectedClientIds.Clear();
             NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
@@ -1446,7 +1446,7 @@ namespace Unity.Netcode
                 {
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
-                        connectedClientsList.RemoveAt(i);
+                        m_ConnectedClientsList.RemoveAt(i);
                         break;
                     }
                 }
@@ -1455,12 +1455,12 @@ namespace Unity.Netcode
                 {
                     if (ConnectedClientsIds[i] == clientId)
                     {
-                        connectedClientIds.RemoveAt(i);
+                        m_ConnectedClientIds.RemoveAt(i);
                         break;
                     }
                 }
 
-                connectedClients.Remove(clientId);
+                m_ConnectedClients.Remove(clientId);
             }
             m_MessagingSystem.ClientDisconnected(clientId);
         }
@@ -1502,9 +1502,9 @@ namespace Unity.Netcode
                 PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
-                connectedClients.Add(ownerClientId, client);
-                connectedClientsList.Add(client);
-                connectedClientIds.Add(client.ClientId);
+                m_ConnectedClients.Add(ownerClientId, client);
+                m_ConnectedClientsList.Add(client);
+                m_ConnectedClientIds.Add(client.ClientId);
 
                 if (createPlayerObject)
                 {
