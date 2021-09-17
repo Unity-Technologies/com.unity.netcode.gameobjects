@@ -1,12 +1,16 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
+namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 {
-    public abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
+    internal abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
     {
         protected override int NbClients => 1;
 
@@ -29,6 +33,17 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             Client = m_ClientNetworkManagers[0];
             ClientMetrics = Client.NetworkMetrics as NetworkMetrics;
+        }
+
+        protected void AssertLocalAndRemoteMetricsSent<T>(IReadOnlyCollection<T> collection) where T : INetworkMetricEvent
+        {
+            var sentLocal = collection.First(t => t.Connection.Id == Server.LocalClientId);
+            Assert.AreEqual(Server.LocalClientId, sentLocal.Connection.Id);
+            Assert.AreEqual(0, sentLocal.BytesCount);
+
+            var sentRemote = collection.First(t => t.Connection.Id != Server.LocalClientId);
+            Assert.AreNotEqual(Server.LocalClientId, sentRemote.Connection.Id);
+            Assert.AreNotEqual(0, sentRemote.BytesCount);
         }
     }
 

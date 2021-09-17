@@ -116,7 +116,10 @@ namespace Unity.Netcode
             var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
             networkObject.SetNetworkParenting(isReparented, latestParent);
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
-            m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
+            var bytesReported = NetworkManager.LocalClientId == clientId
+                ? 0
+                : stream.Length;
+            m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
         }
 
         public void HandleDestroyObject(ulong clientId, Stream stream)
@@ -136,7 +139,10 @@ namespace Unity.Netcode
                 return;
             }
 
-            m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkObjectId, networkObject.name, stream.Length);
+            var bytesReported = NetworkManager.LocalClientId == clientId
+                ? 0
+                : stream.Length;
+            m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkObjectId, networkObject.name, bytesReported);
             NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
         }
 
@@ -180,7 +186,10 @@ namespace Unity.Netcode
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
-            NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
+            var bytesReported = NetworkManager.LocalClientId == clientId
+                ? 0
+                : stream.Length;
+            NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
         }
 
         public void HandleTimeSync(ulong clientId, Stream stream)
@@ -279,7 +288,10 @@ namespace Unity.Netcode
             using var reader = PooledNetworkReader.Get(stream);
             var length = stream.Length;
             var logType = (NetworkLog.LogType)reader.ReadByte();
-            m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, length);
+            var bytesReported = NetworkManager.LocalClientId == clientId
+                ? 0
+                : length;
+            m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, bytesReported);
             string message = reader.ReadStringPacked();
 
             switch (logType)
