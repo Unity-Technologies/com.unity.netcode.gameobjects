@@ -199,9 +199,9 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
-                var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
+            var bytesReported = m_NetworkManager.LocalClientId == clientId
+                ? 0
+                : size;
             m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
         }
 
