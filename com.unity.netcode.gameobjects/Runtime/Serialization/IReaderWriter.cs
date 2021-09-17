@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    public interface IBufferSerializerImplementation
+    public interface IReaderWriter
     {
         bool IsReader { get; }
         bool IsWriter { get; }

@@ -18,10 +18,10 @@ namespace Unity.Netcode
     /// requirements. (Allowing direct access to the IBufferSerializerImplementation struct would allow dangerous
     /// things to happen because the struct's lifetime could outlive the Reader/Writer's.)
     /// </summary>
-    /// <typeparam name="TImplementation">The implementation struct</typeparam>
-    public ref struct BufferSerializer<TImplementation> where TImplementation : IReaderWriter
+    /// <typeparam name="TReaderWriter">The implementation struct</typeparam>
+    public ref struct BufferSerializer<TReaderWriter> where TReaderWriter : IReaderWriter
     {
-        private TImplementation m_Implementation;
+        private TReaderWriter m_Implementation;
 
         /// <summary>
         /// Check if the contained implementation is a reader
@@ -33,7 +33,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsWriter => m_Implementation.IsWriter;
 
-        public BufferSerializer(TImplementation implementation)
+        internal BufferSerializer(TReaderWriter implementation)
         {
             m_Implementation = implementation;
         }
