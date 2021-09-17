@@ -1192,8 +1192,8 @@ GameObject:
   - component: {fileID: 108150028}
   - component: {fileID: 108150027}
   - component: {fileID: 108150026}
-  - component: {fileID: 108150032}
   - component: {fileID: 108150033}
+  - component: {fileID: 108150025}
   m_Layer: 0
   m_Name: NetworkTransformBuffered (2)
   m_TagString: Untagged
@@ -1201,6 +1201,32 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &108150025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 108150024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
+  InLocalSpace: 0
+  Interpolate: 1
 --- !u!114 &108150026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1208,7 +1234,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 108150024}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 307c40a41954948e7a36bb6b64b4b9cb, type: 3}
   m_Name: 
@@ -1310,32 +1336,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &108150032
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 108150024}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54c9647dc784a46bca664910f182491e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0
-  RotAngleThreshold: 0
-  ScaleThreshold: 0
-  InLocalSpace: 0
-  Interpolate: 1
 --- !u!114 &108150033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7835,7 +7835,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &674930888
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20158,21 +20158,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b84a5cd57f84258b2e5cf687e674429, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0
-  RotAngleThreshold: 0
-  ScaleThreshold: 0
-  InLocalSpace: 0
-  Interpolate: 1
-  speed: 0
 --- !u!114 &1495712168
 MonoBehaviour:
   m_ObjectHideFlags: 0

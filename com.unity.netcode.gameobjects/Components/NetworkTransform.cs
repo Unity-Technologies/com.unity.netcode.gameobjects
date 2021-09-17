@@ -703,45 +703,66 @@ namespace Unity.Netcode.Components
 
         #region delta input
 
-        public float Speed { get; set; } = 5;
-        private Vector3 m_CurrentDirection;
-        private Vector3 m_PreviousDirection;
+        private Vector3 m_CurrentPositionDirection;
+        private Vector3 m_PreviousPositionDirection;
+
+        private Vector3 m_CurrentRotationDirection;
+        private Vector3 m_PreviousRotationDirection;
+
+        private Vector3 m_CurrentScaleDirection;
+        private Vector3 m_PreviousScaleDirection;
 
         /// <summary>
-        /// Simple way to affect your position server side. For more custom logic, you can implement an RPC that does the same as this method, with custom
-        /// movement logic.
-        /// This is only compatible with deltaPos happening in Update. FixedUpdate will need custom code to be synced with physics items.
+        /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
+        /// you can implement an RPC that does the same as this method, with custom movement logic.
+        /// It's not recommened to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
         /// </summary>
         /// <param name="deltaPos"></param>
+        /// <param name="deltaRot"></param>
+        /// <param name="deltaScale"></param>
         /// <exception cref="Exception"></exception>
-        public void SendDelta(Vector3 deltaPos)
+        public void CommitDeltaValues(Vector3 deltaPos, Vector3 deltaRot, Vector3 deltaScale)
         {
             if (!IsOwner)
             {
                 throw new Exception("Trying to send a delta to a not owned transform");
             }
 
-            if (m_PreviousDirection == deltaPos)
+            if (m_PreviousPositionDirection == deltaPos && m_PreviousRotationDirection == deltaRot && m_PreviousScaleDirection == deltaScale)
+            {
+                return;
+            }
+
+            if (NetworkManager != null && !(NetworkManager.IsConnectedClient || NetworkManager.IsListening))
             {
                 return;
             }
 
             if (!CanCommitToTransform)
             {
-                SendDeltaServerRpc(deltaPos);
+                if (!IsServer)
+                {
+                    SendDeltaServerRpc(deltaPos, deltaRot, deltaScale);
+                }
             }
             else
             {
-                m_CurrentDirection = deltaPos;
+                m_CurrentPositionDirection = deltaPos;
+                m_CurrentRotationDirection = deltaRot;
+                m_CurrentScaleDirection = deltaScale;
             }
 
-            m_PreviousDirection = deltaPos;
+            m_PreviousPositionDirection = deltaPos;
+            m_PreviousRotationDirection = deltaRot;
+            m_PreviousScaleDirection = deltaScale;
         }
 
         [ServerRpc]
-        private void SendDeltaServerRpc(Vector3 deltaPos)
+        private void SendDeltaServerRpc(Vector3 deltaPos, Vector3 deltaRot, Vector3 deltaScale)
         {
-            m_CurrentDirection = deltaPos;
+            m_CurrentPositionDirection = deltaPos;
+            m_CurrentRotationDirection = deltaRot;
+            m_CurrentScaleDirection = deltaScale;
         }
 
         private void UpdateWithDelta()
@@ -754,7 +775,18 @@ namespace Unity.Netcode.Components
                 // have objects moving forever.
                 // This doesn't "impose" a position on the server from clients (which makes that client have authority), we’re making the client “suggest”
                 // a pos change, but the server could also do what it wants with that transform in between inputs
-                transform.position += m_CurrentDirection.normalized * Speed * Time.deltaTime;
+                if (InLocalSpace)
+                {
+                    m_Transform.localPosition += m_CurrentPositionDirection * Time.deltaTime;
+                    m_Transform.localRotation = Quaternion.Euler(m_Transform.localRotation.eulerAngles + m_CurrentRotationDirection * Time.deltaTime);
+                    m_Transform.localScale += m_CurrentScaleDirection * Time.deltaTime;
+                }
+                else
+                {
+                    m_Transform.position += m_CurrentPositionDirection * Time.deltaTime;
+                    m_Transform.rotation = Quaternion.Euler(m_Transform.rotation.eulerAngles + m_CurrentRotationDirection * Time.deltaTime);
+                    m_Transform.localScale += m_CurrentScaleDirection * Time.deltaTime;
+                }
             }
         }
 
