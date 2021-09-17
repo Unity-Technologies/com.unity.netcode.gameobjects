@@ -76,7 +76,7 @@ namespace Unity.Netcode.Components
                 return TriggerParameters.Add(key);
             }
 
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 SerializeIntParameters(serializer);
                 SerializeFloatParameters(serializer);
@@ -85,7 +85,7 @@ namespace Unity.Netcode.Components
                 SerializeAnimatorLayerStates(serializer);
             }
 
-            private void SerializeAnimatorLayerStates<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            private void SerializeAnimatorLayerStates<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int layerCount = serializer.IsReader ? 0 : LayerStates.Length;
                 serializer.SerializeValue(ref layerCount);
@@ -118,7 +118,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
                 serializer.SerializeValue(ref paramCount);
@@ -141,7 +141,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReader ? 0 : BoolParameters.Count;
                 serializer.SerializeValue(ref paramCount);
@@ -167,7 +167,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReader ? 0 : FloatParameters.Count;
                 serializer.SerializeValue(ref paramCount);
@@ -193,7 +193,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+            private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 int paramCount = serializer.IsReader ? 0 : IntParameters.Count;
                 serializer.SerializeValue(ref paramCount);

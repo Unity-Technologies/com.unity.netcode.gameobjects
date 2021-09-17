@@ -19,7 +19,7 @@ namespace Unity.Netcode
     /// things to happen because the struct's lifetime could outlive the Reader/Writer's.)
     /// </summary>
     /// <typeparam name="TImplementation">The implementation struct</typeparam>
-    public ref struct BufferSerializer<TImplementation> where TImplementation : IBufferSerializerImplementation
+    public ref struct BufferSerializer<TImplementation> where TImplementation : IReaderWriter
     {
         private TImplementation m_Implementation;
 
