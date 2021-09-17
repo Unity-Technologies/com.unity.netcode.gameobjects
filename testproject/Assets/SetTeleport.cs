@@ -14,7 +14,7 @@ public class SetTeleport : MonoBehaviour
     [CustomEditor(typeof(SetTeleport))]
     public class GameEventEditor : Editor
     {
-        private string pos = "position";
+        private string m_Pos = "position";
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -24,12 +24,12 @@ public class SetTeleport : MonoBehaviour
             // if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {
                 GUILayout.TextArea($"Current pos: {setterObject.transform.position}");
-                pos = GUILayout.TextField(pos);
+                m_Pos = GUILayout.TextField(m_Pos);
             }
 
             if (GUILayout.Button("Set"))
             {
-                var posParsed = pos.Split(',');
+                var posParsed = m_Pos.Split(',');
                 setterObject.Set(new Vector3(Convert.ToUInt32(posParsed[0]), Convert.ToUInt32(posParsed[1]), Convert.ToUInt32(posParsed[2])));
             }
         }

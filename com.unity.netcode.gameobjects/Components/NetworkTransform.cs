@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -859,7 +857,7 @@ namespace Unity.Netcode.Components
         {
             if (!CanCommitToTransform)
             {
-                Debug.LogWarning("Teleport not allowed, "+k_NoAuthorityMessage);
+                Debug.LogWarning("Teleport not allowed, " + k_NoAuthorityMessage);
                 return;
             }
 
