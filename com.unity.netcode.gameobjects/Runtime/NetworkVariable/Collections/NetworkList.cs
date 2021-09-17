@@ -73,10 +73,20 @@ namespace Unity.Netcode
         public override void WriteDelta(Stream stream)
         {
             using var writer = PooledNetworkWriter.Get(stream);
+
+            if (base.IsDirty())
+            {
+                writer.WriteUInt16Packed(1);
+                writer.WriteByte((byte)NetworkListEvent<T>.EventType.Full);
+                WriteField(stream);
+
+                return;
+            }
+
             writer.WriteUInt16Packed((ushort)m_DirtyEvents.Length);
             for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
-                writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
+                writer.WriteByte((byte)m_DirtyEvents[i].Type);
                 switch (m_DirtyEvents[i].Type)
                 {
                     case NetworkListEvent<T>.EventType.Add:
@@ -145,7 +155,7 @@ namespace Unity.Netcode
             ushort deltaCount = reader.ReadUInt16Packed();
             for (int i = 0; i < deltaCount; i++)
             {
-                var eventType = (NetworkListEvent<T>.EventType)reader.ReadBits(3);
+                var eventType = (NetworkListEvent<T>.EventType)reader.ReadByte();
                 switch (eventType)
                 {
                     case NetworkListEvent<T>.EventType.Add:
@@ -309,6 +319,12 @@ namespace Unity.Netcode
                                     Type = eventType
                                 });
                             }
+                        }
+                        break;
+                    case NetworkListEvent<T>.EventType.Full:
+                        {
+                            ReadField(stream);
+                            ResetDirty();
                         }
                         break;
                 }
@@ -495,7 +511,12 @@ namespace Unity.Netcode
             /// <summary>
             /// Clear
             /// </summary>
-            Clear
+            Clear,
+
+            /// <summary>
+            /// Full list refresh
+            /// </summary>
+            Full
         }
 
         /// <summary>
