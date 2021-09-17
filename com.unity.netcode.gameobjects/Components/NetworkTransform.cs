@@ -793,6 +793,53 @@ namespace Unity.Netcode.Components
 
         #endregion
 
+        #region state set
+
+        /// <summary>
+        /// Directly sets a state on the authoritative transform.
+        /// This will override any changes made previously to the transform
+        /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="rot"></param>
+        /// <param name="scale"></param>
+        /// <exception cref="Exception"></exception>
+        public void SetState(Vector3 pos, Vector3 rot, Vector3 scale)
+        {
+            if (!IsOwner)
+            {
+                throw new Exception("Trying to set a state on a not owned transform");
+            }
+
+            if (NetworkManager != null && !(NetworkManager.IsConnectedClient || NetworkManager.IsListening))
+            {
+                return;
+            }
+
+            if (!CanCommitToTransform)
+            {
+                if (!IsServer)
+                {
+                    SetStateServerRpc(pos, rot, scale);
+                }
+            }
+            else
+            {
+                transform.position = pos;
+                transform.rotation = Quaternion.Euler(rot);
+                transform.localScale = scale;
+            }
+        }
+
+        [ServerRpc]
+        private void SetStateServerRpc(Vector3 pos, Vector3 rot, Vector3 scale)
+        {
+            transform.position = pos;
+            transform.rotation = Quaternion.Euler(rot);
+            transform.localScale = scale;
+        }
+        #endregion
+
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
@@ -841,7 +888,7 @@ namespace Unity.Netcode.Components
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
                         // from an unauthorized transform change or euler to quaternion conversion artifacts.
                         var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                        Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state! Please use CommitUpdate() or your own [ServerRpc]", this);
+                        Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                     }
 
                     // Apply updated interpolated value
