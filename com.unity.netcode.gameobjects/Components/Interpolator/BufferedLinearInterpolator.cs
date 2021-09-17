@@ -16,14 +16,14 @@ namespace Unity.Netcode
         {
             double BufferedServerTime { get; }
             double BufferedServerFixedTime { get; }
-            int TickRate { get; }
+            uint TickRate { get; }
         }
 
         private class InterpolatorTime : IInterpolatorTime
         {
             public double BufferedServerTime => NetworkManager.Singleton.ServerTime.Time;
             public double BufferedServerFixedTime => NetworkManager.Singleton.ServerTime.FixedTime;
-            public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
+            public uint TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
 
         internal IInterpolatorTime InterpolatorTimeProxy = new InterpolatorTime();
