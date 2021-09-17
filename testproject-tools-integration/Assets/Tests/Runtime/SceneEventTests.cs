@@ -34,6 +34,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
+
             yield return UnloadTestScene(m_LoadedScene);
             yield return base.Teardown();
         }
@@ -42,6 +43,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CLoadSent()
         {
             var serverSceneLoaded = false;
+            // Register a callback so we know when the scene has loaded server side, as this is when
+            // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
                 if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
@@ -53,11 +56,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
 
+            // Load a scene to trigger the messages
             StartServerLoadScene();
 
+            // Wait for the server to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
 
+            // Now start the wait for the metric to be emitted when the message is sent.
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -73,6 +79,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CLoadReceived()
         {
             var serverSceneLoaded = false;
+            // Register a callback so we know when the scene has loaded server side, as this is when
+            // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
                 if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
@@ -84,11 +92,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
+            // Load a scene to trigger the messages
             StartServerLoadScene();
 
+            // Wait for th eserver to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
 
+            // Now start the wait for the metric to be emitted when the message is received.
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -103,17 +114,23 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SLoadCompleteSent()
         {
+            // Register a callback so we can notify the test when the client has finished loading the scene locally
+            // as this is when the message is sent
             var waitForClientLoadComplete = new WaitForSceneEvent(
-                m_ServerNetworkSceneManager,
+                m_ClientNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_LoadComplete);
-
-            StartServerLoadScene();
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
 
+            // Load a scene to trigger the messages
+            StartServerLoadScene();
+
+
+            // Wait for the client to complete loading the scene locally
             yield return waitForClientLoadComplete.Wait();
             Assert.IsTrue(waitForClientLoadComplete.Done);
 
+            // Now start the wait for the metric to be emitted when the message is sent.
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -128,17 +145,23 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SLoadCompleteReceived()
         {
+            // Register a callback so we can notify the test when the client has finished loading the scene locally
+            // as this is when the message is sent
             var waitForClientLoadComplete = new WaitForSceneEvent(
-                m_ServerNetworkSceneManager,
+                m_ClientNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_LoadComplete);
-
-            StartServerLoadScene();
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
+            // Load a scene to trigger the messages
+            StartServerLoadScene();
+
+
+            // Wait for the client to complete loading the scene locally
             yield return waitForClientLoadComplete.Wait();
             Assert.IsTrue(waitForClientLoadComplete.Done);
 
+            // Now start the wait for the metric to be emitted when the message is received
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -153,6 +176,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CLoadCompleteSent()
         {
+            // Register a callback so we can notify the test when the server has finished loading the scene locally
+            // as this is when the message is sent
             var waitForServerLoadComplete = new WaitForSceneEvent(
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.S2C_LoadComplete);
@@ -162,11 +187,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_LoadComplete));
 
+            // Load a scene to trigger the messages
             StartServerLoadScene();
 
+            // Wait for the server to complete loading the scene locally
             yield return waitForServerLoadComplete.Wait();
             Assert.IsTrue(waitForServerLoadComplete.Done);
 
+            // Now start the wait for the metric to be emitted when the message is sent
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -181,6 +209,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CLoadCompleteReceived()
         {
+            // Register a callback so we can notify the test when the server has finished loading the scene locally
+            // as this is when the message is sent
             var waitForServerLoadComplete = new WaitForSceneEvent(
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.S2C_LoadComplete);
@@ -190,11 +220,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_LoadComplete));
 
+            // Load a scene to trigger the messages
             StartServerLoadScene();
 
+            // Wait for the server to complete loading the scene locally
             yield return waitForServerLoadComplete.Wait();
             Assert.IsTrue(waitForServerLoadComplete.Done);
 
+            // Now start the wait for the metric to be emitted when the message is received
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -209,18 +242,19 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CUnloadSent()
         {
+            // Load a scene so that we can unload it
             yield return LoadTestScene(SimpleSceneName);
 
             var serverSceneUnloaded = false;
+            // Register a callback so we can notify the test when the scene has started to unload server side
+            // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType != SceneEventData.SceneEventTypes.S2C_Unload)
+                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Unload))
                 {
-                    return;
+                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
+                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
                 }
-
-                serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
             };
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -228,12 +262,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Unload));
 
+            // Unload the scene to trigger the messages
             StartServerUnloadScene();
 
+            // Wait for the scene to unload locally
             yield return WaitForCondition(() => serverSceneUnloaded);
-
             Assert.IsTrue(serverSceneUnloaded);
 
+            // Now wait for the metric to be emitted when the message is sent
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -248,18 +284,20 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CUnloadReceived()
         {
+            // Load a scene so that we can unload it.
             yield return LoadTestScene(SimpleSceneName);
 
             var serverSceneUnloaded = false;
+
+            // Register a callback so we can notify the test when the scene has started to unload server side
+            // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType != SceneEventData.SceneEventTypes.S2C_Unload)
+                if (sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Unload))
                 {
-                    return;
+                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
+                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
                 }
-
-                serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
             };
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -267,12 +305,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Unload));
 
+            // Unload the scene to trigger the messages
             StartServerUnloadScene();
 
+            // Wait for the scene to unload locally
             yield return WaitForCondition(() => serverSceneUnloaded);
-
             Assert.IsTrue(serverSceneUnloaded);
 
+            // Now wait for the metric to be emitted when the message is received
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -287,8 +327,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SUnloadCompleteSent()
         {
+            // Load a scene so that we can unload it
             yield return LoadTestScene(SimpleSceneName);
 
+            // Register a callback so we can notify the test when the scene has finished unloading client side
+            // as this is when the message is sent.
             var waitForClientUnloadComplete = new WaitForSceneEvent(
                 m_ClientNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_UnloadComplete);
@@ -298,11 +341,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
 
+            // Unload a scene to trigger the messages
             StartServerUnloadScene();
 
+            // Wait for the scene to complete unloading locally
             yield return waitForClientUnloadComplete.Wait();
             Assert.IsTrue(waitForClientUnloadComplete.Done);
 
+            // Now wait for the metric to be emitted when the message is sent
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -317,8 +363,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SUnloadCompleteReceived()
         {
+            // Load a scene so that we can unload it
             yield return LoadTestScene(SimpleSceneName);
 
+            // Register a callback we we can notify the test when the scene has finished unloading client side
+            // as this is when the message is sent
             var waitForClientUnloadComplete = new WaitForSceneEvent(
                 m_ClientNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_UnloadComplete);
@@ -328,11 +377,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_UnloadComplete));
 
+            // Unload a scene to trigger the messages
             StartServerUnloadScene();
 
+            //Wait for the scene to complete unloading locally
             yield return waitForClientUnloadComplete.Wait();
             Assert.IsTrue(waitForClientUnloadComplete.Done);
 
+            // Now wait for the metric to be emitted when the message is received
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -347,8 +399,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CUnloadCompleteSent()
         {
+            // Load a scene so that we can unload it
             yield return LoadTestScene(SimpleSceneName);
 
+            // Register a callback so we can notify the test when the scene has finished unloading server side
+            // as this is when the message is sent
             var waitForServerUnloadComplete = new WaitForSceneEvent(
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.S2C_UnLoadComplete);
@@ -358,16 +413,22 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_UnLoadComplete));
 
+            // Unload a scene to trigger the messages
             StartServerUnloadScene();
 
+            // Wait for the scene to complete unloading locally
             yield return waitForServerUnloadComplete.Wait();
             Assert.IsTrue(waitForServerUnloadComplete.Done);
 
+            // Now wait for the metric to be emitted when the message is sent
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(Server.ConnectedClients.Count, sentMetrics.Count);
 
+            // This message is sent from the server to all connected clients including itself if it is a host,
+            // so iterate over the connected client list on the server to ensure that we have a 1-1 match of connected
+            // clients to sent metrics.
             var filteredSentMetrics = sentMetrics
                 .Where(metric => metric.SceneEventType == SceneEventType.S2C_UnLoadComplete)
                 .Where(metric => metric.SceneName == SimpleSceneName);
@@ -377,8 +438,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CUnloadCompleteReceived()
         {
+            // Load a scene so that we can unload it
             yield return LoadTestScene(SimpleSceneName);
 
+            // Register a callback so we can notify the test when the scene has finished unloading server side
+            // as this is when the message is sent
             var waitForServerUnloadComplete = new WaitForSceneEvent(
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.S2C_UnLoadComplete);
@@ -388,11 +452,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_UnLoadComplete));
 
+            // Unload the scene to trigger the messages
             StartServerUnloadScene();
 
+            // Wait for the scene to unload locally
             yield return waitForServerUnloadComplete.Wait();
             Assert.IsTrue(waitForServerUnloadComplete.Done);
 
+            // Now wait for the metric to be emitted when the message is received
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -412,14 +479,10 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Sync));
 
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            newClient.StartClient();
-
+            // Wait for the metric to be emitted when the server sends the sync message back to the client
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -427,19 +490,18 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var sentMetric = sentMetrics.First();
 
             Assert.AreEqual(SceneEventType.S2C_Sync, sentMetric.SceneEventType);
-            Assert.AreEqual(newClients[0].LocalClientId, sentMetric.Connection.Id);
+            Assert.AreEqual(newClient.LocalClientId, sentMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
         public IEnumerator TestS2CSyncReceived()
         {
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            newClient.StartClient();
+            // Now the client is started we can grab the NetworkMetrics field from it
             var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
 
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -447,6 +509,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.S2C_Sync));
 
+            // Wait for the metric to be emitted when the message is received on the client from the server
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -455,18 +518,17 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventType.S2C_Sync, receivedMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
         public IEnumerator TestC2SSyncCompleteSent()
         {
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            newClient.StartClient();
+            // Now the client is started we can grab the NetworkMetrics field from it
             var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
 
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
@@ -474,6 +536,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_SyncComplete));
 
+            // Wait for the metric to be emitted when the client has completed the sync locally and sends the message
+            // to the server
             yield return waitForSentMetric.WaitForMetricsReceived();
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
@@ -482,6 +546,8 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventType.C2S_SyncComplete, sentMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
@@ -492,14 +558,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.C2S_SyncComplete));
 
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            newClient.StartClient();
-
+            // Wait for the metric to be emitted when the client has completed the sync locally and the message is
+            // received on the server
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
@@ -509,6 +572,24 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.AreEqual(SceneEventType.C2S_SyncComplete, receivedMetric.SceneEventType);
             Assert.AreEqual(newClient.LocalClientId, receivedMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
+        }
+
+        // Create a new client to connect to an already started server to trigger a server sync.
+        private NetworkManager CreateAndStartClient()
+        {
+            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
+            var newClient = newClients[0];
+
+            // Set up the client so it has the same NetworkConfig as the server
+            newClient.NetworkConfig.EnableSceneManagement = true;
+            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            // Start the client to trigger the sync
+            newClient.StartClient();
+
+            return newClient;
         }
 
         private void StartServerLoadScene()
@@ -577,6 +658,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             }
         }
 
+        // Registers a callback for the client's NetworkSceneManager which will synchronise the scene handles from
+        // the server to the client. This only needs to be done in multi-instance unit tests as the client and the
+        // server share a (Unity) SceneManager.
         private void RegisterLoadedSceneCallback(SceneEvent sceneEvent)
         {
             if (!sceneEvent.SceneEventType.Equals(SceneEventData.SceneEventTypes.S2C_Load))
@@ -600,7 +684,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         {
             public WaitForSceneEvent(NetworkSceneManager sceneManager, SceneEventData.SceneEventTypes sceneEventType)
             {
-                sceneManager.OnSceneEvent += sceneEvent => 
+                sceneManager.OnSceneEvent += sceneEvent =>
                 {
                     if (sceneEvent.SceneEventType == sceneEventType)
                     {

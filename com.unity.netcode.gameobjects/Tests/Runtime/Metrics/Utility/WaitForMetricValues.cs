@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,11 +30,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
         }
 
         public WaitForMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName, Filter filter)
+            : this(dispatcher, directionalMetricName)
         {
-            m_MetricName = directionalMetricName.Id;
             m_FilterDelegate = filter;
-
-            dispatcher.RegisterObserver(this);
         }
 
         public IEnumerator WaitForMetricsReceived()
@@ -89,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
             }
         }
 
-        public IEnumerator WaitForFrames(uint maxNbFrames)
+        private IEnumerator WaitForFrames(uint maxNbFrames)
         {
             while (!m_Found && m_NbFrames < maxNbFrames)
             {
@@ -99,3 +98,4 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
         }
     }
 }
+#endif
