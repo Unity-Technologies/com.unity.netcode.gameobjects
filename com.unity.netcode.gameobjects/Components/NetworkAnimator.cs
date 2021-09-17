@@ -1,79 +1,167 @@
-using System.Linq;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A prototype component for syncing animations
+    /// A prototype component for syncing Mecanim Animator state in a server-driven manner
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
     public class NetworkAnimator : NetworkBehaviour
     {
-
-        private class AnimatorSnapshot : INetworkSerializable
+        private class AnimatorSnapshot : INetworkSerializable, IDisposable
         {
-            public Dictionary<int, bool> BoolParameters;
-            public Dictionary<int, float> FloatParameters;
-            public Dictionary<int, int> IntParameters;
-            public HashSet<int> TriggerParameters;
+            public KeyValuePair<int, bool>[] BoolParamArray;
+            public KeyValuePair<int, float>[] FloatParamArray;
+            public KeyValuePair<int, int>[] IntParamArray;
+            public List<int> TriggerParameters;
             public LayerState[] LayerStates;
+            private const int k_InvalidKey = -1;
 
-            public AnimatorSnapshot(Dictionary<int, bool> boolParameters, Dictionary<int, float> floatParameters, Dictionary<int, int> intParameters, HashSet<int> triggerParameters, LayerState[] layerStates)
+            public AnimatorSnapshot(int boolCount, int floatCount, int intCount, int triggerCount, int layerStatesCount)
             {
-                BoolParameters = boolParameters;
-                FloatParameters = floatParameters;
-                IntParameters = intParameters;
-                TriggerParameters = triggerParameters;
-                LayerStates = layerStates;
+                BoolParamArray = new KeyValuePair<int, bool>[boolCount];
+                IntParamArray = new KeyValuePair<int, int>[intCount];
+                FloatParamArray = new KeyValuePair<int, float>[floatCount];
+                TriggerParameters = new List<int>(triggerCount);
+                LayerStates = new LayerState[layerStatesCount];
+                SetBuffersToDefaultValues();
             }
 
             public AnimatorSnapshot()
             {
-                BoolParameters = new Dictionary<int, bool>(0);
-                FloatParameters = new Dictionary<int, float>(0);
-                IntParameters = new Dictionary<int, int>(0);
-                TriggerParameters = new HashSet<int>();
+                BoolParamArray = new KeyValuePair<int, bool>[0];
+                IntParamArray = new KeyValuePair<int, int>[0];
+                FloatParamArray = new KeyValuePair<int, float>[0];
+                TriggerParameters = new List<int>(0);
                 LayerStates = new LayerState[0];
+                SetBuffersToDefaultValues();
+            }
+
+            private void SetBuffersToDefaultValues()
+            {
+                for (int i = 0; i < BoolParamArray.Length; i++)
+                {
+                    BoolParamArray[i] = new KeyValuePair<int, bool>(k_InvalidKey, false);
+                }
+
+                for (int i = 0; i < FloatParamArray.Length; i++)
+                {
+                    FloatParamArray[i] = new KeyValuePair<int, float>(k_InvalidKey, 0);
+                }
+
+                for (int i = 0; i < IntParamArray.Length; i++)
+                {
+                    IntParamArray[i] = new KeyValuePair<int, int>(k_InvalidKey, 0);
+                }
+
+                TriggerParameters.Clear();
+
+                Array.Clear(LayerStates, 0, LayerStates.Length);
             }
 
             public bool SetInt(int key, int value)
             {
-                if (IntParameters.TryGetValue(key, out var existingValue) && existingValue == value)
+                bool setOrUpdatedValue = false;
+
+                int existingKvIndex = Array.FindIndex(IntParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    return false;
+                    for (int i = 0; i < IntParamArray.Length; i++)
+                    {
+                        var kv = IntParamArray[i];
+
+                        if (kv.Key == k_InvalidKey)
+                        {
+                            IntParamArray[i] = new KeyValuePair<int, int>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if (IntParamArray[existingKvIndex].Value != value)
+                {
+                    IntParamArray[existingKvIndex] = new KeyValuePair<int, int>(key, value);
+                    setOrUpdatedValue = true;
                 }
 
-                IntParameters[key] = value;
-                return true;
+                return setOrUpdatedValue;
             }
 
             public bool SetBool(int key, bool value)
             {
-                if (BoolParameters.TryGetValue(key, out var existingValue) && existingValue == value)
+                bool setOrUpdatedValue = false;
+
+                int existingKvIndex = Array.FindIndex(BoolParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    return false;
+                    for (int i = 0; i < BoolParamArray.Length; i++)
+                    {
+                        var kv = BoolParamArray[i];
+
+                        if (kv.Key == k_InvalidKey)
+                        {
+                            BoolParamArray[i] = new KeyValuePair<int, bool>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if (BoolParamArray[existingKvIndex].Value != value)
+                {
+                    BoolParamArray[existingKvIndex] = new KeyValuePair<int, bool>(key, value);
+                    setOrUpdatedValue = true;
                 }
 
-                BoolParameters[key] = value;
-                return true;
+                return setOrUpdatedValue;
             }
 
             public bool SetFloat(int key, float value)
             {
-                if (FloatParameters.TryGetValue(key, out var existingValue) &&
-                    Mathf.Abs(existingValue - value) < Mathf.Epsilon)
+                bool setOrUpdatedValue = false;
+
+                int existingKvIndex = Array.FindIndex(FloatParamArray, pair => pair.Key == key);
+
+                if (existingKvIndex == -1)
                 {
-                    return false;
+                    for (int i = 0; i < FloatParamArray.Length; i++)
+                    {
+                        var kv = FloatParamArray[i];
+
+                        if (kv.Key == k_InvalidKey)
+                        {
+                            FloatParamArray[i] = new KeyValuePair<int, float>(key, value);
+                            setOrUpdatedValue = true;
+                            break;
+                        }
+                    }
+                }
+                else if (Math.Abs(FloatParamArray[existingKvIndex].Value - value) > Mathf.Epsilon)
+                {
+                    FloatParamArray[existingKvIndex] = new KeyValuePair<int, float>(key, value);
+                    setOrUpdatedValue = true;
                 }
 
-                FloatParameters[key] = value;
-                return true;
+                return setOrUpdatedValue;
             }
 
             public bool SetTrigger(int key)
             {
-                return TriggerParameters.Add(key);
+                if (TriggerParameters.Contains(key))
+                {
+                    return false;
+                }
+
+                TriggerParameters.Add(key);
+                return true;
+            }
+
+            public void ClearTriggers()
+            {
+                TriggerParameters.Clear();
             }
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -90,7 +178,7 @@ namespace Unity.Netcode.Components
                 int layerCount = serializer.IsReader ? 0 : LayerStates.Length;
                 serializer.SerializeValue(ref layerCount);
 
-                if (serializer.IsReader && LayerStates.Length != layerCount)
+                if (LayerStates.Length != layerCount)
                 {
                     LayerStates = new LayerState[layerCount];
                 }
@@ -123,101 +211,105 @@ namespace Unity.Netcode.Components
                 int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
                 serializer.SerializeValue(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new int[paramCount] : TriggerParameters.ToArray();
+                if (TriggerParameters.Count != paramCount)
+                {
+                    TriggerParameters = new List<int>(paramCount);
+                }
+
                 for (int i = 0; i < paramCount; i++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[i];
+                    var paramId = serializer.IsReader ? 0 : TriggerParameters[i];
                     serializer.SerializeValue(ref paramId);
 
                     if (serializer.IsReader)
                     {
-                        paramArray[i] = paramId;
+                        TriggerParameters.Add(paramId);
                     }
-                }
-
-                if (serializer.IsReader)
-                {
-                    TriggerParameters = new HashSet<int>(paramArray);
                 }
             }
 
             private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReader ? 0 : BoolParameters.Count;
+                int paramCount = serializer.IsReader ? 0 : BoolParamArray.Length;
                 serializer.SerializeValue(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
+                if (BoolParamArray.Length != paramCount)
+                {
+                    BoolParamArray = new KeyValuePair<int, bool>[paramCount];
+                }
+
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
+                    var paramId = serializer.IsReader ? 0 : BoolParamArray[paramIndex].Key;
                     serializer.SerializeValue(ref paramId);
 
-                    var paramBool = serializer.IsReader ? false : paramArray[paramIndex].Value;
+                    var paramBool = serializer.IsReader ? false : BoolParamArray[paramIndex].Value;
                     serializer.SerializeValue(ref paramBool);
 
                     if (serializer.IsReader)
                     {
-                        paramArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
+                        BoolParamArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
                     }
-                }
-
-                if (serializer.IsReader)
-                {
-                    BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }
             }
 
             private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReader ? 0 : FloatParameters.Count;
+                int paramCount = serializer.IsReader ? 0 : FloatParamArray.Length;
                 serializer.SerializeValue(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
+                if (FloatParamArray.Length != paramCount)
+                {
+                    FloatParamArray = new KeyValuePair<int, float>[paramCount];
+                }
+
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
+                    var paramId = serializer.IsReader ? 0 : FloatParamArray[paramIndex].Key;
                     serializer.SerializeValue(ref paramId);
 
-                    var paramFloat = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
+                    var paramFloat = serializer.IsReader ? 0 : FloatParamArray[paramIndex].Value;
                     serializer.SerializeValue(ref paramFloat);
 
                     if (serializer.IsReader)
                     {
-                        paramArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
+                        FloatParamArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
                     }
-                }
-
-                if (serializer.IsReader)
-                {
-                    FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }
             }
 
             private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReader ? 0 : IntParameters.Count;
+                int paramCount = serializer.IsReader ? 0 : IntParamArray.Length;
                 serializer.SerializeValue(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
+                if (IntParamArray.Length != paramCount)
+                {
+                    IntParamArray = new KeyValuePair<int, int>[paramCount];
+                }
 
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
+                    var paramId = serializer.IsReader ? 0 : IntParamArray[paramIndex].Key;
                     serializer.SerializeValue(ref paramId);
 
-                    var paramInt = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
+                    var paramInt = serializer.IsReader ? 0 : IntParamArray[paramIndex].Value;
                     serializer.SerializeValue(ref paramInt);
 
                     if (serializer.IsReader)
                     {
-                        paramArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
+                        IntParamArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
                     }
                 }
+            }
 
-                if (serializer.IsReader)
-                {
-                    IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
-                }
+            public void Dispose()
+            {
+                BoolParamArray = null;
+                LayerStates = null;
+                TriggerParameters = null;
+                IntParamArray = null;
+                FloatParamArray = null;
             }
         }
 
@@ -229,26 +321,10 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Server authority only allows the server to update this animator
-        /// Client authority only allows the client owner to update this animator
-        /// </summary>
-        public enum Authority
-        {
-            Server = 0,
-            Owner
-        }
-
-        /// <summary>
         /// This constant is used to force the resync if the delta between current
         /// and last synced normalized state time goes above it
         /// </summary>
         private const float k_NormalizedTimeResyncThreshold = 0.15f;
-
-        /// <summary>
-        /// Specifies who can update this animator
-        /// </summary>
-        [Tooltip("Defines who can update this animator.")]
-        public Authority AnimatorAuthority = Authority.Owner;
 
         [SerializeField]
         private float m_SendRate = 0.1f;
@@ -260,9 +336,52 @@ namespace Unity.Netcode.Components
         private AnimatorSnapshot m_AnimatorSnapshot;
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
 
-        public bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Owner && IsOwner) || (IsServer && AnimatorAuthority == Authority.Server);
+        private ulong[] m_ServerMessagingTargetClientIds;
+        private Dictionary<ulong, ulong[]> m_TargetClientIdsCache;
+
+        private bool m_Initialized = false;
+
+        /// <summary>
+        /// This property tells us if the changes made to the Mecanim Animator will be synced to other peers or not.
+        /// If not - then whatever local changes are done to the Mecanim Animator - they'll get overriden.
+        /// </summary>
+        public virtual bool CanCommitToAnimator => IsServer;
 
         public override void OnNetworkSpawn()
+        {
+            m_Initialized = TryInitialize(m_Animator);
+        }
+
+        /// <summary>
+        /// This function call will attempt to (re)initialize the NetworkAnimator object.
+        /// It will succeed if NetworkObject.IsSpawned is true and if the animator is not null.
+        /// </summary>
+        /// <returns></returns>
+        public bool TryInitialize(Animator animator)
+        {
+            if (!NetworkObject.IsSpawned)
+            {
+                return false;
+            }
+
+            if (animator == null)
+            {
+                return false;
+            }
+
+            if (m_Animator != null)
+            {
+                m_CachedAnimatorParameters = null;
+                m_AnimatorSnapshot = null;
+            }
+
+            m_Animator = animator;
+
+            Initialize();
+            return true;
+        }
+
+        private void Initialize()
         {
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new List<(int, AnimatorControllerParameterType)>(parameters.Length);
@@ -270,6 +389,7 @@ namespace Unity.Netcode.Components
             int intCount = 0;
             int floatCount = 0;
             int boolCount = 0;
+            int triggerCount = 0;
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -294,18 +414,16 @@ namespace Unity.Netcode.Components
                     case AnimatorControllerParameterType.Bool:
                         ++boolCount;
                         break;
+                    case AnimatorControllerParameterType.Trigger:
+                        ++triggerCount;
+                        break;
                 }
             }
 
-            var intParameters = new Dictionary<int, int>(intCount);
-            var floatParameters = new Dictionary<int, float>(floatCount);
-            var boolParameters = new Dictionary<int, bool>(boolCount);
-            var triggerParameters = new HashSet<int>();
-            var states = new LayerState[m_Animator.layerCount];
+            m_AnimatorSnapshot =
+                new AnimatorSnapshot(boolCount, floatCount, intCount, triggerCount, m_Animator.layerCount);
 
-            m_AnimatorSnapshot = new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
-
-            if (!IsAuthorityOverAnimator)
+            if (!CanCommitToAnimator)
             {
                 m_Animator.StopPlayback();
             }
@@ -327,9 +445,39 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private ulong[] ServerToClientMessagingTargetClientIds
+        {
+            get
+            {
+                if (m_ServerMessagingTargetClientIds == null)
+                {
+                    var clientIds = new List<ulong>();
+                    foreach (var networkClient in NetworkManager.ConnectedClientsList)
+                    {
+                        if (networkClient.ClientId != NetworkManager.ServerClientId)
+                        {
+                            clientIds.Add(networkClient.ClientId);
+                        }
+                    }
+
+                    m_ServerMessagingTargetClientIds = clientIds.ToArray();
+                }
+
+                return m_ServerMessagingTargetClientIds;
+            }
+        }
+
+        private void InvalidateCachedClientIds()
+        {
+            m_ServerMessagingTargetClientIds = null;
+            m_TargetClientIdsCache = null;
+        }
+
         private void ServerOnClientConnectedCallback(ulong clientId)
         {
-            if (IsAuthorityOverAnimator)
+            InvalidateCachedClientIds();
+
+            if (CanCommitToAnimator)
             {
                 m_ServerRequestsAnimationResync = true;
             }
@@ -338,10 +486,7 @@ namespace Unity.Netcode.Components
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
+                    TargetClientIds = ServerToClientMessagingTargetClientIds
                 }
             };
 
@@ -352,7 +497,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void RequestResyncClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!CanCommitToAnimator)
             {
                 return;
             }
@@ -362,19 +507,19 @@ namespace Unity.Netcode.Components
 
         private void FixedUpdate()
         {
-            if (!NetworkObject.IsSpawned)
+            if (!m_Initialized)
             {
                 return;
             }
 
-            if (IsAuthorityOverAnimator)
+            if (CanCommitToAnimator)
             {
                 bool shouldSendBasedOnTime = CheckSendRate();
                 bool shouldSendBasedOnChanges = StoreState();
                 if (m_ServerRequestsAnimationResync || shouldSendBasedOnTime || shouldSendBasedOnChanges)
                 {
                     SendAllParamsAndState();
-                    m_AnimatorSnapshot.TriggerParameters.Clear();
+                    m_AnimatorSnapshot.ClearTriggers();
                     m_ServerRequestsAnimationResync = false;
                 }
             }
@@ -434,6 +579,7 @@ namespace Unity.Netcode.Components
         private bool StoreParameters()
         {
             bool changed = false;
+
             foreach (var animParam in m_CachedAnimatorParameters)
             {
                 var animParamHash = animParam.Item1;
@@ -470,10 +616,7 @@ namespace Unity.Netcode.Components
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = NetworkManager.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                            .Select(c => c.ClientId)
-                            .ToArray()
+                        TargetClientIds = ServerToClientMessagingTargetClientIds
                     }
                 };
 
@@ -485,10 +628,38 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private ulong[] GetTargetClientIds(ulong originClientId)
+        {
+
+            if (m_TargetClientIdsCache == null)
+            {
+                m_TargetClientIdsCache = new Dictionary<ulong, ulong[]>();
+            }
+
+            if (!m_TargetClientIdsCache.TryGetValue(originClientId, out var ids))
+            {
+                var clientIdsBarOrigin = new List<ulong>();
+                foreach (var connectedClient in NetworkManager.ConnectedClientsList)
+                {
+                    if (connectedClient.ClientId != originClientId &&
+                        connectedClient.ClientId != NetworkManager.ServerClientId)
+                    {
+                        clientIdsBarOrigin.Add(connectedClient.ClientId);
+                    }
+                }
+
+                ids = clientIdsBarOrigin.ToArray();
+
+                m_TargetClientIdsCache[originClientId] = ids;
+            }
+
+            return ids;
+        }
+
         [ServerRpc]
         private void SendParamsAndLayerStatesServerRpc(AnimatorSnapshot animSnapshot, ServerRpcParams serverRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!CanCommitToAnimator)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
@@ -497,10 +668,7 @@ namespace Unity.Netcode.Components
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
+                    TargetClientIds = GetTargetClientIds(serverRpcParams.Receive.SenderClientId)
                 }
             };
 
@@ -510,7 +678,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendParamsAndLayerStatesClientRpc(AnimatorSnapshot animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (!CanCommitToAnimator && !IsHost)
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
@@ -518,17 +686,17 @@ namespace Unity.Netcode.Components
 
         private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
         {
-            foreach (var intParameter in animatorSnapshot.IntParameters)
+            foreach (var intParameter in animatorSnapshot.IntParamArray)
             {
                 m_Animator.SetInteger(intParameter.Key, intParameter.Value);
             }
 
-            foreach (var floatParameter in animatorSnapshot.FloatParameters)
+            foreach (var floatParameter in animatorSnapshot.FloatParamArray)
             {
                 m_Animator.SetFloat(floatParameter.Key, floatParameter.Value);
             }
 
-            foreach (var boolParameter in animatorSnapshot.BoolParameters)
+            foreach (var boolParameter in animatorSnapshot.BoolParamArray)
             {
                 m_Animator.SetBool(boolParameter.Key, boolParameter.Value);
             }
