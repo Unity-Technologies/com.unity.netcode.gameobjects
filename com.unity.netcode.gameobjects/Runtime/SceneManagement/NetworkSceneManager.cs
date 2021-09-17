@@ -1173,7 +1173,7 @@ namespace Unity.Netcode
                 var clientId = m_NetworkManager.ConnectedClientsList[j].ClientId;
                 if (clientId != m_NetworkManager.ServerClientId)
                 {
-                    SceneEventData.TargetClientId = clientId;
+                    sceneEventData.TargetClientId = clientId;
                     var message = new SceneEventMessage
                     {
                         EventData = sceneEventData
@@ -1638,11 +1638,11 @@ namespace Unity.Netcode
 
                 if (sceneEventData.IsSceneEventClientSide())
                 {
-                    HandleClientSceneEvent();
+                    HandleClientSceneEvent(sceneEventDataIndex);
                 }
                 else
                 {
-                    HandleServerSceneEvent(clientId);
+                    HandleServerSceneEvent(sceneEventDataIndex, clientId);
                 }
             }
             else
