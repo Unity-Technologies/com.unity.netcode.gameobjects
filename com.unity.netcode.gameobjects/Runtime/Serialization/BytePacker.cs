@@ -9,141 +9,6 @@ namespace Unity.Netcode
     /// </summary>
     public static class BytePacker
     {
-        #region Managed TypePacking
-
-        /// <summary>
-        /// Writes a boxed object in a packed format
-        /// Named differently from other WriteValuePacked methods to avoid accidental boxing.
-        /// Don't use this method unless you have no other choice.
-        /// </summary>
-        /// <param name="writer">Writer to write to</param>
-        /// <param name="value">The object to write</param>
-        /// <param name="isNullable">
-        /// If true, an extra byte will be written to indicate whether or not the value is null.
-        /// Some types will always write this.
-        /// </param>
-        public static void WriteObjectPacked(ref FastBufferWriter writer, object value, bool isNullable = false)
-        {
-#if UNITY_NETCODE_DEBUG_NO_PACKING
-            writer.WriteObject(value, isNullable);
-            return;
-#endif
-            if (isNullable || value.GetType().IsNullable())
-            {
-                bool isNull = value == null || (value is UnityEngine.Object o && o == null);
-
-                WriteValuePacked(ref writer, isNull);
-
-                if (isNull)
-                {
-                    return;
-                }
-            }
-
-            var type = value.GetType();
-            var hasSerializer = SerializationTypeTable.SerializersPacked.TryGetValue(type, out var serializer);
-            if (hasSerializer)
-            {
-                serializer(ref writer, value);
-                return;
-            }
-
-            if (value is Array array)
-            {
-                WriteValuePacked(ref writer, array.Length);
-
-                for (int i = 0; i < array.Length; i++)
-                {
-                    WriteObjectPacked(ref writer, array.GetValue(i));
-                }
-            }
-
-            if (value.GetType().IsEnum)
-            {
-                switch (Convert.GetTypeCode(value))
-                {
-                    case TypeCode.Boolean:
-                        WriteValuePacked(ref writer, (byte)value);
-                        break;
-                    case TypeCode.Char:
-                        WriteValuePacked(ref writer, (char)value);
-                        break;
-                    case TypeCode.SByte:
-                        WriteValuePacked(ref writer, (sbyte)value);
-                        break;
-                    case TypeCode.Byte:
-                        WriteValuePacked(ref writer, (byte)value);
-                        break;
-                    case TypeCode.Int16:
-                        WriteValuePacked(ref writer, (short)value);
-                        break;
-                    case TypeCode.UInt16:
-                        WriteValuePacked(ref writer, (ushort)value);
-                        break;
-                    case TypeCode.Int32:
-                        WriteValuePacked(ref writer, (int)value);
-                        break;
-                    case TypeCode.UInt32:
-                        WriteValuePacked(ref writer, (uint)value);
-                        break;
-                    case TypeCode.Int64:
-                        WriteValuePacked(ref writer, (long)value);
-                        break;
-                    case TypeCode.UInt64:
-                        WriteValuePacked(ref writer, (ulong)value);
-                        break;
-                }
-                return;
-            }
-            if (value is GameObject)
-            {
-                ((GameObject)value).TryGetComponent<NetworkObject>(out var networkObject);
-                if (networkObject == null)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
-                }
-
-                if (!networkObject.IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
-                }
-
-                WriteValuePacked(ref writer, networkObject.NetworkObjectId);
-                return;
-            }
-            if (value is NetworkObject)
-            {
-                if (!((NetworkObject)value).IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((NetworkObject)value).gameObject.name}");
-                }
-
-                WriteValuePacked(ref writer, ((NetworkObject)value).NetworkObjectId);
-                return;
-            }
-            if (value is NetworkBehaviour)
-            {
-                if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
-                }
-
-                WriteValuePacked(ref writer, ((NetworkBehaviour)value).NetworkObjectId);
-                WriteValuePacked(ref writer, ((NetworkBehaviour)value).NetworkBehaviourId);
-                return;
-            }
-            if (value is INetworkSerializable)
-            {
-                //TODO ((INetworkSerializable)value).NetworkSerialize(new NetworkSerializer(this));
-                return;
-            }
-
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
-        }
-        #endregion
-
-        #region Unmanaged Type Packing
-
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -409,9 +274,7 @@ namespace Unity.Netcode
             }
         }
 #endif
-        #endregion
 
-        #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -547,9 +410,7 @@ namespace Unity.Netcode
             writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
         }
 #endif
-        #endregion
 
-        #region Private Methods
         private static void WriteUInt64Packed(ref FastBufferWriter writer, ulong value)
         {
             if (value <= 240)
@@ -612,6 +473,5 @@ namespace Unity.Netcode
             ulong* asUlong = (ulong*)&value;
             return *asUlong;
         }
-        #endregion
     }
 }
