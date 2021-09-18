@@ -471,6 +471,8 @@ namespace Unity.Netcode.Components
             m_PrevNetworkState = networkState;
 
             var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
+
+            // todo: we should store network state w/ quats vs. euler angles
             var interpolatedRotAngles = InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
             var interpolatedScale = InLocalSpace ? transformToUpdate.localScale : transformToUpdate.lossyScale;
 
@@ -492,19 +494,24 @@ namespace Unity.Netcode.Components
                 interpolatedPosition.z = Interpolate ? m_PositionZInterpolator.GetInterpolatedValue() : networkState.Position.z;
             }
 
-            if (SyncRotAngleX)
+            // again, we should be using quats here
+            if (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
             {
-                interpolatedRotAngles.x = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x : networkState.Rotation.x;
-            }
+                var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                if (SyncRotAngleX)
+                {
+                    interpolatedRotAngles.x = Interpolate ? eulerAngles.x : networkState.Rotation.x;
+                }
 
-            if (SyncRotAngleY)
-            {
-                interpolatedRotAngles.y = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y : networkState.Rotation.y;
-            }
+                if (SyncRotAngleY)
+                {
+                    interpolatedRotAngles.y = Interpolate ? eulerAngles.y : networkState.Rotation.y;
+                }
 
-            if (SyncRotAngleZ)
-            {
-                interpolatedRotAngles.z = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z : networkState.Rotation.z;
+                if (SyncRotAngleZ)
+                {
+                    interpolatedRotAngles.z = Interpolate ? eulerAngles.z : networkState.Rotation.z;
+                }
             }
 
             // Scale Read
@@ -570,7 +577,6 @@ namespace Unity.Netcode.Components
 
                 m_PrevNetworkState.Scale = interpolatedScale;
             }
-            Debug.DrawLine(transformToUpdate.position, transformToUpdate.position + Vector3.up, Color.magenta, 10, false);
         }
 
         private void AddInterpolatedState(NetworkTransformState newState)
@@ -702,110 +708,20 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        #region delta input
-
-        private Vector3 m_CurrentPositionDirection;
-        private Vector3 m_PreviousPositionDirection;
-
-        private Vector3 m_CurrentRotationDirection;
-        private Vector3 m_PreviousRotationDirection;
-
-        private Vector3 m_CurrentScaleDirection;
-        private Vector3 m_PreviousScaleDirection;
-
-        /// <summary>
-        /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
-        /// you can implement an RPC that does the same as this method, with custom movement logic.
-        /// It's not recommened to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
-        /// To stop movements, set delta back to 0
-        /// </summary>
-        /// <param name="deltaPos"></param>
-        /// <param name="deltaRot"></param>
-        /// <param name="deltaScale"></param>
-        /// <exception cref="Exception"></exception>
-        public void CommitDeltaValues(Vector3 deltaPos, Vector3 deltaRot, Vector3 deltaScale)
-        {
-            if (!IsOwner)
-            {
-                throw new Exception("Trying to send a delta to a not owned transform");
-            }
-
-            if (m_PreviousPositionDirection == deltaPos && m_PreviousRotationDirection == deltaRot && m_PreviousScaleDirection == deltaScale)
-            {
-                return;
-            }
-
-            if (NetworkManager != null && !(NetworkManager.IsConnectedClient || NetworkManager.IsListening))
-            {
-                return;
-            }
-
-            if (!CanCommitToTransform)
-            {
-                if (!IsServer)
-                {
-                    SendDeltaServerRpc(deltaPos, deltaRot, deltaScale);
-                }
-            }
-            else
-            {
-                m_CurrentPositionDirection = deltaPos;
-                m_CurrentRotationDirection = deltaRot;
-                m_CurrentScaleDirection = deltaScale;
-            }
-
-            m_PreviousPositionDirection = deltaPos;
-            m_PreviousRotationDirection = deltaRot;
-            m_PreviousScaleDirection = deltaScale;
-        }
-
-        [ServerRpc]
-        private void SendDeltaServerRpc(Vector3 deltaPos, Vector3 deltaRot, Vector3 deltaScale)
-        {
-            m_CurrentPositionDirection = deltaPos;
-            m_CurrentRotationDirection = deltaRot;
-            m_CurrentScaleDirection = deltaScale;
-        }
-
-        private void UpdateWithDelta()
-        {
-            if (CanCommitToTransform)
-            {
-                // Custom logic for position update. You can also create your own RPC to have your own custom movement logic
-                // this is resistant to jitter, since the current direction is cached. This way, if we receive jittery inputs, this update still knows what to do
-                // An improvement could be to do input decay, and slowly decrease that direction over time if no new inputs. This is useful for when a client disconnects for example, so we don't
-                // have objects moving forever.
-                // This doesn't "impose" a position on the server from clients (which makes that client have authority), we’re making the client “suggest”
-                // a pos change, but the server could also do what it wants with that transform in between inputs
-                if (InLocalSpace)
-                {
-                    m_Transform.localPosition += m_CurrentPositionDirection * Time.deltaTime;
-                    m_Transform.localRotation = Quaternion.Euler(m_Transform.localRotation.eulerAngles + m_CurrentRotationDirection * Time.deltaTime);
-                    m_Transform.localScale += m_CurrentScaleDirection * Time.deltaTime;
-                }
-                else
-                {
-                    m_Transform.position += m_CurrentPositionDirection * Time.deltaTime;
-                    m_Transform.rotation = Quaternion.Euler(m_Transform.rotation.eulerAngles + m_CurrentRotationDirection * Time.deltaTime);
-                    m_Transform.localScale += m_CurrentScaleDirection * Time.deltaTime;
-                }
-            }
-        }
-
-        #endregion
-
         #region state set
 
         /// <summary>
         /// Directly sets a state on the authoritative transform.
         /// This will override any changes made previously to the transform
         /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
+        /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
+        ///  just the desired one(s)
         /// </summary>
-        /// <param name="pos"></param>
-        /// <param name="rot"></param>
-        /// <param name="scale"></param>
+        /// <param name="posIn"></param> new position to move to.  Can be null
+        /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
+        /// <param name="scaleIn"></param> new scale to scale to.  Can be null
         /// <exception cref="Exception"></exception>
-        public void SetState(Vector3 pos, Vector3 rot, Vector3 scale)
+        public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null)
         {
             if (!IsOwner)
             {
@@ -817,6 +733,10 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            Vector3 pos = posIn == null ? transform.position : (Vector3)posIn;
+            Quaternion rot = rotIn == null ? transform.rotation : (Quaternion)rotIn;
+            Vector3 scale = scaleIn == null ? transform.localScale : (Vector3)scaleIn;
+
             if (!CanCommitToTransform)
             {
                 if (!IsServer)
@@ -827,16 +747,35 @@ namespace Unity.Netcode.Components
             else
             {
                 transform.position = pos;
-                transform.rotation = Quaternion.Euler(rot);
+                transform.rotation = rot;
                 transform.localScale = scale;
             }
         }
 
+        /// <summary>
+        /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
+        /// you can implement an RPC that does the same as this method, with custom movement logic.
+        /// It's not recommended to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
+        /// To stop movements, set delta back to 0
+        /// </summary>
+        /// <param name="deltaPos"></param>
+        /// <param name="deltaRot"></param>
+        /// <param name="deltaScale"></param>
+        /// <exception cref="Exception"></exception>
+        public void ApplyDelta(Vector3? deltaPosIn = null, Quaternion? deltaRotIn = null, Vector3? deltaScaleIn = null)
+        {
+            Vector3 deltaPos = (deltaPosIn == null ? Vector3.zero : (Vector3)deltaPosIn);
+            Quaternion deltaRot = (deltaRotIn == null ? Quaternion.identity : (Quaternion)deltaRotIn);
+            Vector3 deltaScale = (deltaScaleIn == null ? Vector3.zero : (Vector3)deltaScaleIn);
+
+            SetState(transform.position + deltaPos, transform.rotation * deltaRot, transform.localScale + deltaScale);
+        }
+
         [ServerRpc]
-        private void SetStateServerRpc(Vector3 pos, Vector3 rot, Vector3 scale)
+        private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale)
         {
             transform.position = pos;
-            transform.rotation = Quaternion.Euler(rot);
+            transform.rotation = rot;
             transform.localScale = scale;
         }
         #endregion
@@ -849,8 +788,6 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
-            UpdateWithDelta();
 
             if (CanCommitToTransform)
             {
@@ -884,6 +821,8 @@ namespace Unity.Netcode.Components
                     // if we have any changes, that means made some updates locally
                     // we apply the latest ReplNetworkState again to revert our changes
                     var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
+
+                    // there is a bug in this code, as we the message is dumped out under odd circumstances
                     if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                     {
                         // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
