@@ -59,7 +59,6 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
 
         var workerProcess = new Process();
@@ -88,7 +87,7 @@ public class MultiprocessOrchestration
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
-                    extraArgs += "-nographics";
+                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:

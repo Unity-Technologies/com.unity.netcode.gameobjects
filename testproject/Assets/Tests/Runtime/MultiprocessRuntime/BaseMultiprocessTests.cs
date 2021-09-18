@@ -109,7 +109,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.Processes.Count} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                 }
-            } else
+            }
+            else
             {
                 MultiProcessLog($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.Processes.Count}");
             }
