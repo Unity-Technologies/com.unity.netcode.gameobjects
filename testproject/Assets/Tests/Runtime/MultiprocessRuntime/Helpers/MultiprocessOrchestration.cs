@@ -97,7 +97,7 @@ public class MultiprocessOrchestration
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}";
-                    extraArgs += "-nographics";
+                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");

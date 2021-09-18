@@ -74,7 +74,7 @@ multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
 {% if platform.name == "mac" %}    -  sudo codesign --force --deep --sign - ./testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app{% endif %}
     - {% if platform.name == "ubuntu" %}DISPLAY=:0 && {% endif %}{{ platform.utr }} --suite=playmode --testproject=testproject --editor-location=.Editor --testfilter=Unity.Netcode.MultiprocessRuntimeTests --extra-editor-arg=-bypassIgnoreUTR --extra-editor-arg="-logFile unity.log"
   after:
-    - {% if platform.name == "win" %}dir %USERPROFILE%\.multiprocess\logfile* .{% endif %}{% if platform.name != "win" %}ls $HOME/.multiprocess/logfile* .{% endif %}
+    - {% if platform.name == "win" %}dir %USERPROFILE%\.multiprocess\logfile*{% endif %}{% if platform.name != "win" %}ls $HOME/.multiprocess/logfile*{% endif %}
     - {% if platform.name == "win" %}copy %USERPROFILE%\.multiprocess\logfile* .{% endif %}{% if platform.name != "win" %}cp $HOME/.multiprocess/logfile* .{% endif %}
   artifacts:
     logs:
