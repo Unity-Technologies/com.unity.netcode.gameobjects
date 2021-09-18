@@ -13,7 +13,7 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
-    public static List<Process> Processes = new List<Process>();
+    private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
 
     /// <summary>
@@ -28,11 +28,11 @@ public class MultiprocessOrchestration
     public static int ActiveWorkerCount()
     {
         int activeWorkerCount = 0;
-        if (Processes == null)
+        if (s_Processes == null)
         {
             return activeWorkerCount;
         }
-        foreach (var p in Processes)
+        foreach (var p in s_Processes)
         {
             if (!p.HasExited)
             {
@@ -44,9 +44,9 @@ public class MultiprocessOrchestration
 
     public static void StartWorkerNode()
     {
-        if (Processes == null)
+        if (s_Processes == null)
         {
-            Processes = new List<Process>();
+            s_Processes = new List<Process>();
         }
 
         string userprofile = "";
@@ -63,16 +63,16 @@ public class MultiprocessOrchestration
 
         var workerProcess = new Process();
         s_TotalProcessCounter++;
-        if (Processes.Count > 0)
+        if (s_Processes.Count > 0)
         {
             string message = "";
-            foreach (var p in Processes)
+            foreach (var p in s_Processes)
             {
                 message += $" {p.Id} {p.HasExited} {p.StartTime} ";
             }
-            BaseMultiprocessTests.MultiProcessLog($"Current process count {Processes.Count} with data {message}");
+            BaseMultiprocessTests.MultiProcessLog($"Current process count {s_Processes.Count} with data {message}");
         }
-        Processes.Add(workerProcess);
+        s_Processes.Add(workerProcess);
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
@@ -120,7 +120,7 @@ public class MultiprocessOrchestration
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -137,7 +137,7 @@ public class MultiprocessOrchestration
     public static void ShutdownAllProcesses()
     {
         BaseMultiprocessTests.MultiProcessLog("Shutting down all processes..");
-        foreach (var process in Processes)
+        foreach (var process in s_Processes)
         {
             BaseMultiprocessTests.MultiProcessLog($"Shutting down process {process.Id} with state {process.HasExited}");
             try
@@ -157,6 +157,6 @@ public class MultiprocessOrchestration
             }
         }
 
-        Processes.Clear();
+        s_Processes.Clear();
     }
 }
