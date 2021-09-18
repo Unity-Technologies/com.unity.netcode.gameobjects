@@ -14,6 +14,7 @@ public class MultiprocessOrchestration
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static List<Process> Processes = new List<Process>();
+    private static int s_TotalProcessCounter = 0;
 
     /// <summary>
     /// This is to detect if we should ignore Multiprocess tests
@@ -22,6 +23,23 @@ public class MultiprocessOrchestration
     public static bool ShouldIgnoreUTRTests()
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
+
+    public static int ActiveWorkerCount()
+    {
+        int activeWorkerCount = 0;
+        if (Processes == null)
+        {
+            return activeWorkerCount;
+        }
+        foreach (var p in Processes)
+        {
+            if (!p.HasExited)
+            {
+                activeWorkerCount++;
+            }
+        }
+        return activeWorkerCount;
     }
 
     public static void StartWorkerNode()
@@ -45,6 +63,7 @@ public class MultiprocessOrchestration
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
 
         var workerProcess = new Process();
+        s_TotalProcessCounter++;
         if (Processes.Count > 0)
         {
             string message = "";
@@ -91,7 +110,7 @@ public class MultiprocessOrchestration
             throw;
         }
 
-        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{Processes.Count}.log");
+        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
 
         workerProcess.StartInfo.UseShellExecute = false;
