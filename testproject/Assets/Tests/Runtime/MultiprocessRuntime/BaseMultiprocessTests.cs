@@ -106,12 +106,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.Processes.Count;
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
-                    Debug.Log($"Spawning testplayer {i} since {MultiprocessOrchestration.Processes.Count} is less than {WorkerCount}");
+                    MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.Processes.Count} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                 }
             } else
             {
-                Debug.Log("No need to spawn a new test player as there are already existing processes");
+                MultiProcessLog($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.Processes.Count}");
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
@@ -127,9 +127,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.KeepAliveClientRpc();
         }
 
+
         [TearDown]
         public virtual void Teardown()
         {
+            MultiProcessLog("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
@@ -151,6 +153,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
                 SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
             }
+        }
+
+        public static void MultiProcessLog(string msg)
+        {
+            string dString = DateTime.Now.ToString("G");
+            Debug.Log($" - MPLOG - {dString} : {msg}");
         }
     }
 }

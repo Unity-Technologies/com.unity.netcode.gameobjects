@@ -6,6 +6,7 @@ using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Unity.Netcode.MultiprocessRuntimeTests;
 
 /// <summary>
 /// TestCoordinator
@@ -54,7 +55,7 @@ public class TestCoordinator : NetworkBehaviour
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
-            Debug.Log("starting netcode client");
+            BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
         }
 
@@ -78,7 +79,7 @@ public class TestCoordinator : NetworkBehaviour
         else if (Time.time - m_TimeSinceLastConnected > MaxWaitTimeoutSec || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
-            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
+            BaseMultiprocessTests.MultiProcessLog($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
                 QuitApplication();
@@ -246,7 +247,7 @@ public class TestCoordinator : NetworkBehaviour
     [ClientRpc]
     public void TriggerActionIdClientRpc(string actionId, byte[] args, ClientRpcParams clientRpcParams = default)
     {
-        Debug.Log($"received RPC from server, client side triggering action ID {actionId}");
+        BaseMultiprocessTests.MultiProcessLog($"received RPC from server, client side triggering action ID {actionId}");
         try
         {
             ExecuteStepInContext.AllActions[actionId].Invoke(args);
@@ -294,7 +295,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             NetworkManager.Singleton.Shutdown();
             m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
-            Debug.Log("Quitting player cleanly");
+            BaseMultiprocessTests.MultiProcessLog("Quitting player cleanly");
             Application.Quit();
         }
         catch (Exception e)

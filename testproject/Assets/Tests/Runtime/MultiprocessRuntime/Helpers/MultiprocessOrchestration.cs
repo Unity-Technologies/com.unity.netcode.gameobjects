@@ -41,7 +41,7 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        // Debug.Log($"userprofile is {userprofile}");
+        
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
 
         var workerProcess = new Process();
@@ -52,7 +52,7 @@ public class MultiprocessOrchestration
             {
                 message += $" {p.Id} {p.HasExited} {p.StartTime} ";
             }
-            Debug.Log($"Current process count {Processes.Count} with data {message}");
+            BaseMultiprocessTests.MultiProcessLog($"Current process count {Processes.Count} with data {message}");
         }
         Processes.Add(workerProcess);
 
@@ -102,7 +102,7 @@ public class MultiprocessOrchestration
 
         try
         {
-            Debug.Log($"Attempting to start new process, current process count: {Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {Processes.Count}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -118,10 +118,10 @@ public class MultiprocessOrchestration
 
     public static void ShutdownAllProcesses()
     {
-        Debug.Log("Shutting down all processes..");
+        BaseMultiprocessTests.MultiProcessLog("Shutting down all processes..");
         foreach (var process in Processes)
         {
-            Debug.Log($"Shutting down process {process.Id} with state {process.HasExited}");
+            BaseMultiprocessTests.MultiProcessLog($"Shutting down process {process.Id} with state {process.HasExited}");
             try
             {
                 if (!process.HasExited)
