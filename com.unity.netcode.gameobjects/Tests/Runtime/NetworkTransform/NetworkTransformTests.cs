@@ -3,15 +3,15 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using Unity.Netcode.Components;
 using NUnit.Framework;
-using Unity.Netcode.Samples;
+// using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(true, true)]
+    // [TestFixture(true, true)]
     [TestFixture(true, false)]
-    [TestFixture(false, true)]
+    // [TestFixture(false, true)]
     [TestFixture(false, false)]
     public class NetworkTransformTests : BaseMultiInstanceTest
     {
@@ -37,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (m_TestWithClientNetworkTransform)
                 {
-                    playerPrefab.AddComponent<ClientNetworkTransform>();
+                    // playerPrefab.AddComponent<ClientNetworkTransform>();
                 }
                 else
                 {
@@ -65,13 +65,13 @@ namespace Unity.Netcode.RuntimeTests
 
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
-            if (m_TestWithClientNetworkTransform)
-            {
-                // client auth net transform can write from client, not from server
-                otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            }
-            else
+            // if (m_TestWithClientNetworkTransform)
+            // {
+            //     // client auth net transform can write from client, not from server
+            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            // }
+            // else
             {
                 // server auth net transform can't write from client, not from client
                 authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
@@ -145,13 +145,13 @@ namespace Unity.Netcode.RuntimeTests
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
 
-            if (m_TestWithClientNetworkTransform)
-            {
-                // client auth net transform can write from client, not from server
-                otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            }
-            else
+            // if (m_TestWithClientNetworkTransform)
+            // {
+            //     // client auth net transform can write from client, not from server
+            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            // }
+            // else
             {
                 // server auth net transform can't write from client, not from client
                 authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();

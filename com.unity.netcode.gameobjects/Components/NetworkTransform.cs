@@ -289,7 +289,7 @@ namespace Unity.Netcode.Components
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
 
-        private const string k_NoAuthorityMessage = "was changed locally without authority, reverting back to latest interpolated network state! Please use CommitUpdate() or your own [ServerRpc]";
+        private const string k_NoAuthorityMessage = "A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!";
 
 
         /// <summary>
@@ -674,10 +674,7 @@ namespace Unity.Netcode.Components
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
-            if (CanCommitToTransform)
-            {
-                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
-            }
+
 
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
@@ -699,6 +696,10 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
+            }
+            if (CanCommitToTransform)
+            {
+                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
@@ -748,6 +749,7 @@ namespace Unity.Netcode.Components
         /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
         /// you can implement an RPC that does the same as this method, with custom movement logic.
         /// It's not recommened to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
+        /// To stop movements, set delta back to 0
         /// </summary>
         /// <param name="deltaPos"></param>
         /// <param name="deltaRot"></param>
@@ -822,6 +824,53 @@ namespace Unity.Netcode.Components
             }
         }
 
+        #endregion
+
+        #region state set
+
+        /// <summary>
+        /// Directly sets a state on the authoritative transform.
+        /// This will override any changes made previously to the transform
+        /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="rot"></param>
+        /// <param name="scale"></param>
+        /// <exception cref="Exception"></exception>
+        public void SetState(Vector3 pos, Vector3 rot, Vector3 scale)
+        {
+            if (!IsOwner)
+            {
+                throw new Exception("Trying to set a state on a not owned transform");
+            }
+
+            if (NetworkManager != null && !(NetworkManager.IsConnectedClient || NetworkManager.IsListening))
+            {
+                return;
+            }
+
+            if (!CanCommitToTransform)
+            {
+                if (!IsServer)
+                {
+                    SetStateServerRpc(pos, rot, scale);
+                }
+            }
+            else
+            {
+                transform.position = pos;
+                transform.rotation = Quaternion.Euler(rot);
+                transform.localScale = scale;
+            }
+        }
+
+        [ServerRpc]
+        private void SetStateServerRpc(Vector3 pos, Vector3 rot, Vector3 scale)
+        {
+            transform.position = pos;
+            transform.rotation = Quaternion.Euler(rot);
+            transform.localScale = scale;
+        }
         #endregion
 
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
