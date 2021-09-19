@@ -14,6 +14,9 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
+        public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
+        public OnClientRequestChangeDelegate OnClientRequestChange;
+
         internal struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
@@ -774,6 +777,12 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale)
         {
+            // server has received this RPC request to move change transform.  Give the server a chance to modify or
+            //  even reject the move
+            if (OnClientRequestChange != null)
+            {
+                (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
+            }
             transform.position = pos;
             transform.rotation = rot;
             transform.localScale = scale;
@@ -800,7 +809,7 @@ namespace Unity.Netcode.Components
             }
 
             // apply interpolated value
-            if ((NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
+            if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)
             {
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
