@@ -23,7 +23,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 30f;
+    public const float MaxWaitTimeoutSec = 60;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -102,9 +102,9 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal.Clear();
     }
 
-    public new void OnDestroy()
+    public void OnDisable()
     {
-        if (NetworkObject != null && NetworkManager != null)
+        if (IsSpawned && NetworkObject != null && NetworkObject.NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
@@ -245,7 +245,7 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void TriggerActionIdClientRpc(string actionId, byte[] args, ClientRpcParams clientRpcParams = default)
+    public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignorException, ClientRpcParams clientRpcParams = default)
     {
         BaseMultiprocessTests.MultiProcessLog($"received RPC from server, client side triggering action ID {actionId}");
         try
@@ -255,7 +255,14 @@ public class TestCoordinator : NetworkBehaviour
         catch (Exception e)
         {
             WriteErrorServerRpc(e.Message);
-            throw;
+            if (!ignorException)
+            {
+                throw;
+            }
+            else
+            {
+                Instance.ClientFinishedServerRpc();
+            }
         }
     }
 
@@ -311,17 +318,59 @@ public class TestCoordinator : NetworkBehaviour
         m_TimeSinceLastKeepAlive = Time.time;
     }
 
+    private ulong[] m_TargetClient = new ulong[1] { 0 };
+    private ClientRpcParams m_ClientParams = new ClientRpcParams();
+
+    public delegate void KeepServerFromTimingOutDelegateHandler();
+
+    public KeepServerFromTimingOutDelegateHandler KeepServerFromTimingOut;
+
     [ServerRpc(RequireOwnership = false)]
+    //public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
+        Debug.Log($"Server received result [{result}] from sender [{senderId}]");
         if (!m_TestResultsLocal.ContainsKey(senderId))
         {
             m_TestResultsLocal[senderId] = new List<float>();
         }
 
         m_TestResultsLocal[senderId].Add(result);
+
+
+        if (KeepServerFromTimingOut != null)
+        {
+            KeepServerFromTimingOut.Invoke();
+        }
+
+        // Now send the results received verification
+        m_TargetClient[0] = senderId;
+        m_ClientParams.Send.TargetClientIds = m_TargetClient;
+        ServerReceivedResultsResponseClientRpc(result, m_ClientParams);
     }
+
+    public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);
+
+    public OnServerReceivedResultsResponseDelegateHandler OnServerReceivedResultsResponse;
+    private void ServerReceivedResultsResponse(float resultReceived)
+    {
+        if (OnServerReceivedResultsResponse != null)
+        {
+            OnServerReceivedResultsResponse.Invoke(resultReceived);
+        }
+        else
+        {
+            Debug.LogWarning("Current test is not validating results were received (adding this validation will assure proper test synchronization and timing).");
+        }
+    }
+
+    [ClientRpc]
+    public void ServerReceivedResultsResponseClientRpc(float resultReceived, ClientRpcParams clientRpcParams = default)
+    {
+        ServerReceivedResultsResponse(resultReceived);
+    }
+
 
     [ServerRpc(RequireOwnership = false)]
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
