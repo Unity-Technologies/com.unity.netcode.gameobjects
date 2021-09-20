@@ -140,8 +140,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiProcessLog("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
-                MultiProcessLog($"Stop all workers after each test so we can start fresh ones.");
-                MultiprocessOrchestration.ShutdownAllProcesses();
                 TestCoordinator.Instance.TestRunTeardown();
             }
         }
