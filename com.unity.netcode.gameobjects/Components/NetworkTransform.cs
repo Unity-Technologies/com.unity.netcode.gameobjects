@@ -755,25 +755,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <summary>
-        /// Simple way to affect your transform server side from clients, while still keeping a server authoritative transform. For more custom logic,
-        /// you can implement an RPC that does the same as this method, with custom movement logic.
-        /// It's not recommended to use this on non-kinematic or FixedUpdate based objects. Physics movements will need custom code to be synced with physics items.
-        /// To stop movements, set delta back to 0
-        /// </summary>
-        /// <param name="deltaPos"></param>
-        /// <param name="deltaRot"></param>
-        /// <param name="deltaScale"></param>
-        /// <exception cref="Exception"></exception>
-        public void ApplyDelta(Vector3? deltaPosIn = null, Quaternion? deltaRotIn = null, Vector3? deltaScaleIn = null)
-        {
-            Vector3 deltaPos = (deltaPosIn == null ? Vector3.zero : (Vector3)deltaPosIn);
-            Quaternion deltaRot = (deltaRotIn == null ? Quaternion.identity : (Quaternion)deltaRotIn);
-            Vector3 deltaScale = (deltaScaleIn == null ? Vector3.zero : (Vector3)deltaScaleIn);
-
-            SetState(transform.position + deltaPos, transform.rotation * deltaRot, transform.localScale + deltaScale);
-        }
-
         [ServerRpc]
         private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale)
         {
