@@ -535,17 +535,17 @@ namespace Unity.Netcode.Components
                 var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
                 if (SyncRotAngleX)
                 {
-                	interpolatedRotAngles.x = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
+                    interpolatedRotAngles.x = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
                 }
 
                 if (SyncRotAngleY)
                 {
-                	interpolatedRotAngles.y = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.y : eulerAngles.y;
+                    interpolatedRotAngles.y = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.y : eulerAngles.y;
                 }
 
                 if (SyncRotAngleZ)
                 {
-                	interpolatedRotAngles.z = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.z : eulerAngles.z;
+                    interpolatedRotAngles.z = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.z : eulerAngles.z;
                 }
             }
 
