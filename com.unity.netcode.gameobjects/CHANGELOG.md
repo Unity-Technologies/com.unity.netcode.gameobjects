@@ -9,17 +9,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
-- Implemented `NetworkPrefabHandler` that provides support for object pooling and NetworkPrefab overrides (#1073, #1004, #977, #905,#749, #727)
+- Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
 - When a client tries to spawn a `NetworkObject` an exception is thrown to indicate unsupported behavior. (#981)
 - Added a `NetworkTime` and `NetworkTickSystem` which allows for improved control over time and ticks. (#845)
 - Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
-- Added `SnapshotSystem`. This internal system will allow variables and (de)spawn commands to be sent in blocks. Will leverage unreliable messages and offer efficient transfer with eventual consistency. Off by default for now and only implemented for spawns and despawns.
-- NetworkBehaviour and NetworkObject NetworkManager instance can now be overriden (#762)
+- Added `SnapshotSystem` that would allow variables and spawn/despawn messages to be sent in blocks (#805, #852, #862, #963, #1012, #1013, #1021, #1040, #1062, #1064, #1083, #1111, #1129, #1166, #1192)
+  - Disabled by default for now, except spawn/despawn messages
+  - Will leverage unreliable messages with eventual consistency
+- `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
 
 ### Changed
@@ -43,18 +46,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
-  - Improved newly joined client synchronization
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
-- Network variable cleanup - eliminated shared mode, variables are server-authoritative
-- FindObject(s)OfType now filters NetworkManagers (#763)
-- BufferManager now uses internal NetworkManager (#746)
-- InternalMessageSender is no longer static (#739)
-- NetworkSceneManager is no longer static (#738)
-- CustomMessageManager is no longer static (#737)
-- InternalMessageHandler is no longer static (#706)
-- BufferManager is no longer static (#705)
-- SpawnManager is no longer static (#696)
+- Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
+- `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
 
 ### Deprecated
 
@@ -68,32 +63,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Allow Runtime Scene Changes was no longer needed and was removed
 - Removed the NetworkObject.Spawn payload parameter (#1005)
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
-- Removed NetworkSet, NetworkDictionary
+- Removed NetworkSet, NetworkDictionary (#1149)
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
 
 ### Fixed
-- Fixed parenting not being preserved during scene transitions (#1148)
+
 - Fixed `NetworkObject.OwnerClientId` property changing before `NetworkBehaviour.OnGainedOwnership()` callback (#1092)
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
-- Fixed `NetworkManager` shutdown when quitting the application or switching scenes. Now NetworkManager shutdowns correctly and despawns existing NetworkObjects (#1011)
-- Fixed `specified cast is not valid.' on NetworkWriter` (#951)
-- Fixed `Clients are receiving data from objects not visible to them` (#915)
-- Fixed project compilation when targeting WebGL (#724)
-- Fixed NetworkObject editor exception when NetworkManager field is null (#797)
-- Fixed NetworkVar implementations not using the Time of their owner NetworkManager (#788)
-- Fixed NetworkSceneManager not using the correct ServerId to send responses (#787)
-- Fixed NetworkNavMeshAgent not using the correct NetworkManager (#786)
-- Fixed NetworkAnimator not using the correct NetworkManager (#785)
-- Fixed NetworkObject editor not using the correct NetworkManager (#784)
-- Fixed NetworkBehaviour not using the correct owner NetworkManager (#783)
-- Fixed NetworkTransform not using the correct NetworkManager (#766)
-- Fixed NetworkManager doesn't destroy itself on multi instance (#765)
-- Fixed RpcQueueProcessor not using the correct instance to invoke (#747)
-- Fixed UNET transport channel UI (#679)
-- Fixed: Only one PlayerPrefab can be selected in NetworkManager editor (#676)
+- Fixed `NetworkManager` shutdown when quitting the application or switching scenes (#1011)
+  - Now `NetworkManager` shutdowns correctly and despawns existing `NetworkObject`s
+- Fixed Only one `PlayerPrefab` can be selected on `NetworkManager` inspector UI in the editor (#676)
 - Fixed connection approval not being triggered for host (#675)
-- Fixed multiple connection requests being able to get processed while pending approval (#653)
 
 ### Security
 
@@ -101,55 +82,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### TODO
 
-
-- [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
-- [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
-- [0d956059] (2021-08-19) Luke Stampfli / fix: networkmanager destroy on app quit (#1011)
-- [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTime properties (#1053)
-- [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
-- [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
-- [d30f6170] (2021-08-18) Luke Stampfli / test: Add unit tests for NetworkTimeField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
-- [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
-- [cbe74c2e] (2021-07-30) Luke Stampfli / fix: Client throw exception when destroying spawned object (invalid operation) (#981)
-- [c25821d2] (2021-07-27) Jaedyn Draper / fix: Fixes for a few things discovered from the message ordering refactor: (#985)
-- [4fad5915] (2021-07-27) Phil Deschain / fix: Network animator server authority fixes (#972)
-- [82e1c33e] (2021-07-26) Luke Stampfli / fix: Remove assert which is currently broken (#984)
-- [b9ffc1f1] (2021-07-23) Jaedyn Draper / feat: Message Ordering (#948)
-- [fb1555f3] (2021-07-21) Luke Stampfli / feat!: Network Time (RFC #14) (#845)
-- [13e2b7f1] (2021-07-13) Sam Bellomo / test: multiprocess tests part 6: fixing issues runnings all tests together (#957)
-- [bf296660] (2021-07-13) Sam Bellomo / docs: Perf tests part 5. Adding documentation and instructions (#952)
-- [6c8efd66] (2021-07-12) Sam Bellomo / test: Perf tests part 4. Adding example of performance test with spawning x network objects at once (#925)
-- [089c2065] (2021-07-12) Luke Stampfli / test: Correctly teardown OnNetworkSpawn/Despawn tests.
-- [725a77a9] (2021-07-12) Sam Bellomo / test: Perf tests part 3. Adding ExecuteStepInContext for better test readability (#924)
-- [833f1faf] (2021-07-09) Sam Bellomo / test: Perf tests part 2. Adding Test Coordinator and base test class (#923)
-- [d08b84ac] (2021-07-08) Sam Bellomo / test: Perf tests part 1. Basis for multiprocess tests process orchestration.  (#922)
-- [be0ca068] (2021-07-06) Phil Deschain / feat: network animator Trigger parameter support (#872)
-- [7ed627c6] (2021-06-30) Sam Bellomo / fix: reducing log level for noisy log and adding details for developer log (#926)
-- [4679474b] (2021-06-30) Sam Bellomo / feat: users can set authority on network transform programmatically (#868)
-- [e122376f] (2021-06-29) Sam Bellomo / refactor: move NetworkBehaviour update to a separate non-static class (#917)
-- [0855557e] (2021-06-29) Sam Bellomo / test: add utils for multi instance tests (#914)
-- [9a47c661] (2021-06-29) Sam Bellomo / test: downgrading testproject to 2020.3.12f1 (#927)
-- [f14de778] (2021-06-28) James / fix: Empty prefab removal (#919)
-- [459c041c] (2021-06-14) Luke Stampfli / feat!: OnNetworkSpawn / OnNetworkDespawn (#865)
-- [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
-- [3e96cf95] (2021-06-08) Jean-Sébastien Fauteux / feat: Add RPC Name Lookup Table Provided by NetworkBehaviourILPP (#875)
-- [bd223cfb] (2021-06-01) Lori Krell / docs: Hotfix Changelog for 0.1.1 and manual update (#873)
-- [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
-- [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
-- [e2b17b10] (2021-05-21) Samuel Bellomo / some cleanup
-- [3566ea04] (2021-05-20) Samuel Bellomo / fixing a few issues when connecting and disconnecting additional clients Adding separate tests in SpawnManagerTests. Added Teardown
-- [b3c155b5] (2021-05-20) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [d783a4e0] (2021-05-20) Samuel Bellomo / adding more tests
-- [e2fd839c] (2021-05-19) Samuel Bellomo / Adding tests for that exception Adding the possibility to have multiple clients in MultiInstanceHelpers Updating exception check to make sure to use local networkmanager (so it works with tests)
-- [d11e22be] (2021-05-19) Sam Bellomo / feat: NetworkTransform now uses NetworkVariables instead of RPCs (#826)
-- [ad8ae404] (2021-05-18) Samuel Bellomo / Adding proper exception for invalid case. This is so users don't have silent failures calling this client side expecting to see other player objects. This solves issue https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/issues/581
-- [e409b373] (2021-05-18) Andrew Spiering / fix: Fixing utp license file for legal (#843)
-- [11b2d250] (2021-05-10) Luke Stampfli / refactor: reduce dictionary lookups (#584)
-- [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
-- [b7357f85] (2021-04-19) Andrew Spiering / ci: Enabling MLAPI UTP Transport package (#736)
-- [68482608] (2021-04-15) Cosmin / docs: Remove MIT license hyperlink in the main README.md (#732)
-- [6984f6d6] (2021-04-14) will-mearns / docs: add "expected outcome" section to bug report template (#728)
+// todo
 
 ## [0.2.0] - 2021-06-03
 
