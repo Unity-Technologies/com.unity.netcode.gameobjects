@@ -862,13 +862,14 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Teleports the transform to the given values without interpolating
         /// </summary>
-        public void Teleport(Vector3 newPosition, Vector3 newRotationEuler, Vector3 newScale)
+        public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)
             {
                 throw new Exception("Teleport not allowed, " + k_NoAuthorityMessage);
             }
 
+            var newRotationEuler = newRotation.eulerAngles;
             var stateToSend = m_LocalAuthoritativeNetworkState;
             stateToSend.IsTeleporting = true;
             stateToSend.Position = newPosition;

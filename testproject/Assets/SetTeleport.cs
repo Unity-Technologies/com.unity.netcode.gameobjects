@@ -8,7 +8,7 @@ public class SetTeleport : MonoBehaviour
 {
     public void Set(Vector3 pos)
     {
-        GetComponent<NetworkTransform>().Teleport(pos, transform.rotation.eulerAngles, transform.localScale);
+        GetComponent<NetworkTransform>().Teleport(pos, transform.rotation, transform.localScale);
     }
 
     [CustomEditor(typeof(SetTeleport))]
