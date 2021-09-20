@@ -128,6 +128,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.KeepAliveClientRpc();
         }
 
+        [UnityTearDown]
+        public virtual void UnityTearDown()
+        {
+            // Stop all workers after each test so we can start fresh ones.
+            MultiprocessOrchestration.ShutdownAllProcesses();
+        }
 
         [TearDown]
         public virtual void Teardown()
