@@ -212,7 +212,7 @@ namespace Unity.Netcode
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length - sizeof(BatchHeader));
+                        m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
                     }
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
@@ -243,7 +243,7 @@ namespace Unity.Netcode
                     }
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length - sizeof(BatchHeader));
+                        m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
                     }
                 }
             }

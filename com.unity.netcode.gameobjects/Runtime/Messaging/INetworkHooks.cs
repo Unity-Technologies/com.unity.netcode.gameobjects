@@ -47,7 +47,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
-        /// <param name="batchSizeInBytes">Number of bytes in the batch, not including the batch header</param>
+        /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         /// <param name="delivery"></param>
         void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
 
@@ -56,7 +56,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
-        /// <param name="batchSizeInBytes">Number of bytes in the batch, not including the batch header</param>
+        /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         /// <param name="delivery"></param>
         void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery);
 
@@ -65,7 +65,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
-        /// <param name="batchSizeInBytes">Number of bytes in the batch, not including the batch header</param>
+        /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="senderId">The source clientId</param>
         /// <param name="messageCount">Number of messages in the batch</param>
-        /// <param name="batchSizeInBytes">Number of bytes in the batch, not including the batch header</param>
+        /// <param name="batchSizeInBytes">Number of bytes in the batch, including the batch header</param>
         void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes);
 
 
