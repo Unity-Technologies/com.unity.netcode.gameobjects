@@ -24,13 +24,11 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 enabled = false;
             }
-
-            transform.position += Vector3.up * NetworkObject.NetworkObjectId * 1.1f;
         }
 
         private void Update()
         {
-            if (m_NetworkAnimator.CanCommitToAnimator)
+            if (m_NetworkAnimator.IsAuthorityOverAnimator)
             {
                 if (Input.GetKeyDown(KeyCode.C))
                 {
