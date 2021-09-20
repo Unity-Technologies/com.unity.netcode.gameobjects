@@ -139,7 +139,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool IsTeleporting
+            public bool IsTeleportingNextFrame
             {
                 get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
                 set
@@ -516,17 +516,17 @@ namespace Unity.Netcode.Components
             // Position Read
             if (SyncPositionX)
             {
-                interpolatedPosition.x = networkState.IsTeleporting || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
+                interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
             }
 
             if (SyncPositionY)
             {
-                interpolatedPosition.y = networkState.IsTeleporting || !Interpolate ? networkState.Position.y : m_PositionYInterpolator.GetInterpolatedValue();
+                interpolatedPosition.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.y : m_PositionYInterpolator.GetInterpolatedValue();
             }
 
             if (SyncPositionZ)
             {
-                interpolatedPosition.z = networkState.IsTeleporting || !Interpolate ? networkState.Position.z : m_PositionZInterpolator.GetInterpolatedValue();
+                interpolatedPosition.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.z : m_PositionZInterpolator.GetInterpolatedValue();
             }
 
             // again, we should be using quats here
@@ -535,34 +535,34 @@ namespace Unity.Netcode.Components
                 var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
                 if (SyncRotAngleX)
                 {
-                    interpolatedRotAngles.x = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
+                    interpolatedRotAngles.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
                 }
 
                 if (SyncRotAngleY)
                 {
-                    interpolatedRotAngles.y = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.y : eulerAngles.y;
+                    interpolatedRotAngles.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.y : eulerAngles.y;
                 }
 
                 if (SyncRotAngleZ)
                 {
-                    interpolatedRotAngles.z = networkState.IsTeleporting || !Interpolate ? networkState.Rotation.z : eulerAngles.z;
+                    interpolatedRotAngles.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.z : eulerAngles.z;
                 }
             }
 
             // Scale Read
             if (SyncScaleX)
             {
-                interpolatedScale.x = networkState.IsTeleporting || !Interpolate ? networkState.Scale.x : m_ScaleXInterpolator.GetInterpolatedValue();
+                interpolatedScale.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.x : m_ScaleXInterpolator.GetInterpolatedValue();
             }
 
             if (SyncScaleY)
             {
-                interpolatedScale.y = networkState.IsTeleporting || !Interpolate ? networkState.Scale.y : m_ScaleYInterpolator.GetInterpolatedValue();
+                interpolatedScale.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.y : m_ScaleYInterpolator.GetInterpolatedValue();
             }
 
             if (SyncScaleZ)
             {
-                interpolatedScale.z = networkState.IsTeleporting || !Interpolate ? networkState.Scale.z : m_ScaleZInterpolator.GetInterpolatedValue();
+                interpolatedScale.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.z : m_ScaleZInterpolator.GetInterpolatedValue();
             }
 
             // Position Apply
@@ -754,9 +754,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="posIn"></param> new position to move to.  Can be null
         /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
-        /// <param name="scaleIn"></param> new scale to scale to.  Can be null
+        /// <param name="scaleIn">new scale to scale to. Can be null</param>
+        /// <param name="shouldGhostsInterpolate">Should other clients interpolate this change or not. True by default</param>
+        /// new scale to scale to.  Can be null
         /// <exception cref="Exception"></exception>
-        public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null)
+        public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool shouldGhostsInterpolate = true)
         {
             if (!IsOwner)
             {
@@ -781,9 +783,10 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                transform.position = pos;
-                transform.rotation = rot;
-                transform.localScale = scale;
+                m_Transform.position = pos;
+                m_Transform.rotation = rot;
+                m_Transform.localScale = scale;
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
             }
         }
 
@@ -796,9 +799,10 @@ namespace Unity.Netcode.Components
             {
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
             }
-            transform.position = pos;
-            transform.rotation = rot;
-            transform.localScale = scale;
+            m_Transform.position = pos;
+            m_Transform.rotation = rot;
+            m_Transform.localScale = scale;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
         }
         #endregion
 
@@ -857,6 +861,8 @@ namespace Unity.Netcode.Components
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
+
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
         /// <summary>
@@ -871,16 +877,16 @@ namespace Unity.Netcode.Components
 
             var newRotationEuler = newRotation.eulerAngles;
             var stateToSend = m_LocalAuthoritativeNetworkState;
-            stateToSend.IsTeleporting = true;
+            stateToSend.IsTeleportingNextFrame = true;
             stateToSend.Position = newPosition;
             stateToSend.Rotation = newRotationEuler;
             stateToSend.Scale = newScale;
             ApplyInterpolatedNetworkStateToTransform(stateToSend, transform);
             // set teleport flag in state to signal to ghosts not to interpolate
-            m_LocalAuthoritativeNetworkState.IsTeleporting = true;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
             // check server side
             TryCommitValuesToServer(newPosition, newRotationEuler, newScale, NetworkManager.LocalTime.Time);
-            m_LocalAuthoritativeNetworkState.IsTeleporting = false;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
     }
 }
