@@ -466,12 +466,10 @@ namespace Unity.Netcode
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
                             var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
-#pragma warning disable CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                             using (tmpWriter)
                             {
                                 message.Serialize(tmpWriter);
                             }
-#pragma warning restore CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                         }
                         else
                         {

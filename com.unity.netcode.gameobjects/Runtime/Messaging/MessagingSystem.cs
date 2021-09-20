@@ -289,7 +289,6 @@ namespace Unity.Netcode
                 m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
             }
             var handler = m_MessageHandlers[header.MessageType];
-#pragma warning disable CS0728 // Warns that reader may be reassigned within the handler, but the handler does not reassign it.
             using (reader)
             {
                 // No user-land message handler exceptions should escape the receive loop.
@@ -306,7 +305,6 @@ namespace Unity.Netcode
                     Debug.LogException(e);
                 }
             }
-#pragma warning restore CS0728 // Warns that reader may be reassigned within the handler, but the handler does not reassign it.
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
                 m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
@@ -374,7 +372,6 @@ namespace Unity.Netcode
         {
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
             var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(MessageHeader), Allocator.Temp, maxSize - sizeof(MessageHeader));
-#pragma warning disable CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
             using (tmpSerializer)
             {
                 message.Serialize(tmpSerializer);
@@ -446,7 +443,6 @@ namespace Unity.Netcode
                         m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
                     }
                 }
-#pragma warning restore CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
 
                 return tmpSerializer.Length;
             }
