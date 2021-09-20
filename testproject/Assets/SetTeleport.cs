@@ -1,5 +1,4 @@
 using System;
-using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
@@ -9,7 +8,7 @@ public class SetTeleport : MonoBehaviour
     public void Set(Vector3 pos)
     {
         // GetComponent<NetworkTransform>().Teleport(pos, transform.rotation, transform.localScale);
-        GetComponent<NetworkTransform>().SetState(pos, transform.rotation, transform.localScale, shouldGhostsInterpolate: false);
+        GetComponent<NetworkTransform>().SetState(pos, transform.rotation, transform.localScale, false);
     }
 
     [CustomEditor(typeof(SetTeleport))]
