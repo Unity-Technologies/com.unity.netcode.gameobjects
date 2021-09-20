@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using Unity.Netcode.Components;
 using UnityEditor;
@@ -33,3 +34,4 @@ public class SetTeleport : MonoBehaviour
         }
     }
 }
+#endif
