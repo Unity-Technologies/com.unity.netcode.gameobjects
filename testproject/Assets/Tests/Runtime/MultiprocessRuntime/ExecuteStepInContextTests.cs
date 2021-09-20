@@ -165,7 +165,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                             sendNextResult = false;
                         }
 
-                        // if we exceeded our maximum count, then remove ourselves from the update loop
+                        // if we're finished sending our test count, then remove ourselves from the update loop
                         if (count >= maxValue)
                         {
                             NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
