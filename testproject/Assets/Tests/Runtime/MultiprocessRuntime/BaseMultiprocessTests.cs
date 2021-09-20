@@ -92,6 +92,30 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return true;
         }
 
+        public void WaitForConnectedCountToReach(int val)
+        {
+            while (NetworkManager.Singleton.ConnectedClients.Count < val)
+            {
+                yield return new WaitForSeconds(0.2f);
+                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
+
+                if (Time.realtimeSinceStartup > timeOutTime)
+                {
+                    if (!didSpawn)
+                    {
+                        MultiProcessLog($"Try spawning a new process and also figure out what happened to the original process {MultiprocessOrchestration.ActiveWorkerCount()}");
+                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        didSpawn = true;
+                        timeOutTime += TestCoordinator.MaxWaitTimeoutSec;
+                    }
+                    else
+                    {
+                        throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    }
+                }
+            }
+        }
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
