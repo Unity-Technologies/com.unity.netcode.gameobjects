@@ -778,7 +778,7 @@ namespace Unity.Netcode.Components
             {
                 if (!IsServer)
                 {
-                    SetStateServerRpc(pos, rot, scale);
+                    SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
                 }
             }
             else
@@ -786,12 +786,12 @@ namespace Unity.Netcode.Components
                 m_Transform.position = pos;
                 m_Transform.rotation = rot;
                 m_Transform.localScale = scale;
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldGhostsInterpolate;
             }
         }
 
         [ServerRpc]
-        private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale)
+        private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
             // server has received this RPC request to move change transform.  Give the server a chance to modify or
             //  even reject the move
@@ -802,7 +802,7 @@ namespace Unity.Netcode.Components
             m_Transform.position = pos;
             m_Transform.rotation = rot;
             m_Transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
         #endregion
 
