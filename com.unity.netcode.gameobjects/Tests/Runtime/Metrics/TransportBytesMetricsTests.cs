@@ -3,28 +3,34 @@ using System;
 using System.Collections;
 using System.IO;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class TransportBytesMetricsTests : SingleClientMetricTestBase
+    internal class TransportBytesMetricsTests : SingleClientMetricTestBase
     {
-        const long MessageOverhead = 9;
+        static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + FastBufferWriter.GetWriteSize<MessageHeader>();
 
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
         {
-            var messageName = Guid.NewGuid().ToString();
-            using var memoryStream = new MemoryStream();
-            using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write(messageName);
-
-            var observer = new TotalBytesObserver(ServerMetrics.Dispatcher, NetworkMetricTypes.TotalBytesSent);
-
-            Server.CustomMessagingManager.SendNamedMessage(messageName, Client.LocalClientId, memoryStream);
+            var messageName = Guid.NewGuid();
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
+            try
+            {
+                writer.WriteValueSafe(messageName);
+                
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, ref writer);
+            }
+            finally
+            {
+                writer.Dispose();
+            }
 
             var nbFrames = 0;
             while (!observer.Found || nbFrames < 10)
@@ -34,20 +40,27 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(messageName.Length + MessageOverhead, observer.Value);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
         }
 
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesReceived()
         {
-            var messageName = Guid.NewGuid().ToString();
-            using var memoryStream = new MemoryStream();
-            using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write(messageName);
-
+            var messageName = Guid.NewGuid();
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
             var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
+            try
+            {
+                writer.WriteValueSafe(messageName);
+                
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, ref writer);
+            }
+            finally
+            {
+                writer.Dispose();
+            }
 
-            Server.CustomMessagingManager.SendNamedMessage(messageName, Client.LocalClientId, memoryStream);
+
 
             var nbFrames = 0;
             while (!observer.Found || nbFrames < 10)
@@ -57,7 +70,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(messageName.Length + MessageOverhead, observer.Value);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
         }
 
         private class TotalBytesObserver : IMetricObserver

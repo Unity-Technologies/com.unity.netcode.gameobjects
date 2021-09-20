@@ -2,7 +2,7 @@ using System;
 
 namespace Unity.Netcode
 {
-    internal struct BufferSerializerReader : IBufferSerializerImplementation
+    internal struct BufferSerializerReader : IReaderWriter
     {
         private Ref<FastBufferReader> m_Reader;
 

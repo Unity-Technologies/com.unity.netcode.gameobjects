@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public FixedString32Bytes FixedString;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref FixedString);
         }
@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         public uint SomeInt;
         public bool SomeBool;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IBufferSerializerImplementation
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref SomeInt);
             serializer.SerializeValue(ref SomeBool);

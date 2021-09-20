@@ -372,7 +372,7 @@ namespace Unity.Netcode
             where TClientIdListType : IReadOnlyList<ulong>
         {
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
-            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, maxSize);
+            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(MessageHeader), Allocator.Temp, maxSize - sizeof(MessageHeader));
 #pragma warning disable CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
             using (tmpSerializer)
             {
@@ -403,7 +403,8 @@ namespace Unity.Netcode
                     {
                         ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
                         if (lastQueueItem.NetworkDelivery != delivery ||
-                            lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length)
+                            lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
+                            < tmpSerializer.Length + sizeof(MessageHeader))
                         {
                             sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                                 maxSize));
@@ -429,6 +430,10 @@ namespace Unity.Netcode
                             SenderId = clientId,
                             Timestamp = Time.realtimeSinceStartup
                         });
+                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                        {
+                            m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
+                        }
                         continue;
                     }
 

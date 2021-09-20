@@ -141,8 +141,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private const string k_NetworkManager_rpc_name_table = nameof(NetworkManager.__rpc_name_table);
 
         private const string k_NetworkBehaviour_rpc_exec_stage = nameof(NetworkBehaviour.__rpc_exec_stage);
-        private const string k_NetworkBehaviour_SendServerRpc = nameof(NetworkBehaviour.SendServerRpc);
-        private const string k_NetworkBehaviour_SendClientRpc = nameof(NetworkBehaviour.SendClientRpc);
+        private const string k_NetworkBehaviour_SendServerRpc = nameof(NetworkBehaviour.__sendServerRpc);
+        private const string k_NetworkBehaviour_SendClientRpc = nameof(NetworkBehaviour.__sendClientRpc);
         private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkBehaviour.NetworkManager);
         private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkBehaviour.OwnerClientId);
 

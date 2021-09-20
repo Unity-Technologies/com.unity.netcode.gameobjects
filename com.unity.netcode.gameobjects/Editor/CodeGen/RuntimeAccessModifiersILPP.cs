@@ -120,10 +120,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                if (methodDefinition.Name == nameof(NetworkBehaviour.SendServerRpc)
-                    || methodDefinition.Name == nameof(NetworkBehaviour.SendClientRpc))
+                if (methodDefinition.Name == nameof(NetworkBehaviour.__sendServerRpc)
+                    || methodDefinition.Name == nameof(NetworkBehaviour.__sendClientRpc))
                 {
-                    methodDefinition.IsPublic = true;
+                    methodDefinition.IsFamily = true;
                 }
             }
         }

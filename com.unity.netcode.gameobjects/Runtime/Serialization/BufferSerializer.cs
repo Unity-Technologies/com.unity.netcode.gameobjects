@@ -13,15 +13,15 @@ namespace Unity.Netcode
     /// BufferSerializer doesn't wrapp FastBufferReader or FastBufferWriter directly because it can't.
     /// ref structs can't implement interfaces, and in order to be able to have two different implementations with
     /// the same interface (which allows us to avoid an "if(IsReader)" on every call), the thing directly wrapping
-    /// the struct has to implement an interface. So IBufferSerializerImplementation exists as the interface,
+    /// the struct has to implement an interface. So IReaderWriter exists as the interface,
     /// which is implemented by a normal struct, while the ref struct wraps the normal one to enforce the two above
-    /// requirements. (Allowing direct access to the IBufferSerializerImplementation struct would allow dangerous
+    /// requirements. (Allowing direct access to the IReaderWriter struct would allow dangerous
     /// things to happen because the struct's lifetime could outlive the Reader/Writer's.)
     /// </summary>
-    /// <typeparam name="TImplementation">The implementation struct</typeparam>
-    public ref struct BufferSerializer<TImplementation> where TImplementation : IBufferSerializerImplementation
+    /// <typeparam name="TReaderWriter">The implementation struct</typeparam>
+    public ref struct BufferSerializer<TReaderWriter> where TReaderWriter : IReaderWriter
     {
-        private TImplementation m_Implementation;
+        private TReaderWriter m_Implementation;
 
         /// <summary>
         /// Check if the contained implementation is a reader
@@ -33,7 +33,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsWriter => m_Implementation.IsWriter;
 
-        public BufferSerializer(TImplementation implementation)
+        internal BufferSerializer(TReaderWriter implementation)
         {
             m_Implementation = implementation;
         }

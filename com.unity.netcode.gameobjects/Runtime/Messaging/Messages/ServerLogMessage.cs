@@ -3,7 +3,7 @@ namespace Unity.Netcode
     internal struct ServerLogMessage : INetworkMessage
     {
         public NetworkLog.LogType LogType;
-        // It'd be lovely to be able to replace this with FixedUnmanagedArray<char>...
+        // It'd be lovely to be able to replace this with FixedString or NativeArray...
         // But it's not really practical. On the sending side, the user is likely to want
         // to work with strings and would need to convert, and on the receiving side,
         // we'd have to convert it to a string to be able to pass it to the log system.
@@ -31,8 +31,10 @@ namespace Unity.Netcode
 
         public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
         {
-
-            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, messageSize);
+            var bytesReported = networkManager.LocalClientId == senderId
+                ? 0
+                : messageSize;
+            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, bytesReported);
 
             switch (LogType)
             {

@@ -4,13 +4,13 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class OwnershipChangeMetricsTests : SingleClientMetricTestBase
+    internal class OwnershipChangeMetricsTests : SingleClientMetricTestBase
     {
         private const string k_NewNetworkObjectName = "TestNetworkObjectToSpawn";
         private NetworkObject m_NewNetworkPrefab;
@@ -57,8 +57,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
-            Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(2, ownershipChangeSent.BytesCount);
+            AssertLocalAndRemoteMetricsSent(metricValues);
         }
 
         [UnityTest]
@@ -79,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var ownershipChangeReceived = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeReceived.NetworkId.NetworkId);
-            Assert.AreEqual(2, ownershipChangeReceived.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>(), ownershipChangeReceived.BytesCount);
         }
     }
 }

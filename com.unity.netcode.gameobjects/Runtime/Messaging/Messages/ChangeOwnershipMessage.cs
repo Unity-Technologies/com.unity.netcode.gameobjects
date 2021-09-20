@@ -47,7 +47,10 @@ namespace Unity.Netcode
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
-            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject.NetworkObjectId, networkObject.name, messageSize);
+            var bytesReported = networkManager.LocalClientId == senderId
+                ? 0
+                : messageSize;
+            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
         }
     }
 }

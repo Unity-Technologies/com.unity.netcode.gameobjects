@@ -811,8 +811,8 @@ namespace Unity.Netcode
                 clientData.NextDespawnIndex = 0;
             }
 
-            message.Spawns = new NativeArray<SnapshotDataMessage.SpawnData>(m_Snapshot.NumSpawns, Allocator.TempJob);
-            message.Despawns = new NativeArray<SnapshotDataMessage.DespawnData>(m_Snapshot.NumDespawns, Allocator.TempJob);
+            message.Spawns = new NativeList<SnapshotDataMessage.SpawnData>(m_Snapshot.NumSpawns, Allocator.TempJob);
+            message.Despawns = new NativeList<SnapshotDataMessage.DespawnData>(m_Snapshot.NumDespawns, Allocator.TempJob);
             var spawnUsage = 0;
 
             for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
@@ -831,7 +831,7 @@ namespace Unity.Netcode
                         break;
                     }
                     var sentSpawn = m_Snapshot.GetSpawnData(clientData, in m_Snapshot.Spawns[index], out var spawn);
-                    message.Spawns[j] = spawn;
+                    message.Spawns.Add(spawn);
 
                     m_Snapshot.Spawns[index].TimesWritten++;
                     clientData.SentSpawns.Add(sentSpawn);
@@ -864,7 +864,7 @@ namespace Unity.Netcode
                         break;
                     }
                     var sentDespawn = m_Snapshot.GetDespawnData(clientData, in m_Snapshot.Despawns[index], out var despawn);
-                    message.Despawns[j] = despawn;
+                    message.Despawns.Add(despawn);
                     m_Snapshot.Despawns[index].TimesWritten++;
                     clientData.SentSpawns.Add(sentDespawn);
                     despawnWritten++;
@@ -879,12 +879,12 @@ namespace Unity.Netcode
         /// <param name="message">The message to write the index to</param>
         private void WriteIndex(ref SnapshotDataMessage message)
         {
-            message.Entries = new NativeArray<SnapshotDataMessage.EntryData>(m_Snapshot.LastEntry, Allocator.TempJob);
+            message.Entries = new NativeList<SnapshotDataMessage.EntryData>(m_Snapshot.LastEntry, Allocator.TempJob);
             for (var i = 0; i < m_Snapshot.LastEntry; i++)
             {
                 var entryMeta = m_Snapshot.Entries[i];
                 var entry = entryMeta.Key;
-                message.Entries[i] = new SnapshotDataMessage.EntryData
+                message.Entries.Add(new SnapshotDataMessage.EntryData
                 {
                     NetworkObjectId = entry.NetworkObjectId,
                     BehaviourIndex = entry.BehaviourIndex,
@@ -892,7 +892,7 @@ namespace Unity.Netcode
                     TickWritten = entry.TickWritten,
                     Position = entryMeta.Position,
                     Length = entryMeta.Length
-                };
+                });
             }
         }
 
