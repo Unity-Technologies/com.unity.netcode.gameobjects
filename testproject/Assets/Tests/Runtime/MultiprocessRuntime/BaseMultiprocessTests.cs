@@ -97,6 +97,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening);
             var startTime = Time.time;
+            bool didSpawn = false;
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -108,6 +109,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    didSpawn = true;
                 }
             }
             else
@@ -119,10 +121,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
+                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} {MultiprocessOrchestration.ActiveWorkerCount()}");
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    if (!didSpawn)
+                    {
+                        MultiProcessLog($"Try spawning a new process and also figure out what happened to the original process {MultiprocessOrchestration.ActiveWorkerCount()}");
+                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        didSpawn = true;
+                        timeOutTime += TestCoordinator.MaxWaitTimeoutSec;
+                    }
+                    else
+                    {
+                        throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    }
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
