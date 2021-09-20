@@ -94,7 +94,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public IEnumerator WaitForConnectedCountToReach(int val)
         {
-            
+            MultiProcessLog($"Wait For Connected Count to Reach {val}, it is currently {NetworkManager.Singleton.ConnectedClients.Count}");
             while (NetworkManager.Singleton.ConnectedClients.Count < val)
             {
                 yield return new WaitForSeconds(0.2f);
@@ -103,7 +103,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {val}, failing");
                 }
             }
             
@@ -128,7 +128,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     expectedVal++;
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    WaitForConnectedCountToReach(expectedVal);
+                    yield return WaitForConnectedCountToReach(expectedVal);
                     didSpawn = true;
                 }
             }

@@ -25,10 +25,8 @@ public class MultiprocessOrchestration
             BaseMultiprocessTests.MultiProcessLog($"PathToLogFile {path}");
             string tmpPath = Path.GetTempPath();
             BaseMultiprocessTests.MultiProcessLog($"tmpPath {tmpPath}");
-            using (var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt")))
-            {
-                outputFile.WriteLine(path);
-            }
+            using var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt"));
+            outputFile.WriteLine(path);
         }
 
         BaseMultiprocessTests.MultiProcessLog($"The end");

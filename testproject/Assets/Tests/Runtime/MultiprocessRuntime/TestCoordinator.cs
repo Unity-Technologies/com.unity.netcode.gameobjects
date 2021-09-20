@@ -58,7 +58,7 @@ public class TestCoordinator : NetworkBehaviour
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
         }
-
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
         ExecuteStepInContext.InitializeAllSteps();
     }
 
@@ -102,7 +102,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        
     }
 
     public void OnDisable()
