@@ -92,28 +92,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return true;
         }
 
-        public void WaitForConnectedCountToReach(int val)
+        public IEnumerator WaitForConnectedCountToReach(int val)
         {
+            
             while (NetworkManager.Singleton.ConnectedClients.Count < val)
             {
                 yield return new WaitForSeconds(0.2f);
-                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
+                var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
+                MultiProcessLog($"Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    if (!didSpawn)
-                    {
-                        MultiProcessLog($"Try spawning a new process and also figure out what happened to the original process {MultiprocessOrchestration.ActiveWorkerCount()}");
-                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                        didSpawn = true;
-                        timeOutTime += TestCoordinator.MaxWaitTimeoutSec;
-                    }
-                    else
-                    {
-                        throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
-                    }
+                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
+            
         }
 
         [UnitySetUp]
@@ -129,10 +122,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (MultiprocessOrchestration.ActiveWorkerCount() < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
+                int expectedVal = MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
+                    expectedVal++;
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    WaitForConnectedCountToReach(expectedVal);
                     didSpawn = true;
                 }
             }
