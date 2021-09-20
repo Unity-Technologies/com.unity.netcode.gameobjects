@@ -18,12 +18,20 @@ public class MultiprocessOrchestration
 
     static MultiprocessOrchestration()
     {
+        BaseMultiprocessTests.MultiProcessLog("Class initialized for MultiprocessOrchestration");
         string path = PathToLogFile();
-        string tmpPath = Path.GetTempPath();
-        using var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt"));
-        outputFile.WriteLine(path);
-        using var outputFile2 = new StreamWriter("WriteLines.txt");
-        outputFile2.WriteLine(path);
+        if (path != null)
+        {
+            BaseMultiprocessTests.MultiProcessLog($"PathToLogFile {path}");
+            string tmpPath = Path.GetTempPath();
+            BaseMultiprocessTests.MultiProcessLog($"tmpPath {tmpPath}");
+            using (var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt")))
+            {
+                outputFile.WriteLine(path);
+            }
+        }
+
+        BaseMultiprocessTests.MultiProcessLog($"The end");
     }
 
     /// <summary>
@@ -40,7 +48,7 @@ public class MultiprocessOrchestration
         string[] allArgs = Environment.GetCommandLineArgs();
         foreach (var arg in allArgs)
         {
-            if (arg.EndsWith("UnityLog.txt"))
+            if (arg.Contains("UnityLog.txt"))
             {
                 return arg;
             }
@@ -134,16 +142,14 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
-
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process with log {logPath}, current process count: {s_Processes.Count}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -180,6 +186,14 @@ public class MultiprocessOrchestration
             }
         }
 
-        s_Processes.Clear();
+        BaseMultiprocessTests.MultiProcessLog($"Double check that all processes are shut down");
+        foreach (var process in s_Processes)
+        {
+            BaseMultiprocessTests.MultiProcessLog($"Checking process {process.Id} with HasExited: {process.HasExited}");
+            if (!process.HasExited)
+            {
+                BaseMultiprocessTests.MultiProcessLog($" {process.Id} has not exited ");
+            }
+        }
     }
 }

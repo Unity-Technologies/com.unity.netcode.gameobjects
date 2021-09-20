@@ -121,7 +121,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
-                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} {MultiprocessOrchestration.ActiveWorkerCount()}");
+                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
