@@ -68,7 +68,20 @@ namespace Unity.Netcode
                 },
                 RpcData = writer
             };
+
+            // I would love to remove this hack but it seems that we have behaviour that requires it :/ especially in
+            // testing. It seems very broken that we need to be able to send data to ourself.
+            if (IsServer && NetworkBehaviourId == NetworkManager.ServerClientId)
+            {
+                var tempBuffer = new FastBufferReader(ref writer, Allocator.Temp);
+                message.Handle(ref tempBuffer, NetworkManager, NetworkBehaviourId);
+                tempBuffer.Dispose();
+
+                return;
+            }
+
             var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
