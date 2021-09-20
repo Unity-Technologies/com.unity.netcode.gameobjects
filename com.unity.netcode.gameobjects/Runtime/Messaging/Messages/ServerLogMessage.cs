@@ -11,20 +11,20 @@ namespace Unity.Netcode
         public string Message;
 
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(LogType);
-            BytePacker.WriteValuePacked(ref writer, Message);
+            BytePacker.WriteValuePacked(writer, Message);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (networkManager.IsServer && networkManager.NetworkConfig.EnableNetworkLogs)
             {
                 var message = new ServerLogMessage();
                 reader.ReadValueSafe(out message.LogType);
-                ByteUnpacker.ReadValuePacked(ref reader, out message.Message);
+                ByteUnpacker.ReadValuePacked(reader, out message.Message);
                 message.Handle(context.SenderId, networkManager, reader.Length);
             }
         }

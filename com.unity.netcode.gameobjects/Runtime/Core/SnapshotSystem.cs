@@ -409,7 +409,7 @@ namespace Unity.Netcode
                                     // todo: consider refactoring out in its own function to accomodate
                                     // other ways to (de)serialize
                                     // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
-                                    networkVariable.ReadDelta(ref reader, false);
+                                    networkVariable.ReadDelta(reader, false);
                                 }
 #pragma warning restore CS0728 // Warns that reader may be reassigned within ReadDelta, but ReadDelta does not reassign it.
                             }
@@ -944,7 +944,7 @@ namespace Unity.Netcode
 #pragma warning disable CS0728 // Warns that varBuffer may be reassigned within ReadDelta, but ReadDelta does not reassign it.
             using (varBuffer)
             {
-                networkVariable.WriteDelta(ref varBuffer);
+                networkVariable.WriteDelta(varBuffer);
                 if (varBuffer.Length > snapshot.Entries[index].Length)
                 {
                     // allocate this Entry's buffer

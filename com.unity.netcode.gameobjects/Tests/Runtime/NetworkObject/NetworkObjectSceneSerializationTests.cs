@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
                         // Serialize the invalid NetworkObject
                         var sceneObject = networkObject.GetMessageSceneObject(0);
                         var prePosition = writer.Position;
-                        sceneObject.Serialize(ref writer);
+                        sceneObject.Serialize(writer);
 
                         Debug.Log(
                             $"Invalid {nameof(NetworkObject)} Size {writer.Position - prePosition}");
@@ -106,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
 
                         // Serialize the valid NetworkObject
                         var sceneObject = networkObject.GetMessageSceneObject(0);
-                        sceneObject.Serialize(ref writer);
+                        sceneObject.Serialize(writer);
 
                         if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.ContainsKey(
                             networkObject.GlobalObjectIdHash))
@@ -124,7 +124,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 var totalBufferSize = writer.Position;
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
 
@@ -153,9 +153,9 @@ namespace Unity.Netcode.RuntimeTests
                         reader.ReadValueSafe(out int handle);
                         NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(handle);
                         var sceneObject = new NetworkObject.SceneObject();
-                        sceneObject.Deserialize(ref reader);
+                        sceneObject.Deserialize(reader);
 
-                        var deserializedNetworkObject = NetworkObject.AddSceneObject(sceneObject, ref reader,
+                        var deserializedNetworkObject = NetworkObject.AddSceneObject(sceneObject, reader,
                             NetworkManagerHelper.NetworkManagerObject);
                         if (deserializedNetworkObject != null)
                         {

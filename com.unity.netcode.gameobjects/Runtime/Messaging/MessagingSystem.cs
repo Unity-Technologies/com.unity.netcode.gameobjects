@@ -39,7 +39,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(ref FastBufferReader reader, NetworkContext context);
+        internal delegate void MessageHandler(FastBufferReader reader, in NetworkContext context);
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
@@ -179,14 +179,14 @@ namespace Unity.Netcode
             if (method == null)
             {
                 throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
             }
 
             var asDelegate = Delegate.CreateDelegate(typeof(MessageHandler), method, false);
             if (asDelegate == null)
             {
                 throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(ref FastBufferReader reader, NetworkContext context)");
+                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
             }
 
             m_MessageHandlers[m_HighMessageType] = (MessageHandler)asDelegate;
@@ -212,7 +212,7 @@ namespace Unity.Netcode
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
+                        m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length - sizeof(BatchHeader));
                     }
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
@@ -223,6 +223,7 @@ namespace Unity.Netcode
                             return;
                         }
                         batchReader.ReadValue(out MessageHeader messageHeader);
+                        
                         if (!batchReader.TryBeginRead(messageHeader.MessageSize))
                         {
                             NetworkLog.LogWarning("Received a message that claimed a size larger than the packet, ending early!");
@@ -242,7 +243,7 @@ namespace Unity.Netcode
                     }
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
+                        m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length - sizeof(BatchHeader));
                     }
                 }
             }
@@ -261,7 +262,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void HandleMessage(in MessageHeader header, ref FastBufferReader reader, ulong senderId, float timestamp)
+        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp)
         {
             if (header.MessageType >= m_HighMessageType)
             {
@@ -298,7 +299,7 @@ namespace Unity.Netcode
                 // for some dynamic-length value.
                 try
                 {
-                    handler.Invoke(ref reader, context);
+                    handler.Invoke(reader, context);
                 }
                 catch (Exception e)
                 {
@@ -318,7 +319,7 @@ namespace Unity.Netcode
             {
                 // Avoid copies...
                 ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                HandleMessage(item.Header, ref item.Reader, item.SenderId, item.Timestamp);
+                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
             }
 
             m_IncomingMessageQueue.Clear();
@@ -376,7 +377,7 @@ namespace Unity.Netcode
 #pragma warning disable CS0728 // Warns that tmpSerializer may be reassigned within Serialize, but Serialize does not reassign it.
             using (tmpSerializer)
             {
-                message.Serialize(ref tmpSerializer);
+                message.Serialize(tmpSerializer);
 
                 for (var i = 0; i < clientIds.Count; ++i)
                 {
@@ -426,7 +427,7 @@ namespace Unity.Netcode
                         m_IncomingMessageQueue.Add(new ReceiveQueueItem
                         {
                             Header = header,
-                            Reader = new FastBufferReader(ref tmpSerializer, Allocator.TempJob),
+                            Reader = new FastBufferReader(tmpSerializer, Allocator.TempJob),
                             SenderId = clientId,
                             Timestamp = Time.realtimeSinceStartup
                         });
@@ -529,13 +530,13 @@ namespace Unity.Netcode
                     queueItem.Writer.Seek(0);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
-                    queueItem.Writer.AllowedWriteMark = 2;
+                    queueItem.Writer.Handle->AllowedWriteMark = 2;
 #endif
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
 
                     try
                     {
-                        m_MessageSender.Send(clientId, queueItem.NetworkDelivery, ref queueItem.Writer);
+                        m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
                     }
                     finally
                     {

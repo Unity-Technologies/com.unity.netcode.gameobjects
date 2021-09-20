@@ -27,14 +27,14 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
                     messageName,
                     FirstClient.LocalClientId,
-                    ref writer);
+                    writer);
             }
 
             ulong receivedMessageSender = 0;
             var receivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     receivedMessageSender = sender;
 
@@ -59,14 +59,14 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
                     messageName,
                     new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
-                    ref writer);
+                    writer);
             }
 
             ulong firstReceivedMessageSender = 0;
             var firstReceivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     firstReceivedMessageSender = sender;
 
@@ -77,7 +77,7 @@ namespace Unity.Netcode.RuntimeTests
             var secondReceivedMessageContent = new Guid();
             SecondClient.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     secondReceivedMessageSender = sender;
 

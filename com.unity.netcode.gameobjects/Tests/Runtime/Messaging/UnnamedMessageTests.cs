@@ -25,13 +25,13 @@ namespace Unity.Netcode.RuntimeTests
                 writer.WriteValueSafe(messageContent);
                 m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(
                     FirstClient.LocalClientId,
-                    ref writer);
+                    writer);
             }
 
             ulong receivedMessageSender = 0;
             var receivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     receivedMessageSender = sender;
 
@@ -54,13 +54,13 @@ namespace Unity.Netcode.RuntimeTests
                 writer.WriteValueSafe(messageContent);
                 m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(
                     new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
-                    ref writer);
+                    writer);
             }
 
             ulong firstReceivedMessageSender = 0;
             var firstReceivedMessageContent = new Guid();
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     firstReceivedMessageSender = sender;
 
@@ -70,7 +70,7 @@ namespace Unity.Netcode.RuntimeTests
             ulong secondReceivedMessageSender = 0;
             var secondReceivedMessageContent = new Guid();
             SecondClient.CustomMessagingManager.OnUnnamedMessage +=
-                (ulong sender, ref FastBufferReader reader) =>
+                (ulong sender, FastBufferReader reader) =>
                 {
                     secondReceivedMessageSender = sender;
 

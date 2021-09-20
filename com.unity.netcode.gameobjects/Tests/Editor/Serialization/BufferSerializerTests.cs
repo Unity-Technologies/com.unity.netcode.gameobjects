@@ -15,7 +15,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 Assert.IsFalse(serializer.IsReader);
                 Assert.IsTrue(serializer.IsWriter);
             }
@@ -24,7 +24,7 @@ namespace Unity.Netcode.EditorTests
             using (reader)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                    new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                 Assert.IsTrue(serializer.IsReader);
                 Assert.IsFalse(serializer.IsWriter);
             }
@@ -36,12 +36,9 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
-                ref FastBufferWriter underlyingWriter = ref serializer.GetFastBufferWriter();
-                fixed (FastBufferWriter* ptr = &underlyingWriter)
-                {
-                    Assert.IsTrue(ptr == &writer);
-                }
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+                FastBufferWriter underlyingWriter = serializer.GetFastBufferWriter();
+                Assert.IsTrue(underlyingWriter.Handle == writer.Handle);
                 // Can't use Assert.Throws() because ref structs can't be passed into lambdas.
                 try
                 {
@@ -58,12 +55,9 @@ namespace Unity.Netcode.EditorTests
             using (reader)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
-                ref FastBufferReader underlyingReader = ref serializer.GetFastBufferReader();
-                fixed (FastBufferReader* ptr = &underlyingReader)
-                {
-                    Assert.IsTrue(ptr == &reader);
-                }
+                    new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                FastBufferReader underlyingReader = serializer.GetFastBufferReader();
+                Assert.IsTrue(underlyingReader.Handle == reader.Handle);
                 // Can't use Assert.Throws() because ref structs can't be passed into lambdas.
                 try
                 {
@@ -86,14 +80,14 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 serializer.SerializeValue(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     int readValue = 0;
                     deserializer.SerializeValue(ref readValue);
 
@@ -111,14 +105,14 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 serializer.SerializeValue(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     byte readValue = 0;
                     deserializer.SerializeValue(ref readValue);
 
@@ -136,14 +130,14 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 serializer.SerializeValue(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     int[] readValue = null;
                     deserializer.SerializeValue(ref readValue);
 
@@ -160,14 +154,14 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 serializer.SerializeValue(ref value, oneBytChars);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     string readValue = null;
                     deserializer.SerializeValue(ref readValue, oneBytChars);
 
@@ -187,7 +181,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 try
                 {
                     serializer.SerializeValuePreChecked(ref value);
@@ -200,11 +194,11 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(value)));
                 serializer.SerializeValuePreChecked(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     int readValue = 0;
                     try
                     {
@@ -232,7 +226,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 try
                 {
                     serializer.SerializeValuePreChecked(ref value);
@@ -245,11 +239,11 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(value)));
                 serializer.SerializeValuePreChecked(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     byte readValue = 0;
                     try
                     {
@@ -277,7 +271,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 try
                 {
                     serializer.SerializeValuePreChecked(ref value);
@@ -290,11 +284,11 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(value)));
                 serializer.SerializeValuePreChecked(ref value);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     int[] readValue = null;
                     try
                     {
@@ -321,7 +315,7 @@ namespace Unity.Netcode.EditorTests
             using (writer)
             {
                 var serializer =
-                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref writer));
+                    new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 try
                 {
                     serializer.SerializeValuePreChecked(ref value, oneBytChars);
@@ -334,11 +328,11 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(serializer.PreCheck(FastBufferWriter.GetWriteSize(value, oneBytChars)));
                 serializer.SerializeValuePreChecked(ref value, oneBytChars);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     var deserializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref reader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                     string readValue = null;
                     try
                     {
@@ -354,38 +348,6 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(value, readValue);
                 }
-            }
-        }
-
-        private delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
-            NetworkObject networkObject);
-        private void RunGameObjectTest(GameObjectTestDelegate testCode)
-        {
-            var obj = new GameObject("Object");
-            var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
-            var networkObject = obj.AddComponent<NetworkObject>();
-            // Create networkManager component
-            var networkManager = obj.AddComponent<NetworkManager>();
-            networkManager.SetSingleton();
-            networkObject.NetworkManagerOwner = networkManager;
-
-            // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set transport
-                NetworkTransport = obj.AddComponent<DummyTransport>()
-            };
-
-            networkManager.StartServer();
-
-            try
-            {
-                testCode(obj, networkBehaviour, networkObject);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(obj);
-                networkManager.Shutdown();
             }
         }
     }
