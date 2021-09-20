@@ -131,7 +131,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public virtual void UnityTearDown()
         {
-            
             MultiProcessLog($"Stop all workers after each test so we can start fresh ones.");
             MultiprocessOrchestration.ShutdownAllProcesses();
         }
