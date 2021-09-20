@@ -584,7 +584,7 @@ namespace Unity.Netcode.Components
 
         private void AddInterpolatedState(NetworkTransformState newState)
         {
-            var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
+            var sentTime = new NetworkTime(NetworkManager.ServerTime.TickRate, newState.SentTime);
 
             if (newState.HasPositionX)
             {
@@ -637,7 +637,7 @@ namespace Unity.Netcode.Components
 
             AddInterpolatedState(newState);
 
-            if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+            if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
                 Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
@@ -809,7 +809,7 @@ namespace Unity.Netcode.Components
             }
 
             // apply interpolated value
-            if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)
+            if (NetworkManager.IsConnectedClient || NetworkManager.IsListening)
             {
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
@@ -820,7 +820,7 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-                    if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+                    if (NetworkManager.LogLevel == LogLevel.Developer)
                     {
                         var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
