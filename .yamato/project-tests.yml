@@ -76,6 +76,8 @@ multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
   after:
     - {% if platform.name == "win" %}dir %USERPROFILE%\.multiprocess\logfile*{% endif %}{% if platform.name != "win" %}ls $HOME/.multiprocess/logfile*{% endif %}
     - {% if platform.name == "win" %}copy %USERPROFILE%\.multiprocess\logfile* .{% endif %}{% if platform.name != "win" %}cp $HOME/.multiprocess/logfile* .{% endif %}
+    - {% if platform.name == "win" %}dir %TMP%\*.txt{% endif %}{% if platform.name != "win" %}ls $TMP/*.txt{% endif %}
+    - {% if platform.name == "win" %}dir *.txt{% endif %}{% if platform.name != "win" %}ls *.txt{% endif %}
   artifacts:
     logs:
       paths:

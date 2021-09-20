@@ -16,6 +16,16 @@ public class MultiprocessOrchestration
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
 
+    static MultiprocessOrchestration()
+    {
+        string path = PathToLogFile();
+        string tmpPath = Path.GetTempPath();
+        using var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt"));
+        outputFile.WriteLine(path);
+        using var outputFile2 = new StreamWriter("WriteLines.txt");
+        outputFile2.WriteLine(path);
+    }
+
     /// <summary>
     /// This is to detect if we should ignore Multiprocess tests
     /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
@@ -23,6 +33,19 @@ public class MultiprocessOrchestration
     public static bool ShouldIgnoreUTRTests()
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
+
+    public static string PathToLogFile()
+    {
+        string[] allArgs = Environment.GetCommandLineArgs();
+        foreach (var arg in allArgs)
+        {
+            if (arg.EndsWith("UnityLog.txt"))
+            {
+                return arg;
+            }
+        }
+        return null;
     }
 
     public static int ActiveWorkerCount()
