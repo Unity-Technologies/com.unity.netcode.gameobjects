@@ -23,7 +23,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 60;
+    public const float MaxWaitTimeoutSec = 20;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -58,8 +58,6 @@ public class TestCoordinator : NetworkBehaviour
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
         }
-
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
         ExecuteStepInContext.InitializeAllSteps();
     }
@@ -100,6 +98,11 @@ public class TestCoordinator : NetworkBehaviour
     public void TestRunTeardown()
     {
         m_TestResultsLocal.Clear();
+    }
+
+    public void OnEnable()
+    {
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
     public void OnDisable()
@@ -319,14 +322,12 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     private ulong[] m_TargetClient = new ulong[1] { 0 };
-    private ClientRpcParams m_ClientParams = new ClientRpcParams();
 
     public delegate void KeepServerFromTimingOutDelegateHandler();
 
     public KeepServerFromTimingOutDelegateHandler KeepServerFromTimingOut;
 
     [ServerRpc(RequireOwnership = false)]
-    //public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
@@ -346,8 +347,9 @@ public class TestCoordinator : NetworkBehaviour
 
         // Now send the results received verification
         m_TargetClient[0] = senderId;
-        m_ClientParams.Send.TargetClientIds = m_TargetClient;
-        ServerReceivedResultsResponseClientRpc(result, m_ClientParams);
+        var clientParams = new ClientRpcParams();
+        clientParams.Send.TargetClientIds = m_TargetClient;
+        ServerReceivedResultsResponseClientRpc(result, clientParams);
     }
 
     public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);
