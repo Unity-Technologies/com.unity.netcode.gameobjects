@@ -112,6 +112,20 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
 
+            // if rigidbody is present but network rigidbody is not present
+            var go = ((NetworkTransform)target).gameObject;
+            if (go.TryGetComponent<Rigidbody>(out _) && go.TryGetComponent<NetworkRigidbody>(out _) == false)
+            {
+                EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +
+                    "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
+            }
+
+            if (go.TryGetComponent<Rigidbody2D>(out _) && go.TryGetComponent<NetworkRigidbody2D>(out _) == false)
+            {
+                EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
+                    "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
+            }
+
             serializedObject.ApplyModifiedProperties();
         }
     }
