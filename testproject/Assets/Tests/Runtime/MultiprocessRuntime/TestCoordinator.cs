@@ -21,9 +21,9 @@ using Unity.Netcode.MultiprocessRuntimeTests;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const int PerTestTimeoutSec = 4 * 60; // seconds
+    public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 30;
+    public const float MaxWaitTimeoutSec = 60;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -58,7 +58,9 @@ public class TestCoordinator : NetworkBehaviour
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
         }
+
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+
         ExecuteStepInContext.InitializeAllSteps();
     }
 
@@ -98,11 +100,6 @@ public class TestCoordinator : NetworkBehaviour
     public void TestRunTeardown()
     {
         m_TestResultsLocal.Clear();
-    }
-
-    public void OnEnable()
-    {
-        
     }
 
     public void OnDisable()
@@ -322,12 +319,14 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     private ulong[] m_TargetClient = new ulong[1] { 0 };
+    private ClientRpcParams m_ClientParams = new ClientRpcParams();
 
     public delegate void KeepServerFromTimingOutDelegateHandler();
 
     public KeepServerFromTimingOutDelegateHandler KeepServerFromTimingOut;
 
     [ServerRpc(RequireOwnership = false)]
+    //public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
@@ -347,9 +346,8 @@ public class TestCoordinator : NetworkBehaviour
 
         // Now send the results received verification
         m_TargetClient[0] = senderId;
-        var clientParams = new ClientRpcParams();
-        clientParams.Send.TargetClientIds = m_TargetClient;
-        ServerReceivedResultsResponseClientRpc(result, clientParams);
+        m_ClientParams.Send.TargetClientIds = m_TargetClient;
+        ServerReceivedResultsResponseClientRpc(result, m_ClientParams);
     }
 
     public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);

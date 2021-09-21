@@ -16,22 +16,6 @@ public class MultiprocessOrchestration
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
 
-    static MultiprocessOrchestration()
-    {
-        BaseMultiprocessTests.MultiProcessLog("Class initialized for MultiprocessOrchestration");
-        string path = PathToLogFile();
-        if (path != null)
-        {
-            BaseMultiprocessTests.MultiProcessLog($"PathToLogFile {path}");
-            string tmpPath = Path.GetTempPath();
-            BaseMultiprocessTests.MultiProcessLog($"tmpPath {tmpPath}");
-            using var outputFile = new StreamWriter(Path.Combine(tmpPath, "WriteLines.txt"));
-            outputFile.WriteLine(path);
-        }
-
-        BaseMultiprocessTests.MultiProcessLog($"The end");
-    }
-
     /// <summary>
     /// This is to detect if we should ignore Multiprocess tests
     /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
@@ -39,19 +23,6 @@ public class MultiprocessOrchestration
     public static bool ShouldIgnoreUTRTests()
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
-    }
-
-    public static string PathToLogFile()
-    {
-        string[] allArgs = Environment.GetCommandLineArgs();
-        foreach (var arg in allArgs)
-        {
-            if (arg.Contains("UnityLog.txt"))
-            {
-                return arg;
-            }
-        }
-        return null;
     }
 
     public static int ActiveWorkerCount()
@@ -140,14 +111,16 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
+
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
+
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process with log {logPath}, current process count: {s_Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -184,14 +157,6 @@ public class MultiprocessOrchestration
             }
         }
 
-        BaseMultiprocessTests.MultiProcessLog($"Double check that all processes are shut down");
-        foreach (var process in s_Processes)
-        {
-            BaseMultiprocessTests.MultiProcessLog($"Checking process {process.Id} with HasExited: {process.HasExited}");
-            if (!process.HasExited)
-            {
-                BaseMultiprocessTests.MultiProcessLog($" {process.Id} has not exited ");
-            }
-        }
+        s_Processes.Clear();
     }
 }

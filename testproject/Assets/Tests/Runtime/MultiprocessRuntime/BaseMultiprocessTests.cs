@@ -92,29 +92,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return true;
         }
 
-        public IEnumerator WaitForConnectedCountToReach(int val)
-        {
-            MultiProcessLog($"Wait For Connected Count to Reach {val}, it is currently {NetworkManager.Singleton.ConnectedClients.Count}");
-            while (NetworkManager.Singleton.ConnectedClients.Count < val)
-            {
-                yield return new WaitForSeconds(0.2f);
-                var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
-                MultiProcessLog($"Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
-
-                if (Time.realtimeSinceStartup > timeOutTime)
-                {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {val}, failing");
-                }
-            }
-            
-        }
-
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening);
             var startTime = Time.time;
-            bool didSpawn = false;
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -122,14 +104,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (MultiprocessOrchestration.ActiveWorkerCount() < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
-                int expectedVal = MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
-                    expectedVal++;
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    yield return WaitForConnectedCountToReach(expectedVal);
-                    didSpawn = true;
                 }
             }
             else
@@ -141,31 +119,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
-                MultiProcessLog($"DidSpawn? {didSpawn} Waited 0.2f seconds, realTimeSinceStartup: {Time.realtimeSinceStartup} timeoutTime: {timeOutTime} ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} ConnectedClientCount: {NetworkManager.Singleton.ConnectedClients.Count}");
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    if (!didSpawn)
-                    {
-                        MultiProcessLog($"Try spawning a new process and also figure out what happened to the original process {MultiprocessOrchestration.ActiveWorkerCount()}");
-                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                        didSpawn = true;
-                        timeOutTime += TestCoordinator.MaxWaitTimeoutSec;
-                    }
-                    else
-                    {
-                        throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
-                    }
+                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
         }
 
-        [UnityTearDown]
-        public virtual void UnityTearDown()
-        {
-            MultiProcessLog("Running UnityTearDown");
-        }
 
         [TearDown]
         public virtual void Teardown()

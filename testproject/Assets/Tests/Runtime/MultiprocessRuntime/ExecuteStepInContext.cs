@@ -55,8 +55,8 @@ public class ExecuteStepInContext : CustomYieldInstruction
     private bool m_WaitMultipleUpdates;
     private bool m_IgnoreTimeoutException;
 
-    private float m_Timeout;
-    private bool isTimingOut => m_Timeout < Time.time;
+    private float m_StartTime;
+    private bool isTimingOut => m_StartTime < Time.time;
     private bool shouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
     public static bool IsRegistering;
@@ -163,7 +163,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool ignoreTimeoutException = false, byte[] paramToPass = default,
         NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
     {
-        m_Timeout = Time.time + TestCoordinator.MaxWaitTimeoutSec;
+        m_StartTime = Time.time + TestCoordinator.MaxWaitTimeoutSec;
         m_IsRegistering = IsRegistering;
         m_ActionContext = actionContext;
         m_StepToExecute = stepToExecute;
@@ -173,8 +173,8 @@ public class ExecuteStepInContext : CustomYieldInstruction
         {
             TestCoordinator.Instance.KeepServerFromTimingOut = () =>
             {
-                Debug.Log($"Server received result and extending timeout {m_Timeout} to {(m_Timeout + 0.2f)}.  Time since startup: {Time.time}");
-                m_Timeout += 0.2f; // Each time we receive a result, bump the timeout period a little bit
+                Debug.Log($"Server received result and extending timeout {m_StartTime} to {(m_StartTime + 0.2f)}.  Time since startup: {Time.time}");
+                m_StartTime += 0.2f; // Each time we receive a result, bump the timeout period a little bit
             };
         }
 
