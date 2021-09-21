@@ -98,12 +98,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening);
             var startTime = Time.time;
 
-            MultiProcessLog($"activeWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} connected client count: {NetworkManager.Singleton.ConnectedClients.Count}");
-            if (MultiprocessOrchestration.ActiveWorkerCount() != NetworkManager.Singleton.ConnectedClients.Count)
-            {
-                Debug.LogWarning(" - MPLOG - ActiveWorkerCount and ConnectedClientCount are not the same");
-            }
-
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
@@ -112,8 +106,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
-                    int beforeStartingWorkerNode = NetworkManager.Singleton.ConnectedClients.Count;
-                    MultiProcessLog($"Spawning testplayer {i} out of {numProcessesToCreate} with active count: {MultiprocessOrchestration.ActiveWorkerCount()} since connected client count: {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount}");
+                    MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                 }
             }
