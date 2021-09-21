@@ -109,7 +109,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    yield return new WaitForSeconds(10f);
+                    yield return new WaitForSeconds(1.0f);
                     MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
