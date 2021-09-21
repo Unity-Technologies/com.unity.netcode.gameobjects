@@ -4,12 +4,12 @@ namespace Unity.Netcode
     {
         public NetworkObject.SceneObject ObjectInfo;
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
-            ObjectInfo.Serialize(ref writer);
+            ObjectInfo.Serialize(writer);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
@@ -17,13 +17,13 @@ namespace Unity.Netcode
                 return;
             }
             var message = new CreateObjectMessage();
-            message.ObjectInfo.Deserialize(ref reader);
-            message.Handle(context.SenderId, ref reader, networkManager);
+            message.ObjectInfo.Deserialize(reader);
+            message.Handle(context.SenderId, reader, networkManager);
         }
 
-        public void Handle(ulong senderId, ref FastBufferReader reader, NetworkManager networkManager)
+        public void Handle(ulong senderId, FastBufferReader reader, NetworkManager networkManager)
         {
-            var networkObject = NetworkObject.AddSceneObject(ObjectInfo, ref reader, networkManager);
+            var networkObject = NetworkObject.AddSceneObject(ObjectInfo, reader, networkManager);
             var bytesReported = networkManager.LocalClientId == senderId
                 ? 0
                 : reader.Length;

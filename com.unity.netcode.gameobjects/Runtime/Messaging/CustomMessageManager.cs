@@ -21,14 +21,14 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The clientId that sent the message</param>
         /// <param name="reader">The stream containing the message data</param>
-        public delegate void UnnamedMessageDelegate(ulong clientId, ref FastBufferReader reader);
+        public delegate void UnnamedMessageDelegate(ulong clientId, FastBufferReader reader);
 
         /// <summary>
         /// Event invoked when unnamed messages arrive
         /// </summary>
         public event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal void InvokeUnnamedMessage(ulong clientId, ref FastBufferReader reader)
+        internal void InvokeUnnamedMessage(ulong clientId, FastBufferReader reader)
         {
             if (OnUnnamedMessage != null)
             {
@@ -37,7 +37,7 @@ namespace Unity.Netcode
                 foreach (var handler in delegates)
                 {
                     reader.Seek(pos);
-                    ((UnnamedMessageDelegate)handler).Invoke(clientId, ref reader);
+                    ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
             var bytesReported = m_NetworkManager.LocalClientId == clientId
@@ -52,7 +52,7 @@ namespace Unity.Netcode
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="messageBuffer">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendUnnamedMessage(List<ulong> clientIds, ref FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendUnnamedMessage(List<ulong> clientIds, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -74,7 +74,7 @@ namespace Unity.Netcode
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="messageBuffer">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendUnnamedMessage(ulong clientId, ref FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendUnnamedMessage(ulong clientId, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             var message = new UnnamedMessage
             {
@@ -90,7 +90,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
-        public delegate void HandleNamedMessageDelegate(ulong senderClientId, ref FastBufferReader messagePayload);
+        public delegate void HandleNamedMessageDelegate(ulong senderClientId, FastBufferReader messagePayload);
 
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
@@ -98,7 +98,7 @@ namespace Unity.Netcode
         private Dictionary<ulong, string> m_MessageHandlerNameLookup32 = new Dictionary<ulong, string>();
         private Dictionary<ulong, string> m_MessageHandlerNameLookup64 = new Dictionary<ulong, string>();
 
-        internal void InvokeNamedMessage(ulong hash, ulong sender, ref FastBufferReader reader)
+        internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
             var bytesCount = reader.Length;
 
@@ -107,13 +107,13 @@ namespace Unity.Netcode
                 // We dont know what size to use. Try every (more collision prone)
                 if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                 {
-                    messageHandler32(sender, ref reader);
+                    messageHandler32(sender, reader);
                     m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
                 }
 
                 if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                 {
-                    messageHandler64(sender, ref reader);
+                    messageHandler64(sender, reader);
                     m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                 }
             }
@@ -125,14 +125,14 @@ namespace Unity.Netcode
                     case HashSize.VarIntFourBytes:
                         if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                         {
-                            messageHandler32(sender, ref reader);
+                            messageHandler32(sender, reader);
                             m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
                         }
                         break;
                     case HashSize.VarIntEightBytes:
                         if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                         {
-                            messageHandler64(sender, ref reader);
+                            messageHandler64(sender, reader);
                             m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                         }
                         break;
@@ -180,7 +180,7 @@ namespace Unity.Netcode
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="messageStream">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendNamedMessage(string messageName, ulong clientId, ref FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendNamedMessage(string messageName, ulong clientId, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
@@ -212,7 +212,7 @@ namespace Unity.Netcode
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="messageStream">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendNamedMessage(string messageName, List<ulong> clientIds, ref FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendNamedMessage(string messageName, List<ulong> clientIds, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {

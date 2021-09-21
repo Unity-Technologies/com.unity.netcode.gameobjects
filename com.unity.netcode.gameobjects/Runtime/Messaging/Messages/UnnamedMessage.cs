@@ -4,14 +4,14 @@ namespace Unity.Netcode
     {
         public FastBufferWriter Data;
 
-        public unsafe void Serialize(ref FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer)
         {
             writer.WriteBytesSafe(Data.GetUnsafePtr(), Data.Length);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeUnnamedMessage(context.SenderId, ref reader);
+            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeUnnamedMessage(context.SenderId, reader);
         }
     }
 }

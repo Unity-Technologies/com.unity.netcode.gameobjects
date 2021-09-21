@@ -19,7 +19,7 @@ namespace Unity.Netcode
         public ulong ClientId;
         public NetworkBehaviour NetworkBehaviour;
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) +
                                       FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
@@ -67,14 +67,14 @@ namespace Unity.Netcode
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
-                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(ref tmpWriter);
+                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
 
                         writer.WriteValueSafe((ushort)tmpWriter.Length);
-                        tmpWriter.CopyTo(ref writer);
+                        tmpWriter.CopyTo(writer);
                     }
                     else
                     {
-                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(ref writer);
+                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(writer);
                     }
 
                     if (!NetworkBehaviour.NetworkVariableIndexesToResetSet.Contains(k))
@@ -97,7 +97,7 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
@@ -110,10 +110,10 @@ namespace Unity.Netcode
             }
             reader.ReadValue(out message.NetworkObjectId);
             reader.ReadValue(out message.NetworkBehaviourIndex);
-            message.Handle(context.SenderId, ref reader, networkManager);
+            message.Handle(context.SenderId, reader, networkManager);
         }
 
-        public void Handle(ulong senderId, ref FastBufferReader reader, NetworkManager networkManager)
+        public void Handle(ulong senderId, FastBufferReader reader, NetworkManager networkManager)
         {
             if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
             {
@@ -182,7 +182,7 @@ namespace Unity.Netcode
                         }
                         int readStartPos = reader.Position;
 
-                        behaviour.NetworkVariableFields[i].ReadDelta(ref reader, networkManager.IsServer);
+                        behaviour.NetworkVariableFields[i].ReadDelta(reader, networkManager.IsServer);
                         var bytesReported = networkManager.LocalClientId == senderId
                             ? 0
                             : reader.Length;

@@ -43,9 +43,9 @@ namespace Unity.Netcode
         /// InvalidOperationException otherwise.
         /// </summary>
         /// <returns>Reader instance</returns>
-        public ref FastBufferReader GetFastBufferReader()
+        public FastBufferReader GetFastBufferReader()
         {
-            return ref m_Implementation.GetFastBufferReader();
+            return m_Implementation.GetFastBufferReader();
         }
 
         /// <summary>
@@ -53,9 +53,9 @@ namespace Unity.Netcode
         /// InvalidOperationException otherwise.
         /// </summary>
         /// <returns>Writer instance</returns>
-        public ref FastBufferWriter GetFastBufferWriter()
+        public FastBufferWriter GetFastBufferWriter()
         {
-            return ref m_Implementation.GetFastBufferWriter();
+            return m_Implementation.GetFastBufferWriter();
         }
 
         /// <summary>

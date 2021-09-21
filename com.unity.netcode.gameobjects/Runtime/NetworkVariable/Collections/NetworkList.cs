@@ -70,14 +70,14 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void WriteDelta(ref FastBufferWriter writer)
+        public override void WriteDelta(FastBufferWriter writer)
         {
 
             if (base.IsDirty())
             {
                 writer.WriteValueSafe((ushort)1);
                 writer.WriteValueSafe(NetworkListEvent<T>.EventType.Full);
-                WriteField(ref writer);
+                WriteField(writer);
 
                 return;
             }
@@ -125,7 +125,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void WriteField(ref FastBufferWriter writer)
+        public override void WriteField(FastBufferWriter writer)
         {
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
@@ -135,7 +135,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void ReadField(ref FastBufferReader reader)
+        public override void ReadField(FastBufferReader reader)
         {
             m_List.Clear();
             reader.ReadValueSafe(out ushort count);
@@ -147,7 +147,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             reader.ReadValueSafe(out ushort deltaCount);
             for (int i = 0; i < deltaCount; i++)
@@ -322,7 +322,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Full:
                         {
-                            ReadField(ref reader);
+                            ReadField(reader);
                             ResetDirty();
                         }
                         break;

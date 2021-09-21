@@ -10,7 +10,7 @@ namespace Unity.Netcode.EditorTests
     {
 
         #region Common Checks
-        private void WriteCheckBytes(ref FastBufferWriter writer, int writeSize, string failMessage = "")
+        private void WriteCheckBytes(FastBufferWriter writer, int writeSize, string failMessage = "")
         {
             Assert.IsTrue(writer.TryBeginWrite(2), "Writer denied write permission");
             writer.WriteValue((byte)0x80);
@@ -42,18 +42,18 @@ namespace Unity.Netcode.EditorTests
             Assert.AreEqual(value, *checkValue);
         }
 
-        private void VerifyPositionAndLength(ref FastBufferWriter writer, int position, string failMessage = "")
+        private void VerifyPositionAndLength(FastBufferWriter writer, int position, string failMessage = "")
         {
             Assert.AreEqual(position, writer.Position, failMessage);
             Assert.AreEqual(position, writer.Length, failMessage);
         }
 
-        private unsafe void CommonChecks<T>(ref FastBufferWriter writer, T valueToTest, int writeSize, string failMessage = "") where T : unmanaged
+        private unsafe void CommonChecks<T>(FastBufferWriter writer, T valueToTest, int writeSize, string failMessage = "") where T : unmanaged
         {
 
-            VerifyPositionAndLength(ref writer, writeSize, failMessage);
+            VerifyPositionAndLength(writer, writeSize, failMessage);
 
-            WriteCheckBytes(ref writer, writeSize, failMessage);
+            WriteCheckBytes(writer, writeSize, failMessage);
 
             var underlyingArray = writer.ToArray();
 
@@ -84,7 +84,7 @@ namespace Unity.Netcode.EditorTests
 
                 writer.WriteValue(valueToTest);
 
-                CommonChecks(ref writer, valueToTest, writeSize, failMessage);
+                CommonChecks(writer, valueToTest, writeSize, failMessage);
             }
         }
         protected override unsafe void RunTypeTestSafe<T>(T valueToTest)
@@ -100,7 +100,7 @@ namespace Unity.Netcode.EditorTests
 
                 writer.WriteValueSafe(valueToTest);
 
-                CommonChecks(ref writer, valueToTest, writeSize, failMessage);
+                CommonChecks(writer, valueToTest, writeSize, failMessage);
             }
         }
 
@@ -130,9 +130,9 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
 
                 writer.WriteValue(valueToTest);
-                VerifyPositionAndLength(ref writer, writeSize);
+                VerifyPositionAndLength(writer, writeSize);
 
-                WriteCheckBytes(ref writer, writeSize);
+                WriteCheckBytes(writer, writeSize);
 
                 VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
 
@@ -151,9 +151,9 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
                 writer.WriteValueSafe(valueToTest);
-                VerifyPositionAndLength(ref writer, writeSize);
+                VerifyPositionAndLength(writer, writeSize);
 
-                WriteCheckBytes(ref writer, writeSize);
+                WriteCheckBytes(writer, writeSize);
 
                 VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
 
@@ -217,8 +217,8 @@ namespace Unity.Netcode.EditorTests
 
                 }
 
-                VerifyPositionAndLength(ref writer, serializedValueSize + offset);
-                WriteCheckBytes(ref writer, serializedValueSize + offset);
+                VerifyPositionAndLength(writer, serializedValueSize + offset);
+                WriteCheckBytes(writer, serializedValueSize + offset);
 
                 int* sizeValue = (int*)(writer.GetUnsafePtr() + offset);
                 Assert.AreEqual(valueToTest.Length, *sizeValue);
@@ -304,8 +304,8 @@ namespace Unity.Netcode.EditorTests
                 writer.WritePartialValue(valueToTest, count, offset);
 
                 var failMessage = $"TestWritingPartialValues failed with value {valueToTest}";
-                VerifyPositionAndLength(ref writer, count, failMessage);
-                WriteCheckBytes(ref writer, count, failMessage);
+                VerifyPositionAndLength(writer, count, failMessage);
+                WriteCheckBytes(writer, count, failMessage);
                 var underlyingArray = writer.ToArray();
                 VerifyBytewiseEquality(valueToTest, underlyingArray, offset, 0, count, failMessage);
                 VerifyCheckBytes(underlyingArray, count, failMessage);
@@ -1057,14 +1057,14 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenCallingTryBeginWriteInternal_AllowedWritePositionDoesNotMoveBackward()
+        public unsafe void WhenCallingTryBeginWriteInternal_AllowedWritePositionDoesNotMoveBackward()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
             using (writer)
             {
                 writer.TryBeginWrite(25);
                 writer.TryBeginWriteInternal(5);
-                Assert.AreEqual(writer.AllowedWriteMark, 25);
+                Assert.AreEqual(writer.Handle->AllowedWriteMark, 25);
             }
         }
         #endregion
