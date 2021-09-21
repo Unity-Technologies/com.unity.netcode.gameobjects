@@ -299,6 +299,15 @@ namespace Unity.Netcode
             m_RelayServerData.ComputeNewNonce();
         }
 
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        public void SetConnectionData(string ipv4Address, ushort port)
+        {
+            m_ServerAddress = ipv4Address;
+            m_ServerPort = port;
+        }
+
         private IEnumerator StartRelayServer(SocketTask task)
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
