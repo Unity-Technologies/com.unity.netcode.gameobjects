@@ -38,6 +38,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            MultiProcessLog("Running SetupTestSuite - OneTimeSetup");
             if (IgnoreMultiprocessTests)
             {
                 Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
@@ -47,7 +48,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-
+            MultiProcessLog($"Currently active scene {SceneManager.GetActiveScene().name}");
             var currentlyActiveScene = SceneManager.GetActiveScene();
 
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
@@ -140,7 +141,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         [OneTimeTearDown]
-        public virtual IEnumerator TeardownSuite()
+        public virtual void TeardownSuite()
         {
             MultiProcessLog($"TeardownSuite");
             if (!IgnoreMultiprocessTests)
@@ -150,12 +151,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiProcessLog($"TeardownSuite - NetworkManager.Singleton.Shutdown");
                 NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                MultiProcessLog($"Currently active scene {SceneManager.GetActiveScene().name}");
+                MultiProcessLog($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
                 if (m_OriginalActiveScene.IsValid())
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
                 MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
-                yield return SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
                 MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
             }
         }
