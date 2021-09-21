@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 
 /// <summary>
 /// This is an example of using more than one Network Prefab override when using a custom handler
@@ -130,7 +129,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         var gameObject = GetNextSpawnObject();
         gameObject.transform.position = position;
         gameObject.transform.rotation = rotation;
-        gameObject.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
         gameObject.SetActive(true);
         return gameObject.GetComponent<NetworkObject>();
     }

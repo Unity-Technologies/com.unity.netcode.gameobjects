@@ -47,6 +47,8 @@ namespace TestProject.ManualTests
         private GameObject m_ObjectToSpawn;
         private List<GameObject> m_ObjectPool;
 
+        private NetworkVariable<bool> m_CurrentInterpolateState = new NetworkVariable<bool>();
+
         /// <summary>
         /// Handles registering the custom prefab handler
         /// </summary>
@@ -78,30 +80,6 @@ namespace TestProject.ManualTests
                 if (IsClient && m_ObjectToSpawn != null)
                 {
                     NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToSpawn);
-                }
-            }
-        }
-
-        private bool m_CurrentInterpolateState;
-        private void OnEnable()
-        {
-            m_CurrentInterpolateState = Interpolate;
-        }
-        private void Update()
-        {
-            if (IsSpawned && IsServer)
-            {
-                if (m_CurrentInterpolateState != Interpolate)
-                {
-                    m_CurrentInterpolateState = Interpolate;
-                    foreach (var obj in m_ObjectPool)
-                    {
-                        if (obj == null)
-                        {
-                            continue;
-                        }
-                        obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
-                    }
                 }
             }
         }
@@ -259,6 +237,49 @@ namespace TestProject.ManualTests
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
+                }
+
+                // Server dictates interpolation
+                m_CurrentInterpolateState.Value = Interpolate;
+            }
+
+            // Both client and server want to know when this changes
+            m_CurrentInterpolateState.OnValueChanged = OnInterpolateStateChanged;
+        }
+
+        /// <summary>
+        /// When we change interpolation state, we change this for all of our
+        /// NetworkObjects in the pool
+        /// </summary>
+        /// <param name="previous"></param>
+        /// <param name="current"></param>
+        private void OnInterpolateStateChanged(bool previous, bool current)
+        {
+            if (IsSpawned)
+            {
+                Interpolate = current;
+                foreach (var obj in m_ObjectPool)
+                {
+                    if (obj == null)
+                    {
+                        continue;
+                    }
+                    obj.GetComponent<NetworkTransform>().Interpolate = Interpolate;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Server uses the update to check and see if we want to change the interpolate
+        /// status for the NetworkObject Pool
+        /// </summary>
+        private void Update()
+        {
+            if (IsSpawned && IsServer)
+            {
+                if (Interpolate != m_CurrentInterpolateState.Value)
+                {
+                    m_CurrentInterpolateState.Value = Interpolate;
                 }
             }
         }
@@ -459,7 +480,6 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
-                obj.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
                 obj.SetActive(true);
 
 

@@ -258,8 +258,6 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
 
         public bool Interpolate = true;
-        private NetworkVariable<bool> m_InterpolateState = new NetworkVariable<bool>();
-
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
@@ -368,6 +366,20 @@ namespace Unity.Netcode.Components
             m_ReplicatedNetworkState.Value = networkState;
             AddInterpolatedState(networkState);
         }
+
+        private void ResetInterpolatedStateToCurrentAuthoritativeState()
+        {
+            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX);
+            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY);
+            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ);
+
+            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.Rotation));
+
+            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX);
+            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY);
+            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ);
+        }
+
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
@@ -604,58 +616,39 @@ namespace Unity.Netcode.Components
 
         private void AddInterpolatedState(NetworkTransformState newState)
         {
-            if (!NetworkObject.IsSpawned)
+            var sentTime = new NetworkTime(NetworkManager.ServerTime.TickRate, newState.SentTime);
+
+            if (newState.HasPositionX)
             {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
-                return;
+                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
             }
 
-            if (IsServer)
+            if (newState.HasPositionY)
             {
-                return; // todo use authority
+                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
             }
 
-            // Only if we are interpolating should we set these values
-            if (Interpolate)
+            if (newState.HasPositionZ)
             {
-                var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
-
-                if (newState.HasPositionX)
-                {
-                    m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
-                }
-
-                if (newState.HasPositionY)
-                {
-                    m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
-                }
-
-                if (newState.HasPositionZ)
-                {
-                    m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
-                }
-
-                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
-
-                if (newState.HasScaleX)
-                {
-                    m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
-                }
-
-                if (newState.HasScaleY)
-                {
-                    m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
-                }
-
-                if (newState.HasScaleZ)
-                {
-                    m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
-                }
+                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
-            else // When interpolation is disabled, just apply the state from authority
+
+            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+
+            if (newState.HasScaleX)
             {
-                ApplyNetworkStateFromAuthority(newState);
-            }            
+                m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
+            }
+
+            if (newState.HasScaleY)
+            {
+                m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
+            }
+
+            if (newState.HasScaleZ)
+            {
+                m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
+            }
         }
 
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
@@ -676,28 +669,21 @@ namespace Unity.Netcode.Components
 
             AddInterpolatedState(newState);
 
-
-            if (NetworkManager.Singleton.LogLevel == LogLevel.Developer)
+            if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
                 Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
             }
         }
 
-        /// <summary>
-        /// We use OnEnable for our base initialization because:
-        /// - It is called before Start or OnNetworkSpawn
-        /// - It takes into account pooled NetworkObjects that enable
-        /// and disable as opposed to instantiate and destroy when spawning.
-        /// </summary>
         private void OnEnable()
         {
             m_Transform = transform;
-            // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
+            // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
-            m_InterpolateState.OnValueChanged += OnInterpolateStateUpdated;
         }
+
 
         public override void OnNetworkSpawn()
         {
@@ -708,6 +694,20 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+
+            if (!IsServer)
+            {
+                m_PositionXInterpolator.ResetTo(m_Transform.position.x);
+                m_PositionYInterpolator.ResetTo(m_Transform.position.y);
+                m_PositionZInterpolator.ResetTo(m_Transform.position.z);
+
+                m_RotationInterpolator.ResetTo(m_Transform.rotation);
+
+                m_ScaleXInterpolator.ResetTo(m_Transform.localScale.x);
+                m_ScaleYInterpolator.ResetTo(m_Transform.localScale.y);
+                m_ScaleZInterpolator.ResetTo(m_Transform.localScale.z);
+            }
+
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -717,50 +717,15 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
-
-            // set initial value for spawn
-            if (IsServer)
-            {
-                if (m_InterpolateState.Value != Interpolate)
-                {
-                    m_InterpolateState.Value = Interpolate;
-                }
-                DoUpdateToGhosts();
-            }
-            
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
-            Initialize();    
-        }
 
-        /// <summary>
-        /// When disabled unregister for the OnValueChanged event
-        /// (see OnEnabled for further info)
-        /// </summary>
-        private void OnDisable()
-        {
-            ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
-            m_InterpolateState.OnValueChanged -= OnInterpolateStateUpdated;
-        }
-
-        /// <summary>
-        /// Client Side:
-        /// Non-server clients should initialize once spawned
-        /// </summary>
-        public override void OnNetworkSpawn()
-        {
-            if (!IsServer)
+            if (IsServer)
             {
-                // When spawned and only if we are not the server, then just
-                // set our actual current position, scale, and rotation for all
-                // interpolators' initial values
-                if (Interpolate)
-                {
-                    ResetInterpolatedTransform(transform.position, transform.rotation, transform.localScale);
-                }
+                Initialize();
             }
         }
 
@@ -788,25 +753,17 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void OnInterpolateStateUpdated(bool previousState, bool newState)
+        private void OnDisable()
         {
-            Interpolate = newState;
-            ResetInterpolatedTransform(transform.position, transform.rotation, transform.localScale);
-        }
-
-        public void ResetInterpolatedTransform(Vector3 position, Quaternion rotation, Vector3 scale)
-        {
-            if (IsSpawned && !IsServer && Interpolate)
-            {
-                m_PositionXInterpolator.ResetTo(position.x);
-                m_PositionYInterpolator.ResetTo(position.y);
-                m_PositionZInterpolator.ResetTo(position.z);
-                m_ScaleXInterpolator.ResetTo(scale.x);
-                m_ScaleYInterpolator.ResetTo(scale.y);
-                m_ScaleZInterpolator.ResetTo(scale.z);
-                m_RotationInterpolator.ResetTo(rotation);
-                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
-            }
+            m_AllFloatInterpolators.Clear();
+            m_PositionXInterpolator = null;
+            m_PositionYInterpolator = null;
+            m_PositionZInterpolator = null;
+            m_RotationInterpolator = null;
+            m_ScaleXInterpolator = null;
+            m_ScaleYInterpolator = null;
+            m_ScaleZInterpolator = null;
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         #region state set
@@ -876,7 +833,7 @@ namespace Unity.Netcode.Components
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
         {
-            if (!IsSpawned)
+            if (!NetworkObject.IsSpawned)
             {
                 return;
             }
@@ -890,8 +847,9 @@ namespace Unity.Netcode.Components
 
                 m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
-            else// Only if Interpolate is enabled should we update interpolators and apply the interpolated state
-            if (Interpolate)
+
+            // apply interpolated value
+            if (NetworkManager.IsConnectedClient || NetworkManager.IsListening)
             {
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
@@ -925,8 +883,8 @@ namespace Unity.Netcode.Components
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
-                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
             }
+
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 

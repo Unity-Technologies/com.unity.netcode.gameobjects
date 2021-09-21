@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabInstanceHandler
 {
     [SerializeField]
@@ -72,7 +71,6 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         var gameObject = GetNextSpawnObject();
         gameObject.transform.position = position;
         gameObject.transform.rotation = rotation;
-        gameObject.GetComponent<NetworkTransform>().ResetInterpolatedTransform(position, rotation, transform.localScale);
         gameObject.SetActive(true);
         return gameObject.GetComponent<NetworkObject>();
     }

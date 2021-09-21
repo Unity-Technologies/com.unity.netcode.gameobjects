@@ -2399,6 +2399,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AutoSpawnEnable: 1
+  Interpolate: 1
   InitialSpawnDelay: 0.2
   SpawnsPerSecond: 1
   PoolSize: 32
