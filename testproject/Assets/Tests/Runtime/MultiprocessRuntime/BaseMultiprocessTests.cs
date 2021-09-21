@@ -188,8 +188,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void MultiProcessLog(string msg)
         {
-            string testName = TestContext.CurrentContext.Test.Name;
-            if (String.IsNullOrEmpty(testName))
+            string testName = null;
+            try
+            {
+                testName = TestContext.CurrentContext.Test.Name;
+            }
+            catch (NullReferenceException nre)
+            {
+                testName = "N/A";
+            }
+            
+            if (string.IsNullOrEmpty(testName))
             {
                 testName = "unknwon";
             }
