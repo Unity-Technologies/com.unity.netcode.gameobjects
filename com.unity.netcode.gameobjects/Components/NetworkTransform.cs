@@ -676,6 +676,11 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// We need to allocate a new interpolator instance when enabled in order to
+        /// to support NetworkObject Pools and NetworkObjects that persist after
+        /// a NetworkManager is destroyed.
+        /// </summary>
         private void OnEnable()
         {
             m_Transform = transform;
@@ -695,6 +700,9 @@ namespace Unity.Netcode.Components
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
 
+            // Clients need to set the interpolators' values from the local transform
+            // in order to avoid interpolating from the last position under the scenario
+            // where the NetworkObject is part of a pool
             if (!IsServer)
             {
                 m_PositionXInterpolator.ResetTo(m_Transform.position.x);
@@ -753,6 +761,11 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// We need to reset our settings when a NetworkObject is disabled in order to support
+        /// NetworkObject pools.  We need to release the instance for each interpolator in order
+        /// to support NetworkObjects that persist after a NetworkManager is destroyed.
+        /// </summary>
         private void OnDisable()
         {
             m_AllFloatInterpolators.Clear();
