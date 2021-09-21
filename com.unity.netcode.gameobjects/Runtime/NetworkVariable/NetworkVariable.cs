@@ -98,9 +98,9 @@ namespace Unity.Netcode
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="writer">The stream to write the value to</param>
-        public override void WriteDelta(ref FastBufferWriter writer)
+        public override void WriteDelta(FastBufferWriter writer)
         {
-            WriteField(ref writer);
+            WriteField(writer);
         }
 
 
@@ -109,7 +109,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="reader">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             T previousValue = m_InternalValue;
             reader.ReadValueSafe(out m_InternalValue);
@@ -123,13 +123,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void ReadField(ref FastBufferReader reader)
+        public override void ReadField(FastBufferReader reader)
         {
-            ReadDelta(ref reader, false);
+            ReadDelta(reader, false);
         }
 
         /// <inheritdoc />
-        public override void WriteField(ref FastBufferWriter writer)
+        public override void WriteField(FastBufferWriter writer)
         {
             writer.WriteValueSafe(m_InternalValue);
         }

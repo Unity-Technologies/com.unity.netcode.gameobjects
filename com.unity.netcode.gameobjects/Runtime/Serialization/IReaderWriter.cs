@@ -5,8 +5,8 @@ namespace Unity.Netcode
         bool IsReader { get; }
         bool IsWriter { get; }
 
-        ref FastBufferReader GetFastBufferReader();
-        ref FastBufferWriter GetFastBufferWriter();
+        FastBufferReader GetFastBufferReader();
+        FastBufferWriter GetFastBufferWriter();
 
         void SerializeValue(ref string s, bool oneByteChars = false);
         void SerializeValue<T>(ref T[] array) where T : unmanaged;
@@ -14,8 +14,6 @@ namespace Unity.Netcode
         void SerializeValue<T>(ref T value) where T : unmanaged;
 
         // Has to have a different name to avoid conflicting with "where T: unmananged"
-        // Using SerializeValue(INetworkSerializable) will result in boxing on struct INetworkSerializables
-        // So this is provided as an alternative to avoid boxing allocations.
         void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
 
         bool PreCheck(int amount);
