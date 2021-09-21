@@ -72,8 +72,8 @@ namespace Unity.Netcode
             // If we are a server/host then we just no op and send to ourself
             if (IsHost || IsServer)
             {
-                var tempBuffer = new FastBufferReader(ref writer, Allocator.Temp);
-                message.Handle(ref tempBuffer, NetworkManager, NetworkBehaviourId);
+                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
                 tempBuffer.Dispose();
 
                 return;
