@@ -12,7 +12,7 @@ test_platforms:
   - name: mac
     type: Unity::VM::osx
     image: package-ci/mac:stable
-    flavor: b1.large
+    flavor: b1.xlarge
     editorpath: .Editor/Unity.app/Contents/MacOS/Unity
     utr: ./utr
   - name: ubuntu
