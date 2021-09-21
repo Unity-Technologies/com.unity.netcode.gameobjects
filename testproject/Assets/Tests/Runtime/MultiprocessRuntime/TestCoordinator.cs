@@ -326,7 +326,6 @@ public class TestCoordinator : NetworkBehaviour
     public KeepServerFromTimingOutDelegateHandler KeepServerFromTimingOut;
 
     [ServerRpc(RequireOwnership = false)]
-    //public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;

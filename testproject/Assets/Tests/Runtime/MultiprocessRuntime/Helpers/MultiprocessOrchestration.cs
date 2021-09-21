@@ -111,7 +111,6 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
-
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
@@ -120,7 +119,7 @@ public class MultiprocessOrchestration
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current active process count: {ActiveWorkerCount()}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
