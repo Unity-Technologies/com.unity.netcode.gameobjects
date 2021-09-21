@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -69,9 +70,8 @@ namespace Unity.Netcode
                 RpcData = writer
             };
 
-            // I would love to remove this hack but it seems that we have behaviour that requires it :/ especially in
-            // testing. It seems very broken that we need to be able to send data to ourself.
-            if (IsServer && NetworkBehaviourId == NetworkManager.ServerClientId)
+            // If we are a server/host then we just no op and send to ourself
+            if (IsHost || IsServer)
             {
                 var tempBuffer = new FastBufferReader(ref writer, Allocator.Temp);
                 message.Handle(ref tempBuffer, NetworkManager, NetworkBehaviourId);
