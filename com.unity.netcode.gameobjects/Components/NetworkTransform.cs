@@ -677,9 +677,8 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// We need to allocate a new interpolator instance when enabled in order to
-        /// to support NetworkObject Pools and NetworkObjects that persist after
-        /// a NetworkManager is destroyed.
+        /// Apply our initial assignment and subscribe to the OnValueChanged event
+        /// when enabled in order to support NetworkObject pools.
         /// </summary>
         private void OnEnable()
         {
