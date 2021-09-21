@@ -109,6 +109,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiProcessLog("m_HasSceneLoaded");
             var startTime = Time.time;
 
+            MultiProcessLog($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            if (MultiprocessOrchestration.ActiveWorkerCount() + 1 < NetworkManager.Singleton.ConnectedClients.Count)
+            {
+                MultiProcessLog("Is this a bad state?");
+            }
+
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
@@ -117,10 +123,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
+                    int beforeActiveWorkerCount = MultiprocessOrchestration.ActiveWorkerCount();
+                    int beforeConnectedClientCount = NetworkManager.Singleton.ConnectedClients.Count;
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    yield return new WaitForSeconds(1.0f);
-                    MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    while (NetworkManager.Singleton.ConnectedClients.Count < beforeConnectedClientCount + 1)
+                    {
+                        yield return new WaitForSeconds(1.0f);
+                        MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    }
                 }
             }
             else
@@ -135,7 +146,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and {MultiprocessOrchestration.ActiveWorkerCount()} processes but was expecting {WorkerCount}, failing");
+                    throw new Exception($" {DateTime.Now.ToString("G")} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and {MultiprocessOrchestration.ActiveWorkerCount()} processes but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
@@ -177,8 +188,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void MultiProcessLog(string msg)
         {
+            string testName = TestContext.CurrentContext.Test.Name;
+            if (String.IsNullOrEmpty(testName))
+            {
+                testName = "unknwon";
+            }
             string dString = DateTime.Now.ToString("G");
-            Debug.Log($" - MPLOG - {dString} : {msg}");
+            Debug.Log($" - MPLOG - {dString} : {testName} : {msg}");
         }
     }
 }
