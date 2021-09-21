@@ -107,8 +107,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
-                    MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount}");
+                    MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    yield return new WaitForSeconds(10f);
+                    MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
             else
