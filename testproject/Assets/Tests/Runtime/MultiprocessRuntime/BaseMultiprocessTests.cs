@@ -120,6 +120,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (MultiprocessOrchestration.ActiveWorkerCount() < WorkerCount)
             {
+                var timeOutTime2 = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec/2;
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
@@ -131,6 +132,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     {
                         yield return new WaitForSeconds(1.0f);
                         MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                        if (MultiprocessOrchestration.ActiveWorkerCount() <= beforeActiveWorkerCount)
+                        {
+                            MultiprocessOrchestration.StartWorkerNode();
+                        }
+                        if (Time.realtimeSinceStartup > timeOutTime2)
+                        {
+                            MultiProcessLog("We've waited long enough, maybe there's a problem so let's restart");
+                            MultiprocessOrchestration.ShutdownAllProcesses();
+                        }
                     }
                 }
             }
