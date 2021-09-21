@@ -5,12 +5,12 @@ namespace Unity.Netcode
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(this);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)

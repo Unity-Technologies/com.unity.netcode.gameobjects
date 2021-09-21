@@ -26,7 +26,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
+        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
@@ -144,7 +144,7 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
+            public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
 
                 var length = batchData.Length;
