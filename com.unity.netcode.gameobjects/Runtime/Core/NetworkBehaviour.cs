@@ -68,7 +68,19 @@ namespace Unity.Netcode
                 },
                 RpcData = writer
             };
+
+            // If we are a server/host then we just no op and send to ourself
+            if (IsHost || IsServer)
+            {
+                var tempBuffer = new FastBufferReader(ref writer, Allocator.Temp);
+                message.Handle(ref tempBuffer, NetworkManager, NetworkBehaviourId);
+                tempBuffer.Dispose();
+
+                return;
+            }
+
             var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
