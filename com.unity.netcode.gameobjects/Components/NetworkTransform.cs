@@ -187,57 +187,57 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            public void NetworkSerialize(NetworkSerializer serializer)
             {
-                serializer.SerializeValue(ref SentTime);
+                serializer.Serialize(ref SentTime);
                 // InLocalSpace + HasXXX Bits
-                serializer.SerializeValue(ref m_Bitset);
+                serializer.Serialize(ref m_Bitset);
                 // Position Values
                 if (HasPositionX)
                 {
-                    serializer.SerializeValue(ref PositionX);
+                    serializer.Serialize(ref PositionX);
                 }
 
                 if (HasPositionY)
                 {
-                    serializer.SerializeValue(ref PositionY);
+                    serializer.Serialize(ref PositionY);
                 }
 
                 if (HasPositionZ)
                 {
-                    serializer.SerializeValue(ref PositionZ);
+                    serializer.Serialize(ref PositionZ);
                 }
 
                 // RotAngle Values
                 if (HasRotAngleX)
                 {
-                    serializer.SerializeValue(ref RotAngleX);
+                    serializer.Serialize(ref RotAngleX);
                 }
 
                 if (HasRotAngleY)
                 {
-                    serializer.SerializeValue(ref RotAngleY);
+                    serializer.Serialize(ref RotAngleY);
                 }
 
                 if (HasRotAngleZ)
                 {
-                    serializer.SerializeValue(ref RotAngleZ);
+                    serializer.Serialize(ref RotAngleZ);
                 }
 
                 // Scale Values
                 if (HasScaleX)
                 {
-                    serializer.SerializeValue(ref ScaleX);
+                    serializer.Serialize(ref ScaleX);
                 }
 
                 if (HasScaleY)
                 {
-                    serializer.SerializeValue(ref ScaleY);
+                    serializer.Serialize(ref ScaleY);
                 }
 
                 if (HasScaleZ)
                 {
-                    serializer.SerializeValue(ref ScaleZ);
+                    serializer.Serialize(ref ScaleZ);
                 }
             }
         }

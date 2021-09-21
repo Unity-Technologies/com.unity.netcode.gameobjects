@@ -76,7 +76,7 @@ namespace Unity.Netcode.Components
                 return TriggerParameters.Add(key);
             }
 
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            public void NetworkSerialize(NetworkSerializer serializer)
             {
                 SerializeIntParameters(serializer);
                 SerializeFloatParameters(serializer);
@@ -85,28 +85,28 @@ namespace Unity.Netcode.Components
                 SerializeAnimatorLayerStates(serializer);
             }
 
-            private void SerializeAnimatorLayerStates<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            private void SerializeAnimatorLayerStates(NetworkSerializer serializer)
             {
-                int layerCount = serializer.IsReader ? 0 : LayerStates.Length;
-                serializer.SerializeValue(ref layerCount);
+                int layerCount = serializer.IsReading ? 0 : LayerStates.Length;
+                serializer.Serialize(ref layerCount);
 
-                if (serializer.IsReader && LayerStates.Length != layerCount)
+                if (serializer.IsReading && LayerStates.Length != layerCount)
                 {
                     LayerStates = new LayerState[layerCount];
                 }
 
                 for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
                 {
-                    var stateHash = serializer.IsReader ? 0 : LayerStates[paramIndex].StateHash;
-                    serializer.SerializeValue(ref stateHash);
+                    var stateHash = serializer.IsReading ? 0 : LayerStates[paramIndex].StateHash;
+                    serializer.Serialize(ref stateHash);
 
-                    var layerWeight = serializer.IsReader ? 0 : LayerStates[paramIndex].LayerWeight;
-                    serializer.SerializeValue(ref layerWeight);
+                    var layerWeight = serializer.IsReading ? 0 : LayerStates[paramIndex].LayerWeight;
+                    serializer.Serialize(ref layerWeight);
 
-                    var normalizedStateTime = serializer.IsReader ? 0 : LayerStates[paramIndex].NormalizedStateTime;
-                    serializer.SerializeValue(ref normalizedStateTime);
+                    var normalizedStateTime = serializer.IsReading ? 0 : LayerStates[paramIndex].NormalizedStateTime;
+                    serializer.Serialize(ref normalizedStateTime);
 
-                    if (serializer.IsReader)
+                    if (serializer.IsReading)
                     {
                         LayerStates[paramIndex] = new LayerState()
                         {
@@ -118,103 +118,103 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            private void SerializeTriggerParameters(NetworkSerializer serializer)
             {
-                int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
-                serializer.SerializeValue(ref paramCount);
+                int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
+                serializer.Serialize(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new int[paramCount] : TriggerParameters.ToArray();
+                var paramArray = serializer.IsReading ? new int[paramCount] : TriggerParameters.ToArray();
                 for (int i = 0; i < paramCount; i++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[i];
-                    serializer.SerializeValue(ref paramId);
+                    var paramId = serializer.IsReading ? 0 : paramArray[i];
+                    serializer.Serialize(ref paramId);
 
-                    if (serializer.IsReader)
+                    if (serializer.IsReading)
                     {
                         paramArray[i] = paramId;
                     }
                 }
 
-                if (serializer.IsReader)
+                if (serializer.IsReading)
                 {
                     TriggerParameters = new HashSet<int>(paramArray);
                 }
             }
 
-            private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            private void SerializeBoolParameters(NetworkSerializer serializer)
             {
-                int paramCount = serializer.IsReader ? 0 : BoolParameters.Count;
-                serializer.SerializeValue(ref paramCount);
+                int paramCount = serializer.IsReading ? 0 : BoolParameters.Count;
+                serializer.Serialize(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
 
-                    var paramBool = serializer.IsReader ? false : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramBool);
+                    var paramBool = serializer.IsReading ? false : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramBool);
 
-                    if (serializer.IsReader)
+                    if (serializer.IsReading)
                     {
                         paramArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
                     }
                 }
 
-                if (serializer.IsReader)
+                if (serializer.IsReading)
                 {
                     BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }
             }
 
-            private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            private void SerializeFloatParameters(NetworkSerializer serializer)
             {
-                int paramCount = serializer.IsReader ? 0 : FloatParameters.Count;
-                serializer.SerializeValue(ref paramCount);
+                int paramCount = serializer.IsReading ? 0 : FloatParameters.Count;
+                serializer.Serialize(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
 
-                    var paramFloat = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramFloat);
+                    var paramFloat = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramFloat);
 
-                    if (serializer.IsReader)
+                    if (serializer.IsReading)
                     {
                         paramArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
                     }
                 }
 
-                if (serializer.IsReader)
+                if (serializer.IsReading)
                 {
                     FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }
             }
 
-            private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            private void SerializeIntParameters(NetworkSerializer serializer)
             {
-                int paramCount = serializer.IsReader ? 0 : IntParameters.Count;
-                serializer.SerializeValue(ref paramCount);
+                int paramCount = serializer.IsReading ? 0 : IntParameters.Count;
+                serializer.Serialize(ref paramCount);
 
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
 
                 for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                 {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
 
-                    var paramInt = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramInt);
+                    var paramInt = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramInt);
 
-                    if (serializer.IsReader)
+                    if (serializer.IsReading)
                     {
                         paramArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
                     }
                 }
 
-                if (serializer.IsReader)
+                if (serializer.IsReading)
                 {
                     IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }

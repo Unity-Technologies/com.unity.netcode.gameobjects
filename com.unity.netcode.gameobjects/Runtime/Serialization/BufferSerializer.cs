@@ -1,3 +1,6 @@
+using System;
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -13,15 +16,15 @@ namespace Unity.Netcode
     /// BufferSerializer doesn't wrapp FastBufferReader or FastBufferWriter directly because it can't.
     /// ref structs can't implement interfaces, and in order to be able to have two different implementations with
     /// the same interface (which allows us to avoid an "if(IsReader)" on every call), the thing directly wrapping
-    /// the struct has to implement an interface. So IReaderWriter exists as the interface,
+    /// the struct has to implement an interface. So IBufferSerializerImplementation exists as the interface,
     /// which is implemented by a normal struct, while the ref struct wraps the normal one to enforce the two above
-    /// requirements. (Allowing direct access to the IReaderWriter struct would allow dangerous
+    /// requirements. (Allowing direct access to the IBufferSerializerImplementation struct would allow dangerous
     /// things to happen because the struct's lifetime could outlive the Reader/Writer's.)
     /// </summary>
-    /// <typeparam name="TReaderWriter">The implementation struct</typeparam>
-    public ref struct BufferSerializer<TReaderWriter> where TReaderWriter : IReaderWriter
+    /// <typeparam name="TImplementation">The implementation struct</typeparam>
+    public ref struct BufferSerializer<TImplementation> where TImplementation : IBufferSerializerImplementation
     {
-        private TReaderWriter m_Implementation;
+        private TImplementation m_Implementation;
 
         /// <summary>
         /// Check if the contained implementation is a reader
@@ -33,7 +36,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsWriter => m_Implementation.IsWriter;
 
-        internal BufferSerializer(TReaderWriter implementation)
+        public BufferSerializer(TImplementation implementation)
         {
             m_Implementation = implementation;
         }
@@ -59,15 +62,91 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Serialize an object value.
+        /// Note: Will ALWAYS cause allocations when reading.
+        /// This function is also much slower than the others as it has to figure out how to serialize
+        /// the object using runtime reflection.
+        /// It's recommended not to use this unless you have no choice.
+        /// 
+        /// Throws OverflowException if the end of the buffer has been reached.
+        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        /// <param name="type">Type to deserialize to when reading</param>
+        /// <param name="isNullable">
+        /// If true, will force an isNull byte to be written.
+        /// Some types will write this byte regardless.
+        /// </param>
+        public void SerializeValue(ref object value, Type type, bool isNullable = false)
+        {
+            m_Implementation.SerializeValue(ref value, type, isNullable);
+        }
+
+        /// <summary>
+        /// Serialize an INetworkSerializable
+        /// If your INetworkSerializable is implemented by a struct, as opposed to a class, use this
+        /// function instead of SerializeValue. SerializeValue will incur a boxing allocation,
+        /// SerializeNetworkSerializable will not.
+        ///
+        /// A definition of SerializeValue that doesn't allocate can't be created because C#
+        /// doesn't allow overriding generics based solely on the constraint, so this would conflict
+        /// with WriteValue&lt;T&gt;(ref T value) where T: unmanaged
+        /// 
+        /// Throws OverflowException if the end of the buffer has been reached.
+        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        {
+            m_Implementation.SerializeNetworkSerializable(ref value);
+        }
+
+        /// <summary>
         /// Serialize an INetworkSerializable
         /// 
         /// Throws OverflowException if the end of the buffer has been reached.
         /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
         /// </summary>
         /// <param name="value">Value to serialize</param>
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
+        public void SerializeValue(ref INetworkSerializable value)
         {
-            m_Implementation.SerializeNetworkSerializable(ref value);
+            m_Implementation.SerializeValue(ref value);
+        }
+
+        /// <summary>
+        /// Serialize a GameObject
+        /// 
+        /// Throws OverflowException if the end of the buffer has been reached.
+        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValue(ref GameObject value)
+        {
+            m_Implementation.SerializeValue(ref value);
+        }
+
+        /// <summary>
+        /// Serialize a NetworkObject
+        /// 
+        /// Throws OverflowException if the end of the buffer has been reached.
+        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValue(ref NetworkObject value)
+        {
+            m_Implementation.SerializeValue(ref value);
+        }
+
+        /// <summary>
+        /// Serialize a NetworkBehaviour
+        /// 
+        /// Throws OverflowException if the end of the buffer has been reached.
+        /// Write buffers will grow up to the maximum allowable message size before throwing OverflowException.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValue(ref NetworkBehaviour value)
+        {
+            m_Implementation.SerializeValue(ref value);
         }
 
         /// <summary>
@@ -153,6 +232,45 @@ namespace Unity.Netcode
         public bool PreCheck(int amount)
         {
             return m_Implementation.PreCheck(amount);
+        }
+
+        /// <summary>
+        /// Serialize a GameObject.
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValuePreChecked(ref GameObject value)
+        {
+            m_Implementation.SerializeValuePreChecked(ref value);
+        }
+
+        /// <summary>
+        /// Serialize a NetworkObject
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValuePreChecked(ref NetworkObject value)
+        {
+            m_Implementation.SerializeValuePreChecked(ref value);
+        }
+
+        /// <summary>
+        /// Serialize a NetworkBehaviour
+        ///
+        /// Using the PreChecked versions of these functions requires calling PreCheck() ahead of time, and they should only
+        /// be called if PreCheck() returns true. This is an efficiency option, as it allows you to PreCheck() multiple
+        /// serialization operations in one function call instead of having to do bounds checking on every call.
+        /// </summary>
+        /// <param name="value">Value to serialize</param>
+        public void SerializeValuePreChecked(ref NetworkBehaviour value)
+        {
+            m_Implementation.SerializeValuePreChecked(ref value);
         }
 
         /// <summary>

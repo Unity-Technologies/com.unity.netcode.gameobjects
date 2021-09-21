@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -160,26 +159,24 @@ namespace Unity.Netcode
         public string ToBase64()
         {
             NetworkConfig config = this;
-            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
-            using (writer)
-            {
-                writer.WriteValueSafe(config.ProtocolVersion);
-                writer.WriteValueSafe(config.TickRate);
-                writer.WriteValueSafe(config.ClientConnectionBufferTimeout);
-                writer.WriteValueSafe(config.ConnectionApproval);
-                writer.WriteValueSafe(config.LoadSceneTimeOut);
-                writer.WriteValueSafe(config.EnableTimeResync);
-                writer.WriteValueSafe(config.EnsureNetworkVariableLengthSafety);
-                writer.WriteValueSafe(config.RpcHashSize);
-                writer.WriteValueSafe(ForceSamePrefabs);
-                writer.WriteValueSafe(EnableSceneManagement);
-                writer.WriteValueSafe(RecycleNetworkIds);
-                writer.WriteValueSafe(NetworkIdRecycleDelay);
-                writer.WriteValueSafe(EnableNetworkLogs);
+            using var buffer = PooledNetworkBuffer.Get();
+            using var writer = PooledNetworkWriter.Get(buffer);
+            writer.WriteUInt16Packed(config.ProtocolVersion);
+            writer.WriteUInt32Packed(config.TickRate);
+            writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
+            writer.WriteBool(config.ConnectionApproval);
+            writer.WriteInt32Packed(config.LoadSceneTimeOut);
+            writer.WriteBool(config.EnableTimeResync);
+            writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
+            writer.WriteBits((byte)config.RpcHashSize, 2);
+            writer.WriteBool(ForceSamePrefabs);
+            writer.WriteBool(EnableSceneManagement);
+            writer.WriteBool(RecycleNetworkIds);
+            writer.WriteSinglePacked(NetworkIdRecycleDelay);
+            writer.WriteBool(EnableNetworkLogs);
+            buffer.PadBuffer();
 
-                // Allocates
-                return Convert.ToBase64String(writer.ToArray());
-            }
+            return Convert.ToBase64String(buffer.ToArray());
         }
 
         /// <summary>
@@ -190,23 +187,23 @@ namespace Unity.Netcode
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using var reader = new FastBufferReader(binary, Allocator.Temp);
-            using (reader)
-            {
-                reader.ReadValueSafe(out config.ProtocolVersion);
-                reader.ReadValueSafe(out config.TickRate);
-                reader.ReadValueSafe(out config.ClientConnectionBufferTimeout);
-                reader.ReadValueSafe(out config.ConnectionApproval);
-                reader.ReadValueSafe(out config.LoadSceneTimeOut);
-                reader.ReadValueSafe(out config.EnableTimeResync);
-                reader.ReadValueSafe(out config.EnsureNetworkVariableLengthSafety);
-                reader.ReadValueSafe(out config.RpcHashSize);
-                reader.ReadValueSafe(out config.ForceSamePrefabs);
-                reader.ReadValueSafe(out config.EnableSceneManagement);
-                reader.ReadValueSafe(out config.RecycleNetworkIds);
-                reader.ReadValueSafe(out config.NetworkIdRecycleDelay);
-                reader.ReadValueSafe(out config.EnableNetworkLogs);
-            }
+            using var buffer = new NetworkBuffer(binary);
+            using var reader = PooledNetworkReader.Get(buffer);
+
+            config.ProtocolVersion = reader.ReadUInt16Packed();
+            ushort sceneCount = reader.ReadUInt16Packed();
+            config.TickRate = reader.ReadUInt32Packed();
+            config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
+            config.ConnectionApproval = reader.ReadBool();
+            config.LoadSceneTimeOut = reader.ReadInt32Packed();
+            config.EnableTimeResync = reader.ReadBool();
+            config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
+            config.RpcHashSize = (HashSize)reader.ReadBits(2);
+            config.ForceSamePrefabs = reader.ReadBool();
+            config.EnableSceneManagement = reader.ReadBool();
+            config.RecycleNetworkIds = reader.ReadBool();
+            config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
+            config.EnableNetworkLogs = reader.ReadBool();
         }
 
 
@@ -224,35 +221,35 @@ namespace Unity.Netcode
                 return m_ConfigHash.Value;
             }
 
-            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
-            using (writer)
+            using var buffer = PooledNetworkBuffer.Get();
+            using var writer = PooledNetworkWriter.Get(buffer);
+
+            writer.WriteUInt16Packed(ProtocolVersion);
+            writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
+
+            if (ForceSamePrefabs)
             {
-                writer.WriteValueSafe(ProtocolVersion);
-                writer.WriteValueSafe(NetworkConstants.PROTOCOL_VERSION);
+                var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                foreach (var sortedEntry in sortedDictionary)
 
-                if (ForceSamePrefabs)
                 {
-                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
-                    foreach (var sortedEntry in sortedDictionary)
-
-                    {
-                        writer.WriteValueSafe(sortedEntry.Key);
-                    }
+                    writer.WriteUInt32Packed(sortedEntry.Key);
                 }
-                writer.WriteValueSafe(ConnectionApproval);
-                writer.WriteValueSafe(ForceSamePrefabs);
-                writer.WriteValueSafe(EnableSceneManagement);
-                writer.WriteValueSafe(EnsureNetworkVariableLengthSafety);
-                writer.WriteValueSafe(RpcHashSize);
-
-                if (cache)
-                {
-                    m_ConfigHash = XXHash.Hash64(writer.ToArray());
-                    return m_ConfigHash.Value;
-                }
-
-                return XXHash.Hash64(writer.ToArray());
             }
+            writer.WriteBool(ConnectionApproval);
+            writer.WriteBool(ForceSamePrefabs);
+            writer.WriteBool(EnableSceneManagement);
+            writer.WriteBool(EnsureNetworkVariableLengthSafety);
+            writer.WriteBits((byte)RpcHashSize, 2);
+            buffer.PadBuffer();
+
+            if (cache)
+            {
+                m_ConfigHash = XXHash.Hash64(buffer.ToArray());
+                return m_ConfigHash.Value;
+            }
+
+            return XXHash.Hash64(buffer.ToArray());
         }
 
         /// <summary>

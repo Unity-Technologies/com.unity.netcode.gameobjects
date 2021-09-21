@@ -11,18 +11,18 @@ namespace TestProject.ManualTests
     {
         public List<float> StatValues;
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        public void NetworkSerialize(NetworkSerializer serializer)
         {
-            if (serializer.IsReader)
+            if (serializer.IsReading)
             {
                 float[] statValuesArray = null;
-                serializer.SerializeValue(ref statValuesArray);
+                serializer.Serialize(ref statValuesArray);
                 StatValues = new List<float>(statValuesArray);
             }
             else
             {
                 float[] statValuesArray = StatValues?.ToArray() ?? new float[0];
-                serializer.SerializeValue(ref statValuesArray);
+                serializer.Serialize(ref statValuesArray);
             }
         }
     }

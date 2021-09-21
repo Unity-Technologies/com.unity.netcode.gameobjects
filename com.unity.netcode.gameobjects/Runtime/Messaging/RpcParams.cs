@@ -1,14 +1,34 @@
-using System.Collections.Generic;
-using Unity.Collections;
-
 namespace Unity.Netcode
 {
-    public struct ServerRpcSendParams
+    public interface IHasUpdateStage
     {
+        NetworkUpdateStage UpdateStage
+        {
+            get;
+            set;
+        }
     }
 
-    public struct ServerRpcReceiveParams
+    public struct ServerRpcSendParams : IHasUpdateStage
     {
+        private NetworkUpdateStage m_UpdateStage;
+
+        public NetworkUpdateStage UpdateStage
+        {
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
+        }
+    }
+
+    public struct ServerRpcReceiveParams : IHasUpdateStage
+    {
+        private NetworkUpdateStage m_UpdateStage;
+
+        public NetworkUpdateStage UpdateStage
+        {
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
+        }
         public ulong SenderClientId;
     }
 
@@ -18,24 +38,27 @@ namespace Unity.Netcode
         public ServerRpcReceiveParams Receive;
     }
 
-    public struct ClientRpcSendParams
+    public struct ClientRpcSendParams : IHasUpdateStage
     {
-        /// <summary>
-        /// IEnumerable version of target id list - use either this OR TargetClientIdsNativeArray
-        /// Note: Even if you provide a value type such as NativeArray, enumerating it will cause boxing.
-        /// If you want to avoid boxing, use TargetClientIdsNativeArray
-        /// </summary>
-        public IEnumerable<ulong> TargetClientIds;
+        private NetworkUpdateStage m_UpdateStage;
 
-        /// <summary>
-        /// NativeArray version of target id list - use either this OR TargetClientIds
-        /// This option avoids any GC allocations but is a bit trickier to use.
-        /// </summary>
-        public NativeArray<ulong>? TargetClientIdsNativeArray;
+        public NetworkUpdateStage UpdateStage
+        {
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
+        }
+        public ulong[] TargetClientIds;
     }
 
-    public struct ClientRpcReceiveParams
+    public struct ClientRpcReceiveParams : IHasUpdateStage
     {
+        private NetworkUpdateStage m_UpdateStage;
+
+        public NetworkUpdateStage UpdateStage
+        {
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
+        }
     }
 
     public struct ClientRpcParams

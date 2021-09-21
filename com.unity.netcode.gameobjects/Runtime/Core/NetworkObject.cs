@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -53,8 +55,6 @@ namespace Unity.Netcode
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
         internal NetworkManager NetworkManagerOwner;
-
-        private ulong m_NetworkObjectId;
 
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
@@ -311,16 +311,22 @@ namespace Unity.Netcode
             }
             else
             {
-                var message = new DestroyObjectMessage
-                {
-                    NetworkObjectId = NetworkObjectId
-                };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
+                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
+                if (context != null)
+                {
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    var bytesReported = NetworkManager.LocalClientId == clientId
                         ? 0
                         : size;
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, bytesReported);
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, bytesReported);
+                }
             }
         }
 
@@ -464,7 +470,7 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, null, false, destroyWithScene);
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
@@ -567,6 +573,36 @@ namespace Unity.Netcode
         internal void SetCachedParent(Transform parentTransform)
         {
             m_CachedParent = parentTransform;
+        }
+
+        internal static void WriteNetworkParenting(NetworkWriter writer, bool isReparented, ulong? latestParent)
+        {
+            writer.WriteBool(isReparented);
+            if (isReparented)
+            {
+                var isLatestParentSet = latestParent != null && latestParent.HasValue;
+                writer.WriteBool(isLatestParentSet);
+                if (isLatestParentSet)
+                {
+                    writer.WriteUInt64Packed(latestParent.Value);
+                }
+            }
+        }
+
+        internal static (bool IsReparented, ulong? LatestParent) ReadNetworkParenting(NetworkReader reader)
+        {
+            ulong? latestParent = null;
+            bool isReparented = reader.ReadBool();
+            if (isReparented)
+            {
+                var isLatestParentSet = reader.ReadBool();
+                if (isLatestParentSet)
+                {
+                    latestParent = reader.ReadUInt64Packed();
+                }
+            }
+
+            return (isReparented, latestParent);
         }
 
         internal (bool IsReparented, ulong? LatestParent) GetNetworkParenting() => (m_IsReparented, m_LatestParent);
@@ -684,28 +720,12 @@ namespace Unity.Netcode
             m_IsReparented = true;
             ApplyNetworkParenting();
 
-            var message = new ParentSyncMessage
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ParentSync, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds.Where(id => Observers.Contains(id)).ToArray(), NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
-                NetworkObjectId = NetworkObjectId,
-                IsReparented = m_IsReparented,
-                IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
-                LatestParent = m_LatestParent
-            };
-
-            unsafe
-            {
-                var maxCount = NetworkManager.ConnectedClientsIds.Length;
-                ulong* clientIds = stackalloc ulong[maxCount];
-                int idx = 0;
-                foreach (var clientId in NetworkManager.ConnectedClientsIds)
-                {
-                    if (Observers.Contains(clientId))
-                    {
-                        clientIds[idx++] = clientId;
-                    }
-                }
-
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                using var nonNullContext = (InternalCommandContext)context;
+                nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
             }
         }
 
@@ -825,13 +845,13 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(Stream stream, ulong clientId)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
                 behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(ref writer, clientId);
+                behavior.WriteNetworkVariableData(stream, clientId);
             }
         }
 
@@ -844,13 +864,13 @@ namespace Unity.Netcode
             }
         }
 
-        internal void SetNetworkVariableData(ref FastBufferReader reader)
+        internal void SetNetworkVariableData(Stream stream)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behaviour = ChildNetworkBehaviours[i];
                 behaviour.InitializeVariables();
-                behaviour.SetNetworkVariableData(ref reader);
+                behaviour.SetNetworkVariableData(stream);
             }
         }
 
@@ -896,142 +916,17 @@ namespace Unity.Netcode
             return ChildNetworkBehaviours[index];
         }
 
-        internal struct SceneObject
+        /// <summary>
+        /// Used to serialize a NetworkObjects during scene synchronization that occurs
+        /// upon a client being approved or a scene transition.
+        /// </summary>
+        /// <param name="writer">writer into the outbound stream</param>
+        /// <param name="targetClientId">clientid we are targeting</param>
+        internal void SerializeSceneObject(NetworkWriter writer, ulong targetClientId)
         {
-            public struct HeaderData
-            {
-                public ulong NetworkObjectId;
-                public ulong OwnerClientId;
-                public uint Hash;
-
-                public bool IsPlayerObject;
-                public bool HasParent;
-                public bool IsSceneObject;
-                public bool HasTransform;
-                public bool IsReparented;
-                public bool HasNetworkVariables;
-            }
-
-            public HeaderData Header;
-
-            //If(Metadata.HasParent)
-            public ulong ParentObjectId;
-
-            //If(Metadata.HasTransform)
-            public struct TransformData
-            {
-                public Vector3 Position;
-                public Quaternion Rotation;
-            }
-
-            public TransformData Transform;
-
-            //If(Metadata.IsReparented)
-            public bool IsLatestParentSet;
-
-            //If(IsLatestParentSet)
-            public ulong? LatestParent;
-
-            public NetworkObject OwnerObject;
-            public ulong TargetClientId;
-
-            public unsafe void Serialize(ref FastBufferWriter writer)
-            {
-                if (!writer.TryBeginWrite(
-                    sizeof(HeaderData) +
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented
-                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
-                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
-                        : 0)))
-                {
-                    throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
-                }
-
-                writer.WriteValue(Header);
-
-                if (Header.HasParent)
-                {
-                    writer.WriteValue(ParentObjectId);
-                }
-
-                if (Header.HasTransform)
-                {
-                    writer.WriteValue(Transform);
-                }
-
-                if (Header.IsReparented)
-                {
-                    writer.WriteValue(IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        writer.WriteValue((ulong)LatestParent);
-                    }
-                }
-
-                if (Header.HasNetworkVariables)
-                {
-                    OwnerObject.WriteNetworkVariableData(ref writer, TargetClientId);
-                }
-            }
-
-            public unsafe void Deserialize(ref FastBufferReader reader)
-            {
-                if (!reader.TryBeginRead(sizeof(HeaderData)))
-                {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
-                }
-                reader.ReadValue(out Header);
-                if (!reader.TryBeginRead(
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented
-                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
-                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
-                        : 0)))
-                {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
-                }
-
-                if (Header.HasParent)
-                {
-                    reader.ReadValue(out ParentObjectId);
-                }
-
-                if (Header.HasTransform)
-                {
-                    reader.ReadValue(out Transform);
-                }
-
-                if (Header.IsReparented)
-                {
-                    reader.ReadValue(out IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        reader.ReadValue(out ulong latestParent);
-                        LatestParent = latestParent;
-                    }
-                }
-            }
-        }
-
-        internal SceneObject GetMessageSceneObject(ulong targetClientId, bool includeNetworkVariableData = true)
-        {
-            var obj = new SceneObject
-            {
-                Header = new SceneObject.HeaderData
-                {
-                    IsPlayerObject = IsPlayerObject,
-                    NetworkObjectId = NetworkObjectId,
-                    OwnerClientId = OwnerClientId,
-                    IsSceneObject = IsSceneObject ?? true,
-                    Hash = HostCheckForGlobalObjectIdHashOverride(),
-                    HasNetworkVariables = includeNetworkVariableData
-                },
-                OwnerObject = this,
-                TargetClientId = targetClientId
-            };
+            writer.WriteBool(IsPlayerObject);
+            writer.WriteUInt64Packed(NetworkObjectId);
+            writer.WriteUInt64Packed(OwnerClientId);
 
             NetworkObject parentNetworkObject = null;
 
@@ -1040,83 +935,157 @@ namespace Unity.Netcode
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
             }
 
-            if (parentNetworkObject)
+            if (parentNetworkObject == null)
             {
-                obj.Header.HasParent = true;
-                obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
+                // We don't have a parent
+                writer.WriteBool(false);
             }
+            else
+            {
+                // We do have a parent
+                writer.WriteBool(true);
+                // Write the parent's NetworkObjectId to be used for linking back to the child
+                writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+            }
+
+            // Write if we are a scene object or not
+            writer.WriteBool(IsSceneObject ?? true);
+
+            // Write the hash for this NetworkObject
+            writer.WriteUInt32Packed(HostCheckForGlobalObjectIdHashOverride());
+
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.Header.HasTransform = true;
-                obj.Transform = new SceneObject.TransformData
-                {
-                    Position = transform.position,
-                    Rotation = transform.rotation
-                };
-            }
+                // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that position and rotation data follows).
+                writer.WriteBool(true);
 
-            var (isReparented, latestParent) = GetNetworkParenting();
-            obj.Header.IsReparented = isReparented;
-            if (isReparented)
+                // Write position
+                writer.WriteSinglePacked(transform.position.x);
+                writer.WriteSinglePacked(transform.position.y);
+                writer.WriteSinglePacked(transform.position.z);
+
+                // Write rotation
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+            }
+            else
             {
-                var isLatestParentSet = latestParent != null && latestParent.HasValue;
-                obj.IsLatestParentSet = isLatestParentSet;
-                if (isLatestParentSet)
-                {
-                    obj.LatestParent = latestParent.Value;
-                }
+                // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that position and rotation data *was not included*)
+                writer.WriteBool(false);
             }
 
-            return obj;
+            {
+                var (isReparented, latestParent) = GetNetworkParenting();
+                WriteNetworkParenting(writer, isReparented, latestParent);
+            }
+
+            // NetworkVariable section
+
+            // todo: remove this WriteBool and the matching read
+            writer.WriteBool(true);
+
+            var buffer = writer.GetStream() as NetworkBuffer;
+
+            // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
+            writer.WriteUInt32(0);
+
+            // Mark our current position before we potentially write any NetworkVariable data
+            var positionBeforeNetworkVariableData = buffer.Position;
+
+            // Write network variable data
+            WriteNetworkVariableData(buffer, targetClientId);
+
+            // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
+            // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
+            // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
+            // constructed (See Part 2 below in the DeserializeSceneObject method)
+            if (buffer.Position > positionBeforeNetworkVariableData)
+            {
+                // Store our current stream buffer position
+                var endOfNetworkVariableData = buffer.Position;
+
+                // Calculate the total NetworkVariable data size written
+                var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
+
+                // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
+                buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
+
+                // Now write the actual data size written into our unpacked UInt32 placeholder position
+                writer.WriteUInt32((uint)(networkVariableDataSize));
+
+                // Finally, revert the buffer position back to the end of the network variable data written
+                buffer.Position = endOfNetworkVariableData;
+            }
         }
 
         /// <summary>
         /// Used to deserialize a serialized scene object which occurs
         /// when the client is approved or during a scene transition
         /// </summary>
-        /// <param name="sceneObject">Deserialized scene object data</param>
-        /// <param name="variableData">reader for the NetworkVariable data</param>
+        /// <param name="objectStream">inbound stream</param>
+        /// <param name="reader">reader for the stream</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <returns>optional to use NetworkObject deserialized</returns>
-        internal static NetworkObject AddSceneObject(in SceneObject sceneObject, ref FastBufferReader variableData, NetworkManager networkManager)
+        internal static NetworkObject DeserializeSceneObject(NetworkBuffer objectStream, NetworkReader reader, NetworkManager networkManager)
         {
-            Vector3? position = null;
-            Quaternion? rotation = null;
+            var isPlayerObject = reader.ReadBool();
+            var networkId = reader.ReadUInt64Packed();
+            var ownerClientId = reader.ReadUInt64Packed();
+            var hasParent = reader.ReadBool();
             ulong? parentNetworkId = null;
 
-            if (sceneObject.Header.HasTransform)
+            if (hasParent)
             {
-                position = sceneObject.Transform.Position;
-                rotation = sceneObject.Transform.Rotation;
+                parentNetworkId = reader.ReadUInt32Packed();
             }
 
-            if (sceneObject.Header.HasParent)
+            bool isSceneObject = reader.ReadBool();
+
+            uint globalObjectIdHash = reader.ReadUInt32Packed();
+            Vector3? position = null;
+            Quaternion? rotation = null;
+
+            // Check to see if we have position and rotation values that follows
+            if (reader.ReadBool())
             {
-                parentNetworkId = sceneObject.ParentObjectId;
+                position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
             }
+
+            var (isReparented, latestParent) = ReadNetworkParenting(reader);
 
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
-                sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Header.IsReparented);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, globalObjectIdHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
 
-            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
+            networkObject?.SetNetworkParenting(isReparented, latestParent);
 
-            if (networkObject == null)
+            // Determine if this NetworkObject has NetworkVariable data to read
+            var networkVariableDataIsIncluded = reader.ReadBool();
+
+            if (networkVariableDataIsIncluded)
             {
-                // Log the error that the NetworkObject failed to construct
-                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Header.Hash}.");
+                // (See Part 1 above in the NetworkObject.SerializeSceneObject method to better understand this)
+                // Part 2: This makes sure that if one NetworkObject fails to construct (for whatever reason) then we can "skip past"
+                // that specific NetworkObject but continue processing any remaining serialized NetworkObjects as opposed to just
+                // throwing an exception and skipping the remaining (if any) NetworkObjects.  This will prevent one misconfigured
+                // issue (or more) from breaking the entire loading process.
+                var networkVariableDataSize = reader.ReadUInt32();
+                if (networkObject == null)
+                {
+                    // Log the error that the NetworkObject failed to construct
+                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {globalObjectIdHash}.");
 
-                // If we failed to load this NetworkObject, then skip past the network variable data
-                variableData.ReadValueSafe(out ushort varSize);
-                variableData.Seek(variableData.Position + varSize);
+                    // If we failed to load this NetworkObject, then skip past the network variable data
+                    objectStream.Position += networkVariableDataSize;
 
-                // We have nothing left to do here.
-                return null;
+                    // We have nothing left to do here.
+                    return null;
+                }
             }
 
-            // Spawn the NetworkObject(
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, ref variableData, false);
+            // Spawn the NetworkObject
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, true, false);
 
             return networkObject;
         }

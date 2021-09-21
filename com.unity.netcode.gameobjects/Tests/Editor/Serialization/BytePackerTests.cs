@@ -229,6 +229,24 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private unsafe void RunObjectTypeTest<T>(T value) where T : unmanaged
+        {
+            var writer = new FastBufferWriter(sizeof(T) * 2, Allocator.Temp);
+            using (writer)
+            {
+                BytePacker.WriteObjectPacked(ref writer, value);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+
+                    ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(T));
+                    Assert.AreEqual(value, outVal);
+                    VerifyBytewiseEquality(value, (T)outVal);
+                }
+            }
+        }
+
+
 
         [Test]
         public void TestPacking64BitsUnsigned()
@@ -833,6 +851,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(b);
                 }
+                else
+                {
+                    RunObjectTypeTest(b);
+                }
             }
             else if (testType == typeof(sbyte))
             {
@@ -840,6 +862,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(sb);
+                }
+                else
+                {
+                    RunObjectTypeTest(sb);
                 }
             }
             else if (testType == typeof(short))
@@ -849,6 +875,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(s);
                 }
+                else
+                {
+                    RunObjectTypeTest(s);
+                }
             }
             else if (testType == typeof(ushort))
             {
@@ -856,6 +886,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(us);
+                }
+                else
+                {
+                    RunObjectTypeTest(us);
                 }
             }
             else if (testType == typeof(int))
@@ -865,6 +899,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(i);
                 }
+                else
+                {
+                    RunObjectTypeTest(i);
+                }
             }
             else if (testType == typeof(uint))
             {
@@ -872,6 +910,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(ui);
+                }
+                else
+                {
+                    RunObjectTypeTest(ui);
                 }
             }
             else if (testType == typeof(long))
@@ -881,6 +923,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(l);
                 }
+                else
+                {
+                    RunObjectTypeTest(l);
+                }
             }
             else if (testType == typeof(ulong))
             {
@@ -889,12 +935,20 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(ul);
                 }
+                else
+                {
+                    RunObjectTypeTest(ul);
+                }
             }
             else if (testType == typeof(bool))
             {
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(true);
+                }
+                else
+                {
+                    RunObjectTypeTest(true);
                 }
             }
             else if (testType == typeof(char))
@@ -904,11 +958,19 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(c);
                 }
+                else
+                {
+                    RunObjectTypeTest(c);
+                }
 
                 c = '\u263a';
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(c);
+                }
+                else
+                {
+                    RunObjectTypeTest(c);
                 }
             }
             else if (testType == typeof(float))
@@ -918,6 +980,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(f);
                 }
+                else
+                {
+                    RunObjectTypeTest(f);
+                }
             }
             else if (testType == typeof(double))
             {
@@ -925,6 +991,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(d);
+                }
+                else
+                {
+                    RunObjectTypeTest(d);
                 }
             }
             else if (testType == typeof(ByteEnum))
@@ -934,6 +1004,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
+                else
+                {
+                    RunObjectTypeTest(e);
+                }
             }
             else if (testType == typeof(SByteEnum))
             {
@@ -941,6 +1015,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
+                }
+                else
+                {
+                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(ShortEnum))
@@ -950,6 +1028,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
+                else
+                {
+                    RunObjectTypeTest(e);
+                }
             }
             else if (testType == typeof(UShortEnum))
             {
@@ -957,6 +1039,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
+                }
+                else
+                {
+                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(IntEnum))
@@ -966,6 +1052,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
+                else
+                {
+                    RunObjectTypeTest(e);
+                }
             }
             else if (testType == typeof(UIntEnum))
             {
@@ -973,6 +1063,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
+                }
+                else
+                {
+                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(LongEnum))
@@ -982,6 +1076,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
+                else
+                {
+                    RunObjectTypeTest(e);
+                }
             }
             else if (testType == typeof(ULongEnum))
             {
@@ -989,6 +1087,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
+                }
+                else
+                {
+                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(Vector2))
@@ -998,6 +1100,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
+                else
+                {
+                    RunObjectTypeTest(v);
+                }
             }
             else if (testType == typeof(Vector3))
             {
@@ -1005,6 +1111,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
+                }
+                else
+                {
+                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Vector4))
@@ -1014,6 +1124,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
+                else
+                {
+                    RunObjectTypeTest(v);
+                }
             }
             else if (testType == typeof(Quaternion))
             {
@@ -1021,6 +1135,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
+                }
+                else
+                {
+                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Color))
@@ -1030,6 +1148,10 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
+                else
+                {
+                    RunObjectTypeTest(v);
+                }
             }
             else if (testType == typeof(Color32))
             {
@@ -1037,6 +1159,10 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
+                }
+                else
+                {
+                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Ray))
@@ -1066,6 +1192,26 @@ namespace Unity.Netcode.EditorTests
                         }
                     }
                 }
+                else
+                {
+                    unsafe
+                    {
+                        var writer = new FastBufferWriter(sizeof(Ray) * 2, Allocator.Temp);
+                        using (writer)
+                        {
+                            BytePacker.WriteObjectPacked(ref writer, v);
+                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                            using (reader)
+                            {
+                                ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(Ray));
+                                Assert.AreEqual(v.origin, ((Ray)outVal).origin);
+                                Assert.AreEqual(v.direction.x, ((Ray)outVal).direction.x, 0.00001);
+                                Assert.AreEqual(v.direction.y, ((Ray)outVal).direction.y, 0.00001);
+                                Assert.AreEqual(v.direction.z, ((Ray)outVal).direction.z, 0.00001);
+                            }
+                        }
+                    }
+                }
             }
             else if (testType == typeof(Ray2D))
             {
@@ -1089,6 +1235,25 @@ namespace Unity.Netcode.EditorTests
                                 Assert.AreEqual(v.origin, outVal.origin);
                                 Assert.AreEqual(v.direction.x, outVal.direction.x, 0.00001);
                                 Assert.AreEqual(v.direction.y, outVal.direction.y, 0.00001);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    unsafe
+                    {
+                        var writer = new FastBufferWriter(sizeof(Ray2D) * 2, Allocator.Temp);
+                        using (writer)
+                        {
+                            BytePacker.WriteObjectPacked(ref writer, v);
+                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                            using (reader)
+                            {
+                                ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(Ray2D));
+                                Assert.AreEqual(v.origin, ((Ray2D)outVal).origin);
+                                Assert.AreEqual(v.direction.x, ((Ray2D)outVal).direction.x, 0.00001);
+                                Assert.AreEqual(v.direction.y, ((Ray2D)outVal).direction.y, 0.00001);
                             }
                         }
                     }

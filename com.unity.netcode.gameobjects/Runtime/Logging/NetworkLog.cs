@@ -56,16 +56,18 @@ namespace Unity.Netcode
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-
-                var networkMessage = new ServerLogMessage
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ServerLog, NetworkDelivery.ReliableSequenced, new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
                 {
-                    LogType = logType,
-                    Message = message
-                };
-                var size = NetworkManager.Singleton.SendMessage(networkMessage, NetworkDelivery.ReliableFragmentedSequenced,
-                    NetworkManager.Singleton.ServerClientId);
+                    using var nonNullContext = (InternalCommandContext)context;
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+                    nonNullContext.NetworkWriter.WriteByte((byte)logType);
+                    nonNullContext.NetworkWriter.WriteStringPacked(message);
+                    var size = bufferSizeCapture.StopMeasureSegment();
 
-                NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
+                    NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
+                }
             }
         }
 
@@ -73,7 +75,7 @@ namespace Unity.Netcode
         internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[Netcode-Server Sender={sender}] {message}");
         internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[Netcode-Server Sender={sender}] {message}");
 
-        internal enum LogType : byte
+        internal enum LogType
         {
             Info,
             Warning,

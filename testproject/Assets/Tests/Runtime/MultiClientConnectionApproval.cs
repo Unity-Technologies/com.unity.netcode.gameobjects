@@ -227,8 +227,8 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Check to make sure all clients are connected
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
-            Assert.AreEqual(3, m_ClientConnectedInvocations);
-            Assert.AreEqual(4, m_ServerClientConnectedInvocations);
+            Assert.True(m_ClientConnectedInvocations == 3);
+            Assert.True(m_ServerClientConnectedInvocations == 4);
         }
 
         private void Client_OnClientConnectedCallback(ulong clientId)
@@ -276,7 +276,7 @@ namespace TestProject.RuntimeTests
             var nextFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
+            Assert.True(m_ServerClientDisconnectedInvocations == 3);
         }
 
         private void Server_OnClientDisconnectedCallback(ulong clientId)

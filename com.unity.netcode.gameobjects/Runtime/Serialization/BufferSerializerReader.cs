@@ -1,8 +1,9 @@
 using System;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal struct BufferSerializerReader : IReaderWriter
+    internal struct BufferSerializerReader : IBufferSerializerImplementation
     {
         private Ref<FastBufferReader> m_Reader;
 
@@ -22,6 +23,31 @@ namespace Unity.Netcode
         public ref FastBufferWriter GetFastBufferWriter()
         {
             throw new InvalidOperationException("Cannot retrieve a FastBufferWriter from a serializer where IsWriter = false");
+        }
+
+        public void SerializeValue(ref object value, Type type, bool isNullable = false)
+        {
+            m_Reader.Value.ReadObject(out value, type, isNullable);
+        }
+
+        public void SerializeValue(ref INetworkSerializable value)
+        {
+            m_Reader.Value.ReadNetworkSerializable(out value);
+        }
+
+        public void SerializeValue(ref GameObject value)
+        {
+            m_Reader.Value.ReadValueSafe(out value);
+        }
+
+        public void SerializeValue(ref NetworkObject value)
+        {
+            m_Reader.Value.ReadValueSafe(out value);
+        }
+
+        public void SerializeValue(ref NetworkBehaviour value)
+        {
+            m_Reader.Value.ReadValueSafe(out value);
         }
 
         public void SerializeValue(ref string s, bool oneByteChars = false)
@@ -44,7 +70,7 @@ namespace Unity.Netcode
             m_Reader.Value.ReadValueSafe(out value);
         }
 
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
         {
             m_Reader.Value.ReadNetworkSerializable(out value);
         }
@@ -52,6 +78,21 @@ namespace Unity.Netcode
         public bool PreCheck(int amount)
         {
             return m_Reader.Value.TryBeginRead(amount);
+        }
+
+        public void SerializeValuePreChecked(ref GameObject value)
+        {
+            m_Reader.Value.ReadValue(out value);
+        }
+
+        public void SerializeValuePreChecked(ref NetworkObject value)
+        {
+            m_Reader.Value.ReadValue(out value);
+        }
+
+        public void SerializeValuePreChecked(ref NetworkBehaviour value)
+        {
+            m_Reader.Value.ReadValue(out value);
         }
 
         public void SerializeValuePreChecked(ref string s, bool oneByteChars = false)

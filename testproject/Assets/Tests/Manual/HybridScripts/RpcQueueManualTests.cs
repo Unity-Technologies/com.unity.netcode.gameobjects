@@ -281,6 +281,7 @@ namespace TestProject.ManualTests
                             NetworkManager.StartClient();
                             Screen.SetResolution(800, 80, FullScreenMode.Windowed);
                         }
+                        m_ServerRpcParams.Send.UpdateStage = NetworkUpdateStage.Update;
 
                         break;
                     }
@@ -291,6 +292,7 @@ namespace TestProject.ManualTests
                             NetworkManager.StartHost();
                             Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                         }
+                        m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
 
                         break;
                     }
@@ -302,6 +304,8 @@ namespace TestProject.ManualTests
                             Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                             m_ClientProgressBar.enabled = false;
                         }
+
+                        m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
 
                         break;
                     }
@@ -640,7 +644,8 @@ namespace TestProject.ManualTests
         [ServerRpc(RequireOwnership = false)]
         private void OnSendNoParametersServerRpc(ServerRpcParams parameters = default)
         {
-            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
+            m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.Update;
             OnSendNoParametersClientRpc(m_ClientRpcParamsMultiParameter);
         }
 
@@ -652,7 +657,8 @@ namespace TestProject.ManualTests
         [ServerRpc(RequireOwnership = false)]
         private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
         {
-            m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new[] { parameters.Receive.SenderClientId };
+            m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
             OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);
         }
 

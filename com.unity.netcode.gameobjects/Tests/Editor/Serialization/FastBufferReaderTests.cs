@@ -102,6 +102,28 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        protected override unsafe void RunObjectTypeTest<T>(T valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(T), writeSize);
+
+                var failMessage = $"RunObjectTypeTest failed with type {typeof(T)} and value {valueToTest}";
+                writer.WriteObject(valueToTest);
+
+                var reader = CommonChecks(ref writer, valueToTest, writeSize, failMessage);
+
+                using (reader)
+                {
+                    reader.ReadObject(out object result, typeof(T));
+                    Assert.AreEqual(valueToTest, result);
+                }
+            }
+        }
+
         private void VerifyArrayEquality<T>(T[] value, T[] compareValue, int offset) where T : unmanaged
         {
             Assert.AreEqual(value.Length, compareValue.Length);
@@ -164,6 +186,31 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        protected override unsafe void RunObjectTypeArrayTest<T>(T[] valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            // Extra byte for WriteObject adding isNull flag
+            var writer = new FastBufferWriter(writeSize + 3, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+
+                writer.WriteObject(valueToTest);
+
+                WriteCheckBytes(ref writer, writeSize + 1);
+
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
+
+                    reader.ReadObject(out object result, typeof(T[]));
+                    VerifyArrayEquality(valueToTest, (T[])result, 0);
+
+                    VerifyCheckBytes(ref reader, writeSize + 1);
+                }
+            }
+        }
         #endregion
 
         #region Tests
@@ -195,6 +242,7 @@ namespace Unity.Netcode.EditorTests
 
         [TestCase(false, WriteType.WriteDirect)]
         [TestCase(false, WriteType.WriteSafe)]
+        [TestCase(false, WriteType.WriteAsObject)]
         [TestCase(true, WriteType.WriteDirect)]
         [TestCase(true, WriteType.WriteSafe)]
         public void GivenFastBufferWriterContainingValue_WhenReadingString_ValueMatchesWhatWasWritten(bool oneByteChars, WriteType writeType)
@@ -215,6 +263,10 @@ namespace Unity.Netcode.EditorTests
                     case WriteType.WriteSafe:
                         writer.WriteValueSafe(valueToTest, oneByteChars);
                         break;
+                    case WriteType.WriteAsObject:
+                        writer.WriteObject(valueToTest);
+                        serializedValueSize += 1;
+                        break;
                 }
 
                 WriteCheckBytes(ref writer, serializedValueSize);
@@ -233,6 +285,10 @@ namespace Unity.Netcode.EditorTests
                             break;
                         case WriteType.WriteSafe:
                             reader.ReadValueSafe(out result, oneByteChars);
+                            break;
+                        case WriteType.WriteAsObject:
+                            reader.ReadObject(out object resultObj, typeof(string), oneByteChars);
+                            result = (string)resultObj;
                             break;
                     }
                     Assert.AreEqual(valueToTest, result);
@@ -811,6 +867,147 @@ namespace Unity.Netcode.EditorTests
                     Assert.AreEqual(reader.Length, writer.Length);
                 }
             }
+        }
+
+        [Test]
+        public void GivenFastBufferWriterWithNetworkObjectWritten_WhenReadingNetworkObject_TheSameObjectIsRetrieved([Values] WriteType writeType)
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkObject) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(networkObject)));
+                            writer.WriteValue(networkObject);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(networkObject);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(networkObject);
+                            break;
+                    }
+
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetNetworkObjectWriteSize()));
+                        NetworkObject result = null;
+                        switch (writeType)
+                        {
+                            case WriteType.WriteDirect:
+                                Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetWriteSize(networkObject)));
+                                reader.ReadValue(out result);
+                                break;
+                            case WriteType.WriteSafe:
+                                reader.ReadValueSafe(out result);
+                                break;
+                            case WriteType.WriteAsObject:
+                                reader.ReadObject(out object resultObj, typeof(NetworkObject));
+                                result = (NetworkObject)resultObj;
+                                break;
+                        }
+                        Assert.AreSame(result, networkObject);
+                    }
+                }
+            });
+        }
+
+        [Test]
+        public void GivenFastBufferWriterWithGameObjectWritten_WhenReadingGameObject_TheSameObjectIsRetrieved([Values] WriteType writeType)
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(obj) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(obj)));
+                            writer.WriteValue(obj);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(obj);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(obj);
+                            break;
+                    }
+
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetGameObjectWriteSize()));
+                        GameObject result = null;
+                        switch (writeType)
+                        {
+                            case WriteType.WriteDirect:
+                                Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetWriteSize(obj)));
+                                reader.ReadValue(out result);
+                                break;
+                            case WriteType.WriteSafe:
+                                reader.ReadValueSafe(out result);
+                                break;
+                            case WriteType.WriteAsObject:
+                                reader.ReadObject(out object resultObj, typeof(GameObject));
+                                result = (GameObject)resultObj;
+                                break;
+                        }
+                        Assert.AreSame(result, obj);
+                    }
+                }
+            });
+        }
+
+        [Test]
+        public void GivenFastBufferWriterWithNetworkBehaviourWritten_WhenReadingNetworkBehaviour_TheSameObjectIsRetrieved([Values] WriteType writeType)
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                var writer = new FastBufferWriter(FastBufferWriterExtensions.GetWriteSize(networkBehaviour) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    switch (writeType)
+                    {
+                        case WriteType.WriteDirect:
+                            Assert.IsTrue(writer.TryBeginWrite(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)));
+                            writer.WriteValue(networkBehaviour);
+                            break;
+                        case WriteType.WriteSafe:
+                            writer.WriteValueSafe(networkBehaviour);
+                            break;
+                        case WriteType.WriteAsObject:
+                            writer.WriteObject(networkBehaviour);
+                            break;
+                    }
+
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetNetworkBehaviourWriteSize()));
+                        NetworkBehaviour result = null;
+                        switch (writeType)
+                        {
+                            case WriteType.WriteDirect:
+                                Assert.IsTrue(reader.TryBeginRead(FastBufferWriterExtensions.GetWriteSize(networkBehaviour)));
+                                reader.ReadValue(out result);
+                                break;
+                            case WriteType.WriteSafe:
+                                reader.ReadValueSafe(out result);
+                                break;
+                            case WriteType.WriteAsObject:
+                                reader.ReadObject(out object resultObj, typeof(NetworkBehaviour));
+                                result = (NetworkBehaviour)resultObj;
+                                break;
+                        }
+                        Assert.AreSame(result, networkBehaviour);
+                    }
+                }
+            });
         }
 
         [Test]

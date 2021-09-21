@@ -6,6 +6,138 @@ namespace Unity.Netcode
 {
     public static class ByteUnpacker
     {
+        #region Managed TypePacking
+
+        /// <summary>
+        /// Reads a boxed object in a packed format
+        /// Named differently from other ReadValuePacked methods to avoid accidental boxing
+        /// Don't use this method unless you have no other choice.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The object to read</param>
+        /// <param name="type">The type of the object to read (i.e., typeof(int))</param>
+        /// <param name="isNullable">
+        /// If true, reads a byte indicating whether or not the object is null.
+        /// Should match the way the object was written.
+        /// </param>
+        public static void ReadObjectPacked(ref FastBufferReader reader, out object value, Type type, bool isNullable = false)
+        {
+#if UNITY_NETCODE_DEBUG_NO_PACKING
+            reader.ReadObject(out value, type, isNullable);
+            return;
+#endif
+            if (isNullable || type.IsNullable())
+            {
+                reader.ReadValueSafe(out bool isNull);
+
+                if (isNull)
+                {
+                    value = null;
+                    return;
+                }
+            }
+
+            var hasDeserializer = SerializationTypeTable.DeserializersPacked.TryGetValue(type, out var deserializer);
+            if (hasDeserializer)
+            {
+                deserializer(ref reader, out value);
+                return;
+            }
+
+            if (type.IsArray && type.HasElementType)
+            {
+                ReadValuePacked(ref reader, out int length);
+
+                var arr = Array.CreateInstance(type.GetElementType(), length);
+
+                for (int i = 0; i < length; i++)
+                {
+                    ReadObjectPacked(ref reader, out object item, type.GetElementType());
+                    arr.SetValue(item, i);
+                }
+
+                value = arr;
+                return;
+            }
+
+            if (type.IsEnum)
+            {
+                switch (Type.GetTypeCode(type))
+                {
+                    case TypeCode.Boolean:
+                        ReadValuePacked(ref reader, out byte boolVal);
+                        value = Enum.ToObject(type, boolVal != 0);
+                        return;
+                    case TypeCode.Char:
+                        ReadValuePacked(ref reader, out char charVal);
+                        value = Enum.ToObject(type, charVal);
+                        return;
+                    case TypeCode.SByte:
+                        ReadValuePacked(ref reader, out byte sbyteVal);
+                        value = Enum.ToObject(type, sbyteVal);
+                        return;
+                    case TypeCode.Byte:
+                        ReadValuePacked(ref reader, out byte byteVal);
+                        value = Enum.ToObject(type, byteVal);
+                        return;
+                    case TypeCode.Int16:
+                        ReadValuePacked(ref reader, out short shortVal);
+                        value = Enum.ToObject(type, shortVal);
+                        return;
+                    case TypeCode.UInt16:
+                        ReadValuePacked(ref reader, out ushort ushortVal);
+                        value = Enum.ToObject(type, ushortVal);
+                        return;
+                    case TypeCode.Int32:
+                        ReadValuePacked(ref reader, out int intVal);
+                        value = Enum.ToObject(type, intVal);
+                        return;
+                    case TypeCode.UInt32:
+                        ReadValuePacked(ref reader, out uint uintVal);
+                        value = Enum.ToObject(type, uintVal);
+                        return;
+                    case TypeCode.Int64:
+                        ReadValuePacked(ref reader, out long longVal);
+                        value = Enum.ToObject(type, longVal);
+                        return;
+                    case TypeCode.UInt64:
+                        ReadValuePacked(ref reader, out ulong ulongVal);
+                        value = Enum.ToObject(type, ulongVal);
+                        return;
+                }
+            }
+
+            if (type == typeof(GameObject))
+            {
+                reader.ReadValueSafe(out GameObject go);
+                value = go;
+                return;
+            }
+
+            if (type == typeof(NetworkObject))
+            {
+                reader.ReadValueSafe(out NetworkObject no);
+                value = no;
+                return;
+            }
+
+            if (typeof(NetworkBehaviour).IsAssignableFrom(type))
+            {
+                reader.ReadValueSafe(out NetworkBehaviour nb);
+                value = nb;
+                return;
+            }
+            /*if (value is INetworkSerializable)
+            {
+                //TODO ((INetworkSerializable)value).NetworkSerialize(new NetworkSerializer(this));
+                return;
+            }*/
+
+            throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
+        }
+        #endregion
+
+        #region Unmanaged Type Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -300,6 +432,9 @@ namespace Unity.Netcode
             }
         }
 #endif
+        #endregion
+
+        #region Bit Packing
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
         
@@ -493,6 +628,9 @@ namespace Unity.Netcode
             value = returnValue >> 3;
         }
 #endif
+        #endregion
+
+        #region Private Methods
         private static void ReadUInt64Packed(ref FastBufferReader reader, out ulong value)
         {
             reader.ReadByteSafe(out byte firstByte);
@@ -554,5 +692,6 @@ namespace Unity.Netcode
             double* asDouble = (double*)&value;
             return *asDouble;
         }
+        #endregion
     }
 }

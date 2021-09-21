@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -51,7 +52,6 @@ namespace Unity.Netcode
             foreach (var value in values)
             {
                 m_List.Add(value);
-
             }
         }
 
@@ -70,49 +70,50 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void WriteDelta(ref FastBufferWriter writer)
+        public override void WriteDelta(Stream stream)
         {
+            using var writer = PooledNetworkWriter.Get(stream);
 
             if (base.IsDirty())
             {
-                writer.WriteValueSafe((ushort)1);
-                writer.WriteValueSafe(NetworkListEvent<T>.EventType.Full);
-                WriteField(ref writer);
+                writer.WriteUInt16Packed(1);
+                writer.WriteByte((byte)NetworkListEvent<T>.EventType.Full);
+                WriteField(stream);
 
                 return;
             }
 
-            writer.WriteValueSafe((ushort)m_DirtyEvents.Length);
+            writer.WriteUInt16Packed((ushort)m_DirtyEvents.Length);
             for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
-                writer.WriteValueSafe(m_DirtyEvents[i].Type);
+                writer.WriteByte((byte)m_DirtyEvents[i].Type);
                 switch (m_DirtyEvents[i].Type)
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Clear:
@@ -125,40 +126,41 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void WriteField(ref FastBufferWriter writer)
+        public override void WriteField(Stream stream)
         {
-            writer.WriteValueSafe((ushort)m_List.Length);
+            using var writer = PooledNetworkWriter.Get(stream);
+            writer.WriteUInt16Packed((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
-                writer.WriteValueSafe(m_List[i]);
+                writer.WriteObjectPacked(m_List[i]); //BOX
             }
         }
 
         /// <inheritdoc />
-        public override void ReadField(ref FastBufferReader reader)
+        public override void ReadField(Stream stream)
         {
+            using var reader = PooledNetworkReader.Get(stream);
             m_List.Clear();
-            reader.ReadValueSafe(out ushort count);
+            ushort count = reader.ReadUInt16Packed();
             for (int i = 0; i < count; i++)
             {
-                reader.ReadValueSafe(out T value);
-                m_List.Add(value);
+                m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
             }
         }
 
         /// <inheritdoc />
-        public override void ReadDelta(ref FastBufferReader reader, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            reader.ReadValueSafe(out ushort deltaCount);
+            using var reader = PooledNetworkReader.Get(stream);
+            ushort deltaCount = reader.ReadUInt16Packed();
             for (int i = 0; i < deltaCount; i++)
             {
-                reader.ReadValueSafe(out NetworkListEvent<T>.EventType eventType);
+                var eventType = (NetworkListEvent<T>.EventType)reader.ReadByte();
                 switch (eventType)
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            reader.ReadValueSafe(out T value);
-                            m_List.Add(value);
+                            m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
 
                             if (OnListChanged != null)
                             {
@@ -183,10 +185,9 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            reader.ReadValueSafe(out int index);
-                            reader.ReadValueSafe(out T value);
+                            int index = reader.ReadInt32Packed();
                             m_List.InsertRangeWithBeginEnd(index, index + 1);
-                            m_List[index] = value;
+                            m_List[index] = (T)reader.ReadObjectPacked(typeof(T)); //BOX
 
                             if (OnListChanged != null)
                             {
@@ -211,8 +212,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            reader.ReadValueSafe(out T value);
-                            int index = m_List.IndexOf(value);
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            int index = NativeArrayExtensions.IndexOf(m_List, value);
                             if (index == -1)
                             {
                                 break;
@@ -243,7 +244,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            reader.ReadValueSafe(out int index);
+                            int index = reader.ReadInt32Packed();
                             T value = m_List[index];
                             m_List.RemoveAt(index);
 
@@ -270,8 +271,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            reader.ReadValueSafe(out int index);
-                            reader.ReadValueSafe(out T value);
+                            int index = reader.ReadInt32Packed();
+                            var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
                             if (index < m_List.Length)
                             {
                                 m_List[index] = value;
@@ -322,7 +323,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Full:
                         {
-                            ReadField(ref reader);
+                            ReadField(stream);
                             ResetDirty();
                         }
                         break;
@@ -480,7 +481,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Enum representing the different operations available for triggering an event.
         /// </summary>
-        public enum EventType : byte
+        public enum EventType
         {
             /// <summary>
             /// Add
