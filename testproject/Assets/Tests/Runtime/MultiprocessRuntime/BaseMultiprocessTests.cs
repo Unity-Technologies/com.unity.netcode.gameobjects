@@ -140,18 +140,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         [OneTimeTearDown]
-        public virtual void TeardownSuite()
+        public virtual IEnumerator TeardownSuite()
         {
+            MultiProcessLog($"TeardownSuite");
             if (!IgnoreMultiprocessTests)
             {
+                MultiProcessLog($"TeardownSuite - ShutdownAllProcesses");
                 MultiprocessOrchestration.ShutdownAllProcesses();
+                MultiProcessLog($"TeardownSuite - NetworkManager.Singleton.Shutdown");
                 NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
                 if (m_OriginalActiveScene.IsValid())
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
-                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                yield return SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
             }
         }
 
