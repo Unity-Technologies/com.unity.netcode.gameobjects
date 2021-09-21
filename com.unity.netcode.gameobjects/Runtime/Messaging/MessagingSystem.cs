@@ -420,23 +420,6 @@ namespace Unity.Netcode
                         MessageType = m_MessageTypes[typeof(TMessageType)],
                     };
 
-
-                    if (clientId == m_LocalClientId)
-                    {
-                        m_IncomingMessageQueue.Add(new ReceiveQueueItem
-                        {
-                            Header = header,
-                            Reader = new FastBufferReader(ref tmpSerializer, Allocator.TempJob),
-                            SenderId = clientId,
-                            Timestamp = Time.realtimeSinceStartup
-                        });
-                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                        {
-                            m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
-                        }
-                        continue;
-                    }
-
                     writeQueueItem.Writer.WriteValue(header);
                     writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
                     writeQueueItem.BatchHeader.BatchSize++;
