@@ -105,7 +105,7 @@ namespace TestProject.ManualTests
                 }
             }
         }
-        
+
         private static void ChangeDirectionClientRpcInHandler(NetworkBehaviour target, FastBufferReader reader)
         {
             NetworkManager networkManager = target.NetworkManager;

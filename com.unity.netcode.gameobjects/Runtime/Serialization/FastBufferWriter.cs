@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine.XR;
 
 namespace Unity.Netcode
 {
@@ -83,7 +82,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(Handle, 0, sizeof(WriterHandle) + size);
 #endif
-            Handle->BufferPointer = (byte*) (Handle + 1);
+            Handle->BufferPointer = (byte*)(Handle + 1);
             Handle->Position = 0;
             Handle->Length = 0;
             Handle->Capacity = size;

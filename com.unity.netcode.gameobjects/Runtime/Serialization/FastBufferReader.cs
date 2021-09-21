@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -62,7 +61,7 @@ namespace Unity.Netcode
             {
                 readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), allocator);
                 UnsafeUtility.MemCpy(readerHandle + 1, buffer + offset, length);
-                readerHandle->BufferPointer = (byte*) (readerHandle + 1);
+                readerHandle->BufferPointer = (byte*)(readerHandle + 1);
                 readerHandle->Position = 0;
             }
 
@@ -74,7 +73,7 @@ namespace Unity.Netcode
 #endif
             return readerHandle;
         }
-        
+
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         /// 

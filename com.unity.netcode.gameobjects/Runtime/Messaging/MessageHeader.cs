@@ -12,7 +12,7 @@ namespace Unity.Netcode
         /// calculated differently.
         /// </summary>
         public byte MessageType;
-        
+
         /// <summary>
         /// The total size of the message, NOT including the header.
         /// </summary>

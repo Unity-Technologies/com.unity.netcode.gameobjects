@@ -85,7 +85,7 @@ namespace Unity.Netcode
         /// <param name="delivery"></param>
         /// <returns></returns>
         bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery);
-        
+
         /// <summary>
         /// Called before a message is received. If this returns false, the message will be discarded.
         /// </summary>

@@ -223,7 +223,7 @@ namespace Unity.Netcode
                             return;
                         }
                         batchReader.ReadValue(out MessageHeader messageHeader);
-                        
+
                         if (!batchReader.TryBeginRead(messageHeader.MessageSize))
                         {
                             NetworkLog.LogWarning("Received a message that claimed a size larger than the packet, ending early!");
