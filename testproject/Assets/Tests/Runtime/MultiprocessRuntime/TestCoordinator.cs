@@ -40,6 +40,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void Awake()
     {
+        BaseMultiprocessTests.MultiProcessLog("Awake");
         if (Instance != null)
         {
             Debug.LogError("Multiple test coordinator, destroying this instance");
@@ -52,6 +53,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
+        BaseMultiprocessTests.MultiProcessLog("Start");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
@@ -59,7 +61,7 @@ public class TestCoordinator : NetworkBehaviour
             NetworkManager.Singleton.StartClient();
         }
 
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        // NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
         ExecuteStepInContext.InitializeAllSteps();
     }
@@ -100,6 +102,11 @@ public class TestCoordinator : NetworkBehaviour
     public void TestRunTeardown()
     {
         m_TestResultsLocal.Clear();
+    }
+
+    public void OnEnable()
+    {
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
     public void OnDisable()
