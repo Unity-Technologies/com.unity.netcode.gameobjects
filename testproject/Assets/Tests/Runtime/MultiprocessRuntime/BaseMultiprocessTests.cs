@@ -17,9 +17,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
-
 
         protected virtual bool IsPerformanceTest => true;
 
@@ -67,6 +67,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            MultiProcessLog($"OnSceneLoaded {scene.name}");
             SceneManager.sceneLoaded -= OnSceneLoaded;
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
@@ -77,6 +78,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+
+            m_HasSceneLoaded = true;
         }
 
         /// <summary>
@@ -96,7 +99,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsListening);
+            yield return new WaitUntil(() => NetworkManager.Singleton != null);
+            MultiProcessLog("NetworkManager.Singleton != null");
+            yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
+            MultiProcessLog("NetworkManager.Singleton.IsServer");
+            yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
+            MultiProcessLog("NetworkManager.Singleton.IsListening");
+            yield return new WaitUntil(() => m_HasSceneLoaded == true);
+            MultiProcessLog("m_HasSceneLoaded");
             var startTime = Time.time;
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
@@ -115,7 +125,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else
             {
-                MultiProcessLog($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()}");
+                MultiProcessLog($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()} and connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
@@ -125,7 +135,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and {MultiprocessOrchestration.ActiveWorkerCount()} processes but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
