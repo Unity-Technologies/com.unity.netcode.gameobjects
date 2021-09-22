@@ -118,10 +118,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (MultiprocessOrchestration.ActiveWorkerCount() < WorkerCount)
+            if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
             {
                 var timeOutTime2 = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec / 3;
-                var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
+                var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
                     int beforeActiveWorkerCount = MultiprocessOrchestration.ActiveWorkerCount();
@@ -139,7 +139,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         if (Time.realtimeSinceStartup > timeOutTime2)
                         {
                             MultiProcessLog("We've waited long enough, maybe there's a problem so let's try again");
-                            MultiprocessOrchestration.StartWorkerNode();
                             break;
                         }
                     }
