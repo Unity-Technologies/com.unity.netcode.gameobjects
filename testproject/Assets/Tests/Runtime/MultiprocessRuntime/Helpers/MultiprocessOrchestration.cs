@@ -42,7 +42,7 @@ public class MultiprocessOrchestration
         return activeWorkerCount;
     }
 
-    public static void StartWorkerNode()
+    public static string StartWorkerNode()
     {
         if (s_Processes == null)
         {
@@ -111,16 +111,14 @@ public class MultiprocessOrchestration
 
         string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
-
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-
         workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count}");
+            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count} with arguments {workerProcess.StartInfo.Arguments}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -132,6 +130,7 @@ public class MultiprocessOrchestration
             Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw;
         }
+        return logPath;
     }
 
     public static void ShutdownAllProcesses()

@@ -127,10 +127,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     int beforeActiveWorkerCount = MultiprocessOrchestration.ActiveWorkerCount();
                     int beforeConnectedClientCount = NetworkManager.Singleton.ConnectedClients.Count;
                     MultiProcessLog($"Spawning testplayer {i} since {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
-                    MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    MultiProcessLog($"logPath {logPath}");
                     while (NetworkManager.Singleton.ConnectedClients.Count < beforeConnectedClientCount + 1)
                     {
-                        yield return new WaitForSeconds(1.0f);
+                        yield return new WaitForSeconds(1.5f);
                         MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} is less than {WorkerCount} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                         if (MultiprocessOrchestration.ActiveWorkerCount() <= beforeActiveWorkerCount)
                         {
@@ -142,6 +143,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                             break;
                         }
                     }
+                    MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
             else
@@ -160,6 +162,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
+            MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
 
