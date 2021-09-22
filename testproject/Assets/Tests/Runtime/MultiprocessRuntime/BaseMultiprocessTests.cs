@@ -120,7 +120,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (MultiprocessOrchestration.ActiveWorkerCount() < WorkerCount)
             {
-                var timeOutTime2 = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec/3;
+                var timeOutTime2 = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec / 3;
                 var numProcessesToCreate = WorkerCount - MultiprocessOrchestration.ActiveWorkerCount();
                 for (int i = 0; i < numProcessesToCreate; i++)
                 {
@@ -208,7 +208,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 testName = "N/A";
             }
-            
+
             if (string.IsNullOrEmpty(testName))
             {
                 testName = "unknwon";
