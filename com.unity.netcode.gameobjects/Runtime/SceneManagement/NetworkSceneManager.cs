@@ -1522,11 +1522,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">client who sent the scene event</param>
         /// <param name="reader">data associated with the scene event</param>
-        internal void HandleSceneEvent(ulong clientId, ref FastBufferReader reader)
+        internal void HandleSceneEvent(ulong clientId, FastBufferReader reader)
         {
             if (m_NetworkManager != null)
             {
-                SceneEventData.Deserialize(ref reader);
+                SceneEventData.Deserialize(reader);
 
                 var bytesReported = m_NetworkManager.LocalClientId == clientId
                     ? 0

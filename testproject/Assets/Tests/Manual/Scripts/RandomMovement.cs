@@ -106,6 +106,16 @@ namespace TestProject.ManualTests
             }
         }
 
+        private static void ChangeDirectionClientRpcInHandler(NetworkBehaviour target, FastBufferReader reader)
+        {
+            NetworkManager networkManager = target.NetworkManager;
+            if (networkManager != null && networkManager.IsListening)
+            {
+                reader.ReadValueSafe(out Vector3 value);
+                ((RandomMovement)target).ChangeDirectionClientRpc(value);
+            }
+        }
+
         private void ChangeDirection(bool moveRight, bool moveDown)
         {
             float ang = Random.Range(0, 2 * Mathf.PI);

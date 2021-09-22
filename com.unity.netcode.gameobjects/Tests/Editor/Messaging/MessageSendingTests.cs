@@ -16,13 +16,13 @@ namespace Unity.Netcode.EditorTests
             public int C;
             public static bool Serialized;
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 Serialized = true;
                 writer.WriteValueSafe(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
             }
         }
@@ -31,7 +31,7 @@ namespace Unity.Netcode.EditorTests
         {
             public List<byte[]> MessageQueue = new List<byte[]>();
 
-            public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
+            public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
                 MessageQueue.Add(batchData.ToArray());
             }

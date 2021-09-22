@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// </summary>
     public ref struct BitWriter
     {
-        private Ref<FastBufferWriter> m_Writer;
+        private FastBufferWriter m_Writer;
         private unsafe byte* m_BufferPointer;
         private readonly int m_Position;
         private int m_BitPosition;
@@ -29,14 +29,14 @@ namespace Unity.Netcode
             get => (m_BitPosition & 7) == 0;
         }
 
-        internal unsafe BitWriter(ref FastBufferWriter writer)
+        internal unsafe BitWriter(FastBufferWriter writer)
         {
-            m_Writer = new Ref<FastBufferWriter>(ref writer);
-            m_BufferPointer = writer.BufferPointer + writer.PositionInternal;
-            m_Position = writer.PositionInternal;
+            m_Writer = writer;
+            m_BufferPointer = writer.Handle->BufferPointer + writer.Handle->Position;
+            m_Position = writer.Handle->Position;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseWriteMark = (m_Writer.Value.AllowedWriteMark - m_Writer.Value.Position) * k_BitsPerByte;
+            m_AllowedBitwiseWriteMark = (m_Writer.Handle->AllowedWriteMark - m_Writer.Handle->Position) * k_BitsPerByte;
 #endif
         }
 
@@ -52,7 +52,7 @@ namespace Unity.Netcode
                 ++bytesWritten;
             }
 
-            m_Writer.Value.CommitBitwiseWrites(bytesWritten);
+            m_Writer.CommitBitwiseWrites(bytesWritten);
         }
 
         /// <summary>
@@ -79,16 +79,16 @@ namespace Unity.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.CapacityInternal)
+            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Handle->Capacity)
             {
-                if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.MaxCapacityInternal)
+                if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Handle->MaxCapacity)
                 {
                     return false;
                 }
-                if (m_Writer.Value.CapacityInternal < m_Writer.Value.MaxCapacityInternal)
+                if (m_Writer.Handle->Capacity < m_Writer.Handle->MaxCapacity)
                 {
-                    m_Writer.Value.Grow(totalBytesWrittenInBitwiseContext);
-                    m_BufferPointer = m_Writer.Value.BufferPointer + m_Writer.Value.PositionInternal;
+                    m_Writer.Grow(totalBytesWrittenInBitwiseContext);
+                    m_BufferPointer = m_Writer.Handle->BufferPointer + m_Writer.Handle->Position;
                 }
                 else
                 {
