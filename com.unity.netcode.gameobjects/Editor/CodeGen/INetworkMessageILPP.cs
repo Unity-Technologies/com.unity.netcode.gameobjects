@@ -99,10 +99,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     typeSequence = methodSequence;
                 }
                 if (resolved.IsStatic && resolved.IsPublic && resolved.Name == "Receive" && resolved.Parameters.Count == 2
-                    && resolved.Parameters[0].ParameterType.IsByReference
-                    && resolved.Parameters[0].ParameterType.GetElementType().Resolve() ==
+                    && !resolved.Parameters[0].IsIn
+                    && !resolved.Parameters[0].ParameterType.IsByReference
+                    && resolved.Parameters[0].ParameterType.Resolve() ==
                         m_FastBufferReader_TypeRef.Resolve()
-                    && resolved.Parameters[1].ParameterType.Resolve() == m_NetworkContext_TypeRef.Resolve()
+                    && resolved.Parameters[1].IsIn
+                    && resolved.Parameters[1].ParameterType.IsByReference
+                    && resolved.Parameters[1].ParameterType.GetElementType().Resolve() == m_NetworkContext_TypeRef.Resolve()
                     && resolved.ReturnType == resolved.Module.TypeSystem.Void)
                 {
                     foundAValidMethod = true;
@@ -112,7 +115,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (!foundAValidMethod)
             {
-                m_Diagnostics.AddError(typeSequence, $"Class {typeDefinition.FullName} does not implement required function: `public static void Receive(ref FastBufferReader, NetworkContext)`");
+                m_Diagnostics.AddError(typeSequence, $"Class {typeDefinition.FullName} does not implement required function: `public static void Receive(FastBufferReader, in NetworkContext)`");
             }
         }
     }

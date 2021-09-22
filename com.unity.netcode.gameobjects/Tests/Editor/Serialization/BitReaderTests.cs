@@ -35,7 +35,7 @@ namespace Unity.Netcode.EditorTests
 
                 writer.WriteByte(0b11111111);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     Assert.IsTrue(reader.TryBeginRead(3));
@@ -201,7 +201,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteByte(0b11111111);
 
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     Assert.IsTrue(reader.TryBeginRead(3));
@@ -248,7 +248,7 @@ namespace Unity.Netcode.EditorTests
 
                 writer.WriteByte(0b11111111);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     Assert.IsTrue(reader.TryBeginRead(3));

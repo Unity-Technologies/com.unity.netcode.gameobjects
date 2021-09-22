@@ -41,17 +41,17 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             try
             {
                 // serialize
-                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref outWriter));
+                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
                 NetworkObjectReference outReference = networkObjectContext.Object;
                 outReference.NetworkSerialize(outSerializer);
 
                 // deserialize
                 NetworkObjectReference inReference = default;
-                var inReader = new FastBufferReader(ref outWriter, Allocator.Temp);
+                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
                 try
                 {
                     var inSerializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref inReader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
                     inReference.NetworkSerialize(inSerializer);
                 }
                 finally
@@ -80,17 +80,17 @@ namespace Unity.Netcode.RuntimeTests.Serialization
             try
             {
                 // serialize
-                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(ref outWriter));
+                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
                 NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
                 outReference.NetworkSerialize(outSerializer);
 
                 // deserialize
                 NetworkObjectReference inReference = default;
-                var inReader = new FastBufferReader(ref outWriter, Allocator.Temp);
+                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
                 try
                 {
                     var inSerializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(ref inReader));
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
                     inReference.NetworkSerialize(inSerializer);
                 }
                 finally

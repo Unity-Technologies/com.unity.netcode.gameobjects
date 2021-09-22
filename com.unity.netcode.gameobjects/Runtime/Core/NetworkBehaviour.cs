@@ -38,7 +38,7 @@ namespace Unity.Netcode
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __sendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
+        internal void __sendServerRpc(FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
@@ -68,7 +68,19 @@ namespace Unity.Netcode
                 },
                 RpcData = writer
             };
+
+            // If we are a server/host then we just no op and send to ourself
+            if (IsHost || IsServer)
+            {
+                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
+                tempBuffer.Dispose();
+
+                return;
+            }
+
             var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -85,7 +97,7 @@ namespace Unity.Netcode
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal unsafe void __sendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
+        internal unsafe void __sendClientRpc(FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         {
@@ -466,12 +478,10 @@ namespace Unity.Netcode
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
                             var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
-#pragma warning disable CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                             using (tmpWriter)
                             {
-                                message.Serialize(ref tmpWriter);
+                                message.Serialize(tmpWriter);
                             }
-#pragma warning restore CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                         }
                         else
                         {
@@ -504,7 +514,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -520,7 +530,7 @@ namespace Unity.Netcode
                     var writePos = writer.Position;
                     writer.WriteValueSafe((ushort)0);
                     var startPos = writer.Position;
-                    NetworkVariableFields[j].WriteField(ref writer);
+                    NetworkVariableFields[j].WriteField(writer);
                     var size = writer.Position - startPos;
                     writer.Seek(writePos);
                     writer.WriteValueSafe((ushort)size);
@@ -533,7 +543,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void SetNetworkVariableData(ref FastBufferReader reader)
+        internal void SetNetworkVariableData(FastBufferReader reader)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -549,7 +559,7 @@ namespace Unity.Netcode
                 }
 
                 var readStartPos = reader.Position;
-                NetworkVariableFields[j].ReadField(ref reader);
+                NetworkVariableFields[j].ReadField(reader);
 
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {

@@ -22,12 +22,12 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
 
             }
@@ -40,12 +40,12 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
 
             }
@@ -58,12 +58,12 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
 
             }
@@ -76,12 +76,12 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
 
             }
