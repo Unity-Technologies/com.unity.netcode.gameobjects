@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -57,14 +58,22 @@ public class TestCoordinator : NetworkBehaviour
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
+            NetworkManager.NetworkConfig.EnableNetworkLogs = true;
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
             BaseMultiprocessTests.MultiProcessLog($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
         BaseMultiprocessTests.MultiProcessLog("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
-        BaseMultiprocessTests.MultiProcessLog("Initialize All Steps... done");
-        ScreenCapture.CaptureScreenshot($"ClientString{DateTime.Now.ToString("s")}.png");
+        BaseMultiprocessTests.MultiProcessLog($"Initialize All Steps... done, saving screenshot in {Directory.GetCurrentDirectory()}");
+        string dir = MultiprocessOrchestration.GetPathToMultiprocessDirectory().FullName;
+        ScreenCapture.CaptureScreenshot(
+            Path.Combine(dir,
+            $"ClientString{DateTime.Now.ToString("s").Replace(":", "-")}.png")
+            );
+        BaseMultiprocessTests.MultiProcessLog($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
+        BaseMultiprocessTests.MultiProcessLog($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
+        BaseMultiprocessTests.MultiProcessLog($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
     }
 
     public void Update()
@@ -364,6 +373,7 @@ public class TestCoordinator : NetworkBehaviour
     public OnServerReceivedResultsResponseDelegateHandler OnServerReceivedResultsResponse;
     private void ServerReceivedResultsResponse(float resultReceived)
     {
+        BaseMultiprocessTests.MultiProcessLog($"ServerReceivedResultsReponse {resultReceived}");
         if (OnServerReceivedResultsResponse != null)
         {
             OnServerReceivedResultsResponse.Invoke(resultReceived);

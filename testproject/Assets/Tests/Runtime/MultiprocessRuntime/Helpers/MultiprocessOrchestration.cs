@@ -42,13 +42,8 @@ public class MultiprocessOrchestration
         return activeWorkerCount;
     }
 
-    public static string StartWorkerNode()
+    public static DirectoryInfo GetPathToMultiprocessDirectory()
     {
-        if (s_Processes == null)
-        {
-            s_Processes = new List<Process>();
-        }
-
         string userprofile = "";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -60,6 +55,19 @@ public class MultiprocessOrchestration
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+        if (!s_MultiprocessDirInfo.Exists)
+        {
+            s_MultiprocessDirInfo.Create();
+        }
+        return s_MultiprocessDirInfo;
+    }
+
+    public static string StartWorkerNode()
+    {
+        if (s_Processes == null)
+        {
+            s_Processes = new List<Process>();
+        }
 
         var workerProcess = new Process();
         s_TotalProcessCounter++;
