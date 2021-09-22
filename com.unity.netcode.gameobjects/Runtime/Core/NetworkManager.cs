@@ -394,7 +394,7 @@ namespace Unity.Netcode
                     {
                         {
                             var childNetworkObjects = new List<NetworkObject>();
-                            networkPrefabGo.GetComponentsInChildren( true, childNetworkObjects);
+                            networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
                             if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
