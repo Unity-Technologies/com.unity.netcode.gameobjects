@@ -65,7 +65,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         BaseMultiprocessTests.MultiProcessLog("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
-        BaseMultiprocessTests.MultiProcessLog($"Initialize All Steps... done, saving screenshot in {Directory.GetCurrentDirectory()}");
+        BaseMultiprocessTests.MultiProcessLog($"Initialize All Steps... done");
         string dir = MultiprocessOrchestration.GetPathToMultiprocessDirectory().FullName;
         ScreenCapture.CaptureScreenshot(
             Path.Combine(dir,

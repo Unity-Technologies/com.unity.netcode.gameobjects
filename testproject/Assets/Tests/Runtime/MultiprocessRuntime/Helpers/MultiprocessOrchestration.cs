@@ -95,12 +95,14 @@ public class MultiprocessOrchestration
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
-                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    // extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    extraArgs += "-batchmode -nographics";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.exe";
-                    extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    //extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    extraArgs += "-batchmode -nographics";
                     break;
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:
