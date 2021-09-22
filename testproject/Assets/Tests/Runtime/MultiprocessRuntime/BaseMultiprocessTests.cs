@@ -131,7 +131,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiProcessLog($"logPath {logPath}, old active worker count {beforeActiveWorkerCount}, current active worker count, {MultiprocessOrchestration.ActiveWorkerCount()}");
                     while (NetworkManager.Singleton.ConnectedClients.Count < beforeConnectedClientCount + 1)
                     {
-                        yield return new WaitForSeconds(5.0f);                        
+                        yield return new WaitForSeconds(5.0f);
                         if (Time.realtimeSinceStartup > timeOutTime2)
                         {
                             MultiProcessLog($"We've waited long enough at {i}, let's move to next in loop");

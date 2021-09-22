@@ -66,11 +66,6 @@ public class TestCoordinator : NetworkBehaviour
         BaseMultiprocessTests.MultiProcessLog("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         BaseMultiprocessTests.MultiProcessLog($"Initialize All Steps... done");
-        string dir = MultiprocessOrchestration.GetPathToMultiprocessDirectory().FullName;
-        ScreenCapture.CaptureScreenshot(
-            Path.Combine(dir,
-            $"ClientString{DateTime.Now.ToString("s").Replace(":", "-")}.png")
-            );
         BaseMultiprocessTests.MultiProcessLog($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         BaseMultiprocessTests.MultiProcessLog($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
         BaseMultiprocessTests.MultiProcessLog($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
