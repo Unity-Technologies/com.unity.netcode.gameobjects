@@ -15,7 +15,7 @@ namespace Unity.Netcode
         public InvalidMessageStructureException(string issue) : base(issue) { }
     }
 
-    internal class MessagingSystem : IDisposable
+    internal class MessagingSystem : IMessageSender, IDisposable
     {
         private struct ReceiveQueueItem
         {
@@ -366,7 +366,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -466,21 +466,21 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             ulong* clientIds = stackalloc ulong[] { clientId };
             return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
             return SendMessage(message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));

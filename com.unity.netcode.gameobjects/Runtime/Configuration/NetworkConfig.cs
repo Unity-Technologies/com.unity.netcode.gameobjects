@@ -151,6 +151,20 @@ namespace Unity.Netcode
         /// </summary>
         public int SnapshotMaxSpawnUsage { get; } = 1200;
 
+        /// <summary>
+        /// When enabled, heartbeat messages are sent both directions (server->client and client->server) on an interval.
+        /// </summary>
+        public bool EnableHeartbeats = true;
+        /// <summary>
+        /// The interval between sending heartbeats in milliseconds.
+        /// </summary>
+        public float HeartbeatInterval = 5000;
+        /// <summary>
+        /// When enabled, the server will proactively disconnect any user for which it does not receive a heartbeat message in two (2) time the <see cref="HeartbeatInterval"/> duration.
+        /// </summary>
+        /// <remarks>This is a high-level proactive disconnect on the server. Other systems, including the network transport, may control their own separate timeout behavior.</remarks>
+        public bool DisconnectClientOnMissedHeartbeats = false;
+
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
         /// <summary>

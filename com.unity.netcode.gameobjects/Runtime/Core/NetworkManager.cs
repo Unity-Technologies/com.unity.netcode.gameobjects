@@ -21,7 +21,7 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IMessageSender, IClientManager
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
 
@@ -54,6 +54,8 @@ namespace Unity.Netcode
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         private MessagingSystem m_MessagingSystem;
+
+        internal IHeartbeatSystem heartbeatSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
 
@@ -250,12 +252,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
         /// </summary>
-        public readonly Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
+        public Dictionary<ulong, NetworkClient> ConnectedClients { get; } = new Dictionary<ulong, NetworkClient>();
 
         /// <summary>
         /// Gets a list of connected clients. This is only populated on the server.
         /// </summary>
-        public readonly List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
+        public List<NetworkClient> ConnectedClientsList { get; } = new List<NetworkClient>();
 
         /// <summary>
         /// Gets a list of just the IDs of all connected clients.
@@ -501,6 +503,23 @@ namespace Unity.Netcode
                 }
 
                 return;
+            }
+
+            if (NetworkConfig.EnableHeartbeats)
+            {
+                if (server)
+                {
+                    var hbs = new ServerHeartbeatSystem(this, m_MessagingSystem, NetworkConfig.DisconnectClientOnMissedHeartbeats);
+                    OnClientConnectedCallback += hbs.OnClientConnected;
+                    OnClientDisconnectCallback += hbs.OnClientDisconnected;
+                    heartbeatSystem = hbs;
+                }
+                else
+                {
+                    heartbeatSystem = new ClientHeartbeatSystem(this, m_MessagingSystem);
+                }
+
+                heartbeatSystem.HeartbeatInterval = NetworkConfig.HeartbeatInterval;
             }
 
             //This 'if' should never enter
@@ -1002,6 +1021,12 @@ namespace Unity.Netcode
 
             this.UnregisterAllNetworkUpdates();
 
+            if (heartbeatSystem is ServerHeartbeatSystem hbs)
+            {
+                OnClientConnectedCallback -= hbs.OnClientConnected;
+                OnClientDisconnectCallback -= hbs.OnClientDisconnected;
+            }
+
             if (SnapshotSystem != null)
             {
                 SnapshotSystem.Dispose();
@@ -1111,6 +1136,8 @@ namespace Unity.Netcode
             {
                 NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
             }
+
+            heartbeatSystem?.Update(Time.time);
         }
 
         private void OnNetworkPostLateUpdate()
@@ -1248,7 +1275,14 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, bool serverCanSendToServerId = false)
+        public int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+            where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
+        {
+            return SendMessage(message, delivery, clientIds, false);
+        }
+
+        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, bool serverCanSendToServerId)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1276,8 +1310,14 @@ namespace Unity.Netcode
             return m_MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
+        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong* clientIds, int numClientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage<T>(message, delivery, clientIds, numClientIds, false);
+        }
+
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
-            ulong* clientIds, int numClientIds, bool serverCanSendToServerId = false)
+            ulong* clientIds, int numClientIds, bool serverCanSendToServerId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
@@ -1305,13 +1345,18 @@ namespace Unity.Netcode
             return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
-            where T : INetworkMessage
+        unsafe int IMessageSender.SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
         {
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage
+        {
+            return SendMessage<T>(message, delivery, clientId, false);
+        }
+
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
