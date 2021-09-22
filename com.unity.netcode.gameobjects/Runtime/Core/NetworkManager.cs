@@ -51,7 +51,7 @@ namespace Unity.Netcode
 
         internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
         {
-            return $"Prefab \"{networkPrefab.Prefab.gameObject.name}\"";
+            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
