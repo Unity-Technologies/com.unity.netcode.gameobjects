@@ -59,11 +59,12 @@ public class TestCoordinator : NetworkBehaviour
         {
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
+            BaseMultiprocessTests.MultiProcessLog($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
-
-        // NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
-
+        BaseMultiprocessTests.MultiProcessLog("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
+        BaseMultiprocessTests.MultiProcessLog("Initialize All Steps... done");
+        ScreenCapture.CaptureScreenshot($"ClientString{DateTime.Now.ToString("s")}.png");
     }
 
     public void Update()
@@ -106,6 +107,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
+        BaseMultiprocessTests.MultiProcessLog("OnEnable - Setting OnClientDisconnectCallback");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
@@ -113,6 +115,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (IsSpawned && NetworkObject != null && NetworkObject.NetworkManager != null)
         {
+            BaseMultiprocessTests.MultiProcessLog("OnDisable - Removing OnClientDisconnectCallback");
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
     }
