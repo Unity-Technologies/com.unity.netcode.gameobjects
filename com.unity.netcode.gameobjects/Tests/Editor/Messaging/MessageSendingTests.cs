@@ -27,7 +27,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageSender : IMessageSender
+        private class TestFastBufferMessageSender : IFastBufferMessageSender
         {
             public List<byte[]> MessageQueue = new List<byte[]>();
 
@@ -37,7 +37,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private TestMessageSender m_MessageSender;
+        private TestFastBufferMessageSender m_FastBufferMessageSender;
         private MessagingSystem m_MessagingSystem;
         private ulong[] m_Clients = { 0 };
 
@@ -46,8 +46,8 @@ namespace Unity.Netcode.EditorTests
         {
             TestMessage.Serialized = false;
 
-            m_MessageSender = new TestMessageSender();
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this);
+            m_FastBufferMessageSender = new TestFastBufferMessageSender();
+            m_MessagingSystem = new MessagingSystem(m_FastBufferMessageSender, this);
             m_MessagingSystem.ClientConnected(0);
         }
 
@@ -81,7 +81,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            Assert.IsEmpty(m_MessageSender.MessageQueue);
+            Assert.IsEmpty(m_FastBufferMessageSender.MessageQueue);
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace Unity.Netcode.EditorTests
             m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(1, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -103,7 +103,7 @@ namespace Unity.Netcode.EditorTests
             m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(1, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(1, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(2, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(2, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -145,7 +145,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(1, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -157,7 +157,7 @@ namespace Unity.Netcode.EditorTests
             m_MessagingSystem.SendMessage(message, NetworkDelivery.Unreliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(2, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(2, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -169,7 +169,7 @@ namespace Unity.Netcode.EditorTests
             m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
-            Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
+            Assert.AreEqual(1, m_FastBufferMessageSender.MessageQueue.Count);
         }
 
         [Test]
@@ -181,7 +181,7 @@ namespace Unity.Netcode.EditorTests
             m_MessagingSystem.SendMessage(message2, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
-            var reader = new FastBufferReader(m_MessageSender.MessageQueue[0], Allocator.Temp);
+            var reader = new FastBufferReader(m_FastBufferMessageSender.MessageQueue[0], Allocator.Temp);
             using (reader)
             {
                 reader.TryBeginRead(

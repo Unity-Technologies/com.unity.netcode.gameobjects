@@ -39,7 +39,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Deserialized = false;
             TestMessage.DeserializedValues.Clear();
 
-            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this);
+            m_MessagingSystem = new MessagingSystem(new NopFastBufferMessageSender(), this);
         }
 
         [TearDown]

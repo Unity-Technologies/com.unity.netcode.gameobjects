@@ -135,11 +135,11 @@ namespace Unity.Netcode
             }
         }
 
-        private class NetworkManagerMessageSender : IMessageSender
+        private class NetworkManagerFastBufferMessageSender : IFastBufferMessageSender
         {
             private NetworkManager m_NetworkManager;
 
-            public NetworkManagerMessageSender(NetworkManager manager)
+            public NetworkManagerFastBufferMessageSender(NetworkManager manager)
             {
                 m_NetworkManager = manager;
             }
@@ -452,7 +452,7 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
+            m_MessagingSystem = new MessagingSystem(new NetworkManagerFastBufferMessageSender(this), this, ulong.MaxValue);
 
             m_MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

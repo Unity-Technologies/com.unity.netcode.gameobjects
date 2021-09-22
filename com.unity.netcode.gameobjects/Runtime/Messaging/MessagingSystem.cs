@@ -53,7 +53,7 @@ namespace Unity.Netcode
 
         private byte m_HighMessageType;
         private object m_Owner;
-        private IMessageSender m_MessageSender;
+        private IFastBufferMessageSender m_FastBufferMessageSender;
         private ulong m_LocalClientId;
         private bool m_Disposed;
 
@@ -69,12 +69,12 @@ namespace Unity.Netcode
         public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
         public const int FRAGMENTED_MESSAGE_MAX_SIZE = 64000;
 
-        public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = long.MaxValue)
+        public MessagingSystem(IFastBufferMessageSender fastBufferMessageSender, object owner, ulong localClientId = long.MaxValue)
         {
             try
             {
                 m_LocalClientId = localClientId;
-                m_MessageSender = messageSender;
+                m_FastBufferMessageSender = fastBufferMessageSender;
                 m_Owner = owner;
 
                 var interfaceType = typeof(INetworkMessage);
@@ -515,7 +515,7 @@ namespace Unity.Netcode
 
                     try
                     {
-                        m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
+                        m_FastBufferMessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
                     }
                     finally
                     {

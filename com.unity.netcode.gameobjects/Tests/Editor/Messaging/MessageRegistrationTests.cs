@@ -92,7 +92,7 @@ namespace Unity.Netcode.EditorTests
         {
             var ownerOne = new MessagingSystemOwnerOne();
             var ownerTwo = new MessagingSystemOwnerTwo();
-            var sender = new NopMessageSender();
+            var sender = new NopFastBufferMessageSender();
 
             var systemOne = new MessagingSystem(sender, ownerOne);
             var systemTwo = new MessagingSystem(sender, ownerTwo);
@@ -118,7 +118,7 @@ namespace Unity.Netcode.EditorTests
         {
             var ownerOne = new MessagingSystemOwnerOne();
             var ownerTwo = new MessagingSystemOwnerTwo();
-            var sender = new NopMessageSender();
+            var sender = new NopFastBufferMessageSender();
 
             var systemOne = new MessagingSystem(sender, ownerOne);
             var systemTwo = new MessagingSystem(sender, ownerTwo);
