@@ -75,7 +75,6 @@ multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
     - {% if platform.name == "ubuntu" %}DISPLAY=:0 && {% endif %}{{ platform.utr }} --suite=playmode --testproject=testproject --editor-location=.Editor --testfilter=Unity.Netcode.MultiprocessRuntimeTests --extra-editor-arg=-bypassIgnoreUTR
   after:
     - {% if platform.name == "win" %}copy %USERPROFILE%\.multiprocess\logfile* .{% endif %}{% if platform.name != "win" %}cp $HOME/.multiprocess/logfile* .{% endif %}
-    - {% if platform.name == "win" %}copy %USERPROFILE%\.multiprocess\*.png .{% endif %}{% if platform.name != "win" %}cp $HOME/.multiprocess/*.png .{% endif %}
   artifacts:
     logs:
       paths:
