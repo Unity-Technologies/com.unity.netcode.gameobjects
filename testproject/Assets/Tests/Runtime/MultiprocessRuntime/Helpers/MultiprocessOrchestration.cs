@@ -16,6 +16,11 @@ public class MultiprocessOrchestration
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
 
+    static MultiprocessOrchestration()
+    {
+        GetPathToMultiprocessDirectory();
+    }
+
     /// <summary>
     /// This is to detect if we should ignore Multiprocess tests
     /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
@@ -32,13 +37,19 @@ public class MultiprocessOrchestration
         {
             return activeWorkerCount;
         }
-        foreach (var p in s_Processes)
+
+        if (s_Processes.Count > 0)
         {
-            if (!p.HasExited)
+            BaseMultiprocessTests.MultiProcessLog($"s_Processes.Count is {s_Processes.Count}");
+            foreach (var p in s_Processes)
             {
-                activeWorkerCount++;
+                if ((p != null) && (!p.HasExited))
+                {
+                    activeWorkerCount++;
+                }
             }
         }
+        
         return activeWorkerCount;
     }
 
@@ -80,7 +91,6 @@ public class MultiprocessOrchestration
             }
             BaseMultiprocessTests.MultiProcessLog($"Current process count {s_Processes.Count} with data {message}");
         }
-        s_Processes.Add(workerProcess);
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
@@ -135,6 +145,7 @@ public class MultiprocessOrchestration
             {
                 throw new Exception("Failed to start worker process!");
             }
+            s_Processes.Add(workerProcess);
         }
         catch (Win32Exception e)
         {
