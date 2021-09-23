@@ -119,7 +119,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
-            {                
+            {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 1; i <= numProcessesToCreate; i++)
                 {

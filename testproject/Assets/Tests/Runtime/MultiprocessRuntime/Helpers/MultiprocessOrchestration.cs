@@ -13,7 +13,8 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
-    public static DirectoryInfo MultiprocessDirInfo {
+    public static DirectoryInfo MultiprocessDirInfo
+    {
         private set => s_MultiprocessDirInfo = value;
         get => s_MultiprocessDirInfo != null ? s_MultiprocessDirInfo : initMultiprocessDirinfo();
     }
