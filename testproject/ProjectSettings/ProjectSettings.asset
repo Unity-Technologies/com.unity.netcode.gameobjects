@@ -581,7 +581,9 @@ PlayerSettings:
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
     1: 
-  additionalCompilerArguments: {}
+  additionalCompilerArguments:
+    1:
+    - -warnaserror
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}
