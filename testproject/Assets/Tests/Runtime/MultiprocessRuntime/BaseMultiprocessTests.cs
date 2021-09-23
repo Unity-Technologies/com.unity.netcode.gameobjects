@@ -119,25 +119,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
-            {
-                var timeOutTime2 = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec / 3;
+            {                
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 1; i <= numProcessesToCreate; i++)
                 {
-                    int beforeActiveWorkerCount = MultiprocessOrchestration.ActiveWorkerCount();
-                    int beforeConnectedClientCount = NetworkManager.Singleton.ConnectedClients.Count;
                     MultiProcessLog($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
                     string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    MultiProcessLog($"logPath {logPath}, old active worker count {beforeActiveWorkerCount}, current active worker count, {MultiprocessOrchestration.ActiveWorkerCount()}");
-                    while (NetworkManager.Singleton.ConnectedClients.Count < beforeConnectedClientCount + 1)
-                    {
-                        yield return new WaitForSeconds(5.0f);
-                        if (Time.realtimeSinceStartup > timeOutTime2)
-                        {
-                            MultiProcessLog($"We've waited long enough at {i}, let's move to next in loop");
-                            break;
-                        }
-                    }
+                    MultiProcessLog($"logPath to new process is {logPath}");
+                    yield return new WaitForSeconds(5.0f); // Wait 5 seconds before starting the next process because there are odd contentions that happen when starting multiple processes quickly
                     MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }

@@ -57,7 +57,6 @@ public class TestCoordinator : NetworkBehaviour
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
-            NetworkManager.NetworkConfig.EnableNetworkLogs = true;
             BaseMultiprocessTests.MultiProcessLog("starting netcode client");
             NetworkManager.Singleton.StartClient();
             BaseMultiprocessTests.MultiProcessLog($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
@@ -332,7 +331,6 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     private ulong[] m_TargetClient = new ulong[1] { 0 };
-    private ClientRpcParams m_ClientParams = new ClientRpcParams();
 
     public delegate void KeepServerFromTimingOutDelegateHandler();
 
@@ -358,8 +356,9 @@ public class TestCoordinator : NetworkBehaviour
 
         // Now send the results received verification
         m_TargetClient[0] = senderId;
-        m_ClientParams.Send.TargetClientIds = m_TargetClient;
-        ServerReceivedResultsResponseClientRpc(result, m_ClientParams);
+        var clientParams = new ClientRpcParams();
+        clientParams.Send.TargetClientIds = m_TargetClient;
+        ServerReceivedResultsResponseClientRpc(result, clientParams);
     }
 
     public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);
