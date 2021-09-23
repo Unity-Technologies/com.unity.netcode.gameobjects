@@ -21,7 +21,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Gets a bool value indicating whether this <see cref="NetworkRigidbody2D"/> on this peer currently holds authority.
         /// </summary>
-        private bool HasAuthority => NetworkManager.IsServer;
+        private bool HasAuthority => m_NetworkTransform.CanCommitToTransform;
 
         private void Awake()
         {
