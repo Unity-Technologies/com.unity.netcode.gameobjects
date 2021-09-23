@@ -384,7 +384,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    
+
                     Debug.Log($"Sending {typeof(TMessageType)} to {clientId}");
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)

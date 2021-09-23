@@ -37,10 +37,13 @@ namespace TestProject.RuntimeTests.Support
             Debug.Log("Activated");
             m_Active = true;
         }
-        
+
         public override void OnNetworkSpawn()
-        {        
-            if(!IsServer) return;
+        {
+            if (!IsServer)
+            {
+                return;
+            }
 
             TestClientRpc();
         }

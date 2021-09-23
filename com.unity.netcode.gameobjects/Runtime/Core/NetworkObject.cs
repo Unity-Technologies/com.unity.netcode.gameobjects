@@ -479,7 +479,7 @@ namespace Unity.Netcode
                     NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
                 }
             }
-            
+
             // Moving this to the end here to ensure it's invoked after any client spawn messages have been sent.
             InvokeBehaviourNetworkSpawn();
         }

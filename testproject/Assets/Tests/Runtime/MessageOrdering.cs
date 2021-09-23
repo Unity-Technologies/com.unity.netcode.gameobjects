@@ -172,7 +172,7 @@ namespace TestProject.RuntimeTests
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
             Assert.True(handler.WasDestroyed);
         }
-        
+
         [UnityTest]
         public IEnumerator RpcOnNetworkSpawn()
         {
