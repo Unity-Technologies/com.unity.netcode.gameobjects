@@ -49,7 +49,6 @@ public class MultiprocessOrchestration
                 }
             }
         }
-        
         return activeWorkerCount;
     }
 
