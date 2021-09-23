@@ -21,12 +21,17 @@ namespace Unity.Netcode
 
         private class InterpolatorTime : IInterpolatorTime
         {
-            public double BufferedServerTime => NetworkManager.Singleton.ServerTime.Time;
-            public double BufferedServerFixedTime => NetworkManager.Singleton.ServerTime.FixedTime;
-            public uint TickRate => NetworkManager.Singleton.ServerTime.TickRate;
+            private readonly NetworkManager m_Manager;
+            public InterpolatorTime(NetworkManager manager)
+            {
+                m_Manager = manager;
+            }
+            public double BufferedServerTime => m_Manager.ServerTime.Time;
+            public double BufferedServerFixedTime => m_Manager.ServerTime.FixedTime;
+            public uint TickRate => m_Manager.ServerTime.TickRate;
         }
 
-        internal IInterpolatorTime InterpolatorTimeProxy = new InterpolatorTime();
+        internal IInterpolatorTime InterpolatorTimeProxy;
 
         private struct BufferedItem
         {
@@ -55,6 +60,11 @@ namespace Unity.Netcode
         private int m_LifetimeConsumedCount;
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
+
+        internal BufferedLinearInterpolator(NetworkManager manager)
+        {
+            InterpolatorTimeProxy = new InterpolatorTime(manager);
+        }
 
         public void ResetTo(T targetValue)
         {
@@ -187,6 +197,10 @@ namespace Unity.Netcode
         {
             return Mathf.Lerp(start, end, time);
         }
+
+        public BufferedLinearInterpolatorFloat(NetworkManager manager) : base(manager)
+        {
+        }
     }
 
     internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
@@ -199,6 +213,10 @@ namespace Unity.Netcode
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorQuaternion(NetworkManager manager) : base(manager)
+        {
         }
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.IO;
 using System;
 
 namespace Unity.Netcode
@@ -98,22 +97,22 @@ namespace Unity.Netcode
         /// <summary>
         /// Writes the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the value to</param>
-        public override void WriteDelta(Stream stream)
+        /// <param name="writer">The stream to write the value to</param>
+        public override void WriteDelta(FastBufferWriter writer)
         {
-            WriteField(stream);
+            WriteField(writer);
         }
+
 
         /// <summary>
         /// Reads value from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the value from</param>
+        /// <param name="reader">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            using var reader = PooledNetworkReader.Get(stream);
             T previousValue = m_InternalValue;
-            m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
+            reader.ReadValueSafe(out m_InternalValue);
 
             if (keepDirtyDelta)
             {
@@ -124,16 +123,15 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public override void ReadField(Stream stream)
+        public override void ReadField(FastBufferReader reader)
         {
-            ReadDelta(stream, false);
+            ReadDelta(reader, false);
         }
 
         /// <inheritdoc />
-        public override void WriteField(Stream stream)
+        public override void WriteField(FastBufferWriter writer)
         {
-            using var writer = PooledNetworkWriter.Get(stream);
-            writer.WriteObjectPacked(m_InternalValue); //BOX
+            writer.WriteValueSafe(m_InternalValue);
         }
     }
 }

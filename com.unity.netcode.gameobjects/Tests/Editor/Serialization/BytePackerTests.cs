@@ -76,7 +76,7 @@ namespace Unity.Netcode.EditorTests
 
         #endregion
 
-        private void CheckUnsignedPackedSize64(ref FastBufferWriter writer, ulong value)
+        private void CheckUnsignedPackedSize64(FastBufferWriter writer, ulong value)
         {
 
             if (value <= 240)
@@ -93,17 +93,17 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private void CheckUnsignedPackedValue64(ref FastBufferWriter writer, ulong value)
+        private void CheckUnsignedPackedValue64(FastBufferWriter writer, ulong value)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValuePacked(ref reader, out ulong readValue);
+                ByteUnpacker.ReadValuePacked(reader, out ulong readValue);
                 Assert.AreEqual(readValue, value);
             }
         }
 
-        private void CheckUnsignedPackedSize32(ref FastBufferWriter writer, uint value)
+        private void CheckUnsignedPackedSize32(FastBufferWriter writer, uint value)
         {
 
             if (value <= 240)
@@ -120,17 +120,17 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private void CheckUnsignedPackedValue32(ref FastBufferWriter writer, uint value)
+        private void CheckUnsignedPackedValue32(FastBufferWriter writer, uint value)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValuePacked(ref reader, out uint readValue);
+                ByteUnpacker.ReadValuePacked(reader, out uint readValue);
                 Assert.AreEqual(readValue, value);
             }
         }
 
-        private void CheckSignedPackedSize64(ref FastBufferWriter writer, long value)
+        private void CheckSignedPackedSize64(FastBufferWriter writer, long value)
         {
             ulong asUlong = Arithmetic.ZigZagEncode(value);
 
@@ -148,17 +148,17 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private void CheckSignedPackedValue64(ref FastBufferWriter writer, long value)
+        private void CheckSignedPackedValue64(FastBufferWriter writer, long value)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValuePacked(ref reader, out long readValue);
+                ByteUnpacker.ReadValuePacked(reader, out long readValue);
                 Assert.AreEqual(readValue, value);
             }
         }
 
-        private void CheckSignedPackedSize32(ref FastBufferWriter writer, int value)
+        private void CheckSignedPackedSize32(FastBufferWriter writer, int value)
         {
             ulong asUlong = Arithmetic.ZigZagEncode(value);
 
@@ -176,12 +176,12 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private void CheckSignedPackedValue32(ref FastBufferWriter writer, int value)
+        private void CheckSignedPackedValue32(FastBufferWriter writer, int value)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValuePacked(ref reader, out int readValue);
+                ByteUnpacker.ReadValuePacked(reader, out int readValue);
                 Assert.AreEqual(readValue, value);
             }
         }
@@ -201,8 +201,8 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(sizeof(T) * 2, Allocator.Temp);
             using (writer)
             {
-                BytePacker.WriteValuePacked(ref writer, (dynamic)value);
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                BytePacker.WriteValuePacked(writer, (dynamic)value);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
 
@@ -217,7 +217,7 @@ namespace Unity.Netcode.EditorTests
                     else
                     {
                         method = typeof(ByteUnpacker).GetMethod("ReadValuePacked",
-                            new[] { typeof(FastBufferReader).MakeByRefType(), typeof(T).MakeByRefType() });
+                            new[] { typeof(FastBufferReader), typeof(T).MakeByRefType() });
                     }
 
                     object[] args = { reader, outVal };
@@ -229,24 +229,6 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private unsafe void RunObjectTypeTest<T>(T value) where T : unmanaged
-        {
-            var writer = new FastBufferWriter(sizeof(T) * 2, Allocator.Temp);
-            using (writer)
-            {
-                BytePacker.WriteObjectPacked(ref writer, value);
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
-                using (reader)
-                {
-
-                    ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(T));
-                    Assert.AreEqual(value, outVal);
-                    VerifyBytewiseEquality(value, (T)outVal);
-                }
-            }
-        }
-
-
 
         [Test]
         public void TestPacking64BitsUnsigned()
@@ -257,7 +239,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(9);
                 ulong value = 0;
-                BytePacker.WriteValuePacked(ref writer, value);
+                BytePacker.WriteValuePacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
 
                 for (var i = 0; i < 64; ++i)
@@ -265,17 +247,17 @@ namespace Unity.Netcode.EditorTests
                     value = 1UL << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, value);
-                    CheckUnsignedPackedSize64(ref writer, value);
-                    CheckUnsignedPackedValue64(ref writer, value);
+                    BytePacker.WriteValuePacked(writer, value);
+                    CheckUnsignedPackedSize64(writer, value);
+                    CheckUnsignedPackedValue64(writer, value);
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1UL << i) | (1UL << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, value);
-                        CheckUnsignedPackedSize64(ref writer, value);
-                        CheckUnsignedPackedValue64(ref writer, value);
+                        BytePacker.WriteValuePacked(writer, value);
+                        CheckUnsignedPackedSize64(writer, value);
+                        CheckUnsignedPackedValue64(writer, value);
                     }
                 }
             }
@@ -290,7 +272,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(9);
                 uint value = 0;
-                BytePacker.WriteValuePacked(ref writer, value);
+                BytePacker.WriteValuePacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
 
                 for (var i = 0; i < 64; ++i)
@@ -298,17 +280,17 @@ namespace Unity.Netcode.EditorTests
                     value = 1U << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, value);
-                    CheckUnsignedPackedSize32(ref writer, value);
-                    CheckUnsignedPackedValue32(ref writer, value);
+                    BytePacker.WriteValuePacked(writer, value);
+                    CheckUnsignedPackedSize32(writer, value);
+                    CheckUnsignedPackedValue32(writer, value);
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1U << i) | (1U << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, value);
-                        CheckUnsignedPackedSize32(ref writer, value);
-                        CheckUnsignedPackedValue32(ref writer, value);
+                        BytePacker.WriteValuePacked(writer, value);
+                        CheckUnsignedPackedSize32(writer, value);
+                        CheckUnsignedPackedValue32(writer, value);
                     }
                 }
             }
@@ -323,7 +305,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(9);
                 long value = 0;
-                BytePacker.WriteValuePacked(ref writer, value);
+                BytePacker.WriteValuePacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
 
                 for (var i = 0; i < 64; ++i)
@@ -331,29 +313,29 @@ namespace Unity.Netcode.EditorTests
                     value = 1L << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, value);
-                    CheckSignedPackedSize64(ref writer, value);
-                    CheckSignedPackedValue64(ref writer, value);
+                    BytePacker.WriteValuePacked(writer, value);
+                    CheckSignedPackedSize64(writer, value);
+                    CheckSignedPackedValue64(writer, value);
 
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, -value);
-                    CheckSignedPackedSize64(ref writer, -value);
-                    CheckSignedPackedValue64(ref writer, -value);
+                    BytePacker.WriteValuePacked(writer, -value);
+                    CheckSignedPackedSize64(writer, -value);
+                    CheckSignedPackedValue64(writer, -value);
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1L << i) | (1L << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, value);
-                        CheckSignedPackedSize64(ref writer, value);
-                        CheckSignedPackedValue64(ref writer, value);
+                        BytePacker.WriteValuePacked(writer, value);
+                        CheckSignedPackedSize64(writer, value);
+                        CheckSignedPackedValue64(writer, value);
 
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, -value);
-                        CheckSignedPackedSize64(ref writer, -value);
-                        CheckSignedPackedValue64(ref writer, -value);
+                        BytePacker.WriteValuePacked(writer, -value);
+                        CheckSignedPackedSize64(writer, -value);
+                        CheckSignedPackedValue64(writer, -value);
                     }
                 }
             }
@@ -368,7 +350,7 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(5);
                 int value = 0;
-                BytePacker.WriteValuePacked(ref writer, value);
+                BytePacker.WriteValuePacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
 
                 for (var i = 0; i < 64; ++i)
@@ -376,29 +358,29 @@ namespace Unity.Netcode.EditorTests
                     value = 1 << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, value);
-                    CheckSignedPackedSize32(ref writer, value);
-                    CheckSignedPackedValue32(ref writer, value);
+                    BytePacker.WriteValuePacked(writer, value);
+                    CheckSignedPackedSize32(writer, value);
+                    CheckSignedPackedValue32(writer, value);
 
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValuePacked(ref writer, -value);
-                    CheckSignedPackedSize32(ref writer, -value);
-                    CheckSignedPackedValue32(ref writer, -value);
+                    BytePacker.WriteValuePacked(writer, -value);
+                    CheckSignedPackedSize32(writer, -value);
+                    CheckSignedPackedValue32(writer, -value);
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1 << i) | (1 << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, value);
-                        CheckSignedPackedSize32(ref writer, value);
-                        CheckSignedPackedValue32(ref writer, value);
+                        BytePacker.WriteValuePacked(writer, value);
+                        CheckSignedPackedSize32(writer, value);
+                        CheckSignedPackedValue32(writer, value);
 
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValuePacked(ref writer, -value);
-                        CheckSignedPackedSize32(ref writer, -value);
-                        CheckSignedPackedValue32(ref writer, -value);
+                        BytePacker.WriteValuePacked(writer, -value);
+                        CheckSignedPackedSize32(writer, -value);
+                        CheckSignedPackedValue32(writer, -value);
                     }
                 }
             }
@@ -477,62 +459,62 @@ namespace Unity.Netcode.EditorTests
             return 2;
         }
 
-        private ulong Get61BitEncodedValue(ref FastBufferWriter writer)
+        private ulong Get61BitEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out ulong value);
+                ByteUnpacker.ReadValueBitPacked(reader, out ulong value);
                 return value;
             }
         }
 
-        private long Get60BitSignedEncodedValue(ref FastBufferWriter writer)
+        private long Get60BitSignedEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out long value);
+                ByteUnpacker.ReadValueBitPacked(reader, out long value);
                 return value;
             }
         }
 
-        private uint Get30BitEncodedValue(ref FastBufferWriter writer)
+        private uint Get30BitEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out uint value);
+                ByteUnpacker.ReadValueBitPacked(reader, out uint value);
                 return value;
             }
         }
 
-        private int Get29BitSignedEncodedValue(ref FastBufferWriter writer)
+        private int Get29BitSignedEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out int value);
+                ByteUnpacker.ReadValueBitPacked(reader, out int value);
                 return value;
             }
         }
 
-        private ushort Get15BitEncodedValue(ref FastBufferWriter writer)
+        private ushort Get15BitEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out ushort value);
+                ByteUnpacker.ReadValueBitPacked(reader, out ushort value);
                 return value;
             }
         }
 
-        private short Get14BitSignedEncodedValue(ref FastBufferWriter writer)
+        private short Get14BitSignedEncodedValue(FastBufferWriter writer)
         {
-            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+            var reader = new FastBufferReader(writer, Allocator.Temp);
             using (reader)
             {
-                ByteUnpacker.ReadValueBitPacked(ref reader, out short value);
+                ByteUnpacker.ReadValueBitPacked(reader, out short value);
                 return value;
             }
         }
@@ -546,34 +528,34 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(8);
                 ulong value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b111);
-                Assert.AreEqual(value, Get61BitEncodedValue(ref writer));
+                Assert.AreEqual(value, Get61BitEncodedValue(writer));
 
                 for (var i = 0; i < 61; ++i)
                 {
                     value = 1UL << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount61Bits(value), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount61Bits(value) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get61BitEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get61BitEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1UL << i) | (1UL << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount61Bits(value), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount61Bits(value) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get61BitEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get61BitEncodedValue(writer));
                     }
                 }
 
-                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(ref writer, 1UL << 61); });
+                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(writer, 1UL << 61); });
             }
         }
 
@@ -586,10 +568,10 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(8);
                 long value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b111);
-                Assert.AreEqual(value, Get60BitSignedEncodedValue(ref writer));
+                Assert.AreEqual(value, Get60BitSignedEncodedValue(writer));
 
                 for (var i = 0; i < 61; ++i)
                 {
@@ -597,19 +579,19 @@ namespace Unity.Netcode.EditorTests
                     ulong zzvalue = Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount61Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount61Bits(zzvalue) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get60BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get60BitSignedEncodedValue(writer));
 
                     value = -value;
                     zzvalue = Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount61Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount61Bits(zzvalue) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get60BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get60BitSignedEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
@@ -617,23 +599,23 @@ namespace Unity.Netcode.EditorTests
                         zzvalue = Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount61Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount61Bits(zzvalue) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get60BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get60BitSignedEncodedValue(writer));
 
                         value = -value;
                         zzvalue = Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount61Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount61Bits(zzvalue) - 1, writer.ToArray()[0] & 0b111, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get60BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get60BitSignedEncodedValue(writer));
                     }
                 }
 
-                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(ref writer, 1UL << 61); });
+                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(writer, 1UL << 61); });
             }
         }
 
@@ -646,34 +628,34 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(4);
                 uint value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b11);
-                Assert.AreEqual(value, Get30BitEncodedValue(ref writer));
+                Assert.AreEqual(value, Get30BitEncodedValue(writer));
 
                 for (var i = 0; i < 30; ++i)
                 {
                     value = 1U << i;
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount30Bits(value), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount30Bits(value) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get30BitEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get30BitEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (1U << i) | (1U << j);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount30Bits(value), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount30Bits(value) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get30BitEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get30BitEncodedValue(writer));
                     }
                 }
 
-                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(ref writer, 1U << 30); });
+                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(writer, 1U << 30); });
             }
         }
 
@@ -686,10 +668,10 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(4);
                 int value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b11);
-                Assert.AreEqual(value, Get30BitEncodedValue(ref writer));
+                Assert.AreEqual(value, Get30BitEncodedValue(writer));
 
                 for (var i = 0; i < 29; ++i)
                 {
@@ -697,19 +679,19 @@ namespace Unity.Netcode.EditorTests
                     uint zzvalue = (uint)Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount30Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount30Bits(zzvalue) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get29BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get29BitSignedEncodedValue(writer));
 
                     value = -value;
                     zzvalue = (uint)Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount30Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount30Bits(zzvalue) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get29BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get29BitSignedEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
@@ -717,19 +699,19 @@ namespace Unity.Netcode.EditorTests
                         zzvalue = (uint)Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount30Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount30Bits(zzvalue) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get29BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get29BitSignedEncodedValue(writer));
 
                         value = -value;
                         zzvalue = (uint)Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount30Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount30Bits(zzvalue) - 1, writer.ToArray()[0] & 0b11, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get29BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get29BitSignedEncodedValue(writer));
                     }
                 }
             }
@@ -744,34 +726,34 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(2);
                 ushort value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b1);
-                Assert.AreEqual(value, Get15BitEncodedValue(ref writer));
+                Assert.AreEqual(value, Get15BitEncodedValue(writer));
 
                 for (var i = 0; i < 15; ++i)
                 {
                     value = (ushort)(1U << i);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount15Bits(value), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount15Bits(value) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get15BitEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get15BitEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
                         value = (ushort)((1U << i) | (1U << j));
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount15Bits(value), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount15Bits(value) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get15BitEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get15BitEncodedValue(writer));
                     }
                 }
 
-                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(ref writer, (ushort)(1U << 15)); });
+                Assert.Throws<ArgumentException>(() => { BytePacker.WriteValueBitPacked(writer, (ushort)(1U << 15)); });
             }
         }
         [Test]
@@ -783,10 +765,10 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(2);
                 short value = 0;
-                BytePacker.WriteValueBitPacked(ref writer, value);
+                BytePacker.WriteValueBitPacked(writer, value);
                 Assert.AreEqual(1, writer.Position);
                 Assert.AreEqual(0, writer.ToArray()[0] & 0b1);
-                Assert.AreEqual(value, Get15BitEncodedValue(ref writer));
+                Assert.AreEqual(value, Get15BitEncodedValue(writer));
 
                 for (var i = 0; i < 14; ++i)
                 {
@@ -794,19 +776,19 @@ namespace Unity.Netcode.EditorTests
                     ushort zzvalue = (ushort)Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount15Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount15Bits(zzvalue) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get14BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get14BitSignedEncodedValue(writer));
 
                     value = (short)-value;
                     zzvalue = (ushort)Arithmetic.ZigZagEncode(value);
                     writer.Seek(0);
                     writer.Truncate();
-                    BytePacker.WriteValueBitPacked(ref writer, value);
+                    BytePacker.WriteValueBitPacked(writer, value);
                     Assert.AreEqual(GetByteCount15Bits(zzvalue), writer.Position, $"Failed on {value} ({i})");
                     Assert.AreEqual(GetByteCount15Bits(zzvalue) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i})");
-                    Assert.AreEqual(value, Get14BitSignedEncodedValue(ref writer));
+                    Assert.AreEqual(value, Get14BitSignedEncodedValue(writer));
 
                     for (var j = 0; j < 8; ++j)
                     {
@@ -814,19 +796,19 @@ namespace Unity.Netcode.EditorTests
                         zzvalue = (ushort)Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount15Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount15Bits(zzvalue) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get14BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get14BitSignedEncodedValue(writer));
 
                         value = (short)-value;
                         zzvalue = (ushort)Arithmetic.ZigZagEncode(value);
                         writer.Seek(0);
                         writer.Truncate();
-                        BytePacker.WriteValueBitPacked(ref writer, value);
+                        BytePacker.WriteValueBitPacked(writer, value);
                         Assert.AreEqual(GetByteCount15Bits(zzvalue), writer.Position, $"Failed on {value} ({i}, {j})");
                         Assert.AreEqual(GetByteCount15Bits(zzvalue) - 1, writer.ToArray()[0] & 0b1, $"Failed on {value} ({i}, {j})");
-                        Assert.AreEqual(value, Get14BitSignedEncodedValue(ref writer));
+                        Assert.AreEqual(value, Get14BitSignedEncodedValue(writer));
                     }
                 }
             }
@@ -851,10 +833,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(b);
                 }
-                else
-                {
-                    RunObjectTypeTest(b);
-                }
             }
             else if (testType == typeof(sbyte))
             {
@@ -862,10 +840,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(sb);
-                }
-                else
-                {
-                    RunObjectTypeTest(sb);
                 }
             }
             else if (testType == typeof(short))
@@ -875,10 +849,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(s);
                 }
-                else
-                {
-                    RunObjectTypeTest(s);
-                }
             }
             else if (testType == typeof(ushort))
             {
@@ -886,10 +856,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(us);
-                }
-                else
-                {
-                    RunObjectTypeTest(us);
                 }
             }
             else if (testType == typeof(int))
@@ -899,10 +865,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(i);
                 }
-                else
-                {
-                    RunObjectTypeTest(i);
-                }
             }
             else if (testType == typeof(uint))
             {
@@ -910,10 +872,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(ui);
-                }
-                else
-                {
-                    RunObjectTypeTest(ui);
                 }
             }
             else if (testType == typeof(long))
@@ -923,10 +881,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(l);
                 }
-                else
-                {
-                    RunObjectTypeTest(l);
-                }
             }
             else if (testType == typeof(ulong))
             {
@@ -935,20 +889,12 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(ul);
                 }
-                else
-                {
-                    RunObjectTypeTest(ul);
-                }
             }
             else if (testType == typeof(bool))
             {
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(true);
-                }
-                else
-                {
-                    RunObjectTypeTest(true);
                 }
             }
             else if (testType == typeof(char))
@@ -958,19 +904,11 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(c);
                 }
-                else
-                {
-                    RunObjectTypeTest(c);
-                }
 
                 c = '\u263a';
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(c);
-                }
-                else
-                {
-                    RunObjectTypeTest(c);
                 }
             }
             else if (testType == typeof(float))
@@ -980,10 +918,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(f);
                 }
-                else
-                {
-                    RunObjectTypeTest(f);
-                }
             }
             else if (testType == typeof(double))
             {
@@ -991,10 +925,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(d);
-                }
-                else
-                {
-                    RunObjectTypeTest(d);
                 }
             }
             else if (testType == typeof(ByteEnum))
@@ -1004,10 +934,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
             }
             else if (testType == typeof(SByteEnum))
             {
@@ -1015,10 +941,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(ShortEnum))
@@ -1028,10 +950,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
             }
             else if (testType == typeof(UShortEnum))
             {
@@ -1039,10 +957,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(IntEnum))
@@ -1052,10 +966,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
             }
             else if (testType == typeof(UIntEnum))
             {
@@ -1063,10 +973,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(LongEnum))
@@ -1076,10 +982,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(e);
                 }
-                else
-                {
-                    RunObjectTypeTest(e);
-                }
             }
             else if (testType == typeof(ULongEnum))
             {
@@ -1087,10 +989,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(e);
-                }
-                else
-                {
-                    RunObjectTypeTest(e);
                 }
             }
             else if (testType == typeof(Vector2))
@@ -1100,10 +998,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
             }
             else if (testType == typeof(Vector3))
             {
@@ -1111,10 +1005,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Vector4))
@@ -1124,10 +1014,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
             }
             else if (testType == typeof(Quaternion))
             {
@@ -1135,10 +1021,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Color))
@@ -1148,10 +1030,6 @@ namespace Unity.Netcode.EditorTests
                 {
                     RunTypeTest(v);
                 }
-                else
-                {
-                    RunObjectTypeTest(v);
-                }
             }
             else if (testType == typeof(Color32))
             {
@@ -1159,10 +1037,6 @@ namespace Unity.Netcode.EditorTests
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);
-                }
-                else
-                {
-                    RunObjectTypeTest(v);
                 }
             }
             else if (testType == typeof(Ray))
@@ -1179,35 +1053,15 @@ namespace Unity.Netcode.EditorTests
                         var writer = new FastBufferWriter(sizeof(Ray) * 2, Allocator.Temp);
                         using (writer)
                         {
-                            BytePacker.WriteValuePacked(ref writer, v);
-                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                            BytePacker.WriteValuePacked(writer, v);
+                            var reader = new FastBufferReader(writer, Allocator.Temp);
                             using (reader)
                             {
-                                ByteUnpacker.ReadValuePacked(ref reader, out Ray outVal);
+                                ByteUnpacker.ReadValuePacked(reader, out Ray outVal);
                                 Assert.AreEqual(v.origin, outVal.origin);
                                 Assert.AreEqual(v.direction.x, outVal.direction.x, 0.00001);
                                 Assert.AreEqual(v.direction.y, outVal.direction.y, 0.00001);
                                 Assert.AreEqual(v.direction.z, outVal.direction.z, 0.00001);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    unsafe
-                    {
-                        var writer = new FastBufferWriter(sizeof(Ray) * 2, Allocator.Temp);
-                        using (writer)
-                        {
-                            BytePacker.WriteObjectPacked(ref writer, v);
-                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
-                            using (reader)
-                            {
-                                ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(Ray));
-                                Assert.AreEqual(v.origin, ((Ray)outVal).origin);
-                                Assert.AreEqual(v.direction.x, ((Ray)outVal).direction.x, 0.00001);
-                                Assert.AreEqual(v.direction.y, ((Ray)outVal).direction.y, 0.00001);
-                                Assert.AreEqual(v.direction.z, ((Ray)outVal).direction.z, 0.00001);
                             }
                         }
                     }
@@ -1227,33 +1081,14 @@ namespace Unity.Netcode.EditorTests
                         var writer = new FastBufferWriter(sizeof(Ray2D) * 2, Allocator.Temp);
                         using (writer)
                         {
-                            BytePacker.WriteValuePacked(ref writer, v);
-                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                            BytePacker.WriteValuePacked(writer, v);
+                            var reader = new FastBufferReader(writer, Allocator.Temp);
                             using (reader)
                             {
-                                ByteUnpacker.ReadValuePacked(ref reader, out Ray2D outVal);
+                                ByteUnpacker.ReadValuePacked(reader, out Ray2D outVal);
                                 Assert.AreEqual(v.origin, outVal.origin);
                                 Assert.AreEqual(v.direction.x, outVal.direction.x, 0.00001);
                                 Assert.AreEqual(v.direction.y, outVal.direction.y, 0.00001);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    unsafe
-                    {
-                        var writer = new FastBufferWriter(sizeof(Ray2D) * 2, Allocator.Temp);
-                        using (writer)
-                        {
-                            BytePacker.WriteObjectPacked(ref writer, v);
-                            var reader = new FastBufferReader(ref writer, Allocator.Temp);
-                            using (reader)
-                            {
-                                ByteUnpacker.ReadObjectPacked(ref reader, out object outVal, typeof(Ray2D));
-                                Assert.AreEqual(v.origin, ((Ray2D)outVal).origin);
-                                Assert.AreEqual(v.direction.x, ((Ray2D)outVal).direction.x, 0.00001);
-                                Assert.AreEqual(v.direction.y, ((Ray2D)outVal).direction.y, 0.00001);
                             }
                         }
                     }

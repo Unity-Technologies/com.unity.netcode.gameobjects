@@ -24,25 +24,12 @@ namespace TestProject.RuntimeTests
             yield break;
         }
 
-        /// <summary>
-        /// Default Mode (Batched RPCs Enabled)
-        /// </summary>
-        /// <returns></returns>
         [UnityTest]
         public IEnumerator ManualRpcTestsAutomated()
         {
             return AutomatedRpcTestsHandler(9);
         }
 
-        /// <summary>
-        /// Same test with Batched RPC turned off
-        /// </summary>
-        /// <returns></returns>
-        [UnityTest]
-        public IEnumerator ManualRpcTestsAutomatedNoBatching()
-        {
-            return AutomatedRpcTestsHandler(3, false);
-        }
 
         /// <summary>
         /// This just helps to simplify any further tests that can leverage from
@@ -52,9 +39,8 @@ namespace TestProject.RuntimeTests
         /// RPC Batching is enabled or not.
         /// </summary>
         /// <param name="numClients"></param>
-        /// <param name="useBatching"></param>
         /// <returns></returns>
-        private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
+        private IEnumerator AutomatedRpcTestsHandler(int numClients)
         {
             var startFrameCount = Time.frameCount;
             var startTime = Time.realtimeSinceStartup;
@@ -67,14 +53,6 @@ namespace TestProject.RuntimeTests
                  // Add our RpcQueueManualTests component
                  playerPrefab.AddComponent<RpcQueueManualTests>();
              });
-
-            // Set the RPC Batch sending mode
-            m_ServerNetworkManager.MessageQueueContainer.EnableBatchedMessages(useBatching);
-
-            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
-            {
-                m_ClientNetworkManagers[i].MessageQueueContainer.EnableBatchedMessages(useBatching);
-            }
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();

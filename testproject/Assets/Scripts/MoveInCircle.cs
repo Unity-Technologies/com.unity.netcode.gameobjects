@@ -47,9 +47,11 @@ public class MoveInCircle : NetworkBehaviour
 
     private void Tick(bool isFixed)
     {
-        if (m_NetworkTransform != null && m_NetworkTransform.CanCommitToTransform || !m_RunServerOnly)
+        // if (m_NetworkTransform != null && m_NetworkTransform.CanCommitToTransform || !m_RunServerOnly)
+        if (IsServer)
         {
             var deltaTime = isFixed ? Time.fixedDeltaTime : Time.deltaTime;
+            // GetComponent<NetworkTransform>().ApplyDelta(transform.forward * m_MoveSpeed, Quaternion.Euler(0, m_RotationSpeed, 0), Vector3.one);
             transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);
             transform.Rotate(0, m_RotationSpeed * deltaTime, 0);
             transform.localScale = ((Mathf.Sin(isFixed ? Time.fixedTime : Time.time) + 1) * Vector3.one);

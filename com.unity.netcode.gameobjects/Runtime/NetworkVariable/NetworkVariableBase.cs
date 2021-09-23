@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 
 namespace Unity.Netcode
 {
@@ -88,27 +87,28 @@ namespace Unity.Netcode
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
-        public abstract void WriteDelta(Stream stream);
+        /// <param name="writer">The stream to write the dirty changes to</param>
+        public abstract void WriteDelta(FastBufferWriter writer);
 
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
-        public abstract void WriteField(Stream stream);
+        /// <param name="writer">The stream to write the state to</param>
+        public abstract void WriteField(FastBufferWriter writer);
 
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        public abstract void ReadField(Stream stream);
+        /// <param name="reader">The stream to read the state from</param>
+        public abstract void ReadField(FastBufferReader reader);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
+        /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
+
+        public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
         public virtual void Dispose()
         {

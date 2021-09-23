@@ -1,16 +1,17 @@
 using System;
 using System.Collections;
+using System.Text.RegularExpressions;
 using Unity.Netcode.Components;
 using NUnit.Framework;
-using Unity.Netcode.Samples;
+// using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(true, true)]
+    // [TestFixture(true, true)]
     [TestFixture(true, false)]
-    [TestFixture(false, true)]
+    // [TestFixture(false, true)]
     [TestFixture(false, false)]
     public class NetworkTransformTests : BaseMultiInstanceTest
     {
@@ -36,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (m_TestWithClientNetworkTransform)
                 {
-                    playerPrefab.AddComponent<ClientNetworkTransform>();
+                    // playerPrefab.AddComponent<ClientNetworkTransform>();
                 }
                 else
                 {
@@ -57,21 +58,20 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // TODO: rewrite after perms & authority changes
-        //*
-        [UnityTest, Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
+        [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
         {
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
 
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
-            if (m_TestWithClientNetworkTransform)
-            {
-                // client auth net transform can write from client, not from server
-                otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            }
-            else
+            // if (m_TestWithClientNetworkTransform)
+            // {
+            //     // client auth net transform can write from client, not from server
+            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            // }
+            // else
             {
                 // server auth net transform can't write from client, not from client
                 authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
@@ -79,51 +79,6 @@ namespace Unity.Netcode.RuntimeTests
             }
             Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
             Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
-
-            // // server auth net transform can't write from client, not from client
-            // var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            // Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
-            // var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            // Assert.That(otherSideNetworkTransform.CanCommitToTransform);
-
-            // if (testClientAuthority)
-            // {
-            //     if (m_TestWithClientNetworkTransform)
-            //     {
-            //         // client auth net transform can write from client, not from server
-            //         authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //         Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
-            //         otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //         Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
-            //     }
-            //     else
-            //     {
-            //         // server auth net transform can't write from client, not from client
-            //         authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            //         Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
-            //         otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            //         Assert.That(otherSideNetworkTransform.CanCommitToTransform);
-            //     }
-            // }
-            // else
-            // {
-            //     if (m_TestWithClientNetworkTransform)
-            //     {
-            //         // client auth net transform can write from client, not from server
-            //         authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //         Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
-            //         otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //         Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
-            //     }
-            //     else
-            //     {
-            //         // server auth net transform can't write from client, not from client
-            //         authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            //         Assert.That(!authoritativeNetworkTransform.CanCommitToTransform);
-            //         otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            //         Assert.That(otherSideNetworkTransform.CanCommitToTransform);
-            //     }
-            // }
 
             authoritativeNetworkTransform.Interpolate = false;
             otherSideNetworkTransform.Interpolate = false;
@@ -182,57 +137,45 @@ namespace Unity.Netcode.RuntimeTests
             // todo test all public API
         }
 
-        [UnityTest, Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
+        [UnityTest]
+        // [Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
         public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
         {
             // test server can't change client authoritative transform
-            NetworkTransform networkTransform;
+            NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
-            // var networkTransform = (testClientAuthority ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
-            if (testClientAuthority)
-            {
-                if (m_TestWithClientNetworkTransform)
-                {
-                    networkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                }
-                else
-                {
-                    networkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-                    otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                }
-            }
-            else
-            {
-                if (m_TestWithClientNetworkTransform)
-                {
-                    networkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
 
-                }
-                else
-                {
-                    networkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                    otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-                }
+            // if (m_TestWithClientNetworkTransform)
+            // {
+            //     // client auth net transform can write from client, not from server
+            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
+            // }
+            // else
+            {
+                // server auth net transform can't write from client, not from client
+                authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+                otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
             }
-            networkTransform.Interpolate = false;
+
+            authoritativeNetworkTransform.Interpolate = false;
             otherSideNetworkTransform.Interpolate = false;
-            // networkTransform.SetAuthority(authorityToTest);
-            // networkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
-
-            // var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
-            // otherSideNetworkTransform.SetAuthority(authorityToTest);
-            // otherSideNetworkTransform.InitializeInterpolator<NoInterpolator<float>, NoInterpolator<Quaternion>, NoInterpolator<float>>();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return new WaitForFixedUpdate();
+            yield return null; // one frame
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
+            LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
         }
-        //*/
+
+        /*
+         * ownership change
+         * test teleport with interpolation
+         * test teleport without interpolation
+         * test dynamic spawning
+         */
 
         [UnityTearDown]
         public override IEnumerator Teardown()
