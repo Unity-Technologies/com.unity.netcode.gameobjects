@@ -13,12 +13,36 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
+    public static DirectoryInfo MultiprocessDirInfo {
+        private set => s_MultiprocessDirInfo = value;
+        get => s_MultiprocessDirInfo != null ? s_MultiprocessDirInfo : initMultiprocessDirinfo();
+    }
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
 
+    private static DirectoryInfo initMultiprocessDirinfo()
+    {
+        string userprofile = "";
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
+        }
+        else
+        {
+            userprofile = Environment.GetEnvironmentVariable("HOME");
+        }
+        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+        if (!MultiprocessDirInfo.Exists)
+        {
+            MultiprocessDirInfo.Create();
+        }
+        return s_MultiprocessDirInfo;
+    }
+
     static MultiprocessOrchestration()
     {
-        GetPathToMultiprocessDirectory();
+        initMultiprocessDirinfo();
     }
 
     /// <summary>
@@ -50,26 +74,6 @@ public class MultiprocessOrchestration
             }
         }
         return activeWorkerCount;
-    }
-
-    public static DirectoryInfo GetPathToMultiprocessDirectory()
-    {
-        string userprofile = "";
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
-        }
-        else
-        {
-            userprofile = Environment.GetEnvironmentVariable("HOME");
-        }
-        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
-        if (!s_MultiprocessDirInfo.Exists)
-        {
-            s_MultiprocessDirInfo.Create();
-        }
-        return s_MultiprocessDirInfo;
     }
 
     public static string StartWorkerNode()
@@ -129,7 +133,7 @@ public class MultiprocessOrchestration
             throw;
         }
 
-        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
+        string logPath = Path.Combine(MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
