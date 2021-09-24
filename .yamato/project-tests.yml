@@ -54,5 +54,3 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
-
-
