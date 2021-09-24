@@ -331,11 +331,7 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     private ulong[] m_TargetClient = new ulong[1] { 0 };
-
-    public delegate void KeepServerFromTimingOutDelegateHandler();
-
-    public KeepServerFromTimingOutDelegateHandler KeepServerFromTimingOut;
-
+    
     [ServerRpc(RequireOwnership = false)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
@@ -347,12 +343,6 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         m_TestResultsLocal[senderId].Add(result);
-
-
-        if (KeepServerFromTimingOut != null)
-        {
-            KeepServerFromTimingOut.Invoke();
-        }
 
         // Now send the results received verification
         m_TargetClient[0] = senderId;

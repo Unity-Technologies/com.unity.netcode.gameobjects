@@ -169,14 +169,6 @@ public class ExecuteStepInContext : CustomYieldInstruction
         m_StepToExecute = stepToExecute;
         m_WaitMultipleUpdates = waitMultipleUpdates;
         m_IgnoreTimeoutException = ignoreTimeoutException;
-        if (actionContext == StepExecutionContext.Server)
-        {
-            TestCoordinator.Instance.KeepServerFromTimingOut = () =>
-            {
-                Debug.Log($"Server received result and extending timeout {m_Timeout} to {(m_Timeout + 0.2f)}.  Time since startup: {Time.time}");
-                m_Timeout += 0.2f; // Each time we receive a result, bump the timeout period a little bit
-            };
-        }
 
         if (additionalIsFinishedWaiter != null)
         {
