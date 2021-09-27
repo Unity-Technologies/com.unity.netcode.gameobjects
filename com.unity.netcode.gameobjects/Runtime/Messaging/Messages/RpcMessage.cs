@@ -49,7 +49,7 @@ namespace Unity.Netcode
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(Header.NetworkObjectId))
                 {
-                    return;
+                    throw new MessagingSystem.NotReady();
                 }
 
                 var networkObject = networkManager.SpawnManager.SpawnedObjects[Header.NetworkObjectId];

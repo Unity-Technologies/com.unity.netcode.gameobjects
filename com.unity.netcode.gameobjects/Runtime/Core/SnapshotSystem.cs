@@ -419,6 +419,7 @@ namespace Unity.Netcode
 
         internal void ReadSpawns(in SnapshotDataMessage message)
         {
+            Debug.Log("Reading Snapshot");
             SnapshotSpawnCommand spawnCommand;
             SnapshotDespawnCommand despawnCommand;
 
@@ -434,7 +435,7 @@ namespace Unity.Netcode
 
                 TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
 
-                // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
+                Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {

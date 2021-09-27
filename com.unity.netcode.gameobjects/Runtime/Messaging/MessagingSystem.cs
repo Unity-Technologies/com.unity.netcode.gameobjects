@@ -17,6 +17,11 @@ namespace Unity.Netcode
 
     internal class MessagingSystem : IDisposable
     {
+        internal class NotReady : Exception
+        {
+
+        };
+
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -300,6 +305,15 @@ namespace Unity.Netcode
                 {
                     handler.Invoke(reader, context);
                 }
+                catch (NotReady notReady)
+                {
+                    /* should I called those after receive messgae hooks ?
+                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                    {
+                        m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
+                    }*/
+                    throw notReady;
+                }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
@@ -313,14 +327,44 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
+            int blockPosition = -1;
+
+            Debug.Log($"ProcessIncomingMessageQueue {m_IncomingMessageQueue.Length}");
             for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
             {
-                // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                try
+                {
+                    // Avoid copies...
+                    ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
+                    if (blockPosition == -1 || m_ReverseTypeMap[item.Header.MessageType] == typeof(SnapshotDataMessage))
+                    {
+                        Debug.Log($"Reading at {i}");
+                        HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                    }
+                    else
+                    {
+                        Debug.Log("skipping {i}");
+                    }
+                }
+                catch (NotReady notReadyException)
+                {
+                    Debug.Log("RPC target object not spawned");
+                    blockPosition = i;
+                }
             }
 
-            m_IncomingMessageQueue.Clear();
+            if (blockPosition != -1)
+            {
+                if (blockPosition != 0)
+                {
+                    m_IncomingMessageQueue.RemoveRange(0, blockPosition);
+                }
+            }
+            else
+            {
+                m_IncomingMessageQueue.Clear();
+            }
+            Debug.Log($"{m_IncomingMessageQueue.Length} items are left in the m_IncomingMessageQueue");
         }
 
         internal void ClientConnected(ulong clientId)
