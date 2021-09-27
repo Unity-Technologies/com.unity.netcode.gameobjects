@@ -587,6 +587,7 @@ namespace Unity.Netcode
             // Return invalid scene name status if the scene name is invalid... :)
             if (!IsSceneNameValid(sceneName))
             {
+                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings or the AssetBundle has not been loaded.");
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
