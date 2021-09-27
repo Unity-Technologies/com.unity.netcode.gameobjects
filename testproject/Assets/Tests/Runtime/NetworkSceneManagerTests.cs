@@ -40,7 +40,7 @@ namespace TestProject.RuntimeTests
         private string m_CurrentSceneName;
         private List<SceneTestInfo> m_ShouldWaitList;
         private Scene m_CurrentScene;
-
+        private const string k_InvalidSceneName = "SomeInvalidSceneName";
 
         [UnityTest]
         public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
@@ -129,9 +129,9 @@ namespace TestProject.RuntimeTests
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.SceneNotLoaded);
 
-            LogAssert.Expect(LogType.Error, "Scene 'SomeInvalidSceneName' couldn't be loaded because it has not been added to the build settings scenes in build list.");
+            LogAssert.Expect(LogType.Error,$"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             // Check error status for trying to load an invalid scene name
-            result = m_ServerNetworkManager.SceneManager.LoadScene("SomeInvalidSceneName", LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.InvalidSceneName);
 
             yield break;
