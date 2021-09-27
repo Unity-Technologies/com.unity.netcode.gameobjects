@@ -436,6 +436,10 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
+                if (index > m_List.Length)
+                {
+                    throw new IndexOutOfRangeException("trying to add an index beyond current list size.  Use 'Add' instead");
+                }
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
