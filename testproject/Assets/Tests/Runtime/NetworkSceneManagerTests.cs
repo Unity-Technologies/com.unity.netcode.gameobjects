@@ -129,6 +129,7 @@ namespace TestProject.RuntimeTests
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.SceneNotLoaded);
 
+            LogAssert.Expect(LogType.Error, "Scene 'SomeInvalidSceneName' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             // Check error status for trying to load an invalid scene name
             result = m_ServerNetworkManager.SceneManager.LoadScene("SomeInvalidSceneName", LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.InvalidSceneName);
