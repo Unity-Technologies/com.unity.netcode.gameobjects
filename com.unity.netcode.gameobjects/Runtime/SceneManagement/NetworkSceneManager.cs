@@ -578,16 +578,16 @@ namespace Unity.Netcode
         /// <returns><see cref="SceneEventProgress"/> that should have a <see cref="SceneEventProgress.Status"/> of <see cref="SceneEventProgressStatus.Started"/> otherwise it failed.</returns>
         private SceneEventProgress ValidateSceneEvent(string sceneName, bool isUnloading = false)
         {
-            // Return scene event already in progress if one is already in progress... :)
+            // Return scene event already in progress if one is already in progress.
             if (s_IsSceneEventActive)
             {
                 return new SceneEventProgress(null, SceneEventProgressStatus.SceneEventInProgress);
             }
 
-            // Return invalid scene name status if the scene name is invalid... :)
+            // Return invalid scene name status if the scene name is invalid.
             if (!IsSceneNameValid(sceneName))
             {
-                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings or the AssetBundle has not been loaded.");
+                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
