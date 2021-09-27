@@ -323,6 +323,7 @@ namespace TestProject.RuntimeTests
         private int m_ClientsThatFailedVerification;
         private string m_ExpectedSceneName;
         private LoadSceneMode m_ExpectedLoadMode;
+        private const string k_AddtiveSceneToLoad = "Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity";
 
         private bool ServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
@@ -345,6 +346,7 @@ namespace TestProject.RuntimeTests
             return m_ClientVerifyScene;
         }
 
+
         /// <summary>
         /// Unit test to verify that user defined scene verification works on both the client and
         /// the server side.
@@ -365,7 +367,7 @@ namespace TestProject.RuntimeTests
             m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
-            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            var result = m_ServerNetworkManager.SceneManager.LoadScene(k_AddtiveSceneToLoad, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             // Wait for all clients to load the scene
@@ -384,7 +386,7 @@ namespace TestProject.RuntimeTests
             // Server will notify it failed scene verification and no client should load
             ResetWait();
             m_ServerVerifyScene = false;
-            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(k_AddtiveSceneToLoad, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.SceneFailedVerification);
 
             // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to true and m_ClientVerifyScene set to false
