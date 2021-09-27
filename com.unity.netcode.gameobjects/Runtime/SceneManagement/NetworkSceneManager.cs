@@ -179,6 +179,11 @@ namespace Unity.Netcode
         internal List<string> ScenesInBuild = new List<string>();
 
         /// <summary>
+        /// The full scene name and path
+        /// </summary>
+        internal List<string> ScenePathsInBuild = new List<string>();
+
+        /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         /// they need to be moved into the do not destroy temporary scene
         /// When it is set: Just before starting the asynchronous loading call
@@ -247,9 +252,12 @@ namespace Unity.Netcode
         internal void GenerateScenesInBuild()
         {
             ScenesInBuild.Clear();
+            ScenePathsInBuild.Clear();
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
-                ScenesInBuild.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
+                var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+                ScenePathsInBuild.Add(scenePath);
+                ScenesInBuild.Add(GetSceneNameFromPath(scenePath));
             }
         }
 
@@ -487,6 +495,11 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneNameValid(string sceneName)
         {
+            if (sceneName.Contains("/") && ScenePathsInBuild.Contains(sceneName))
+            {
+                return true;
+            }
+            else
             if (ScenesInBuild.Contains(sceneName))
             {
                 return true;
@@ -514,7 +527,14 @@ namespace Unity.Netcode
         {
             if (IsSceneNameValid(sceneName))
             {
-                return (uint)ScenesInBuild.IndexOf(sceneName);
+                if (sceneName.Contains("/"))
+                {
+                    return (uint)ScenePathsInBuild.IndexOf(sceneName);
+                }
+                else
+                {
+                    return (uint)ScenesInBuild.IndexOf(sceneName);
+                }
             }
             return uint.MaxValue;
         }
@@ -871,12 +891,14 @@ namespace Unity.Netcode
             // This will be the message we send to everyone when this scene event sceneEventProgress is complete
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_LoadComplete;
             sceneEventProgress.LoadSceneMode = loadSceneMode;
+            var sceneBuildIndex = (int)GetBuildIndexFromSceneName(sceneName);
 
             // Now set up the current scene event
             SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
+            SceneEventData.SceneIndex = (uint)sceneBuildIndex;
             SceneEventData.LoadSceneMode = loadSceneMode;
+
 
             // This both checks to make sure the scene is valid and if not resets the active scene event
             s_IsSceneEventActive = ValidateSceneBeforeLoading(SceneEventData.SceneIndex, loadSceneMode);
@@ -899,7 +921,7 @@ namespace Unity.Netcode
 
             // Now start loading the scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
+            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(ScenesInBuild[sceneBuildIndex]); };
             sceneEventProgress.SetSceneLoadOperation(sceneLoad);
 
             // Notify the local server that a scene loading event has begun
@@ -908,7 +930,7 @@ namespace Unity.Netcode
                 AsyncOperation = sceneLoad,
                 SceneEventType = SceneEventData.SceneEventType,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
-                SceneName = sceneName,
+                SceneName = ScenesInBuild[sceneBuildIndex],
                 ClientId = m_NetworkManager.ServerClientId
             });
 
