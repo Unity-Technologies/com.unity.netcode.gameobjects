@@ -20,8 +20,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
-        private const string k_ExtensionMethodReadName = "ReadValueSafe";
-        private const string k_ExtensionMethodWriteName = "WriteValueSafe";
+        private const string k_ReadValueMethodName = nameof(FastBufferReader.ReadValueSafe);
+        private const string k_WriteValueMethodName = nameof(FastBufferWriter.WriteValueSafe);
 
         public override ILPPInterface GetInstance() => this;
 
@@ -640,7 +640,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var parameters = method.Resolve().Parameters;
 
-                    if (method.Name == k_ExtensionMethodWriteName)
+                    if (method.Name == k_WriteValueMethodName)
                     {
                         if (parameters[1].IsIn)
                         {
@@ -671,7 +671,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 var typeMethod = GetFastBufferWriterWriteMethod("WriteNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetFastBufferWriterWriteMethod(k_ExtensionMethodWriteName, paramType);
+                    typeMethod = GetFastBufferWriterWriteMethod(k_WriteValueMethodName, paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -757,7 +757,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var parameters = method.Resolve().Parameters;
                     if (
-                        method.Name == k_ExtensionMethodReadName
+                        method.Name == k_ReadValueMethodName
                         && parameters[1].IsOut
                         && parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve()
                         && ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
@@ -773,7 +773,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 var typeMethod = GetFastBufferReaderReadMethod("ReadNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetFastBufferReaderReadMethod(k_ExtensionMethodReadName, paramType);
+                    typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -1019,7 +1019,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferWriter)}.{k_ExtensionMethodWriteName} to define serialization.");
+                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                         continue;
                     }
 
@@ -1309,7 +1309,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferReader)}.{k_ExtensionMethodReadName} to define serialization.");
+                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferReader)}.{k_ReadValueMethodName} to define serialization.");
                     continue;
                 }
 
