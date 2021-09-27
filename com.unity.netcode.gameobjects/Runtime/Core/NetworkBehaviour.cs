@@ -595,7 +595,7 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
-        public void OnDestroy()
+        public virtual void OnDestroy()
         {
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
