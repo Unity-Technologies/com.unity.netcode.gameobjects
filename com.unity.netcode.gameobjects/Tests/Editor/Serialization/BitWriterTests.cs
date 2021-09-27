@@ -72,14 +72,11 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitWriter.WriteBit(true);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
                     }
-                    catch (Exception e)
-                    {
-                        throw e;
-                    }
+
                     Assert.IsTrue(bitWriter.TryBeginWriteBits(3));
                     bitWriter.WriteBit(true);
                     Assert.AreEqual(0b11, *asInt);
@@ -92,26 +89,18 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitWriter.WriteBits(0b11111111, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
 
                     try
                     {
                         bitWriter.WriteBits(0b11111111, 1);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
                     Assert.IsTrue(bitWriter.TryBeginWriteBits(3));
 
@@ -119,13 +108,9 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitWriter.WriteBits(0b11111111, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
                     Assert.IsTrue(bitWriter.TryBeginWriteBits(4));
 
@@ -308,10 +293,9 @@ namespace Unity.Netcode.EditorTests
                         bitWriter.WriteBits(0b11111111UL, 4);
                         bitWriter.WriteBits(0b11111111UL, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         Assert.Fail("Overflow exception was thrown too early.");
-                        throw;
                     }
                     bitWriter.WriteBits(0b11111111UL, 1);
                 });
