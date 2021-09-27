@@ -129,6 +129,10 @@ namespace Unity.Netcode
             };
             int messageSize;
 
+            // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
+            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            ulong serverClientId = ulong.MaxValue;
+
             if (rpcParams.Send.TargetClientIds != null)
             {
                 // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
@@ -136,17 +140,46 @@ namespace Unity.Netcode
                 var index = 0;
                 foreach (var clientId in rpcParams.Send.TargetClientIds)
                 {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        serverClientId = clientId;
+                        continue;
+                    }
+
                     localArray[index++] = clientId;
                 }
+
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index, true);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
+                foreach (var clientId in rpcParams.Send.TargetClientIdsNativeArray)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        serverClientId = clientId;
+                    }
+                }
+
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds, true);
+                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        serverClientId = clientId;
+                    }
+                }
+
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+            }
+
+            // If we are a server/host then we just no op and send to ourself
+            if (serverClientId != ulong.MaxValue && (IsHost || IsServer))
+            {
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, serverClientId, true);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
