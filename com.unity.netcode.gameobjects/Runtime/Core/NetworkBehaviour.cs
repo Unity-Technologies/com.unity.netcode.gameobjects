@@ -75,12 +75,12 @@ namespace Unity.Netcode
             if (IsHost || IsServer)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
             {
-                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
+                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
             }
 
 
@@ -134,7 +134,7 @@ namespace Unity.Netcode
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :( 
-            ulong serverClientId = ulong.MaxValue;
+            bool shouldSendToHost = false;
 
             if (rpcParams.Send.TargetClientIds != null)
             {
@@ -145,14 +145,13 @@ namespace Unity.Netcode
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {
-                        serverClientId = clientId;
-                        continue;
+                        shouldSendToHost = true;
                     }
 
                     localArray[index++] = clientId;
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index, true);
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -160,7 +159,8 @@ namespace Unity.Netcode
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {
-                        serverClientId = clientId;
+                        shouldSendToHost = true;
+                        break;
                     }
                 }
 
@@ -168,22 +168,15 @@ namespace Unity.Netcode
             }
             else
             {
-                foreach (var clientId in NetworkManager.ConnectedClientsIds)
-                {
-                    if (clientId == NetworkManager.ServerClientId)
-                    {
-                        serverClientId = clientId;
-                    }
-                }
-
+                shouldSendToHost = IsHost;
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
             }
 
             // If we are a server/host then we just no op and send to ourself
-            if (serverClientId != ulong.MaxValue && (IsHost || IsServer))
+            if (shouldSendToHost)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, serverClientId);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
                 messageSize = tempBuffer.Length;
             }
 
