@@ -61,7 +61,7 @@ namespace Unity.Netcode
 
         public NativeList<DespawnData> Despawns;
 
-        public unsafe void Serialize(ref FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(
                 FastBufferWriter.GetWriteSize(CurrentTick) +
@@ -102,7 +102,7 @@ namespace Unity.Netcode
             Despawns.Dispose();
         }
 
-        public static unsafe void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static unsafe void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var message = new SnapshotDataMessage();

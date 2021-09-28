@@ -24,7 +24,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
+        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
@@ -47,6 +47,10 @@ namespace Unity.Netcode
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
         private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
+        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
+        {
+            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
+        }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
@@ -142,7 +146,7 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
+            public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
 
                 var length = batchData.Length;
@@ -414,26 +418,27 @@ namespace Unity.Netcode
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 var networkPrefab = NetworkConfig.NetworkPrefabs[i];
-                if (networkPrefab != null && networkPrefab.Prefab != null)
+                var networkPrefabGo = networkPrefab?.Prefab;
+                if (networkPrefabGo != null)
                 {
-                    var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+                    var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
                     if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogError($"Cannot register {nameof(NetworkPrefab)}[{i}], it does not have a {nameof(NetworkObject)} component at its root");
+                            NetworkLog.LogError($"Cannot register {PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
                         }
                     }
                     else
                     {
                         {
                             var childNetworkObjects = new List<NetworkObject>();
-                            networkPrefab.Prefab.GetComponentsInChildren( /* includeInactive = */ true, childNetworkObjects);
+                            networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
                             if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
-                                    NetworkLog.LogWarning($"{nameof(NetworkPrefab)}[{i}] has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                                    NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
                                 }
                             }
                         }
@@ -449,9 +454,9 @@ namespace Unity.Netcode
                                     if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
                                         NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                     {
-                                        if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                        if (networkPrefab.SourcePrefabToOverride == null)
                                         {
-                                            networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                            networkPrefab.SourcePrefabToOverride = networkPrefabGo;
                                         }
 
                                         globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
@@ -591,12 +596,13 @@ namespace Unity.Netcode
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
                 {
-                    networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+                    var networkPrefab = NetworkConfig.NetworkPrefabs[i];
+                    networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
                     if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing " +
+                            NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} is missing " +
                                 $"a {nameof(NetworkObject)} component (entry will be ignored).");
                         }
                         removeEmptyPrefabs.Add(i);
@@ -617,7 +623,8 @@ namespace Unity.Netcode
                                 {
                                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                                     {
-                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourceHashToOverride)} is zero (entry will be ignored).");
+                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourceHashToOverride)} is zero " +
+                                            "(entry will be ignored).");
                                     }
                                     removeEmptyPrefabs.Add(i);
                                     continue;

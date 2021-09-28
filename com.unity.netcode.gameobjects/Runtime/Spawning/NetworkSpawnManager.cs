@@ -318,7 +318,7 @@ namespace Unity.Netcode
 
         // Ran on both server and client
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject,
-            ref FastBufferReader variableData, bool destroyWithScene)
+            FastBufferReader variableData, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -332,7 +332,7 @@ namespace Unity.Netcode
 
             if (sceneObject.Header.HasNetworkVariables)
             {
-                networkObject.SetNetworkVariableData(ref variableData);
+                networkObject.SetNetworkVariableData(variableData);
             }
 
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
