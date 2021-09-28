@@ -179,7 +179,11 @@ namespace Unity.Netcode
             // If we are a server/host then we just no op and send to ourself
             if (serverClientId != ulong.MaxValue && (IsHost || IsServer))
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, serverClientId, true);
+                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, serverClientId);
+                tempBuffer.Dispose();
+
+                messageSize = tempBuffer.Length;
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
