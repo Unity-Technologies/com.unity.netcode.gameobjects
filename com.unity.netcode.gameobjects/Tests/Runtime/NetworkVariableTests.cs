@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using UnityEditor.Experimental.GraphView;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -35,6 +36,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkList<int> TheList = new NetworkList<int>();
 
         public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
+        public bool runListHighTraffic = false;
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -44,6 +46,29 @@ namespace Unity.Netcode.RuntimeTests
         public void Awake()
         {
             TheList.OnListChanged += ListChanged;
+        }
+
+        public void Update()
+        {
+            if (runListHighTraffic)
+            {
+                if (NetworkManager.IsHost || NetworkManager.IsServer)
+                {
+                    for (var i = 0; i < 10; i++)
+                    {
+                        TheList[i] = (TheList[i] + 1) % 10;
+                    }
+                }
+                else
+                {
+                    string txt = "";
+                    for (var i = 0; i < TheList.Count; i++)
+                    {
+                        txt = txt + TheList[i] + ",";
+                    }
+                    Debug.Log(txt);
+                }
+            }
         }
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
@@ -188,6 +213,28 @@ namespace Unity.Netcode.RuntimeTests
                         m_Player1OnClient1.FixedStringStruct.Value.FixedString == k_FixedStringTestValue;
                 }
             );
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkListHighTraffic([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        m_Player1OnServer.TheList.Add(i);
+                    }
+
+                    m_Player1OnServer.runListHighTraffic = true;
+                    m_Player1OnClient1.runListHighTraffic = true;
+                },
+                () =>
+                {
+                    return true;
+                },
+                MultiInstanceHelpers.DefaultMaxFrames, 200);
         }
 
         [UnityTest]
