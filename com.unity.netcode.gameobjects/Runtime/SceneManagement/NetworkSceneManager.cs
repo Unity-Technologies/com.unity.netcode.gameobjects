@@ -238,12 +238,23 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the scene name from full path to the scene
         /// </summary>
-        /// <returns></returns>
+        /// <returns>scene name</returns>
         internal string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
             var end = scenePath.LastIndexOf(".", StringComparison.Ordinal);
             return scenePath.Substring(begin, end - begin);
+        }
+
+        /// <summary>
+        /// Returns the full path of the scene and scene name as it
+        /// is displayed in the Build Settings Scenes in Build list.
+        /// </summary>
+        /// <param name="scenePath"></param>
+        /// <returns>full path and scene name</returns>
+        internal string GetScenePathAndName(string scenePath)
+        {
+            return scenePath.Replace("Assets/", "").Replace(".unity", "");
         }
 
         /// <summary>
@@ -256,7 +267,7 @@ namespace Unity.Netcode
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
-                ScenePathsInBuild.Add(scenePath);
+                ScenePathsInBuild.Add(GetScenePathAndName(scenePath));
                 ScenesInBuild.Add(GetSceneNameFromPath(scenePath));
             }
         }
@@ -495,7 +506,7 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneNameValid(string sceneName)
         {
-            if (sceneName.Contains("/") && ScenePathsInBuild.Contains(sceneName))
+            if (sceneName.Contains("/"))
             {
                 return true;
             }

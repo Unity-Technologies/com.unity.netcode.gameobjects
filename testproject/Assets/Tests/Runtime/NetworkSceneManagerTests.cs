@@ -323,7 +323,7 @@ namespace TestProject.RuntimeTests
         private int m_ClientsThatFailedVerification;
         private string m_ExpectedSceneName;
         private LoadSceneMode m_ExpectedLoadMode;
-        private const string k_AddtiveSceneToLoad = "Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity";
+        private const string k_AddtiveSceneToLoad = "Tests/Manual/SceneTransitioningAdditive/AdditiveScene1";
 
         private bool ServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
