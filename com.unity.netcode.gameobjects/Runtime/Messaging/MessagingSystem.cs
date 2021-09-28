@@ -47,6 +47,7 @@ namespace Unity.Netcode
         internal delegate void MessageHandler(FastBufferReader reader, in NetworkContext context);
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
+        private NativeList<ReceiveQueueItem> m_QueuedMessages = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
         private Type[] m_ReverseTypeMap = new Type[255];
@@ -327,44 +328,66 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
-            int blockPosition = -1;
+            bool blocked = false;
 
             Debug.Log($"ProcessIncomingMessageQueue {m_IncomingMessageQueue.Length}");
+
+            var taken = 0;
+            for (var i = 0; i < m_QueuedMessages.Length; ++i)
+            {
+                ref var item = ref m_QueuedMessages.GetUnsafeList()->ElementAt(i);
+                try
+                {
+                    HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                    taken++;
+                }
+                catch (NotReady)
+                {
+                    Debug.Log("RPC target object not spawned");
+                    blocked = true;
+                    break;
+                }
+            }
+            m_QueuedMessages.RemoveRange(0, taken);
+
             for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
             {
+                bool queueMessage = false;
                 try
                 {
                     // Avoid copies...
                     ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                    if (blockPosition == -1 || m_ReverseTypeMap[item.Header.MessageType] == typeof(SnapshotDataMessage))
+                    if (!blocked || m_ReverseTypeMap[item.Header.MessageType] == typeof(SnapshotDataMessage))
                     {
                         Debug.Log($"Reading at {i}");
                         HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
                     }
                     else
                     {
-                        Debug.Log("skipping {i}");
+                        queueMessage = true;
                     }
                 }
-                catch (NotReady notReadyException)
+                catch (NotReady)
                 {
                     Debug.Log("RPC target object not spawned");
-                    blockPosition = i;
+                    queueMessage = true;
+                    blocked = true;
+                }
+
+                if (queueMessage)
+                {
+                    var queuedItem = m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
+                    m_QueuedMessages.Add(new ReceiveQueueItem{
+                        Header = queuedItem.Header,
+                        SenderId = queuedItem.SenderId,
+                        Timestamp = queuedItem.Timestamp,
+                        Reader = new FastBufferReader(queuedItem.Reader.GetUnsafePtr(), Allocator.TempJob, queuedItem.Reader.Length)
+                    });
                 }
             }
 
-            if (blockPosition != -1)
-            {
-                if (blockPosition != 0)
-                {
-                    m_IncomingMessageQueue.RemoveRange(0, blockPosition);
-                }
-            }
-            else
-            {
-                m_IncomingMessageQueue.Clear();
-            }
-            Debug.Log($"{m_IncomingMessageQueue.Length} items are left in the m_IncomingMessageQueue");
+            m_IncomingMessageQueue.Clear();
+            Debug.Log($"We now have {m_QueuedMessages.Length} queued messages.");
         }
 
         internal void ClientConnected(ulong clientId)
