@@ -120,6 +120,8 @@ public class TestCoordinator : NetworkBehaviour
             BaseMultiprocessTests.MultiProcessLog("OnDisable - Removing OnClientDisconnectCallback");
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
+
+        base.OnDestroy();
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
