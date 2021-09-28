@@ -53,6 +53,12 @@ namespace Unity.Netcode
             ServerTime = new NetworkTime(tickRate, serverTimeSec);
         }
 
+        internal void Reset(double localTimeSec, double serverTimeSec)
+        {
+            LocalTime = new NetworkTime(TickRate, localTimeSec);
+            ServerTime = new NetworkTime(TickRate, serverTimeSec);
+        }
+
         /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
         /// </summary>
