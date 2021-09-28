@@ -490,7 +490,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         m_MainModule.AssemblyReferences.Remove(reference);
                         break;
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //
                     }

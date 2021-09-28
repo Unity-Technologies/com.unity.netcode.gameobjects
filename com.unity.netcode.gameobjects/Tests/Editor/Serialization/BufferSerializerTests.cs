@@ -185,7 +185,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     serializer.SerializeValuePreChecked(ref value);
                 }
-                catch (OverflowException e)
+                catch (OverflowException)
                 {
                     // Pass
                 }
@@ -203,7 +203,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         deserializer.SerializeValuePreChecked(ref readValue);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Pass
                     }
@@ -230,7 +230,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     serializer.SerializeValuePreChecked(ref value);
                 }
-                catch (OverflowException e)
+                catch (OverflowException)
                 {
                     // Pass
                 }
@@ -248,7 +248,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         deserializer.SerializeValuePreChecked(ref readValue);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Pass
                     }
@@ -275,7 +275,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     serializer.SerializeValuePreChecked(ref value);
                 }
-                catch (OverflowException e)
+                catch (OverflowException)
                 {
                     // Pass
                 }
@@ -293,7 +293,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         deserializer.SerializeValuePreChecked(ref readValue);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Pass
                     }
@@ -319,7 +319,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     serializer.SerializeValuePreChecked(ref value, oneBytChars);
                 }
-                catch (OverflowException e)
+                catch (OverflowException)
                 {
                     // Pass
                 }
@@ -337,7 +337,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         deserializer.SerializeValuePreChecked(ref readValue, oneBytChars);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Pass
                     }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using System.Reflection;
-using System.Linq;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -138,20 +138,16 @@ namespace Unity.Netcode
 
             if (rpcParams.Send.TargetClientIds != null)
             {
-                // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
-                ulong* localArray = stackalloc ulong[rpcParams.Send.TargetClientIds.Count()];
-                var index = 0;
                 foreach (var clientId in rpcParams.Send.TargetClientIds)
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {
                         shouldSendToHost = true;
+                        break;
                     }
-
-                    localArray[index++] = clientId;
                 }
-
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index);
+                
+                messageSize = NetworkManager.SendMessage(message, networkDelivery,  in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -626,7 +622,7 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
-        public void OnDestroy()
+        public virtual void OnDestroy()
         {
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
