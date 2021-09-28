@@ -268,7 +268,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp)
+        public unsafe void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, bool canDefer)
         {
             if (header.MessageType >= m_HighMessageType)
             {
@@ -308,11 +308,17 @@ namespace Unity.Netcode
                 }
                 catch (NotReady notReady)
                 {
-                    /* should I called those after receive messgae hooks ?
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                    if (canDefer)
                     {
-                        m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
-                    }*/
+                        m_QueuedMessages.Add(new ReceiveQueueItem
+                        {
+                            Header = header,
+                            SenderId = senderId,
+                            Timestamp = timestamp,
+                            Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.TempJob, reader.Length)
+                        });
+                    }
+
                     throw notReady;
                 }
                 catch (Exception e)
@@ -338,7 +344,7 @@ namespace Unity.Netcode
                 ref var item = ref m_QueuedMessages.GetUnsafeList()->ElementAt(i);
                 try
                 {
-                    HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                    HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, false);
                     taken++;
                 }
                 catch (NotReady)
@@ -360,7 +366,7 @@ namespace Unity.Netcode
                     if (!blocked || m_ReverseTypeMap[item.Header.MessageType] == typeof(SnapshotDataMessage))
                     {
                         Debug.Log($"Reading at {i}");
-                        HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                        HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, true);
                     }
                     else
                     {
@@ -376,13 +382,7 @@ namespace Unity.Netcode
 
                 if (queueMessage)
                 {
-                    var queuedItem = m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                    m_QueuedMessages.Add(new ReceiveQueueItem{
-                        Header = queuedItem.Header,
-                        SenderId = queuedItem.SenderId,
-                        Timestamp = queuedItem.Timestamp,
-                        Reader = new FastBufferReader(queuedItem.Reader.GetUnsafePtr(), Allocator.TempJob, queuedItem.Reader.Length)
-                    });
+
                 }
             }
 

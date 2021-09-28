@@ -78,7 +78,7 @@ namespace Unity.Netcode.EditorTests
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0);
+                    m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, false);
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
                     Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
