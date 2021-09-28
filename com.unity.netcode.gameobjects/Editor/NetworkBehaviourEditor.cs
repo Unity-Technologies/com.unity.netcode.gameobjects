@@ -178,6 +178,12 @@ namespace Unity.Netcode.Editor
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
+                if (m_NetworkVariableNames.Contains(property.name))
+                {
+                    // Skip rendering of NetworkVars, they have special rendering
+                    continue;
+                }
+
                 if (property.propertyType == SerializedPropertyType.ObjectReference)
                 {
                     if (property.name == "m_Script")
