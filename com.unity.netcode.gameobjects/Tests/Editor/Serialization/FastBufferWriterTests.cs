@@ -491,7 +491,6 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                int i = 1;
                 using var context = writer.EnterBitwiseContext();
                 Assert.Throws<InvalidOperationException>(() => { writer.WriteValue(""); });
             }
@@ -625,7 +624,6 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                int i = 1;
                 using (var context = writer.EnterBitwiseContext())
                 {
                     context.WriteBit(true);
@@ -710,7 +708,6 @@ namespace Unity.Netcode.EditorTests
             {
                 writer.TryBeginWrite(100);
                 var bytes = new byte[] { 0, 1, 2 };
-                int i = 1;
                 using (var context = writer.EnterBitwiseContext())
                 {
                     context.WriteBit(true);
