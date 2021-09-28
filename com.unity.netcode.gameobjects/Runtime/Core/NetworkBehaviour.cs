@@ -69,18 +69,21 @@ namespace Unity.Netcode
                 RpcData = writer
             };
 
+            var rpcMessageSize = 0;
+
             // If we are a server/host then we just no op and send to ourself
             if (IsHost || IsServer)
             {
-                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
                 message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
-                tempBuffer.Dispose();
-
-                return;
+                rpcMessageSize = tempBuffer.Length;
+            }
+            else
+            {
+                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
             }
 
-            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
-
+             
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -179,10 +182,8 @@ namespace Unity.Netcode
             // If we are a server/host then we just no op and send to ourself
             if (serverClientId != ulong.MaxValue && (IsHost || IsServer))
             {
-                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
                 message.Handle(tempBuffer, NetworkManager, serverClientId);
-                tempBuffer.Dispose();
-
                 messageSize = tempBuffer.Length;
             }
 
