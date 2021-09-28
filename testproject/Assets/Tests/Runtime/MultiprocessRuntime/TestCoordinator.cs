@@ -333,7 +333,7 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     private ulong[] m_TargetClient = new ulong[1] { 0 };
-    
+
     [ServerRpc(RequireOwnership = false)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
@@ -382,3 +382,4 @@ public class TestCoordinator : NetworkBehaviour
         Debug.LogError($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
     }
 }
+
