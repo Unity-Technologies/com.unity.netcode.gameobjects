@@ -5,18 +5,18 @@ namespace Unity.Netcode
         public ulong Hash;
         public FastBufferWriter Data;
 
-        public unsafe void Serialize(ref FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(Hash);
             writer.WriteBytesSafe(Data.GetUnsafePtr(), Data.Length);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var message = new NamedMessage();
             reader.ReadValueSafe(out message.Hash);
 
-            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(message.Hash, context.SenderId, ref reader);
+            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(message.Hash, context.SenderId, reader);
         }
     }
 }

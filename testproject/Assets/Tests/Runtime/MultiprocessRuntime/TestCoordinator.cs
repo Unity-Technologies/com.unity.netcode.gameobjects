@@ -101,12 +101,14 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal.Clear();
     }
 
-    public void OnDestroy()
+    public override void OnDestroy()
     {
         if (NetworkObject != null && NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
+
+        base.OnDestroy();
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)

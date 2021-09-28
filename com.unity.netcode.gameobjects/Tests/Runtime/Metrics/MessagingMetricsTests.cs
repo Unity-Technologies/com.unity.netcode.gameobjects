@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, writer);
             }
             finally
             {
@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, writer);
             }
             finally
             {
@@ -80,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var messageName = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             LogAssert.Expect(LogType.Log, $"Received from {Server.LocalClientId}");
-            FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.ToString(), (ulong sender, ref FastBufferReader payload) =>
+            FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.ToString(), (ulong sender, FastBufferReader payload) =>
             {
                 Debug.Log($"Received from {sender}");
             });
@@ -90,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, writer);
             }
             finally
             {
@@ -117,7 +117,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, writer);
             }
             finally
             {
@@ -146,7 +146,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, writer);
             }
             finally
             {
@@ -170,7 +170,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var messageName = Guid.NewGuid();
             
             LogAssert.Expect(LogType.Log, $"Received from {Server.LocalClientId}");
-            FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.ToString(), (ulong sender, ref FastBufferReader payload) =>
+            FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.ToString(), (ulong sender, FastBufferReader payload) =>
             {
                 Debug.Log($"Received from {sender}");
             });
@@ -180,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), FirstClient.LocalClientId, writer);
             }
             finally
             {
@@ -208,7 +208,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(message);
                 
-                Server.CustomMessagingManager.SendUnnamedMessage(FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendUnnamedMessage(FirstClient.LocalClientId, writer);
             }
             finally
             {
@@ -238,7 +238,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(message);
                 
-                Server.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, ref writer);
+                Server.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId }, writer);
             }
             finally
             {
@@ -267,7 +267,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(message);
                 
-                Server.CustomMessagingManager.SendUnnamedMessage(FirstClient.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendUnnamedMessage(FirstClient.LocalClientId, writer);
             }
             finally
             {

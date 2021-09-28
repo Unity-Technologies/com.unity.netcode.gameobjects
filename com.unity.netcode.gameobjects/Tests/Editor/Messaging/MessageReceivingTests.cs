@@ -18,12 +18,12 @@ namespace Unity.Netcode.EditorTests
             public static bool Deserialized;
             public static List<TestMessage> DeserializedValues = new List<TestMessage>();
 
-            public void Serialize(ref FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValueSafe(this);
             }
 
-            public static void Receive(ref FastBufferReader reader, NetworkContext context)
+            public static void Receive(FastBufferReader reader, in NetworkContext context)
             {
                 Deserialized = true;
                 reader.ReadValueSafe(out TestMessage value);
@@ -75,10 +75,10 @@ namespace Unity.Netcode.EditorTests
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
                 writer.WriteValue(message);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleMessage(messageHeader, ref reader, 0, 0);
+                    m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0);
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
                     Assert.AreEqual(message, TestMessage.DeserializedValues[0]);
@@ -110,7 +110,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
@@ -144,7 +144,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
@@ -183,7 +183,7 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message2);
 
-                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
                     m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);

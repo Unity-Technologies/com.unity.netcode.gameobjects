@@ -12,7 +12,7 @@ namespace Unity.Netcode
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(NetworkObjectId);
             writer.WriteValueSafe(IsReparented);
@@ -26,7 +26,7 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)

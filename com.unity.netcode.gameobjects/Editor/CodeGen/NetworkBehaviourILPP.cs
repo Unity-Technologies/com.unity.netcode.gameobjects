@@ -493,7 +493,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         m_MainModule.AssemblyReferences.Remove(reference);
                         break;
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //
                     }
@@ -874,8 +874,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var serializer = BeginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
-                // var serializer = BeginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
@@ -1031,16 +1029,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // SendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
-                // SendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
+                // __sendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // __sendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // SendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery);
+                    // __sendServerRpc(ref serializer, rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
-                    instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
@@ -1065,11 +1063,11 @@ namespace Unity.Netcode.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // SendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery);
+                    // __sendClientRpc(ref serializer, rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
-                    instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
@@ -1156,7 +1154,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, m_NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, m_FastBufferReader_TypeRef.MakeByReferenceType()));
+            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, m_FastBufferReader_TypeRef));
             nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, m_RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
@@ -1281,7 +1279,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     // reader.ReadValueSafe(out bool isSet)
                     nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
                     int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
-                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldarga, 1);
                     processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
                     processor.Emit(OpCodes.Call, boolMethodRef);
 
@@ -1299,7 +1297,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (foundMethodRef)
                 {
                     // reader.ReadValueSafe(out localVar);
-                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldarga, 1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
                     if (paramType == typeSystem.String)
                     {

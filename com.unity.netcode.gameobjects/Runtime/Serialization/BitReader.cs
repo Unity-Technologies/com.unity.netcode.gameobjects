@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// </summary>
     public ref struct BitReader
     {
-        private Ref<FastBufferReader> m_Reader;
+        private FastBufferReader m_Reader;
         private readonly unsafe byte* m_BufferPointer;
         private readonly int m_Position;
         private int m_BitPosition;
@@ -30,15 +30,15 @@ namespace Unity.Netcode
             get => (m_BitPosition & 7) == 0;
         }
 
-        internal unsafe BitReader(ref FastBufferReader reader)
+        internal unsafe BitReader(FastBufferReader reader)
         {
-            m_Reader = new Ref<FastBufferReader>(ref reader);
+            m_Reader = reader;
 
-            m_BufferPointer = m_Reader.Value.BufferPointer + m_Reader.Value.Position;
-            m_Position = m_Reader.Value.Position;
+            m_BufferPointer = m_Reader.Handle->BufferPointer + m_Reader.Handle->Position;
+            m_Position = m_Reader.Handle->Position;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseReadMark = (m_Reader.Value.AllowedReadMark - m_Position) * k_BitsPerByte;
+            m_AllowedBitwiseReadMark = (m_Reader.Handle->AllowedReadMark - m_Position) * k_BitsPerByte;
 #endif
         }
 
@@ -54,7 +54,7 @@ namespace Unity.Netcode
                 ++bytesWritten;
             }
 
-            m_Reader.Value.CommitBitwiseReads(bytesWritten);
+            m_Reader.CommitBitwiseReads(bytesWritten);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="bitCount">Number of bits you want to read, in total</param>
         /// <returns>True if you can read, false if that would exceed buffer bounds</returns>
-        public bool TryBeginReadBits(uint bitCount)
+        public unsafe bool TryBeginReadBits(uint bitCount)
         {
             var newBitPosition = m_BitPosition + bitCount;
             var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
@@ -75,7 +75,7 @@ namespace Unity.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Reader.Value.PositionInternal + totalBytesWrittenInBitwiseContext > m_Reader.Value.LengthInternal)
+            if (m_Reader.Handle->Position + totalBytesWrittenInBitwiseContext > m_Reader.Handle->Length)
             {
                 return false;
             }

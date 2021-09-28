@@ -8,7 +8,7 @@ namespace Unity.Netcode
 
         public bool ShouldSendConnectionData;
 
-        public void Serialize(ref FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer)
         {
             if (ShouldSendConnectionData)
             {
@@ -21,7 +21,7 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsServer)

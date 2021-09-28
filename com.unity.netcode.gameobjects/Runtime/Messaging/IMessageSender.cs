@@ -2,6 +2,6 @@ namespace Unity.Netcode
 {
     internal interface IMessageSender
     {
-        void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData);
+        void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData);
     }
 }

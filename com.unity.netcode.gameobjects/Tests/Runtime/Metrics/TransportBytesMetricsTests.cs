@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally
             {
@@ -53,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 writer.WriteValueSafe(messageName);
                 
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, ref writer);
+                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally
             {
