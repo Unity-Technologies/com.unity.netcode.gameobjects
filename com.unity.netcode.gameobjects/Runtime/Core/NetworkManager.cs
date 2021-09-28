@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 #if MULTIPLAYER_TOOLS
+using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
