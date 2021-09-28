@@ -193,6 +193,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             catch (NullReferenceException nre)
             {
                 testName = "N/A";
+                Debug.Log(nre);
             }
 
             if (string.IsNullOrEmpty(testName))
