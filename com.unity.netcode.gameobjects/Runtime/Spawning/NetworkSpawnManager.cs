@@ -646,8 +646,6 @@ namespace Unity.Netcode
                                 {
                                     m_TargetClientIds.Add(clientId);
                                 }
-<<<<<<< HEAD
-=======
                             }
 
                             var message = new DestroyObjectMessage
@@ -661,15 +659,7 @@ namespace Unity.Netcode
                                     ? 0
                                     : size;
                                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
->>>>>>> origin/develop
                             }
-
-                            var message = new DestroyObjectMessage
-                            {
-                                NetworkObjectId = networkObject.NetworkObjectId
-                            };
-                            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
-                            NetworkManager.NetworkMetrics.TrackObjectDestroySent(m_TargetClientIds, networkObject.NetworkObjectId, networkObject.name, size);
                         }
                     }
                 }
