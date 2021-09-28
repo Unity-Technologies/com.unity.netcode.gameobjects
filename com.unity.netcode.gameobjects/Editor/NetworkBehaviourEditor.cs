@@ -90,7 +90,8 @@ namespace Unity.Netcode.Editor
 
             var behaviour = (NetworkBehaviour)target;
 
-            if (behaviour.NetworkManager != null && behaviour.NetworkManager.IsListening)
+            // Only server can MODIFY. So allow modification if network is either not running or we are server
+            if (behaviour.NetworkManager == null || !behaviour.NetworkManager.IsListening || behaviour.NetworkManager.IsServer)
             {
                 if (type == typeof(int))
                 {
@@ -168,12 +169,9 @@ namespace Unity.Netcode.Editor
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
 
-            if (EditorApplication.isPlaying)
+            for (int i = 0; i < m_NetworkVariableNames.Count; i++)
             {
-                for (int i = 0; i < m_NetworkVariableNames.Count; i++)
-                {
-                    RenderNetworkVariable(i);
-                }
+                RenderNetworkVariable(i);
             }
 
             var property = serializedObject.GetIterator();
