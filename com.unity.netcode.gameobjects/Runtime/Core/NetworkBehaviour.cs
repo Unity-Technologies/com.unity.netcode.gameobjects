@@ -146,8 +146,8 @@ namespace Unity.Netcode
                         break;
                     }
                 }
-                
-                messageSize = NetworkManager.SendMessage(message, networkDelivery,  in rpcParams.Send.TargetClientIds);
+
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
