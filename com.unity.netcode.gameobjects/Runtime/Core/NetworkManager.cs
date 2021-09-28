@@ -510,6 +510,7 @@ namespace Unity.Netcode
             m_ConnectedClients.Clear();
             m_ConnectedClientsList.Clear();
             m_ConnectedClientIds.Clear();
+            LocalClient = null;
             NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
