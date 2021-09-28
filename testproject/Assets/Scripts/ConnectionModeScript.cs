@@ -28,11 +28,6 @@ public class ConnectionModeScript : MonoBehaviour
 
     private CommandLineProcessor m_CommandLineProcessor;
 
-    // Will be used for Relay support when it becomes available.
-    // TODO: Remove this comment once relay support is available.
-    [SerializeField]
-    private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
-
     [HideInInspector]
     public string RelayJoinCode { get; set; }
 

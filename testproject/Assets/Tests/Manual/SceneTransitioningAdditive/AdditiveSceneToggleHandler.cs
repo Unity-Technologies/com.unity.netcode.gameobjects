@@ -43,10 +43,13 @@ namespace TestProject.ManualTests
         }
 
         private bool m_ExitingScene;
-        private void OnDestroy()
+
+        public override void OnDestroy()
         {
             m_ExitingScene = true;
             StopCoroutine(CheckForVisibility());
+
+            base.OnDestroy();
         }
 
         private IEnumerator CheckForVisibility()
