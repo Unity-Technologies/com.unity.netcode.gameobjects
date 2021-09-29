@@ -1,22 +1,25 @@
+using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
+using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
 
+// Tests for ClientNetworkTransform (CNT) + NetworkRigidbody
 namespace Unity.Netcode.RuntimeTests.Physics
 {
-    public class NetworkRigidbody2DDynamicTest : NetworkRigidbody2DTestBase
+    public class NetworkRigidbodyDynamicCntTest : NetworkRigidbodyCntTestBase
     {
         public override bool Kinematic => false;
     }
 
-    public class NetworkRigidbody2DKinematicTest : NetworkRigidbody2DTestBase
+    public class NetworkRigidbodyKinematicCntTest : NetworkRigidbodyCntTestBase
     {
         public override bool Kinematic => true;
     }
 
-    public abstract class NetworkRigidbody2DTestBase : BaseMultiInstanceTest
+    public abstract class NetworkRigidbodyCntTestBase : BaseMultiInstanceTest
     {
         protected override int NbClients => 1;
 
@@ -27,13 +30,12 @@ namespace Unity.Netcode.RuntimeTests.Physics
         {
             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
             {
-                playerPrefab.AddComponent<NetworkTransform>();
-                playerPrefab.AddComponent<Rigidbody2D>();
-                playerPrefab.AddComponent<NetworkRigidbody2D>();
-                playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
+                playerPrefab.AddComponent<ClientNetworkTransform>();
+                playerPrefab.AddComponent<Rigidbody>();
+                playerPrefab.AddComponent<NetworkRigidbody>();
+                playerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
             });
         }
-
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
         /// </summary>
@@ -57,21 +59,25 @@ namespace Unity.Netcode.RuntimeTests.Physics
             int waitFor = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= waitFor);
 
-            // server rigidbody has authority and should have a kinematic mode of false
-            Assert.True(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
-
-            // client rigidbody has no authority and should have a kinematic mode of true
-            Assert.True(clientPlayer.GetComponent<Rigidbody2D>().isKinematic);
+            TestKinematicSetCorrectly(clientPlayer, serverPlayer);
 
             // despawn the server player
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
             yield return null;
-
-            Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
-
             yield return null;
+            
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
+        }
+
+        private void TestKinematicSetCorrectly(GameObject canCommitPlayer, GameObject canNotCommitPlayer)
+        {
+
+            // can commit player has authority and should have a kinematic mode of false (or true in case body was already kinematic).
+            Assert.True(canCommitPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic);
+
+            // can not commit player has no authority and should have a kinematic mode of true
+            Assert.True(canNotCommitPlayer.GetComponent<Rigidbody>().isKinematic);
         }
     }
 }
