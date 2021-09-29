@@ -353,6 +353,22 @@ public class TestCoordinator : NetworkBehaviour
         ServerReceivedResultsResponseClientRpc(result, clientParams);
     }
 
+    public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);
+
+    public OnServerReceivedResultsResponseDelegateHandler OnServerReceivedResultsResponse;
+    private void ServerReceivedResultsResponse(float resultReceived)
+    {
+        BaseMultiprocessTests.MultiProcessLog($"ServerReceivedResultsReponse {resultReceived}");
+        if (OnServerReceivedResultsResponse != null)
+        {
+            OnServerReceivedResultsResponse.Invoke(resultReceived);
+        }
+        else
+        {
+            Debug.LogWarning("Current test is not validating results were received (adding this validation will assure proper test synchronization and timing).");
+        }
+    }
+
     [ClientRpc]
     public void ServerReceivedResultsResponseClientRpc(float resultReceived, ClientRpcParams clientRpcParams = default)
     {
