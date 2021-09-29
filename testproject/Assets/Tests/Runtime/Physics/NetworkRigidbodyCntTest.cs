@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -66,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
             yield return null;
             yield return null;
-            
+
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
         }
 

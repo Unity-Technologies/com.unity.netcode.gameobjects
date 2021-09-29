@@ -8,12 +8,12 @@ using UnityEngine.TestTools;
 // Tests for ClientNetworkTransform (CNT) + NetworkRigidbody2D
 namespace Unity.Netcode.RuntimeTests.Physics
 {
-    public class NetworkRigidbody2DDynamicCntTest :  NetworkRigidbody2DCntTestBase
+    public class NetworkRigidbody2DDynamicCntTest : NetworkRigidbody2DCntTestBase
     {
         public override bool Kinematic => false;
     }
 
-    public class NetworkRigidbody2DKinematicCntTest :  NetworkRigidbody2DCntTestBase
+    public class NetworkRigidbody2DKinematicCntTest : NetworkRigidbody2DCntTestBase
     {
         public override bool Kinematic => true;
     }
