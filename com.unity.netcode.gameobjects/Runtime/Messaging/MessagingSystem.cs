@@ -295,37 +295,37 @@ namespace Unity.Netcode
                 m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
             }
             var handler = m_MessageHandlers[header.MessageType];
-            using (reader)
-            {
-                // No user-land message handler exceptions should escape the receive loop.
-                // If an exception is throw, the message is ignored.
-                // Example use case: A bad message is received that can't be deserialized and throws
-                // an OverflowException because it specifies a length greater than the number of bytes in it
-                // for some dynamic-length value.
-                try
-                {
-                    handler.Invoke(reader, context);
-                }
-                catch (NotReady notReady)
-                {
-                    if (canDefer)
-                    {
-                        m_QueuedMessages.Add(new ReceiveQueueItem
-                        {
-                            Header = header,
-                            SenderId = senderId,
-                            Timestamp = timestamp,
-                            Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.TempJob, reader.Length)
-                        });
-                    }
 
-                    throw notReady;
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
+            // No user-land message handler exceptions should escape the receive loop.
+            // If an exception is throw, the message is ignored.
+            // Example use case: A bad message is received that can't be deserialized and throws
+            // an OverflowException because it specifies a length greater than the number of bytes in it
+            // for some dynamic-length value.
+            try
+            {
+                handler.Invoke(reader, context);
             }
+            catch (NotReady notReady)
+            {
+                if (canDefer)
+                {
+                    m_QueuedMessages.Add(new ReceiveQueueItem
+                    {
+                        Header = header,
+                        SenderId = senderId,
+                        Timestamp = timestamp,
+                        Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length)
+                    });
+                }
+
+                throw notReady;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            reader.Dispose();
+
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
                 m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
