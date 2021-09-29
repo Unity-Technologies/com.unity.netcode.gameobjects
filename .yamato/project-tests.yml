@@ -60,7 +60,7 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
-  name : testproject multiprocess project tests - {{ editor }} on {{ platform.name }}
+  name : multiprocess tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}

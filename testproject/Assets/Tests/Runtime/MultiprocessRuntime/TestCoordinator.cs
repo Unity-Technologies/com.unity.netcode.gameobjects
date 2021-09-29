@@ -259,7 +259,7 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignorException, ClientRpcParams clientRpcParams = default)
+    public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         BaseMultiprocessTests.MultiProcessLog($"received RPC from server, client side triggering action ID {actionId}");
         try
@@ -269,7 +269,7 @@ public class TestCoordinator : NetworkBehaviour
         catch (Exception e)
         {
             WriteErrorServerRpc(e.Message);
-            if (!ignorException)
+            if (!ignoreException)
             {
                 throw;
             }
