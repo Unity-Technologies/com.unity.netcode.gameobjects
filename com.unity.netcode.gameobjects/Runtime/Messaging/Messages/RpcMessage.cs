@@ -22,7 +22,7 @@ namespace Unity.Netcode
         public FastBufferWriter RpcData;
 
 
-        public unsafe void Serialize(ref FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(Header) + RpcData.Length))
             {
@@ -32,7 +32,7 @@ namespace Unity.Netcode
             writer.WriteBytes(RpcData.GetUnsafePtr(), RpcData.Length);
         }
 
-        public static void Receive(ref FastBufferReader reader, NetworkContext context)
+        public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
             var message = new RpcMessage();
             if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.Header)))
@@ -40,10 +40,10 @@ namespace Unity.Netcode
                 throw new OverflowException("Not enough space in the buffer to read RPC data.");
             }
             reader.ReadValue(out message.Header);
-            message.Handle(ref reader, (NetworkManager)context.SystemOwner, context.SenderId);
+            message.Handle(reader, (NetworkManager)context.SystemOwner, context.SenderId);
         }
 
-        public void Handle(ref FastBufferReader reader, NetworkManager networkManager, ulong senderId)
+        public void Handle(FastBufferReader reader, NetworkManager networkManager, ulong senderId)
         {
             if (NetworkManager.__rpc_func_table.ContainsKey(Header.NetworkMethodId))
             {
@@ -82,7 +82,7 @@ namespace Unity.Netcode
                         break;
                 }
 
-                NetworkManager.__rpc_func_table[Header.NetworkMethodId](networkBehaviour, ref reader, rpcParams);
+                NetworkManager.__rpc_func_table[Header.NetworkMethodId](networkBehaviour, reader, rpcParams);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 if (NetworkManager.__rpc_name_table.TryGetValue(Header.NetworkMethodId, out var rpcMethodName))

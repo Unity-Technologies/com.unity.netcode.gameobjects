@@ -30,7 +30,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestReset()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var timeMock = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = timeMock;
             timeMock.BufferedServerTime = 100f;
@@ -51,7 +51,7 @@ namespace Unity.Netcode.EditorTests
         {
             // Testing float instead of Vector3. The only difference with Vector3 is the lerp method used.
 
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -97,7 +97,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void OutOfOrderShouldStillWork()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -127,7 +127,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageLoss()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -194,7 +194,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void AddFirstMeasurement()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -222,7 +222,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToEachValueIfDeltaTimeTooBig()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -241,7 +241,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToLastValueFromStart()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -272,7 +272,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBufferSizeLimit()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -305,7 +305,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestUpdatingInterpolatorWithNoData()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 
@@ -316,7 +316,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestDuplicatedValues()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat();
+            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.InterpolatorTimeProxy = mockBufferedTime;
 

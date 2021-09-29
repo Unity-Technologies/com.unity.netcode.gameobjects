@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -26,7 +25,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, ref FastBufferReader reader, __RpcParams parameters);
+        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
@@ -49,6 +48,10 @@ namespace Unity.Netcode
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
         private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
+        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
+        {
+            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
+        }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
@@ -144,7 +147,7 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void Send(ulong clientId, NetworkDelivery delivery, ref FastBufferWriter batchData)
+            public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
 
                 var length = batchData.Length;
@@ -247,20 +250,61 @@ namespace Unity.Netcode
 
         private ulong m_LocalClientId;
 
-        /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
-        /// </summary>
-        public readonly Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
+        private Dictionary<ulong, NetworkClient> m_ConnectedClients = new Dictionary<ulong, NetworkClient>();
+
+        private List<NetworkClient> m_ConnectedClientsList = new List<NetworkClient>();
+
+        private List<ulong> m_ConnectedClientIds = new List<ulong>();
 
         /// <summary>
-        /// Gets a list of connected clients. This is only populated on the server.
+        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
         /// </summary>
-        public readonly List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectedClients)} should only be accessed on server.");
+                }
+                return m_ConnectedClients;
+            }
+        }
 
         /// <summary>
-        /// Gets a list of just the IDs of all connected clients.
+        /// Gets a list of connected clients. This is only accessible on the server.
         /// </summary>
-        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
+        public IReadOnlyList<NetworkClient> ConnectedClientsList
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectedClientsList)} should only be accessed on server.");
+                }
+                return m_ConnectedClientsList;
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
+        /// </summary>
+        public IReadOnlyList<ulong> ConnectedClientsIds
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(m_ConnectedClientIds)} should only be accessed on server.");
+                }
+                return m_ConnectedClientIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the local <see cref="NetworkClient"/> for this client.
+        /// </summary>
+        public NetworkClient LocalClient { get; internal set; }
 
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
@@ -375,26 +419,27 @@ namespace Unity.Netcode
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 var networkPrefab = NetworkConfig.NetworkPrefabs[i];
-                if (networkPrefab != null && networkPrefab.Prefab != null)
+                var networkPrefabGo = networkPrefab?.Prefab;
+                if (networkPrefabGo != null)
                 {
-                    var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+                    var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
                     if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogError($"Cannot register {nameof(NetworkPrefab)}[{i}], it does not have a {nameof(NetworkObject)} component at its root");
+                            NetworkLog.LogError($"Cannot register {PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
                         }
                     }
                     else
                     {
                         {
                             var childNetworkObjects = new List<NetworkObject>();
-                            networkPrefab.Prefab.GetComponentsInChildren( /* includeInactive = */ true, childNetworkObjects);
+                            networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
                             if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
-                                    NetworkLog.LogWarning($"{nameof(NetworkPrefab)}[{i}] has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                                    NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
                                 }
                             }
                         }
@@ -410,9 +455,9 @@ namespace Unity.Netcode
                                     if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
                                         NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                     {
-                                        if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                        if (networkPrefab.SourcePrefabToOverride == null)
                                         {
-                                            networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                            networkPrefab.SourcePrefabToOverride = networkPrefabGo;
                                         }
 
                                         globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
@@ -463,8 +508,10 @@ namespace Unity.Netcode
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
-            ConnectedClients.Clear();
-            ConnectedClientsList.Clear();
+            m_ConnectedClients.Clear();
+            m_ConnectedClientsList.Clear();
+            m_ConnectedClientIds.Clear();
+            LocalClient = null;
             NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
@@ -551,12 +598,13 @@ namespace Unity.Netcode
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
                 {
-                    networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+                    var networkPrefab = NetworkConfig.NetworkPrefabs[i];
+                    networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
                     if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing " +
+                            NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} is missing " +
                                 $"a {nameof(NetworkObject)} component (entry will be ignored).");
                         }
                         removeEmptyPrefabs.Add(i);
@@ -577,7 +625,8 @@ namespace Unity.Netcode
                                 {
                                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                                     {
-                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourceHashToOverride)} is zero (entry will be ignored).");
+                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourceHashToOverride)} is zero " +
+                                            "(entry will be ignored).");
                                     }
                                     removeEmptyPrefabs.Add(i);
                                     continue;
@@ -1248,12 +1297,12 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, bool serverCanSendToServerId = false)
+        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
             // Prevent server sending to itself
-            if (IsServer && !serverCanSendToServerId)
+            if (IsServer)
             {
                 ulong* nonServerIds = stackalloc ulong[clientIds.Count];
                 int newIdx = 0;
@@ -1277,11 +1326,11 @@ namespace Unity.Netcode
         }
 
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
-            ulong* clientIds, int numClientIds, bool serverCanSendToServerId = false)
+            ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer && !serverCanSendToServerId)
+            if (IsServer)
             {
                 ulong* nonServerIds = stackalloc ulong[numClientIds];
                 int newIdx = 0;
@@ -1311,11 +1360,11 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer && clientId == ServerClientId && !serverCanSendToServerId)
+            if (IsServer && clientId == ServerClientId)
             {
                 return 0;
             }
@@ -1408,12 +1457,21 @@ namespace Unity.Netcode
                 {
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
-                        ConnectedClientsList.RemoveAt(i);
+                        m_ConnectedClientsList.RemoveAt(i);
                         break;
                     }
                 }
 
-                ConnectedClients.Remove(clientId);
+                for (int i = 0; i < ConnectedClientsIds.Count; i++)
+                {
+                    if (ConnectedClientsIds[i] == clientId)
+                    {
+                        m_ConnectedClientIds.RemoveAt(i);
+                        break;
+                    }
+                }
+
+                m_ConnectedClients.Remove(clientId);
             }
             m_MessagingSystem.ClientDisconnected(clientId);
         }
@@ -1455,8 +1513,9 @@ namespace Unity.Netcode
                 PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
-                ConnectedClients.Add(ownerClientId, client);
-                ConnectedClientsList.Add(client);
+                m_ConnectedClients.Add(ownerClientId, client);
+                m_ConnectedClientsList.Add(client);
+                m_ConnectedClientIds.Add(client.ClientId);
 
                 if (createPlayerObject)
                 {

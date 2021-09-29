@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using System.Reflection;
-using System.Linq;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -38,7 +38,7 @@ namespace Unity.Netcode
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __sendServerRpc(ref FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
+        internal void __sendServerRpc(FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
 #pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
@@ -68,7 +68,22 @@ namespace Unity.Netcode
                 },
                 RpcData = writer
             };
-            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
+
+            var rpcMessageSize = 0;
+
+            // If we are a server/host then we just no op and send to ourself
+            if (IsHost || IsServer)
+            {
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                rpcMessageSize = tempBuffer.Length;
+            }
+            else
+            {
+                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
+            }
+
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -85,7 +100,7 @@ namespace Unity.Netcode
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal unsafe void __sendClientRpc(ref FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
+        internal unsafe void __sendClientRpc(FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         {
@@ -117,24 +132,48 @@ namespace Unity.Netcode
             };
             int messageSize;
 
+            // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
+            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            bool shouldSendToHost = false;
+
             if (rpcParams.Send.TargetClientIds != null)
             {
-                // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
-                ulong* localArray = stackalloc ulong[rpcParams.Send.TargetClientIds.Count()];
-                var index = 0;
                 foreach (var clientId in rpcParams.Send.TargetClientIds)
                 {
-                    localArray[index++] = clientId;
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
                 }
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index, true);
+
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
+                foreach (var clientId in rpcParams.Send.TargetClientIdsNativeArray)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
+                }
+
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds, true);
+                shouldSendToHost = IsHost;
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+            }
+
+            // If we are a server/host then we just no op and send to ourself
+            if (shouldSendToHost)
+            {
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                messageSize = tempBuffer.Length;
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -466,12 +505,10 @@ namespace Unity.Netcode
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
                             var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
-#pragma warning disable CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                             using (tmpWriter)
                             {
-                                message.Serialize(ref tmpWriter);
+                                message.Serialize(tmpWriter);
                             }
-#pragma warning restore CS0728 // Warns that tmpWriter may be reassigned within Serialize, but Serialize does not reassign it.
                         }
                         else
                         {
@@ -504,7 +541,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(ref FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -520,7 +557,7 @@ namespace Unity.Netcode
                     var writePos = writer.Position;
                     writer.WriteValueSafe((ushort)0);
                     var startPos = writer.Position;
-                    NetworkVariableFields[j].WriteField(ref writer);
+                    NetworkVariableFields[j].WriteField(writer);
                     var size = writer.Position - startPos;
                     writer.Seek(writePos);
                     writer.WriteValueSafe((ushort)size);
@@ -533,7 +570,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void SetNetworkVariableData(ref FastBufferReader reader)
+        internal void SetNetworkVariableData(FastBufferReader reader)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -549,7 +586,7 @@ namespace Unity.Netcode
                 }
 
                 var readStartPos = reader.Position;
-                NetworkVariableFields[j].ReadField(ref reader);
+                NetworkVariableFields[j].ReadField(reader);
 
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
@@ -585,7 +622,7 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
-        public void OnDestroy()
+        public virtual void OnDestroy()
         {
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
