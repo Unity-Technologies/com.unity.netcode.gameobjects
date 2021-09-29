@@ -222,6 +222,10 @@ namespace Unity.Netcode
             SceneEventDataQueue = null;
         }
 
+        /// <summary>
+        /// Creates a new SceneEventData object for a new scene event
+        /// </summary>
+        /// <returns>SceneEventData instance</returns>
         internal SceneEventData BeginSceneEvent()
         {
             var sceneEventData = new SceneEventData(m_NetworkManager);
@@ -229,6 +233,10 @@ namespace Unity.Netcode
             return sceneEventData;
         }
 
+        /// <summary>
+        /// Disposes and removes SceneEventData object for the scene event
+        /// </summary>
+        /// <param name="sceneEventId">SceneEventId to end</param>
         internal void EndSceneEvent(Guid sceneEventId)
         {
             if (SceneEventDataQueue.ContainsKey(sceneEventId))

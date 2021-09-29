@@ -495,7 +495,7 @@ namespace TestProject.RuntimeTests
         private const string k_MultiInstanceTestScenename = "AdditiveSceneMultiInstance";
 
         /// <summary>
-        /// Small to heavy scene loading scenario to test the SceneEventData pool under a load.
+        /// Small to heavy scene loading scenario to test the dynamically generated SceneEventData objects under a load.
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
