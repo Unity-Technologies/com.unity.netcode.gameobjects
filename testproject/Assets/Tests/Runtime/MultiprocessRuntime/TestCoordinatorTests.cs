@@ -41,7 +41,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckTestCoordinator()
         {
-            TestCoordinator.Instance.OnServerReceivedResultsResponse = ValidateSimpleCoordinatorTestValue;
             // Sanity check for TestCoordinator
             // Call the method
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
@@ -56,13 +55,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 nbResults++;
             }
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
-            TestCoordinator.Instance.OnServerReceivedResultsResponse = null;
         }
 
         [UnityTest]
         public IEnumerator CheckTestCoordinatorWithArgs()
         {
-            TestCoordinator.Instance.OnServerReceivedResultsResponse = ValidateSimpleCoordinatorTestValue;
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
@@ -75,7 +72,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 nbResults++;
             }
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
-            TestCoordinator.Instance.OnServerReceivedResultsResponse = null;
         }
     }
 }

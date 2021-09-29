@@ -332,49 +332,18 @@ public class TestCoordinator : NetworkBehaviour
         m_TimeSinceLastKeepAlive = Time.time;
     }
 
-    private ulong[] m_TargetClient = new ulong[1] { 0 };
-
     [ServerRpc(RequireOwnership = false)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
-        Debug.Log($"Server received result [{result}] from sender [{senderId}]");
+        BaseMultiprocessTests.MultiProcessLog($"Server received result [{result}] from sender [{senderId}]");
         if (!m_TestResultsLocal.ContainsKey(senderId))
         {
             m_TestResultsLocal[senderId] = new List<float>();
         }
 
         m_TestResultsLocal[senderId].Add(result);
-
-        // Now send the results received verification
-        m_TargetClient[0] = senderId;
-        var clientParams = new ClientRpcParams();
-        clientParams.Send.TargetClientIds = m_TargetClient;
-        ServerReceivedResultsResponseClientRpc(result, clientParams);
     }
-
-    public delegate void OnServerReceivedResultsResponseDelegateHandler(float resultReceived);
-
-    public OnServerReceivedResultsResponseDelegateHandler OnServerReceivedResultsResponse;
-    private void ServerReceivedResultsResponse(float resultReceived)
-    {
-        BaseMultiprocessTests.MultiProcessLog($"ServerReceivedResultsReponse {resultReceived}");
-        if (OnServerReceivedResultsResponse != null)
-        {
-            OnServerReceivedResultsResponse.Invoke(resultReceived);
-        }
-        else
-        {
-            Debug.LogWarning("Current test is not validating results were received (adding this validation will assure proper test synchronization and timing).");
-        }
-    }
-
-    [ClientRpc]
-    public void ServerReceivedResultsResponseClientRpc(float resultReceived, ClientRpcParams clientRpcParams = default)
-    {
-        ServerReceivedResultsResponse(resultReceived);
-    }
-
 
     [ServerRpc(RequireOwnership = false)]
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)

@@ -169,28 +169,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         if (count >= maxValue)
                         {
                             NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
-                            TestCoordinator.Instance.OnServerReceivedResultsResponse = null;
                         }
                     }
                 }
 
-                void TestResultReceived(float result)
-                {
-                    if (result != count)
-                    {
-                        TestCoordinator.Instance.WriteErrorServerRpc($"Received result {result} but was expected {count} for test {nameof(ContextTestWithAdditionalWait)}!");
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
-                        TestCoordinator.Instance.OnServerReceivedResultsResponse = null;
-                        exitOnFailure = true;
-                    }
-                    else
-                    {
-                        count++;
-                        sendNextResult = true;
-                    }
-                }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
-                TestCoordinator.Instance.OnServerReceivedResultsResponse = TestResultReceived;
 
             }, additionalIsFinishedWaiter: () =>
             {
