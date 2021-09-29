@@ -694,7 +694,7 @@ namespace Unity.Netcode
 
             unsafe
             {
-                var maxCount = NetworkManager.ConnectedClientsIds.Length;
+                var maxCount = NetworkManager.ConnectedClientsIds.Count;
                 ulong* clientIds = stackalloc ulong[maxCount];
                 int idx = 0;
                 foreach (var clientId in NetworkManager.ConnectedClientsIds)
