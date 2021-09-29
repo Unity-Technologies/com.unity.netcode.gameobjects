@@ -216,6 +216,10 @@ namespace Unity.Netcode
         {
             foreach (var keypair in SceneEventDataStore)
             {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogInfo($"{nameof(SceneEventDataStore)} is disposing {nameof(SceneEventData.SceneEventId)} '{keypair.Key}'.");
+                }
                 keypair.Value.Dispose();
             }
             SceneEventDataStore.Clear();
@@ -743,7 +747,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
                 }
-
+                EndSceneEvent(sceneEventId);
                 return;
             }
 
@@ -906,6 +910,7 @@ namespace Unity.Netcode
             s_IsSceneEventActive = ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode);
             if (!s_IsSceneEventActive)
             {
+                EndSceneEvent(sceneEventData.SceneEventId);
                 return SceneEventProgressStatus.SceneFailedVerification;
             }
 
@@ -954,6 +959,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
                 }
+                EndSceneEvent(sceneEventId);
                 return;
             }
 
@@ -962,6 +968,7 @@ namespace Unity.Netcode
             // Run scene validation before loading a scene
             if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, sceneEventData.LoadSceneMode))
             {
+                EndSceneEvent(sceneEventId);
                 return;
             }
 
@@ -988,6 +995,7 @@ namespace Unity.Netcode
                     throw new Exception($"Could not find the scene handle {sceneEventData.SceneHandle} for scene {sceneName} " +
                         $"during unit test.  Did you forget to register this in the unit test?");
                 }
+                EndSceneEvent(sceneEventId);
                 return;
             }
 #endif
@@ -1256,6 +1264,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
                 }
+                EndSceneEvent(sceneEventId);
                 return;
             }
             var sceneName = ScenesInBuild[(int)sceneIndex];
@@ -1265,6 +1274,7 @@ namespace Unity.Netcode
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode))
             {
+                EndSceneEvent(sceneEventId);
                 return;
             }
 
@@ -1443,7 +1453,6 @@ namespace Unity.Netcode
                             m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
                             EndSceneEvent(sceneEventId);
-
                         }
                         break;
                     }
@@ -1508,7 +1517,7 @@ namespace Unity.Netcode
                         {
                             SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(clientId);
                         }
-
+                        EndSceneEvent(sceneEventId);
                         break;
                     }
                 case SceneEventData.SceneEventTypes.C2S_UnloadComplete:
@@ -1525,7 +1534,7 @@ namespace Unity.Netcode
                             SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
                             ClientId = clientId
                         });
-
+                        EndSceneEvent(sceneEventId);
                         break;
                     }
                 case SceneEventData.SceneEventTypes.C2S_SyncComplete:
@@ -1554,7 +1563,7 @@ namespace Unity.Netcode
                                 ClientId = clientId
                             });
                         }
-
+                        EndSceneEvent(sceneEventId);
                         break;
                     }
                 default:
