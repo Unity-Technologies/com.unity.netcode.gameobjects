@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
@@ -36,28 +37,38 @@ namespace Unity.Netcode.RuntimeTests.Serialization
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
             networkObjectContext.Object.Spawn();
-            using var outStream = PooledNetworkBuffer.Get();
-            using var outWriter = PooledNetworkWriter.Get(outStream);
-            using var inStream = PooledNetworkBuffer.Get();
-            using var inReader = PooledNetworkReader.Get(inStream);
+            var outWriter = new FastBufferWriter(1300, Allocator.Temp);
+            try
+            {
+                // serialize
+                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
+                NetworkObjectReference outReference = networkObjectContext.Object;
+                outReference.NetworkSerialize(outSerializer);
 
-            // serialize
-            var outSerializer = new NetworkSerializer(outWriter);
-            NetworkObjectReference outReference = networkObjectContext.Object;
-            outReference.NetworkSerialize(outSerializer);
+                // deserialize
+                NetworkObjectReference inReference = default;
+                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
+                try
+                {
+                    var inSerializer =
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
+                    inReference.NetworkSerialize(inSerializer);
+                }
+                finally
+                {
+                    inReader.Dispose();
+                }
 
-            // deserialize
-            NetworkObjectReference inReference = default;
-            inStream.Write(outStream.ToArray());
-            inStream.Position = 0;
-            var inSerializer = new NetworkSerializer(inReader);
-            inReference.NetworkSerialize(inSerializer);
-
-            // validate
-            Assert.NotNull((NetworkObject)inReference);
-            Assert.AreEqual(inReference.NetworkObjectId, networkObjectContext.Object.NetworkObjectId);
-            Assert.AreEqual(outReference, inReference);
-            Assert.AreEqual(networkObjectContext.Object, (NetworkObject)inReference);
+                // validate
+                Assert.NotNull((NetworkObject)inReference);
+                Assert.AreEqual(inReference.NetworkObjectId, networkObjectContext.Object.NetworkObjectId);
+                Assert.AreEqual(outReference, inReference);
+                Assert.AreEqual(networkObjectContext.Object, (NetworkObject)inReference);
+            }
+            finally
+            {
+                outWriter.Dispose();
+            }
         }
 
         [Test]
@@ -65,27 +76,37 @@ namespace Unity.Netcode.RuntimeTests.Serialization
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
             networkObjectContext.Object.Spawn();
-            using var outStream = PooledNetworkBuffer.Get();
-            using var outWriter = PooledNetworkWriter.Get(outStream);
-            using var inStream = PooledNetworkBuffer.Get();
-            using var inReader = PooledNetworkReader.Get(inStream);
+            var outWriter = new FastBufferWriter(1300, Allocator.Temp);
+            try
+            {
+                // serialize
+                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
+                NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
+                outReference.NetworkSerialize(outSerializer);
 
-            // serialize
-            var outSerializer = new NetworkSerializer(outWriter);
-            NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
-            outReference.NetworkSerialize(outSerializer);
+                // deserialize
+                NetworkObjectReference inReference = default;
+                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
+                try
+                {
+                    var inSerializer =
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
+                    inReference.NetworkSerialize(inSerializer);
+                }
+                finally
+                {
+                    inReader.Dispose();
+                }
+                GameObject gameObject = inReference;
 
-            // deserialize
-            NetworkObjectReference inReference = default;
-            inStream.Write(outStream.ToArray());
-            inStream.Position = 0;
-            var inSerializer = new NetworkSerializer(inReader);
-            inReference.NetworkSerialize(inSerializer);
-            GameObject gameObject = inReference;
-
-            // validate
-            Assert.AreEqual(outReference, inReference);
-            Assert.AreEqual(networkObjectContext.Object.gameObject, gameObject);
+                // validate
+                Assert.AreEqual(outReference, inReference);
+                Assert.AreEqual(networkObjectContext.Object.gameObject, gameObject);
+            }
+            finally
+            {
+                outWriter.Dispose();
+            }
         }
 
         [Test]

@@ -7,67 +7,103 @@ namespace Unity.Netcode
 {
     public struct FastBufferReader : IDisposable
     {
-        internal readonly unsafe byte* BufferPointer;
-        internal int PositionInternal;
-        internal readonly int LengthInternal;
-        private readonly Allocator m_Allocator;
+        internal struct ReaderHandle
+        {
+            internal unsafe byte* BufferPointer;
+            internal int Position;
+            internal int Length;
+            internal Allocator Allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        internal int AllowedReadMark;
-        private bool m_InBitwiseContext;
+            internal int AllowedReadMark;
+            internal bool InBitwiseContext;
 #endif
+        }
+
+        internal readonly unsafe ReaderHandle* Handle;
 
         /// <summary>
         /// Get the current read position
         /// </summary>
-        public int Position
+        public unsafe int Position
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => PositionInternal;
+            get => Handle->Position;
         }
 
         /// <summary>
         /// Get the total length of the buffer
         /// </summary>
-        public int Length
+        public unsafe int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => LengthInternal;
+            get => Handle->Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void CommitBitwiseReads(int amount)
+        internal unsafe void CommitBitwiseReads(int amount)
         {
-            PositionInternal += amount;
+            Handle->Position += amount;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InBitwiseContext = false;
+            Handle->InBitwiseContext = false;
 #endif
         }
 
-        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator allocator)
         {
-            LengthInternal = Math.Max(1, length == -1 ? buffer.Length : length);
+            ReaderHandle* readerHandle = null;
             if (allocator == Allocator.None)
             {
-                BufferPointer = (byte*)buffer.GetUnsafePtr() + offset;
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
+                readerHandle->BufferPointer = buffer;
+                readerHandle->Position = offset;
             }
             else
             {
-                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-                UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr() + offset, LengthInternal);
-                BufferPointer = (byte*)bufferPtr;
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), allocator);
+                UnsafeUtility.MemCpy(readerHandle + 1, buffer + offset, length);
+                readerHandle->BufferPointer = (byte*)(readerHandle + 1);
+                readerHandle->Position = 0;
             }
-            PositionInternal = offset;
-            m_Allocator = allocator;
+
+            readerHandle->Length = length;
+            readerHandle->Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = 0;
-            m_InBitwiseContext = false;
+            readerHandle->AllowedReadMark = 0;
+            readerHandle->InBitwiseContext = false;
 #endif
+            return readerHandle;
+        }
+
+        /// <summary>
+        /// Create a FastBufferReader from a NativeArray.
+        /// 
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        ///
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// ownership of the data remains with the caller and the reader will point at it directly.
+        /// When created with Allocator.None, FastBufferReader will allocate some internal data using
+        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// the context in which it was created (it should neither be returned from that function nor
+        /// stored anywhere in heap memory).
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="allocator"></param>
+        /// <param name="length"></param>
+        /// <param name="offset"></param>
+        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        {
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from an ArraySegment.
+        /// 
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
+        ///
+        /// Allocator.None is not supported for byte[]. If you need this functionality, use a fixed() block
+        /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="allocator">The allocator to use</param>
@@ -75,34 +111,24 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            LengthInternal = Math.Max(1, length == -1 ? (buffer.Count - offset) : length);
             if (allocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
-            else
+            fixed (byte* data = buffer.Array)
             {
-                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-                fixed (byte* data = buffer.Array)
-                {
-                    UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
-                }
-
-                BufferPointer = (byte*)bufferPtr;
+                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Count : length), offset, allocator);
             }
-
-            PositionInternal = 0;
-            m_Allocator = allocator;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = 0;
-            m_InBitwiseContext = false;
-#endif
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte array.
+        /// 
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
+        ///
+        /// Allocator.None is not supported for byte[]. If you need this functionality, use a fixed() block
+        /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="allocator">The allocator to use</param>
@@ -110,34 +136,28 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            LengthInternal = Math.Max(1, length == -1 ? (buffer.Length - offset) : length);
             if (allocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
-            else
+            fixed (byte* data = buffer)
             {
-                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-                fixed (byte* data = buffer)
-                {
-                    UnsafeUtility.MemCpy(bufferPtr, data + offset, LengthInternal);
-                }
-
-                BufferPointer = (byte*)bufferPtr;
+                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
             }
-
-            PositionInternal = 0;
-            m_Allocator = allocator;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = 0;
-            m_InBitwiseContext = false;
-#endif
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
+        /// 
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
+        ///
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// ownership of the data remains with the caller and the reader will point at it directly.
+        /// When created with Allocator.None, FastBufferReader will allocate some internal data using
+        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// the context in which it was created (it should neither be returned from that function nor
+        /// stored anywhere in heap memory).
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="allocator">The allocator to use</param>
@@ -145,47 +165,29 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
-            LengthInternal = Math.Max(1, length);
-            if (allocator == Allocator.None)
-            {
-                BufferPointer = buffer + offset;
-            }
-            else
-            {
-                void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-                UnsafeUtility.MemCpy(bufferPtr, buffer + offset, LengthInternal);
-                BufferPointer = (byte*)bufferPtr;
-            }
-
-            PositionInternal = 0;
-            m_Allocator = allocator;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = 0;
-            m_InBitwiseContext = false;
-#endif
+            Handle = CreateHandle(buffer, Math.Max(1, length), offset, allocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
+        /// 
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
+        ///
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// ownership of the data remains with the caller and the reader will point at it directly.
+        /// When created with Allocator.None, FastBufferReader will allocate some internal data using
+        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// the context in which it was created (it should neither be returned from that function nor
+        /// stored anywhere in heap memory).
         /// </summary>
         /// <param name="writer">The writer to copy from</param>
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(ref FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
+        public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
         {
-            LengthInternal = Math.Max(1, length == -1 ? writer.Length : length);
-            void* bufferPtr = UnsafeUtility.Malloc(LengthInternal, UnsafeUtility.AlignOf<byte>(), allocator);
-            UnsafeUtility.MemCpy(bufferPtr, writer.GetUnsafePtr() + offset, LengthInternal);
-            BufferPointer = (byte*)bufferPtr;
-            PositionInternal = 0;
-            m_Allocator = allocator;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = 0;
-            m_InBitwiseContext = false;
-#endif
+            Handle = CreateHandle(writer.GetUnsafePtr(), Math.Max(1, length == -1 ? writer.Length : length), offset, allocator);
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace Unity.Netcode
         /// </summary>
         public unsafe void Dispose()
         {
-            UnsafeUtility.Free(BufferPointer, m_Allocator);
+            UnsafeUtility.Free(Handle, Handle->Allocator);
         }
 
         /// <summary>
@@ -201,9 +203,9 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="where">Absolute value to move the position to, truncated to Length</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Seek(int where)
+        public unsafe void Seek(int where)
         {
-            PositionInternal = Math.Min(Length, where);
+            Handle->Position = Math.Min(Length, where);
         }
 
         /// <summary>
@@ -213,20 +215,20 @@ namespace Unity.Netcode
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void MarkBytesRead(int amount)
+        internal unsafe void MarkBytesRead(int amount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + amount > AllowedReadMark)
+            if (Handle->Position + amount > Handle->AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling TryBeginRead()");
             }
 #endif
-            PositionInternal += amount;
+            Handle->Position += amount;
         }
 
         /// <summary>
@@ -235,12 +237,12 @@ namespace Unity.Netcode
         /// At the end of the operation, FastBufferReader will remain byte-aligned.
         /// </summary>
         /// <returns>A BitReader</returns>
-        public BitReader EnterBitwiseContext()
+        public unsafe BitReader EnterBitwiseContext()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InBitwiseContext = true;
+            Handle->InBitwiseContext = true;
 #endif
-            return new BitReader(ref this);
+            return new BitReader(this);
         }
 
         /// <summary>
@@ -258,21 +260,21 @@ namespace Unity.Netcode
         /// <returns>True if the read is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryBeginRead(int bytes)
+        public unsafe bool TryBeginRead(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (PositionInternal + bytes > LengthInternal)
+            if (Handle->Position + bytes > Handle->Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = PositionInternal + bytes;
+            Handle->AllowedReadMark = Handle->Position + bytes;
 #endif
             return true;
         }
@@ -295,19 +297,19 @@ namespace Unity.Netcode
         public unsafe bool TryBeginReadValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
             int len = sizeof(T);
-            if (PositionInternal + len > LengthInternal)
+            if (Handle->Position + len > Handle->Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedReadMark = PositionInternal + len;
+            Handle->AllowedReadMark = Handle->Position + len;
 #endif
             return true;
         }
@@ -320,23 +322,23 @@ namespace Unity.Netcode
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool TryBeginReadInternal(int bytes)
+        internal unsafe bool TryBeginReadInternal(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (PositionInternal + bytes > LengthInternal)
+            if (Handle->Position + bytes > Handle->Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (PositionInternal + bytes > AllowedReadMark)
+            if (Handle->Position + bytes > Handle->AllowedReadMark)
             {
-                AllowedReadMark = PositionInternal + bytes;
+                Handle->AllowedReadMark = Handle->Position + bytes;
             }
 #endif
             return true;
@@ -353,7 +355,7 @@ namespace Unity.Netcode
             byte[] ret = new byte[Length];
             fixed (byte* b = ret)
             {
-                UnsafeUtility.MemCpy(b, BufferPointer, Length);
+                UnsafeUtility.MemCpy(b, Handle->BufferPointer, Length);
             }
             return ret;
         }
@@ -365,7 +367,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
-            return BufferPointer;
+            return Handle->BufferPointer;
         }
 
         /// <summary>
@@ -375,7 +377,36 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
-            return BufferPointer + PositionInternal;
+            return Handle->BufferPointer + Handle->Position;
+        }
+
+        /// <summary>
+        /// Read an INetworkSerializable
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable, new()
+        {
+            value = new T();
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
+        /// Read an array of INetworkSerializables
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializable<T>(out T[] value) where T : INetworkSerializable, new()
+        {
+            ReadValueSafe(out int size);
+            value = new T[size];
+            for (var i = 0; i < size; ++i)
+            {
+                ReadNetworkSerializable(out value[i]);
+            }
         }
 
         /// <summary>
@@ -418,7 +449,7 @@ namespace Unity.Netcode
         public unsafe void ReadValueSafe(out string s, bool oneByteChars = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -485,7 +516,7 @@ namespace Unity.Netcode
         public unsafe void ReadValueSafe<T>(out T[] array) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -494,13 +525,13 @@ namespace Unity.Netcode
 
             if (!TryBeginReadInternal(sizeof(int)))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
             ReadValue(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
             if (!TryBeginReadInternal(sizeInBytes))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
             array = new T[sizeInTs];
             fixed (T* native = array)
@@ -523,12 +554,12 @@ namespace Unity.Netcode
         public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + bytesToRead > AllowedReadMark)
+            if (Handle->Position + bytesToRead > Handle->AllowedReadMark)
             {
                 throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
@@ -536,10 +567,10 @@ namespace Unity.Netcode
 
             var val = new T();
             byte* ptr = ((byte*)&val) + offsetBytes;
-            byte* bufferPointer = BufferPointer + PositionInternal;
+            byte* bufferPointer = Handle->BufferPointer + Handle->Position;
             UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
-            PositionInternal += bytesToRead;
+            Handle->Position += bytesToRead;
             value = val;
         }
 
@@ -551,17 +582,17 @@ namespace Unity.Netcode
         public unsafe void ReadByte(out byte value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + 1 > AllowedReadMark)
+            if (Handle->Position + 1 > Handle->AllowedReadMark)
             {
                 throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
-            value = BufferPointer[PositionInternal++];
+            value = Handle->BufferPointer[Handle->Position++];
         }
 
         /// <summary>
@@ -575,7 +606,7 @@ namespace Unity.Netcode
         public unsafe void ReadByteSafe(out byte value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -586,7 +617,7 @@ namespace Unity.Netcode
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            value = BufferPointer[PositionInternal++];
+            value = Handle->BufferPointer[Handle->Position++];
         }
 
         /// <summary>
@@ -599,18 +630,18 @@ namespace Unity.Netcode
         public unsafe void ReadBytes(byte* value, int size, int offset = 0)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + size > AllowedReadMark)
+            if (Handle->Position + size > Handle->AllowedReadMark)
             {
                 throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
 #endif
-            UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
-            PositionInternal += size;
+            UnsafeUtility.MemCpy(value + offset, (Handle->BufferPointer + Handle->Position), size);
+            Handle->Position += size;
         }
 
         /// <summary>
@@ -626,7 +657,7 @@ namespace Unity.Netcode
         public unsafe void ReadBytesSafe(byte* value, int size, int offset = 0)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -635,10 +666,10 @@ namespace Unity.Netcode
 
             if (!TryBeginReadInternal(size))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
-            UnsafeUtility.MemCpy(value + offset, (BufferPointer + PositionInternal), size);
-            PositionInternal += size;
+            UnsafeUtility.MemCpy(value + offset, (Handle->BufferPointer + Handle->Position), size);
+            Handle->Position += size;
         }
 
         /// <summary>
@@ -686,12 +717,12 @@ namespace Unity.Netcode
             int len = sizeof(T);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + len > AllowedReadMark)
+            if (Handle->Position + len > Handle->AllowedReadMark)
             {
                 throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
             }
@@ -699,9 +730,9 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
             }
-            PositionInternal += len;
+            Handle->Position += len;
         }
 
         /// <summary>
@@ -719,7 +750,7 @@ namespace Unity.Netcode
             int len = sizeof(T);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -728,15 +759,15 @@ namespace Unity.Netcode
 
             if (!TryBeginReadInternal(len))
             {
-                throw new OverflowException("Writing past the end of the buffer");
+                throw new OverflowException("Reading past the end of the buffer");
             }
 
 
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, BufferPointer + PositionInternal, len);
+                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
             }
-            PositionInternal += len;
+            Handle->Position += len;
         }
     }
 }

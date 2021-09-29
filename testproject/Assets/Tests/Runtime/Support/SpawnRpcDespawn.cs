@@ -17,7 +17,7 @@ namespace TestProject.RuntimeTests.Support
         [ClientRpc]
         public void SendIncrementUpdateCountClientRpc()
         {
-            Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
+            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
 
             StageExecutedByReceiver = NetworkUpdateLoop.UpdateStage;
             ++ClientUpdateCount;
@@ -40,7 +40,7 @@ namespace TestProject.RuntimeTests.Support
         public void NetworkStart()
         {
             Debug.Log($"Network Start on client {NetworkManager.LocalClientId.ToString()}");
-            Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
+            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
         }
 
         public void Awake()
@@ -51,12 +51,14 @@ namespace TestProject.RuntimeTests.Support
             }
         }
 
-        public void OnDestroy()
+        public override void OnDestroy()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {
                 NetworkUpdateLoop.UnregisterNetworkUpdate(this, stage);
             }
+
+            base.OnDestroy();
         }
 
         private void RunTest()

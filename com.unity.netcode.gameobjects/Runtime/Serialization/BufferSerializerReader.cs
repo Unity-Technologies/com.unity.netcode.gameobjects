@@ -1,118 +1,77 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal struct BufferSerializerReader : IBufferSerializerImplementation
+    internal struct BufferSerializerReader : IReaderWriter
     {
-        private Ref<FastBufferReader> m_Reader;
+        private FastBufferReader m_Reader;
 
-        public BufferSerializerReader(ref FastBufferReader reader)
+        public BufferSerializerReader(FastBufferReader reader)
         {
-            m_Reader = new Ref<FastBufferReader>(ref reader);
+            m_Reader = reader;
         }
 
         public bool IsReader => true;
         public bool IsWriter => false;
 
-        public ref FastBufferReader GetFastBufferReader()
+        public FastBufferReader GetFastBufferReader()
         {
-            return ref m_Reader.Value;
+            return m_Reader;
         }
 
-        public ref FastBufferWriter GetFastBufferWriter()
+        public FastBufferWriter GetFastBufferWriter()
         {
             throw new InvalidOperationException("Cannot retrieve a FastBufferWriter from a serializer where IsWriter = false");
         }
 
-        public void SerializeValue(ref object value, Type type, bool isNullable = false)
-        {
-            m_Reader.Value.ReadObject(out value, type, isNullable);
-        }
-
-        public void SerializeValue(ref INetworkSerializable value)
-        {
-            m_Reader.Value.ReadNetworkSerializable(out value);
-        }
-
-        public void SerializeValue(ref GameObject value)
-        {
-            m_Reader.Value.ReadValueSafe(out value);
-        }
-
-        public void SerializeValue(ref NetworkObject value)
-        {
-            m_Reader.Value.ReadValueSafe(out value);
-        }
-
-        public void SerializeValue(ref NetworkBehaviour value)
-        {
-            m_Reader.Value.ReadValueSafe(out value);
-        }
-
         public void SerializeValue(ref string s, bool oneByteChars = false)
         {
-            m_Reader.Value.ReadValueSafe(out s, oneByteChars);
+            m_Reader.ReadValueSafe(out s, oneByteChars);
         }
 
         public void SerializeValue<T>(ref T[] array) where T : unmanaged
         {
-            m_Reader.Value.ReadValueSafe(out array);
+            m_Reader.ReadValueSafe(out array);
         }
 
         public void SerializeValue(ref byte value)
         {
-            m_Reader.Value.ReadByteSafe(out value);
+            m_Reader.ReadByteSafe(out value);
         }
 
         public void SerializeValue<T>(ref T value) where T : unmanaged
         {
-            m_Reader.Value.ReadValueSafe(out value);
+            m_Reader.ReadValueSafe(out value);
         }
 
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
-            m_Reader.Value.ReadNetworkSerializable(out value);
+            m_Reader.ReadNetworkSerializable(out value);
         }
 
         public bool PreCheck(int amount)
         {
-            return m_Reader.Value.TryBeginRead(amount);
-        }
-
-        public void SerializeValuePreChecked(ref GameObject value)
-        {
-            m_Reader.Value.ReadValue(out value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkObject value)
-        {
-            m_Reader.Value.ReadValue(out value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkBehaviour value)
-        {
-            m_Reader.Value.ReadValue(out value);
+            return m_Reader.TryBeginRead(amount);
         }
 
         public void SerializeValuePreChecked(ref string s, bool oneByteChars = false)
         {
-            m_Reader.Value.ReadValue(out s, oneByteChars);
+            m_Reader.ReadValue(out s, oneByteChars);
         }
 
         public void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged
         {
-            m_Reader.Value.ReadValue(out array);
+            m_Reader.ReadValue(out array);
         }
 
         public void SerializeValuePreChecked(ref byte value)
         {
-            m_Reader.Value.ReadValue(out value);
+            m_Reader.ReadValue(out value);
         }
 
         public void SerializeValuePreChecked<T>(ref T value) where T : unmanaged
         {
-            m_Reader.Value.ReadValue(out value);
+            m_Reader.ReadValue(out value);
         }
     }
 }

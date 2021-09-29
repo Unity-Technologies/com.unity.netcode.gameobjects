@@ -81,12 +81,6 @@ namespace Unity.Netcode
             return networkObject != null;
         }
 
-        /// <inheritdoc/>
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            serializer.Serialize(ref m_NetworkObjectId);
-        }
-
         /// <summary>
         /// Resolves the corresponding <see cref="NetworkObject"/> for this reference.
         /// </summary>
@@ -118,6 +112,12 @@ namespace Unity.Netcode
         public override int GetHashCode()
         {
             return m_NetworkObjectId.GetHashCode();
+        }
+
+        /// <inheritdoc/>
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref m_NetworkObjectId);
         }
 
         public static implicit operator NetworkObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef);

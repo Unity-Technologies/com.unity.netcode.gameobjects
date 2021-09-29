@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -20,7 +19,6 @@ namespace Unity.Netcode
         /// A list of the spawned objects
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
-
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -70,7 +68,7 @@ namespace Unity.Netcode
                 throw new NotServerException("Only the server can find player objects from other clients.");
             }
 
-            if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
+            if (TryGetNetworkClient(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
             }
@@ -102,26 +100,45 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientIdInternal = null;
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
+            var message = new ChangeOwnershipMessage
             {
-                using var nonNullContext = (InternalCommandContext)context;
-                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                bufferSizeCapture.StartMeasureSegment();
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
-
-                var size = bufferSizeCapture.StopMeasureSegment();
-
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : size;
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
-                }
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                var bytesReported = NetworkManager.LocalClientId == client.Key
+                      ? 0
+                      : size;
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
             }
+        }
+
+        /// <summary>
+        /// Helper function to get a network client for a clientId from the NetworkManager.
+        /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
+        /// On a non-server this will check the <see cref="NetworkManager.LocalClient"/> only.
+        /// </summary>
+        /// <param name="clientId">The clientId for which to try getting the NetworkClient for.</param>
+        /// <param name="networkClient">The found NetworkClient. Null if no client was found.</param>
+        /// <returns>True if a NetworkClient with a matching id was found else false.</returns>
+        private bool TryGetNetworkClient(ulong clientId, out NetworkClient networkClient)
+        {
+            if (NetworkManager.IsServer)
+            {
+                return NetworkManager.ConnectedClients.TryGetValue(clientId, out networkClient);
+            }
+
+            if (clientId == NetworkManager.LocalClient.ClientId)
+            {
+                networkClient = NetworkManager.LocalClient;
+                return true;
+            }
+
+            networkClient = null;
+            return false;
         }
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
@@ -136,7 +153,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (NetworkManager.ConnectedClients.TryGetValue(networkObject.OwnerClientId, out NetworkClient networkClient))
+            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
                 for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                 {
@@ -151,26 +168,20 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
-            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ChangeOwner, NetworkDelivery.ReliableSequenced, clientIds, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
+
+            var message = new ChangeOwnershipMessage
             {
-                using var nonNullContext = (InternalCommandContext)context;
-                var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                bufferSizeCapture.StartMeasureSegment();
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-                nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
-
-                var size = bufferSizeCapture.StopMeasureSegment();
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : size;
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
-                }
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                var bytesReported = NetworkManager.LocalClientId == client.Key
+                    ? 0
+                    : size;
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
             }
         }
 
@@ -290,7 +301,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readNetworkVariable, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -302,11 +313,33 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            if (readNetworkVariable)
+            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+        }
+
+        // Ran on both server and client
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject,
+            FastBufferReader variableData, bool destroyWithScene)
+        {
+            if (networkObject == null)
             {
-                networkObject.SetNetworkVariableData(dataStream);
+                throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
             }
 
+            if (networkObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is already spawned");
+            }
+
+            if (sceneObject.Header.HasNetworkVariables)
+            {
+                networkObject.SetNetworkVariableData(variableData);
+            }
+
+            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
+        }
+
+        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
+        {
             if (SpawnedObjects.ContainsKey(networkId))
             {
                 Debug.LogWarning($"Trying to spawn {nameof(NetworkObject.NetworkObjectId)} {networkId} that already exists!");
@@ -351,7 +384,7 @@ namespace Unity.Netcode
                 }
                 else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
                 {
-                    NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
+                    NetworkManager.LocalClient.PlayerObject = networkObject;
                 }
             }
 
@@ -384,23 +417,15 @@ namespace Unity.Netcode
                     return;
                 }
 
-                var messageQueueContainer = NetworkManager.MessageQueueContainer;
-
-                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkDelivery.ReliableSequenced, new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
-                if (context != null)
+                var message = new CreateObjectMessage
                 {
-                    using var nonNullContext = (InternalCommandContext)context;
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureSegment();
-
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
-
-                    var size = bufferSizeCapture.StopMeasureSegment();
-                    var bytesReported = NetworkManager.LocalClientId == clientId
-                        ? 0
-                        : size;
-                    NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
-                }
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                };
+                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+                var bytesReported = NetworkManager.LocalClientId == clientId
+                    ? 0
+                    : size;
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
 
                 networkObject.MarkVariablesDirty();
             }
@@ -421,48 +446,6 @@ namespace Unity.Netcode
             }
 
             return parentNetworkObject.NetworkObjectId;
-        }
-
-        internal void WriteSpawnCallForObject(PooledNetworkWriter writer, ulong clientId, NetworkObject networkObject)
-        {
-            writer.WriteBool(networkObject.IsPlayerObject);
-            writer.WriteUInt64Packed(networkObject.NetworkObjectId);
-            writer.WriteUInt64Packed(networkObject.OwnerClientId);
-
-            var parent = GetSpawnParentId(networkObject);
-            if (parent == null)
-            {
-                writer.WriteBool(false);
-            }
-            else
-            {
-                writer.WriteBool(true);
-                writer.WriteUInt64Packed(parent.Value);
-            }
-
-            writer.WriteBool(networkObject.IsSceneObject ?? true);
-            writer.WriteUInt32Packed(networkObject.HostCheckForGlobalObjectIdHashOverride());
-
-            if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
-            {
-                writer.WriteBool(true);
-                writer.WriteSinglePacked(networkObject.transform.position.x);
-                writer.WriteSinglePacked(networkObject.transform.position.y);
-                writer.WriteSinglePacked(networkObject.transform.position.z);
-
-                writer.WriteSinglePacked(networkObject.transform.rotation.eulerAngles.x);
-                writer.WriteSinglePacked(networkObject.transform.rotation.eulerAngles.y);
-                writer.WriteSinglePacked(networkObject.transform.rotation.eulerAngles.z);
-            }
-            else
-            {
-                writer.WriteBool(false);
-            }
-
-            {
-                var (isReparented, latestParent) = networkObject.GetNetworkParenting();
-                NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
-            }
         }
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
@@ -565,7 +548,6 @@ namespace Unity.Netcode
             }
         }
 
-
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
@@ -576,7 +558,7 @@ namespace Unity.Netcode
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, true);
+                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, true);
                     }
                 }
             }
@@ -618,7 +600,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && NetworkManager.Singleton.ConnectedClients.TryGetValue(networkObject.OwnerClientId, out NetworkClient networkClient))
+            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
                 //Someone owns it.
                 for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
@@ -649,49 +631,40 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    var messageQueueContainer = NetworkManager.MessageQueueContainer;
-                    if (messageQueueContainer != null)
+                    if (networkObject != null)
                     {
-                        if (networkObject != null)
+                        // As long as we have any remaining clients, then notify of the object being destroy.
+                        if (NetworkManager.ConnectedClientsList.Count > 0)
                         {
-                            // As long as we have any remaining clients, then notify of the object being destroy.
-                            if (NetworkManager.ConnectedClientsList.Count > 0)
+                            m_TargetClientIds.Clear();
+
+                            // We keep only the client for which the object is visible
+                            // as the other clients have them already despawned
+                            foreach (var clientId in NetworkManager.ConnectedClientsIds)
                             {
-                                m_TargetClientIds.Clear();
-
-                                // We keep only the client for which the object is visible
-                                // as the other clients have them already despawned
-                                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                                if (networkObject.IsNetworkVisibleTo(clientId))
                                 {
-                                    if (networkObject.IsNetworkVisibleTo(clientId))
-                                    {
-                                        m_TargetClientIds.Add(clientId);
-                                    }
+                                    m_TargetClientIds.Add(clientId);
                                 }
+                            }
 
-                                var context = messageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.DestroyObject, NetworkDelivery.ReliableSequenced, m_TargetClientIds.ToArray(), NetworkUpdateStage.PostLateUpdate);
-                                if (context != null)
-                                {
-                                    using var nonNullContext = (InternalCommandContext)context;
-                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                    bufferSizeCapture.StartMeasureSegment();
-
-                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-
-                                    var size = bufferSizeCapture.StopMeasureSegment();
-                                    foreach (var targetClientId in m_TargetClientIds)
-                                    {
-                                        var bytesReported = NetworkManager.LocalClientId == targetClientId
-                                            ? 0
-                                            : size;
-                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
-                                    }
-                                }
+                            var message = new DestroyObjectMessage
+                            {
+                                NetworkObjectId = networkObject.NetworkObjectId
+                            };
+                            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
+                            foreach (var targetClientId in m_TargetClientIds)
+                            {
+                                var bytesReported = NetworkManager.LocalClientId == targetClientId
+                                    ? 0
+                                    : size;
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
                             }
                         }
                     }
                 }
             }
+
             networkObject.IsSpawned = false;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
@@ -711,42 +684,6 @@ namespace Unity.Netcode
                     UnityEngine.Object.Destroy(gobj);
                 }
             }
-        }
-
-        /// <summary>
-        /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also
-        /// adding the client to each <see cref="NetworkObject">'s <see cref="NetworkObject.Observers"/> list only if
-        /// observable to the client.
-        /// Maximum number of objects that could theoretically be serialized is 65536 for now
-        /// </summary>
-        /// <param name="clientId"> the client identifier used to determine if a spawned NetworkObject is observable</param>
-        /// <param name="internalCommandContext"> contains the writer used for serialization </param>
-        internal void SerializeObservedNetworkObjects(ulong clientId, NetworkWriter writer)
-        {
-            var stream = writer.GetStream();
-            var headPosition = stream.Position;
-            var numberOfObjects = (ushort)0;
-
-            // Write our count place holder(must not be packed!)
-            writer.WriteUInt16(0);
-
-            foreach (var sobj in SpawnedObjectsList)
-            {
-                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
-                {
-                    sobj.Observers.Add(clientId);
-                    sobj.SerializeSceneObject(writer, clientId);
-                    numberOfObjects++;
-                }
-            }
-
-            var tailPosition = stream.Position;
-            // Reposition to our count position to the head before we wrote our object count
-            stream.Position = headPosition;
-            // Write number of NetworkObjects serialized (must not be packed!)
-            writer.WriteUInt16(numberOfObjects);
-            // Set our position back to the tail
-            stream.Position = tailPosition;
         }
 
         /// <summary>

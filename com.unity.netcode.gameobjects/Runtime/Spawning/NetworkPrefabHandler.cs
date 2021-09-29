@@ -176,7 +176,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Use the <see cref="NetworkObject.GlobalObjectIdHash"/> of the overridden network prefab asset to remove a registered class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface.
         /// </summary>
-        /// <param name="networkPrefabHash"><see cref="NetworkObject.GlobalObjectIdHash"/> of the source NetworkPrefab that was being overridden</param>
+        /// <param name="globalObjectIdHash"><see cref="NetworkObject.GlobalObjectIdHash"/> of the source NetworkPrefab that was being overridden</param>
         /// <returns>true (success) or false (failure)</returns>
         public bool RemoveHandler(uint globalObjectIdHash)
         {
