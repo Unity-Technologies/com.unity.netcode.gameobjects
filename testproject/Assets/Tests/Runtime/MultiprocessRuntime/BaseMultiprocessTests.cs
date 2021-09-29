@@ -183,7 +183,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        public static void MultiProcessLog(string msg)
+        public static void MultiProcessLog(string msg, LogType logType = LogType.Log, bool ignoreFormating = false)
         {
             string testName = null;
             try
@@ -198,11 +198,32 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (string.IsNullOrEmpty(testName))
             {
-                testName = "unknwon";
+                testName = "unknown";
             }
             string dString = DateTime.Now.ToString("G");
-            MultiprocessLogger.Log($" - MPLOG - {dString} : {testName} : {msg}");
+            var message = ignoreFormating ? msg : $" - MPLOG - {dString} : {testName} : {msg}";
+            switch (logType)
+            {
+                case LogType.Log:
+                    {
+                        MultiprocessLogger.Log(message);
+                        break;
+                    }
+                case LogType.Warning:
+                    {
+                        MultiprocessLogger.LogWarning(message);
+                        break;
+                    }
+                case LogType.Exception:
+                case LogType.Assert:
+                case LogType.Error:
+                    {
+                        MultiprocessLogger.LogError(message);
+                        break;
+                    }
+            }
         }
+
     }
 }
 

@@ -267,7 +267,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteErrorServerRpc(e.Message);
+            WriteErrorServerRpc(e.Message, true);
             if (!ignoreException)
             {
                 throw;
@@ -345,9 +345,16 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
+    public void WriteErrorServerRpc(string errorMessage, bool ignoreFormatting = false, ServerRpcParams receiveParams = default)
     {
-        BaseMultiprocessTests.MultiProcessLog($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
+        if (ignoreFormatting)
+        {
+            BaseMultiprocessTests.MultiProcessLog(errorMessage, LogType.Error, ignoreFormatting);
+        }
+        else
+        {
+            BaseMultiprocessTests.MultiProcessLog($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}", LogType.Error, ignoreFormatting);
+        }
     }
 }
 
