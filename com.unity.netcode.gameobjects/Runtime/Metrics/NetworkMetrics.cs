@@ -262,7 +262,7 @@ namespace Unity.Netcode
             m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
         }
 
-        public void TrackSceneEventSent(ulong[] receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
+        public void TrackSceneEventSent(IReadOnlyList<ulong> receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
