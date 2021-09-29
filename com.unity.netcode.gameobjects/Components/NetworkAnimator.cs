@@ -15,7 +15,8 @@ namespace Unity.Netcode.Components
             public KeyValuePair<int, bool>[] BoolParamArray;
             public KeyValuePair<int, float>[] FloatParamArray;
             public KeyValuePair<int, int>[] IntParamArray;
-            public List<int> TriggerParameters;
+
+            public HashSet<int> TriggerParameters;
             public LayerState[] LayerStates;
             private const int k_InvalidKey = -1;
 
@@ -24,8 +25,9 @@ namespace Unity.Netcode.Components
                 BoolParamArray = new KeyValuePair<int, bool>[boolCount];
                 IntParamArray = new KeyValuePair<int, int>[intCount];
                 FloatParamArray = new KeyValuePair<int, float>[floatCount];
-                TriggerParameters = new List<int>(triggerCount);
+                TriggerParameters = new HashSet<int>(triggerCount);
                 LayerStates = new LayerState[layerStatesCount];
+
                 SetBuffersToDefaultValues();
             }
 
@@ -34,7 +36,7 @@ namespace Unity.Netcode.Components
                 BoolParamArray = new KeyValuePair<int, bool>[0];
                 IntParamArray = new KeyValuePair<int, int>[0];
                 FloatParamArray = new KeyValuePair<int, float>[0];
-                TriggerParameters = new List<int>(0);
+                TriggerParameters = new HashSet<int>(0);
                 LayerStates = new LayerState[0];
                 SetBuffersToDefaultValues();
             }
@@ -208,17 +210,22 @@ namespace Unity.Netcode.Components
 
             private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
-                serializer.SerializeValue(ref paramCount);
-
-                if (TriggerParameters.Count != paramCount)
+                int paramCount;
+                if (serializer.IsReader)
                 {
-                    TriggerParameters = new List<int>(paramCount);
+                    paramCount = 0;
+                    TriggerParameters = new HashSet<int>(paramCount);
+                }
+                else
+                {
+                    paramCount = TriggerParameters.Count;
                 }
 
-                for (int i = 0; i < paramCount; i++)
+                serializer.SerializeValue(ref paramCount);
+
+                foreach (var thisParamId in TriggerParameters)
                 {
-                    var paramId = serializer.IsReader ? 0 : TriggerParameters[i];
+                    var paramId = serializer.IsReader ? 0 : thisParamId;
                     serializer.SerializeValue(ref paramId);
 
                     if (serializer.IsReader)
