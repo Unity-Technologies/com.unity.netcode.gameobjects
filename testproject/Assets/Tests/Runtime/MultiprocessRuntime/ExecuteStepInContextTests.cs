@@ -102,6 +102,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator TestExceptionClientSide()
         {
             InitializeContextSteps();
+
             const string exceptionMessageToTest = "This is an exception for TestCoordinator that's expected";
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
@@ -141,53 +142,31 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             InitializeContextSteps();
 
             const int maxValue = 10;
-            const float resendResultTime = 2.0f;
-            bool exitOnFailure = false;
-            int count = 0;
-            bool sendNextResult = true;
-            float lastResultSentTime = 0;
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
+                int count = 0;
+
                 void UpdateFunc(float _)
                 {
-                    if (!exitOnFailure)
+                    TestCoordinator.Instance.WriteTestResultsServerRpc(count++);
+                    if (count > maxValue)
                     {
-                        // We will send if we have another result to send =or= if we haven't received a response back from the server yet.
-                        if (sendNextResult || lastResultSentTime < Time.realtimeSinceStartup)
-                        {
-                            if (!sendNextResult && lastResultSentTime < Time.realtimeSinceStartup)
-                            {
-                                Debug.LogWarning($"{nameof(ContextTestWithAdditionalWait)} is resending due to timeout receiving result received response for count value = {count}!");
-                            }
-
-                            TestCoordinator.Instance.WriteTestResultsServerRpc(count);
-                            lastResultSentTime = resendResultTime + Time.realtimeSinceStartup;
-                            sendNextResult = false;
-                        }
-
-                        // if we're finished sending our test count, then remove ourselves from the update loop
-                        if (count >= maxValue)
-                        {
-                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
-                        }
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
                     }
                 }
 
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
-
             }, additionalIsFinishedWaiter: () =>
             {
                 int nbFinished = 0;
-                if (!exitOnFailure)
+                for (int i = 0; i < m_WorkerCountToTest; i++)
                 {
-                    for (int i = 0; i < m_WorkerCountToTest; i++)
+                    if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
                     {
-                        if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
-                        {
-                            nbFinished++;
-                        }
+                        nbFinished++;
                     }
                 }
+
                 return nbFinished == m_WorkerCountToTest;
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
@@ -279,3 +258,4 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
     }
 }
+
