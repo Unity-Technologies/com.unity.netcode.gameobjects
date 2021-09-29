@@ -263,8 +263,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(m_ServerEvents.Count, previousServerEventsCount);
             Assert.AreEqual(m_ClientsEvents[0].Count, previousClientEventsCount);
 
-            m_Server.Shutdown();
-
             yield return null;
         }
     }
