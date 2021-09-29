@@ -13,6 +13,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             s_Logger.Log(msg);
         }
+
+        public static void LogError(string msg)
+        {
+            s_Logger.LogError("", msg);
+        }
+
+        public static void LogWarning(string msg)
+        {
+            s_Logger.LogWarning("", msg);
+        }
     }
 
     public class MultiprocessLogHandler : ILogHandler

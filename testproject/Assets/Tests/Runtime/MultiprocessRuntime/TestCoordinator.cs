@@ -5,7 +5,6 @@ using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using Unity.Netcode.MultiprocessRuntimeTests;
 
 /// <summary>
@@ -43,7 +42,7 @@ public class TestCoordinator : NetworkBehaviour
         BaseMultiprocessTests.MultiProcessLog("Awake");
         if (Instance != null)
         {
-            Debug.LogError("Multiple test coordinator, destroying this instance");
+            BaseMultiprocessTests.MultiProcessLog("Multiple test coordinator, destroying this instance");
             Destroy(gameObject);
             return;
         }
@@ -129,7 +128,7 @@ public class TestCoordinator : NetworkBehaviour
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
-            Debug.Log($"received disconnect from {clientId}, quitting");
+            BaseMultiprocessTests.MultiProcessLog($"received disconnect from {clientId}, quitting");
             QuitApplication();
         }
     }
@@ -348,7 +347,7 @@ public class TestCoordinator : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
-        Debug.LogError($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
+        BaseMultiprocessTests.MultiProcessLog($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
     }
 }
 

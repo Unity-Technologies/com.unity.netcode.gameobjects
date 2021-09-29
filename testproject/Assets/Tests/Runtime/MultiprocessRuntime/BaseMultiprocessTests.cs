@@ -202,7 +202,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             string dString = DateTime.Now.ToString("G");
             MultiprocessLogger.Log($" - MPLOG - {dString} : {testName} : {msg}");
-            
         }
     }
 }
