@@ -91,7 +91,7 @@ namespace Unity.Netcode
         internal SceneEventTypes SceneEventType;
         internal LoadSceneMode LoadSceneMode;
         internal Guid SceneEventProgressId;
-        internal Guid SceneEventId;
+        internal uint SceneEventId;
 
 
         internal uint SceneIndex;
@@ -768,7 +768,7 @@ namespace Unity.Netcode
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            SceneEventId = Guid.NewGuid();
+            SceneEventId = XXHash.Hash32(Guid.NewGuid().ToString());
         }
     }
 }

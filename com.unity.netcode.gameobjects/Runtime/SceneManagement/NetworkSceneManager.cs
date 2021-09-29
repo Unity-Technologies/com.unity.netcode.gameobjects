@@ -186,7 +186,7 @@ namespace Unity.Netcode
         /// Client and Server:
         /// Used for all scene event processing
         /// </summary>
-        internal Dictionary<Guid, SceneEventData> SceneEventDataQueue;
+        internal Dictionary<uint, SceneEventData> SceneEventDataStore;
 
 
         private NetworkManager m_NetworkManager { get; }
@@ -214,12 +214,12 @@ namespace Unity.Netcode
         /// </summary>
         public void Dispose()
         {
-            foreach (var keypair in SceneEventDataQueue)
+            foreach (var keypair in SceneEventDataStore)
             {
                 keypair.Value.Dispose();
             }
-            SceneEventDataQueue.Clear();
-            SceneEventDataQueue = null;
+            SceneEventDataStore.Clear();
+            SceneEventDataStore = null;
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace Unity.Netcode
         internal SceneEventData BeginSceneEvent()
         {
             var sceneEventData = new SceneEventData(m_NetworkManager);
-            SceneEventDataQueue.Add(sceneEventData.SceneEventId, sceneEventData);
+            SceneEventDataStore.Add(sceneEventData.SceneEventId, sceneEventData);
             return sceneEventData;
         }
 
@@ -237,12 +237,12 @@ namespace Unity.Netcode
         /// Disposes and removes SceneEventData object for the scene event
         /// </summary>
         /// <param name="sceneEventId">SceneEventId to end</param>
-        internal void EndSceneEvent(Guid sceneEventId)
+        internal void EndSceneEvent(uint sceneEventId)
         {
-            if (SceneEventDataQueue.ContainsKey(sceneEventId))
+            if (SceneEventDataStore.ContainsKey(sceneEventId))
             {
-                SceneEventDataQueue[sceneEventId].Dispose();
-                SceneEventDataQueue.Remove(sceneEventId);
+                SceneEventDataStore[sceneEventId].Dispose();
+                SceneEventDataStore.Remove(sceneEventId);
             }
             else
             {
@@ -307,7 +307,7 @@ namespace Unity.Netcode
         internal NetworkSceneManager(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            SceneEventDataQueue = new Dictionary<Guid, SceneEventData>();
+            SceneEventDataStore = new Dictionary<uint, SceneEventData>();
 
             GenerateScenesInBuild();
 
@@ -480,7 +480,7 @@ namespace Unity.Netcode
         /// Generic sending of scene event data
         /// </summary>
         /// <param name="targetClientIds">array of client identifiers to receive the scene event message</param>
-        private void SendSceneEventData(Guid sceneEventId, ulong[] targetClientIds)
+        private void SendSceneEventData(uint sceneEventId, ulong[] targetClientIds)
         {
             if (targetClientIds.Length == 0)
             {
@@ -490,12 +490,12 @@ namespace Unity.Netcode
             }
             var message = new SceneEventMessage
             {
-                EventData = SceneEventDataQueue[sceneEventId]
+                EventData = SceneEventDataStore[sceneEventId]
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, targetClientIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                targetClientIds, (uint)SceneEventDataQueue[sceneEventId].SceneEventType, ScenesInBuild[(int)SceneEventDataQueue[sceneEventId].SceneIndex], size);
+                targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, ScenesInBuild[(int)SceneEventDataStore[sceneEventId].SceneIndex], size);
         }
 
         /// <summary>
@@ -734,9 +734,9 @@ namespace Unity.Netcode
         /// Client Side:
         /// Handles <see cref="SceneEventData.SceneEventTypes.S2C_Unload"/> scene events.
         /// </summary>
-        private void OnClientUnloadScene(Guid sceneEventId)
+        private void OnClientUnloadScene(uint sceneEventId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             if (!IsSceneIndexValid(sceneEventData.SceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -807,9 +807,9 @@ namespace Unity.Netcode
         /// Server and Client:
         /// Invoked when an additively loaded scene is unloaded
         /// </summary>
-        private void OnSceneUnloaded(Guid sceneEventId)
+        private void OnSceneUnloaded(uint sceneEventId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             // First thing we do, if we are a server, is to send the unload scene event.
             if (m_NetworkManager.IsServer)
             {
@@ -945,9 +945,9 @@ namespace Unity.Netcode
         /// Handles both forms of scene loading
         /// </summary>
         /// <param name="objectStream">Stream data associated with the event</param>
-        private void OnClientSceneLoadingEvent(Guid sceneEventId)
+        private void OnClientSceneLoadingEvent(uint sceneEventId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             if (!IsSceneIndexValid(sceneEventData.SceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -1029,9 +1029,9 @@ namespace Unity.Netcode
         /// Client and Server:
         /// Generic on scene loaded callback method to be called upon a scene loading
         /// </summary>
-        private void OnSceneLoaded(Guid sceneEventId, string sceneName)
+        private void OnSceneLoaded(uint sceneEventId, string sceneName)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
             if (!nextScene.isLoaded || !nextScene.IsValid())
             {
@@ -1084,9 +1084,9 @@ namespace Unity.Netcode
         /// Server side:
         /// On scene loaded callback method invoked by OnSceneLoading only
         /// </summary>
-        private void OnServerLoadedScene(Guid sceneEventId, Scene scene)
+        private void OnServerLoadedScene(uint sceneEventId, Scene scene)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             // Register in-scene placed NetworkObjects with spawn manager
             foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
             {
@@ -1144,9 +1144,9 @@ namespace Unity.Netcode
         /// Client side:
         /// On scene loaded callback method invoked by OnSceneLoading only
         /// </summary>
-        private void OnClientLoadedScene(Guid sceneEventId, Scene scene)
+        private void OnClientLoadedScene(uint sceneEventId, Scene scene)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             sceneEventData.DeserializeScenePlacedObjects();
 
             sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete;
@@ -1245,9 +1245,9 @@ namespace Unity.Netcode
         /// Note: This can recurse one additional time by the client if the current scene loaded by the client
         /// is already loaded.
         /// </summary>
-        private void OnClientBeginSync(Guid sceneEventId)
+        private void OnClientBeginSync(uint sceneEventId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             var sceneIndex = sceneEventData.GetNextSceneSynchronizationIndex();
             var sceneHandle = sceneEventData.GetNextSceneSynchronizationHandle();
             if (!IsSceneIndexValid(sceneIndex))
@@ -1330,9 +1330,9 @@ namespace Unity.Netcode
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
         /// <param name="sceneIndex">Netcode scene index that was loaded</param>
-        private void ClientLoadedSynchronization(Guid sceneEventId, uint sceneIndex, int sceneHandle)
+        private void ClientLoadedSynchronization(uint sceneEventId, uint sceneIndex, int sceneHandle)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             var sceneName = ScenesInBuild[(int)sceneIndex];
             var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
 
@@ -1398,9 +1398,9 @@ namespace Unity.Netcode
         /// Handles incoming Scene_Event messages for clients
         /// </summary>
         /// <param name="stream">data associated with the event</param>
-        private void HandleClientSceneEvent(Guid sceneEventId)
+        private void HandleClientSceneEvent(uint sceneEventId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             switch (sceneEventData.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Load:
@@ -1488,9 +1488,9 @@ namespace Unity.Netcode
         /// Server Side:
         /// Handles incoming Scene_Event messages for host or server
         /// </summary>
-        private void HandleServerSceneEvent(Guid sceneEventId, ulong clientId)
+        private void HandleServerSceneEvent(uint sceneEventId, ulong clientId)
         {
-            var sceneEventData = SceneEventDataQueue[sceneEventId];
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             switch (sceneEventData.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.C2S_LoadComplete:
