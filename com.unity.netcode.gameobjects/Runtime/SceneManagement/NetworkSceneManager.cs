@@ -1087,10 +1087,7 @@ namespace Unity.Netcode
                         EventData = SceneEventData
                     };
                     var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-                    var bytesReported = m_NetworkManager.LocalClientId == clientId
-                            ? 0
-                            : size;
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, bytesReported);
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)SceneEventData.SceneEventType, scene.name, size);
                 }
             }
 
@@ -1191,11 +1188,8 @@ namespace Unity.Netcode
                 EventData = ClientSynchEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-            var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                clientId, (uint)ClientSynchEventData.SceneEventType, "", bytesReported);
+                clientId, (uint)ClientSynchEventData.SceneEventType, string.Empty, size);
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1528,13 +1522,8 @@ namespace Unity.Netcode
             {
                 SceneEventData.Deserialize(reader);
 
-                var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : reader.Length;
-
-
                 m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                   clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], bytesReported);
+                   clientId, (uint)SceneEventData.SceneEventType, ScenesInBuild[(int)SceneEventData.SceneIndex], reader.Length);
 
                 if (SceneEventData.IsSceneEventClientSide())
                 {

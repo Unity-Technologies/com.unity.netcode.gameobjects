@@ -88,10 +88,6 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-        }
-
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
         }

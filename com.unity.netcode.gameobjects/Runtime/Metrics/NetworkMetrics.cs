@@ -185,14 +185,6 @@ namespace Unity.Netcode
             m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-            foreach (var receiverClientId in receiverClientIds)
-            {
-                TrackObjectDestroySent(receiverClientId, networkObjectId, gameObjectName, bytesCount);
-            }
-        }
-
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
