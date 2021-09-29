@@ -1297,12 +1297,12 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds, bool serverCanSendToServerId = false)
+        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
             // Prevent server sending to itself
-            if (IsServer && !serverCanSendToServerId)
+            if (IsServer)
             {
                 ulong* nonServerIds = stackalloc ulong[clientIds.Count];
                 int newIdx = 0;
@@ -1326,11 +1326,11 @@ namespace Unity.Netcode
         }
 
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
-            ulong* clientIds, int numClientIds, bool serverCanSendToServerId = false)
+            ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer && !serverCanSendToServerId)
+            if (IsServer)
             {
                 ulong* nonServerIds = stackalloc ulong[numClientIds];
                 int newIdx = 0;
@@ -1360,11 +1360,11 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId, bool serverCanSendToServerId = false)
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
-            if (IsServer && clientId == ServerClientId && !serverCanSendToServerId)
+            if (IsServer && clientId == ServerClientId)
             {
                 return 0;
             }

@@ -69,17 +69,20 @@ namespace Unity.Netcode
                 RpcData = writer
             };
 
+            var rpcMessageSize = 0;
+
             // If we are a server/host then we just no op and send to ourself
             if (IsHost || IsServer)
             {
-                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
-                tempBuffer.Dispose();
-
-                return;
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                rpcMessageSize = tempBuffer.Length;
+            }
+            else
+            {
+                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
             }
 
-            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -129,17 +132,48 @@ namespace Unity.Netcode
             };
             int messageSize;
 
+            // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
+            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            bool shouldSendToHost = false;
+
             if (rpcParams.Send.TargetClientIds != null)
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds, true);
+                foreach (var clientId in rpcParams.Send.TargetClientIds)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
+                }
+
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
+                foreach (var clientId in rpcParams.Send.TargetClientIdsNativeArray)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
+                }
+
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds, true);
+                shouldSendToHost = IsHost;
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+            }
+
+            // If we are a server/host then we just no op and send to ourself
+            if (shouldSendToHost)
+            {
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                messageSize = tempBuffer.Length;
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
