@@ -681,7 +681,9 @@ namespace Unity.Netcode
         public override void Shutdown()
         {
             if (!m_Driver.IsCreated)
+            {
                 return;
+            }
 
             // Flush the driver's internal send queue. If we're shutting down because the
             // NetworkManager is shutting down, it probably has disconnected some peer(s)
