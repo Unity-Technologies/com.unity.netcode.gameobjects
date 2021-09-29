@@ -680,6 +680,11 @@ namespace Unity.Netcode
 
         public override void Shutdown()
         {
+            // Flush the driver's internal send queue. If we're shutting down because the
+            // NetworkManager is shutting down, it probably has disconnected some peer(s)
+            // in the process and we want to get these disconnect messages on the wire.
+            m_Driver.ScheduleFlushSend(default).Complete();
+
             DisposeDriver();
 
             foreach (var queue in m_SendQueue.Values)
