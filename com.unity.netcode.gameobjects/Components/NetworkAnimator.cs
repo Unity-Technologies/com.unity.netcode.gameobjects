@@ -635,6 +635,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /* This function generates the client ids so that we can (in client mode anyway) send messages
+          * to every client except:
+          *
+          *  - the origin client
+          *  - and the server client (because we're sending this RPC from the server)
+          */
         private ulong[] GetTargetClientIds(ulong originClientId)
         {
 
