@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.6.0-pre.2",
+      "version": "1.6.0",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -43,7 +43,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.multiplayer.tools": {
-      "version": "0.0.1-preview.8",
+      "version": "0.0.1-preview.9",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -86,7 +86,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.test-framework": {
-      "version": "1.1.26",
+      "version": "1.1.29",
       "depth": 0,
       "source": "registry",
       "dependencies": {
