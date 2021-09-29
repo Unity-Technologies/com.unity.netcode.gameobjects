@@ -267,7 +267,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteErrorServerRpc(e.Message, true);
+            WriteErrorServerRpc(e.Message, ignoreException);
             if (!ignoreException)
             {
                 throw;
