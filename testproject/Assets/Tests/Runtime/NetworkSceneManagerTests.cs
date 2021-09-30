@@ -545,6 +545,12 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// This tests the client synchronization process for the client side
+    /// in more of a real world scenario where the client will actually load
+    /// scenes.  MultiInstance tests only loads scenes on the server since
+    /// the client(s) and server both share the same hierarchy scene space.
+    /// </summary>
     public class NetworkSceneManagerSynchronizationTests
     {
         private const int k_ClientInstanceCount = 1;
@@ -557,8 +563,9 @@ namespace TestProject.RuntimeTests
 
         private List<Scene> m_ScenesLoaded = new List<Scene>();
 
-        private Scene m_SceneBeingUnloaded;
+        private List<Scene> m_ScenesClientLoaded = new List<Scene>();
 
+        private Scene m_SceneBeingUnloaded;
 
         [SetUp]
         public void Setup()
@@ -574,6 +581,18 @@ namespace TestProject.RuntimeTests
 
         private int m_CurrentScenesLoadedCount;
         private bool m_LoadNextScene;
+        private bool m_ClientSynchronized;
+        private int m_FrameCountAfterSynchronization;
+
+        private bool VerifySceneToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            // Only allow the client to load the AdditiveSceneMultiInstance scene that has two NetworkObjects within it.
+            if (sceneName == k_SceneToLoad)
+            {
+                return true;
+            }
+            return false;
+        }
 
         [UnityTest]
         public IEnumerator MultiSceneSynchronizationTest()
@@ -583,16 +602,39 @@ namespace TestProject.RuntimeTests
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }));
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_ServerNetworkManager.SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.5f);
 
-            while(LoadNextScene())
+            while (LoadNextScene())
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+            var currentFrameCount = Time.frameCount;
+
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            m_ClientNetworkManagers[0].StartClient();
+            // We disable the client pass through for MultiInstance tests in order to get
+            // the client to actually load scenes.  We control which scenes it can load
+            // via VerifySceneBeforeLoading.
+            m_ClientNetworkManagers[0].SceneManager.BypassClientPassThrough = true;
+            m_ClientNetworkManagers[0].SceneManager.VerifySceneBeforeLoading = VerifySceneToLoad;
+
+            // Wait for the client to load all of the valid scenes
+            while (!m_ClientSynchronized)
             {
                 yield return new WaitForSeconds(0.1f);
             }
 
-            m_ClientNetworkManagers[0].StartClient();
+            SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+            m_ClientNetworkManagers[0].SceneManager.BypassClientPassThrough = false;
+            var totalFramesToSynchronize = m_FrameCountAfterSynchronization - currentFrameCount;
 
-            yield return new WaitForSeconds(1.0f);
+            Debug.Log($"Client took {totalFramesToSynchronize} frames to synchronize, FastBufferReader persisted longer than a 4 frame period without errors.");
+
+            // Make sure we took longer than 4 frames to synchronize everything.
+            // Let us check for 8 frames or longer
+            Assert.True((m_FrameCountAfterSynchronization - currentFrameCount > 8));
+
+            // Unload all scenes loaded by the server (client simulates unloading)
             var reverseScenes = new List<Scene>(m_ScenesLoaded);
             reverseScenes.Reverse();
             foreach (var scene in reverseScenes)
@@ -604,8 +646,48 @@ namespace TestProject.RuntimeTests
                     yield return new WaitForSeconds(0.1f);
                 }
             }
+
+            // We have to unload the "simulated" client loaded scenes via the SceneManager
+            // since we are having to bypass the scene loading during synchronization in order
+            // to simulate a reasonable time frame (in frames passed) that it would take to load
+            // a couple of scenes (or one reasonably populated scene).
+            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
+            reverseScenes = new List<Scene>(m_ScenesClientLoaded);
+            reverseScenes.Reverse();
+            foreach (var scene in reverseScenes)
+            {
+                SceneManager.UnloadSceneAsync(scene);
+                while (m_ScenesClientLoaded.Contains(scene))
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+            SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
+            // When we are done, we should only be left with the test runner temporary scene
+            Assert.True(SceneManager.sceneCount == 1);
         }
 
+        /// <summary>
+        /// Client clean up scenes
+        /// </summary>
+        /// <param name="sceneUnloaded"></param>
+        private void SceneManager_sceneUnloaded(Scene sceneUnloaded)
+        {
+            m_ScenesClientLoaded.Remove(sceneUnloaded);
+        }
+
+        /// <summary>
+        ///  Track all scenes we force loaded on the client to simulate real world scene loading
+        /// times to assure we don't get any errors from the FastBuffer reader.
+        /// </summary>
+        private void SceneManager_sceneLoaded(Scene sceneLoaded, LoadSceneMode arg1)
+        {
+            m_ScenesClientLoaded.Add(sceneLoaded);
+        }
+
+        /// <summary>
+        /// Load the next scene until k_MaximumScenesToLoad is reached
+        /// </summary>
         private bool LoadNextScene()
         {
             if (m_LoadNextScene)
@@ -622,6 +704,12 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Track scene events to determine when:
+        /// Scenes are loaded or unloaded
+        /// The client is finished synchronizing
+        /// </summary>
+        /// <param name="sceneEvent"></param>
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
             switch (sceneEvent.SceneEventType)
@@ -651,8 +739,16 @@ namespace TestProject.RuntimeTests
                         }
                         break;
                     }
+                case SceneEventData.SceneEventTypes.C2S_SyncComplete:
+                    {
+                        if (sceneEvent.ClientId != m_ServerNetworkManager.LocalClientId)
+                        {
+                            m_FrameCountAfterSynchronization = Time.frameCount;
+                            m_ClientSynchronized = true;
+                        }
+                        break;
+                    }
             }
         }
-
     }
 }
