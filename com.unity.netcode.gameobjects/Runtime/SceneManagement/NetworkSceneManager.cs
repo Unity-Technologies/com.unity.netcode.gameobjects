@@ -1248,7 +1248,7 @@ namespace Unity.Netcode
             EndSceneEvent(sceneEventData.SceneEventId);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
         internal bool BypassClientPassThrough;
 #endif
 
