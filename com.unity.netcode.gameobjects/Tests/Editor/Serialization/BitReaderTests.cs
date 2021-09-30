@@ -262,7 +262,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public unsafe void TestReadingMultipleBytesToLongs([Range(1U, 64U)] uint numBits)
+        public unsafe void TestReadingMultipleBytesToLongs([NUnit.Framework.Range(1U, 64U)] uint numBits)
         {
             ulong value = 0xFFFFFFFFFFFFFFFF;
             var reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
@@ -285,6 +285,34 @@ namespace Unity.Netcode.EditorTests
                     bitReader.ReadBits(out readValue, numBits);
                 }
                 Assert.AreEqual(value & mask, readValue);
+            }
+        }
+
+        [Test]
+        public unsafe void TestReadingMultipleBytesToLongsMisaligned([NUnit.Framework.Range(1U, 63U)] uint numBits)
+        {
+            ulong value = 0b01010101_10101010_01010101_10101010_01010101_10101010_01010101_10101010;
+            var reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
+            using (reader)
+            {
+                ulong* asUlong = (ulong*)reader.GetUnsafePtr();
+
+                Assert.AreEqual(value, *asUlong);
+                var mask = 0UL;
+                for (var i = 0; i < numBits; ++i)
+                {
+                    mask |= (1UL << i);
+                }
+
+                ulong readValue;
+
+                Assert.IsTrue(reader.TryBeginRead(sizeof(ulong)));
+                using (var bitReader = reader.EnterBitwiseContext())
+                {
+                    bitReader.ReadBit(out bool unused);
+                    bitReader.ReadBits(out readValue, numBits);
+                }
+                Assert.AreEqual((value >> 1) & mask, readValue);
             }
         }
 

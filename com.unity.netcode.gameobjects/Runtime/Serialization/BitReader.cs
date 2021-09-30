@@ -212,7 +212,7 @@ namespace Unity.Netcode
             int pos = m_BitPosition >> 3;
             int shift1 = 8 - off;
 
-            value = (byte)((m_BufferPointer[pos] >> shift1) | (m_BufferPointer[(m_BitPosition += 8) >> 3] << shift1));
+            value = (byte)((m_BufferPointer[pos] >> off) | (m_BufferPointer[(m_BitPosition += 8) >> 3] << shift1));
         }
     }
 }
