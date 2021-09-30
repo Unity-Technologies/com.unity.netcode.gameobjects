@@ -68,12 +68,14 @@ namespace TestProject.RuntimeTests.Support
             }
         }
 
-        public void OnDestroy()
+        public override void OnDestroy()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {
                 NetworkUpdateLoop.UnregisterNetworkUpdate(this, stage);
             }
+
+            base.OnDestroy();
         }
 
         private void RunTest()

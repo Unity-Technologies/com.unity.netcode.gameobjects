@@ -149,7 +149,7 @@ namespace TestProject.RuntimeTests
             int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount)
+            while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount && !handler.WasSpawned)
             {
                 if (Time.frameCount > maxFrames)
                 {
@@ -167,7 +167,6 @@ namespace TestProject.RuntimeTests
 
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            Assert.True(handler.WasSpawned);
             var lastFrameNumber = Time.frameCount + 1;
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
             Assert.True(handler.WasDestroyed);
