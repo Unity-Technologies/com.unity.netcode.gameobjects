@@ -52,11 +52,16 @@ namespace Unity.Netcode
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="messageBuffer">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendUnnamedMessage(List<ulong> clientIds, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendUnnamedMessage(IReadOnlyList<ulong> clientIds, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
+            }
+
+            if (clientIds == null)
+            {
+                clientIds = m_NetworkManager.ConnectedClientsIds;
             }
 
             var message = new UnnamedMessage
@@ -212,11 +217,16 @@ namespace Unity.Netcode
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="messageStream">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
-        public void SendNamedMessage(string messageName, List<ulong> clientIds, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        public void SendNamedMessage(string messageName, IReadOnlyList<ulong> clientIds, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
+            }
+
+            if (clientIds == null)
+            {
+                clientIds = m_NetworkManager.ConnectedClientsIds;
             }
 
             ulong hash = 0;

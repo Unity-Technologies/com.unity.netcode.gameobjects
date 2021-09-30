@@ -85,5 +85,47 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(messageContent, secondReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, secondReceivedMessageSender);
         }
+
+        [UnityTest]
+        public IEnumerator SendingUnnamedMessageWithNullClientListSendsToAll()
+        {
+            var messageContent = Guid.NewGuid();
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(
+                    null,
+                    writer);
+            }
+
+            ulong firstReceivedMessageSender = 0;
+            var firstReceivedMessageContent = new Guid();
+            FirstClient.CustomMessagingManager.OnUnnamedMessage +=
+                (ulong sender, FastBufferReader reader) =>
+                {
+                    firstReceivedMessageSender = sender;
+
+                    reader.ReadValueSafe(out firstReceivedMessageContent);
+                };
+
+            ulong secondReceivedMessageSender = 0;
+            var secondReceivedMessageContent = new Guid();
+            SecondClient.CustomMessagingManager.OnUnnamedMessage +=
+                (ulong sender, FastBufferReader reader) =>
+                {
+                    secondReceivedMessageSender = sender;
+
+                    reader.ReadValueSafe(out secondReceivedMessageContent);
+                };
+
+            yield return new WaitForSeconds(0.2f);
+
+            Assert.AreEqual(messageContent, firstReceivedMessageContent);
+            Assert.AreEqual(m_ServerNetworkManager.LocalClientId, firstReceivedMessageSender);
+
+            Assert.AreEqual(messageContent, secondReceivedMessageContent);
+            Assert.AreEqual(m_ServerNetworkManager.LocalClientId, secondReceivedMessageSender);
+        }
     }
 }
