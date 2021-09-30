@@ -452,7 +452,16 @@ namespace Unity.Netcode
 
             if (m_State == State.Connected)
             {
-                m_Driver.Disconnect(ParseClientId(m_ServerClientId));
+                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0) {
+
+                    // If we successfully disconnect we dispatch a local disconnect message
+                    // this how uNET and other transports worked and so this is just keeping with the old behavior
+                    // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        m_ServerClientId,
+                        default(ArraySegment<byte>),
+                        Time.realtimeSinceStartup);
+                }
             }
         }
 
