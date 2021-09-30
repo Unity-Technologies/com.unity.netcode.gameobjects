@@ -448,8 +448,6 @@ namespace Unity.Netcode
 
         public override void DisconnectLocalClient()
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectLocalClient should be called on a connected client");
-
             if (m_State == State.Connected)
             {
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0) {
@@ -461,6 +459,8 @@ namespace Unity.Netcode
                         m_ServerClientId,
                         default(ArraySegment<byte>),
                         Time.realtimeSinceStartup);
+
+                    m_State = State.Disconnected;
                 }
             }
         }
