@@ -709,6 +709,9 @@ namespace Unity.Netcode
 
             // make sure we don't leak queues when we shutdown
             m_SendQueue.Clear();
+
+            // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
+            m_ServerClientId = 0;
         }
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
