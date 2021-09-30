@@ -549,10 +549,15 @@ namespace TestProject.RuntimeTests
     {
         private const int k_ClientInstanceCount = 1;
         private const int k_MaximumScenesToLoad = 6;
+        private const string k_BaseSceneToLoad = "UnitTestBaseScene";
         private const string k_SceneToLoad = "AdditiveSceneMultiInstance";
 
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
+
+        private List<Scene> m_ScenesLoaded = new List<Scene>();
+
+        private Scene m_SceneBeingUnloaded;
 
 
         [SetUp]
@@ -577,14 +582,28 @@ namespace TestProject.RuntimeTests
             m_LoadNextScene = true;
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }));
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            m_ServerNetworkManager.SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
+            yield return new WaitForSeconds(0.2f);
+
             while(LoadNextScene())
             {
                 yield return new WaitForSeconds(0.1f);
             }
+
             m_ClientNetworkManagers[0].StartClient();
 
-
-
+            yield return new WaitForSeconds(1.0f);
+            var reverseScenes = new List<Scene>(m_ScenesLoaded);
+            reverseScenes.Reverse();
+            foreach (var scene in reverseScenes)
+            {
+                m_SceneBeingUnloaded = scene;
+                m_ServerNetworkManager.SceneManager.UnloadScene(m_SceneBeingUnloaded);
+                while (m_ScenesLoaded.Contains(m_SceneBeingUnloaded))
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
         }
 
         private bool LoadNextScene()
@@ -613,13 +632,27 @@ namespace TestProject.RuntimeTests
                         {
                             if (sceneEvent.SceneName == k_SceneToLoad)
                             {
+                                m_ScenesLoaded.Add(sceneEvent.Scene);
                                 m_LoadNextScene = true;
                                 m_CurrentScenesLoadedCount++;
                             }
+                            if (sceneEvent.SceneName == k_BaseSceneToLoad)
+                            {
+                                m_ScenesLoaded.Add(sceneEvent.Scene);
+                            }
+                        }
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.C2S_UnloadComplete:
+                    {
+                        if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
+                        {
+                            m_ScenesLoaded.Remove(m_SceneBeingUnloaded);
                         }
                         break;
                     }
             }
         }
+
     }
 }
