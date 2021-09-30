@@ -173,7 +173,7 @@ namespace Unity.Netcode.RuntimeTests
                     // ...and we should see the writes to the private var only on the server & the owner,
                     //  but the public variable everywhere
                     return
-                        m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue &&
+                        m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue;
                 }
             );
         }
