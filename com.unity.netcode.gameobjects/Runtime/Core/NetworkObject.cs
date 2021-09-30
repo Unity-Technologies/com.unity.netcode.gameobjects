@@ -514,7 +514,7 @@ namespace Unity.Netcode
         /// Despawns the <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
         /// </summary>
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
-        public void Despawn(bool destroy = false)
+        public void Despawn(bool destroy = true)
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
@@ -694,7 +694,7 @@ namespace Unity.Netcode
 
             unsafe
             {
-                var maxCount = NetworkManager.ConnectedClientsIds.Length;
+                var maxCount = NetworkManager.ConnectedClientsIds.Count;
                 ulong* clientIds = stackalloc ulong[maxCount];
                 int idx = 0;
                 foreach (var clientId in NetworkManager.ConnectedClientsIds)

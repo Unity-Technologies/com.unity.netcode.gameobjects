@@ -90,7 +90,9 @@ namespace Unity.Netcode
 
         internal SceneEventTypes SceneEventType;
         internal LoadSceneMode LoadSceneMode;
-        internal Guid SceneEventGuid;
+        internal Guid SceneEventProgressId;
+        internal uint SceneEventId;
+
 
         internal uint SceneIndex;
         internal int SceneHandle;
@@ -317,7 +319,7 @@ namespace Unity.Netcode
             // Write the scene event progress Guid
             if (SceneEventType != SceneEventTypes.S2C_Sync)
             {
-                writer.WriteValueSafe(SceneEventGuid);
+                writer.WriteValueSafe(SceneEventProgressId);
             }
 
             // Write the scene index and handle
@@ -448,7 +450,7 @@ namespace Unity.Netcode
 
             if (SceneEventType != SceneEventTypes.S2C_Sync)
             {
-                reader.ReadValueSafe(out SceneEventGuid);
+                reader.ReadValueSafe(out SceneEventProgressId);
             }
 
             reader.ReadValueSafe(out SceneIndex);
@@ -768,6 +770,7 @@ namespace Unity.Netcode
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
+            SceneEventId = XXHash.Hash32(Guid.NewGuid().ToString());
         }
     }
 }
