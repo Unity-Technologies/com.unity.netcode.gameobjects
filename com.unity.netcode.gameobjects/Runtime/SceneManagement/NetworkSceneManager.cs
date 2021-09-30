@@ -934,10 +934,10 @@ namespace Unity.Netcode
             var sceneEventData = BeginSceneEvent();
 
             // Now set up the current scene event
-            SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            SceneEventData.SceneIndex = (uint)sceneBuildIndex;
-            SceneEventData.LoadSceneMode = loadSceneMode;
+            sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
+            sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
+            sceneEventData.SceneIndex = (uint)sceneBuildIndex;
+            sceneEventData.LoadSceneMode = loadSceneMode;
 
 
             // This both checks to make sure the scene is valid and if not resets the active scene event
@@ -969,8 +969,8 @@ namespace Unity.Netcode
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 AsyncOperation = sceneLoad,
-                SceneEventType = SceneEventData.SceneEventType,
-                LoadSceneMode = SceneEventData.LoadSceneMode,
+                SceneEventType = sceneEventData.SceneEventType,
+                LoadSceneMode = sceneEventData.LoadSceneMode,
                 SceneName = ScenesInBuild[sceneBuildIndex],
                 ClientId = m_NetworkManager.ServerClientId
             });
