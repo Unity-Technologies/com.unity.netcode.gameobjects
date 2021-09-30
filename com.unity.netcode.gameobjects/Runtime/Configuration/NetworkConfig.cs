@@ -139,11 +139,11 @@ namespace Unity.Netcode
         public bool EnableNetworkLogs = true;
 
         /// <summary>
-        /// Whether or not to enable Snapshot System for variable updates. Currently unsupported.
+        /// Whether or not to enable Snapshot System for variable updates. Not supported in this version.
         /// </summary>
         public bool UseSnapshotDelta { get; } = false;
         /// <summary>
-        /// Whether or not to enable Snapshot System for spawn and despawn commands. Working but experimental.
+        /// Whether or not to enable Snapshot System for spawn and despawn commands. Not supported in this version.
         /// </summary>
         public bool UseSnapshotSpawn { get; } = false;
         /// <summary>
