@@ -262,7 +262,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public unsafe void TestReadingMultipleBytesToLongs([NUnit.Framework.Range(1U, 64U)] uint numBits)
+        public unsafe void TestReadingMultipleBytesToLongs([Range(1U, 64U)] uint numBits)
         {
             ulong value = 0xFFFFFFFFFFFFFFFF;
             var reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
@@ -289,7 +289,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public unsafe void TestReadingMultipleBytesToLongsMisaligned([NUnit.Framework.Range(1U, 63U)] uint numBits)
+        public unsafe void TestReadingMultipleBytesToLongsMisaligned([Range(1U, 63U)] uint numBits)
         {
             ulong value = 0b01010101_10101010_01010101_10101010_01010101_10101010_01010101_10101010;
             var reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
