@@ -39,7 +39,6 @@ namespace Unity.Netcode.Transports.UNET
         private int m_ServerConnectionId;
         private int m_ServerHostId;
 
-        private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetNetcodeClientId(0, 0, true);
 
         protected void LateUpdate()
@@ -171,36 +170,6 @@ namespace Unity.Netcode.Transports.UNET
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
             }
 
-            if (m_ConnectTask != null && hostId == m_ServerHostId && connectionId == m_ServerConnectionId)
-            {
-                if (eventType == NetworkEventType.ConnectEvent)
-                {
-                    // We just got a response to our connect request.
-                    m_ConnectTask.Message = null;
-                    m_ConnectTask.SocketError = networkError == NetworkError.Ok ? System.Net.Sockets.SocketError.Success : System.Net.Sockets.SocketError.SocketError;
-                    m_ConnectTask.State = null;
-                    m_ConnectTask.Success = networkError == NetworkError.Ok;
-                    m_ConnectTask.TransportCode = (byte)networkError;
-                    m_ConnectTask.TransportException = null;
-                    m_ConnectTask.IsDone = true;
-
-                    m_ConnectTask = null;
-                }
-                else if (eventType == NetworkEventType.DisconnectEvent)
-                {
-                    // We just got a response to our connect request.
-                    m_ConnectTask.Message = null;
-                    m_ConnectTask.SocketError = System.Net.Sockets.SocketError.SocketError;
-                    m_ConnectTask.State = null;
-                    m_ConnectTask.Success = false;
-                    m_ConnectTask.TransportCode = (byte)networkError;
-                    m_ConnectTask.TransportException = null;
-                    m_ConnectTask.IsDone = true;
-
-                    m_ConnectTask = null;
-                }
-            }
-
             if (networkError == NetworkError.Timeout)
             {
                 // In UNET. Timeouts are not disconnects. We have to translate that here.
@@ -208,61 +177,28 @@ namespace Unity.Netcode.Transports.UNET
             }
 
             // Translate NetworkEventType to NetEventType
-            switch (eventType)
+            return eventType switch
             {
-                case NetworkEventType.DataEvent:
-                    return NetworkEvent.Data;
-                case NetworkEventType.ConnectEvent:
-                    return NetworkEvent.Connect;
-                case NetworkEventType.DisconnectEvent:
-                    return NetworkEvent.Disconnect;
-                case NetworkEventType.Nothing:
-                    return NetworkEvent.Nothing;
-                case NetworkEventType.BroadcastEvent:
-                    return NetworkEvent.Nothing;
-            }
-
-            return NetworkEvent.Nothing;
+                NetworkEventType.ConnectEvent => NetworkEvent.Connect,
+                NetworkEventType.DisconnectEvent => NetworkEvent.Disconnect,
+                NetworkEventType.DataEvent => NetworkEvent.Data,
+                NetworkEventType.BroadcastEvent => NetworkEvent.Nothing,
+                _ => NetworkEvent.Nothing,
+            };
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            var socketTask = SocketTask.Working;
-
             m_ServerHostId = UnityEngine.Networking.NetworkTransport.AddHost(new HostTopology(GetConfig(), 1), 0, null);
             m_ServerConnectionId = UnityEngine.Networking.NetworkTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
-
-            var connectError = (NetworkError)error;
-
-            switch (connectError)
-            {
-                case NetworkError.Ok:
-                    socketTask.Success = true;
-                    socketTask.TransportCode = error;
-                    socketTask.SocketError = System.Net.Sockets.SocketError.Success;
-                    socketTask.IsDone = false;
-
-                    // We want to continue to wait for the successful connect
-                    m_ConnectTask = socketTask;
-                    break;
-                default:
-                    socketTask.Success = false;
-                    socketTask.TransportCode = error;
-                    socketTask.SocketError = System.Net.Sockets.SocketError.SocketError;
-                    socketTask.IsDone = true;
-                    break;
-            }
-
-            return socketTask.AsTasks();
+            return (NetworkError)error == NetworkError.Ok;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             var topology = new HostTopology(GetConfig(), MaxConnections);
-
             UnityEngine.Networking.NetworkTransport.AddHost(topology, ServerListenPort, null);
-
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
