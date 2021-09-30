@@ -840,7 +840,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsListening_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
-                
+
                 // Debug.LogError(...);
                 instructions.Add(logInstruction);
                 instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
