@@ -418,4 +418,82 @@ namespace TestProject.RuntimeTests
         }
 
     }
+
+    public class NetworkSceneManagerSynchronizationTests
+    {
+        private const int k_ClientInstanceCount = 1;
+        private const int k_MaximumScenesToLoad = 6;
+        private const string k_SceneToLoad = "AdditiveSceneMultiInstance";
+
+        private NetworkManager m_ServerNetworkManager;
+        private NetworkManager[] m_ClientNetworkManagers;
+
+
+        [SetUp]
+        public void Setup()
+        {
+            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            MultiInstanceHelpers.Destroy();
+        }
+
+        private int m_CurrentScenesLoadedCount;
+        private bool m_LoadNextScene;
+
+        [UnityTest]
+        public IEnumerator MultiSceneSynchronizationTest()
+        {
+            m_CurrentScenesLoadedCount = 0;
+            m_LoadNextScene = true;
+            Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }));
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            while(LoadNextScene())
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+            m_ClientNetworkManagers[0].StartClient();
+
+
+
+        }
+
+        private bool LoadNextScene()
+        {
+            if (m_LoadNextScene)
+            {
+
+                if (m_CurrentScenesLoadedCount >= k_MaximumScenesToLoad)
+                {
+                    return false;
+                }
+
+                Assert.That(m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive) == SceneEventProgressStatus.Started);
+                m_LoadNextScene = false;
+            }
+            return true;
+        }
+
+        private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
+        {
+            switch (sceneEvent.SceneEventType)
+            {
+                case SceneEventData.SceneEventTypes.C2S_LoadComplete:
+                    {
+                        if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
+                        {
+                            if (sceneEvent.SceneName == k_SceneToLoad)
+                            {
+                                m_LoadNextScene = true;
+                                m_CurrentScenesLoadedCount++;
+                            }
+                        }
+                        break;
+                    }
+            }
+        }
+    }
 }
