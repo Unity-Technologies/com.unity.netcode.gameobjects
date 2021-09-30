@@ -1297,7 +1297,7 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1325,7 +1325,7 @@ namespace Unity.Netcode
             return m_MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
-        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1360,7 +1360,7 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
