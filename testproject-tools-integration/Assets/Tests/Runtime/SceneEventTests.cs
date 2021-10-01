@@ -474,6 +474,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CSyncSent()
         {
+            // Register a callback so we can notify the test when the scene has finished unloading server side
+            // as this is when the message is sent
+            var waitForServerSyncComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventData.SceneEventTypes.C2S_SyncComplete);
+
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
@@ -487,6 +493,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, sentMetrics.Count);
+
+            // Although the metric should have been emitted, wait for the sync to complete
+            // as the client/server IDs have not been fully initialised until this is done.
+            yield return waitForServerSyncComplete.Wait();
+            Assert.IsTrue(waitForServerSyncComplete.Done);
+
             var sentMetric = sentMetrics.First();
 
             Assert.AreEqual(SceneEventType.S2C_Sync, sentMetric.SceneEventType);
