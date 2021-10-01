@@ -153,7 +153,7 @@ public class MultiprocessOrchestration
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
+            BaseMultiprocessTests.MultiProcessLog($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}", LogType.Error);
             throw;
         }
         return logPath;
