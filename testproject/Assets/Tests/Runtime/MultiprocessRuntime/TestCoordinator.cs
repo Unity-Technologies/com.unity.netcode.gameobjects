@@ -42,7 +42,7 @@ public class TestCoordinator : NetworkBehaviour
         BaseMultiprocessTests.MultiProcessLog("Awake");
         if (Instance != null)
         {
-            BaseMultiprocessTests.MultiProcessLog("Multiple test coordinator, destroying this instance");
+            BaseMultiprocessTests.MultiProcessLog("Multiple test coordinator, destroying this instance", LogType.Error);
             Destroy(gameObject);
             return;
         }
