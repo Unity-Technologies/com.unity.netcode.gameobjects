@@ -259,6 +259,8 @@ namespace Unity.Netcode
             }
         }
 
+        private const string k_UnitySceneExtension = ".unity";
+        private const string k_UnityAssets = "Assets/";
 
         /// <summary>
         /// Gets the scene name from full path to the scene
@@ -267,7 +269,8 @@ namespace Unity.Netcode
         internal string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
-            var end = scenePath.LastIndexOf(".", StringComparison.Ordinal);
+            var end = scenePath.LastIndexOf(k_UnitySceneExtension, StringComparison.Ordinal);
+
             return scenePath.Substring(begin, end - begin);
         }
 
@@ -279,7 +282,46 @@ namespace Unity.Netcode
         /// <returns>full path and scene name</returns>
         internal string GetScenePathAndName(string scenePath)
         {
-            return scenePath.Replace("Assets/", "").Replace(".unity", "");
+            // Get the zero-based index of the first occurrence of 'Assets/'
+            var begin = scenePath.IndexOf(k_UnityAssets, StringComparison.Ordinal) + k_UnityAssets.Length;
+            // Get the zero-based index of the last occurrence of '.unity'
+            var end = scenePath.LastIndexOf(k_UnitySceneExtension, StringComparison.Ordinal);
+            // Return the scene name and path
+            return scenePath.Substring(begin, end - begin);
+        }
+
+        /// <summary>
+        /// Verifies the scene name is valid relative to the scenes in build list
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns>true (Valid) or false (Invalid)</returns>
+        internal bool IsSceneNameValid(string scenePathOrName)
+        {
+            if (scenePathOrName.Contains("/"))
+            {
+                if (scenePathOrName.StartsWith(k_UnityAssets) && scenePathOrName.EndsWith(k_UnitySceneExtension))
+                {
+                    // First check to see if this is a full path to the scene
+                    if (ScenePathsInBuild.Contains(GetScenePathAndName(scenePathOrName)))
+                    {
+                        return true;
+                    }
+                    // Could be an irregular scene path and scene name fall through to check for that
+                }
+
+                // Checks for regular and irregular scene path and scene name
+                if (ScenePathsInBuild.Contains(scenePathOrName))
+                {
+                    return true;
+                }
+            }
+            else
+            if (ScenesInBuild.Contains(scenePathOrName))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -522,35 +564,6 @@ namespace Unity.Netcode
                 targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, ScenesInBuild[(int)SceneEventDataStore[sceneEventId].SceneIndex], size);
         }
 
-        /// <summary>
-        /// Verifies the scene name is valid relative to the scenes in build list
-        /// </summary>
-        /// <param name="sceneName"></param>
-        /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool IsSceneNameValid(string sceneName)
-        {
-            if (sceneName.Contains("/"))
-            {
-                if (sceneName.Contains(".unity"))
-                {
-                    if (ScenePathsInBuild.Contains(sceneName.Replace("Assets/", "").Replace(".unity", "")))
-                    {
-                        return true;
-                    }
-                }
-                else
-                if (ScenePathsInBuild.Contains(sceneName))
-                {
-                    return true;
-                }
-            }
-            else
-            if (ScenesInBuild.Contains(sceneName))
-            {
-                return true;
-            }
-            return false;
-        }
 
         /// <summary>
         /// Used to determine if the index value is within the range of valid
@@ -568,17 +581,21 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneName">scene name</param>
         /// <returns>build index</returns>
-        internal uint GetBuildIndexFromSceneName(string sceneName)
+        internal uint GetBuildIndexFromSceneName(string scenePathOrName)
         {
-            if (IsSceneNameValid(sceneName))
+            if (IsSceneNameValid(scenePathOrName))
             {
-                if (sceneName.Contains("/"))
+                if (scenePathOrName.StartsWith(k_UnityAssets) && scenePathOrName.EndsWith(k_UnitySceneExtension))
                 {
-                    return (uint)ScenePathsInBuild.IndexOf(sceneName);
+                    return (uint)ScenePathsInBuild.IndexOf(GetScenePathAndName(scenePathOrName));
+                }
+                else if (scenePathOrName.Contains("/"))
+                {
+                    return (uint)ScenePathsInBuild.IndexOf(scenePathOrName);
                 }
                 else
                 {
-                    return (uint)ScenesInBuild.IndexOf(sceneName);
+                    return (uint)ScenesInBuild.IndexOf(scenePathOrName);
                 }
             }
             return uint.MaxValue;
@@ -942,7 +959,6 @@ namespace Unity.Netcode
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_LoadComplete;
             sceneEventProgress.LoadSceneMode = loadSceneMode;
             var sceneBuildIndex = (int)GetBuildIndexFromSceneName(sceneName);
-
             var sceneEventData = BeginSceneEvent();
 
             // Now set up the current scene event

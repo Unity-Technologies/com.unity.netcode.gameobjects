@@ -345,6 +345,7 @@ namespace TestProject.RuntimeTests
         private string m_ExpectedSceneName;
         private LoadSceneMode m_ExpectedLoadMode;
         private const string k_AddtiveSceneToLoad = "Tests/Manual/SceneTransitioningAdditive/AdditiveScene1";
+        private const string k_AddtiveSceneToLoadFull = "Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity";
 
         private bool ServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
@@ -392,6 +393,27 @@ namespace TestProject.RuntimeTests
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
             var result = m_ServerNetworkManager.SceneManager.LoadScene(k_AddtiveSceneToLoad, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            // Wait for all clients to load the scene
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            // Unload the scene
+            ResetWait();
+            result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.True(result == SceneEventProgressStatus.Started);
+
+            yield return new WaitWhile(ShouldWait);
+            Assert.IsFalse(m_TimedOut);
+
+            // Test VerifySceneBeforeLoading with both server and client set to true
+            ResetWait();
+            m_ServerVerifyScene = m_ClientVerifyScene = true;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneName = m_CurrentSceneName;
+            m_ExpectedLoadMode = LoadSceneMode.Additive;
+            result = m_ServerNetworkManager.SceneManager.LoadScene(k_AddtiveSceneToLoadFull, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             // Wait for all clients to load the scene
@@ -503,7 +525,7 @@ namespace TestProject.RuntimeTests
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
+        public IEnumerator SceneLoadingSceneEventDataStressTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
         {
             m_MultiSceneTest = true;
             m_ClientVerificationAction = DataPoolVerifySceneClient;
@@ -546,6 +568,73 @@ namespace TestProject.RuntimeTests
             SceneManager.SetActiveScene(currentlyActiveScene);
             m_MultiSceneTest = false;
             yield break;
+        }
+
+        // Used to test various cases of irregular but still valid scene paths
+        private string[] m_FullScenePaths = {
+            "Assets/Assets/Assets.unity/Scenes/myscene1.unity",
+            "Assets/Assets/Assets.unity/Scenes/myscene2.unity.unity",
+            "Assets/Scenes/Assets/Assets.unity/myscene3.unity.unity",
+            "Assets/Scenes/myscene.unity/myscene4.unity",
+            "Assets/Scenes/myscene5.unity",
+        };
+
+        // Used to validate the results of the scene path extracted from the m_FullScenePaths
+        private string[] m_ScenePaths = {
+            "Assets/Assets.unity/Scenes/myscene1",
+            "Assets/Assets.unity/Scenes/myscene2.unity",
+            "Scenes/Assets/Assets.unity/myscene3.unity",
+            "Scenes/myscene.unity/myscene4",
+            "Scenes/myscene5",
+        };
+
+        // Used to validate the scene name extracted from the m_FullScenePaths
+        private string[] m_SceneNames = {
+            "myscene1",
+            "myscene2.unity",
+            "myscene3.unity",
+            "myscene4",
+            "myscene5",
+        };
+
+        /// <summary>
+        /// This validates that:
+        /// The scene path and scene name can be extracted from the full scene path
+        /// That irregular but valid full scene paths can be processed
+        /// That validating a scene name, scene path, or full scene path works properly
+        /// </summary>
+        [Test]
+        public void ScenePathAndNameExtraction()
+        {
+            var networkManager = new NetworkManager();
+            networkManager.DontDestroy = false;
+            var sceneManager = new NetworkSceneManager(networkManager);
+
+            // Test full path extraction to scene path and scene name
+            for (int i = 0; i < m_FullScenePaths.Length; i++)
+            {
+                var result = sceneManager.GetScenePathAndName(m_FullScenePaths[i]);
+                Debug.Log($"Comparing result [{result}] to valid path [{m_ScenePaths[i]}]");
+                Assert.That(result == m_ScenePaths[i]);
+            }
+
+            // Test extracting the scene name from the full scene path and populate simulated scenes in build
+            sceneManager.ScenesInBuild = new List<string>();
+            for (int i = 0; i < m_FullScenePaths.Length; i++)
+            {
+                var result = sceneManager.GetSceneNameFromPath(m_FullScenePaths[i]);
+                Debug.Log($"Comparing result [{result}] to valid scene name [{m_SceneNames[i]}]");
+                Assert.That(result == m_SceneNames[i]);
+                sceneManager.ScenesInBuild.Add(result);
+            }
+
+            // Test scene name validation
+            sceneManager.ScenePathsInBuild = new List<string>(m_ScenePaths);
+            for (int i = 0; i < m_ScenePaths.Length; i++)
+            {
+                Assert.True(sceneManager.IsSceneNameValid(m_FullScenePaths[i]));
+                Assert.True(sceneManager.IsSceneNameValid(m_ScenePaths[i]));
+            }
         }
     }
 }
