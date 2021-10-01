@@ -1,7 +1,5 @@
 <!-- Replace this line with what this PR does and why.  Describe what you'd like reviewers to know, how you applied the Engineering principles, and any interesting tradeoffs made.  Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
 
-<!-- Add performance testing results here. Replace with a short explanation if not applicable. -->
-
 <!-- Add JIRA link here. Short version (e.g. MTT-123) also works and gets auto-linked. -->
 
 <!-- Add RFC link here if applicable. -->
@@ -17,7 +15,6 @@
 
 * No tests have been added.
 * Includes unit tests.
-* Includes performance tests.
 * Includes integration tests.
 * No documentation changes or additions were necessary.
 * Includes documentation for previously-undocumented public API entry points.
