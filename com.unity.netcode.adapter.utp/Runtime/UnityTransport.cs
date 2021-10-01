@@ -450,7 +450,8 @@ namespace Unity.Netcode
         {
             if (m_State == State.Connected)
             {
-                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0) {
+                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
+                {
 
                     m_State = State.Disconnected;
 
