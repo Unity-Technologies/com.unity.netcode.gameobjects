@@ -264,6 +264,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the scene name from full path to the scene
+        /// Note:
+        /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
         /// </summary>
         /// <returns>scene name</returns>
         internal string GetSceneNameFromPath(string scenePath)
@@ -277,6 +279,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Returns the full path of the scene and scene name as it
         /// is displayed in the Build Settings Scenes in Build list.
+        /// Note:
+        /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
         /// </summary>
         /// <param name="scenePath"></param>
         /// <returns>full path and scene name</returns>
@@ -292,6 +296,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Verifies the scene name is valid relative to the scenes in build list
+        /// Note:
+        /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
         /// </summary>
         /// <param name="sceneName"></param>
         /// <returns>true (Valid) or false (Invalid)</returns>
@@ -326,6 +332,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Generates the scenes in build list
+        /// Note:
+        /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
         /// </summary>
         internal void GenerateScenesInBuild()
         {
