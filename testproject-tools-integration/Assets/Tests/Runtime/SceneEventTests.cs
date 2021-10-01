@@ -474,8 +474,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CSyncSent()
         {
-            // Register a callback so we can notify the test when the scene has finished unloading server side
-            // as this is when the message is sent
+            // Register a callback so we can notify the test when the client and server have completed their sync
             var waitForServerSyncComplete = new WaitForSceneEvent(
                 m_ServerNetworkSceneManager,
                 SceneEventData.SceneEventTypes.C2S_SyncComplete);
