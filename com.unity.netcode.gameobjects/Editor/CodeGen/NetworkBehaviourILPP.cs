@@ -829,7 +829,7 @@ namespace Unity.Netcode.Editor.CodeGen
             int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
-                var logInstruction = processor.Create(OpCodes.Ldstr, $"Attempting to invoke {methodDefinition.Name} with no active NetworkManager ");
+                var logInstruction = processor.Create(OpCodes.Ldstr, $"Attempting to invoke {methodDefinition.Name} with no active {nameof(NetworkManager)} listening");
                 var lastInstr = processor.Create(OpCodes.Nop);
 
                 // networkManager = this.NetworkManager;
