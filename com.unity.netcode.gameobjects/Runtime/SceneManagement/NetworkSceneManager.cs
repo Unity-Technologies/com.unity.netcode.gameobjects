@@ -531,7 +531,18 @@ namespace Unity.Netcode
         {
             if (sceneName.Contains("/"))
             {
-                return true;
+                if (sceneName.Contains(".unity"))
+                {
+                    if (ScenePathsInBuild.Contains(sceneName.Replace("Assets/", "").Replace(".unity", "")))
+                    {
+                        return true;
+                    }
+                }
+                else
+                if (ScenePathsInBuild.Contains(sceneName))
+                {
+                    return true;
+                }
             }
             else
             if (ScenesInBuild.Contains(sceneName))
@@ -1030,7 +1041,6 @@ namespace Unity.Netcode
                     throw new Exception($"Could not find the scene handle {sceneEventData.SceneHandle} for scene {sceneName} " +
                         $"during unit test.  Did you forget to register this in the unit test?");
                 }
-                EndSceneEvent(sceneEventId);
                 return;
             }
 #endif
@@ -1307,7 +1317,7 @@ namespace Unity.Netcode
             var loadSceneMode = sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode))
+            if (!ValidateSceneBeforeLoading(sceneIndex, loadSceneMode))
             {
                 EndSceneEvent(sceneEventId);
                 return;
