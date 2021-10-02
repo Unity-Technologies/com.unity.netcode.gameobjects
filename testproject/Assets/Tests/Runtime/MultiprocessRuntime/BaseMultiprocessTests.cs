@@ -126,7 +126,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiProcessLog($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
                     string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                     MultiProcessLog($"logPath to new process is {logPath}");
-                    yield return new WaitForSeconds(0.1f); // Wait 0.1 seconds before starting the next process because there are odd contentions that happen when starting multiple processes quickly
                     MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
