@@ -267,18 +267,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            if (ignoreException)
-            {
-                // Bypass MultiprocessLogger because there's an undocumented verification step which requires exceptions
-                // to not have any additional formatting applied in certain cases.
-                // This isn't ideal since it may "split" log output in the future, but we should fix that verification step
-                // instead of catering to it too much here.
-                NetworkLog.LogErrorServer(e.ToString());
-            }
-            else
-            {
-                WriteErrorServerRpc(e.ToString());
-            }
+            WriteErrorServerRpc(e.ToString());
 
             if (!ignoreException)
             {
