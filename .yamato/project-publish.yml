@@ -24,7 +24,7 @@ publish_{{ project.name }}_{{ package.name }}:
 {% endfor -%}
 {% endfor -%}
 
-publish_{{ project.name }}_{{ package.name }}:
+publish_{{ project.name }}_{{ package.name }}_dry_run:
   name: Publish Project {{project.name }} - Package {{ package.name }} to Internal Registry (dry-run)
   agent:
     type: Unity::VM
