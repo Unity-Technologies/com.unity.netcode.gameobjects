@@ -258,7 +258,6 @@ namespace Unity.Netcode
             }
         }
 
-
         /// <summary>
         /// Gets the scene name from full path to the scene
         /// </summary>
