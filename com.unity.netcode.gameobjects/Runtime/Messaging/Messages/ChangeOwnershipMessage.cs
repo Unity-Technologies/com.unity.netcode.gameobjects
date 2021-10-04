@@ -50,7 +50,7 @@ namespace Unity.Netcode
             var bytesReported = networkManager.LocalClientId == senderId
                 ? 0
                 : messageSize;
-            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject.NetworkObjectId, networkObject.GetNameForMetrics(), bytesReported);
         }
     }
 }

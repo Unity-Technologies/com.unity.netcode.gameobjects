@@ -27,7 +27,7 @@ namespace Unity.Netcode
             var bytesReported = networkManager.LocalClientId == senderId
                 ? 0
                 : reader.Length;
-            networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+            networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject.NetworkObjectId, networkObject.GetNameForMetrics(), bytesReported);
         }
     }
 }

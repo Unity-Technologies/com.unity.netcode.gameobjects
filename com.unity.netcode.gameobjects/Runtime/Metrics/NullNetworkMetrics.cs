@@ -20,10 +20,6 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackNetworkObject(NetworkObject networkObject)
-        {
-        }
-
         public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)
         {
         }
@@ -99,6 +95,7 @@ namespace Unity.Netcode
         public void TrackRpcSent(
             ulong receiverClientId,
             ulong networkObjectId,
+            string gameObjectName,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
@@ -108,6 +105,7 @@ namespace Unity.Netcode
         public void TrackRpcSent(
             ulong[] receiverClientIds,
             ulong networkObjectId,
+            string gameObjectName,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
@@ -117,6 +115,7 @@ namespace Unity.Netcode
         public void TrackRpcReceived(
             ulong senderClientId,
             ulong networkObjectId,
+            string gameObjectName,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)

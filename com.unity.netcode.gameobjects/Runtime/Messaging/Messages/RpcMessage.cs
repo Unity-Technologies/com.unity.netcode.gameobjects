@@ -89,7 +89,8 @@ namespace Unity.Netcode
                 {
                     networkManager.NetworkMetrics.TrackRpcReceived(
                         senderId,
-                        Header.NetworkObjectId,
+                        networkBehaviour.NetworkObjectId,
+                        networkBehaviour.NetworkObject.GetNameForMetrics(),
                         rpcMethodName,
                         networkBehaviour.__getTypeName(),
                         reader.Length);
