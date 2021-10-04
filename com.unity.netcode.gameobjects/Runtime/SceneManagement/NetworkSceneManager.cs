@@ -174,11 +174,6 @@ namespace Unity.Netcode
         internal List<string> ScenesInBuild = new List<string>();
 
         /// <summary>
-        /// The full scene name and path
-        /// </summary>
-        internal List<string> ScenePathsInBuild = new List<string>();
-
-        /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         /// they need to be moved into the do not destroy temporary scene
         /// When it is set: Just before starting the asynchronous loading call
@@ -260,7 +255,6 @@ namespace Unity.Netcode
         }
 
         private const string k_UnitySceneExtension = ".unity";
-        private const string k_UnityAssets = "Assets/";
 
         /// <summary>
         /// Gets the scene name from full path to the scene
@@ -277,24 +271,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the full path of the scene and scene name as it
-        /// is displayed in the Build Settings Scenes in Build list.
-        /// Note:
-        /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
-        /// </summary>
-        /// <param name="scenePath"></param>
-        /// <returns>full path and scene name</returns>
-        internal string GetScenePathAndName(string scenePath)
-        {
-            // Get the zero-based index of the first occurrence of 'Assets/'
-            var begin = scenePath.IndexOf(k_UnityAssets, StringComparison.Ordinal) + k_UnityAssets.Length;
-            // Get the zero-based index of the last occurrence of '.unity'
-            var end = scenePath.LastIndexOf(k_UnitySceneExtension, StringComparison.Ordinal);
-            // Return the scene name and path
-            return scenePath.Substring(begin, end - begin);
-        }
-
-        /// <summary>
         /// Verifies the scene name is valid relative to the scenes in build list
         /// Note:
         /// This could be removed with scene v2.0 once NetworkSceneManager is derived from SceneManagerAPI
@@ -303,31 +279,7 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneNameValid(string scenePathOrName)
         {
-            if (scenePathOrName.Contains("/"))
-            {
-                if (scenePathOrName.StartsWith(k_UnityAssets) && scenePathOrName.EndsWith(k_UnitySceneExtension))
-                {
-                    // First check to see if this is a full path to the scene
-                    if (ScenePathsInBuild.Contains(GetScenePathAndName(scenePathOrName)))
-                    {
-                        return true;
-                    }
-                    // Could be an irregular scene path and scene name fall through to check for that
-                }
-
-                // Checks for regular and irregular scene path and scene name
-                if (ScenePathsInBuild.Contains(scenePathOrName))
-                {
-                    return true;
-                }
-            }
-            else
-            if (ScenesInBuild.Contains(scenePathOrName))
-            {
-                return true;
-            }
-
-            return false;
+            return SceneUtility.GetBuildIndexByScenePath(scenePathOrName) >= 0 ? true : false;
         }
 
         /// <summary>
@@ -338,11 +290,9 @@ namespace Unity.Netcode
         internal void GenerateScenesInBuild()
         {
             ScenesInBuild.Clear();
-            ScenePathsInBuild.Clear();
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
-                ScenePathsInBuild.Add(GetScenePathAndName(scenePath));
                 ScenesInBuild.Add(GetSceneNameFromPath(scenePath));
             }
         }
@@ -591,20 +541,10 @@ namespace Unity.Netcode
         /// <returns>build index</returns>
         internal uint GetBuildIndexFromSceneName(string scenePathOrName)
         {
-            if (IsSceneNameValid(scenePathOrName))
+            var buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePathOrName);
+            if (buildIndex >= 0)
             {
-                if (scenePathOrName.StartsWith(k_UnityAssets) && scenePathOrName.EndsWith(k_UnitySceneExtension))
-                {
-                    return (uint)ScenePathsInBuild.IndexOf(GetScenePathAndName(scenePathOrName));
-                }
-                else if (scenePathOrName.Contains("/"))
-                {
-                    return (uint)ScenePathsInBuild.IndexOf(scenePathOrName);
-                }
-                else
-                {
-                    return (uint)ScenesInBuild.IndexOf(scenePathOrName);
-                }
+                return (uint)buildIndex;
             }
             return uint.MaxValue;
         }
