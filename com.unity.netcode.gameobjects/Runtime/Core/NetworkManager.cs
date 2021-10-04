@@ -536,7 +536,8 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
-                NetworkObjectProvider = new NetworkObjectProvider(this)
+                NetworkObjectProvider = new NetworkObjectProvider(this),
+                ClientIdProvider = new ClientIdProvider(this)
             });
 #endif
 

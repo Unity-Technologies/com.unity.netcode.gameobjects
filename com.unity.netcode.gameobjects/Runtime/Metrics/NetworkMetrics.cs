@@ -61,6 +61,11 @@ namespace Unity.Netcode
 
         internal IMetricDispatcher Dispatcher { get; }
 
+        public void SetConnectionId(ulong connectionId)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void TrackTransportBytesSent(long bytesCount)
         {
             m_TransportBytesSent.Increment(bytesCount);
