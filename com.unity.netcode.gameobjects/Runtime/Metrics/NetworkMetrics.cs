@@ -63,7 +63,7 @@ namespace Unity.Netcode
 
         public void SetConnectionId(ulong connectionId)
         {
-            throw new System.NotImplementedException();
+            Dispatcher.SetConnectionId(connectionId);
         }
 
         public void TrackTransportBytesSent(long bytesCount)

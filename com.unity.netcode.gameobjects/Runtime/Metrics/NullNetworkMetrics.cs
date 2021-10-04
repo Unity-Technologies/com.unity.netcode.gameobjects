@@ -4,6 +4,10 @@ namespace Unity.Netcode
 {
     internal class NullNetworkMetrics : INetworkMetrics
     {
+        public void SetConnectionId(ulong connectionId)
+        {
+        }
+
         public void TrackTransportBytesSent(long bytesCount)
         {
         }

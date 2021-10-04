@@ -4,6 +4,8 @@ namespace Unity.Netcode
 {
     internal interface INetworkMetrics
     {
+        void SetConnectionId(ulong connectionId);
+
         void TrackTransportBytesSent(long bytesCount);
 
         void TrackTransportBytesReceived(long bytesCount);

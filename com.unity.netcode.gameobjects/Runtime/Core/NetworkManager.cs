@@ -537,7 +537,6 @@ namespace Unity.Netcode
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
                 NetworkObjectProvider = new NetworkObjectProvider(this),
-                ClientIdProvider = new ClientIdProvider(this)
             });
 #endif
 
@@ -1185,6 +1184,7 @@ namespace Unity.Netcode
                 SyncTime();
             }
 
+            NetworkMetrics.SetConnectionId(LocalClientId);
             NetworkMetrics.DispatchFrame();
         }
 
