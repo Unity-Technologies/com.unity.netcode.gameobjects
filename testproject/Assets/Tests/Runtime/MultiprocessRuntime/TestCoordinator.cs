@@ -267,7 +267,19 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteErrorServerRpc(e.Message, ignoreException);
+            if (ignoreException)
+            {
+                // Bypass MultiprocessLogger because there's an undocumented verification step which requires exceptions
+                // to not have any additional formatting applied in certain cases.
+                // This isn't ideal since it may "split" log output in the future, but we should fix that verification step
+                // instead of catering to it too much here.
+                NetworkLog.LogErrorServer(e.ToString());
+            }
+            else
+            {
+                WriteErrorServerRpc(e.ToString());
+            }
+
             if (!ignoreException)
             {
                 throw;
@@ -303,7 +315,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteErrorServerRpc(e.Message);
+            WriteErrorServerRpc(e.ToString());
             throw;
         }
     }
@@ -320,7 +332,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteErrorServerRpc(e.Message);
+            WriteErrorServerRpc(e.ToString());
             throw;
         }
     }
@@ -344,17 +356,16 @@ public class TestCoordinator : NetworkBehaviour
         m_TestResultsLocal[senderId].Add(result);
     }
 
+    /// <summary>
+    /// Use this to communicate client-side errors for server-side logging using the MultiprocessLogger.
+    /// </summary>
+    /// <remarks>
+    /// Use <see cref="NetworkLog.LogErrorServer"/> to log server-side without MultiprocessLogger formatting.
+    /// </remarks>
     [ServerRpc(RequireOwnership = false)]
-    public void WriteErrorServerRpc(string errorMessage, bool ignoreFormatting = false, ServerRpcParams receiveParams = default)
+    public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
-        if (ignoreFormatting)
-        {
-            MultiprocessLogger.Log(errorMessage, LogType.Error, ignoreFormatting);
-        }
-        else
-        {
-            MultiprocessLogger.Log($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}", LogType.Error, ignoreFormatting);
-        }
+        MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
     }
 }
 

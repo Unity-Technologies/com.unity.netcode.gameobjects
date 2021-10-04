@@ -65,7 +65,7 @@ public class MultiprocessOrchestration
 
         if (s_Processes.Count > 0)
         {
-            BaseMultiprocessTests.MultiProcessLog($"s_Processes.Count is {s_Processes.Count}");
+            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
             foreach (var p in s_Processes)
             {
                 if ((p != null) && (!p.HasExited))
@@ -93,7 +93,7 @@ public class MultiprocessOrchestration
             {
                 message += $" {p.Id} {p.HasExited} {p.StartTime} ";
             }
-            BaseMultiprocessTests.MultiProcessLog($"Current process count {s_Processes.Count} with data {message}");
+            MultiprocessLogger.Log($"Current process count {s_Processes.Count} with data {message}");
         }
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
@@ -143,7 +143,7 @@ public class MultiprocessOrchestration
 
         try
         {
-            BaseMultiprocessTests.MultiProcessLog($"Attempting to start new process, current process count: {s_Processes.Count} with arguments {workerProcess.StartInfo.Arguments}");
+            MultiprocessLogger.Log($"Attempting to start new process, current process count: {s_Processes.Count} with arguments {workerProcess.StartInfo.Arguments}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
@@ -153,7 +153,7 @@ public class MultiprocessOrchestration
         }
         catch (Win32Exception e)
         {
-            BaseMultiprocessTests.MultiProcessLog($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}", LogType.Error);
+            MultiprocessLogger.LogError($"Error starting player, {buildInstructions}, {e}");
             throw;
         }
         return logPath;
@@ -161,10 +161,10 @@ public class MultiprocessOrchestration
 
     public static void ShutdownAllProcesses()
     {
-        BaseMultiprocessTests.MultiProcessLog("Shutting down all processes..");
+        MultiprocessLogger.Log("Shutting down all processes..");
         foreach (var process in s_Processes)
         {
-            BaseMultiprocessTests.MultiProcessLog($"Shutting down process {process.Id} with state {process.HasExited}");
+            MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
             try
             {
                 if (!process.HasExited)
