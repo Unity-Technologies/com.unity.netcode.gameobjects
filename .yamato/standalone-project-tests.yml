@@ -10,8 +10,7 @@
 standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
   name : standalone {{ project.name }} tests - {{ editor }} on {{ platform.name }}
   agent:
-    type: {{ platform.type }}{% if platform.name == "ubuntu" %}::GPU{% endif %}
-{% if platform.name == "ubuntu" %}    model: rtx2080{% endif %}
+    type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   commands:
