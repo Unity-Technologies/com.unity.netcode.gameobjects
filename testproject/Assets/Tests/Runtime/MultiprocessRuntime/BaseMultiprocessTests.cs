@@ -38,7 +38,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            MultiProcessLog("Running SetupTestSuite - OneTimeSetup");
+            MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
             if (IgnoreMultiprocessTests)
             {
                 Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
@@ -48,7 +48,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-            MultiProcessLog($"Currently active scene {SceneManager.GetActiveScene().name}");
+            MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
             var currentlyActiveScene = SceneManager.GetActiveScene();
 
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
@@ -57,7 +57,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // or could not unload the BuildMultiprocessTestPlayer.MainSceneName.
             if (!currentlyActiveScene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
             {
-                Debug.LogError($"Expected the currently active scene to begin with ({k_FirstPartOfTestRunnerSceneName}) but currently active scene is {currentlyActiveScene.name}");
+                MultiprocessLogger.LogError(
+                    $"Expected the currently active scene to begin with ({k_FirstPartOfTestRunnerSceneName}) but" +
+                    $" currently active scene is {currentlyActiveScene.name}");
             }
             m_OriginalActiveScene = currentlyActiveScene;
 
@@ -67,7 +69,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            MultiProcessLog($"OnSceneLoaded {scene.name}");
+            MultiprocessLogger.Log($"OnSceneLoaded {scene.name}");
             SceneManager.sceneLoaded -= OnSceneLoaded;
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
@@ -100,19 +102,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiProcessLog("NetworkManager.Singleton != null");
+            MultiprocessLogger.Log("NetworkManager.Singleton != null");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiProcessLog("NetworkManager.Singleton.IsServer");
+            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiProcessLog("NetworkManager.Singleton.IsListening");
+            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiProcessLog("m_HasSceneLoaded");
+            MultiprocessLogger.Log("m_HasSceneLoaded");
             var startTime = Time.time;
 
-            MultiProcessLog($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
             if (MultiprocessOrchestration.ActiveWorkerCount() + 1 < NetworkManager.Singleton.ConnectedClients.Count)
             {
-                MultiProcessLog("Is this a bad state?");
+                MultiprocessLogger.Log("Is this a bad state?");
             }
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
@@ -123,15 +125,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 1; i <= numProcessesToCreate; i++)
                 {
-                    MultiProcessLog($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
+                    MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
                     string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    MultiProcessLog($"logPath to new process is {logPath}");
-                    MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    MultiprocessLogger.Log($"logPath to new process is {logPath}");
+                    MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
             else
             {
-                MultiProcessLog($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()} and connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
+                MultiprocessLogger.Log($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()} and connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
@@ -141,18 +143,18 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($" {DateTime.Now.ToString("G")} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} but was expecting {WorkerCount}, failing");
+                    throw new Exception($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
-            MultiProcessLog($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
 
         [TearDown]
         public virtual void Teardown()
         {
-            MultiProcessLog("Running teardown");
+            MultiprocessLogger.Log("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
@@ -162,67 +164,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiProcessLog($"TeardownSuite");
+            MultiprocessLogger.Log($"TeardownSuite");
             if (!IgnoreMultiprocessTests)
             {
-                MultiProcessLog($"TeardownSuite - ShutdownAllProcesses");
+                MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
                 MultiprocessOrchestration.ShutdownAllProcesses();
-                MultiProcessLog($"TeardownSuite - NetworkManager.Singleton.Shutdown");
+                MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
                 NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                MultiProcessLog($"Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiProcessLog($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+                MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+                MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
                 if (m_OriginalActiveScene.IsValid())
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
-                MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
                 SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                MultiProcessLog($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
             }
         }
-
-        public static void MultiProcessLog(string msg, LogType logType = LogType.Log, bool ignoreFormating = false)
-        {
-            string testName = null;
-            try
-            {
-                testName = TestContext.CurrentContext.Test.Name;
-            }
-            catch (NullReferenceException nre)
-            {
-                testName = "N/A";
-                Debug.Log(nre);
-            }
-
-            if (string.IsNullOrEmpty(testName))
-            {
-                testName = "unknown";
-            }
-            string dString = DateTime.Now.ToString("G");
-            var message = ignoreFormating ? msg : $" - MPLOG - {dString} : {testName} : {msg}";
-            switch (logType)
-            {
-                case LogType.Log:
-                    {
-                        MultiprocessLogger.Log(message);
-                        break;
-                    }
-                case LogType.Warning:
-                    {
-                        MultiprocessLogger.LogWarning(message);
-                        break;
-                    }
-                case LogType.Exception:
-                case LogType.Assert:
-                case LogType.Error:
-                    {
-                        MultiprocessLogger.LogError(message);
-                        break;
-                    }
-            }
-        }
-
     }
 }
 
