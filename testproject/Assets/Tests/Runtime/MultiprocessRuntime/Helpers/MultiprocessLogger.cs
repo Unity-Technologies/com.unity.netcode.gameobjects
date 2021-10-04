@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using NUnit.Framework;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -34,7 +35,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void LogFormat(LogType logType, UnityEngine.Object context, string format, params object[] args)
         {
-            Debug.unityLogger.logHandler.LogFormat(logType, context, format, args);
+            string testName = null;
+            try
+            {
+                testName = TestContext.CurrentContext.Test.Name;
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            if (string.IsNullOrEmpty(testName))
+            {
+                testName = "unknown";
+            }
+
+            Debug.unityLogger.logHandler.LogFormat(logType, context, $"MPLOG({DateTime.Now:T}) : {testName} : {format}", args);
         }
     }
 }

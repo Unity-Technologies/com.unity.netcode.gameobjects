@@ -17,7 +17,7 @@ public class CallbackComponent : MonoBehaviour
         }
         catch (Exception e)
         {
-            TestCoordinator.Instance.WriteErrorServerRpc(e.Message);
+            TestCoordinator.Instance.WriteErrorServerRpc(e);
             throw;
         }
     }
