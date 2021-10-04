@@ -7,60 +7,66 @@ namespace Unity.Netcode
 {
     public struct FastBufferWriter : IDisposable
     {
-        internal unsafe byte* BufferPointer;
-        internal int PositionInternal;
-        private int m_Length;
-        internal int CapacityInternal;
-        internal readonly int MaxCapacityInternal;
-        private readonly Allocator m_Allocator;
+        internal struct WriterHandle
+        {
+            internal unsafe byte* BufferPointer;
+            internal int Position;
+            internal int Length;
+            internal int Capacity;
+            internal int MaxCapacity;
+            internal Allocator Allocator;
+            internal bool BufferGrew;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        internal int AllowedWriteMark;
-        private bool m_InBitwiseContext;
+            internal int AllowedWriteMark;
+            internal bool InBitwiseContext;
 #endif
+        }
+
+        internal readonly unsafe WriterHandle* Handle;
 
         /// <summary>
         /// The current write position
         /// </summary>
-        public int Position
+        public unsafe int Position
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => PositionInternal;
+            get => Handle->Position;
         }
 
         /// <summary>
         /// The current total buffer size
         /// </summary>
-        public int Capacity
+        public unsafe int Capacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => CapacityInternal;
+            get => Handle->Capacity;
         }
 
         /// <summary>
         /// The maximum possible total buffer size
         /// </summary>
-        public int MaxCapacity
+        public unsafe int MaxCapacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MaxCapacityInternal;
+            get => Handle->MaxCapacity;
         }
 
         /// <summary>
         /// The total amount of bytes that have been written to the stream
         /// </summary>
-        public int Length
+        public unsafe int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => PositionInternal > m_Length ? PositionInternal : m_Length;
+            get => Handle->Position > Handle->Length ? Handle->Position : Handle->Length;
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void CommitBitwiseWrites(int amount)
+        internal unsafe void CommitBitwiseWrites(int amount)
         {
-            PositionInternal += amount;
+            Handle->Position += amount;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InBitwiseContext = false;
+            Handle->InBitwiseContext = false;
 #endif
         }
 
@@ -72,19 +78,20 @@ namespace Unity.Netcode
         /// <param name="maxSize">Maximum size the buffer can grow to. If less than size, buffer cannot grow.</param>
         public unsafe FastBufferWriter(int size, Allocator allocator, int maxSize = -1)
         {
-            void* buffer = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<byte>(), allocator);
+            Handle = (WriterHandle*)UnsafeUtility.Malloc(sizeof(WriterHandle) + size, UnsafeUtility.AlignOf<WriterHandle>(), allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            UnsafeUtility.MemSet(buffer, 0, size);
+            UnsafeUtility.MemSet(Handle, 0, sizeof(WriterHandle) + size);
 #endif
-            BufferPointer = (byte*)buffer;
-            PositionInternal = 0;
-            m_Length = 0;
-            CapacityInternal = size;
-            m_Allocator = allocator;
-            MaxCapacityInternal = maxSize < size ? size : maxSize;
+            Handle->BufferPointer = (byte*)(Handle + 1);
+            Handle->Position = 0;
+            Handle->Length = 0;
+            Handle->Capacity = size;
+            Handle->Allocator = allocator;
+            Handle->MaxCapacity = maxSize < size ? size : maxSize;
+            Handle->BufferGrew = false;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedWriteMark = 0;
-            m_InBitwiseContext = false;
+            Handle->AllowedWriteMark = 0;
+            Handle->InBitwiseContext = false;
 #endif
         }
 
@@ -93,7 +100,11 @@ namespace Unity.Netcode
         /// </summary>
         public unsafe void Dispose()
         {
-            UnsafeUtility.Free(BufferPointer, m_Allocator);
+            if (Handle->BufferGrew)
+            {
+                UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);
+            }
+            UnsafeUtility.Free(Handle, Handle->Allocator);
         }
 
         /// <summary>
@@ -102,7 +113,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="where">Absolute value to move the position to, truncated to Capacity</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Seek(int where)
+        public unsafe void Seek(int where)
         {
             // This avoids us having to synchronize length all the time.
             // Writing things is a much more common operation than seeking
@@ -114,12 +125,13 @@ namespace Unity.Netcode
             // because position increases, and if we seek backward, length remembers
             // the position it was in.
             // Seeking forward will not update the length.
-            where = Math.Min(where, CapacityInternal);
-            if (PositionInternal > m_Length && where < PositionInternal)
+            where = Math.Min(where, Handle->Capacity);
+            if (Handle->Position > Handle->Length && where < Handle->Position)
             {
-                m_Length = PositionInternal;
+                Handle->Length = Handle->Position;
             }
-            PositionInternal = where;
+
+            Handle->Position = where;
         }
 
         /// <summary>
@@ -128,20 +140,21 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="where">The value to truncate to. If -1, the current position will be used.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Truncate(int where = -1)
+        public unsafe void Truncate(int where = -1)
         {
             if (where == -1)
             {
                 where = Position;
             }
 
-            if (PositionInternal > where)
+            if (Handle->Position > where)
             {
-                PositionInternal = where;
+                Handle->Position = where;
             }
-            if (m_Length > where)
+
+            if (Handle->Length > where)
             {
-                m_Length = where;
+                Handle->Length = where;
             }
         }
 
@@ -151,30 +164,36 @@ namespace Unity.Netcode
         /// At the end of the operation, FastBufferWriter will remain byte-aligned.
         /// </summary>
         /// <returns>A BitWriter</returns>
-        public BitWriter EnterBitwiseContext()
+        public unsafe BitWriter EnterBitwiseContext()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InBitwiseContext = true;
+            Handle->InBitwiseContext = true;
 #endif
-            return new BitWriter(ref this);
+            return new BitWriter(this);
         }
 
         internal unsafe void Grow(int additionalSizeRequired)
         {
-            var desiredSize = CapacityInternal * 2;
+            var desiredSize = Handle->Capacity * 2;
             while (desiredSize < Position + additionalSizeRequired)
             {
                 desiredSize *= 2;
             }
-            var newSize = Math.Min(desiredSize, MaxCapacityInternal);
-            void* buffer = UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), m_Allocator);
+
+            var newSize = Math.Min(desiredSize, Handle->MaxCapacity);
+            byte* newBuffer = (byte*)UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), Handle->Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            UnsafeUtility.MemSet(buffer, 0, newSize);
+            UnsafeUtility.MemSet(newBuffer, 0, sizeof(WriterHandle) + newSize);
 #endif
-            UnsafeUtility.MemCpy(buffer, BufferPointer, Length);
-            UnsafeUtility.Free(BufferPointer, m_Allocator);
-            BufferPointer = (byte*)buffer;
-            CapacityInternal = newSize;
+            UnsafeUtility.MemCpy(newBuffer, Handle->BufferPointer, Length);
+            if (Handle->BufferGrew)
+            {
+                UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);
+            }
+
+            Handle->BufferGrew = true;
+            Handle->BufferPointer = newBuffer;
+            Handle->Capacity = newSize;
         }
 
         /// <summary>
@@ -192,22 +211,23 @@ namespace Unity.Netcode
         /// <returns>True if the write is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryBeginWrite(int bytes)
+        public unsafe bool TryBeginWrite(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (PositionInternal + bytes > CapacityInternal)
+            if (Handle->Position + bytes > Handle->Capacity)
             {
-                if (PositionInternal + bytes > MaxCapacityInternal)
+                if (Handle->Position + bytes > Handle->MaxCapacity)
                 {
                     return false;
                 }
-                if (CapacityInternal < MaxCapacityInternal)
+
+                if (Handle->Capacity < Handle->MaxCapacity)
                 {
                     Grow(bytes);
                 }
@@ -217,7 +237,7 @@ namespace Unity.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedWriteMark = PositionInternal + bytes;
+            Handle->AllowedWriteMark = Handle->Position + bytes;
 #endif
             return true;
         }
@@ -241,20 +261,21 @@ namespace Unity.Netcode
         public unsafe bool TryBeginWriteValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
             int len = sizeof(T);
-            if (PositionInternal + len > CapacityInternal)
+            if (Handle->Position + len > Handle->Capacity)
             {
-                if (PositionInternal + len > MaxCapacityInternal)
+                if (Handle->Position + len > Handle->MaxCapacity)
                 {
                     return false;
                 }
-                if (CapacityInternal < MaxCapacityInternal)
+
+                if (Handle->Capacity < Handle->MaxCapacity)
                 {
                     Grow(len);
                 }
@@ -264,7 +285,7 @@ namespace Unity.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            AllowedWriteMark = PositionInternal + len;
+            Handle->AllowedWriteMark = Handle->Position + len;
 #endif
             return true;
         }
@@ -277,22 +298,23 @@ namespace Unity.Netcode
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryBeginWriteInternal(int bytes)
+        public unsafe bool TryBeginWriteInternal(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (PositionInternal + bytes > CapacityInternal)
+            if (Handle->Position + bytes > Handle->Capacity)
             {
-                if (PositionInternal + bytes > MaxCapacityInternal)
+                if (Handle->Position + bytes > Handle->MaxCapacity)
                 {
                     return false;
                 }
-                if (CapacityInternal < MaxCapacityInternal)
+
+                if (Handle->Capacity < Handle->MaxCapacity)
                 {
                     Grow(bytes);
                 }
@@ -302,9 +324,9 @@ namespace Unity.Netcode
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (PositionInternal + bytes > AllowedWriteMark)
+            if (Handle->Position + bytes > Handle->AllowedWriteMark)
             {
-                AllowedWriteMark = PositionInternal + bytes;
+                Handle->AllowedWriteMark = Handle->Position + bytes;
             }
 #endif
             return true;
@@ -321,8 +343,9 @@ namespace Unity.Netcode
             byte[] ret = new byte[Length];
             fixed (byte* b = ret)
             {
-                UnsafeUtility.MemCpy(b, BufferPointer, Length);
+                UnsafeUtility.MemCpy(b, Handle->BufferPointer, Length);
             }
+
             return ret;
         }
 
@@ -333,7 +356,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
-            return BufferPointer;
+            return Handle->BufferPointer;
         }
 
         /// <summary>
@@ -343,7 +366,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
-            return BufferPointer + PositionInternal;
+            return Handle->BufferPointer + Handle->Position;
         }
 
         /// <summary>
@@ -356,6 +379,34 @@ namespace Unity.Netcode
         public static int GetWriteSize(string s, bool oneByteChars = false)
         {
             return sizeof(int) + s.Length * (oneByteChars ? sizeof(byte) : sizeof(char));
+        }
+
+        /// <summary>
+        /// Write an INetworkSerializable
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
+        {
+            var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
+        /// Write an array of INetworkSerializables
+        /// </summary>
+        /// <param name="array">The value to write</param>
+        /// <param name="count"></param>
+        /// <param name="offset"></param>
+        /// <typeparam name="T"></typeparam>
+        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
+        {
+            int sizeInTs = count != -1 ? count : array.Length - offset;
+            WriteValueSafe(sizeInTs);
+            foreach (var item in array)
+            {
+                WriteNetworkSerializable(item);
+            }
         }
 
         /// <summary>
@@ -394,7 +445,7 @@ namespace Unity.Netcode
         public unsafe void WriteValueSafe(string s, bool oneByteChars = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
@@ -474,7 +525,7 @@ namespace Unity.Netcode
         public unsafe void WriteValueSafe<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
@@ -509,22 +560,22 @@ namespace Unity.Netcode
         public unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + bytesToWrite > AllowedWriteMark)
+            if (Handle->Position + bytesToWrite > Handle->AllowedWriteMark)
             {
                 throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
 
             byte* ptr = ((byte*)&value) + offsetBytes;
-            byte* bufferPointer = BufferPointer + PositionInternal;
+            byte* bufferPointer = Handle->BufferPointer + Handle->Position;
             UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
 
-            PositionInternal += bytesToWrite;
+            Handle->Position += bytesToWrite;
         }
 
         /// <summary>
@@ -535,17 +586,17 @@ namespace Unity.Netcode
         public unsafe void WriteByte(byte value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + 1 > AllowedWriteMark)
+            if (Handle->Position + 1 > Handle->AllowedWriteMark)
             {
                 throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
-            BufferPointer[PositionInternal++] = value;
+            Handle->BufferPointer[Handle->Position++] = value;
         }
 
         /// <summary>
@@ -559,7 +610,7 @@ namespace Unity.Netcode
         public unsafe void WriteByteSafe(byte value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
@@ -570,7 +621,7 @@ namespace Unity.Netcode
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            BufferPointer[PositionInternal++] = value;
+            Handle->BufferPointer[Handle->Position++] = value;
         }
 
         /// <summary>
@@ -583,18 +634,18 @@ namespace Unity.Netcode
         public unsafe void WriteBytes(byte* value, int size, int offset = 0)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + size > AllowedWriteMark)
+            if (Handle->Position + size > Handle->AllowedWriteMark)
             {
                 throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
 #endif
-            UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
-            PositionInternal += size;
+            UnsafeUtility.MemCpy((Handle->BufferPointer + Handle->Position), value + offset, size);
+            Handle->Position += size;
         }
 
         /// <summary>
@@ -610,7 +661,7 @@ namespace Unity.Netcode
         public unsafe void WriteBytesSafe(byte* value, int size, int offset = 0)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
@@ -621,8 +672,8 @@ namespace Unity.Netcode
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            UnsafeUtility.MemCpy((BufferPointer + PositionInternal), value + offset, size);
-            PositionInternal += size;
+            UnsafeUtility.MemCpy((Handle->BufferPointer + Handle->Position), value + offset, size);
+            Handle->Position += size;
         }
 
         /// <summary>
@@ -632,11 +683,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytes(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytes(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytes(ptr, size, offset);
+                WriteBytes(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 
@@ -650,11 +701,11 @@ namespace Unity.Netcode
         /// <param name="size">Number of bytes to write</param>
         /// <param name="offset">Offset into the buffer to begin writing</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteBytesSafe(byte[] value, int size, int offset = 0)
+        public unsafe void WriteBytesSafe(byte[] value, int size = -1, int offset = 0)
         {
             fixed (byte* ptr = value)
             {
-                WriteBytesSafe(ptr, size, offset);
+                WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
             }
         }
 
@@ -667,7 +718,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void CopyTo(FastBufferWriter other)
         {
-            other.WriteBytes(BufferPointer, PositionInternal);
+            other.WriteBytes(Handle->BufferPointer, Handle->Position);
         }
 
         /// <summary>
@@ -679,7 +730,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void CopyFrom(FastBufferWriter other)
         {
-            WriteBytes(other.BufferPointer, other.PositionInternal);
+            WriteBytes(other.Handle->BufferPointer, other.Handle->Position);
         }
 
         /// <summary>
@@ -697,7 +748,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
         /// </summary>
-        /// <param name="value"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public static unsafe int GetWriteSize<T>() where T : unmanaged
@@ -717,12 +767,12 @@ namespace Unity.Netcode
             int len = sizeof(T);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
             }
-            if (PositionInternal + len > AllowedWriteMark)
+            if (Handle->Position + len > Handle->AllowedWriteMark)
             {
                 throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
             }
@@ -730,9 +780,9 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy(BufferPointer + PositionInternal, (byte*)ptr, len);
+                UnsafeUtility.MemCpy(Handle->BufferPointer + Handle->Position, (byte*)ptr, len);
             }
-            PositionInternal += len;
+            Handle->Position += len;
         }
 
         /// <summary>
@@ -750,7 +800,7 @@ namespace Unity.Netcode
             int len = sizeof(T);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InBitwiseContext)
+            if (Handle->InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
@@ -764,9 +814,9 @@ namespace Unity.Netcode
 
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy(BufferPointer + PositionInternal, (byte*)ptr, len);
+                UnsafeUtility.MemCpy(Handle->BufferPointer + Handle->Position, (byte*)ptr, len);
             }
-            PositionInternal += len;
+            Handle->Position += len;
         }
     }
 }

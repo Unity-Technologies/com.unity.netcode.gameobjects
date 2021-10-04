@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
@@ -299,6 +297,15 @@ namespace Unity.Netcode
             m_RelayServerData.ComputeNewNonce();
         }
 
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        public void SetConnectionData(string ipv4Address, ushort port)
+        {
+            m_ServerAddress = ipv4Address;
+            m_ServerPort = port;
+        }
+
         private IEnumerator StartRelayServer(SocketTask task)
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
@@ -441,11 +448,22 @@ namespace Unity.Netcode
 
         public override void DisconnectLocalClient()
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectLocalClient should be called on a connected client");
-
             if (m_State == State.Connected)
             {
-                m_Driver.Disconnect(ParseClientId(m_ServerClientId));
+                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
+                {
+
+                    m_State = State.Disconnected;
+
+
+                    // If we successfully disconnect we dispatch a local disconnect message
+                    // this how uNET and other transports worked and so this is just keeping with the old behavior
+                    // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        m_ServerClientId,
+                        default(ArraySegment<byte>),
+                        Time.realtimeSinceStartup);
+                }
             }
         }
 
@@ -463,12 +481,21 @@ namespace Unity.Netcode
                 }
 
                 // we need to cleanup any SendQueues for this connectionID;
-                var keys = m_SendQueue.Keys.Where(k => k.ClientId == clientId).ToList();
+                var keys = new NativeList<SendTarget>(16, Allocator.Temp); // use nativelist and manual foreach to avoid allocations
+                foreach (var key in m_SendQueue.Keys)
+                {
+                    if (key.ClientId == clientId)
+                    {
+                        keys.Add(key);
+                    }
+                }
+
                 foreach (var queue in keys)
                 {
                     m_SendQueue[queue].Dispose();
                     m_SendQueue.Remove(queue);
                 }
+                keys.Dispose();
             }
         }
 
@@ -664,6 +691,16 @@ namespace Unity.Netcode
 
         public override void Shutdown()
         {
+            if (!m_Driver.IsCreated)
+            {
+                return;
+            }
+
+            // Flush the driver's internal send queue. If we're shutting down because the
+            // NetworkManager is shutting down, it probably has disconnected some peer(s)
+            // in the process and we want to get these disconnect messages on the wire.
+            m_Driver.ScheduleFlushSend(default).Complete();
+
             DisposeDriver();
 
             foreach (var queue in m_SendQueue.Values)
@@ -673,6 +710,9 @@ namespace Unity.Netcode
 
             // make sure we don't leak queues when we shutdown
             m_SendQueue.Clear();
+
+            // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
+            m_ServerClientId = 0;
         }
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)

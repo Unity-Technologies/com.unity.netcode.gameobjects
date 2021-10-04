@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
+using Unity.Collections;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -18,148 +19,166 @@ namespace Unity.Netcode.RuntimeTests
         {
             var networkObjectsToTest = new List<GameObject>();
 
-            var pooledBuffer = PooledNetworkBuffer.Get();
-            var writer = PooledNetworkWriter.Get(pooledBuffer);
-            var reader = PooledNetworkReader.Get(pooledBuffer);
+            var writer = new FastBufferWriter(1300, Allocator.Temp, 4096000);
             var invalidNetworkObjectOffsets = new List<long>();
             var invalidNetworkObjectIdCount = new List<int>();
             var invalidNetworkObjects = new List<GameObject>();
             var invalidNetworkObjectFrequency = 3;
-
-            // Construct 50 NetworkObjects
-            for (int i = 0; i < 50; i++)
+            using (writer)
             {
-                // Inject an invalid NetworkObject every [invalidNetworkObjectFrequency] entry
-                if ((i % invalidNetworkObjectFrequency) == 0)
+                // Construct 50 NetworkObjects
+                for (int i = 0; i < 50; i++)
                 {
-                    // Create the invalid NetworkObject
-                    var gameObject = new GameObject($"InvalidTestObject{i}");
-
-                    Assert.IsNotNull(gameObject);
-
-                    var networkObject = gameObject.AddComponent<NetworkObject>();
-
-                    Assert.IsNotNull(networkObject);
-
-                    var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
-                    Assert.IsNotNull(networkVariableComponent);
-
-                    // Add invalid NetworkObject's starting position before serialization to handle trapping for the Debug.LogError message
-                    // that we know will be thrown
-                    invalidNetworkObjectOffsets.Add(pooledBuffer.Position);
-
-                    networkObject.GlobalObjectIdHash = (uint)(i);
-                    invalidNetworkObjectIdCount.Add(i);
-
-                    invalidNetworkObjects.Add(gameObject);
-
-                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
-                    // Serialize the invalid NetworkObject
-                    networkObject.SerializeSceneObject(writer, 0);
-
-                    Debug.Log($"Invalid {nameof(NetworkObject)} Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
-
-                    // Now adjust how frequent we will inject invalid NetworkObjects
-                    invalidNetworkObjectFrequency = Random.Range(2, 5);
-
-                }
-                else
-                {
-                    // Create a valid NetworkObject
-                    var gameObject = new GameObject($"TestObject{i}");
-
-                    Assert.IsNotNull(gameObject);
-
-                    var networkObject = gameObject.AddComponent<NetworkObject>();
-
-                    var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
-                    Assert.IsNotNull(networkVariableComponent);
-
-                    Assert.IsNotNull(networkObject);
-
-                    networkObject.GlobalObjectIdHash = (uint)(i + 4096);
-
-                    networkObjectsToTest.Add(gameObject);
-
-                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
-
-                    // Handle populating the scenes loaded list
-                    var scene = networkObject.gameObject.scene;
-
-                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                    // Inject an invalid NetworkObject every [invalidNetworkObjectFrequency] entry
+                    if ((i % invalidNetworkObjectFrequency) == 0)
                     {
-                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.Add(scene.handle, scene);
+                        // Create the invalid NetworkObject
+                        var gameObject = new GameObject($"InvalidTestObject{i}");
+
+                        Assert.IsNotNull(gameObject);
+
+                        var networkObject = gameObject.AddComponent<NetworkObject>();
+
+                        Assert.IsNotNull(networkObject);
+
+                        var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
+                        Assert.IsNotNull(networkVariableComponent);
+
+                        // Add invalid NetworkObject's starting position before serialization to handle trapping for the Debug.LogError message
+                        // that we know will be thrown
+                        invalidNetworkObjectOffsets.Add(writer.Position);
+
+                        networkObject.GlobalObjectIdHash = (uint)(i);
+                        invalidNetworkObjectIdCount.Add(i);
+
+                        invalidNetworkObjects.Add(gameObject);
+
+                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
+                        // Serialize the invalid NetworkObject
+                        var sceneObject = networkObject.GetMessageSceneObject(0);
+                        var prePosition = writer.Position;
+                        sceneObject.Serialize(writer);
+
+                        Debug.Log(
+                            $"Invalid {nameof(NetworkObject)} Size {writer.Position - prePosition}");
+
+                        // Now adjust how frequent we will inject invalid NetworkObjects
+                        invalidNetworkObjectFrequency = Random.Range(2, 5);
+
+                    }
+                    else
+                    {
+                        // Create a valid NetworkObject
+                        var gameObject = new GameObject($"TestObject{i}");
+
+                        Assert.IsNotNull(gameObject);
+
+                        var networkObject = gameObject.AddComponent<NetworkObject>();
+
+                        var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
+                        Assert.IsNotNull(networkVariableComponent);
+
+                        Assert.IsNotNull(networkObject);
+
+                        networkObject.GlobalObjectIdHash = (uint)(i + 4096);
+
+                        networkObjectsToTest.Add(gameObject);
+
+                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
+
+                        // Handle populating the scenes loaded list
+                        var scene = networkObject.gameObject.scene;
+
+                        if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(
+                            scene.handle))
+                        {
+                            NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded
+                                .Add(scene.handle, scene);
+                        }
+
+                        // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value
+                        if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle
+                            .ContainsKey(networkObject.gameObject.scene.handle))
+                        {
+                            NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle
+                                .Add(networkObject.gameObject.scene.handle, networkObject.gameObject.scene.handle);
+                        }
+
+                        // Serialize the valid NetworkObject
+                        var sceneObject = networkObject.GetMessageSceneObject(0);
+                        sceneObject.Serialize(writer);
+
+                        if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.ContainsKey(
+                            networkObject.GlobalObjectIdHash))
+                        {
+                            NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(
+                                networkObject.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
+                        }
+
+                        // Add this valid NetworkObject into the ScenePlacedObjects list
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager
+                            .ScenePlacedObjects[networkObject.GlobalObjectIdHash]
+                            .Add(SceneManager.GetActiveScene().handle, networkObject);
+                    }
+                }
+
+                var totalBufferSize = writer.Position;
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+
+                    var networkObjectsDeSerialized = new List<NetworkObject>();
+                    var currentLogLevel = NetworkManager.Singleton.LogLevel;
+                    var invalidNetworkObjectCount = 0;
+                    while (reader.Position != totalBufferSize)
+                    {
+                        // If we reach the point where we expect it to fail, then make sure we let TestRunner know it should expect this log error message
+                        if (invalidNetworkObjectOffsets.Count > 0 &&
+                            reader.Position == invalidNetworkObjectOffsets[0])
+                        {
+                            invalidNetworkObjectOffsets.RemoveAt(0);
+
+                            // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
+                            NetworkManager.Singleton.LogLevel = LogLevel.Nothing;
+
+                            // Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
+                            UnityEngine.TestTools.LogAssert.Expect(LogType.Error,
+                                $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
+
+                            invalidNetworkObjectCount++;
+                        }
+
+
+                        reader.ReadValueSafe(out int handle);
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(handle);
+                        var sceneObject = new NetworkObject.SceneObject();
+                        sceneObject.Deserialize(reader);
+
+                        var deserializedNetworkObject = NetworkObject.AddSceneObject(sceneObject, reader,
+                            NetworkManagerHelper.NetworkManagerObject);
+                        if (deserializedNetworkObject != null)
+                        {
+                            networkObjectsDeSerialized.Add(deserializedNetworkObject);
+                        }
+                        else
+                        {
+                            // Under this condition, we are expecting null (i.e. no NetworkObject instantiated)
+                            // and will set our log level back to the original value to assure the valid NetworkObjects
+                            // aren't causing any log Errors to occur
+                            NetworkManager.Singleton.LogLevel = currentLogLevel;
+                        }
                     }
 
-                    // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value
-                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.gameObject.scene.handle))
+                    // Now validate all NetworkObjects returned against the original NetworkObjects we created
+                    // after they validate, destroy the objects
+                    foreach (var entry in networkObjectsToTest)
                     {
-                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.Add(networkObject.gameObject.scene.handle, networkObject.gameObject.scene.handle);
+                        var entryNetworkObject = entry.GetComponent<NetworkObject>();
+                        Assert.IsTrue(networkObjectsDeSerialized.Contains(entryNetworkObject));
+                        Object.Destroy(entry);
                     }
-
-                    // Serialize the valid NetworkObject
-                    networkObject.SerializeSceneObject(writer, 0);
-
-                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.ContainsKey(networkObject.GlobalObjectIdHash))
-                    {
-                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(networkObject.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
-                    }
-                    // Add this valid NetworkObject into the ScenePlacedObjects list
-                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects[networkObject.GlobalObjectIdHash].Add(SceneManager.GetActiveScene().handle, networkObject);
                 }
-            }
-
-            var totalBufferSize = pooledBuffer.Position;
-            // Reset the position for reading this information
-            pooledBuffer.Position = 0;
-
-            var networkObjectsDeSerialized = new List<NetworkObject>();
-            var currentLogLevel = NetworkManager.Singleton.LogLevel;
-            var invalidNetworkObjectCount = 0;
-            while (pooledBuffer.Position != totalBufferSize)
-            {
-                // If we reach the point where we expect it to fail, then make sure we let TestRunner know it should expect this log error message
-                if (invalidNetworkObjectOffsets.Count > 0 && pooledBuffer.Position == invalidNetworkObjectOffsets[0])
-                {
-                    invalidNetworkObjectOffsets.RemoveAt(0);
-
-                    // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
-                    NetworkManager.Singleton.LogLevel = LogLevel.Nothing;
-
-                    // Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
-                    UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
-
-                    invalidNetworkObjectCount++;
-                }
-
-
-                NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
-                if (deserializedNetworkObject != null)
-                {
-                    networkObjectsDeSerialized.Add(deserializedNetworkObject);
-                }
-                else
-                {
-                    // Under this condition, we are expecting null (i.e. no NetworkObject instantiated)
-                    // and will set our log level back to the original value to assure the valid NetworkObjects
-                    // aren't causing any log Errors to occur
-                    NetworkManager.Singleton.LogLevel = currentLogLevel;
-                }
-            }
-
-            reader.Dispose();
-            writer.Dispose();
-            NetworkBufferPool.PutBackInPool(pooledBuffer);
-
-            // Now validate all NetworkObjects returned against the original NetworkObjects we created
-            // after they validate, destroy the objects
-            foreach (var entry in networkObjectsToTest)
-            {
-                var entryNetworkObject = entry.GetComponent<NetworkObject>();
-                Assert.IsTrue(networkObjectsDeSerialized.Contains(entryNetworkObject));
-                Object.Destroy(entry);
             }
 
             // Destroy the invalid network objects

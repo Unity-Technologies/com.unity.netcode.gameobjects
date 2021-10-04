@@ -82,7 +82,7 @@ namespace TestProject.ManualTests
         /// General clean up
         /// The custom prefab handler is unregistered here
         /// </summary>
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (IsServer)
             {
@@ -96,6 +96,8 @@ namespace TestProject.ManualTests
             {
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
+
+            base.OnDestroy();
         }
 
         // Start is called before the first frame update
@@ -155,7 +157,7 @@ namespace TestProject.ManualTests
                         {
                             if (DestroyOnUnload)
                             {
-                                networkObject.Despawn(true);
+                                networkObject.Despawn();
                             }
                             else if (SpawnInSourceScene)
                             {

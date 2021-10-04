@@ -1,118 +1,77 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal struct BufferSerializerWriter : IBufferSerializerImplementation
+    internal struct BufferSerializerWriter : IReaderWriter
     {
-        private Ref<FastBufferWriter> m_Writer;
+        private FastBufferWriter m_Writer;
 
-        public BufferSerializerWriter(ref FastBufferWriter writer)
+        public BufferSerializerWriter(FastBufferWriter writer)
         {
-            m_Writer = new Ref<FastBufferWriter>(ref writer);
+            m_Writer = writer;
         }
 
         public bool IsReader => false;
         public bool IsWriter => true;
 
-        public ref FastBufferReader GetFastBufferReader()
+        public FastBufferReader GetFastBufferReader()
         {
             throw new InvalidOperationException("Cannot retrieve a FastBufferReader from a serializer where IsReader = false");
         }
 
-        public ref FastBufferWriter GetFastBufferWriter()
+        public FastBufferWriter GetFastBufferWriter()
         {
-            return ref m_Writer.Value;
-        }
-
-        public void SerializeValue(ref object value, Type type, bool isNullable = false)
-        {
-            m_Writer.Value.WriteObject(value, isNullable);
-        }
-
-        public void SerializeValue(ref INetworkSerializable value)
-        {
-            m_Writer.Value.WriteNetworkSerializable(value);
-        }
-
-        public void SerializeValue(ref GameObject value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
-        }
-
-        public void SerializeValue(ref NetworkObject value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
-        }
-
-        public void SerializeValue(ref NetworkBehaviour value)
-        {
-            m_Writer.Value.WriteValueSafe(value);
+            return m_Writer;
         }
 
         public void SerializeValue(ref string s, bool oneByteChars = false)
         {
-            m_Writer.Value.WriteValueSafe(s, oneByteChars);
+            m_Writer.WriteValueSafe(s, oneByteChars);
         }
 
         public void SerializeValue<T>(ref T[] array) where T : unmanaged
         {
-            m_Writer.Value.WriteValueSafe(array);
+            m_Writer.WriteValueSafe(array);
         }
 
         public void SerializeValue(ref byte value)
         {
-            m_Writer.Value.WriteByteSafe(value);
+            m_Writer.WriteByteSafe(value);
         }
 
         public void SerializeValue<T>(ref T value) where T : unmanaged
         {
-            m_Writer.Value.WriteValueSafe(value);
+            m_Writer.WriteValueSafe(value);
         }
 
-        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable
+        public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
-            m_Writer.Value.WriteNetworkSerializable(value);
+            m_Writer.WriteNetworkSerializable(value);
         }
 
         public bool PreCheck(int amount)
         {
-            return m_Writer.Value.TryBeginWrite(amount);
-        }
-
-        public void SerializeValuePreChecked(ref GameObject value)
-        {
-            m_Writer.Value.WriteValue(value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkObject value)
-        {
-            m_Writer.Value.WriteValue(value);
-        }
-
-        public void SerializeValuePreChecked(ref NetworkBehaviour value)
-        {
-            m_Writer.Value.WriteValue(value);
+            return m_Writer.TryBeginWrite(amount);
         }
 
         public void SerializeValuePreChecked(ref string s, bool oneByteChars = false)
         {
-            m_Writer.Value.WriteValue(s, oneByteChars);
+            m_Writer.WriteValue(s, oneByteChars);
         }
 
         public void SerializeValuePreChecked<T>(ref T[] array) where T : unmanaged
         {
-            m_Writer.Value.WriteValue(array);
+            m_Writer.WriteValue(array);
         }
 
         public void SerializeValuePreChecked(ref byte value)
         {
-            m_Writer.Value.WriteByte(value);
+            m_Writer.WriteByte(value);
         }
 
         public void SerializeValuePreChecked<T>(ref T value) where T : unmanaged
         {
-            m_Writer.Value.WriteValue(value);
+            m_Writer.WriteValue(value);
         }
     }
 }
