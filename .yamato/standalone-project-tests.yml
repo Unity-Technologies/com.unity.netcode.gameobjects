@@ -22,7 +22,7 @@ standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     - {% if platform.name != "win" %}./{% endif %}utr --suite=playmode --platform={{platform.standalone}}  --editor-location=.Editor --testproject=testproject --player-save-path=build/players --artifacts_path=build/logs --scripting-backend=mono --build-only --testfilter=Unity.Netcode.RuntimeTests --extra-editor-arg=-batchmode --extra-editor-arg=-nographics
     - |
       {% if platform.name == "win" %}set{% endif %}{% if platform.name != "win" %}export{% endif %} UTR_VERSION=0.12.0
-      {% if platform.name != "win" %}./{% endif %}utr --suite=playmode --platform={{platform.standalone}}  --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --extra-editor-arg=-batchmode --extra-editor-arg=-nographics
+      {% if platform.name != "win" %}./{% endif %}utr --suite=playmode --platform={{platform.standalone}}  --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null
     - echo {{ platform.name }}
   artifacts:
     logs:
