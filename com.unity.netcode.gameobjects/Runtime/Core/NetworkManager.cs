@@ -1517,11 +1517,10 @@ namespace Unity.Netcode
                 m_ConnectedClientsList.Add(client);
                 m_ConnectedClientIds.Add(client.ClientId);
 
-                NetworkObject networkObject = null;
                 if (createPlayerObject)
                 {
-                    networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false, false);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
+                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
@@ -1568,12 +1567,6 @@ namespace Unity.Netcode
 
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
                 ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
-
-                // Moving this to the end here to ensure it's invoked after any client spawn messages have been sent.
-                if (createPlayerObject)
-                {
-                    networkObject.InvokeBehaviourNetworkSpawn();
-                }
             }
             else
             {

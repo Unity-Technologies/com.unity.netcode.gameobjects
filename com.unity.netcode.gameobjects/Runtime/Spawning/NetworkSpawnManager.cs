@@ -301,7 +301,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene, bool invokeOnNetworkSpawn = true)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -313,12 +313,12 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene, invokeOnNetworkSpawn);
+            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
         }
 
         // Ran on both server and client
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject,
-            FastBufferReader variableData, bool destroyWithScene, bool invokeOnNetworkSpawn = true)
+            FastBufferReader variableData, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -335,10 +335,10 @@ namespace Unity.Netcode
                 networkObject.SetNetworkVariableData(variableData);
             }
 
-            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene, invokeOnNetworkSpawn);
+            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
 
-        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene, bool invokeOnNetworkSpawn)
+        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
         {
             if (SpawnedObjects.ContainsKey(networkId))
             {
@@ -402,10 +402,7 @@ namespace Unity.Netcode
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
-            if (invokeOnNetworkSpawn)
-            {
-                networkObject.InvokeBehaviourNetworkSpawn();
-            }
+            networkObject.InvokeBehaviourNetworkSpawn();
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
