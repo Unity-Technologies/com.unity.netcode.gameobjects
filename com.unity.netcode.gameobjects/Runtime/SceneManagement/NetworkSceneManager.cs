@@ -1662,7 +1662,7 @@ namespace Unity.Netcode
                             ClientsThatTimedOut = sceneEventData.ClientsTimedOut,
                         });
 
-                        if(sceneEventData.SceneEventType == SceneEventData.SceneEventTypes.LoadEventCompleted)
+                        if (sceneEventData.SceneEventType == SceneEventData.SceneEventTypes.LoadEventCompleted)
                         {
                             OnLoadEventCompleted?.Invoke(ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
                         }
