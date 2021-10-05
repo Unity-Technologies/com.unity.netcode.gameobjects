@@ -292,8 +292,10 @@ namespace Unity.Netcode
         /// </summary>
         internal string SceneNameFromHash(uint sceneHash)
         {
-            // In the event there is no scene associated with the scene event
-            // (this can happen) then just return "No Scene";
+            // In the event there is no scene associated with the scene event then just return "No Scene"
+            // This can happen during unit tests when clients first connect and the only scene loaded is the 
+            // unit test scene (which is ignored by default) that results in a scene event that has no associated
+            // scene.  Under this specific special case, we just return "No Scene".
             if (sceneHash == 0)
             {
                 return "No Scene";
