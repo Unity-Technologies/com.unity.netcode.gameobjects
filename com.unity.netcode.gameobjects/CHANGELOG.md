@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `ClientNetworkTransform` sample to the SDK package (#1168)
+- Added `Bootstamp` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
@@ -44,6 +46,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
+- Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
@@ -57,6 +60,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
+- Removed `NetworkChannel` and `MultiplexTransportAdapter` (#1133)
 - Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 - `NetworkManager.NetworkConfig` had the following properties removed: (#1080)
   - Scene Registrations no longer exists
@@ -68,6 +72,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed ServerRpc ownership check to `Debug.LogError` instead of `Debug.LogWarning` (#1126)
 - Fixed `NetworkObject.OwnerClientId` property changing before `NetworkBehaviour.OnGainedOwnership()` callback (#1092)
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
@@ -151,7 +156,6 @@ Others (2nd iteration):
 - [ccb839aa] (2021-09-27) zain-mecklai / test: Remove multiprocess build and sign from test project job (#1222)
 - [aa0a5b45] (2021-09-22) Matt Walsh / refactor: cleanup prefab error messages a bit (#1212)
 - [2c1997c4] (2021-09-22) Luke Stampfli / feat: Add a warning box to NetworkTransform to indicate missing NetworkRigidbody (#1210)
-- [2225a010] (2021-09-21) M. Fatih MAR / chore: remove old meta files (#1207)
 - [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
 - [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
 - [268c7ec3] (2021-09-17) Simon Lemay / fix: Increase timeout for UTP adapter tests (#1199)
@@ -178,9 +182,6 @@ Others (2nd iteration):
 - [fbd893dc] (2021-09-13) Jeffrey Rainy / feat: snapshot spawn pre-requisite (#1166)
 - [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
 - [9d0f50e9] (2021-09-13) Noel Stephens / feat: client scene synchronization mode (#1171)
-- [6a032b19] (2021-09-13) M. Fatih MAR / fix: add `link.xml` to prevent IL2CPP stripping `Unity.PerformanceTesting` (#1172)
-- [03264b05] (2021-09-11) M. Fatih MAR / chore: add boilerplate for `ClientNetworkTransform` sample (#1168)
-- [1fe6a0f2] (2021-09-10) M. Fatih MAR / chore: remove `ClientNetworkVariable` (#1167)
 - [a38029a3] (2021-09-10) kvassall-unity / chore: Disable test while we reevaluate the assumption that INetworkM… (#1163)
 - [8d2dcf99] (2021-09-10) Briancoughlin / docs: rename Manual.md to Index.md
 - [ae16e8c6] (2021-09-10) Josie Messa / Only track one metric for scene sync and do not report scene name (#1159)
@@ -190,17 +191,12 @@ Others (2nd iteration):
 - [ace9d895] (2021-09-08) Jeffrey Rainy / chore: remove unused SyncTransform.cs (#1153)
 - [d76d2815] (2021-09-07) Matt Walsh / chore!: remove NetworkNavMeshAgent (#1150)
 - [b6937e8b] (2021-09-07) Noel Stephens / fix: NetworkObject parenting support in scene transitioning (#1148)
-- [825bf192] (2021-09-07) M. Fatih MAR / chore!: rename Prototyping asmdef to Components (#1145)
-- [b55baa19] (2021-09-07) M. Fatih MAR / feat: add bootstrap sample to package (#1140)
-- [be05d1aa] (2021-09-07) M. Fatih MAR / chore: remove `--yamato` param from `standards.py` (#1144)
 - [847068bf] (2021-09-03) Noel Stephens / fix: MTT-504 connection approval messages and comparing networkconfig (#1138)
-- [92e53618] (2021-09-03) M. Fatih MAR / refactor!: remove NetworkChannel and MultiplexTransportAdapter (#1133)
 - [8a74421f] (2021-09-02) Noel Stephens / fix: networkscenemanager not releasing buffers from pool (#1132)
 - [f1a07069] (2021-09-02) Matt Walsh / test: fixed-length strings in netvars (#1119)
 - [b5b40dec] (2021-09-02) Jeffrey Rainy / fix: snapshot system. last fixes for release (#1129)
 - [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
 - [5ed41b95] (2021-09-02) Josie Messa / chore: Fill out unity project for integration test project (#1128)
-- [5338ca2b] (2021-09-01) M. Fatih MAR / feat: make ServerRpc ownership check an error log instead of warning log (#1126)
 - [f703ba57] (2021-09-01) Noel Stephens / fix: client connected InvokeOnClientConnectedCallback with scene management disabled (#1123)
 - [370d9ef1] (2021-09-01) becksebenius-unity / fix: removed `public` class `NetcodeObserver` (MTT-1157) (#1122)
 - [ed110d05] (2021-08-31) becksebenius-unity / feat: add NetworkMessageSent/Received metrics (#1112)
@@ -214,20 +210,12 @@ Others (2nd iteration):
 - [c1ee3b62] (2021-08-30) Noel Stephens / feat: replace scene registration with scenes in build list (#1080)
 - [b5f761cf] (2021-08-27) Jeffrey Rainy / fix: mtt-857 GitHub issue 915 (#1099)
 - [ced41388] (2021-08-27) Noel Stephens / fix: NetworkSceneManager exception when DontDestroyOnLoad NetworkObjects are being synchronized (#1090)
-- [f3851d6a] (2021-08-27) M. Fatih MAR / feat: NetworkTransform Custom Editor Inspector UI (#1101)
-- [f8f53f3e] (2021-08-27) M. Fatih MAR / refactor: remove TempGlobalObjectIdHashOverride (#1105)
 - [bef00ff6] (2021-08-27) JS Fauteux / fix: MTT-1124 Counters are now reported in sync with other metrics (#1096)
-- [00164832] (2021-08-27) M. Fatih MAR / refactor: convert using var statements to using var declarations (#1100)
 - [4dfc7601] (2021-08-27) becksebenius-unity / chore: updated all of the namespaces to match the tools package change (#1095)
 - [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
 - [3796565a] (2021-08-26) Jeffrey Rainy / fix: mtt-1088 review. Safer handling of out-of-order or old messages (#1091)
-- [90e4bbe9] (2021-08-26) M. Fatih MAR / refactor: assign auto-incremented `GlobalObjectIdHash` as a fallback in `MultiInstanceHelpers.MakeNetworkObjectTestPrefab()` + fix flaky tests exposed by this fix (#1094)
 - [f733bec4] (2021-08-25) becksebenius-unity / feat: fulfilling interface for tools to find network objects from an id (#1086)
 - [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
-- [a7ffde6a] (2021-08-25) M. Fatih MAR / fix: change OwnerClientId before firing OnGainedOwnership() callback (#1092)
-- [611678a2] (2021-08-25) Matt Walsh / feat!: network variables - client auth, permission cleanup, containers (#1074)
-- [fbfcc94e] (2021-08-25) M. Fatih MAR / chore: expose `--verbosity` through `standards.py` (#1085)
-- [4c166a64] (2021-08-24) M. Fatih MAR / test: NetworkTransformStateTests no longer uses ReplNetworkState (#1084)
 
 ## [0.2.0] - 2021-06-03
 
