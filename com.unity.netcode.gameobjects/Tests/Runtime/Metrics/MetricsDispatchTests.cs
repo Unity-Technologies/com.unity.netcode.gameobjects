@@ -35,13 +35,18 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 TickRate = m_TickRate
             }));
 
-            tickSystem.Tick += ()=> m_NumTicks++;
+            InitNetworkManager();
 
             var networkMetrics = m_NetworkManager.NetworkMetrics as NetworkMetrics;
             networkMetrics.Dispatcher.RegisterObserver(new MockMetricsObserver()
             {
                 OnObserve = ()=> m_NumDispatches++
             });
+        }
+
+        private void InitNetworkManager()
+        {
+            tickSystem.Tick += ()=> m_NumTicks++;
         }
 
         [TearDown]
@@ -84,6 +89,26 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             Assert.AreEqual(0, m_NumTicks);
             Assert.AreEqual(0, m_NumDispatches);
+        }
+
+        [UnityTest]
+        public IEnumerator GivenReinitializedNetworkManagerAfterOneTickExecuted_WhenFirstTickExecuted_MetricsDispatch()
+        {
+            AdvanceTicks(1);
+            yield return null;
+
+            Assert.AreEqual(1, m_NumTicks);
+            Assert.AreEqual(1, m_NumDispatches);
+
+            m_NetworkManager.Shutdown();
+            m_NetworkManager.StartHost();
+            InitNetworkManager();
+
+            AdvanceTicks(1);
+            yield return null;
+
+            Assert.AreEqual(2, m_NumTicks);
+            Assert.AreEqual(2, m_NumDispatches);
         }
 
         private void AdvanceTicks(int numTicks)

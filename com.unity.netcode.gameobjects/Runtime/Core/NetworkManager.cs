@@ -533,6 +533,7 @@ namespace Unity.Netcode
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
             }
+            m_LastMetricsTickId = 0;
 
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
