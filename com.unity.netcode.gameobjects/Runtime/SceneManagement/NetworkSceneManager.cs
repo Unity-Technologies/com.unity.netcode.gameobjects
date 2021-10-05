@@ -87,6 +87,7 @@ namespace Unity.Netcode
     public class NetworkSceneManager : IDisposable
     {
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
+        internal const int InvalidSceneNameOrPath = -1;
 
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
@@ -630,7 +631,7 @@ namespace Unity.Netcode
             }
 
             // Return invalid scene name status if the scene name is invalid
-            if (SceneUtility.GetBuildIndexByScenePath(sceneName) == -1)
+            if (SceneUtility.GetBuildIndexByScenePath(sceneName) == InvalidSceneNameOrPath)
             {
                 Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
