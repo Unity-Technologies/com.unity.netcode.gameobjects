@@ -84,6 +84,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 Jaedyn:
 
+- [3e935242] (2021-09-26) Jesse Olmer / revert: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219) (#1224)
+- [e1cc5a1b] (2021-09-23) Jaedyn Draper / fix: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219)
 - [6a6a1bf0] (2021-10-01) Jaedyn Draper / chore: Making INetworkMessage and accompanying structures internal since we have decided to continue with the existing NamedMessage and UnnamedMessage for this release. (#1244)
 - [5ff98e7d] (2021-09-21) Jaedyn Draper / refactor!: cleanup lingering items with `INetworkSerializable` (#1206)
 - [6181e7e0] (2021-09-17) Jaedyn Draper / feat: INetworkMessage (#1187)
@@ -124,6 +126,7 @@ Samuel:
 
 Philipp:
 
+- [c73e2324] (2021-09-20) Jesse Olmer / revert: ClientNetworkAnimator (#1191) (#1203)
 - [e47b73fa] (2021-09-17) Philipp Deschain / feat: NetworkAnimator and ClientNetworkAnimator (#1191)
 - [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
 - [4fad5915] (2021-07-27) Phil Deschain / fix: Network animator server authority fixes (#972)
@@ -146,14 +149,11 @@ Others (2nd iteration):
 - [c215d154] (2021-09-28) Luke Stampfli / perf!: reduce linq, cleanup connectedclients (#1196)
 - [8a1f1f8a] (2021-09-27) Jesse Olmer / chore: Enable warnings as errors in CI (#1225)
 - [ccb839aa] (2021-09-27) zain-mecklai / test: Remove multiprocess build and sign from test project job (#1222)
-- [3e935242] (2021-09-26) Jesse Olmer / revert: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219) (#1224)
-- [e1cc5a1b] (2021-09-23) Jaedyn Draper / fix: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219)
 - [aa0a5b45] (2021-09-22) Matt Walsh / refactor: cleanup prefab error messages a bit (#1212)
 - [2c1997c4] (2021-09-22) Luke Stampfli / feat: Add a warning box to NetworkTransform to indicate missing NetworkRigidbody (#1210)
 - [2225a010] (2021-09-21) M. Fatih MAR / chore: remove old meta files (#1207)
 - [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
 - [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
-- [c73e2324] (2021-09-20) Jesse Olmer / revert: ClientNetworkAnimator (#1191) (#1203)
 - [268c7ec3] (2021-09-17) Simon Lemay / fix: Increase timeout for UTP adapter tests (#1199)
 - [d2db3940] (2021-09-17) Jesse Olmer / docs: Update repo and both package readme files (#1180)
 - [3d5b29a0] (2021-09-17) Andrew Spiering / chore: updating UTP package to pull in DTLS fixes (#1197)
