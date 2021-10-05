@@ -332,7 +332,7 @@ namespace Unity.Netcode
                 var bytesReported = NetworkManager.LocalClientId == clientId
                         ? 0
                         : size;
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, GetNameForMetrics(), bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, bytesReported);
             }
         }
 

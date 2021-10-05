@@ -89,8 +89,7 @@ namespace Unity.Netcode
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
                     NetworkManager.ServerClientId,
-                    NetworkObjectId,
-                    NetworkObject.GetNameForMetrics(),
+                    NetworkObject,
                     rpcMethodName,
                     __getTypeName(),
                     rpcMessageSize);
@@ -134,7 +133,7 @@ namespace Unity.Netcode
             int messageSize;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
-            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
 
             if (rpcParams.Send.TargetClientIds != null)
@@ -187,8 +186,7 @@ namespace Unity.Netcode
                         : messageSize;
                     NetworkManager.NetworkMetrics.TrackRpcSent(
                         client.Key,
-                        NetworkObjectId,
-                        NetworkObject.GetNameForMetrics(),
+                        NetworkObject,
                         rpcMethodName,
                         __getTypeName(),
                         bytesReported);
