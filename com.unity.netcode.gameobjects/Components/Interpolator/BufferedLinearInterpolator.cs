@@ -149,14 +149,6 @@ namespace Unity.Netcode
                     t = 1;
                 }
 
-                if (Debug.isDebugBuild)
-                {
-                    if (t < 0)
-                    {
-                        Debug.LogWarning(
-                            $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
-                    }
-                }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
                 float maxInterpTime = 0.1f;
