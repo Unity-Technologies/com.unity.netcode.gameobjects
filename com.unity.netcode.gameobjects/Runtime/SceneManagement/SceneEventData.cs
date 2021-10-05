@@ -15,9 +15,6 @@ namespace Unity.Netcode
     {
         /// <summary>
         /// The different types of scene events communicated between a server and client.
-        /// Scene event types can be:
-        /// A Server To Client Event (S2C)
-        /// A Client to Server Event (C2S)
         /// </summary>
         public enum SceneEventTypes : byte
         {
@@ -27,28 +24,29 @@ namespace Unity.Netcode
             /// Message Flow: Server to client
             /// Event Notification: Both server and client are notified a load scene event started
             /// </summary>
-            S2C_Load,
+            Load,
             /// <summary>
             /// Unload a scene
             /// Invocation: Server Side
             /// Message Flow: Server to client
             /// Event Notification: Both server and client are notified an unload scene event started
             /// </summary>
-            S2C_Unload,
+            Unload,
             /// <summary>
             /// Synchronize current game session state for approved clients
             /// Invocation: Server Side
             /// Message Flow: Server to client
             /// Event Notification: Server and Client receives a local notification (server receives the ClientId being synchronized)
             /// </summary>
-            S2C_Sync,
+            Synchronize,
             /// <summary>
-            /// Game session re-synchronization of NetworkOjects that were destroyed during a <see cref="S2C_Sync"/> event
+            /// Game session re-synchronization of NetworkOjects that were destroyed during a <see cref="Synchronize"/> event
             /// Invocation: Server Side
             /// Message Flow: Server to client
             /// Event Notification: Both server and client receive a local notification
+            /// Note: This will be removed once snapshot and buffered messages are finalized as it will no longer be needed at that point
             /// </summary>
-            S2C_ReSync,
+            ReSynchronize,
             /// <summary>
             /// All clients have finished loading a scene
             /// Invocation: Server Side
@@ -56,7 +54,7 @@ namespace Unity.Netcode
             /// Event Notification: Both server and client receive a local notification containing the clients that finished
             /// as well as the clients that timed out (if any).
             /// </summary>
-            S2C_LoadComplete,
+            LoadEventCompleted,
             /// <summary>
             /// All clients have unloaded a scene
             /// Invocation: Server Side
@@ -64,28 +62,28 @@ namespace Unity.Netcode
             /// Event Notification: Both server and client receive a local notification containing the clients that finished
             /// as well as the clients that timed out (if any).
             /// </summary>
-            S2C_UnLoadComplete,
+            UnloadEventCompleted,
             /// <summary>
             /// A client has finished loading a scene
             /// Invocation: Client Side
             /// Message Flow: Client to Server
             /// Event Notification: Both server and client receive a local notification
             /// </summary>
-            C2S_LoadComplete,
+            LoadComplete,
             /// <summary>
             /// A client has finished unloading a scene
             /// Invocation: Client Side
             /// Message Flow: Client to Server
             /// Event Notification: Both server and client receive a local notification
             /// </summary>
-            C2S_UnloadComplete,
+            UnloadComplete,
             /// <summary>
-            /// A client has finished synchronizing from a <see cref="S2C_Sync"/> event
+            /// A client has finished synchronizing from a <see cref="Synchronize"/> event
             /// Invocation: Client Side
             /// Message Flow: Client to Server
             /// Event Notification: Both server and client receive a local notification
             /// </summary>
-            C2S_SyncComplete,
+            SynchronizeComplete,
         }
 
         internal SceneEventTypes SceneEventType;
@@ -264,12 +262,12 @@ namespace Unity.Netcode
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Load:
-                case SceneEventTypes.S2C_Unload:
-                case SceneEventTypes.S2C_Sync:
-                case SceneEventTypes.S2C_ReSync:
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventTypes.Load:
+                case SceneEventTypes.Unload:
+                case SceneEventTypes.Synchronize:
+                case SceneEventTypes.ReSynchronize:
+                case SceneEventTypes.LoadEventCompleted:
+                case SceneEventTypes.UnloadEventCompleted:
                     {
                         return true;
                     }
@@ -317,7 +315,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(LoadSceneMode);
 
             // Write the scene event progress Guid
-            if (SceneEventType != SceneEventTypes.S2C_Sync)
+            if (SceneEventType != SceneEventTypes.Synchronize)
             {
                 writer.WriteValueSafe(SceneEventProgressId);
             }
@@ -328,28 +326,28 @@ namespace Unity.Netcode
 
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Sync:
+                case SceneEventTypes.Synchronize:
                     {
                         WriteSceneSynchronizationData(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_Load:
+                case SceneEventTypes.Load:
                     {
                         SerializeScenePlacedObjects(writer);
                         break;
                     }
-                case SceneEventTypes.C2S_SyncComplete:
+                case SceneEventTypes.SynchronizeComplete:
                     {
                         WriteClientSynchronizationResults(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_ReSync:
+                case SceneEventTypes.ReSynchronize:
                     {
                         WriteClientReSynchronizationData(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventTypes.LoadEventCompleted:
+                case SceneEventTypes.UnloadEventCompleted:
                     {
                         WriteSceneEventProgressDone(writer);
                         break;
@@ -448,7 +446,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out SceneEventType);
             reader.ReadValueSafe(out LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.S2C_Sync)
+            if (SceneEventType != SceneEventTypes.Synchronize)
             {
                 reader.ReadValueSafe(out SceneEventProgressId);
             }
@@ -458,17 +456,17 @@ namespace Unity.Netcode
 
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Sync:
+                case SceneEventTypes.Synchronize:
                     {
                         CopySceneSyncrhonizationData(reader);
                         break;
                     }
-                case SceneEventTypes.C2S_SyncComplete:
+                case SceneEventTypes.SynchronizeComplete:
                     {
                         CheckClientSynchronizationResults(reader);
                         break;
                     }
-                case SceneEventTypes.S2C_Load:
+                case SceneEventTypes.Load:
                     {
                         unsafe
                         {
@@ -479,13 +477,13 @@ namespace Unity.Netcode
                         }
                         break;
                     }
-                case SceneEventTypes.S2C_ReSync:
+                case SceneEventTypes.ReSynchronize:
                     {
                         ReadClientReSynchronizationData(reader);
                         break;
                     }
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventTypes.LoadEventCompleted:
+                case SceneEventTypes.UnloadEventCompleted:
                     {
                         ReadSceneEventProgressDone(reader);
                         break;
