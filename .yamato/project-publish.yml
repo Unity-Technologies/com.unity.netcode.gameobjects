@@ -17,12 +17,24 @@ publish_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-tests.yml#validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
-{% for editor in project.test_editors -%}
-{% for platform in test_platforms -%}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
-{% endfor -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+
+publish_{{ project.name }}_{{ package.name }}_dry_run:
+  name: Publish Project {{project.name }} - Package {{ package.name }} to Internal Registry (dry-run)
+  agent:
+    type: Unity::VM
+    image: package-ci/win10:stable
+    flavor: b1.large
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci package publish --package-path {{ package.path }} --dry-run
+  artifacts:
+    artifacts:
+      paths:
+        - "upm-ci~/packages/*.tgz"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 
 {% endfor -%}
 
@@ -35,6 +47,23 @@ publish_{{ project.name }}:
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - upm-ci project publish --project-path {{ project.path }}
+  artifacts:
+    artifacts:
+      paths:
+        - "upm-ci~/packages/*.tgz"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+    - .yamato/_run-all.yml#run_all_tests
+
+publish_{{ project.name }}_dry_run:
+  name: Publish ALL {{ project.name }} packages to Internal Registry (dry-run)
+  agent:
+    type: Unity::VM
+    image: package-ci/win10:stable
+    flavor: b1.large
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci project publish --project-path {{ project.path }} --dry-run
   artifacts:
     artifacts:
       paths:
