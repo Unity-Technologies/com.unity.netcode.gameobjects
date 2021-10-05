@@ -21,7 +21,6 @@ namespace Unity.Netcode
         public bool IsServer { get; }
         public ulong ServerClientId { get; }
         public IReadOnlyList<ulong> ConnectedClientsIds { get; }
-        public IReadOnlyList<NetworkClient> ConnectedClientsList { get; }
         public bool IsConnectedClient { get; }
 
         public ulong LocalClientId { get; }

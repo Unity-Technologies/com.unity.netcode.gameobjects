@@ -680,9 +680,9 @@ namespace Unity.Netcode
                     m_CurrentTick = tick;
                     if (m_NetworkManager.IsServer)
                     {
-                        for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
+                        for (int i = 0; i < m_NetworkManager.ConnectedClientsIds.Count; i++)
                         {
-                            var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
+                            var clientId = m_NetworkManager.ConnectedClientsIds[i];
 
                             // don't send to ourselves
                             if (clientId != m_NetworkManager.ServerClientId)
