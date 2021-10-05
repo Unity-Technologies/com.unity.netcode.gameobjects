@@ -47,6 +47,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
 - Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
+- Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
@@ -60,6 +61,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
+- Removed `NetworkNavMeshAgent` (#1150)
+- Removed `NetworkDictionary`, `NetworkSet` (#1149)
+- Removed `NetworkVariableSettings` (#1097)
+- Removed predefined `NetworkVariable<T>` types (#1093)
+    - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
 - Removed `NetworkChannel` and `MultiplexTransportAdapter` (#1133)
 - Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 - `NetworkManager.NetworkConfig` had the following properties removed: (#1080)
@@ -148,13 +154,11 @@ Others (2nd iteration):
 - [6e832760] (2021-09-29) Noel Stephens / fix: Client errors during networked scene loads (#1186)
 - [6f3de305] (2021-09-29) Jeffrey Rainy / docs: clarifying the comments on snapshot booleans in the config (#1235)
 - [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
-- [ce6fde6d] (2021-09-29) Matt Walsh / refactor!: NetworkObject.Despawn defaults destroy objects to 'true' (#1217)
 - [8bb14f3b] (2021-09-29) ian-m-unity / feat: Improved error message for undefined serialization of custom type (#1220)
 - [d4678fd2] (2021-09-28) Andrew Spiering / fix: fixing MTT-1299 (#1227)
 - [c215d154] (2021-09-28) Luke Stampfli / perf!: reduce linq, cleanup connectedclients (#1196)
 - [8a1f1f8a] (2021-09-27) Jesse Olmer / chore: Enable warnings as errors in CI (#1225)
 - [ccb839aa] (2021-09-27) zain-mecklai / test: Remove multiprocess build and sign from test project job (#1222)
-- [aa0a5b45] (2021-09-22) Matt Walsh / refactor: cleanup prefab error messages a bit (#1212)
 - [2c1997c4] (2021-09-22) Luke Stampfli / feat: Add a warning box to NetworkTransform to indicate missing NetworkRigidbody (#1210)
 - [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
 - [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
@@ -169,7 +173,6 @@ Others (2nd iteration):
 - [80913c10] (2021-09-16) Jeffrey Rainy / feat: snapshot spawn pre-requisite 2 (#1192)
 - [5114ca80] (2021-09-15) Noel Stephens / feat: NetworkBehaviour.IsSpawned  (#1190)
 - [d04560fa] (2021-09-15) becksebenius-unity / feat: added tip to the network manager inspector that directs to install tools (MTT-1211) (#1182)
-- [db6de508] (2021-09-14) Matt Walsh / refactor!: remove network dictionary & set, use native container in List, add tests (#1149)
 - [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
 - [0941fd7f] (2021-09-14) Noel Stephens / test: base changes to PR-1114 (#1165)
 - [d2669aec] (2021-09-14) Noel Stephens / test: verify do not destroy networkobjects on networkmanager shutdown (#1183)
@@ -177,7 +180,6 @@ Others (2nd iteration):
 - [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
 - [9590a056] (2021-09-14) Andrew Spiering / test: Giving Android some more room as the connection tests are timing sensitive (#1178)
 - [5ef9f418] (2021-09-14) Noel Stephens / fix: unitytransport connectionmode buttons (#1176)
-- [46dfe4a2] (2021-09-13) Matt Walsh / test: added min frames to multi-instance helper (#1170)
 - [b7c5d803] (2021-09-13) zain-mecklai / chore: Add mobile tests to nightly trigger (#1161)
 - [fbd893dc] (2021-09-13) Jeffrey Rainy / feat: snapshot spawn pre-requisite (#1166)
 - [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
@@ -189,11 +191,9 @@ Others (2nd iteration):
 - [599ed687] (2021-09-09) Noel Stephens / test: make test runner scene ignored by default for BaseMultiInstanceTest (#1154)
 - [52293db0] (2021-09-08) Jeffrey Rainy / fix: remove left-over reference to SyncTransform (#1155)
 - [ace9d895] (2021-09-08) Jeffrey Rainy / chore: remove unused SyncTransform.cs (#1153)
-- [d76d2815] (2021-09-07) Matt Walsh / chore!: remove NetworkNavMeshAgent (#1150)
 - [b6937e8b] (2021-09-07) Noel Stephens / fix: NetworkObject parenting support in scene transitioning (#1148)
 - [847068bf] (2021-09-03) Noel Stephens / fix: MTT-504 connection approval messages and comparing networkconfig (#1138)
 - [8a74421f] (2021-09-02) Noel Stephens / fix: networkscenemanager not releasing buffers from pool (#1132)
-- [f1a07069] (2021-09-02) Matt Walsh / test: fixed-length strings in netvars (#1119)
 - [b5b40dec] (2021-09-02) Jeffrey Rainy / fix: snapshot system. last fixes for release (#1129)
 - [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
 - [5ed41b95] (2021-09-02) Josie Messa / chore: Fill out unity project for integration test project (#1128)
@@ -212,10 +212,8 @@ Others (2nd iteration):
 - [ced41388] (2021-08-27) Noel Stephens / fix: NetworkSceneManager exception when DontDestroyOnLoad NetworkObjects are being synchronized (#1090)
 - [bef00ff6] (2021-08-27) JS Fauteux / fix: MTT-1124 Counters are now reported in sync with other metrics (#1096)
 - [4dfc7601] (2021-08-27) becksebenius-unity / chore: updated all of the namespaces to match the tools package change (#1095)
-- [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
 - [3796565a] (2021-08-26) Jeffrey Rainy / fix: mtt-1088 review. Safer handling of out-of-order or old messages (#1091)
 - [f733bec4] (2021-08-25) becksebenius-unity / feat: fulfilling interface for tools to find network objects from an id (#1086)
-- [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
 
 ## [0.2.0] - 2021-06-03
 
