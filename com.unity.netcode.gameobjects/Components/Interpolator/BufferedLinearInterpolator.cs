@@ -151,10 +151,10 @@ namespace Unity.Netcode
 
                 if (Debug.isDebugBuild)
                 {
-                    if (t >= 0)
+                    if (t < 0)
                     {
-                        string msg =  $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}";
-                        Debug.LogWarning(msg);
+                        Debug.LogWarning(
+                            $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
                     }
                 }
 
