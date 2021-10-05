@@ -84,6 +84,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 Jaedyn:
 
+- [6a6a1bf0] (2021-10-01) Jaedyn Draper / chore: Making INetworkMessage and accompanying structures internal since we have decided to continue with the existing NamedMessage and UnnamedMessage for this release. (#1244)
+- [5ff98e7d] (2021-09-21) Jaedyn Draper / refactor!: cleanup lingering items with `INetworkSerializable` (#1206)
 - [6181e7e0] (2021-09-17) Jaedyn Draper / feat: INetworkMessage (#1187)
 - [dc708a56] (2021-09-15) Jaedyn Draper / feat: Fast buffer reader and fast buffer writer (#1082)
 - [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
@@ -93,6 +95,8 @@ Jaedyn:
 
 Samuel:
 
+- [92fc3e6d] (2021-09-20) Sam Bellomo / feat: transform teleport (#1200)
+- [d8a3a9b3] (2021-09-20) Sam Bellomo / feat: ClientNetworkTransform (#1177)
 - [5513c906] (2021-09-16) Sam Bellomo / feat: interpolation for network transform (#1060)
 - [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
 - [13e2b7f1] (2021-07-13) Sam Bellomo / test: multiprocess tests part 6: fixing issues runnings all tests together (#957)
@@ -128,6 +132,28 @@ Philipp:
 
 Others (2nd iteration):
 
+- [d3408ac5] (2021-10-01) Andrew Spiering / fix: Fixing an issue where OnClientDisconnectCallback was not being called when using UTP (#1243)
+- [731b3616] (2021-10-01) Andrew Spiering / chore: adding a PR Template (#1248)
+- [960cc1ce] (2021-10-01) Josie Messa / test: Scene event metric tests in tools integration test project (#1164)
+- [ad797f49] (2021-09-30) Noel Stephens / fix: network scene manager scenes in build message (#1226)
+- [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
+- [6e832760] (2021-09-29) Noel Stephens / fix: Client errors during networked scene loads (#1186)
+- [6f3de305] (2021-09-29) Jeffrey Rainy / docs: clarifying the comments on snapshot booleans in the config (#1235)
+- [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
+- [ce6fde6d] (2021-09-29) Matt Walsh / refactor!: NetworkObject.Despawn defaults destroy objects to 'true' (#1217)
+- [8bb14f3b] (2021-09-29) ian-m-unity / feat: Improved error message for undefined serialization of custom type (#1220)
+- [d4678fd2] (2021-09-28) Andrew Spiering / fix: fixing MTT-1299 (#1227)
+- [c215d154] (2021-09-28) Luke Stampfli / perf!: reduce linq, cleanup connectedclients (#1196)
+- [8a1f1f8a] (2021-09-27) Jesse Olmer / chore: Enable warnings as errors in CI (#1225)
+- [ccb839aa] (2021-09-27) zain-mecklai / test: Remove multiprocess build and sign from test project job (#1222)
+- [3e935242] (2021-09-26) Jesse Olmer / revert: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219) (#1224)
+- [e1cc5a1b] (2021-09-23) Jaedyn Draper / fix: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219)
+- [aa0a5b45] (2021-09-22) Matt Walsh / refactor: cleanup prefab error messages a bit (#1212)
+- [2c1997c4] (2021-09-22) Luke Stampfli / feat: Add a warning box to NetworkTransform to indicate missing NetworkRigidbody (#1210)
+- [2225a010] (2021-09-21) M. Fatih MAR / chore: remove old meta files (#1207)
+- [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
+- [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
+- [c73e2324] (2021-09-20) Jesse Olmer / revert: ClientNetworkAnimator (#1191) (#1203)
 - [268c7ec3] (2021-09-17) Simon Lemay / fix: Increase timeout for UTP adapter tests (#1199)
 - [d2db3940] (2021-09-17) Jesse Olmer / docs: Update repo and both package readme files (#1180)
 - [3d5b29a0] (2021-09-17) Andrew Spiering / chore: updating UTP package to pull in DTLS fixes (#1197)
