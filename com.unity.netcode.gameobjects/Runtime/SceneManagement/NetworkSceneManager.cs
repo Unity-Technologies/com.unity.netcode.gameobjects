@@ -1272,21 +1272,12 @@ namespace Unity.Netcode
             var activeScene = SceneManager.GetActiveScene();
             var loadSceneMode = sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
-#if UNITY_INCLUDE_TESTS
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneIndex, loadSceneMode))
             {
                 EndSceneEvent(sceneEventId);
                 return;
             }
-#else
-            // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneIndex, loadSceneMode))
-            {
-                EndSceneEvent(sceneEventId);
-                return;
-            }
-#endif
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
             if (sceneIndex == sceneEventData.SceneIndex)
