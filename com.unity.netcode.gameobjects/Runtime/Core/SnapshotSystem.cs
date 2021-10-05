@@ -748,7 +748,7 @@ namespace Unity.Netcode
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
 
-            m_NetworkManager.SendMessageInterface(message, NetworkDelivery.Unreliable, clientId);
+            m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
 
             m_ClientData[clientId].LastReceivedSequence = 0;
 

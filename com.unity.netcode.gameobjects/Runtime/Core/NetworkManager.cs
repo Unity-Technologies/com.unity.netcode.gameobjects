@@ -26,7 +26,8 @@ namespace Unity.Netcode
 
         public ulong LocalClientId { get; }
 
-        public int SendMessageInterface(in INetworkMessage message, NetworkDelivery delivery, ulong clientId);
+        int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage;
     };
     /// <summary>
     /// The main component of the library
@@ -1309,11 +1310,6 @@ namespace Unity.Netcode
             }
         }
 
-        public int SendMessageInterface(in INetworkMessage message, NetworkDelivery delivery, ulong clientId)
-        {
-            return SendMessage(message, delivery, clientId);
-        }
-
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
@@ -1377,7 +1373,7 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
