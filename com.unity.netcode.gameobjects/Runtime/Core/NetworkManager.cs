@@ -1373,7 +1373,13 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        int IClientServer.SendMessage<T>(in T message, NetworkDelivery delivery,
+            ulong clientId)
+        {
+            return SendMessage(message, delivery, clientId);
+        }
+
+        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
