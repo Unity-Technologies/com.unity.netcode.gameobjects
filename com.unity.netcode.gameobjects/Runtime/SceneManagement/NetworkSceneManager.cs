@@ -993,10 +993,10 @@ namespace Unity.Netcode
                 }
                 else
                 {
+                    EndSceneEvent(sceneEventId);
                     throw new Exception($"Could not find the scene handle {sceneEventData.SceneHandle} for scene {sceneName} " +
                         $"during unit test.  Did you forget to register this in the unit test?");
                 }
-
                 return;
             }
 #endif
@@ -1249,10 +1249,6 @@ namespace Unity.Netcode
             EndSceneEvent(sceneEventData.SceneEventId);
         }
 
-#if UNITY_INCLUDE_TESTS
-        internal bool BypassClientPassThrough;
-#endif
-
         /// <summary>
         /// This is called when the client receives the SCENE_EVENT of type SceneEventData.SceneEventTypes.SYNC
         /// Note: This can recurse one additional time by the client if the current scene loaded by the client
@@ -1275,18 +1271,13 @@ namespace Unity.Netcode
             var sceneName = ScenesInBuild[(int)sceneIndex];
             var activeScene = SceneManager.GetActiveScene();
             var loadSceneMode = sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
-            var shouldPassThrough = false;
 
 #if UNITY_INCLUDE_TESTS
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneIndex, loadSceneMode))
             {
-                if (!BypassClientPassThrough)
-                {
-                    EndSceneEvent(sceneEventId);
-                    return;
-                }
-                shouldPassThrough = true;
+                EndSceneEvent(sceneEventId);
+                return;
             }
 #else
             // Always check to see if the scene needs to be validated
@@ -1310,7 +1301,7 @@ namespace Unity.Netcode
                 ScenePlacedObjects.Clear();
             }
 
-
+            var shouldPassThrough = false;
             var sceneLoad = (AsyncOperation)null;
 
             // Check to see if the client already has loaded the scene to be loaded
@@ -1322,7 +1313,7 @@ namespace Unity.Netcode
             }
 
 #if UNITY_INCLUDE_TESTS
-            if (m_IsRunningUnitTest && !BypassClientPassThrough)
+            if (m_IsRunningUnitTest)
             {
                 // In unit tests, we don't allow clients to load additional scenes since
                 // MultiInstance unit tests share the same scene space.
