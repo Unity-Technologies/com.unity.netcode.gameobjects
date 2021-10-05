@@ -83,4 +83,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoad_DestroyNetworkManagerTest.unity
     guid: 7dc1ab12373402546befc7d54e447258
+  - enabled: 1
+    path: Assets/Tests/Manual/UnitTestBaseScene.unity
+    guid: fa0b4956a4a0aee48ae43f9116d28354
+  - enabled: 1
+    path: Assets/Tests/Manual/PreserveNetworkObjectsOnShutdown/PreserveNetworkObjects.unity
+    guid: 3efb2ada1190a234d801b415fb526ec3
+  - enabled: 1
+    path: Assets/Samples/Physics/PhysicsSample.unity
+    guid: 2c76877ad66aa22458c62a0d74514a91
   m_configObjects: {}
