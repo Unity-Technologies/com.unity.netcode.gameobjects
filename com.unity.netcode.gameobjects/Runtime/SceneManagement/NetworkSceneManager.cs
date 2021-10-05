@@ -565,16 +565,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the build Index value for the scene name
-        /// </summary>
-        /// <param name="sceneName">scene name</param>
-        /// <returns>build index</returns>
-        internal int GetBuildIndexFromSceneName(string sceneName)
-        {
-            return SceneUtility.GetBuildIndexByScenePath(sceneName);
-        }
-
-        /// <summary>
         /// Entry method for scene unloading validation
         /// </summary>
         /// <param name="scene">the scene to be unloaded</param>
