@@ -141,7 +141,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Whether or not to enable Snapshot System for variable updates. Not supported in this version.
         /// </summary>
-        public bool UseSnapshotDelta { get; internal set;} = false;
+        public bool UseSnapshotDelta { get; internal set; } = false;
         /// <summary>
         /// Whether or not to enable Snapshot System for spawn and despawn commands. Not supported in this version.
         /// </summary>

@@ -91,7 +91,7 @@ namespace Unity.Netcode
         internal int NumDespawns = 0;
 
         internal IClientServer NetworkManager;
-        internal NetworkSpawnManager networkSpawnManager;
+        internal NetworkSpawnManager NetworkSpawnManager;
 
         // indexed by ObjectId
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
@@ -439,13 +439,13 @@ namespace Unity.Netcode
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
-                    var networkObject = networkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    networkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
                 else
                 {
-                    var networkObject = networkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    networkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
             }
             for (var i = 0; i < message.Despawns.Length; i++)
@@ -462,10 +462,10 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
-                networkSpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                NetworkSpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
                     out NetworkObject networkObject);
 
-                networkSpawnManager.OnDespawnObject(networkObject, true);
+                NetworkSpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
@@ -570,7 +570,7 @@ namespace Unity.Netcode
         /// <param name="key">The key to search for</param>
         private NetworkVariableBase FindNetworkVar(VariableKey key)
         {
-            var spawnedObjects = networkSpawnManager.SpawnedObjects;
+            var spawnedObjects = NetworkSpawnManager.SpawnedObjects;
 
             if (spawnedObjects.ContainsKey(key.NetworkObjectId))
             {
@@ -639,7 +639,7 @@ namespace Unity.Netcode
             m_NetworkSpawnManager = networkSpawnManager;
 
             m_Snapshot = new Snapshot();
-            m_Snapshot.networkSpawnManager = networkSpawnManager;
+            m_Snapshot.NetworkSpawnManager = networkSpawnManager;
             m_Snapshot.NetworkManager = networkManager;
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
