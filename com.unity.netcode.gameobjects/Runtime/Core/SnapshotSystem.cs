@@ -91,6 +91,7 @@ namespace Unity.Netcode
         internal int NumDespawns = 0;
 
         internal IClientServer NetworkManager;
+        internal NetworkSpawnManager networkSpawnManager;
 
         // indexed by ObjectId
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
@@ -438,13 +439,13 @@ namespace Unity.Netcode
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
-                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                    var networkObject = networkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    networkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
                 else
                 {
-                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                    var networkObject = networkSpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    networkSpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 }
             }
             for (var i = 0; i < message.Despawns.Length; i++)
@@ -461,10 +462,10 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
-                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                networkSpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
                     out NetworkObject networkObject);
 
-                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+                networkSpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
@@ -569,7 +570,7 @@ namespace Unity.Netcode
         /// <param name="key">The key to search for</param>
         private NetworkVariableBase FindNetworkVar(VariableKey key)
         {
-            var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
+            var spawnedObjects = networkSpawnManager.SpawnedObjects;
 
             if (spawnedObjects.ContainsKey(key.NetworkObjectId))
             {
@@ -617,6 +618,7 @@ namespace Unity.Netcode
         private IClientServer m_NetworkManager;
         private NetworkConfig m_NetworkConfig;
         private NetworkTickSystem m_NetworkTickSystem;
+        private NetworkSpawnManager m_NetworkSpawnManager;
         private Snapshot m_Snapshot = default;
 
         // by clientId
@@ -629,13 +631,15 @@ namespace Unity.Netcode
         /// Constructor
         /// </summary>
         /// Registers the snapshot system for early updates, keeps reference to the NetworkManager
-        internal SnapshotSystem(IClientServer networkManager, NetworkConfig networkConfig, NetworkTickSystem networkTickSystem)
+        internal SnapshotSystem(IClientServer networkManager, NetworkConfig networkConfig, NetworkTickSystem networkTickSystem, NetworkSpawnManager networkSpawnManager)
         {
-            m_Snapshot = new Snapshot();
-
             m_NetworkConfig = networkConfig;
             m_NetworkManager = networkManager;
             m_NetworkTickSystem = networkTickSystem;
+            m_NetworkSpawnManager = networkSpawnManager;
+
+            m_Snapshot = new Snapshot();
+            m_Snapshot.networkSpawnManager = networkSpawnManager;
             m_Snapshot.NetworkManager = networkManager;
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);

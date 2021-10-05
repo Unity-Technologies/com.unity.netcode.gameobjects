@@ -21,7 +21,6 @@ namespace Unity.Netcode
         public bool IsServer { get; }
         public ulong ServerClientId { get; }
         public IReadOnlyList<ulong> ConnectedClientsIds { get; }
-        public NetworkSpawnManager SpawnManager { get; }
         public IReadOnlyList<NetworkClient> ConnectedClientsList { get; }
         public bool IsConnectedClient { get; }
 
@@ -570,7 +569,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
+            SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem, SpawnManager);
 
             if (server)
             {
