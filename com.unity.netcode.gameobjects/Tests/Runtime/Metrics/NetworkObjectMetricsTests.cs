@@ -50,12 +50,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
-            var metricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, metricValues.Count);
+            var objectSpawnedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, objectSpawnedSentMetricValues.Count);
 
-            var objectSpawned = metricValues.First();
+            var objectSpawned = objectSpawnedSentMetricValues.First();
+            Assert.AreEqual(Client.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectSpawned.NetworkId.Name);
-            AssertLocalAndRemoteMetricsSent(metricValues);
+            Assert.AreNotEqual(0, objectSpawned.BytesCount);
         }
 
         [UnityTest]
@@ -90,12 +91,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
-            var metricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, metricValues.Count); // As there's a client and server, this event is emitted twice.
+            var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count); // As there's a client and server, this event is emitted twice.
 
-            var objectDestroyed = metricValues.Last();
+            var objectDestroyed = objectDestroyedSentMetricValues.Last();
+            Assert.AreEqual(Client.LocalClientId, objectDestroyed.Connection.Id);
             Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectDestroyed.NetworkId.Name);
-            AssertLocalAndRemoteMetricsSent(metricValues);
+            Assert.AreNotEqual(0, objectDestroyed.BytesCount);
         }
 
         [UnityTest]
