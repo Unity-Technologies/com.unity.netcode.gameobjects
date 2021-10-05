@@ -56,6 +56,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Resets the tick system to the given network time.
+        /// </summary>
+        /// <param name="localTimeSec">The local time in seconds.</param>
+        /// <param name="serverTimeSec">The server time in seconds.</param>
+        public void Reset(double localTimeSec, double serverTimeSec)
+        {
+            LocalTime = new NetworkTime(TickRate, localTimeSec);
+            ServerTime = new NetworkTime(TickRate, serverTimeSec);
+        }
+
+        /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
         /// </summary>
         public void UpdateTick(double localTimeSec, double serverTimeSec)
