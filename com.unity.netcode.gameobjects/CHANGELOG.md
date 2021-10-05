@@ -11,7 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added `ClientNetworkTransform` sample to the SDK package (#1168)
-- Added `Bootstamp` sample to the SDK package (#1140)
+- Added `Bootstrap` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
