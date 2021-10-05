@@ -151,7 +151,11 @@ namespace Unity.Netcode
 
                 if (Debug.isDebugBuild)
                 {
-                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
+                    if (t >= 0)
+                    {
+                        string msg =  $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}";
+                        Debug.LogWarning(msg);
+                    }
                 }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
