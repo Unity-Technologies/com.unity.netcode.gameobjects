@@ -16,11 +16,24 @@ using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
 {
+    internal interface IClientServer
+    {
+        public bool IsServer { get; }
+        public ulong ServerClientId { get; }
+        public IReadOnlyList<ulong> ConnectedClientsIds { get; }
+        public NetworkSpawnManager SpawnManager { get; }
+        public IReadOnlyList<NetworkClient> ConnectedClientsList { get; }
+        public bool IsConnectedClient { get; }
+
+        public ulong LocalClientId { get; }
+
+        public int SendMessageInterface(in INetworkMessage message, NetworkDelivery delivery, ulong clientId);
+    };
     /// <summary>
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IClientServer
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
 
@@ -557,7 +570,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem(this);
+            SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
             if (server)
             {
@@ -1295,6 +1308,11 @@ namespace Unity.Netcode
 #endif
                     break;
             }
+        }
+
+        public int SendMessageInterface(in INetworkMessage message, NetworkDelivery delivery, ulong clientId)
+        {
+            return SendMessage(message, delivery, clientId);
         }
 
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)

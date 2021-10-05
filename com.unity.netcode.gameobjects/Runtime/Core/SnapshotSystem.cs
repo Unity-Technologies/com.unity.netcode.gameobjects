@@ -90,7 +90,7 @@ namespace Unity.Netcode
         internal SnapshotDespawnCommand[] Despawns;
         internal int NumDespawns = 0;
 
-        internal NetworkManager NetworkManager;
+        internal IClientServer NetworkManager;
 
         // indexed by ObjectId
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
@@ -614,7 +614,9 @@ namespace Unity.Netcode
         internal const ushort SentinelBefore = 0x4246;
         internal const ushort SentinelAfter = 0x89CE;
 
-        private NetworkManager m_NetworkManager = default;
+        private IClientServer m_NetworkManager;
+        private NetworkConfig m_NetworkConfig;
+        private NetworkTickSystem m_NetworkTickSystem;
         private Snapshot m_Snapshot = default;
 
         // by clientId
@@ -627,11 +629,13 @@ namespace Unity.Netcode
         /// Constructor
         /// </summary>
         /// Registers the snapshot system for early updates, keeps reference to the NetworkManager
-        internal SnapshotSystem(NetworkManager networkManager)
+        internal SnapshotSystem(IClientServer networkManager, NetworkConfig networkConfig, NetworkTickSystem networkTickSystem)
         {
             m_Snapshot = new Snapshot();
 
+            m_NetworkConfig = networkConfig;
             m_NetworkManager = networkManager;
+            m_NetworkTickSystem = networkTickSystem;
             m_Snapshot.NetworkManager = networkManager;
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -658,14 +662,14 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            if (!m_NetworkConfig.UseSnapshotDelta && !m_NetworkConfig.UseSnapshotSpawn)
             {
                 return;
             }
 
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                var tick = m_NetworkManager.NetworkTickSystem.LocalTime.Tick;
+                var tick = m_NetworkTickSystem.LocalTime.Tick;
 
                 if (tick != m_CurrentTick)
                 {
@@ -740,7 +744,7 @@ namespace Unity.Netcode
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
 
-            m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+            m_NetworkManager.SendMessageInterface(message, NetworkDelivery.Unreliable, clientId);
 
             m_ClientData[clientId].LastReceivedSequence = 0;
 
@@ -823,7 +827,7 @@ namespace Unity.Netcode
                     spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.SpawnData>();
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (spawnUsage > m_NetworkManager.NetworkConfig.SnapshotMaxSpawnUsage)
+                    if (spawnUsage > m_NetworkConfig.SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         break;
@@ -856,7 +860,7 @@ namespace Unity.Netcode
                     spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.DespawnData>();
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (spawnUsage > m_NetworkManager.NetworkConfig.SnapshotMaxSpawnUsage)
+                    if (spawnUsage > m_NetworkConfig.SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         break;
@@ -922,7 +926,7 @@ namespace Unity.Netcode
             k.NetworkObjectId = networkObjectId;
             k.BehaviourIndex = (ushort)behaviourIndex;
             k.VariableIndex = (ushort)variableIndex;
-            k.TickWritten = m_NetworkManager.NetworkTickSystem.LocalTime.Tick;
+            k.TickWritten = m_NetworkTickSystem.LocalTime.Tick;
 
             int pos = m_Snapshot.Find(k);
             if (pos == Entry.NotFound)
