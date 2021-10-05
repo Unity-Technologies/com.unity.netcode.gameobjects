@@ -75,7 +75,16 @@ namespace Unity.Netcode
             if (IsHost || IsServer)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
@@ -172,7 +181,16 @@ namespace Unity.Netcode
             if (shouldSendToHost)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 messageSize = tempBuffer.Length;
             }
 

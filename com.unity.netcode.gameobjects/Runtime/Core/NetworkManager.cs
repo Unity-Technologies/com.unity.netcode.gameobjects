@@ -56,7 +56,7 @@ namespace Unity.Netcode
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
-        private MessagingSystem m_MessagingSystem;
+        internal MessagingSystem MessagingSystem;
 
         private NetworkPrefabHandler m_PrefabHandler;
 
@@ -244,7 +244,7 @@ namespace Unity.Netcode
             internal set
             {
                 m_LocalClientId = value;
-                m_MessagingSystem.SetLocalClientId(value);
+                MessagingSystem.SetLocalClientId(value);
             }
         }
 
@@ -497,13 +497,13 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
+            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
 
-            m_MessagingSystem.Hook(new NetworkManagerHooks(this));
+            MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_MessagingSystem.Hook(new ProfilingHooks());
+            MessagingSystem.Hook(new ProfilingHooks());
 #endif
-            m_MessagingSystem.Hook(new MetricHooks(this));
+            MessagingSystem.Hook(new MetricHooks(this));
 
             LocalClientId = ulong.MaxValue;
 
@@ -845,7 +845,7 @@ namespace Unity.Netcode
             }
 
             Initialize(false);
-            m_MessagingSystem.ClientConnected(ServerClientId);
+            MessagingSystem.ClientConnected(ServerClientId);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
@@ -891,7 +891,7 @@ namespace Unity.Netcode
             Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
-            m_MessagingSystem.ClientConnected(ServerClientId);
+            MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
 
             IsServer = true;
@@ -1000,9 +1000,9 @@ namespace Unity.Netcode
             if (IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
-                if (m_MessagingSystem != null)
+                if (MessagingSystem != null)
                 {
-                    m_MessagingSystem.ProcessSendQueues();
+                    MessagingSystem.ProcessSendQueues();
                 }
 
                 var disconnectedIds = new HashSet<ulong>();
@@ -1063,10 +1063,10 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
-            if (m_MessagingSystem != null)
+            if (MessagingSystem != null)
             {
-                m_MessagingSystem.Dispose();
-                m_MessagingSystem = null;
+                MessagingSystem.Dispose();
+                MessagingSystem = null;
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -1142,7 +1142,7 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
-            m_MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem.ProcessIncomingMessageQueue();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
@@ -1164,7 +1164,8 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            m_MessagingSystem.ProcessSendQueues();
+            MessagingSystem.ProcessSendQueues();
+            SpawnManager.CleanupStaleTriggers();
         }
 
         /// <summary>
@@ -1228,7 +1229,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
-                    m_MessagingSystem.ClientConnected(clientId);
+                    MessagingSystem.ClientConnected(clientId);
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1320,9 +1321,9 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return m_MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
-            return m_MessagingSystem.SendMessage(message, delivery, clientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
         public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
@@ -1348,10 +1349,10 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return m_MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
 
-            return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
         internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
@@ -1368,7 +1369,7 @@ namespace Unity.Netcode
             {
                 return 0;
             }
-            return m_MessagingSystem.SendMessage(message, delivery, clientId);
+            return MessagingSystem.SendMessage(message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1377,7 +1378,7 @@ namespace Unity.Netcode
             s_HandleIncomingData.Begin();
 #endif
 
-            m_MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
+            MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1473,7 +1474,7 @@ namespace Unity.Netcode
 
                 m_ConnectedClients.Remove(clientId);
             }
-            m_MessagingSystem.ClientDisconnected(clientId);
+            MessagingSystem.ClientDisconnected(clientId);
         }
 
         private void SyncTime()
