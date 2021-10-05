@@ -53,6 +53,8 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Client.OnClientConnectedCallback += ClientOnOnClientConnectedCallback;
 
+            var clientStartRealTime = Time.time;
+
             m_Client.StartClient();
             BaseMultiInstanceTest.SceneManagerValidationAndTestRunnerInitialization(clients[0]);
 
@@ -65,10 +67,13 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
+            var clientStartRealTimeDuration = Time.time - clientStartRealTime;
+            var clientStartRealTickDuration = Mathf.FloorToInt(clientStartRealTimeDuration * 30);
+
             // check tick is initialized with server value
             Assert.AreNotEqual(0, m_ConnectedTick);
 
-            Assert.True(m_ClientTickCounter <= 3);
+            Assert.True(m_ClientTickCounter <= clientStartRealTickDuration);
 
             MultiInstanceHelpers.Destroy();
             yield return null;
