@@ -56,7 +56,7 @@ namespace Unity.Netcode
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
-        internal MessagingSystem MessagingSystem;
+        internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
 
