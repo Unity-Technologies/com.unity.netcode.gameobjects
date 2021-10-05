@@ -1154,8 +1154,18 @@ namespace Unity.Netcode
         // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
+            if (IsServer == false && IsConnectedClient == false)
+            {
+                // As a client wait to run the time system until we are connected.
+                return;
+            }
+
             // Only update RTT here, server time is updated by time sync messages
-            NetworkTimeSystem.Advance(Time.deltaTime);
+            var reset = NetworkTimeSystem.Advance(Time.deltaTime);
+            if (reset)
+            {
+                NetworkTickSystem.Reset(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
+            }
             NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
 
             if (IsServer == false)
