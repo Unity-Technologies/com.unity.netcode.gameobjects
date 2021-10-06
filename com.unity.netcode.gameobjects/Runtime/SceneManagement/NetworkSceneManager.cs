@@ -320,22 +320,10 @@ namespace Unity.Netcode
             {
                 DontDestroyOnLoadScene = networkManager.gameObject.scene;
             }
-            else // Otherwise, we have to create a GameObject and move it into the DDOL to get the scene
+            else
             {
-
-#if UNITY_INCLUDE_TESTS
-                // During unit and integration tests, we could initialize and then enable scene management
-                // which would make this generate an extra GameObject per instance. The DontDestroyOnLoadScene
-                // is internal so tests that are using multiInstance and that are moving NetworkObjects into
-                // the DDOL scene will have to manually set this. Otherwise, we can exclude DDOL stuff completely
-                // during unit testing.
-                if (m_IsRunningUnitTest)
-                {
-                    return;
-                }
-#endif
-                // Create our DDOL GameObject and move it into the DDOL scene so we can register the DDOL with
-                // the NetworkSceneManager and then destroy the DDOL GameObject
+                // Otherwise, we have to create a GameObject and move it into the DDOL in order to
+                // register the DDOL scene handle with NetworkSceneManager
                 var myDDOLObject = new GameObject("DDOL-NWSM");
                 UnityEngine.Object.DontDestroyOnLoad(myDDOLObject);
                 DontDestroyOnLoadScene = myDDOLObject.scene;
