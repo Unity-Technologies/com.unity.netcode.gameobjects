@@ -181,15 +181,12 @@ namespace Unity.Netcode
             {
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : messageSize;
                     NetworkManager.NetworkMetrics.TrackRpcSent(
                         client.Key,
                         NetworkObjectId,
                         rpcMethodName,
                         __getTypeName(),
-                        bytesReported);
+                        messageSize);
                 }
             }
 #endif
