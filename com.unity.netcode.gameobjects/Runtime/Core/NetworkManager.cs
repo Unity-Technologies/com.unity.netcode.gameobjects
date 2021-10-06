@@ -893,6 +893,7 @@ namespace Unity.Netcode
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
             m_MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
+            NetworkMetrics.SetConnectionId(LocalClientId);
 
             IsServer = true;
             IsClient = true;
@@ -1184,7 +1185,6 @@ namespace Unity.Netcode
                 SyncTime();
             }
 
-            NetworkMetrics.SetConnectionId(LocalClientId);
             NetworkMetrics.DispatchFrame();
         }
 
