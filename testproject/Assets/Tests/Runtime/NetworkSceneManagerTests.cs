@@ -576,7 +576,7 @@ namespace TestProject.RuntimeTests
 
             var sceneEventData = new SceneEventData(networkManager);
             sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            sceneEventData.SceneIndex = 0;
+            sceneEventData.SceneHash = XXHash.Hash32("SomeRandomSceneName");
             sceneEventData.SceneEventProgressId = Guid.NewGuid();
             sceneEventData.LoadSceneMode = LoadSceneMode.Single;
             sceneEventData.SceneHandle = 32768;
