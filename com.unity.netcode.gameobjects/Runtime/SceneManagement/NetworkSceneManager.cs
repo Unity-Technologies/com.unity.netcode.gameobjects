@@ -770,7 +770,7 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
             var sceneUnload = (AsyncOperation)null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 sceneUnload = new AsyncOperation();
@@ -800,7 +800,7 @@ namespace Unity.Netcode
             });
 
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 OnSceneUnloaded(sceneEventId);
@@ -993,10 +993,10 @@ namespace Unity.Netcode
                 }
                 else
                 {
+                    EndSceneEvent(sceneEventId);
                     throw new Exception($"Could not find the scene handle {sceneEventData.SceneHandle} for scene {sceneName} " +
                         $"during unit test.  Did you forget to register this in the unit test?");
                 }
-                EndSceneEvent(sceneEventId);
                 return;
             }
 #endif
@@ -1267,7 +1267,7 @@ namespace Unity.Netcode
             var loadSceneMode = sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode))
+            if (!ValidateSceneBeforeLoading(sceneIndex, loadSceneMode))
             {
                 EndSceneEvent(sceneEventId);
                 return;
@@ -1297,7 +1297,7 @@ namespace Unity.Netcode
                 shouldPassThrough = true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 // In unit tests, we don't allow clients to load additional scenes since
