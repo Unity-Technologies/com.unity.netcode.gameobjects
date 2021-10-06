@@ -3,21 +3,21 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class NetworkVariableMetricsTests : SingleClientMetricTestBase
+    internal class NetworkVariableMetricsTests : SingleClientMetricTestBase
     {
         protected override Action<GameObject> UpdatePlayerPrefab => prefab => prefab.AddComponent<NetworkVariableComponent>();
 
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaSentMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkVariableDeltaSent);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
@@ -25,14 +25,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var networkVariableDeltaSent = metricValues.First();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
-            Assert.AreEqual(Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
-            Assert.AreNotEqual(0, networkVariableDeltaSent.BytesCount);
+            AssertLocalAndRemoteMetricsSent(metricValues);
         }
 
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkVariableDeltaReceived);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 

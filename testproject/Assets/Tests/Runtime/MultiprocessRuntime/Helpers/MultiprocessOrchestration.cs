@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,16 +12,17 @@ using Debug = UnityEngine.Debug;
 public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
-    public static List<Process> Processes = new List<Process>();
     private static DirectoryInfo s_MultiprocessDirInfo;
-
-    public static void StartWorkerOnNodes()
+    public static DirectoryInfo MultiprocessDirInfo
     {
-        if (Processes == null)
-        {
-            Processes = new List<Process>();
-        }
-        Debug.Log("Determine whether to start on local or remote nodes");
+        private set => s_MultiprocessDirInfo = value;
+        get => s_MultiprocessDirInfo != null ? s_MultiprocessDirInfo : initMultiprocessDirinfo();
+    }
+    private static List<Process> s_Processes = new List<Process>();
+    private static int s_TotalProcessCounter = 0;
+
+    private static DirectoryInfo initMultiprocessDirinfo()
+    {
         string userprofile = "";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -31,86 +33,96 @@ public class MultiprocessOrchestration
         {
             userprofile = Environment.GetEnvironmentVariable("HOME");
         }
-        Debug.Log($"userprofile is {userprofile}");
-
         s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
-        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
-        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
-        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
-
-        if (!s_MultiprocessDirInfo.Exists)
+        if (!MultiprocessDirInfo.Exists)
         {
-            s_MultiprocessDirInfo.Create();
+            MultiprocessDirInfo.Create();
         }
-
-        if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
-        {
-            Debug.Log("Run on remote nodes");
-            StartWorkersOnRemoteNodes(rootdir_fileinfo);
-        }
-        else
-        {
-            Debug.Log($"Run on local nodes: current count is {Processes.Count}");
-            StartWorkerNode();
-        }
+        return s_MultiprocessDirInfo;
     }
 
-    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
+    static MultiprocessOrchestration()
     {
-        // That suggests sufficient information to determine that we can run remotely
-        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
-        var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
+        initMultiprocessDirinfo();
+    }
 
-        var workerProcess = new Process();
-        // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
-        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
-        workerProcess.StartInfo.UseShellExecute = false;
-        workerProcess.StartInfo.RedirectStandardError = true;
-        workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{fileName} launch";
-        try
+    /// <summary>
+    /// This is to detect if we should ignore Multiprocess tests
+    /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
+    /// </summary>
+    public static bool ShouldIgnoreUTRTests()
+    {
+        return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
+
+    public static int ActiveWorkerCount()
+    {
+        int activeWorkerCount = 0;
+        if (s_Processes == null)
         {
-            var newProcessStarted = workerProcess.Start();
-            if (!newProcessStarted)
+            return activeWorkerCount;
+        }
+
+        if (s_Processes.Count > 0)
+        {
+            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
+            foreach (var p in s_Processes)
             {
-                throw new Exception("Failed to start worker process!");
+                if ((p != null) && (!p.HasExited))
+                {
+                    activeWorkerCount++;
+                }
             }
         }
-        catch (Win32Exception e)
-        {
-            Debug.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
-              throw;
-        }    
+        return activeWorkerCount;
     }
 
-    public static void StartWorkerNode()
+    public static string StartWorkerNode()
     {
-        Debug.Log($"Run on local nodes: current count is {Processes.Count}");
-        foreach (Process p in Processes)
+        if (s_Processes == null)
         {
-            Debug.Log($"Has the process exited? {p.HasExited} {p.Id} {p.ProcessName} is responding? {p.Responding}");
+            s_Processes = new List<Process>();
         }
 
         var workerProcess = new Process();
-        Processes.Add(workerProcess);
-        
+        s_TotalProcessCounter++;
+        if (s_Processes.Count > 0)
+        {
+            string message = "";
+            foreach (var p in s_Processes)
+            {
+                message += $" {p.Id} {p.HasExited} {p.StartTime} ";
+            }
+            MultiprocessLogger.Log($"Current process count {s_Processes.Count} with data {message}");
+        }
+
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
         // run performance tests with more realistic conditions.
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
+        string extraArgs = "";
         try
         {
-
             var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
+                    // extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    extraArgs += "-batchmode -nographics";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.exe";
+                    //extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    extraArgs += "-batchmode -nographics";
+                    break;
+                case RuntimePlatform.LinuxPlayer:
+                case RuntimePlatform.LinuxEditor:
+                    workerProcess.StartInfo.FileName = $"{buildPath}";
+                    // extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
+                    extraArgs += "-batchmode -nographics";
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
@@ -122,25 +134,54 @@ public class MultiprocessOrchestration
             throw;
         }
 
-        string logPath = Path.Combine(s_MultiprocessDirInfo.FullName, $"zlogfile{Processes.Count}");
+        string logPath = Path.Combine(MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100 -logFile {logPath}";
-        // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} {extraArgs} -logFile {logPath} -s {BuildMultiprocessTestPlayer.MainSceneName}";
+
         try
         {
+            MultiprocessLogger.Log($"Attempting to start new process, current process count: {s_Processes.Count} with arguments {workerProcess.StartInfo.Arguments}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
                 throw new Exception("Failed to start worker process!");
             }
+            s_Processes.Add(workerProcess);
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
+            MultiprocessLogger.LogError($"Error starting player, {buildInstructions}, {e}");
             throw;
         }
+        return logPath;
+    }
+
+    public static void ShutdownAllProcesses()
+    {
+        MultiprocessLogger.Log("Shutting down all processes..");
+        foreach (var process in s_Processes)
+        {
+            MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
+            try
+            {
+                if (!process.HasExited)
+                {
+                    // Close process by sending a close message to its main window.
+                    process.CloseMainWindow();
+
+                    // Free resources associated with process.
+                    process.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        s_Processes.Clear();
     }
 }

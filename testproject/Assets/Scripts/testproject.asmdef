@@ -1,8 +1,28 @@
 {
     "name": "TestProject",
+    "rootNamespace": "",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping"
-    ]
+        "Unity.Netcode.Components",
+        "Unity.Netcode.Adapter.UTP",
+        "Unity.Services.Authentication",
+        "Unity.Services.Core",
+        "Unity.Services.Relay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.relay",
+            "expression": "0.0.1-preview.3",
+            "define": "ENABLE_RELAY_SERVICE"
+        }
+    ],
+    "noEngineReferences": false
 }

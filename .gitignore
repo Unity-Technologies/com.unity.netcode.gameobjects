@@ -2,8 +2,11 @@
 .vs
 .vscode
 .idea
-.Editor
+.DS_Store
 .bin
+.Editor
+upm-ci~
+utr
+utr.bat
 .download
-upm-ci~/
 

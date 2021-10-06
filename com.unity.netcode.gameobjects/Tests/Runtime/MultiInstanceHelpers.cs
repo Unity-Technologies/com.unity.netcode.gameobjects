@@ -14,6 +14,8 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public static class MultiInstanceHelpers
     {
+        public const int DefaultMinFrames = 1;
+        public const int DefaultMaxFrames = 64;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static bool s_IsStarted;
         private static int s_ClientCount;
@@ -31,7 +33,6 @@ namespace Unity.Netcode.RuntimeTests
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-
             CreateNewClients(clientCount, out clients);
 
             // Create gameObject
@@ -44,8 +45,6 @@ namespace Unity.Netcode.RuntimeTests
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
             {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                 // Set transport
                 NetworkTransport = go.AddComponent<SIPTransport>()
             };
@@ -65,7 +64,7 @@ namespace Unity.Netcode.RuntimeTests
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
-
+            var activeSceneName = SceneManager.GetActiveScene().name;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create gameObject
@@ -76,8 +75,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
@@ -93,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="clientToStop"></param>
         public static void StopOneClient(NetworkManager clientToStop)
         {
-            clientToStop.StopClient();
+            clientToStop.Shutdown();
             Object.Destroy(clientToStop.gameObject);
             NetworkManagerInstances.Remove(clientToStop);
         }
@@ -114,24 +111,13 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsHost)
-                {
-                    networkManager.StopHost();
-                }
-                else if (networkManager.IsServer)
-                {
-                    networkManager.StopServer();
-                }
-                else if (networkManager.IsClient)
-                {
-                    networkManager.StopClient();
-                }
+                networkManager.Shutdown();
             }
 
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
 
             NetworkManagerInstances.Clear();
@@ -139,7 +125,8 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
-                Object.Destroy(s_CoroutineRunner);
+                s_CoroutineRunner.StopAllCoroutines();
+                Object.DestroyImmediate(s_CoroutineRunner);
             }
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
@@ -151,7 +138,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="host">Whether or not to create a Host instead of Server</param>
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
+        /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
+        /// <returns></returns>
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, Action<NetworkManager> startInitializationCallback = null)
         {
             if (s_IsStarted)
             {
@@ -170,9 +159,15 @@ namespace Unity.Netcode.RuntimeTests
                 server.StartServer();
             }
 
+            // if set, then invoke this for the server
+            startInitializationCallback?.Invoke(server);
+
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
+
+                // if set, then invoke this for the client
+                startInitializationCallback?.Invoke(clients[i]);
             }
 
             return true;
@@ -204,6 +199,7 @@ namespace Unity.Netcode.RuntimeTests
             public T Result;
         }
 
+        private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
 
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
@@ -214,16 +210,19 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="networkObject">The networkObject to be treated as Prefab</param>
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
-        public static void MakeNetworkedObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
+        public static void MakeNetworkObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
         {
-            // Set a globalObjectId for prefab
+            // Override `GlobalObjectIdHash` if `globalObjectIdHash` param is set
             if (globalObjectIdHash != default)
             {
-                networkObject.TempGlobalObjectIdHashOverride = globalObjectIdHash;
+                networkObject.GlobalObjectIdHash = globalObjectIdHash;
             }
 
-            // Force generation
-            networkObject.GenerateGlobalObjectIdHash();
+            // Fallback to auto-increment if `GlobalObjectIdHash` was never set
+            if (networkObject.GlobalObjectIdHash == default)
+            {
+                networkObject.GlobalObjectIdHash = ++s_AutoIncrementGlobalObjectIdHashCounter;
+            }
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
@@ -261,7 +260,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, maxFrames);
         }
@@ -273,7 +272,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="maxFrames">The max frames to wait for</param>
         /// <returns></returns>
-        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             // Make sure none are the host client
             foreach (var client in clients)
@@ -327,7 +326,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, maxFrames);
         }
@@ -338,7 +337,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             if (!server.IsServer)
             {
@@ -373,7 +372,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = 64)
+        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
         {
             if (result == null)
             {
@@ -404,7 +403,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = 64)
+        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
         {
             if (result == null)
             {
@@ -438,7 +437,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="workload">Action / code to run</param>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = 64)
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
         {
             var waitResult = new CoroutineResultWrapper<bool>();
             workload();
@@ -446,7 +445,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return Run(WaitForCondition(
                 predicate,
                 waitResult,
-                maxFrames: maxFrames));
+                maxFrames: maxFrames,
+                minFrames: minFrames));
 
             if (!waitResult.Result)
             {
@@ -454,14 +454,14 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-
         /// <summary>
         /// Waits for a predicate condition to be met
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
@@ -470,12 +470,24 @@ namespace Unity.Netcode.RuntimeTests
 
             var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
+            if (minFrames > 0)
+            {
+                yield return new WaitUntil(() =>
+                {
+                    return Time.frameCount >= minFrames;
+                });
+            }
+
+            while (Time.frameCount - startFrameNumber <= maxFrames &&
+                !predicate())
             {
                 // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
                 // see a value change (i.e. discovered in the NetworkTransformTests)
                 var nextFrameNumber = Time.frameCount + 2;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return new WaitUntil(() =>
+                {
+                    return Time.frameCount >= nextFrameNumber;
+                });
             }
 
             var res = predicate();

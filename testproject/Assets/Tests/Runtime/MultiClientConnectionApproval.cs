@@ -67,7 +67,7 @@ namespace TestProject.RuntimeTests
             var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             // Create the player prefab override if set
             if (prefabOverride)
@@ -75,8 +75,14 @@ namespace TestProject.RuntimeTests
                 // Create a default player GameObject to use
                 m_PlayerPrefabOverride = new GameObject("PlayerPrefabOverride");
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
-                MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectOverride);
+                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
+
+                server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                foreach (var client in clients)
+                {
+                    client.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                }
             }
             else
             {
@@ -142,11 +148,11 @@ namespace TestProject.RuntimeTests
 
             foreach (var client in clients)
             {
-                client.StopClient();
+                client.Shutdown();
             }
 
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
-            server.StopHost();
+            server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
@@ -180,6 +186,104 @@ namespace TestProject.RuntimeTests
                 callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
             }
         }
+
+
+
+        private int m_ServerClientConnectedInvocations;
+
+        private int m_ClientConnectedInvocations;
+
+        /// <summary>
+        /// Tests that the OnClientConnectedCallback is invoked when scene management is enabled and disabled
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement)
+        {
+            m_ServerClientConnectedInvocations = 0;
+            m_ClientConnectedInvocations = 0;
+
+            // Create Host and (numClients) clients
+            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+
+            server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+            server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+
+            foreach (var client in clients)
+            {
+                client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+                client.OnClientConnectedCallback += Client_OnClientConnectedCallback;
+            }
+
+            // Start the instances
+            if (!MultiInstanceHelpers.Start(true, server, clients))
+            {
+                Assert.Fail("Failed to start instances");
+            }
+
+            // [Client-Side] Wait for a connection to the server
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+
+            // [Host-Side] Check to make sure all clients are connected
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+
+            Assert.AreEqual(3, m_ClientConnectedInvocations);
+            Assert.AreEqual(4, m_ServerClientConnectedInvocations);
+        }
+
+        private void Client_OnClientConnectedCallback(ulong clientId)
+        {
+            m_ClientConnectedInvocations++;
+        }
+
+        private void Server_OnClientConnectedCallback(ulong clientId)
+        {
+            m_ServerClientConnectedInvocations++;
+        }
+
+
+        private int m_ServerClientDisconnectedInvocations;
+
+        /// <summary>
+        /// Tests that clients are disconnected when their ConnectionApproval setting is mismatched with the host-server
+        /// and  when scene management is enabled and disabled
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true, false)] bool connectionApproval)
+        {
+            m_ServerClientDisconnectedInvocations = 0;
+
+            // Create Host and (numClients) clients
+            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+
+            server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+            server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
+            server.NetworkConfig.ConnectionApproval = connectionApproval;
+
+            foreach (var client in clients)
+            {
+                client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
+                client.NetworkConfig.ConnectionApproval = !connectionApproval;
+            }
+
+            // Start the instances
+            if (!MultiInstanceHelpers.Start(true, server, clients))
+            {
+                Assert.Fail("Failed to start instances");
+            }
+
+            var nextFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
+        }
+
+        private void Server_OnClientDisconnectedCallback(ulong clientId)
+        {
+            m_ServerClientDisconnectedInvocations++;
+        }
+
 
         [TearDown]
         public void TearDown()

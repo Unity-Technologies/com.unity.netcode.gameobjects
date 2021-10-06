@@ -10,6 +10,10 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
+        internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
+        private static GUIStyle s_CenteredWordWrappedLabelStyle;
+        private static GUIStyle s_HelpBoxStyle;
+
         // Properties
         private SerializedProperty m_DontDestroyOnLoadProperty;
         private SerializedProperty m_RunInBackgroundProperty;
@@ -21,13 +25,11 @@ namespace Unity.Netcode.Editor
         // NetworkConfig fields
         private SerializedProperty m_PlayerPrefabProperty;
         private SerializedProperty m_ProtocolVersionProperty;
-        private SerializedProperty m_AllowRuntimeSceneChangesProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
         private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
-        private SerializedProperty m_EnableNetworkVariableProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
         private SerializedProperty m_ForceSamePrefabsProperty;
         private SerializedProperty m_EnableSceneManagementProperty;
@@ -37,7 +39,6 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_LoadSceneTimeOutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
-        private ReorderableList m_RegisteredSceneAssetsList;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -92,12 +93,10 @@ namespace Unity.Netcode.Editor
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
@@ -121,12 +120,10 @@ namespace Unity.Netcode.Editor
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
@@ -200,36 +197,16 @@ namespace Unity.Netcode.Editor
                 }
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
-
-            m_RegisteredSceneAssetsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredSceneAssets)), true, true, true, true);
-            m_RegisteredSceneAssetsList.elementHeightCallback = index =>
-            {
-                return EditorGUIUtility.singleLineHeight + 8;
-            };
-            m_RegisteredSceneAssetsList.drawElementCallback = (rect, index, isActive, isFocused) =>
-            {
-                rect.y += 5;
-
-                var sceneAsset = m_RegisteredSceneAssetsList.serializedProperty.GetArrayElementAtIndex(index);
-                int firstLabelWidth = 24;
-                int padding = 2;
-
-                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), index.ToString());
-                EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), sceneAsset, GUIContent.none);
-            };
-
-            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkScenes");
-
-            m_RegisteredSceneAssetsList.onAddCallback = (registeredList) =>
-            {
-                m_NetworkManager.NetworkConfig.RegisteredSceneAssets.Add(null);
-            };
         }
 
         public override void OnInspectorGUI()
         {
             Initialize();
             CheckNullProperties();
+
+#if !MULTIPLAYER_TOOLS
+            DrawInstallMultiplayerToolsTip();
+#endif
 
             {
                 var iterator = serializedObject.GetIterator();
@@ -256,13 +233,6 @@ namespace Unity.Netcode.Editor
 
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
-                {
-                    m_RegisteredSceneAssetsList.DoLayoutList();
-                    EditorGUILayout.Space();
-                }
-
 
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
@@ -295,12 +265,8 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_TickRateProperty);
 
                 EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
 
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableNetworkVariable))
-                {
-                    EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
-                }
+                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
 
                 EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
@@ -330,7 +296,6 @@ namespace Unity.Netcode.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
-                    EditorGUILayout.PropertyField(m_AllowRuntimeSceneChangesProperty);
                 }
 
                 serializedObject.ApplyModifiedProperties();
@@ -388,20 +353,76 @@ namespace Unity.Netcode.Editor
 
                 if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
                 {
-                    if (m_NetworkManager.IsHost)
-                    {
-                        m_NetworkManager.StopHost();
-                    }
-                    else if (m_NetworkManager.IsServer)
-                    {
-                        m_NetworkManager.StopServer();
-                    }
-                    else if (m_NetworkManager.IsClient)
-                    {
-                        m_NetworkManager.StopClient();
-                    }
+                    m_NetworkManager.Shutdown();
                 }
             }
+        }
+
+        private static void DrawInstallMultiplayerToolsTip()
+        {
+            const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
+            const string openDocsButtonText = "Open Docs";
+            const string dismissButtonText = "Dismiss";
+            const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tutorials/goldenpath_series/goldenpath_foundation_module";
+            const string infoIconName = "console.infoicon";
+
+            if (PlayerPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)
+            {
+                return;
+            }
+
+            if (s_CenteredWordWrappedLabelStyle == null)
+            {
+                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label);
+                s_CenteredWordWrappedLabelStyle.wordWrap = true;
+                s_CenteredWordWrappedLabelStyle.alignment = TextAnchor.MiddleLeft;
+            }
+
+            if (s_HelpBoxStyle == null)
+            {
+                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
+                s_HelpBoxStyle.padding = new RectOffset(10, 10, 10, 10);
+            }
+
+            var openDocsButtonStyle = GUI.skin.button;
+            var dismissButtonStyle = EditorStyles.linkLabel;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginHorizontal(s_HelpBoxStyle, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
+            {
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(infoIconName)), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true));
+                GUILayout.Space(4);
+                GUILayout.Label(getToolsText, s_CenteredWordWrappedLabelStyle, GUILayout.ExpandHeight(true));
+
+                GUILayout.Space(4);
+
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(openDocsButtonText, openDocsButtonStyle, GUILayout.Width(90), GUILayout.Height(30)))
+                {
+                    Application.OpenURL(targetUrl);
+                }
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+
+                GUILayout.Space(4);
+
+                GUILayout.BeginVertical();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
+                {
+                    PlayerPrefs.SetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 1);
+                }
+                EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
+                GUILayout.FlexibleSpace();
+                GUILayout.EndVertical();
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
         }
     }
 }

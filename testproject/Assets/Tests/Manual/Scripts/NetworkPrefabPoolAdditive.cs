@@ -6,7 +6,7 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
-    public class NetworkPrefabPoolAdditive : NetworkBehaviour
+    public class NetworkPrefabPoolAdditive : NetworkBehaviour, INetworkPrefabInstanceHandler
     {
         [Header("General Settings")]
         public bool RandomMovement = true;
@@ -43,26 +43,23 @@ namespace TestProject.ManualTests
         private GameObject m_ObjectToSpawn;
         private List<GameObject> m_ObjectPool;
 
-        private MyAdditiveCustomPrefabSpawnHandler m_AdditiveCustomPrefabSpawnHandler;
-
         /// <summary>
         /// Handles registering the custom prefab handler
         /// </summary>
         private void RegisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (m_AdditiveCustomPrefabSpawnHandler == null && EnableHandler)
+            if (EnableHandler)
             {
                 if (NetworkManager && NetworkManager.PrefabHandler != null)
                 {
-                    m_AdditiveCustomPrefabSpawnHandler = new MyAdditiveCustomPrefabSpawnHandler(this);
                     if (RegisterUsingNetworkObject)
                     {
-                        NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool.GetComponent<NetworkObject>(), m_AdditiveCustomPrefabSpawnHandler);
+                        NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool.GetComponent<NetworkObject>(), this);
                     }
                     else
                     {
-                        NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_AdditiveCustomPrefabSpawnHandler);
+                        NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, this);
                     }
                 }
             }
@@ -71,7 +68,7 @@ namespace TestProject.ManualTests
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null && m_AdditiveCustomPrefabSpawnHandler != null)
+            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -85,7 +82,7 @@ namespace TestProject.ManualTests
         /// General clean up
         /// The custom prefab handler is unregistered here
         /// </summary>
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (IsServer)
             {
@@ -99,6 +96,8 @@ namespace TestProject.ManualTests
             {
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
+
+            base.OnDestroy();
         }
 
         // Start is called before the first frame update
@@ -106,7 +105,6 @@ namespace TestProject.ManualTests
         {
             NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
         }
-
 
 
         /// <summary>
@@ -159,7 +157,7 @@ namespace TestProject.ManualTests
                         {
                             if (DestroyOnUnload)
                             {
-                                networkObject.Despawn(true);
+                                networkObject.Despawn();
                             }
                             else if (SpawnInSourceScene)
                             {
@@ -368,6 +366,12 @@ namespace TestProject.ManualTests
 
         }
 
+
+        private void OnDisable()
+        {
+            StopCoroutine(SpawnObjects());
+        }
+
         /// <summary>
         /// Coroutine to spawn boxes
         /// </summary>
@@ -425,18 +429,10 @@ namespace TestProject.ManualTests
                 }
             }
         }
-    }
 
-
-    /// <summary>
-    /// The custom prefab handler that returns an object from the prefab pool
-    /// </summary>
-    public class MyAdditiveCustomPrefabSpawnHandler : INetworkPrefabInstanceHandler
-    {
-        private NetworkPrefabPoolAdditive m_PrefabPool;
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
-            var obj = m_PrefabPool.GetObject();
+            var obj = GetObject();
             if (obj != null)
             {
                 obj.transform.position = position;
@@ -455,13 +451,8 @@ namespace TestProject.ManualTests
             }
             else
             {
-                Object.Destroy(networkObject.gameObject);
+                Destroy(networkObject.gameObject);
             }
-        }
-
-        public MyAdditiveCustomPrefabSpawnHandler(NetworkPrefabPoolAdditive objectPool)
-        {
-            m_PrefabPool = objectPool;
         }
     }
 }

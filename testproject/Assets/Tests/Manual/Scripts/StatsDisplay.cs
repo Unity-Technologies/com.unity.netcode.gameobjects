@@ -90,12 +90,14 @@ namespace TestProject.ManualTests
         /// <summary>
         /// Remove our OnClientConnectedCallback registration when we are destroyed
         /// </summary>
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (NetworkManager != null)
             {
                 NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             }
+
+            base.OnDestroy();
         }
 
         /// <summary>

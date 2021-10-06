@@ -1,5 +1,4 @@
 using System.Collections;
-using System.IO;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -26,46 +25,54 @@ namespace Unity.Netcode.RuntimeTests
                 return Dirty;
             }
 
-            public override void WriteDelta(Stream stream)
+            public override void WriteDelta(FastBufferWriter writer)
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
+                using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    writer.WriteBits((byte)1, 1);
-                    writer.WriteInt32(k_DummyValue);
+                    bitWriter.WriteBits((byte)1, 1);
                 }
+                writer.WriteValue(k_DummyValue);
 
                 DeltaWritten = true;
             }
 
-            public override void WriteField(Stream stream)
+            public override void WriteField(FastBufferWriter writer)
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
+                using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    writer.WriteBits((byte)1, 1);
-                    writer.WriteInt32(k_DummyValue);
+                    bitWriter.WriteBits((byte)1, 1);
                 }
+                writer.WriteValue(k_DummyValue);
 
                 FieldWritten = true;
             }
 
-            public override void ReadField(Stream stream)
+            public override void ReadField(FastBufferReader reader)
             {
-                using (var reader = PooledNetworkReader.Get(stream))
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
+                using (var bitReader = reader.EnterBitwiseContext())
                 {
-                    reader.ReadBits(1);
-                    Assert.AreEqual(k_DummyValue, reader.ReadInt32());
+                    bitReader.ReadBits(out byte b, 1);
                 }
+
+                reader.ReadValue(out int i);
+                Assert.AreEqual(k_DummyValue, i);
 
                 FieldRead = true;
             }
 
-            public override void ReadDelta(Stream stream, bool keepDirtyDelta)
+            public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
             {
-                using (var reader = PooledNetworkReader.Get(stream))
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
+                using (var bitReader = reader.EnterBitwiseContext())
                 {
-                    reader.ReadBits(1);
-                    Assert.AreEqual(k_DummyValue, reader.ReadInt32());
+                    bitReader.ReadBits(out byte b, 1);
                 }
+
+                reader.ReadValue(out int i);
+                Assert.AreEqual(k_DummyValue, i);
 
                 DeltaRead = true;
             }

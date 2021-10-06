@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -42,10 +43,13 @@ namespace TestProject.ManualTests
         }
 
         private bool m_ExitingScene;
-        private void OnDestroy()
+
+        public override void OnDestroy()
         {
             m_ExitingScene = true;
             StopCoroutine(CheckForVisibility());
+
+            base.OnDestroy();
         }
 
         private IEnumerator CheckForVisibility()
@@ -126,19 +130,22 @@ namespace TestProject.ManualTests
                 if (m_ToggleObject)
                 {
                     m_ToggleObject.enabled = false;
-                    StartCoroutine(SceneEventCoroutine(m_ToggleObject.isOn));
+                    ToggleSceneManager.AddNewToggleHandler(this);
                 }
             }
         }
 
+
         private bool m_WaitForSceneLoadOrUnload;
 
-        private IEnumerator SceneEventCoroutine(bool isLoading)
+        public IEnumerator SceneEventCoroutine()
         {
+            var isLoading = m_ToggleObject.isOn;
             var sceneEventProgressStatus = SceneEventProgressStatus.None;
             var continueCheck = true;
+
             NetworkManager.Singleton.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            while (continueCheck && sceneEventProgressStatus != SceneEventProgressStatus.Started)
+            while (continueCheck && sceneEventProgressStatus != SceneEventProgressStatus.Started && sceneEventProgressStatus != SceneEventProgressStatus.SceneFailedVerification)
             {
                 if (isLoading)
                 {
@@ -148,31 +155,31 @@ namespace TestProject.ManualTests
                 {
                     sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneLoaded);
                 }
-                if (sceneEventProgressStatus == SceneEventProgressStatus.SceneEventInProgress)
+
+                switch (sceneEventProgressStatus)
                 {
-                    yield return new WaitForSeconds(0.25f);
-                }
-                else
-                {
-                    switch (sceneEventProgressStatus)
-                    {
-                        case SceneEventProgressStatus.Started:
-                            {
-                                continueCheck = false;
-                                break;
-                            }
-                        case SceneEventProgressStatus.InternalNetcodeError:
-                        case SceneEventProgressStatus.InvalidSceneName:
-                        case SceneEventProgressStatus.SceneNotLoaded:
-                            {
-                                continueCheck = false;
-                                break;
-                            }
-                    }
+                    case SceneEventProgressStatus.SceneEventInProgress:
+                        {
+                            yield return new WaitForSeconds(0.25f);
+                            break;
+                        }
+                    case SceneEventProgressStatus.Started:
+                        {
+                            continueCheck = false;
+                            break;
+                        }
+                    case SceneEventProgressStatus.InternalNetcodeError:
+                    case SceneEventProgressStatus.InvalidSceneName:
+                    case SceneEventProgressStatus.SceneNotLoaded:
+                        {
+                            Debug.Log($"Scene Event Error: {sceneEventProgressStatus}");
+                            continueCheck = false;
+                            break;
+                        }
                 }
             }
             m_WaitForSceneLoadOrUnload = true;
-            var timeOutAfter = Time.realtimeSinceStartup + 10.0f;
+            var timeOutAfter = Time.realtimeSinceStartup + 5.0f;
             while (m_WaitForSceneLoadOrUnload)
             {
                 if (timeOutAfter < Time.realtimeSinceStartup)
@@ -183,11 +190,46 @@ namespace TestProject.ManualTests
                 yield return new WaitForSeconds(0.5f);
             }
 
-
             NetworkManager.Singleton.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
             m_ToggleObject.isOn = isLoading;
             m_ToggleObject.enabled = true;
+            ToggleSceneManager.CurrentQueueItem = null;
             yield return null;
+        }
+    }
+
+
+    public static class ToggleSceneManager
+    {
+
+        private static Queue<AdditiveSceneToggleHandler> s_QueueUpForLoadUnload = new Queue<AdditiveSceneToggleHandler>();
+        public static AdditiveSceneToggleHandler CurrentQueueItem;
+        static private IEnumerator GlobalQueueToggleRoutine()
+        {
+            while (s_QueueUpForLoadUnload.Count > 0)
+            {
+                CurrentQueueItem = s_QueueUpForLoadUnload.Dequeue();
+                CurrentQueueItem.StartCoroutine(CurrentQueueItem.SceneEventCoroutine());
+                while (CurrentQueueItem != null)
+                {
+                    yield return new WaitForSeconds(0.25f);
+                }
+            }
+            yield return null;
+        }
+
+
+        public static void AddNewToggleHandler(AdditiveSceneToggleHandler handler)
+        {
+            if (s_QueueUpForLoadUnload.Count == 0 && CurrentQueueItem == null)
+            {
+                s_QueueUpForLoadUnload.Enqueue(handler);
+                NetworkManager.Singleton.StartCoroutine(GlobalQueueToggleRoutine());
+            }
+            else
+            {
+                s_QueueUpForLoadUnload.Enqueue(handler);
+            }
         }
     }
 }

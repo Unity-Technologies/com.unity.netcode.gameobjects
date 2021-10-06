@@ -3,27 +3,51 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Multiplayer.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utlity;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    public class OwnershipChangeMetricsTests : SingleClientMetricTestBase
+    internal class OwnershipChangeMetricsTests : SingleClientMetricTestBase
     {
-        [UnityTest]
-        public IEnumerator TrackOwnershipChangeSentMetric()
+        private const string k_NewNetworkObjectName = "TestNetworkObjectToSpawn";
+        private NetworkObject m_NewNetworkPrefab;
+
+        protected override Action<GameObject> UpdatePlayerPrefab => _ =>
         {
-            var gameObject = new GameObject(Guid.NewGuid().ToString());
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
+            var gameObject = new GameObject(k_NewNetworkObjectName);
+            m_NewNetworkPrefab = gameObject.AddComponent<NetworkObject>();
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkPrefab);
+
+            var networkPrefab = new NetworkPrefab { Prefab = gameObject };
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            }
+        };
+
+        private NetworkObject SpawnNetworkObject()
+        {
+            // Spawn another network object so we can hide multiple.
+            var gameObject = UnityEngine.Object.Instantiate(m_NewNetworkPrefab); // new GameObject(NewNetworkObjectName);
+            var networkObject = gameObject.GetComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();
 
+            return networkObject;
+        }
+
+        [UnityTest]
+        public IEnumerator TrackOwnershipChangeSentMetric()
+        {
+            var networkObject = SpawnNetworkObject();
+
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ServerMetrics.Dispatcher, MetricNames.OwnershipChangeSent);
+            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeSent);
 
             networkObject.ChangeOwnership(1);
 
@@ -33,22 +57,17 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
-            Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(2, ownershipChangeSent.BytesCount);
+            AssertLocalAndRemoteMetricsSent(metricValues);
         }
 
         [UnityTest]
         public IEnumerator TrackOwnershipChangeReceivedMetric()
         {
-            var gameObject = new GameObject(Guid.NewGuid().ToString());
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
-            networkObject.NetworkManagerOwner = Server;
-            networkObject.Spawn();
+            var networkObject = SpawnNetworkObject();
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ClientMetrics.Dispatcher, MetricNames.OwnershipChangeReceived);
+            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeReceived);
 
             networkObject.ChangeOwnership(1);
 
@@ -59,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var ownershipChangeReceived = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeReceived.NetworkId.NetworkId);
-            Assert.AreEqual(2, ownershipChangeReceived.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>(), ownershipChangeReceived.BytesCount);
         }
     }
 }

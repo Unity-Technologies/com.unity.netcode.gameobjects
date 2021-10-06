@@ -1,0 +1,218 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Unity.Netcode
+{
+    /// <summary>
+    /// Solves for incoming values that are jittered
+    /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal abstract class BufferedLinearInterpolator<T> where T : struct
+    {
+        // interface for mock testing, abstracting away external systems
+        internal interface IInterpolatorTime
+        {
+            double BufferedServerTime { get; }
+            double BufferedServerFixedTime { get; }
+            uint TickRate { get; }
+        }
+
+        private class InterpolatorTime : IInterpolatorTime
+        {
+            private readonly NetworkManager m_Manager;
+            public InterpolatorTime(NetworkManager manager)
+            {
+                m_Manager = manager;
+            }
+            public double BufferedServerTime => m_Manager.ServerTime.Time;
+            public double BufferedServerFixedTime => m_Manager.ServerTime.FixedTime;
+            public uint TickRate => m_Manager.ServerTime.TickRate;
+        }
+
+        internal IInterpolatorTime InterpolatorTimeProxy;
+
+        private struct BufferedItem
+        {
+            public T Item;
+            public NetworkTime TimeSent;
+        }
+
+
+        /// <summary>
+        /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
+        /// </summary>
+        private double ServerTimeBeingHandledForBuffering => InterpolatorTimeProxy.BufferedServerTime;
+
+        private double RenderTime => InterpolatorTimeProxy.BufferedServerTime - 1f / InterpolatorTimeProxy.TickRate;
+
+        private T m_InterpStartValue;
+        private T m_CurrentInterpValue;
+        private T m_InterpEndValue;
+
+        private NetworkTime m_EndTimeConsumed;
+        private NetworkTime m_StartTimeConsumed;
+
+        private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
+        private const int k_BufferSizeLimit = 100;
+
+        private int m_LifetimeConsumedCount;
+
+        private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
+
+        internal BufferedLinearInterpolator(NetworkManager manager)
+        {
+            InterpolatorTimeProxy = new InterpolatorTime(manager);
+        }
+
+        public void ResetTo(T targetValue)
+        {
+            m_LifetimeConsumedCount = 1;
+            m_InterpStartValue = targetValue;
+            m_InterpEndValue = targetValue;
+            m_CurrentInterpValue = targetValue;
+            m_Buffer.Clear();
+            m_EndTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
+            m_StartTimeConsumed = new NetworkTime(InterpolatorTimeProxy.TickRate, 0);
+
+            Update(0);
+        }
+
+
+        // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
+        private void TryConsumeFromBuffer()
+        {
+            int consumedCount = 0;
+            // only consume if we're ready
+            if (RenderTime >= m_EndTimeConsumed.Time)
+            {
+                // buffer is sorted so older (smaller) time values are at the end.
+                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values
+                {
+                    var bufferedValue = m_Buffer[i];
+                    // Consume when ready. This can consume multiple times
+                    if (bufferedValue.TimeSent.Time <= ServerTimeBeingHandledForBuffering)
+                    {
+                        if (m_LifetimeConsumedCount == 0)
+                        {
+                            m_StartTimeConsumed = bufferedValue.TimeSent;
+                            m_InterpStartValue = bufferedValue.Item;
+                        }
+                        else if (consumedCount == 0)
+                        {
+                            m_StartTimeConsumed = m_EndTimeConsumed;
+                            m_InterpStartValue = m_InterpEndValue;
+                        }
+
+                        m_EndTimeConsumed = bufferedValue.TimeSent;
+                        m_InterpEndValue = bufferedValue.Item;
+                        m_Buffer.RemoveAt(i);
+                        consumedCount++;
+                        m_LifetimeConsumedCount++;
+                    }
+                }
+            }
+        }
+
+        public T Update(float deltaTime)
+        {
+            TryConsumeFromBuffer();
+
+            if (InvalidState)
+            {
+                throw new InvalidOperationException("trying to update interpolator when no data has been added to it yet");
+            }
+
+            // Interpolation example to understand the math below
+            // 4   4.5      6   6.5
+            // |   |        |   |
+            // A   render   B   Server
+
+            if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
+            {
+                float t = 1.0f;
+                if (m_EndTimeConsumed.Time != m_StartTimeConsumed.Time)
+                {
+                    double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
+                    t = (float)((RenderTime - m_StartTimeConsumed.Time) / range);
+
+                    if (t < 0.0f)
+                    {
+                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
+                    }
+
+                    if (t > 3.0f) // max extrapolation
+                    {
+                        // TODO this causes issues with teleport, investigate
+                        // todo make this configurable
+                        t = 1.0f;
+                    }
+                }
+
+                var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
+                float maxInterpTime = 0.1f;
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime); // second interpolate to smooth out extrapolation jumps
+            }
+
+            return m_CurrentInterpValue;
+        }
+
+        public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
+        {
+            if (m_Buffer.Count >= k_BufferSizeLimit)
+            {
+                Debug.LogWarning("Going over buffer size limit while adding new interpolation values, interpolation buffering isn't consuming fast enough, removing oldest value now.");
+                m_Buffer.RemoveAt(m_Buffer.Count - 1);
+            }
+
+            if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
+            {
+                m_Buffer.Add(new BufferedItem { Item = newMeasurement, TimeSent = sentTime });
+                m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
+            }
+        }
+
+        public T GetInterpolatedValue()
+        {
+            return m_CurrentInterpValue;
+        }
+
+        protected abstract T Interpolate(T start, T end, float time);
+        protected abstract T InterpolateUnclamped(T start, T end, float time);
+    }
+
+    internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    {
+        protected override float InterpolateUnclamped(float start, float end, float time)
+        {
+            return Mathf.LerpUnclamped(start, end, time);
+        }
+
+        protected override float Interpolate(float start, float end, float time)
+        {
+            return Mathf.Lerp(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorFloat(NetworkManager manager) : base(manager)
+        {
+        }
+    }
+
+    internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    {
+        protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
+        {
+            return Quaternion.SlerpUnclamped(start, end, time);
+        }
+
+        protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
+        {
+            return Quaternion.SlerpUnclamped(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorQuaternion(NetworkManager manager) : base(manager)
+        {
+        }
+    }
+}

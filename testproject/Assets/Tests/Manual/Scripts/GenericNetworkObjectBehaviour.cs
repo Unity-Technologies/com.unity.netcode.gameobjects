@@ -43,6 +43,18 @@ namespace TestProject.ManualTests
             base.OnNetworkDespawn();
         }
 
+        /// <summary>
+        /// Makes mesh renderer visible again
+        /// </summary>
+        public void Reset()
+        {
+            if (m_MeshRenderer == null)
+            {
+                m_MeshRenderer = GetComponent<MeshRenderer>();
+            }
+            m_MeshRenderer.enabled = true;
+        }
+
         private float m_VisibilitySpawn;
         /// <summary>
         /// Handles setting a delay before the newly spawned object is visible
@@ -133,7 +145,7 @@ namespace TestProject.ManualTests
                 m_ShouldDespawn = false;
                 if (NetworkObject.NetworkManager != null)
                 {
-                    NetworkObject.Despawn(true);
+                    NetworkObject.Despawn();
                 }
             }
             else if (!IsServer)

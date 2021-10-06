@@ -1,7 +1,0 @@
-{
-    "name": "Unity.Netcode.Prototyping",
-    "rootNamespace": "Unity.Netcode.Prototyping",
-    "references": [
-        "Unity.Netcode.Runtime"
-    ]
-}

@@ -1,29 +1,30 @@
-using System.IO;
+using System;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Interface for network value containers
     /// </summary>
-    public abstract class NetworkVariableBase
+    public abstract class NetworkVariableBase : IDisposable
     {
         /// <summary>
-        /// The name of the channel to be used for syncing
+        /// The delivery type (QoS) to send data with
         /// </summary>
-        public const NetworkChannel NetworkVariableChannel = NetworkChannel.NetworkVariable;
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
 
-        protected NetworkVariableBase() { }
+        private protected NetworkBehaviour m_NetworkBehaviour;
 
-        protected NetworkVariableBase(NetworkVariableSettings settings)
+        public void Initialize(NetworkBehaviour networkBehaviour)
         {
-            Settings = settings;
+            m_NetworkBehaviour = networkBehaviour;
         }
 
-        // demolish me
-        // or better setter?
-        internal protected NetworkBehaviour NetworkBehaviour { get; internal set; }
+        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
+        {
+            ReadPerm = readPermIn;
+        }
 
-        private protected bool m_IsDirty = false;
+        private protected bool m_IsDirty;
 
         /// <summary>
         /// Gets or sets the name of the network variable's instance
@@ -32,9 +33,9 @@ namespace Unity.Netcode
         public string Name { get; internal set; }
 
         /// <summary>
-        /// The settings for this var
+        /// The read permission for this var
         /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
+        public readonly NetworkVariableReadPermission ReadPerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -73,53 +74,44 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client can read to the variable</returns>
         public bool CanClientRead(ulong clientId)
         {
-            switch (Settings.ReadPermission)
+            switch (ReadPerm)
             {
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.OwnerOnly:
-                    return NetworkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
         }
 
         /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
-        public virtual bool CanClientWrite(ulong clientId)
-        {
-            return false;
-        }
-
-        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the dirty changes to</param>
-        public abstract void WriteDelta(Stream stream);
+        /// <param name="writer">The stream to write the dirty changes to</param>
+        public abstract void WriteDelta(FastBufferWriter writer);
 
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
-        /// <param name="stream">The stream to write the state to</param>
-        public abstract void WriteField(Stream stream);
+        /// <param name="writer">The stream to write the state to</param>
+        public abstract void WriteField(FastBufferWriter writer);
 
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
-        /// <param name="stream">The stream to read the state from</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        public abstract void ReadField(Stream stream);
+        /// <param name="reader">The stream to read the state from</param>
+        public abstract void ReadField(FastBufferReader reader);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
-        /// <param name="stream">The stream to read the delta from</param>
+        /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
-        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        public abstract void ReadDelta(Stream stream, bool keepDirtyDelta);
+
+        public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
+
+        public virtual void Dispose()
+        {
+        }
     }
 }
