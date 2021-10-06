@@ -475,7 +475,8 @@ namespace Unity.Netcode
                             // We store off the trailing in-scene placed serialized NetworkObject data to
                             // be processed once we are done loading.
                             m_HasInternalBuffer = true;
-                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, reader.Length - reader.Position);
+                            // We use Allocator.Persistent since scene loading could take longer than 4 frames
+                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, reader.Length - reader.Position);
                         }
                         break;
                     }
@@ -517,7 +518,8 @@ namespace Unity.Netcode
                 }
 
                 m_HasInternalBuffer = true;
-                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, sizeToCopy);
+                // We use Allocator.Persistent since scene synchronization will most likely take longer than 4 frames
+                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
             }
         }
 
