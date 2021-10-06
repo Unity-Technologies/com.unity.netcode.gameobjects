@@ -419,7 +419,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
                 var bytesReported = NetworkManager.LocalClientId == clientId
