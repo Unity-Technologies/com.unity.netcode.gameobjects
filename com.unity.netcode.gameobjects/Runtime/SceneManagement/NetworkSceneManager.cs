@@ -99,7 +99,7 @@ namespace Unity.Netcode
 
         // TODO: Remove `m_IsRunningUnitTest` entirely after we switch to multi-process testing
         // In MultiInstance tests, we cannot allow clients to load additional scenes as they're sharing the same scene space / Unity instance.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
         private readonly bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
 #endif
 
@@ -320,22 +320,10 @@ namespace Unity.Netcode
             {
                 DontDestroyOnLoadScene = networkManager.gameObject.scene;
             }
-            else // Otherwise, we have to create a GameObject and move it into the DDOL to get the scene
+            else
             {
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                // During unit and integration tests, we could initialize and then enable scene management
-                // which would make this generate an extra GameObject per instance. The DontDestroyOnLoadScene
-                // is internal so tests that are using multiInstance and that are moving NetworkObjects into
-                // the DDOL scene will have to manually set this. Otherwise, we can exclude DDOL stuff completely
-                // during unit testing.
-                if (m_IsRunningUnitTest)
-                {
-                    return;
-                }
-#endif
-                // Create our DDOL GameObject and move it into the DDOL scene so we can register the DDOL with
-                // the NetworkSceneManager and then destroy the DDOL GameObject
+                // Otherwise, we have to create a GameObject and move it into the DDOL in order to
+                // register the DDOL scene handle with NetworkSceneManager
                 var myDDOLObject = new GameObject("DDOL-NWSM");
                 UnityEngine.Object.DontDestroyOnLoad(myDDOLObject);
                 DontDestroyOnLoadScene = myDDOLObject.scene;
@@ -799,7 +787,6 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
 
-
 #if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
@@ -973,7 +960,7 @@ namespace Unity.Netcode
                 return;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 // Send the loading message
@@ -1123,10 +1110,7 @@ namespace Unity.Netcode
                         EventData = sceneEventData
                     };
                     var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-                    var bytesReported = m_NetworkManager.LocalClientId == clientId
-                            ? 0
-                            : size;
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, bytesReported);
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, size);
                 }
             }
 
@@ -1233,11 +1217,8 @@ namespace Unity.Netcode
                 EventData = sceneEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-            var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                clientId, (uint)sceneEventData.SceneEventType, "", bytesReported);
+                clientId, (uint)sceneEventData.SceneEventType, "", size);
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1588,12 +1569,8 @@ namespace Unity.Netcode
 
                 sceneEventData.Deserialize(reader);
 
-                var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : reader.Length;
-
                 m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                   clientId, (uint)sceneEventData.SceneEventType, ScenesInBuild[(int)sceneEventData.SceneIndex], bytesReported);
+                   clientId, (uint)sceneEventData.SceneEventType, ScenesInBuild[(int)sceneEventData.SceneIndex], reader.Length);
 
                 if (sceneEventData.IsSceneEventClientSide())
                 {

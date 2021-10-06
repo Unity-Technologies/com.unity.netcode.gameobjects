@@ -536,7 +536,7 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
-                NetworkObjectProvider = new NetworkObjectProvider(this)
+                NetworkObjectProvider = new NetworkObjectProvider(this),
             });
 #endif
 
@@ -893,6 +893,7 @@ namespace Unity.Netcode
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
             m_MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
+            NetworkMetrics.SetConnectionId(LocalClientId);
 
             IsServer = true;
             IsClient = true;
@@ -1175,6 +1176,7 @@ namespace Unity.Netcode
         private void OnNetworkPostLateUpdate()
         {
             m_MessagingSystem.ProcessSendQueues();
+            NetworkMetrics.DispatchFrame();
         }
 
         /// <summary>
@@ -1193,8 +1195,6 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
-
-            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
