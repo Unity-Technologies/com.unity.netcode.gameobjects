@@ -64,12 +64,12 @@ namespace TestProject.ManualTests
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
             var sceneEventMsg = $"({NetworkManager.Singleton.LocalClientId})-[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName}";
-            if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.Load || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.LoadComplete)
+            if (sceneEvent.SceneEventType == SceneEventType.Load || sceneEvent.SceneEventType == SceneEventType.LoadComplete)
             {
                 sceneEventMsg += $" | { sceneEvent.LoadSceneMode}";
             }
 
-            if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.UnloadEventCompleted || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.LoadEventCompleted)
+            if (sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted || sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
             {
                 sceneEventMsg += $" | Loaded ({sceneEvent.ClientsThatCompleted.Count}) : (";
                 foreach (var clientId in sceneEvent.ClientsThatCompleted)

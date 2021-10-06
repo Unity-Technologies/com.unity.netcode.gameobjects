@@ -194,7 +194,6 @@ namespace TestProject.RuntimeTests
         /// Wait until all clients have processed the event and the server has determined the event is completed
         /// Will bail if it takes too long via m_TimeOutMarker
         /// </summary>
-        /// <returns></returns>
         private bool ShouldWait()
         {
             m_TimedOut = m_TimeOutMarker < Time.realtimeSinceStartup;
@@ -212,8 +211,6 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Determines if the clientId is valid
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <returns></returns>
         private bool ContainsClient(ulong clientId)
         {
             return m_ShouldWaitList.Select(c => c.ClientId).Where(c => c == clientId).Count() > 0;
@@ -222,7 +219,6 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Sets the specific clientId entry as having processed the current event
         /// </summary>
-        /// <param name="clientId"></param>
         private void SetClientProcessedEvent(ulong clientId)
         {
             m_ShouldWaitList.Select(c => c).Where(c => c.ClientId == clientId).First().ProcessedEvent = true;
@@ -231,7 +227,6 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Sets all known clients' ShouldWait value to false
         /// </summary>
-        /// <param name="clientId"></param>
         private void SetClientWaitDone(List<ulong> clients)
         {
             foreach (var clientId in clients)
@@ -266,29 +261,28 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// This test only needs to check the server side for the proper event notifications of loading a scene, each
-        /// client response that it loaded the scene, and the final  event notifications S2C_LoadComplete and S2C_UnloadComplete
-        /// that signify all clients have processed through the loading and unloading process.
+        /// client response that it loaded the scene, and the final event notifications <see cref="SceneEventType.LoadEventCompleted"/>
+        /// and <see cref="SceneEventType.UnloadEventCompleted"/> that signifies all clients have completed a loading or unloading event.
         /// </summary>
-        /// <param name="sceneEvent"></param>
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
             switch (sceneEvent.SceneEventType)
             {
-                case SceneEventData.SceneEventTypes.Synchronize:
+                case SceneEventType.Synchronize:
                     {
                         // Verify that the Client Synchronization Mode set by the server is being received by the client (which means it is applied when loading the first scene)
                         Assert.AreEqual(m_ClientNetworkManagers.ToArray().Where(c => c.LocalClientId == sceneEvent.ClientId).First().SceneManager.ClientSynchronizationMode, sceneEvent.LoadSceneMode);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Load:
-                case SceneEventData.SceneEventTypes.Unload:
+                case SceneEventType.Load:
+                case SceneEventType.Unload:
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.LoadComplete:
+                case SceneEventType.LoadComplete:
                     {
                         if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId)
                         {
@@ -318,15 +312,15 @@ namespace TestProject.RuntimeTests
                         SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.UnloadComplete:
+                case SceneEventType.UnloadComplete:
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.LoadEventCompleted:
-                case SceneEventData.SceneEventTypes.UnloadEventCompleted:
+                case SceneEventType.LoadEventCompleted:
+                case SceneEventType.UnloadEventCompleted:
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
