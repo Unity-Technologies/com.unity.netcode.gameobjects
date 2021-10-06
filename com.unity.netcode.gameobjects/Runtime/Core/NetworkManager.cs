@@ -1176,6 +1176,7 @@ namespace Unity.Netcode
         private void OnNetworkPostLateUpdate()
         {
             m_MessagingSystem.ProcessSendQueues();
+            NetworkMetrics.DispatchFrame();
         }
 
         /// <summary>
@@ -1194,8 +1195,6 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
-
-            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
