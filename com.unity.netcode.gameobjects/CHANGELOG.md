@@ -26,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Will leverage unreliable messages with eventual consistency
 - `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
+- `NetworkBehaviour.IsSpawned` a quick (and stable) way to determine if the associated NetworkObject is spawned (#1190)
 
 ### Changed
 
@@ -50,6 +51,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
+- `NetworkManager, NetworkConfig, and NetworkSceneManager` scene registration replaced with scenes in build list (#1080)
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
 - Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
@@ -147,9 +149,7 @@ Philipp:
 Others (2nd iteration):
 
 - [d3408ac5] (2021-10-01) Andrew Spiering / fix: Fixing an issue where OnClientDisconnectCallback was not being called when using UTP (#1243)
-- [ad797f49] (2021-09-30) Noel Stephens / fix: network scene manager scenes in build message (#1226)
 - [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
-- [6e832760] (2021-09-29) Noel Stephens / fix: Client errors during networked scene loads (#1186)
 - [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
 - [d4678fd2] (2021-09-28) Andrew Spiering / fix: fixing MTT-1299 (#1227)
 - [c215d154] (2021-09-28) Luke Stampfli / perf!: reduce linq, cleanup connectedclients (#1196)
@@ -160,23 +160,16 @@ Others (2nd iteration):
 - [4fe7a30c] (2021-09-17) Luke Stampfli / feat: network physics (#1175)
 - [0654eaf8] (2021-09-16) Luke Stampfli / feat: add `NetworkObject` and `NetworkBehaviour` reference types (#1173)
 - [80913c10] (2021-09-16) Jeffrey Rainy / feat: snapshot spawn pre-requisite 2 (#1192)
-- [5114ca80] (2021-09-15) Noel Stephens / feat: NetworkBehaviour.IsSpawned  (#1190)
 - [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
 - [eaa2f196] (2021-09-14) Jeffrey Rainy / chore: removal of EnableNetworkVariable in NetworkConfig. It's always True now (#1179)
 - [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
 - [fbd893dc] (2021-09-13) Jeffrey Rainy / feat: snapshot spawn pre-requisite (#1166)
 - [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
-- [9d0f50e9] (2021-09-13) Noel Stephens / feat: client scene synchronization mode (#1171)
-- [b6937e8b] (2021-09-07) Noel Stephens / fix: NetworkObject parenting support in scene transitioning (#1148)
-- [847068bf] (2021-09-03) Noel Stephens / fix: MTT-504 connection approval messages and comparing networkconfig (#1138)
-- [8a74421f] (2021-09-02) Noel Stephens / fix: networkscenemanager not releasing buffers from pool (#1132)
 - [b5b40dec] (2021-09-02) Jeffrey Rainy / fix: snapshot system. last fixes for release (#1129)
 - [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
-- [f703ba57] (2021-09-01) Noel Stephens / fix: client connected InvokeOnClientConnectedCallback with scene management disabled (#1123)
 - [9c759d6f] (2021-08-31) Jeffrey Rainy / feat: snapshot. MTU sizing option for Snapshot. MTT-1087 (#1111)
-- [c1ee3b62] (2021-08-30) Noel Stephens / feat: replace scene registration with scenes in build list (#1080)
 - [b5f761cf] (2021-08-27) Jeffrey Rainy / fix: mtt-857 GitHub issue 915 (#1099)
-- [ced41388] (2021-08-27) Noel Stephens / fix: NetworkSceneManager exception when DontDestroyOnLoad NetworkObjects are being synchronized (#1090)
+synchronized (#1090)
 
 ## [0.2.0] - 2021-06-03
 
