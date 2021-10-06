@@ -385,7 +385,6 @@ namespace Unity.Netcode
         public string ConnectedHostname { get; private set; }
 
         internal INetworkMetrics NetworkMetrics { get; private set; }
-        private int m_LastMetricsTickId;
 
         internal static event Action OnSingletonReady;
 
@@ -533,7 +532,6 @@ namespace Unity.Netcode
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
             }
-            m_LastMetricsTickId = 0;
 
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
@@ -1167,11 +1165,7 @@ namespace Unity.Netcode
         private void OnNetworkPostLateUpdate()
         {
             m_MessagingSystem.ProcessSendQueues();
-            if (m_LastMetricsTickId != NetworkTickSystem.LocalTime.Tick)
-            {
-                NetworkMetrics.DispatchFrame();
-                m_LastMetricsTickId = NetworkTickSystem.LocalTime.Tick;
-            }
+            NetworkMetrics.DispatchFrame();
         }
 
         /// <summary>

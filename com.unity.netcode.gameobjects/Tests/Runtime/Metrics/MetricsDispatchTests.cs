@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -59,8 +60,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator GivenMultipleTicks_OneDispatchOccurs()
+        public IEnumerator GivenMetricsTracked_MultipleTicksPass_OneDispatchOccurs()
         {
+            SendMetric();
             AdvanceTicks(2);
 
             // Wait one frame so dispatch occurs
@@ -71,8 +73,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator GivenOneTick_OneDispatchOccurs()
+        public IEnumerator GivenMetricsTracked_OneTickPasses_OneDispatchOccurs()
         {
+            SendMetric();
             AdvanceTicks(1);
 
             // Wait one frame so dispatch occurs
@@ -83,7 +86,18 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator GivenZeroTicks_ZeroDispatchesOccur()
+        public IEnumerator GivenMetricsTracked_ZeroTicksPass_OneDispatchOccurs()
+        {
+            SendMetric();
+
+            yield return null;
+
+            Assert.AreEqual(0, m_NumTicks);
+            Assert.AreEqual(1, m_NumDispatches);
+        }
+
+        [UnityTest]
+        public IEnumerator GivenNoMetricsTracked_ZeroTicksPass_NoDispatchOccurs()
         {
             yield return null;
 
@@ -92,8 +106,24 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        public IEnumerator GivenNoMetricsTracked_MultipleTicksPass_NoDispatchOccurs()
+        {
+            AdvanceTicks(2);
+
+            yield return null;
+
+            Assert.AreEqual(2, m_NumTicks);
+            Assert.AreEqual(0, m_NumDispatches);
+        }
+
+        [UnityTest]
+        // This tests a regression where dispatches would not occur when the network manager was reset
+        //     after a single tick and then started again. The first frame would not dispatch even though it should
+        // This is likely not an edge case after refactoring to use dirty flags in the dispatcher
+        //     but the test should still pass
         public IEnumerator GivenReinitializedNetworkManagerAfterOneTickExecuted_WhenFirstTickExecuted_MetricsDispatch()
         {
+            SendMetric();
             AdvanceTicks(1);
             yield return null;
 
@@ -104,6 +134,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             m_NetworkManager.StartHost();
             InitNetworkManager();
 
+            SendMetric();
             AdvanceTicks(1);
             yield return null;
 
@@ -115,6 +146,15 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             timeSystem.Advance(1f / m_TickRate * (numTicks + 0.1f));
             tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
+        }
+
+        private void SendMetric()
+        {
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                m_NetworkManager.CustomMessagingManager.SendNamedMessage("FakeMetric", m_NetworkManager.LocalClientId, writer);
+            }
         }
 
     }
