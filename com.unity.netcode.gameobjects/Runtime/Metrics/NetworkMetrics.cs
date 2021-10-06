@@ -17,7 +17,7 @@ namespace Unity.Netcode
             ShouldResetOnDispatch = true,
         };
 
-    	readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageSent.Id);
+        readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageSent.Id);
         readonly EventMetric<NetworkMessageEvent> m_NetworkMessageReceivedEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageReceived.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageSent.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageReceived.Id);
@@ -60,6 +60,11 @@ namespace Unity.Netcode
         }
 
         internal IMetricDispatcher Dispatcher { get; }
+
+        public void SetConnectionId(ulong connectionId)
+        {
+            Dispatcher.SetConnectionId(connectionId);
+        }
 
         public void TrackTransportBytesSent(long bytesCount)
         {
@@ -183,14 +188,6 @@ namespace Unity.Netcode
         public void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
-        }
-
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-            foreach (var receiverClientId in receiverClientIds)
-            {
-                TrackObjectDestroySent(receiverClientId, networkObjectId, gameObjectName, bytesCount);
-            }
         }
 
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
