@@ -786,7 +786,7 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
             var sceneUnload = (AsyncOperation)null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 sceneUnload = new AsyncOperation();
@@ -816,7 +816,7 @@ namespace Unity.Netcode
             });
 
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 OnSceneUnloaded(sceneEventId);
@@ -1297,7 +1297,7 @@ namespace Unity.Netcode
                 shouldPassThrough = true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 // In unit tests, we don't allow clients to load additional scenes since
