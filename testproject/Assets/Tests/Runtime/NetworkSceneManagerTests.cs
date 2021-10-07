@@ -386,7 +386,7 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             m_ServerVerifyScene = m_ClientVerifyScene = true;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
@@ -416,7 +416,7 @@ namespace TestProject.RuntimeTests
             ResetWait();
             m_CurrentSceneName = "AdditiveScene2";
             m_ExpectedSceneName = m_CurrentSceneName;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ServerVerifyScene = true;
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
@@ -446,7 +446,7 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             m_ServerVerifyScene = m_ClientVerifyScene = true;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
@@ -576,7 +576,7 @@ namespace TestProject.RuntimeTests
 
             var sceneEventData = new SceneEventData(networkManager);
             sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            sceneEventData.SceneIndex = 0;
+            sceneEventData.SceneHash = XXHash.Hash32("SomeRandomSceneName");
             sceneEventData.SceneEventProgressId = Guid.NewGuid();
             sceneEventData.LoadSceneMode = LoadSceneMode.Single;
             sceneEventData.SceneHandle = 32768;
