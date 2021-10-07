@@ -503,8 +503,10 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             MessagingSystem.Hook(new ProfilingHooks());
 #endif
-            MessagingSystem.Hook(new MetricHooks(this));
 
+#if MULTIPLAYER_TOOLS
+            m_MessagingSystem.Hook(new MetricHooks(this));
+#endif
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
@@ -536,7 +538,7 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
-                NetworkObjectProvider = new NetworkObjectProvider(this)
+                NetworkObjectProvider = new NetworkObjectProvider(this),
             });
 #endif
 
@@ -893,6 +895,7 @@ namespace Unity.Netcode
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
+            NetworkMetrics.SetConnectionId(LocalClientId);
 
             IsServer = true;
             IsClient = true;
@@ -1152,8 +1155,18 @@ namespace Unity.Netcode
         // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
+            if (IsServer == false && IsConnectedClient == false)
+            {
+                // As a client wait to run the time system until we are connected.
+                return;
+            }
+
             // Only update RTT here, server time is updated by time sync messages
-            NetworkTimeSystem.Advance(Time.deltaTime);
+            var reset = NetworkTimeSystem.Advance(Time.deltaTime);
+            if (reset)
+            {
+                NetworkTickSystem.Reset(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
+            }
             NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
 
             if (IsServer == false)
@@ -1164,7 +1177,8 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            MessagingSystem.ProcessSendQueues();
+            m_MessagingSystem.ProcessSendQueues();
+            NetworkMetrics.DispatchFrame();
             SpawnManager.CleanupStaleTriggers();
         }
 
@@ -1184,8 +1198,6 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
-
-            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
@@ -1298,7 +1310,7 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1326,7 +1338,7 @@ namespace Unity.Netcode
             return MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
-        public unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1361,7 +1373,7 @@ namespace Unity.Netcode
             return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        public int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself

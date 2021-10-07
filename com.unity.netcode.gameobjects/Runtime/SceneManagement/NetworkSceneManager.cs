@@ -87,6 +87,7 @@ namespace Unity.Netcode
     public class NetworkSceneManager : IDisposable
     {
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
+        internal const int InvalidSceneNameOrPath = -1;
 
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
@@ -99,7 +100,7 @@ namespace Unity.Netcode
 
         // TODO: Remove `m_IsRunningUnitTest` entirely after we switch to multi-process testing
         // In MultiInstance tests, we cannot allow clients to load additional scenes as they're sharing the same scene space / Unity instance.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
         private readonly bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
 #endif
 
@@ -169,9 +170,14 @@ namespace Unity.Netcode
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
 
         /// <summary>
-        /// The scenes in the build without their path
+        /// Hash to build index lookup table
         /// </summary>
-        internal List<string> ScenesInBuild = new List<string>();
+        internal Dictionary<uint, int> HashToBuildIndex = new Dictionary<uint, int>();
+
+        /// <summary>
+        /// Build index to hash lookup table
+        /// </summary>
+        internal Dictionary<int, uint> BuildIndexToHash = new Dictionary<int, uint>();
 
         /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
@@ -187,7 +193,6 @@ namespace Unity.Netcode
         /// Used for all scene event processing
         /// </summary>
         internal Dictionary<uint, SceneEventData> SceneEventDataStore;
-
 
         private NetworkManager m_NetworkManager { get; }
 
@@ -254,7 +259,6 @@ namespace Unity.Netcode
             }
         }
 
-
         /// <summary>
         /// Gets the scene name from full path to the scene
         /// </summary>
@@ -266,14 +270,74 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Generates the scenes in build list
+        /// Generates the hash values and associated tables
+        /// for the scenes in build list
         /// </summary>
         internal void GenerateScenesInBuild()
         {
-            ScenesInBuild.Clear();
+            HashToBuildIndex.Clear();
+            BuildIndexToHash.Clear();
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
-                ScenesInBuild.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
+                var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+                var hash = XXHash.Hash32(scenePath);
+                var buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
+                HashToBuildIndex.Add(hash, buildIndex);
+                BuildIndexToHash.Add(buildIndex, hash);
+            }
+        }
+
+        /// <summary>
+        /// Gets the scene name from a hash value generated from the full scene path
+        /// </summary>
+        internal string SceneNameFromHash(uint sceneHash)
+        {
+            // In the event there is no scene associated with the scene event then just return "No Scene"
+            // This can happen during unit tests when clients first connect and the only scene loaded is the 
+            // unit test scene (which is ignored by default) that results in a scene event that has no associated
+            // scene.  Under this specific special case, we just return "No Scene".
+            if (sceneHash == 0)
+            {
+                return "No Scene";
+            }
+            return GetSceneNameFromPath(ScenePathFromHash(sceneHash));
+        }
+
+        /// <summary>
+        /// Gets the full scene path from a hash value
+        /// </summary>
+        internal string ScenePathFromHash(uint sceneHash)
+        {
+            if (HashToBuildIndex.ContainsKey(sceneHash))
+            {
+                return SceneUtility.GetScenePathByBuildIndex(HashToBuildIndex[sceneHash]);
+            }
+            else
+            {
+                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!");
+            }
+        }
+
+        /// <summary>
+        /// Gets the associated hash value for the scene name or path
+        /// </summary>
+        internal uint SceneHashFromNameOrPath(string sceneNameOrPath)
+        {
+            var buildIndex = SceneUtility.GetBuildIndexByScenePath(sceneNameOrPath);
+            if (buildIndex >= 0)
+            {
+                if (BuildIndexToHash.ContainsKey(buildIndex))
+                {
+                    return BuildIndexToHash[buildIndex];
+                }
+                else
+                {
+                    throw new Exception($"Scene '{sceneNameOrPath}' has a build index of {buildIndex} that does not exist in the {nameof(BuildIndexToHash)} table!");
+                }
+            }
+            else
+            {
+                throw new Exception($"Scene '{sceneNameOrPath}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             }
         }
 
@@ -320,22 +384,10 @@ namespace Unity.Netcode
             {
                 DontDestroyOnLoadScene = networkManager.gameObject.scene;
             }
-            else // Otherwise, we have to create a GameObject and move it into the DDOL to get the scene
+            else
             {
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                // During unit and integration tests, we could initialize and then enable scene management
-                // which would make this generate an extra GameObject per instance. The DontDestroyOnLoadScene
-                // is internal so tests that are using multiInstance and that are moving NetworkObjects into
-                // the DDOL scene will have to manually set this. Otherwise, we can exclude DDOL stuff completely
-                // during unit testing.
-                if (m_IsRunningUnitTest)
-                {
-                    return;
-                }
-#endif
-                // Create our DDOL GameObject and move it into the DDOL scene so we can register the DDOL with
-                // the NetworkSceneManager and then destroy the DDOL GameObject
+                // Otherwise, we have to create a GameObject and move it into the DDOL in order to
+                // register the DDOL scene handle with NetworkSceneManager
                 var myDDOLObject = new GameObject("DDOL-NWSM");
                 UnityEngine.Object.DontDestroyOnLoad(myDDOLObject);
                 DontDestroyOnLoadScene = myDDOLObject.scene;
@@ -354,10 +406,11 @@ namespace Unity.Netcode
         /// <param name="sceneIndex">index into ScenesInBuild</param>
         /// <param name="loadSceneMode">LoadSceneMode the scene is going to be loaded</param>
         /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool ValidateSceneBeforeLoading(uint sceneIndex, LoadSceneMode loadSceneMode)
+        internal bool ValidateSceneBeforeLoading(uint sceneHash, LoadSceneMode loadSceneMode)
         {
             var validated = true;
-            var sceneName = ScenesInBuild[(int)sceneIndex];
+            var sceneName = SceneNameFromHash(sceneHash);
+            var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
             if (VerifySceneBeforeLoading != null)
             {
                 validated = VerifySceneBeforeLoading.Invoke((int)sceneIndex, sceneName, loadSceneMode);
@@ -499,46 +552,7 @@ namespace Unity.Netcode
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, targetClientIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, ScenesInBuild[(int)SceneEventDataStore[sceneEventId].SceneIndex], size);
-        }
-
-        /// <summary>
-        /// Verifies the scene name is valid relative to the scenes in build list
-        /// </summary>
-        /// <param name="sceneName"></param>
-        /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool IsSceneNameValid(string sceneName)
-        {
-            if (ScenesInBuild.Contains(sceneName))
-            {
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Used to determine if the index value is within the range of valid
-        /// build indices.
-        /// </summary>
-        /// <param name="index">index value to check</param>
-        /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool IsSceneIndexValid(uint index)
-        {
-            return (index >= 0 && index < ScenesInBuild.Count);
-        }
-
-        /// <summary>
-        /// Gets the build Index value for the scene name
-        /// </summary>
-        /// <param name="sceneName">scene name</param>
-        /// <returns>build index</returns>
-        internal uint GetBuildIndexFromSceneName(string sceneName)
-        {
-            if (IsSceneNameValid(sceneName))
-            {
-                return (uint)ScenesInBuild.IndexOf(sceneName);
-            }
-            return uint.MaxValue;
+                targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), size);
         }
 
         /// <summary>
@@ -607,14 +621,15 @@ namespace Unity.Netcode
             }
 
             // Return invalid scene name status if the scene name is invalid
-            if (!IsSceneNameValid(sceneName))
+            if (SceneUtility.GetBuildIndexByScenePath(sceneName) == InvalidSceneNameOrPath)
             {
+                Debug.LogError($"Scene '{sceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
             var sceneEventProgress = new SceneEventProgress(m_NetworkManager)
             {
-                SceneBuildIndex = GetBuildIndexFromSceneName(sceneName)
+                SceneHash = SceneHashFromNameOrPath(sceneName)
             };
 
             SceneEventProgressTracking.Add(sceneEventProgress.Guid, sceneEventProgress);
@@ -646,7 +661,7 @@ namespace Unity.Netcode
         {
             var sceneEventData = BeginSceneEvent();
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
-            sceneEventData.SceneIndex = sceneEventProgress.SceneBuildIndex;
+            sceneEventData.SceneHash = sceneEventProgress.SceneHash;
             sceneEventData.SceneEventType = sceneEventProgress.SceneEventType;
             sceneEventData.ClientsCompleted = sceneEventProgress.DoneClients;
             sceneEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
@@ -660,14 +675,14 @@ namespace Unity.Netcode
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 m_NetworkManager.ConnectedClientsIds,
                 (uint)sceneEventProgress.SceneEventType,
-                ScenesInBuild[(int)sceneEventProgress.SceneBuildIndex],
+               SceneNameFromHash(sceneEventProgress.SceneHash),
                 size);
 
             // Send a local notification to the server that all clients are done loading or unloading
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 SceneEventType = sceneEventProgress.SceneEventType,
-                SceneName = ScenesInBuild[(int)sceneEventProgress.SceneBuildIndex],
+                SceneName = SceneNameFromHash(sceneEventProgress.SceneHash),
                 ClientId = m_NetworkManager.ServerClientId,
                 LoadSceneMode = sceneEventProgress.LoadSceneMode,
                 ClientsThatCompleted = sceneEventProgress.DoneClients,
@@ -708,7 +723,7 @@ namespace Unity.Netcode
             var sceneEventData = BeginSceneEvent();
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
             sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload;
-            sceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
+            sceneEventData.SceneHash = SceneHashFromNameOrPath(sceneName);
             sceneEventData.SceneHandle = sceneHandle;
 
             // This will be the message we send to everyone when this scene event sceneEventProgress is complete
@@ -741,17 +756,7 @@ namespace Unity.Netcode
         private void OnClientUnloadScene(uint sceneEventId)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            if (!IsSceneIndexValid(sceneEventData.SceneIndex))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
-                }
-                EndSceneEvent(sceneEventId);
-                return;
-            }
-
-            var sceneName = ScenesInBuild[(int)sceneEventData.SceneIndex];
+            var sceneName = SceneNameFromHash(sceneEventData.SceneHash);
 
             if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.SceneHandle))
             {
@@ -769,7 +774,7 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
             var sceneUnload = (AsyncOperation)null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 sceneUnload = new AsyncOperation();
@@ -798,8 +803,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
 
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 OnSceneUnloaded(sceneEventId);
@@ -837,7 +841,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = sceneEventData.SceneEventType,
                 LoadSceneMode = sceneEventData.LoadSceneMode,
-                SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                 ClientId = m_NetworkManager.IsServer ? m_NetworkManager.ServerClientId : m_NetworkManager.LocalClientId
             });
 
@@ -903,11 +907,11 @@ namespace Unity.Netcode
             // Now set up the current scene event
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
             sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            sceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
+            sceneEventData.SceneHash = SceneHashFromNameOrPath(sceneName);
             sceneEventData.LoadSceneMode = loadSceneMode;
 
             // This both checks to make sure the scene is valid and if not resets the active scene event
-            s_IsSceneEventActive = ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode);
+            s_IsSceneEventActive = ValidateSceneBeforeLoading(sceneEventData.SceneHash, loadSceneMode);
             if (!s_IsSceneEventActive)
             {
                 EndSceneEvent(sceneEventData.SceneEventId);
@@ -953,26 +957,16 @@ namespace Unity.Netcode
         private void OnClientSceneLoadingEvent(uint sceneEventId)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            if (!IsSceneIndexValid(sceneEventData.SceneIndex))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
-                }
-                EndSceneEvent(sceneEventId);
-                return;
-            }
-
-            var sceneName = ScenesInBuild[(int)sceneEventData.SceneIndex];
+            var sceneName = SceneNameFromHash(sceneEventData.SceneHash);
 
             // Run scene validation before loading a scene
-            if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, sceneEventData.LoadSceneMode))
+            if (!ValidateSceneBeforeLoading(sceneEventData.SceneHash, sceneEventData.LoadSceneMode))
             {
                 EndSceneEvent(sceneEventId);
                 return;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 // Send the loading message
@@ -992,10 +986,10 @@ namespace Unity.Netcode
                 }
                 else
                 {
+                    EndSceneEvent(sceneEventId);
                     throw new Exception($"Could not find the scene handle {sceneEventData.SceneHandle} for scene {sceneName} " +
                         $"during unit test.  Did you forget to register this in the unit test?");
                 }
-                EndSceneEvent(sceneEventId);
                 return;
             }
 #endif
@@ -1122,10 +1116,7 @@ namespace Unity.Netcode
                         EventData = sceneEventData
                     };
                     var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-                    var bytesReported = m_NetworkManager.LocalClientId == clientId
-                            ? 0
-                            : size;
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, bytesReported);
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, size);
                 }
             }
 
@@ -1135,7 +1126,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete,
                 LoadSceneMode = sceneEventData.LoadSceneMode,
-                SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                 ClientId = m_NetworkManager.ServerClientId,
                 Scene = scene,
             });
@@ -1166,7 +1157,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete,
                 LoadSceneMode = sceneEventData.LoadSceneMode,
-                SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                 ClientId = m_NetworkManager.LocalClientId,
                 Scene = scene,
             });
@@ -1200,29 +1191,25 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
 
-                var sceneIndex = GetBuildIndexFromSceneName(scene.name);
+                var sceneHash = SceneHashFromNameOrPath(scene.path);
 
-                if (sceneIndex == uint.MaxValue)
-                {
-                    continue;
-                }
                 // This would depend upon whether we are additive or not
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if (!ValidateSceneBeforeLoading(sceneIndex, sceneEventData.LoadSceneMode))
+                    if (!ValidateSceneBeforeLoading(sceneHash, sceneEventData.LoadSceneMode))
                     {
                         continue;
                     }
-                    sceneEventData.SceneIndex = sceneIndex;
+                    sceneEventData.SceneHash = sceneHash;
                     sceneEventData.SceneHandle = scene.handle;
                 }
-                else if (!ValidateSceneBeforeLoading(sceneIndex, LoadSceneMode.Additive))
+                else if (!ValidateSceneBeforeLoading(sceneHash, LoadSceneMode.Additive))
                 {
                     continue;
                 }
 
-                sceneEventData.AddSceneToSynchronize(sceneIndex, scene.handle);
+                sceneEventData.AddSceneToSynchronize(sceneHash, scene.handle);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();
@@ -1232,11 +1219,8 @@ namespace Unity.Netcode
                 EventData = sceneEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-            var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                clientId, (uint)sceneEventData.SceneEventType, "", bytesReported);
+                clientId, (uint)sceneEventData.SceneEventType, "", size);
 
             // Notify the local server that the client has been sent the SceneEventData.SceneEventTypes.S2C_Event_Sync event
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1256,30 +1240,22 @@ namespace Unity.Netcode
         private void OnClientBeginSync(uint sceneEventId)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            var sceneIndex = sceneEventData.GetNextSceneSynchronizationIndex();
+            var sceneHash = sceneEventData.GetNextSceneSynchronizationHash();
             var sceneHandle = sceneEventData.GetNextSceneSynchronizationHandle();
-            if (!IsSceneIndexValid(sceneIndex))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
-                }
-                EndSceneEvent(sceneEventId);
-                return;
-            }
-            var sceneName = ScenesInBuild[(int)sceneIndex];
+            var sceneName = SceneNameFromHash(sceneHash);
             var activeScene = SceneManager.GetActiveScene();
-            var loadSceneMode = sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
+
+            var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneEventData.SceneIndex, loadSceneMode))
+            if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
             {
                 EndSceneEvent(sceneEventId);
                 return;
             }
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
-            if (sceneIndex == sceneEventData.SceneIndex)
+            if (sceneHash == sceneEventData.SceneHash)
             {
                 OnSceneEvent?.Invoke(new SceneEvent()
                 {
@@ -1302,7 +1278,7 @@ namespace Unity.Netcode
                 shouldPassThrough = true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
                 // In unit tests, we don't allow clients to load additional scenes since
@@ -1315,7 +1291,7 @@ namespace Unity.Netcode
             {
                 // If not, then load the scene
                 sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-                sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneEventId, sceneIndex, sceneHandle);
+                sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneEventId, sceneHash, sceneHandle);
             }
 
             // Notify local client that a scene load has begun
@@ -1331,7 +1307,7 @@ namespace Unity.Netcode
             if (shouldPassThrough)
             {
                 // If so, then pass through
-                ClientLoadedSynchronization(sceneEventId, sceneIndex, sceneHandle);
+                ClientLoadedSynchronization(sceneEventId, sceneHash, sceneHandle);
             }
         }
 
@@ -1340,10 +1316,10 @@ namespace Unity.Netcode
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
         /// <param name="sceneIndex">Netcode scene index that was loaded</param>
-        private void ClientLoadedSynchronization(uint sceneEventId, uint sceneIndex, int sceneHandle)
+        private void ClientLoadedSynchronization(uint sceneEventId, uint sceneHash, int sceneHandle)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            var sceneName = ScenesInBuild[(int)sceneIndex];
+            var sceneName = SceneNameFromHash(sceneHash);
             var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
 
             if (!nextScene.isLoaded || !nextScene.IsValid())
@@ -1351,7 +1327,7 @@ namespace Unity.Netcode
                 throw new Exception($"Failed to find valid scene internal Unity.Netcode for {nameof(GameObject)}s error!");
             }
 
-            var loadSceneMode = (sceneIndex == sceneEventData.SceneIndex ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive);
+            var loadSceneMode = (sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive);
 
             // For now, during a synchronization event, we will make the first scene the "base/master" scene that denotes a "complete scene switch"
             if (loadSceneMode == LoadSceneMode.Single)
@@ -1376,7 +1352,7 @@ namespace Unity.Netcode
             var responseSceneEventData = BeginSceneEvent();
             responseSceneEventData.LoadSceneMode = loadSceneMode;
             responseSceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete;
-            responseSceneEventData.SceneIndex = sceneIndex;
+            responseSceneEventData.SceneHash = sceneHash;
 
 
             var message = new SceneEventMessage
@@ -1475,7 +1451,7 @@ namespace Unity.Netcode
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             SceneEventType = sceneEventData.SceneEventType,
-                            SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                            SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                             ClientId = m_NetworkManager.ServerClientId,
                             LoadSceneMode = sceneEventData.LoadSceneMode,
                             ClientsThatCompleted = sceneEventData.ClientsCompleted,
@@ -1509,7 +1485,7 @@ namespace Unity.Netcode
                         {
                             SceneEventType = sceneEventData.SceneEventType,
                             LoadSceneMode = sceneEventData.LoadSceneMode,
-                            SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                            SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                             ClientId = clientId
                         });
 
@@ -1531,7 +1507,7 @@ namespace Unity.Netcode
                         {
                             SceneEventType = sceneEventData.SceneEventType,
                             LoadSceneMode = sceneEventData.LoadSceneMode,
-                            SceneName = ScenesInBuild[(int)sceneEventData.SceneIndex],
+                            SceneName = SceneNameFromHash(sceneEventData.SceneHash),
                             ClientId = clientId
                         });
                         EndSceneEvent(sceneEventId);
@@ -1587,12 +1563,8 @@ namespace Unity.Netcode
 
                 sceneEventData.Deserialize(reader);
 
-                var bytesReported = m_NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : reader.Length;
-
                 m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
-                   clientId, (uint)sceneEventData.SceneEventType, ScenesInBuild[(int)sceneEventData.SceneIndex], bytesReported);
+                   clientId, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), reader.Length);
 
                 if (sceneEventData.IsSceneEventClientSide())
                 {

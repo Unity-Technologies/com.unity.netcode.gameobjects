@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
         /// </summary>
-        private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
             if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
         /// scene and its handle for both client(s) and server-host.
         /// </summary>
-        private void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        public static void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
         {
             // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
             // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
