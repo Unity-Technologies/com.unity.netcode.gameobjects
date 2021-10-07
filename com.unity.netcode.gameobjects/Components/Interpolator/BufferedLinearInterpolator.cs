@@ -61,10 +61,35 @@ namespace Unity.Netcode
         private NetworkTime m_EndTimeConsumed;
         private NetworkTime m_StartTimeConsumed;
 
-        private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
-        private const float k_SupportedBurstSizeSeconds = 1f; // will try to interpolate x seconds before teleporting
-        private int BufferSizeLimit { get; }
+        private readonly List<BufferedItem> m_Buffer;
 
+        // Perfect case consumption
+        // | 1 | 2 | 3 |
+        // | 2 | 3 | 4 | consume 1
+        // | 3 | 4 | 5 | consume 2
+        // | 4 | 5 | 6 | consume 3
+        // | 5 | 6 | 7 | consume 4
+        // jittered case
+        // | 1 | 2 | 3 |
+        // | 2 | 3 |   | consume 1
+        // | 3 |   |   | consume 2
+        // | 4 | 5 | 6 | consume 3
+        // | 5 | 6 | 7 | consume 4
+        // bursted case
+        // | 1 | 2 | 3 |
+        // | 2 | 3 |   | consume 1
+        // | 3 |   |   | consume 2
+        // |   |   |   | consume 3
+        // |   |   |   |
+        // | 4 | 5 | 6 | 7 | 8 | --> consume all and teleport to last value <8> --> this is the nuclear option, ideally this example would consume 4 and 5
+        // instead of jumping to 8, but since in OnValueChange we don't yet have an updated server time (updated in pre-update) to know which value
+        // we should keep and which we should drop, we don't have enough information to do this. Another thing would be to not have the burst in the
+        // first place.
+        // constant absolute value here instead of dynamic time based value. This is in case we have very low tick rates, so
+        // that we don't have a very small buffer because of this.
+        private const int k_BufferCountLimit = 100;
+        private BufferedItem m_LastBufferedItemReceived;
+        private int m_NbItemsReceivedThisFrame;
 
         private int m_LifetimeConsumedCount;
 
@@ -73,7 +98,13 @@ namespace Unity.Netcode
         internal BufferedLinearInterpolator(NetworkManager manager)
         {
             InterpolatorTimeProxy = new InterpolatorTime(manager);
-            BufferSizeLimit = Mathf.CeilToInt(k_SupportedBurstSizeSeconds * InterpolatorTimeProxy.TickRate);
+            m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
+        }
+
+        internal BufferedLinearInterpolator(IInterpolatorTime proxy)
+        {
+            InterpolatorTimeProxy = proxy;
+            m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
         }
 
         public void ResetTo(T targetValue)
@@ -98,6 +129,8 @@ namespace Unity.Netcode
             if (RenderTime >= m_EndTimeConsumed.Time)
             {
                 BufferedItem? itemToInterpolateTo = null;
+                // assumes we're using sequenced messages for netvar syncing
+                // buffer contains oldest values first, iterating from end to start to remove elements from list while iterating
                 for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values due to packet loss
                 {
                     var bufferedValue = m_Buffer[i];
@@ -106,20 +139,25 @@ namespace Unity.Netcode
                     {
                         if (!itemToInterpolateTo.HasValue || bufferedValue.TimeSent.Time > itemToInterpolateTo.Value.TimeSent.Time)
                         {
-                            itemToInterpolateTo = bufferedValue;
                             if (m_LifetimeConsumedCount == 0)
                             {
+                                // if interpolator not initialized, teleport to first value when available
                                 m_StartTimeConsumed = bufferedValue.TimeSent;
                                 m_InterpStartValue = bufferedValue.Item;
                             }
                             else if (consumedCount == 0)
                             {
+                                // Interpolating to new value, end becomes start. We then look in our buffer for a new end.
                                 m_StartTimeConsumed = m_EndTimeConsumed;
                                 m_InterpStartValue = m_InterpEndValue;
                             }
 
-                            m_EndTimeConsumed = bufferedValue.TimeSent;
-                            m_InterpEndValue = bufferedValue.Item;
+                            if (bufferedValue.TimeSent.Time > m_EndTimeConsumed.Time)
+                            {
+                                itemToInterpolateTo = bufferedValue;
+                                m_EndTimeConsumed = bufferedValue.TimeSent;
+                                m_InterpEndValue = bufferedValue.Item;
+                            }
                         }
 
                         m_Buffer.RemoveAt(i);
@@ -174,17 +212,16 @@ namespace Unity.Netcode
             return m_CurrentInterpValue;
         }
 
-        private BufferedItem m_LastBufferedItemReceived;
-        private int m_NbItemsReceivedThisFrame;
+
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
             m_NbItemsReceivedThisFrame++;
 
             // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
-            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the correct value
-            if (m_NbItemsReceivedThisFrame > BufferSizeLimit)
+            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
+            if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
             {
-                if (m_LastBufferedItemReceived.TimeSent.Time > sentTime.Time)
+                if (m_LastBufferedItemReceived.TimeSent.Time < sentTime.Time)
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                     ResetTo(newMeasurement);
@@ -222,6 +259,10 @@ namespace Unity.Netcode
         }
 
         public BufferedLinearInterpolatorFloat(NetworkManager manager) : base(manager)
+        {
+        }
+
+        public BufferedLinearInterpolatorFloat(IInterpolatorTime proxy) : base(proxy)
         {
         }
     }
