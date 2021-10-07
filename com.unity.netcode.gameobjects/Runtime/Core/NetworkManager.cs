@@ -503,8 +503,10 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_MessagingSystem.Hook(new ProfilingHooks());
 #endif
-            m_MessagingSystem.Hook(new MetricHooks(this));
 
+#if MULTIPLAYER_TOOLS
+            m_MessagingSystem.Hook(new MetricHooks(this));
+#endif
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
