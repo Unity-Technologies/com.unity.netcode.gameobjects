@@ -66,11 +66,14 @@ namespace Unity.Netcode.RuntimeTests.Physics
             // despawn the server player (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
-            yield return null;
+            waitFor = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= waitFor);
 
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic);
 
-            yield return null;
+            waitFor = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= waitFor);
+
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
         }
     }
