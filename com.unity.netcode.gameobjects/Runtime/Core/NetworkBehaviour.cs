@@ -133,7 +133,7 @@ namespace Unity.Netcode
             int messageSize;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
-            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
 
             if (rpcParams.Send.TargetClientIds != null)
@@ -194,6 +194,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
+        ///  this call is costing us performance.
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
@@ -463,6 +464,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            // significantly saves performance
+            bool cacheIsServer = IsServer;
             if (NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
@@ -478,7 +481,7 @@ namespace Unity.Netcode
                     var shouldSend = false;
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
-                        if (NetworkVariableFields[k].ShouldWrite(clientId, IsServer))
+                        if (NetworkVariableFields[k].ShouldWrite(clientId, cacheIsServer))
                         {
                             shouldSend = true;
                         }

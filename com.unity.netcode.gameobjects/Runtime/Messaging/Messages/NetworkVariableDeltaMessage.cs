@@ -21,6 +21,9 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
+            var cacheNetworkManager = NetworkBehaviour.NetworkManager;
+            var cacheVariableLengthSafety = cacheNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
+
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) +
                                       FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
             {
@@ -34,7 +37,7 @@ namespace Unity.Netcode
                 if (!DeliveryMappedNetworkVariableIndex.Contains(k))
                 {
                     // This var does not belong to the currently iterating delivery group.
-                    if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (cacheVariableLengthSafety)
                     {
                         writer.WriteValueSafe((short)0);
                     }
@@ -48,9 +51,9 @@ namespace Unity.Netcode
 
                 //   if I'm dirty AND a client, write (server always has all permissions)
                 //   if I'm dirty AND the server AND the client can read me, send.
-                bool shouldWrite = NetworkBehaviour.NetworkVariableFields[k].ShouldWrite(ClientId, NetworkBehaviour.NetworkManager.IsServer);
+                bool shouldWrite = NetworkBehaviour.NetworkVariableFields[k].ShouldWrite(ClientId, cacheNetworkManager.IsServer);
 
-                if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                if (cacheVariableLengthSafety)
                 {
                     if (!shouldWrite)
                     {
@@ -64,7 +67,7 @@ namespace Unity.Netcode
 
                 if (shouldWrite)
                 {
-                    if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (cacheVariableLengthSafety)
                     {
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
@@ -83,7 +86,7 @@ namespace Unity.Netcode
                         NetworkBehaviour.NetworkVariableIndexesToReset.Add(k);
                     }
 
-                    NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                    cacheNetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         ClientId,
                         NetworkBehaviour.NetworkObjectId,
                         NetworkBehaviour.name,
