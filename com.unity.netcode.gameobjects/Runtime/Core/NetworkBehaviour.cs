@@ -198,6 +198,16 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
+        public string CachedName
+        {
+            get;
+            internal set;
+        }
+
+        void Awake()
+        {
+            CachedName = name;
+        }
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>

@@ -89,7 +89,7 @@ namespace Unity.Netcode
                     cacheNetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         ClientId,
                         NetworkBehaviour.NetworkObjectId,
-                        NetworkBehaviour.name,
+                        NetworkBehaviour.CachedName,
                         NetworkBehaviour.NetworkVariableFields[k].Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length);
