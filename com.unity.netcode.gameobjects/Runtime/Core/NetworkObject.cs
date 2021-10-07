@@ -329,10 +329,7 @@ namespace Unity.Netcode
                 };
                 // Send destroy call
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                        ? 0
-                        : size;
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
 

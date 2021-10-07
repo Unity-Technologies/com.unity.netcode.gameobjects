@@ -34,10 +34,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            var bytesReported = networkManager.LocalClientId == senderId
-                ? 0
-                : messageSize;
-            networkManager.NetworkMetrics.TrackObjectDestroyReceived(senderId, networkObject, bytesReported);
+            networkManager.NetworkMetrics.TrackObjectDestroyReceived(senderId, networkObject, messageSize);
             networkManager.SpawnManager.OnDespawnObject(networkObject, true);
         }
     }
