@@ -4,6 +4,10 @@ namespace Unity.Netcode
 {
     internal class NullNetworkMetrics : INetworkMetrics
     {
+        public void SetConnectionId(ulong connectionId)
+        {
+        }
+
         public void TrackTransportBytesSent(long bytesCount)
         {
         }
@@ -88,10 +92,6 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-        }
-
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
         }
@@ -131,7 +131,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackSceneEventSent(ulong[] receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
+        public void TrackSceneEventSent(IReadOnlyList<ulong> receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
         {
         }
 

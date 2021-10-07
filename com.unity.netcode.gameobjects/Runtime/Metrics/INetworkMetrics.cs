@@ -4,6 +4,8 @@ namespace Unity.Netcode
 {
     internal interface INetworkMetrics
     {
+        void SetConnectionId(ulong connectionId);
+
         void TrackTransportBytesSent(long bytesCount);
 
         void TrackTransportBytesReceived(long bytesCount);
@@ -52,8 +54,6 @@ namespace Unity.Netcode
 
         void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount);
 
-        void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount);
-
         void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount);
 
         void TrackRpcSent(
@@ -81,7 +81,7 @@ namespace Unity.Netcode
 
         void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount);
 
-        void TrackSceneEventSent(ulong[] receiverClientIds, uint sceneEventType, string sceneName, long bytesCount);
+        void TrackSceneEventSent(IReadOnlyList<ulong> receiverClientIds, uint sceneEventType, string sceneName, long bytesCount);
 
         void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount);
 

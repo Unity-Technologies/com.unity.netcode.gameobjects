@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using System;
 
@@ -83,11 +82,6 @@ namespace Unity.Netcode
 
         private protected void Set(T value)
         {
-            if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
-            {
-                return;
-            }
-
             m_IsDirty = true;
             T previousValue = m_InternalValue;
             m_InternalValue = value;

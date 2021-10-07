@@ -62,11 +62,13 @@ namespace Unity.Netcode
         public void Handle(FastBufferReader reader, ulong clientId, NetworkManager networkManager)
         {
             networkManager.LocalClientId = OwnerClientId;
+            networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
             networkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
+            networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
 
-            networkManager.ConnectedClients.Add(networkManager.LocalClientId, new NetworkClient { ClientId = networkManager.LocalClientId });
+            networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)

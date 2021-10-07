@@ -6,7 +6,7 @@ namespace Unity.Netcode
     public class NetworkTickSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_Tick = new ProfilerMarker($"{nameof(NetworkTimeSystem)}.Tick");
+        private static ProfilerMarker s_Tick = new ProfilerMarker($"{nameof(NetworkTickSystem)}.Tick");
 #endif
 
         /// <summary>
@@ -20,12 +20,14 @@ namespace Unity.Netcode
         public uint TickRate { get; }
 
         /// <summary>
-        /// The current local time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
+        /// The current local time. This is the time at which predicted or client authoritative objects move.
+        ///  This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
         /// </summary>
         public NetworkTime LocalTime { get; internal set; }
 
         /// <summary>
-        /// The current server time. This value is mostly used for internal purposes and to interpolate state received from the server. This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
+        /// The current server time. This value is mostly used for internal purposes and to interpolate state received from the server.
+        ///  This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
         /// </summary>
         public NetworkTime ServerTime { get; internal set; }
 
@@ -51,6 +53,17 @@ namespace Unity.Netcode
             Tick = null;
             LocalTime = new NetworkTime(tickRate, localTimeSec);
             ServerTime = new NetworkTime(tickRate, serverTimeSec);
+        }
+
+        /// <summary>
+        /// Resets the tick system to the given network time.
+        /// </summary>
+        /// <param name="localTimeSec">The local time in seconds.</param>
+        /// <param name="serverTimeSec">The server time in seconds.</param>
+        public void Reset(double localTimeSec, double serverTimeSec)
+        {
+            LocalTime = new NetworkTime(TickRate, localTimeSec);
+            ServerTime = new NetworkTime(TickRate, serverTimeSec);
         }
 
         /// <summary>
