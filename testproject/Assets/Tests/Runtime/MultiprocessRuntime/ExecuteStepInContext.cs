@@ -207,7 +207,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
             {
                 if (networkManager.IsServer)
                 {
-                    TestCoordinator.Instance.TriggerActionIdClientRpc(currentActionId, paramToPass,
+                    TestCoordinator.Instance.TriggerActionIdClientRpc(currentActionId, paramToPass, m_IgnoreTimeoutException,
                         clientRpcParams: new ClientRpcParams
                         {
                             Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdsExceptMine.ToArray() }

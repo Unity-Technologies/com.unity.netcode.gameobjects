@@ -91,15 +91,11 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start server and client NetworkManager instances
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
-            m_ServerNetworkManager.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
+
             // Register our scene verification delegate handler so we don't load the unit test scene
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
             foreach (var entry in m_ClientNetworkManagers)
             {
-                if (!entry.SceneManager.ScenesInBuild.Contains(nameof(NetworkObjectParentingTests)))
-                {
-                    entry.SceneManager.ScenesInBuild.Add(nameof(NetworkObjectParentingTests));
-                }
                 // Register our scene verification delegate handler so we don't load the unit test scene
                 entry.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
             }

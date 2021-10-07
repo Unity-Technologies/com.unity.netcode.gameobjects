@@ -101,9 +101,6 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-        /// <param name="networkObjectId"></param>
-        /// <param name="reader"></param>
-        /// <param name="context"></param>
         internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
         {
             if (!m_Triggers.ContainsKey(networkObjectId))
@@ -191,10 +188,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                      ? 0
-                      : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
             }
         }
 
@@ -260,10 +254,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
             }
         }
 
@@ -515,13 +506,10 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
             }
             networkObject.MarkVariablesDirty();
         }
@@ -750,10 +738,7 @@ namespace Unity.Netcode
                             var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                             foreach (var targetClientId in m_TargetClientIds)
                             {
-                                var bytesReported = NetworkManager.LocalClientId == targetClientId
-                                    ? 0
-                                    : size;
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, size);
                             }
                         }
                     }

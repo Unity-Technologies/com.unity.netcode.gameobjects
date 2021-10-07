@@ -31,10 +31,7 @@ namespace Unity.Netcode
 
         public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
         {
-            var bytesReported = networkManager.LocalClientId == senderId
-                ? 0
-                : messageSize;
-            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, bytesReported);
+            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, messageSize);
 
             switch (LogType)
             {
