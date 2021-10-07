@@ -84,6 +84,25 @@ public class MultiprocessOrchestration
             s_Processes = new List<Process>();
         }
 
+        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
+        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
+        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
+
+        if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
+        {
+            MultiprocessLogger.Log("Run on remote nodes");
+            StartWorkersOnRemoteNodes(rootdir_fileinfo);
+            return "";
+        }
+        else
+        {
+            MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
+            return StartWorkerOnLocalNode();
+        }
+    }
+
+    public static string StartWorkerOnLocalNode()
+    {
         var workerProcess = new Process();
         s_TotalProcessCounter++;
         if (s_Processes.Count > 0)
@@ -157,6 +176,34 @@ public class MultiprocessOrchestration
             throw;
         }
         return logPath;
+    }
+
+    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
+    {
+        // That suggests sufficient information to determine that we can run remotely
+        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
+        var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
+
+        var workerProcess = new Process();
+        // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
+        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{fileName} launch";
+        try
+        {
+            var newProcessStarted = workerProcess.Start();
+            if (!newProcessStarted)
+            {
+                throw new Exception("Failed to start worker process!");
+            }
+        }
+        catch (Win32Exception e)
+        {
+            Debug.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+            throw;
+        }
     }
 
     public static void ShutdownAllProcesses()
