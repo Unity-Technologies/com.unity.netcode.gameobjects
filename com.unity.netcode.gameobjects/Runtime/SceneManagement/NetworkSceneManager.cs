@@ -971,7 +971,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
 
-         OnUnload?.Invoke(m_NetworkManager.ServerClientId, sceneName, sceneUnload);
+            OnUnload?.Invoke(m_NetworkManager.ServerClientId, sceneName, sceneUnload);
 
 #if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
