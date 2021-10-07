@@ -85,8 +85,7 @@ namespace Unity.Netcode
 
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         ClientId,
-                        NetworkBehaviour.NetworkObjectId,
-                        NetworkBehaviour.name,
+                        NetworkBehaviour.NetworkObject,
                         NetworkBehaviour.NetworkVariableFields[k].Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length);
@@ -183,8 +182,7 @@ namespace Unity.Netcode
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             senderId,
-                            behaviour.NetworkObjectId,
-                            behaviour.name,
+                            networkObject,
                             behaviour.NetworkVariableFields[i].Name,
                             behaviour.__getTypeName(),
                             reader.Length);
