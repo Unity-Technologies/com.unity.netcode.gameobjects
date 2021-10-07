@@ -431,11 +431,22 @@ namespace Unity.Netcode
 
         public override void DisconnectLocalClient()
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectLocalClient should be called on a connected client");
-
             if (m_State == State.Connected)
             {
-                m_Driver.Disconnect(ParseClientId(m_ServerClientId));
+                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
+                {
+
+                    m_State = State.Disconnected;
+
+
+                    // If we successfully disconnect we dispatch a local disconnect message
+                    // this how uNET and other transports worked and so this is just keeping with the old behavior
+                    // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        m_ServerClientId,
+                        default(ArraySegment<byte>),
+                        Time.realtimeSinceStartup);
+                }
             }
         }
 
@@ -672,6 +683,9 @@ namespace Unity.Netcode
 
             // make sure we don't leak queues when we shutdown
             m_SendQueue.Clear();
+
+            // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
+            m_ServerClientId = 0;
         }
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)

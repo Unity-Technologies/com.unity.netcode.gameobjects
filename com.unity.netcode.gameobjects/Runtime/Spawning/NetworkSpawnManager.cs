@@ -109,10 +109,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                      ? 0
-                      : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -178,10 +175,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -366,8 +360,7 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject.NetworkObjectId, networkObject.name, 0);
+            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject, 0);
 
             if (ownerClientId != null)
             {
@@ -419,13 +412,10 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
 
                 networkObject.MarkVariablesDirty();
             }
@@ -655,10 +645,7 @@ namespace Unity.Netcode
                             var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                             foreach (var targetClientId in m_TargetClientIds)
                             {
-                                var bytesReported = NetworkManager.LocalClientId == targetClientId
-                                    ? 0
-                                    : size;
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
                             }
                         }
                     }

@@ -41,6 +41,7 @@ namespace TestProject.RuntimeTests
         private string m_CurrentSceneName;
         private List<SceneTestInfo> m_ShouldWaitList;
         private Scene m_CurrentScene;
+        private const string k_InvalidSceneName = "SomeInvalidSceneName";
 
         private List<Scene> m_ScenesLoaded = new List<Scene>();
 
@@ -139,8 +140,9 @@ namespace TestProject.RuntimeTests
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.SceneNotLoaded);
 
+            LogAssert.Expect(LogType.Error, $"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             // Check error status for trying to load an invalid scene name
-            result = m_ServerNetworkManager.SceneManager.LoadScene("SomeInvalidSceneName", LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.InvalidSceneName);
 
             yield break;
@@ -384,7 +386,7 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             m_ServerVerifyScene = m_ClientVerifyScene = true;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
@@ -414,7 +416,7 @@ namespace TestProject.RuntimeTests
             ResetWait();
             m_CurrentSceneName = "AdditiveScene2";
             m_ExpectedSceneName = m_CurrentSceneName;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ServerVerifyScene = true;
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
@@ -444,7 +446,7 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             m_ServerVerifyScene = m_ClientVerifyScene = true;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneIndex = SceneUtility.GetBuildIndexByScenePath(m_CurrentSceneName);
             m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
@@ -542,6 +544,61 @@ namespace TestProject.RuntimeTests
             SceneManager.SetActiveScene(currentlyActiveScene);
             m_MultiSceneTest = false;
             yield break;
+        }
+    }
+
+    /// <summary>
+    /// This is where all of the SceneEventData specific tests should reside.
+    /// </summary>
+    public class SceneEventDataTests
+    {
+        /// <summary>
+        /// This verifies that change from Allocator.TmpJob to Allocator.Persistent
+        /// will not cause memory leak warning notifications if the scene event takes
+        /// longer than 4 frames to complete.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator FastReaderAllocationTest()
+        {
+            var fastBufferWriter = new FastBufferWriter(1024, Unity.Collections.Allocator.Persistent);
+            var networkManagerGameObject = new GameObject("NetworkManager - Host");
+
+            var networkManager = networkManagerGameObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig()
+            {
+                ConnectionApproval = false,
+                NetworkPrefabs = new List<NetworkPrefab>(),
+                NetworkTransport = networkManagerGameObject.AddComponent<SIPTransport>(),
+            };
+
+            networkManager.StartHost();
+
+            var sceneEventData = new SceneEventData(networkManager);
+            sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
+            sceneEventData.SceneHash = XXHash.Hash32("SomeRandomSceneName");
+            sceneEventData.SceneEventProgressId = Guid.NewGuid();
+            sceneEventData.LoadSceneMode = LoadSceneMode.Single;
+            sceneEventData.SceneHandle = 32768;
+
+            sceneEventData.Serialize(fastBufferWriter);
+            var nativeArray = new Unity.Collections.NativeArray<byte>(fastBufferWriter.ToArray(), Unity.Collections.Allocator.Persistent);
+            var fastBufferReader = new FastBufferReader(nativeArray, Unity.Collections.Allocator.Persistent, fastBufferWriter.ToArray().Length);
+
+            var incomingSceneEventData = new SceneEventData(networkManager);
+            incomingSceneEventData.Deserialize(fastBufferReader);
+
+            // Wait for 30 frames
+            var framesToWait = Time.frameCount + 30;
+            yield return new WaitUntil(() => Time.frameCount > framesToWait);
+
+            // As long as no errors occurred, the test verifies that
+            incomingSceneEventData.Dispose();
+            fastBufferReader.Dispose();
+            nativeArray.Dispose();
+            fastBufferWriter.Dispose();
+            networkManager.Shutdown();
+            UnityEngine.Object.Destroy(networkManagerGameObject);
         }
     }
 }

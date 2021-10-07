@@ -34,17 +34,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
             Client = m_ClientNetworkManagers[0];
             ClientMetrics = Client.NetworkMetrics as NetworkMetrics;
         }
-
-        protected void AssertLocalAndRemoteMetricsSent<T>(IReadOnlyCollection<T> collection) where T : INetworkMetricEvent
-        {
-            var sentLocal = collection.First(t => t.Connection.Id == Server.LocalClientId);
-            Assert.AreEqual(Server.LocalClientId, sentLocal.Connection.Id);
-            Assert.AreEqual(0, sentLocal.BytesCount);
-
-            var sentRemote = collection.First(t => t.Connection.Id != Server.LocalClientId);
-            Assert.AreNotEqual(Server.LocalClientId, sentRemote.Connection.Id);
-            Assert.AreNotEqual(0, sentRemote.BytesCount);
-        }
     }
 
     public abstract class DualClientMetricTestBase : BaseMultiInstanceTest
