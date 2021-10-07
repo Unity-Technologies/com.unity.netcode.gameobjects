@@ -74,19 +74,18 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
 
-
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-        Debug.Log($"Transport is {transport.ToString()}");
+        MultiprocessLogger.Log($"Transport is {transport.ToString()}");
         switch (transport)
         {
             case UNetTransport unetTransport:
-			    Debug.Log("Setting ConnectPort and ServerListenPort");
+                MultiprocessLogger.Log("Setting ConnectPort and ServerListenPort");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (isClient)
                 {
-					Debug.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
                     unetTransport.ConnectAddress = m_ConnectAddress;
                 }
                 break;

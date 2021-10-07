@@ -858,8 +858,8 @@ MonoBehaviour:
   MaxConnections: 100
   MaxSentMessageQueueSize: 50000
   ConnectAddress: 127.0.0.1
-  ConnectPort: 7777
-  ServerListenPort: 7777
+  ConnectPort: 3076
+  ServerListenPort: 3076
   MessageSendMode: 0
 --- !u!1 &2027640071
 GameObject:
