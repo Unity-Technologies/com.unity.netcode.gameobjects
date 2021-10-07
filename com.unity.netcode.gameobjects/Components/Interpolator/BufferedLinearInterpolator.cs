@@ -131,27 +131,23 @@ namespace Unity.Netcode
 
             if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
-                double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
-                float t;
-                if (range == 0)
+                float t = 1.0f;
+                if (m_EndTimeConsumed.Time != m_StartTimeConsumed.Time)
                 {
-                    t = 1;
-                }
-                else
-                {
+                    double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
                     t = (float)((RenderTime - m_StartTimeConsumed.Time) / range);
-                }
 
-                if (t > 3) // max extrapolation
-                {
-                    // TODO this causes issues with teleport, investigate
-                    // todo make this configurable
-                    t = 1;
-                }
+                    if (t < 0.0f)
+                    {
+                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
+                    }
 
-                if (Debug.isDebugBuild)
-                {
-                    Debug.Assert(t >= 0, $"t must be bigger than or equal to 0. range {range}, RenderTime {RenderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
+                    if (t > 3.0f) // max extrapolation
+                    {
+                        // TODO this causes issues with teleport, investigate
+                        // todo make this configurable
+                        t = 1.0f;
+                    }
                 }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);

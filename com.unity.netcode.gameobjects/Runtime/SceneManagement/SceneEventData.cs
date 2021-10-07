@@ -37,7 +37,7 @@ namespace Unity.Netcode
         /// </summary>
         Synchronize,
         /// <summary>
-        /// Game session re-synchronization of NetworkOjects that were destroyed during a <see cref="Synchronize"/> event
+        /// Game session re-synchronization of NetworkObjects that were destroyed during a <see cref="Synchronize"/> event
         /// Invocation: Server Side
         /// Message Flow: Server to client
         /// Event Notification: Both server and client receive a local notification
@@ -93,7 +93,9 @@ namespace Unity.Netcode
         internal LoadSceneMode LoadSceneMode;
         internal Guid SceneEventProgressId;
         internal uint SceneEventId;
-        internal uint SceneIndex;
+
+
+        internal uint SceneHash;
         internal int SceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
@@ -145,18 +147,18 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="sceneHandle"></param>
-        internal void AddSceneToSynchronize(uint sceneIndex, int sceneHandle)
+        internal void AddSceneToSynchronize(uint sceneHash, int sceneHandle)
         {
-            ScenesToSynchronize.Enqueue(sceneIndex);
+            ScenesToSynchronize.Enqueue(sceneHash);
             SceneHandlesToSynchronize.Enqueue((uint)sceneHandle);
         }
 
         /// <summary>
         /// Client Side:
-        /// Gets the next scene index to be loaded for approval and/or late joining
+        /// Gets the next scene hash to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        internal uint GetNextSceneSynchronizationIndex()
+        internal uint GetNextSceneSynchronizationHash()
         {
             return ScenesToSynchronize.Dequeue();
         }
@@ -314,7 +316,7 @@ namespace Unity.Netcode
             }
 
             // Write the scene index and handle
-            writer.WriteValueSafe(SceneIndex);
+            writer.WriteValueSafe(SceneHash);
             writer.WriteValueSafe(SceneHandle);
 
             switch (SceneEventType)
@@ -444,14 +446,14 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out SceneEventProgressId);
             }
 
-            reader.ReadValueSafe(out SceneIndex);
+            reader.ReadValueSafe(out SceneHash);
             reader.ReadValueSafe(out SceneHandle);
 
             switch (SceneEventType)
             {
                 case SceneEventType.Synchronize:
                     {
-                        CopySceneSyncrhonizationData(reader);
+                        CopySceneSynchronizationData(reader);
                         break;
                     }
                 case SceneEventType.SynchronizeComplete:
@@ -466,7 +468,8 @@ namespace Unity.Netcode
                             // We store off the trailing in-scene placed serialized NetworkObject data to
                             // be processed once we are done loading.
                             m_HasInternalBuffer = true;
-                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, reader.Length - reader.Position);
+                            // We use Allocator.Persistent since scene loading could take longer than 4 frames
+                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, reader.Length - reader.Position);
                         }
                         break;
                     }
@@ -490,7 +493,7 @@ namespace Unity.Netcode
         /// into the internal buffer to be used throughout the synchronization process.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CopySceneSyncrhonizationData(FastBufferReader reader)
+        internal void CopySceneSynchronizationData(FastBufferReader reader)
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
@@ -508,7 +511,8 @@ namespace Unity.Netcode
                 }
 
                 m_HasInternalBuffer = true;
-                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, sizeToCopy);
+                // We use Allocator.Persistent since scene synchronization will most likely take longer than 4 frames
+                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
             }
         }
 
