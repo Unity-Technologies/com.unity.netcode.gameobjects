@@ -63,6 +63,7 @@ namespace Unity.Netcode
 
         private readonly List<BufferedItem> m_Buffer;
 
+        // Buffer consumption scenarios
         // Perfect case consumption
         // | 1 | 2 | 3 |
         // | 2 | 3 | 4 | consume 1
@@ -75,7 +76,7 @@ namespace Unity.Netcode
         // | 3 |   |   | consume 2
         // | 4 | 5 | 6 | consume 3
         // | 5 | 6 | 7 | consume 4
-        // bursted case
+        // bursted case (assuming max count is 5)
         // | 1 | 2 | 3 |
         // | 2 | 3 |   | consume 1
         // | 3 |   |   | consume 2
@@ -83,9 +84,9 @@ namespace Unity.Netcode
         // |   |   |   |
         // | 4 | 5 | 6 | 7 | 8 | --> consume all and teleport to last value <8> --> this is the nuclear option, ideally this example would consume 4 and 5
         // instead of jumping to 8, but since in OnValueChange we don't yet have an updated server time (updated in pre-update) to know which value
-        // we should keep and which we should drop, we don't have enough information to do this. Another thing would be to not have the burst in the
-        // first place.
-        // constant absolute value here instead of dynamic time based value. This is in case we have very low tick rates, so
+        // we should keep and which we should drop, we don't have enough information to do this. Another thing would be to not have the burst in the first place.
+
+        // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
         // that we don't have a very small buffer because of this.
         private const int k_BufferCountLimit = 100;
         private BufferedItem m_LastBufferedItemReceived;
