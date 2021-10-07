@@ -39,8 +39,6 @@ namespace Unity.Netcode
         readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
         private bool m_Dirty;
 
-        readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
-
         public NetworkMetrics()
         {
             Dispatcher = new MetricDispatcherBuilder()
@@ -75,14 +73,6 @@ namespace Unity.Netcode
         public void TrackTransportBytesReceived(long bytesCount)
         {
             m_TransportBytesReceived.Increment(bytesCount);
-        }
-
-        public void TrackNetworkObject(NetworkObject networkObject)
-        {
-            if (!m_NetworkGameObjects.ContainsKey(networkObject.NetworkObjectId))
-            {
-                m_NetworkGameObjects[networkObject.NetworkObjectId] = new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId);
-            }
         }
 
         public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
@@ -139,8 +129,7 @@ namespace Unity.Netcode
 
         public void TrackNetworkVariableDeltaSent(
             ulong receiverClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
@@ -148,7 +137,7 @@ namespace Unity.Netcode
             m_NetworkVariableDeltaSentEvent.Mark(
                 new NetworkVariableEvent(
                     new ConnectionInfo(receiverClientId),
-                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    GetObjectIdentifier(networkObject),
                     variableName,
                     networkBehaviourName,
                     bytesCount));
@@ -157,8 +146,7 @@ namespace Unity.Netcode
 
         public void TrackNetworkVariableDeltaReceived(
             ulong senderClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
@@ -166,66 +154,61 @@ namespace Unity.Netcode
             m_NetworkVariableDeltaReceivedEvent.Mark(
                 new NetworkVariableEvent(
                     new ConnectionInfo(senderClientId),
-                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    GetObjectIdentifier(networkObject),
                     variableName,
                     networkBehaviourName,
                     bytesCount));
             MarkDirty();
         }
 
-        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
-        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
             m_OwnershipChangeReceivedEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(senderClientId),
-                new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+                GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
-        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
-        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
-        public void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroySent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
-        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroyReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
             MarkDirty();
         }
 
         public void TrackRpcSent(
             ulong receiverClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
-            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
-            {
-                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
-            }
-
             m_RpcSentEvent.Mark(
                 new RpcEvent(
                     new ConnectionInfo(receiverClientId),
-                    networkObjectIdentifier,
+                    GetObjectIdentifier(networkObject),
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
@@ -234,32 +217,27 @@ namespace Unity.Netcode
 
         public void TrackRpcSent(
             ulong[] receiverClientIds,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
-                TrackRpcSent(receiverClientId, networkObjectId, rpcName, networkBehaviourName, bytesCount);
+                TrackRpcSent(receiverClientId, networkObject, rpcName, networkBehaviourName, bytesCount);
             }
         }
 
         public void TrackRpcReceived(
             ulong senderClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
-            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
-            {
-                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
-            }
-
             m_RpcReceivedEvent.Mark(
                 new RpcEvent(new ConnectionInfo(senderClientId),
-                    networkObjectIdentifier,
+                    GetObjectIdentifier(networkObject),
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
@@ -310,6 +288,11 @@ namespace Unity.Netcode
         private void MarkDirty()
         {
             m_Dirty = true;
+        }
+
+        private static NetworkObjectIdentifier GetObjectIdentifier(NetworkObject networkObject)
+        {
+            return new NetworkObjectIdentifier(networkObject.GetNameForMetrics(), networkObject.NetworkObjectId);
         }
     }
 

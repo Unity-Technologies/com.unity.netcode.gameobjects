@@ -167,6 +167,18 @@ namespace Unity.Netcode
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
+#if MULTIPLAYER_TOOLS
+        private string m_CachedNameForMetrics;
+#endif
+        internal string GetNameForMetrics()
+        {
+#if MULTIPLAYER_TOOLS
+            return m_CachedNameForMetrics ??= name;
+#else
+            return null;
+#endif
+        }
+
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
@@ -317,7 +329,7 @@ namespace Unity.Netcode
                 };
                 // Send destroy call
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
+                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
 
