@@ -109,6 +109,9 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.That(netVar.Value, Is.EqualTo(0)); // sanity check
             }
 
+            // this is enough to make the test pass with SnapshotSpawn
+            yield return new WaitForSeconds(0.2f);
+
             // test updating all netvars
             int updatedValue = 1;
             foreach (var netVar in serverNetVarsToUpdate)

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -118,7 +119,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned
-            int nextFrameNumber = Time.frameCount + 2;
+            int nextFrameNumber = Time.frameCount + 3;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // check despawned on clients

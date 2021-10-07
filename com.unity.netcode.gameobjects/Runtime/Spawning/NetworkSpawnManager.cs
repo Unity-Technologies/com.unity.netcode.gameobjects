@@ -522,9 +522,8 @@ namespace Unity.Netcode
                     ? 0
                     : size;
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
-
-                networkObject.MarkVariablesDirty();
             }
+            networkObject.MarkVariablesDirty();
         }
 
         internal ulong? GetSpawnParentId(NetworkObject networkObject)
