@@ -505,7 +505,7 @@ namespace Unity.Netcode
 #endif
 
 #if MULTIPLAYER_TOOLS
-            m_MessagingSystem.Hook(new MetricHooks(this));
+            MessagingSystem.Hook(new MetricHooks(this));
 #endif
             LocalClientId = ulong.MaxValue;
 
