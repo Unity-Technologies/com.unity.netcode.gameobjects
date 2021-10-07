@@ -447,7 +447,7 @@ namespace Unity.Netcode
         internal string SceneNameFromHash(uint sceneHash)
         {
             // In the event there is no scene associated with the scene event then just return "No Scene"
-            // This can happen during unit tests when clients first connect and the only scene loaded is the 
+            // This can happen during unit tests when clients first connect and the only scene loaded is the
             // unit test scene (which is ignored by default) that results in a scene event that has no associated
             // scene.  Under this specific special case, we just return "No Scene".
             if (sceneHash == 0)
@@ -846,11 +846,11 @@ namespace Unity.Netcode
 
             if (sceneEventData.SceneEventType == SceneEventType.LoadEventCompleted)
             {
-                OnLoadEventCompleted?.Invoke(ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventProgress.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
+                OnLoadEventCompleted?.Invoke(SceneNameFromHash(sceneEventProgress.SceneHash), sceneEventProgress.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
             }
             else
             {
-                OnUnloadEventCompleted?.Invoke(ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventProgress.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
+                OnUnloadEventCompleted?.Invoke(SceneNameFromHash(sceneEventProgress.SceneHash), sceneEventProgress.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
             }
 
             EndSceneEvent(sceneEventData.SceneEventId);
@@ -887,7 +887,7 @@ namespace Unity.Netcode
             }
             var sceneEventData = BeginSceneEvent();
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
-            sceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload;
+            sceneEventData.SceneEventType = SceneEventType.Unload;
             sceneEventData.SceneHash = SceneHashFromNameOrPath(sceneName);
             sceneEventData.LoadSceneMode = LoadSceneMode.Additive; // The only scenes unloaded are scenes that were additively loaded
             sceneEventData.SceneHandle = sceneHandle;
@@ -1015,7 +1015,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.IsServer ? m_NetworkManager.ServerClientId : m_NetworkManager.LocalClientId
             });
 
-            OnUnloadComplete?.Invoke(m_NetworkManager.ServerClientId, ScenesInBuild[(int)sceneEventData.SceneIndex]);
+            OnUnloadComplete?.Invoke(m_NetworkManager.ServerClientId, SceneNameFromHash(sceneEventData.SceneHash));
 
             // Clients send a notification back to the server they have completed the unload scene event
             if (!m_NetworkManager.IsServer)
@@ -1310,7 +1310,7 @@ namespace Unity.Netcode
                 Scene = scene,
             });
 
-            OnLoadComplete?.Invoke(m_NetworkManager.ServerClientId, ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.LoadSceneMode);
+            OnLoadComplete?.Invoke(m_NetworkManager.ServerClientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
             //Second, set the server as having loaded for the associated SceneEventProgress
             if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
@@ -1343,7 +1343,7 @@ namespace Unity.Netcode
                 Scene = scene,
             });
 
-            OnLoadComplete?.Invoke(m_NetworkManager.LocalClientId, ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.LoadSceneMode);
+            OnLoadComplete?.Invoke(m_NetworkManager.LocalClientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
             EndSceneEvent(sceneEventId);
         }
@@ -1653,11 +1653,11 @@ namespace Unity.Netcode
 
                         if (sceneEventData.SceneEventType == SceneEventType.LoadEventCompleted)
                         {
-                            OnLoadEventCompleted?.Invoke(ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
+                            OnLoadEventCompleted?.Invoke(SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
                         }
                         else
                         {
-                            OnUnloadEventCompleted?.Invoke(ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
+                            OnUnloadEventCompleted?.Invoke(SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode, sceneEventData.ClientsCompleted, sceneEventData.ClientsTimedOut);
                         }
 
                         EndSceneEvent(sceneEventId);
@@ -1692,7 +1692,7 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
-                        OnLoadComplete?.Invoke(clientId, ScenesInBuild[(int)sceneEventData.SceneIndex], sceneEventData.LoadSceneMode);
+                        OnLoadComplete?.Invoke(clientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
@@ -1716,7 +1716,7 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
-                        OnUnloadComplete?.Invoke(clientId, ScenesInBuild[(int)sceneEventData.SceneIndex]);
+                        OnUnloadComplete?.Invoke(clientId, SceneNameFromHash(sceneEventData.SceneHash));
 
                         EndSceneEvent(sceneEventId);
                         break;
