@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
+using ToolsSceneEventType = Unity.Multiplayer.Tools.MetricTypes.SceneEventType;
 
 namespace Unity.Netcode
 {
@@ -266,13 +267,13 @@ namespace Unity.Netcode
 
         public void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), (Multiplayer.Tools.MetricTypes.SceneEventType)sceneEventType, sceneName, bytesCount));
+            m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), (ToolsSceneEventType)sceneEventType, sceneName, bytesCount));
             MarkDirty();
         }
 
         public void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), (Multiplayer.Tools.MetricTypes.SceneEventType)sceneEventType, sceneName, bytesCount));
+            m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), (ToolsSceneEventType)sceneEventType, sceneName, bytesCount));
             MarkDirty();
         }
 
