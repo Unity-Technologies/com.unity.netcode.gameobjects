@@ -1177,7 +1177,7 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            m_MessagingSystem.ProcessSendQueues();
+            MessagingSystem.ProcessSendQueues();
             NetworkMetrics.DispatchFrame();
             SpawnManager.CleanupStaleTriggers();
         }
