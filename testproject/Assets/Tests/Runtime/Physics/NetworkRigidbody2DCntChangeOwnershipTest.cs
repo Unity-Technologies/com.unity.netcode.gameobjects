@@ -8,17 +8,17 @@
 // // Tests for ClientNetworkTransform (CNT) + NetworkRigidbody. This test is in TestProject because it needs access to ClientNetworkTransform
 // namespace Unity.Netcode.RuntimeTests.Physics
 // {
-//     public class NetworkRigidbodyDynamicCntTest : NetworkRigidbodyCntTestBase
+//     public class NetworkRigidbody2DDynamicCntChangeOwnershipTest : NetworkRigidbody2DCntChangeOwnershipTestBase
 //     {
 //         public override bool Kinematic => false;
 //     }
 //
-//     public class NetworkRigidbodyKinematicCntTest : NetworkRigidbodyCntTestBase
+//     public class NetworkRigidbody2DKinematicCntChangeOwnershipTest : NetworkRigidbody2DCntChangeOwnershipTestBase
 //     {
 //         public override bool Kinematic => true;
 //     }
 //
-//     public abstract class NetworkRigidbodyCntTestBase : BaseMultiInstanceTest
+//     public abstract class NetworkRigidbody2DCntChangeOwnershipTestBase : BaseMultiInstanceTest
 //     {
 //         protected override int NbClients => 1;
 //
@@ -30,9 +30,9 @@
 //             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
 //             {
 //                 playerPrefab.AddComponent<ClientNetworkTransform>();
-//                 playerPrefab.AddComponent<Rigidbody>();
-//                 playerPrefab.AddComponent<NetworkRigidbody>();
-//                 playerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
+//                 playerPrefab.AddComponent<Rigidbody2D>();
+//                 playerPrefab.AddComponent<NetworkRigidbody2D>();
+//                 playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
 //             });
 //         }
 //         /// <summary>
@@ -60,23 +60,36 @@
 //
 //             TestKinematicSetCorrectly(clientPlayer, serverPlayer);
 //
-//             // despawn the server player
-//             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
+//
+//             // give server ownership over the player
+//
+//             serverPlayer.GetComponent<NetworkObject>().ChangeOwnership(m_ServerNetworkManager.ServerClientId);
 //
 //             yield return null;
 //             yield return null;
 //
-//             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
+//             // server should now be able to commit to transform
+//             TestKinematicSetCorrectly(serverPlayer, clientPlayer);
+//
+//             // return ownership to client
+//             serverPlayer.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+//             yield return null;
+//             yield return null;
+//
+//             // client should again be able to commit
+//             TestKinematicSetCorrectly(clientPlayer, serverPlayer);
 //         }
+//
+//
 //
 //         private void TestKinematicSetCorrectly(GameObject canCommitPlayer, GameObject canNotCommitPlayer)
 //         {
 //
 //             // can commit player has authority and should have a kinematic mode of false (or true in case body was already kinematic).
-//             Assert.True(canCommitPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic);
+//             Assert.True(canCommitPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 //
 //             // can not commit player has no authority and should have a kinematic mode of true
-//             Assert.True(canNotCommitPlayer.GetComponent<Rigidbody>().isKinematic);
+//             Assert.True(canNotCommitPlayer.GetComponent<Rigidbody2D>().isKinematic);
 //         }
 //     }
 // }
