@@ -37,8 +37,15 @@ namespace Unity.Netcode
         {
             public T Item;
             public NetworkTime TimeSent;
+
+            public BufferedItem(T item, NetworkTime timeSent)
+            {
+                Item = item;
+                TimeSent = timeSent;
+            }
         }
 
+        private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
         /// <summary>
         /// Override this if you want configurable buffering, right now using ServerTick's own global buffering
@@ -55,7 +62,9 @@ namespace Unity.Netcode
         private NetworkTime m_StartTimeConsumed;
 
         private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
-        private const int k_BufferSizeLimit = 100;
+        private const float k_SupportedBurstSizeSeconds = 1f; // will try to interpolate x seconds before teleporting
+        private int BufferSizeLimit { get; }
+
 
         private int m_LifetimeConsumedCount;
 
@@ -64,6 +73,7 @@ namespace Unity.Netcode
         internal BufferedLinearInterpolator(NetworkManager manager)
         {
             InterpolatorTimeProxy = new InterpolatorTime(manager);
+            BufferSizeLimit = Mathf.CeilToInt(k_SupportedBurstSizeSeconds * InterpolatorTimeProxy.TickRate);
         }
 
         public void ResetTo(T targetValue)
@@ -87,26 +97,31 @@ namespace Unity.Netcode
             // only consume if we're ready
             if (RenderTime >= m_EndTimeConsumed.Time)
             {
-                // buffer is sorted so older (smaller) time values are at the end.
-                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values
+                BufferedItem? itemToInterpolateTo = null;
+                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values due to packet loss
                 {
                     var bufferedValue = m_Buffer[i];
-                    // Consume when ready. This can consume multiple times
+                    // Consume when ready and interpolate to last value we can consume. This can consume multiple values from the buffer
                     if (bufferedValue.TimeSent.Time <= ServerTimeBeingHandledForBuffering)
                     {
-                        if (m_LifetimeConsumedCount == 0)
+                        if (!itemToInterpolateTo.HasValue || bufferedValue.TimeSent.Time > itemToInterpolateTo.Value.TimeSent.Time)
                         {
-                            m_StartTimeConsumed = bufferedValue.TimeSent;
-                            m_InterpStartValue = bufferedValue.Item;
-                        }
-                        else if (consumedCount == 0)
-                        {
-                            m_StartTimeConsumed = m_EndTimeConsumed;
-                            m_InterpStartValue = m_InterpEndValue;
+                            itemToInterpolateTo = bufferedValue;
+                            if (m_LifetimeConsumedCount == 0)
+                            {
+                                m_StartTimeConsumed = bufferedValue.TimeSent;
+                                m_InterpStartValue = bufferedValue.Item;
+                            }
+                            else if (consumedCount == 0)
+                            {
+                                m_StartTimeConsumed = m_EndTimeConsumed;
+                                m_InterpStartValue = m_InterpEndValue;
+                            }
+
+                            m_EndTimeConsumed = bufferedValue.TimeSent;
+                            m_InterpEndValue = bufferedValue.Item;
                         }
 
-                        m_EndTimeConsumed = bufferedValue.TimeSent;
-                        m_InterpEndValue = bufferedValue.Item;
                         m_Buffer.RemoveAt(i);
                         consumedCount++;
                         m_LifetimeConsumedCount++;
@@ -132,9 +147,9 @@ namespace Unity.Netcode
             if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
                 float t = 1.0f;
-                if (m_EndTimeConsumed.Time != m_StartTimeConsumed.Time)
+                double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
+                if (range > k_SmallValue)
                 {
-                    double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
                     t = (float)((RenderTime - m_StartTimeConsumed.Time) / range);
 
                     if (t < 0.0f)
@@ -155,21 +170,33 @@ namespace Unity.Netcode
                 m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime); // second interpolate to smooth out extrapolation jumps
             }
 
+            m_NbItemsReceivedThisFrame = 0;
             return m_CurrentInterpValue;
         }
 
+        private BufferedItem m_LastBufferedItemReceived;
+        private int m_NbItemsReceivedThisFrame;
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
-            if (m_Buffer.Count >= k_BufferSizeLimit)
+            m_NbItemsReceivedThisFrame++;
+
+            // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
+            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the correct value
+            if (m_NbItemsReceivedThisFrame > BufferSizeLimit)
             {
-                Debug.LogWarning("Going over buffer size limit while adding new interpolation values, interpolation buffering isn't consuming fast enough, removing oldest value now.");
-                m_Buffer.RemoveAt(m_Buffer.Count - 1);
+                if (m_LastBufferedItemReceived.TimeSent.Time > sentTime.Time)
+                {
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
+                    ResetTo(newMeasurement);
+                }
+
+                return;
             }
 
             if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
-                m_Buffer.Add(new BufferedItem { Item = newMeasurement, TimeSent = sentTime });
-                m_Buffer.Sort((item1, item2) => item2.TimeSent.Time.CompareTo(item1.TimeSent.Time));
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
+                m_Buffer.Add(m_LastBufferedItemReceived);
             }
         }
 
