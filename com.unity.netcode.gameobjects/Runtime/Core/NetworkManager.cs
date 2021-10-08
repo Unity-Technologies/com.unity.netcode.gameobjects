@@ -559,7 +559,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem(this);
+            SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
             if (server)
             {
