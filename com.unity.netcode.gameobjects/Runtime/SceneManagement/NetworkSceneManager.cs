@@ -971,7 +971,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
 
-            OnUnload?.Invoke(m_NetworkManager.ServerClientId, sceneName, sceneUnload);
+            OnUnload?.Invoke(m_NetworkManager.LocalClientId, sceneName, sceneUnload);
 
 #if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
@@ -1015,7 +1015,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.IsServer ? m_NetworkManager.ServerClientId : m_NetworkManager.LocalClientId
             });
 
-            OnUnloadComplete?.Invoke(m_NetworkManager.ServerClientId, SceneNameFromHash(sceneEventData.SceneHash));
+            OnUnloadComplete?.Invoke(m_NetworkManager.LocalClientId, SceneNameFromHash(sceneEventData.SceneHash));
 
             // Clients send a notification back to the server they have completed the unload scene event
             if (!m_NetworkManager.IsServer)
@@ -1202,7 +1202,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId
             });
 
-            OnLoad?.Invoke(m_NetworkManager.ServerClientId, sceneName, sceneEventData.LoadSceneMode, sceneLoad);
+            OnLoad?.Invoke(m_NetworkManager.LocalClientId, sceneName, sceneEventData.LoadSceneMode, sceneLoad);
         }
 
 

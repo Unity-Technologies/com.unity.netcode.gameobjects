@@ -19,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected abstract int NbClients { get; }
 
+        protected bool m_BypassStartAndWaitForClients = false;
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
@@ -155,19 +157,22 @@ namespace Unity.Netcode.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
-            // is started and after each client is started.
-            if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+            if (!m_BypassStartAndWaitForClients)
             {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                // Wait for connection on client side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+
+                // Wait for connection on server side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
             }
-
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
     }
 }
