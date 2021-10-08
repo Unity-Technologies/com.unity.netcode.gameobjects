@@ -552,6 +552,7 @@ namespace TestProject.RuntimeTests
 
         private class SceneEventCompletedTestInfo
         {
+            public string SceneName;
             public SceneEventType EventTypeCompleted;
             public List<ulong> ClientThatCompletedEvent;
         }
@@ -580,23 +581,24 @@ namespace TestProject.RuntimeTests
             var clientSelection = notificationList.Select(c => c).Where(c => c.ClientId == clientId);
             if (clientSelection == null || clientSelection.Count() == 0)
             {
-                    notificationList.Add(new SceneEventNotificationTestInfo()
-                    {
-                        ClientId = clientId,
-                        EventsProcessed = new List<SceneEventType>(),
-                    });
+                notificationList.Add(new SceneEventNotificationTestInfo()
+                {
+                    ClientId = clientId,
+                    EventsProcessed = new List<SceneEventType>(),
+                });
             }
             var clientNotificationObject = notificationList.Select(c => c).Where(c => c.ClientId == clientId).First();
             clientNotificationObject.EventsProcessed.Add(notificationType);
             clientNotificationObject.ShouldWait = !eventComplete;
         }
 
-        private void ProcessCompletedNotification(List<ulong> clientIds, SceneEventType notificationType, bool isServer)
+        private void ProcessCompletedNotification(string sceneName, List<ulong> clientIds, SceneEventType notificationType, bool isServer)
         {
             var notificationList = isServer ? m_ServerCompletedTestInfo : m_ClientCompletedTestInfo;
 
             notificationList.Add(new SceneEventCompletedTestInfo()
             {
+                SceneName = sceneName,
                 EventTypeCompleted = notificationType,
                 ClientThatCompletedEvent = new List<ulong>(clientIds)
             });
@@ -607,11 +609,12 @@ namespace TestProject.RuntimeTests
             var isValidated = m_ClientCompletedTestInfo.Count == NbClients && m_ServerCompletedTestInfo.Count == 1;
             if (isValidated)
             {
-                foreach(var client in m_ClientCompletedTestInfo)
+                foreach (var client in m_ClientCompletedTestInfo)
                 {
+                    Assert.That(m_ServerCompletedTestInfo[0].SceneName == client.SceneName);
                     Assert.That(m_ServerCompletedTestInfo[0].EventTypeCompleted == client.EventTypeCompleted);
                     Assert.That(m_ServerCompletedTestInfo[0].ClientThatCompletedEvent.Count == client.ClientThatCompletedEvent.Count);
-                    foreach(var clientId in m_ServerCompletedTestInfo[0].ClientThatCompletedEvent)
+                    foreach (var clientId in m_ServerCompletedTestInfo[0].ClientThatCompletedEvent)
                     {
                         Assert.That(client.ClientThatCompletedEvent.Contains(clientId));
                     }
@@ -736,7 +739,7 @@ namespace TestProject.RuntimeTests
             //////////////////////////////////////////
             // Testing load event notifications
             Assert.That(m_ServerNetworkManager.SceneManager.LoadScene(k_AdditiveScene1, LoadSceneMode.Additive) == SceneEventProgressStatus.Started);
-            shouldWait = NotificationTestShouldWait()|| !m_CurrentScene.IsValid() || !m_CurrentScene.isLoaded;
+            shouldWait = NotificationTestShouldWait() || !m_CurrentScene.IsValid() || !m_CurrentScene.isLoaded;
 
             while (shouldWait)
             {
@@ -769,7 +772,7 @@ namespace TestProject.RuntimeTests
 
         private void Client_OnSynchronize(ulong clientId)
         {
-            ClientProcessedNotification(clientId,SceneEventType.Synchronize, false);
+            ClientProcessedNotification(clientId, SceneEventType.Synchronize, false);
         }
 
         private void Client_OnSynchronizeComplete(ulong clientId)
@@ -780,7 +783,7 @@ namespace TestProject.RuntimeTests
 
         private void Client_OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
-            ProcessCompletedNotification(clientsCompleted, SceneEventType.UnloadEventCompleted, false);
+            ProcessCompletedNotification(sceneName, clientsCompleted, SceneEventType.UnloadEventCompleted, false);
         }
 
         private void Client_OnUnloadComplete(ulong clientId, string sceneName)
@@ -796,7 +799,7 @@ namespace TestProject.RuntimeTests
 
         private void Client_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
-            ProcessCompletedNotification(clientsCompleted, SceneEventType.LoadEventCompleted, false);
+            ProcessCompletedNotification(sceneName, clientsCompleted, SceneEventType.LoadEventCompleted, false);
         }
 
         private void Client_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
@@ -851,7 +854,7 @@ namespace TestProject.RuntimeTests
 
         private void Server_OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
-            ProcessCompletedNotification(clientsCompleted, SceneEventType.UnloadEventCompleted, true);
+            ProcessCompletedNotification(sceneName, clientsCompleted, SceneEventType.UnloadEventCompleted, true);
         }
 
         private void Server_OnUnloadComplete(ulong clientId, string sceneName)
@@ -866,7 +869,7 @@ namespace TestProject.RuntimeTests
 
         private void Server_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
-            ProcessCompletedNotification(clientsCompleted, SceneEventType.LoadEventCompleted, true);
+            ProcessCompletedNotification(sceneName, clientsCompleted, SceneEventType.LoadEventCompleted, true);
         }
 
         private void Server_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
