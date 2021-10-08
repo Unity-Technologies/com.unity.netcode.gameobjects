@@ -202,7 +202,7 @@ namespace Unity.Netcode
         public delegate void OnUnloadCompleteDelegateHandler(ulong clientId, string sceneName);
 
         /// <summary>
-        /// Delegate declaration for the OnUnloadComplete event
+        /// Delegate declaration for the OnSynchronizeComplete event
         /// View <see cref="SceneEventType.SynchronizeComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that completed this event</param>
