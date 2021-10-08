@@ -83,16 +83,12 @@ namespace Unity.Netcode
                         NetworkBehaviour.NetworkVariableIndexesToReset.Add(k);
                     }
 
-                    var bytesReported = NetworkBehaviour.NetworkManager.LocalClientId == ClientId
-                        ? 0
-                        : writer.Length;
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         ClientId,
-                        NetworkBehaviour.NetworkObjectId,
-                        NetworkBehaviour.name,
+                        NetworkBehaviour.NetworkObject,
                         NetworkBehaviour.NetworkVariableFields[k].Name,
                         NetworkBehaviour.__getTypeName(),
-                        bytesReported);
+                        writer.Length);
                 }
             }
         }
@@ -183,16 +179,13 @@ namespace Unity.Netcode
                         int readStartPos = reader.Position;
 
                         behaviour.NetworkVariableFields[i].ReadDelta(reader, networkManager.IsServer);
-                        var bytesReported = networkManager.LocalClientId == senderId
-                            ? 0
-                            : reader.Length;
+
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             senderId,
-                            behaviour.NetworkObjectId,
-                            behaviour.name,
+                            networkObject,
                             behaviour.NetworkVariableFields[i].Name,
                             behaviour.__getTypeName(),
-                            bytesReported);
+                            reader.Length);
 
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

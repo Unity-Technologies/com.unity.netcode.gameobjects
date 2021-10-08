@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    public struct ParentSyncMessage : INetworkMessage
+    internal struct ParentSyncMessage : INetworkMessage
     {
         public ulong NetworkObjectId;
 

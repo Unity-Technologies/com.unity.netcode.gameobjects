@@ -88,7 +88,10 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AreAllClientsDoneLoading { get; private set; }
 
-        internal uint SceneBuildIndex { get; set; }
+        /// <summary>
+        /// The hash value generated from the full scene path
+        /// </summary>
+        internal uint SceneHash { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 

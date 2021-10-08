@@ -17,7 +17,7 @@ namespace Unity.Netcode
             ShouldResetOnDispatch = true,
         };
 
-    	readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageSent.Id);
+        readonly EventMetric<NetworkMessageEvent> m_NetworkMessageSentEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageSent.Id);
         readonly EventMetric<NetworkMessageEvent> m_NetworkMessageReceivedEvent = new EventMetric<NetworkMessageEvent>(NetworkMetricTypes.NetworkMessageReceived.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageSent.Id);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(NetworkMetricTypes.NamedMessageReceived.Id);
@@ -37,8 +37,7 @@ namespace Unity.Netcode
         readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogReceived.Id);
         readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
-
-        readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
+        private bool m_Dirty;
 
         public NetworkMetrics()
         {
@@ -61,6 +60,11 @@ namespace Unity.Netcode
 
         internal IMetricDispatcher Dispatcher { get; }
 
+        public void SetConnectionId(ulong connectionId)
+        {
+            Dispatcher.SetConnectionId(connectionId);
+        }
+
         public void TrackTransportBytesSent(long bytesCount)
         {
             m_TransportBytesSent.Increment(bytesCount);
@@ -71,27 +75,22 @@ namespace Unity.Netcode
             m_TransportBytesReceived.Increment(bytesCount);
         }
 
-        public void TrackNetworkObject(NetworkObject networkObject)
-        {
-            if (!m_NetworkGameObjects.ContainsKey(networkObject.NetworkObjectId))
-            {
-                m_NetworkGameObjects[networkObject.NetworkObjectId] = new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId);
-            }
-        }
-
         public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
         {
             m_NetworkMessageSentEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(receivedClientId), messageType, bytesCount));
+            MarkDirty();
         }
 
         public void TrackNetworkMessageReceived(ulong senderClientId, string messageType, long bytesCount)
         {
             m_NetworkMessageReceivedEvent.Mark(new NetworkMessageEvent(new ConnectionInfo(senderClientId), messageType, bytesCount));
+            MarkDirty();
         }
 
         public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)
         {
             m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(receiverClientId), messageName, bytesCount));
+            MarkDirty();
         }
 
         public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, long bytesCount)
@@ -105,11 +104,13 @@ namespace Unity.Netcode
         public void TrackNamedMessageReceived(ulong senderClientId, string messageName, long bytesCount)
         {
             m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(senderClientId), messageName, bytesCount));
+            MarkDirty();
         }
 
         public void TrackUnnamedMessageSent(ulong receiverClientId, long bytesCount)
         {
             m_UnnamedMessageSentEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(receiverClientId), bytesCount));
+            MarkDirty();
         }
 
         public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, long bytesCount)
@@ -123,12 +124,12 @@ namespace Unity.Netcode
         public void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount)
         {
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
+            MarkDirty();
         }
 
         public void TrackNetworkVariableDeltaSent(
             ulong receiverClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
@@ -136,16 +137,16 @@ namespace Unity.Netcode
             m_NetworkVariableDeltaSentEvent.Mark(
                 new NetworkVariableEvent(
                     new ConnectionInfo(receiverClientId),
-                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    GetObjectIdentifier(networkObject),
                     variableName,
                     networkBehaviourName,
                     bytesCount));
+            MarkDirty();
         }
 
         public void TrackNetworkVariableDeltaReceived(
             ulong senderClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
@@ -153,113 +154,106 @@ namespace Unity.Netcode
             m_NetworkVariableDeltaReceivedEvent.Mark(
                 new NetworkVariableEvent(
                     new ConnectionInfo(senderClientId),
-                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    GetObjectIdentifier(networkObject),
                     variableName,
                     networkBehaviourName,
                     bytesCount));
+            MarkDirty();
         }
 
-        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
-        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
             m_OwnershipChangeReceivedEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(senderClientId),
-                new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+                GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
-        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
-        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
-        public void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroySent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroyReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            foreach (var receiverClientId in receiverClientIds)
-            {
-                TrackObjectDestroySent(receiverClientId, networkObjectId, gameObjectName, bytesCount);
-            }
-        }
-
-        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-            m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+            m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
+            MarkDirty();
         }
 
         public void TrackRpcSent(
             ulong receiverClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
-            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
-            {
-                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
-            }
-
             m_RpcSentEvent.Mark(
                 new RpcEvent(
                     new ConnectionInfo(receiverClientId),
-                    networkObjectIdentifier,
+                    GetObjectIdentifier(networkObject),
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
+            MarkDirty();
         }
 
         public void TrackRpcSent(
             ulong[] receiverClientIds,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
-                TrackRpcSent(receiverClientId, networkObjectId, rpcName, networkBehaviourName, bytesCount);
+                TrackRpcSent(receiverClientId, networkObject, rpcName, networkBehaviourName, bytesCount);
             }
         }
 
         public void TrackRpcReceived(
             ulong senderClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
         {
-            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
-            {
-                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
-            }
-
             m_RpcReceivedEvent.Mark(
                 new RpcEvent(new ConnectionInfo(senderClientId),
-                    networkObjectIdentifier,
+                    GetObjectIdentifier(networkObject),
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
+            MarkDirty();
         }
 
         public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
         {
             m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
+            MarkDirty();
         }
 
         public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
             m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.Tools.MetricTypes.LogLevel)logType, bytesCount));
+            MarkDirty();
         }
 
         public void TrackSceneEventSent(IReadOnlyList<ulong> receiverClientIds, uint sceneEventType, string sceneName, long bytesCount)
@@ -273,16 +267,32 @@ namespace Unity.Netcode
         public void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
             m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), (SceneEventType)sceneEventType, sceneName, bytesCount));
+            MarkDirty();
         }
 
         public void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
             m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), (SceneEventType)sceneEventType, sceneName, bytesCount));
+            MarkDirty();
         }
 
         public void DispatchFrame()
         {
-            Dispatcher.Dispatch();
+            if (m_Dirty)
+            {
+                Dispatcher.Dispatch();
+                m_Dirty = false;
+            }
+        }
+
+        private void MarkDirty()
+        {
+            m_Dirty = true;
+        }
+
+        private static NetworkObjectIdentifier GetObjectIdentifier(NetworkObject networkObject)
+        {
+            return new NetworkObjectIdentifier(networkObject.GetNameForMetrics(), networkObject.NetworkObjectId);
         }
     }
 
