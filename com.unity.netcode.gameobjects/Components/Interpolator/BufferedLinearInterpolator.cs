@@ -61,7 +61,7 @@ namespace Unity.Netcode
         private NetworkTime m_EndTimeConsumed;
         private NetworkTime m_StartTimeConsumed;
 
-        private readonly List<BufferedItem> m_Buffer;
+        private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
 
         // Buffer consumption scenarios
         // Perfect case consumption
@@ -99,13 +99,11 @@ namespace Unity.Netcode
         internal BufferedLinearInterpolator(NetworkManager manager)
         {
             InterpolatorTimeProxy = new InterpolatorTime(manager);
-            m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
         }
 
         internal BufferedLinearInterpolator(IInterpolatorTime proxy)
         {
             InterpolatorTimeProxy = proxy;
-            m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
         }
 
         public void ResetTo(T targetValue)
@@ -212,7 +210,6 @@ namespace Unity.Netcode
             m_NbItemsReceivedThisFrame = 0;
             return m_CurrentInterpValue;
         }
-
 
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
