@@ -39,7 +39,7 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
-        public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor ?? this;
+        public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor != null ? s_DriverConstructor : this;
 
         [SerializeField] private ProtocolType m_ProtocolType;
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
@@ -297,7 +297,7 @@ namespace Unity.Netcode
         {
             var connection = m_Driver.Accept();
 
-            if (connection == default)
+            if (connection == default(NetworkConnection))
             {
                 return false;
             }
@@ -321,7 +321,7 @@ namespace Unity.Netcode
                     {
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                             ParseClientId(networkConnection),
-                            default,
+                            default(ArraySegment<byte>),
                             Time.realtimeSinceStartup);
 
                         m_State = State.Connected;
@@ -331,7 +331,7 @@ namespace Unity.Netcode
                     {
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             ParseClientId(networkConnection),
-                            default,
+                            default(ArraySegment<byte>),
                             Time.realtimeSinceStartup);
 
                         if (m_ServerConnection.IsCreated)
@@ -654,12 +654,15 @@ namespace Unity.Netcode
                 return false;
             }
 
-            return m_ProtocolType switch
+            switch (m_ProtocolType)
             {
-                ProtocolType.UnityTransport => ServerBindAndListen(NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort)),
-                ProtocolType.RelayUnityTransport => StartRelayServer(),
-                _ => false,
-            };
+                case ProtocolType.UnityTransport:
+                    return ServerBindAndListen(NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort));
+                case ProtocolType.RelayUnityTransport:
+                    return StartRelayServer();
+                default:
+                    return false;
+            }
         }
 
         public override void Shutdown()

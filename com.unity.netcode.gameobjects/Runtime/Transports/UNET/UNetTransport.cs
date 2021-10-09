@@ -177,14 +177,19 @@ namespace Unity.Netcode.Transports.UNET
             }
 
             // Translate NetworkEventType to NetEventType
-            return eventType switch
+            switch (eventType)
             {
-                NetworkEventType.ConnectEvent => NetworkEvent.Connect,
-                NetworkEventType.DisconnectEvent => NetworkEvent.Disconnect,
-                NetworkEventType.DataEvent => NetworkEvent.Data,
-                NetworkEventType.BroadcastEvent => NetworkEvent.Nothing,
-                _ => NetworkEvent.Nothing,
-            };
+                case NetworkEventType.DataEvent:
+                    return NetworkEvent.Data;
+                case NetworkEventType.ConnectEvent:
+                    return NetworkEvent.Connect;
+                case NetworkEventType.DisconnectEvent:
+                    return NetworkEvent.Disconnect;
+                case NetworkEventType.BroadcastEvent:
+                case NetworkEventType.Nothing:
+                default:
+                    return NetworkEvent.Nothing;
+            }
         }
 
         public override bool StartClient()
