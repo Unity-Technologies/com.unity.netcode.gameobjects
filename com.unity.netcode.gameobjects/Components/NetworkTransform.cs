@@ -267,7 +267,9 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        public virtual bool CanCommitToTransform => IsServer;
+        protected bool CanCommitToTransform;
+        protected bool CachedIsServer;
+        protected NetworkManager CachedNetworkManager;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
@@ -320,7 +322,7 @@ namespace Unity.Netcode.Components
         {
             void Send(NetworkTransformState stateToSend)
             {
-                if (IsServer)
+                if (CachedIsServer)
                 {
                     // server RPC takes a few frames to execute server side, we want this to execute immediately
                     CommitLocallyAndReplicate(stateToSend);
@@ -342,12 +344,12 @@ namespace Unity.Netcode.Components
             {
                 Send(m_LocalAuthoritativeNetworkState);
                 m_HasSentLastValue = false;
-                m_LastSentTick = NetworkManager.LocalTime.Tick;
+                m_LastSentTick = CachedNetworkManager.LocalTime.Tick;
                 m_LastSentState = m_LocalAuthoritativeNetworkState;
             }
-            else if (!m_HasSentLastValue && NetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
+            else if (!m_HasSentLastValue && CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
-                m_LastSentState.SentTime = NetworkManager.LocalTime.Time; // time 1+ tick later
+                m_LastSentState.SentTime = CachedNetworkManager.LocalTime.Time; // time 1+ tick later
                 Send(m_LastSentState);
                 m_HasSentLastValue = true;
             }
@@ -421,8 +423,8 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionY &&
-                Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
-                !Mathf.Approximately(networkState.PositionY, position.y))
+                isPositionDirty || (Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
+                !Mathf.Approximately(networkState.PositionY, position.y)))
             {
                 networkState.PositionY = position.y;
                 networkState.HasPositionY = true;
@@ -430,8 +432,8 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionZ &&
-                Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
-                !Mathf.Approximately(networkState.PositionZ, position.z))
+                isPositionDirty || (Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
+                !Mathf.Approximately(networkState.PositionZ, position.z)))
             {
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
@@ -448,8 +450,9 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold &&
-                !Mathf.Approximately(networkState.RotAngleY, rotAngles.y))
+                isRotationDirty ||
+                (Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold &&
+                !Mathf.Approximately(networkState.RotAngleY, rotAngles.y)))
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -457,8 +460,9 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold &&
-                !Mathf.Approximately(networkState.RotAngleZ, rotAngles.z))
+                isRotationDirty ||
+                (Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold &&
+                !Mathf.Approximately(networkState.RotAngleZ, rotAngles.z)))
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
@@ -475,8 +479,9 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleY &&
-                Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold &&
-                !Mathf.Approximately(networkState.ScaleY, scale.y))
+                isScaleDirty ||
+                (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold &&
+                !Mathf.Approximately(networkState.ScaleY, scale.y)))
             {
                 networkState.ScaleY = scale.y;
                 networkState.HasScaleY = true;
@@ -484,8 +489,9 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleZ &&
-                Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold &&
-                !Mathf.Approximately(networkState.ScaleZ, scale.z))
+                isScaleDirty ||
+                (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold &&
+                !Mathf.Approximately(networkState.ScaleZ, scale.z)))
             {
                 networkState.ScaleZ = scale.z;
                 networkState.HasScaleZ = true;
@@ -617,7 +623,7 @@ namespace Unity.Netcode.Components
 
         private void AddInterpolatedState(NetworkTransformState newState)
         {
-            var sentTime = new NetworkTime(NetworkManager.ServerTime.TickRate, newState.SentTime);
+            var sentTime = new NetworkTime(CachedNetworkManager.ServerTime.TickRate, newState.SentTime);
 
             if (newState.HasPositionX)
             {
@@ -670,7 +676,7 @@ namespace Unity.Netcode.Components
 
             AddInterpolatedState(newState);
 
-            if (NetworkManager.LogLevel == LogLevel.Developer)
+            if (CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
                 Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
@@ -681,23 +687,24 @@ namespace Unity.Netcode.Components
         {
             m_Transform = transform;
 
-
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
-
-
 
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
         public override void OnNetworkSpawn()
         {
-            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
-            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
-            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(NetworkManager); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
-            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
-            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
-            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            CanCommitToTransform = IsServer;
+            CachedIsServer = IsServer;
+            CachedNetworkManager = NetworkManager;
+
+            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
+            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
+            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
+            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
+            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -709,7 +716,7 @@ namespace Unity.Netcode.Components
             }
             if (CanCommitToTransform)
             {
-                TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
+                TryCommitTransformToServer(m_Transform, CachedNetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
@@ -768,7 +775,7 @@ namespace Unity.Netcode.Components
                 throw new Exception("Trying to set a state on a not owned transform");
             }
 
-            if (NetworkManager != null && !(NetworkManager.IsConnectedClient || NetworkManager.IsListening))
+            if (CachedNetworkManager != null && !(CachedNetworkManager.IsConnectedClient || CachedNetworkManager.IsListening))
             {
                 return;
             }
@@ -779,7 +786,7 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                if (!IsServer)
+                if (!CachedIsServer)
                 {
                     SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
                 }
@@ -820,27 +827,30 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                if (IsServer)
+                if (CachedIsServer)
                 {
-                    TryCommitTransformToServer(m_Transform, NetworkManager.LocalTime.Time);
+                    TryCommitTransformToServer(m_Transform, CachedNetworkManager.LocalTime.Time);
                 }
 
                 m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
-            if (NetworkManager.IsConnectedClient || NetworkManager.IsListening)
+            if (CachedNetworkManager.IsConnectedClient || CachedNetworkManager.IsListening)
             {
+                var cachedDeltaTime = Time.deltaTime;
+                var cachedServerTime = NetworkManager.ServerTime.Time;
+                var cachedRenderTime = cachedServerTime - 1f / NetworkManager.NetworkConfig.TickRate;
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
-                    interpolator.Update(Time.deltaTime);
+                    interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
-                m_RotationInterpolator.Update(Time.deltaTime);
+                m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
 
                 if (!CanCommitToTransform)
                 {
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    if (CachedNetworkManager.LogLevel == LogLevel.Developer)
                     {
                         var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
@@ -888,7 +898,7 @@ namespace Unity.Netcode.Components
             // set teleport flag in state to signal to ghosts not to interpolate
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
             // check server side
-            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, NetworkManager.LocalTime.Time);
+            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
     }
