@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -19,6 +20,21 @@ namespace Unity.Netcode
         /// A list of the spawned objects
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
+
+        private struct TriggerData
+        {
+            public FastBufferReader Reader;
+            public MessageHeader Header;
+            public ulong SenderId;
+            public float Timestamp;
+        }
+        private struct TriggerInfo
+        {
+            public float Expiry;
+            public NativeList<TriggerData> TriggerData;
+        }
+
+        private readonly Dictionary<ulong, TriggerInfo> m_Triggers = new Dictionary<ulong, TriggerInfo>();
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -74,6 +90,69 @@ namespace Unity.Netcode
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Defers processing of a message until the moment a specific networkObjectId is spawned.
+        /// This is to handle situations where an RPC or other object-specific message arrives before the spawn does,
+        /// either due to it being requested in OnNetworkSpawn before the spawn call has been executed, or with
+        /// snapshot spawns enabled where the spawn is sent unreliably and not until the end of the frame.
+        ///
+        /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
+        /// without the requested object ID being spawned, the triggers for it are automatically deleted.
+        /// </summary>
+        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
+        {
+            if (!m_Triggers.ContainsKey(networkObjectId))
+            {
+                m_Triggers[networkObjectId] = new TriggerInfo
+                {
+                    Expiry = Time.realtimeSinceStartup + 1,
+                    TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
+                };
+            }
+
+            m_Triggers[networkObjectId].TriggerData.Add(new TriggerData
+            {
+                Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
+                Header = context.Header,
+                Timestamp = context.Timestamp,
+                SenderId = context.SenderId
+            });
+        }
+
+        /// <summary>
+        /// Cleans up any trigger that's existed for more than a second.
+        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
+        /// </summary>
+        internal unsafe void CleanupStaleTriggers()
+        {
+            ulong* staleKeys = stackalloc ulong[m_Triggers.Count()];
+            int index = 0;
+            foreach (var kvp in m_Triggers)
+            {
+                if (kvp.Value.Expiry < Time.realtimeSinceStartup)
+                {
+
+                    staleKeys[index++] = kvp.Key;
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Deferred messages were received for {nameof(NetworkObject)} #{kvp.Key}, but it did not spawn within 1 second.");
+                    }
+
+                    foreach (var data in kvp.Value.TriggerData)
+                    {
+                        data.Reader.Dispose();
+                    }
+
+                    kvp.Value.TriggerData.Dispose();
+                }
+            }
+
+            for (var i = 0; i < index; ++i)
+            {
+                m_Triggers.Remove(staleKeys[i]);
+            }
         }
 
         internal void RemoveOwnership(NetworkObject networkObject)
@@ -395,6 +474,20 @@ namespace Unity.Netcode
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
+
+            if (m_Triggers.ContainsKey(networkId))
+            {
+                var triggerInfo = m_Triggers[networkId];
+                foreach (var trigger in triggerInfo.TriggerData)
+                {
+                    // Reader will be disposed within HandleMessage
+                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp);
+                }
+
+                triggerInfo.TriggerData.Dispose();
+                m_Triggers.Remove(networkId);
+            }
+
             networkObject.InvokeBehaviourNetworkSpawn();
         }
 

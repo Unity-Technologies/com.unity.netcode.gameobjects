@@ -17,6 +17,13 @@ namespace Unity.Netcode
 
     internal class MessagingSystem : IDisposable
     {
+
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // This is NOT modified by RuntimeAccessModifiersILPP right now, but is populated by ILPP.
+        internal static readonly List<Type> __network_message_types = new List<Type>();
+#pragma warning restore IDE1006 // restore naming rule violation check
+
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -77,54 +84,43 @@ namespace Unity.Netcode
                 m_MessageSender = messageSender;
                 m_Owner = owner;
 
-                var interfaceType = typeof(INetworkMessage);
-                var implementationTypes = new List<Type>();
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                var allowedTypes = new List<Type>();
+                foreach (var type in __network_message_types)
                 {
-                    foreach (var type in assembly.GetTypes())
+                    var attributes = type.GetCustomAttributes(typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute), false);
+                    // If [IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute(ownerType)] isn't provided, it defaults
+                    // to being bound to NetworkManager. This is technically a breach of domain by having
+                    // MessagingSystem know about the existence of NetworkManager... but ultimately,
+                    // IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute is provided to support testing, not to support
+                    // general use of MessagingSystem outside of Netcode for GameObjects, so having MessagingSystem
+                    // know about NetworkManager isn't so bad. Especially since it's just a default value.
+                    // This is just a convenience to keep us and our users from having to use
+                    // [Bind(typeof(NetworkManager))] on every message - only tests that don't want to use
+                    // the full NetworkManager need to worry about it.
+                    var shouldSkip = attributes.Length != 0 || !(m_Owner is NetworkManager);
+                    for (var i = 0; i < attributes.Length; ++i)
                     {
-                        if (type.IsInterface || type.IsAbstract)
+                        var bindAttribute = (IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute)attributes[i];
+                        if (
+                            (bindAttribute.BoundType != null &&
+                             bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
+                            (m_Owner == null && bindAttribute.BoundType == null))
                         {
-                            continue;
-                        }
-
-                        if (interfaceType.IsAssignableFrom(type))
-                        {
-                            var attributes = type.GetCustomAttributes(typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute), false);
-                            // If [Bind(ownerType)] isn't provided, it defaults to being bound to NetworkManager
-                            // This is technically a breach of domain by having MessagingSystem know about the existence
-                            // of NetworkManager... but ultimately, Bind is provided to support testing, not to support
-                            // general use of MessagingSystem outside of Netcode for GameObjects, so having MessagingSystem
-                            // know about NetworkManager isn't so bad. Especially since it's just a default value.
-                            // This is just a convenience to keep us and our users from having to use
-                            // [Bind(typeof(NetworkManager))] on every message - only tests that don't want to use
-                            // the full NetworkManager need to worry about it.
-                            var allowedToBind = attributes.Length == 0 && m_Owner is NetworkManager;
-                            for (var i = 0; i < attributes.Length; ++i)
-                            {
-                                var bindAttribute = (IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute)attributes[i];
-                                if (
-                                    (bindAttribute.BoundType != null &&
-                                     bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
-                                    (m_Owner == null && bindAttribute.BoundType == null))
-                                {
-                                    allowedToBind = true;
-                                    break;
-                                }
-                            }
-
-                            if (!allowedToBind)
-                            {
-                                continue;
-                            }
-
-                            implementationTypes.Add(type);
+                            shouldSkip = false;
+                            break;
                         }
                     }
+
+                    if (shouldSkip)
+                    {
+                        continue;
+                    }
+
+                    allowedTypes.Add(type);
                 }
 
-                implementationTypes.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
-                foreach (var type in implementationTypes)
+                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
+                foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
                 }
