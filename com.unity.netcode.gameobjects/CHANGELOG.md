@@ -47,15 +47,34 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
+  
 - Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
+
 - Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
+
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
+
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
+
 - `NetworkManager, NetworkConfig, and NetworkSceneManager` scene registration replaced with scenes in build list (#1080)
+
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
+
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
+
 - Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
+
 - `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
+
+- `INetworkSerializable`'s `NetworkSerialize` method signature was changed to:
+
+  ```c#
+  void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter;
+  ```
+
+  `BufferSerializer<T>` uses `FastBufferReader` and `FastBufferWriter` implementations that offer much better performance and zero garbage. (#1187)
+
+- The signatures for all custom message methods have been changed from using `Stream` to using `FastBufferWriter` on the sending side and `FastBufferReader` on the receiving side. (#1187)
 
 ### Deprecated
 
@@ -77,6 +96,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
 - Removed NetworkSet, NetworkDictionary (#1149)
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
+- Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
+- Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
 
 ### Fixed
 
@@ -88,28 +109,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Now `NetworkManager` shutdowns correctly and despawns existing `NetworkObject`s
 - Fixed Only one `PlayerPrefab` can be selected on `NetworkManager` inspector UI in the editor (#676)
 - Fixed connection approval not being triggered for host (#675)
+- Fixed various situations where messages could be processed in an invalid order, resulting in errors (#948, #1187, #1218)
+- Fixed NetworkVariables being zero-initialized on the client instead of being initialized with the desired value (#1266)
+- Improved performance and dramatically reduced the amount of garbage Netcode for Game Objects creates (#1187)
 
 ### Security
 
 - something
 
 ### TODO
-
-Jaedyn:
-
-- [40011ed8] (2021-10-08) Jaedyn Draper / fix: issue #1151 - client RPCs invoked in OnNetworkSpawn being dropped (#1218)
-- [17320e07] (2021-10-06) Jaedyn Draper / fix: ensure server netvar initialization in OnNetworkSpawn replicates correctly to clients as initialization and not delta (#1266)
-- [1f4b894b] (2021-10-06) Jaedyn Draper / fix: Fixes unaligned BitReader reads when reading >= 8 bits. (#1240)
-- [3e935242] (2021-09-26) Jesse Olmer / revert: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219) (#1224)
-- [e1cc5a1b] (2021-09-23) Jaedyn Draper / fix: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219)
-- [6a6a1bf0] (2021-10-01) Jaedyn Draper / chore: Making INetworkMessage and accompanying structures internal since we have decided to continue with the existing NamedMessage and UnnamedMessage for this release. (#1244)
-- [5ff98e7d] (2021-09-21) Jaedyn Draper / refactor!: cleanup lingering items with `INetworkSerializable` (#1206)
-- [6181e7e0] (2021-09-17) Jaedyn Draper / feat: INetworkMessage (#1187)
-- [dc708a56] (2021-09-15) Jaedyn Draper / feat: Fast buffer reader and fast buffer writer (#1082)
-- [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
-- [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
-- [c25821d2] (2021-07-27) Jaedyn Draper / fix: Fixes for a few things discovered from the message ordering refactor: (#985)
-- [b9ffc1f1] (2021-07-23) Jaedyn Draper / feat: Message Ordering (#948)
 
 Samuel:
 
