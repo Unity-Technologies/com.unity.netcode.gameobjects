@@ -102,7 +102,7 @@ namespace Unity.Netcode
 
         internal SceneEventProgressStatus Status { get; set; }
 
-        internal SceneEventData.SceneEventTypes SceneEventType { get; set; }
+        internal SceneEventType SceneEventType { get; set; }
 
         internal LoadSceneMode LoadSceneMode;
 
