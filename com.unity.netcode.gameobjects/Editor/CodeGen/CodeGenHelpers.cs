@@ -23,8 +23,6 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
-        public static readonly string INetworkSerializable_NetworkSerialize_Name = nameof(INetworkSerializable.NetworkSerialize);
-        public static readonly string IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute_FullName = typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute).FullName;
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
         public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
         public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
