@@ -40,15 +40,23 @@ namespace Unity.Netcode
                 throw new OverflowException("Not enough space in the buffer to read RPC data.");
             }
             reader.ReadValue(out message.Header);
-            message.Handle(reader, (NetworkManager)context.SystemOwner, context.SenderId);
+            message.Handle(reader, context, (NetworkManager)context.SystemOwner, context.SenderId, true);
         }
 
-        public void Handle(FastBufferReader reader, NetworkManager networkManager, ulong senderId)
+        public void Handle(FastBufferReader reader, in NetworkContext context, NetworkManager networkManager, ulong senderId, bool canDefer)
         {
             if (NetworkManager.__rpc_func_table.ContainsKey(Header.NetworkMethodId))
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(Header.NetworkObjectId))
                 {
+                    if (canDefer)
+                    {
+                        networkManager.SpawnManager.TriggerOnSpawn(Header.NetworkObjectId, reader, context);
+                    }
+                    else
+                    {
+                        NetworkLog.LogError($"Tried to invoke an RPC on a non-existent {nameof(NetworkObject)} with {nameof(canDefer)}=false");
+                    }
                     return;
                 }
 
