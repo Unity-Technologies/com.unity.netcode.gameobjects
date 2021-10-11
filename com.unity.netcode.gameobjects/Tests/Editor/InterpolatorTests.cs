@@ -30,9 +30,9 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestReset()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var timeMock = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = timeMock;
+            var interpolator = new BufferedLinearInterpolatorFloat(timeMock);
+
             timeMock.BufferedServerTime = 100f;
 
             interpolator.AddMeasurement(5, T(1.0f));
@@ -51,9 +51,8 @@ namespace Unity.Netcode.EditorTests
         {
             // Testing float instead of Vector3. The only difference with Vector3 is the lerp method used.
 
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
 
@@ -97,9 +96,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void OutOfOrderShouldStillWork()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(0, T(0f));
             interpolator.AddMeasurement(2, T(2f));
@@ -127,9 +125,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageLoss()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(1f, T(1f));
             interpolator.AddMeasurement(2f, T(2f));
@@ -139,10 +136,22 @@ namespace Unity.Netcode.EditorTests
             // message time=6 was lost
             interpolator.AddMeasurement(100f, T(7f)); // high value to produce a misprediction
 
-            mockBufferedTime.BufferedServerTime = 2f;
-            interpolator.Update(2f);
+            // first value teleports interpolator
+            mockBufferedTime.BufferedServerTime = 1f;
+            interpolator.Update(1f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1f));
 
+            // nothing happens, not ready to consume second value yet
+            mockBufferedTime.BufferedServerTime = 1.5f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1f));
+
+            // beginning of interpolation, second value consumed, currently at start
+            mockBufferedTime.BufferedServerTime = 2f;
+            interpolator.Update(0.5f);
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1f));
+
+            // interpolation starts
             mockBufferedTime.BufferedServerTime = 2.5f;
             interpolator.Update(0.5f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1.5f));
@@ -194,9 +203,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void AddFirstMeasurement()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(2f, T(1f));
             interpolator.AddMeasurement(3f, T(2f));
@@ -222,9 +230,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToEachValueIfDeltaTimeTooBig()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(2f, T(1f));
             interpolator.AddMeasurement(3f, T(2f));
@@ -241,14 +248,14 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToLastValueFromStart()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(1f, T(1f));
             interpolator.AddMeasurement(2f, T(2f));
             interpolator.AddMeasurement(3f, T(3f));
 
+            // big time jump
             mockBufferedTime.BufferedServerTime = 10f;
             var interpolatedValue = interpolator.Update(10f);
             Assert.That(interpolatedValue, Is.EqualTo(3f));
@@ -272,9 +279,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBufferSizeLimit()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             // set first value
             interpolator.AddMeasurement(-1f, T(1f));
@@ -282,32 +288,23 @@ namespace Unity.Netcode.EditorTests
             interpolator.Update(1f);
 
             // max + 1
-            interpolator.AddMeasurement(2, T(2)); // this value should disappear
-            for (int i = 3; i < 103; i++)
+            interpolator.AddMeasurement(2, T(2)); // +1, this should trigger a burst and teleport to last value
+            for (int i = 0; i < 100; i++)
             {
-                interpolator.AddMeasurement(i, T(i));
+                interpolator.AddMeasurement(i + 3, T(i + 3));
             }
 
-            // make sure the first value isn't there anymore and that we're already using the second value
-            // the following shouldn't happen in real life, since the server time should catchup to the real time and not stay behind like this
-            mockBufferedTime.BufferedServerTime = 2f;
-            // if there was no buffer limit, we'd still be consuming the first "1" value
-            var interpolatedValue = interpolator.Update(1f);
-            // but now, we're still at the initial -1f
-            Assert.That(interpolatedValue, Is.EqualTo(-1f));
-
-            // interpolation continues as expected, interpolating between -1 and 3
-            mockBufferedTime.BufferedServerTime = 3f;
-            interpolatedValue = interpolator.Update(1f);
-            Assert.That(interpolatedValue, Is.EqualTo(1f));
+            // client was paused for a while, some time has past, we just got a burst of values from the server that teleported us to the last value received
+            mockBufferedTime.BufferedServerTime = 102;
+            var interpolatedValue = interpolator.Update(101f);
+            Assert.That(interpolatedValue, Is.EqualTo(102));
         }
 
         [Test]
         public void TestUpdatingInterpolatorWithNoData()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             // invalid case, this is undefined behaviour
             Assert.Throws<InvalidOperationException>(() => interpolator.Update(1f));
@@ -316,20 +313,27 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestDuplicatedValues()
         {
-            var interpolator = new BufferedLinearInterpolatorFloat(null);
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
-            interpolator.InterpolatorTimeProxy = mockBufferedTime;
+            var interpolator = new BufferedLinearInterpolatorFloat(mockBufferedTime);
 
             interpolator.AddMeasurement(1f, T(1f));
             interpolator.AddMeasurement(2f, T(2f));
             interpolator.AddMeasurement(2f, T(2f));
 
-            mockBufferedTime.BufferedServerTime = 2f;
+            // empty interpolator teleports to initial value
+            mockBufferedTime.BufferedServerTime = 1f;
             var interp = interpolator.Update(1f);
             Assert.That(interp, Is.EqualTo(1f));
+
+            // consume value, start interp, currently at start value
+            mockBufferedTime.BufferedServerTime = 2f;
+            interp = interpolator.Update(1f);
+            Assert.That(interp, Is.EqualTo(1f));
+            // interp
             mockBufferedTime.BufferedServerTime = 2.5f;
             interp = interpolator.Update(0.5f);
             Assert.That(interp, Is.EqualTo(1.5f));
+            // reach end
             mockBufferedTime.BufferedServerTime = 3f;
             interp = interpolator.Update(0.5f);
             Assert.That(interp, Is.EqualTo(2f));
