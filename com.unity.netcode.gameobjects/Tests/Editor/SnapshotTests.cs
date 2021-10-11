@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using System.Runtime.CompilerServices;
+using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -11,6 +15,14 @@ namespace Unity.Netcode.EditorTests
         internal int SendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
         {
             Debug.Log("Snapshot Message sent");
+
+            Debug.Assert(message.Ack.LastReceivedSequence == 0);
+            Debug.Assert(message.Ack.ReceivedSequenceMask == 0);
+            Debug.Assert(message.Despawns.IsEmpty);
+            Debug.Assert(message.Sequence == 0);
+            Debug.Assert(message.Spawns.Length == 1);
+            Debug.Assert(message.Entries.Length == 0);
+
             return 0;
         }
 
