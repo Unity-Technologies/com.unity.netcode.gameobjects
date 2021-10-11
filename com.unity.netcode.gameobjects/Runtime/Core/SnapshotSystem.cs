@@ -87,6 +87,8 @@ namespace Unity.Netcode
         internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
+    internal delegate int MockSendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
+
     // A table of NetworkVariables that constitutes a Snapshot.
     // Stores serialized NetworkVariables
     // todo --M1--
@@ -107,13 +109,9 @@ namespace Unity.Netcode
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
         private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
-        private bool m_IsConnectedClient;
-        private ulong m_ServerClientId;
-        private List<ulong> m_ConnectedClientsId = new List<ulong>();
-
-        private bool UseSnapshotDelta;
-        private bool UseSnapshotSpawn;
-        private int SnapshotMaxSpawnUsage;
+        private bool m_UseSnapshotDelta;
+        private bool m_UseSnapshotSpawn;
+        private int m_SnapshotMaxSpawnUsage;
         private NetworkTickSystem m_NetworkTickSystem;
 
         private int m_CurrentTick = NetworkTickSystem.NoTick;
@@ -136,7 +134,11 @@ namespace Unity.Netcode
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
         internal Dictionary<ulong, int> TickAppliedDespawn = new Dictionary<ulong, int>();
 
-        private bool m_IsServer;
+        internal bool IsServer { get; set; }
+        internal bool IsConnectedClient { get; set; }
+        internal ulong ServerClientId { get; set; }
+        internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
+        internal MockSendMessage MockSendMessage { get; set; }
 
         internal void Clear()
         {
@@ -186,13 +188,13 @@ namespace Unity.Netcode
             List<ulong> clientList;
             clientList = new List<ulong>();
 
-            if (!m_IsServer)
+            if (!IsServer)
             {
                 clientList.Add(m_NetworkManager.ServerClientId);
             }
             else
             {
-                foreach (var clientId in m_ConnectedClientsId)
+                foreach (var clientId in ConnectedClientsId)
                 {
                     if (clientId != m_NetworkManager.ServerClientId)
                     {
@@ -620,9 +622,9 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             m_NetworkTickSystem = networkTickSystem;
 
-            UseSnapshotDelta = config.UseSnapshotDelta;
-            UseSnapshotSpawn = config.UseSnapshotSpawn;
-            SnapshotMaxSpawnUsage = config.SnapshotMaxSpawnUsage;
+            m_UseSnapshotDelta = config.UseSnapshotDelta;
+            m_UseSnapshotSpawn = config.UseSnapshotSpawn;
+            m_SnapshotMaxSpawnUsage = config.SnapshotMaxSpawnUsage;
 
             UpdateClientServerData();
 
@@ -639,17 +641,17 @@ namespace Unity.Netcode
         {
             if (m_NetworkManager)
             {
-                m_IsServer = m_NetworkManager.IsServer;
-                m_IsConnectedClient = m_NetworkManager.IsConnectedClient;
-                m_ServerClientId = m_NetworkManager.ServerClientId;
+                IsServer = m_NetworkManager.IsServer;
+                IsConnectedClient = m_NetworkManager.IsConnectedClient;
+                ServerClientId = m_NetworkManager.ServerClientId;
 
                 // todo: This is extremely inefficient. What is the efficient and idiomatic way ?
-                m_ConnectedClientsId.Clear();
-                if (m_IsServer)
+                ConnectedClientsId.Clear();
+                if (IsServer)
                 {
                     foreach (var id in m_NetworkManager.ConnectedClientsIds)
                     {
-                        m_ConnectedClientsId.Add(id);
+                        ConnectedClientsId.Add(id);
                     }
                 }
             }
@@ -676,7 +678,7 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (!UseSnapshotDelta && !UseSnapshotSpawn)
+            if (!m_UseSnapshotDelta && !m_UseSnapshotSpawn)
             {
                 return;
             }
@@ -690,22 +692,22 @@ namespace Unity.Netcode
                 if (tick != m_CurrentTick)
                 {
                     m_CurrentTick = tick;
-                    if (m_IsServer)
+                    if (IsServer)
                     {
-                        for (int i = 0; i < m_ConnectedClientsId.Count; i++)
+                        for (int i = 0; i < ConnectedClientsId.Count; i++)
                         {
-                            var clientId = m_ConnectedClientsId[i];
+                            var clientId = ConnectedClientsId[i];
 
                             // don't send to ourselves
-                            if (clientId != m_ServerClientId)
+                            if (clientId != ServerClientId)
                             {
                                 SendSnapshot(clientId);
                             }
                         }
                     }
-                    else if (m_IsConnectedClient)
+                    else if (IsConnectedClient)
                     {
-                        SendSnapshot(m_ServerClientId);
+                        SendSnapshot(ServerClientId);
                     }
                 }
 
@@ -760,7 +762,14 @@ namespace Unity.Netcode
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
 
-            m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+            if (m_NetworkManager)
+            {
+                m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+            }
+            else
+            {
+                MockSendMessage(message, NetworkDelivery.Unreliable, clientId);
+            }
 
             m_ClientData[clientId].LastReceivedSequence = 0;
 
@@ -843,7 +852,7 @@ namespace Unity.Netcode
                     spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.SpawnData>();
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (spawnUsage > SnapshotMaxSpawnUsage)
+                    if (spawnUsage > m_SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         break;
@@ -876,7 +885,7 @@ namespace Unity.Netcode
                     spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.DespawnData>();
 
                     // limit spawn sizes, compare current pos to very first position we wrote to
-                    if (spawnUsage > SnapshotMaxSpawnUsage)
+                    if (spawnUsage > m_SnapshotMaxSpawnUsage)
                     {
                         overSize = true;
                         break;
