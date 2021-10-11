@@ -75,7 +75,16 @@ namespace Unity.Netcode
             if (IsHost || IsServer)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
@@ -89,7 +98,7 @@ namespace Unity.Netcode
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
                     NetworkManager.ServerClientId,
-                    NetworkObjectId,
+                    NetworkObject,
                     rpcMethodName,
                     __getTypeName(),
                     rpcMessageSize);
@@ -133,7 +142,7 @@ namespace Unity.Netcode
             int messageSize;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
-            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
 
             if (rpcParams.Send.TargetClientIds != null)
@@ -172,7 +181,16 @@ namespace Unity.Netcode
             if (shouldSendToHost)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 messageSize = tempBuffer.Length;
             }
 
@@ -181,15 +199,12 @@ namespace Unity.Netcode
             {
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : messageSize;
                     NetworkManager.NetworkMetrics.TrackRpcSent(
                         client.Key,
-                        NetworkObjectId,
+                        NetworkObject,
                         rpcMethodName,
                         __getTypeName(),
-                        bytesReported);
+                        messageSize);
                 }
             }
 #endif

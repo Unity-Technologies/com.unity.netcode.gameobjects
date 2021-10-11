@@ -6,7 +6,7 @@ namespace Unity.Netcode
     public class NetworkTickSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_Tick = new ProfilerMarker($"{nameof(NetworkTimeSystem)}.Tick");
+        private static ProfilerMarker s_Tick = new ProfilerMarker($"{nameof(NetworkTickSystem)}.Tick");
 #endif
 
         /// <summary>
