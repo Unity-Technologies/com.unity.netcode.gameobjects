@@ -8,268 +8,114 @@ namespace Unity.Netcode.Components
     /// A prototype component for syncing animations
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
+    [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour
     {
-
-        private class AnimatorSnapshot : INetworkSerializable
+        internal struct AnimationMessage : INetworkSerializable
         {
-            public Dictionary<int, bool> BoolParameters;
-            public Dictionary<int, float> FloatParameters;
-            public Dictionary<int, int> IntParameters;
-            public HashSet<int> TriggerParameters;
-            public LayerState[] LayerStates;
-
-            public AnimatorSnapshot(Dictionary<int, bool> boolParameters, Dictionary<int, float> floatParameters, Dictionary<int, int> intParameters, HashSet<int> triggerParameters, LayerState[] layerStates)
-            {
-                BoolParameters = boolParameters;
-                FloatParameters = floatParameters;
-                IntParameters = intParameters;
-                TriggerParameters = triggerParameters;
-                LayerStates = layerStates;
-            }
-
-            public AnimatorSnapshot()
-            {
-                BoolParameters = new Dictionary<int, bool>(0);
-                FloatParameters = new Dictionary<int, float>(0);
-                IntParameters = new Dictionary<int, int>(0);
-                TriggerParameters = new HashSet<int>();
-                LayerStates = new LayerState[0];
-            }
-
-            public bool SetInt(int key, int value)
-            {
-                if (IntParameters.TryGetValue(key, out var existingValue) && existingValue == value)
-                {
-                    return false;
-                }
-
-                IntParameters[key] = value;
-                return true;
-            }
-
-            public bool SetBool(int key, bool value)
-            {
-                if (BoolParameters.TryGetValue(key, out var existingValue) && existingValue == value)
-                {
-                    return false;
-                }
-
-                BoolParameters[key] = value;
-                return true;
-            }
-
-            public bool SetFloat(int key, float value)
-            {
-                if (FloatParameters.TryGetValue(key, out var existingValue) &&
-                    Mathf.Abs(existingValue - value) < Mathf.Epsilon)
-                {
-                    return false;
-                }
-
-                FloatParameters[key] = value;
-                return true;
-            }
-
-            public bool SetTrigger(int key)
-            {
-                return TriggerParameters.Add(key);
-            }
+            public int StateHash;      // if non-zero, then Play() this animation, skipping transitions
+            public float NormalizedTime;
+            public byte[] Parameters;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                SerializeIntParameters(serializer);
-                SerializeFloatParameters(serializer);
-                SerializeBoolParameters(serializer);
-                SerializeTriggerParameters(serializer);
-                SerializeAnimatorLayerStates(serializer);
-            }
-
-            private void SerializeAnimatorLayerStates<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                int layerCount = serializer.IsReader ? 0 : LayerStates.Length;
-                serializer.SerializeValue(ref layerCount);
-
-                if (serializer.IsReader && LayerStates.Length != layerCount)
-                {
-                    LayerStates = new LayerState[layerCount];
-                }
-
-                for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
-                {
-                    var stateHash = serializer.IsReader ? 0 : LayerStates[paramIndex].StateHash;
-                    serializer.SerializeValue(ref stateHash);
-
-                    var layerWeight = serializer.IsReader ? 0 : LayerStates[paramIndex].LayerWeight;
-                    serializer.SerializeValue(ref layerWeight);
-
-                    var normalizedStateTime = serializer.IsReader ? 0 : LayerStates[paramIndex].NormalizedStateTime;
-                    serializer.SerializeValue(ref normalizedStateTime);
-
-                    if (serializer.IsReader)
-                    {
-                        LayerStates[paramIndex] = new LayerState()
-                        {
-                            LayerWeight = layerWeight,
-                            StateHash = stateHash,
-                            NormalizedStateTime = normalizedStateTime
-                        };
-                    }
-                }
-            }
-
-            private void SerializeTriggerParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                int paramCount = serializer.IsReader ? 0 : TriggerParameters.Count;
-                serializer.SerializeValue(ref paramCount);
-
-                var paramArray = serializer.IsReader ? new int[paramCount] : TriggerParameters.ToArray();
-                for (int i = 0; i < paramCount; i++)
-                {
-                    var paramId = serializer.IsReader ? 0 : paramArray[i];
-                    serializer.SerializeValue(ref paramId);
-
-                    if (serializer.IsReader)
-                    {
-                        paramArray[i] = paramId;
-                    }
-                }
-
-                if (serializer.IsReader)
-                {
-                    TriggerParameters = new HashSet<int>(paramArray);
-                }
-            }
-
-            private void SerializeBoolParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                int paramCount = serializer.IsReader ? 0 : BoolParameters.Count;
-                serializer.SerializeValue(ref paramCount);
-
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
-                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
-
-                    var paramBool = serializer.IsReader ? false : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramBool);
-
-                    if (serializer.IsReader)
-                    {
-                        paramArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
-                    }
-                }
-
-                if (serializer.IsReader)
-                {
-                    BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
-                }
-            }
-
-            private void SerializeFloatParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                int paramCount = serializer.IsReader ? 0 : FloatParameters.Count;
-                serializer.SerializeValue(ref paramCount);
-
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
-                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
-
-                    var paramFloat = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramFloat);
-
-                    if (serializer.IsReader)
-                    {
-                        paramArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
-                    }
-                }
-
-                if (serializer.IsReader)
-                {
-                    FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
-                }
-            }
-
-            private void SerializeIntParameters<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                int paramCount = serializer.IsReader ? 0 : IntParameters.Count;
-                serializer.SerializeValue(ref paramCount);
-
-                var paramArray = serializer.IsReader ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
-
-                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                {
-                    var paramId = serializer.IsReader ? 0 : paramArray[paramIndex].Key;
-                    serializer.SerializeValue(ref paramId);
-
-                    var paramInt = serializer.IsReader ? 0 : paramArray[paramIndex].Value;
-                    serializer.SerializeValue(ref paramInt);
-
-                    if (serializer.IsReader)
-                    {
-                        paramArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
-                    }
-                }
-
-                if (serializer.IsReader)
-                {
-                    IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
-                }
+                serializer.SerializeValue(ref StateHash);
+                serializer.SerializeValue(ref NormalizedTime);
+                serializer.SerializeValue(ref Parameters);
             }
         }
 
-        private struct LayerState
+        internal struct AnimationParametersMessage : INetworkSerializable
         {
-            public int StateHash;
-            public float NormalizedStateTime;
-            public float LayerWeight;
+            public byte[] Parameters;
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref Parameters);
+            }
         }
 
-        /// <summary>
-        /// Server authority only allows the server to update this animator
-        /// Client authority only allows the client owner to update this animator
-        /// </summary>
-        public enum Authority
+        internal struct AnimationTriggerMessage : INetworkSerializable
         {
-            Server = 0,
-            Owner
+            public int Hash;
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref Hash);
+
+            }
         }
 
-        /// <summary>
-        /// This constant is used to force the resync if the delta between current
-        /// and last synced normalized state time goes above it
-        /// </summary>
-        private const float k_NormalizedTimeResyncThreshold = 0.15f;
+        [SerializeField] private Animator m_Animator;
+        [SerializeField] private uint m_ParameterSendBits;
+        [SerializeField] private float m_SendRate = 0.1f;
 
-        /// <summary>
-        /// Specifies who can update this animator
-        /// </summary>
-        [Tooltip("Defines who can update this animator.")]
-        public Authority AnimatorAuthority = Authority.Owner;
+        public Animator Animator
+        {
+            get { return m_Animator; }
+            set
+            {
+                m_Animator = value;
+                ResetParameterOptions();
+            }
+        }
 
-        [SerializeField]
-        private float m_SendRate = 0.1f;
+        public void SetParameterAutoSend(int index, bool value)
+        {
+            if (value)
+            {
+                m_ParameterSendBits |= (uint)(1 << index);
+            }
+            else
+            {
+                m_ParameterSendBits &= (uint)(~(1 << index));
+            }
+        }
+
+        public bool GetParameterAutoSend(int index)
+        {
+            return (m_ParameterSendBits & (uint)(1 << index)) != 0;
+        }
+
+        // Animators only support up to 32 params
+        private const int k_MaxAnimationParams = 32;
+
+        private int m_AnimationHash;
+        private int m_TransitionHash;
         private double m_NextSendTime = 0.0f;
-        private bool m_ServerRequestsAnimationResync = false;
-        [SerializeField]
-        private Animator m_Animator;
 
-        private AnimatorSnapshot m_AnimatorSnapshot;
+        // 128bytes per Animator 
+        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Collections.Allocator.Persistent);
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
 
-        public bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Owner && IsOwner) || (IsServer && AnimatorAuthority == Authority.Server);
+        internal void ResetParameterOptions()
+        {
+
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfoServer("ResetParameterOptions");
+            }
+
+            m_ParameterSendBits = 0;
+        }
+
+        private bool sendMessagesAllowed
+        {
+            get
+            {
+                return IsServer && NetworkObject.IsSpawned;
+            }
+        }
+
+        public override void OnDestroy()
+        {
+            m_ParameterWriter.Dispose();
+        }
 
         public override void OnNetworkSpawn()
         {
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new List<(int, AnimatorControllerParameterType)>(parameters.Length);
-
-            int intCount = 0;
-            int floatCount = 0;
-            int boolCount = 0;
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -282,278 +128,208 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CachedAnimatorParameters.Add((parameter.nameHash, parameter.type));
-
-                switch (parameter.type)
-                {
-                    case AnimatorControllerParameterType.Float:
-                        ++floatCount;
-                        break;
-                    case AnimatorControllerParameterType.Int:
-                        ++intCount;
-                        break;
-                    case AnimatorControllerParameterType.Bool:
-                        ++boolCount;
-                        break;
-                }
             }
-
-            var intParameters = new Dictionary<int, int>(intCount);
-            var floatParameters = new Dictionary<int, float>(floatCount);
-            var boolParameters = new Dictionary<int, bool>(boolCount);
-            var triggerParameters = new HashSet<int>();
-            var states = new LayerState[m_Animator.layerCount];
-
-            m_AnimatorSnapshot = new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
-
-            if (!IsAuthorityOverAnimator)
-            {
-                m_Animator.StopPlayback();
-            }
-        }
-
-        private void OnEnable()
-        {
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback += ServerOnClientConnectedCallback;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback -= ServerOnClientConnectedCallback;
-            }
-        }
-
-        private void ServerOnClientConnectedCallback(ulong clientId)
-        {
-            if (IsAuthorityOverAnimator)
-            {
-                m_ServerRequestsAnimationResync = true;
-            }
-
-            var clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
-                }
-            };
-
-            RequestResyncClientRpc(clientRpcParams);
-        }
-
-
-        [ClientRpc]
-        private void RequestResyncClientRpc(ClientRpcParams clientRpcParams = default)
-        {
-            if (!IsAuthorityOverAnimator)
-            {
-                return;
-            }
-
-            m_ServerRequestsAnimationResync = true;
         }
 
         private void FixedUpdate()
         {
-            if (!NetworkObject.IsSpawned)
+            if (!sendMessagesAllowed)
             {
                 return;
             }
 
-            if (IsAuthorityOverAnimator)
+            CheckSendRate();
+
+            int stateHash;
+            float normalizedTime;
+            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
-                bool shouldSendBasedOnTime = CheckSendRate();
-                bool shouldSendBasedOnChanges = StoreState();
-                if (m_ServerRequestsAnimationResync || shouldSendBasedOnTime || shouldSendBasedOnChanges)
+                return;
+            }
+
+            var animMsg = new AnimationMessage();
+            animMsg.StateHash = stateHash;
+            animMsg.NormalizedTime = normalizedTime;
+
+            m_ParameterWriter.Seek(0);
+            m_ParameterWriter.Truncate();
+
+            WriteParameters(m_ParameterWriter, false);
+            animMsg.Parameters = m_ParameterWriter.ToArray();
+
+            SendAnimStateClientRpc(animMsg);
+        }
+
+        private void CheckSendRate()
+        {
+            var networkTime = NetworkManager.ServerTime.Time;
+            if (sendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
+            {
+                m_NextSendTime = networkTime + m_SendRate;
+
+                // we then sync the params we care about
+                var animMsg = new AnimationParametersMessage();
+
+                m_ParameterWriter.Seek(0);
+                m_ParameterWriter.Truncate();
+
+                if (WriteParameters(m_ParameterWriter, true))
                 {
-                    SendAllParamsAndState();
-                    m_AnimatorSnapshot.TriggerParameters.Clear();
-                    m_ServerRequestsAnimationResync = false;
+                    animMsg.Parameters = m_ParameterWriter.ToArray();
+                    SendParamsClientRpc(animMsg);
                 }
             }
         }
 
-        private bool CheckSendRate()
+        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
         {
-            var networkTime = NetworkManager.LocalTime.FixedTime;
-            if (m_SendRate != 0 && m_NextSendTime < networkTime)
+            stateHash = 0;
+            normalizedTime = 0;
+
+            if (m_Animator.IsInTransition(0))
             {
-                m_NextSendTime = networkTime + m_SendRate;
-                return true;
+                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(0);
+                if (tt.fullPathHash != m_TransitionHash)
+                {
+                    // first time in this transition
+                    m_TransitionHash = tt.fullPathHash;
+                    m_AnimationHash = 0;
+                    return true;
+                }
+                return false;
             }
 
+            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(0);
+            if (st.fullPathHash != m_AnimationHash)
+            {
+                // first time in this animation state
+                if (m_AnimationHash != 0)
+                {
+                    // came from another animation directly - from Play()
+                    stateHash = st.fullPathHash;
+                    normalizedTime = st.normalizedTime;
+                }
+                m_TransitionHash = 0;
+                m_AnimationHash = st.fullPathHash;
+                return true;
+            }
             return false;
         }
 
-        private bool StoreState()
+        private bool WriteParameters(FastBufferWriter writer, bool autoSend)
         {
-            bool layerStateChanged = StoreLayerState();
-            bool animatorParametersChanged = StoreParameters();
-
-            return layerStateChanged || animatorParametersChanged;
-        }
-
-        private bool StoreLayerState()
-        {
-            bool changed = false;
-
-            for (int i = 0; i < m_AnimatorSnapshot.LayerStates.Length; i++)
+            if (m_CachedAnimatorParameters == null)
             {
-                var animStateInfo = m_Animator.GetCurrentAnimatorStateInfo(i);
+                return false;
+            }
 
-                var snapshotAnimStateInfo = m_AnimatorSnapshot.LayerStates[i];
-                bool didStateChange = snapshotAnimStateInfo.StateHash != animStateInfo.fullPathHash;
-                bool enoughDelta = !didStateChange &&
-                                   Mathf.Abs(animStateInfo.normalizedTime - snapshotAnimStateInfo.NormalizedStateTime) >= k_NormalizedTimeResyncThreshold;
-
-                float newLayerWeight = m_Animator.GetLayerWeight(i);
-                bool layerWeightChanged = Mathf.Abs(snapshotAnimStateInfo.LayerWeight - newLayerWeight) > Mathf.Epsilon;
-
-                if (didStateChange || enoughDelta || layerWeightChanged || m_ServerRequestsAnimationResync)
+            for (int i = 0; i < m_CachedAnimatorParameters.Count; i++)
+            {
+                if (autoSend && !GetParameterAutoSend(i))
                 {
-                    m_AnimatorSnapshot.LayerStates[i] = new LayerState
-                    {
-                        StateHash = animStateInfo.fullPathHash,
-                        NormalizedStateTime = animStateInfo.normalizedTime,
-                        LayerWeight = newLayerWeight
-                    };
-                    changed = true;
+                    continue;
+                }
+
+                var (hash, paramType) = m_CachedAnimatorParameters[i];
+                if (paramType == AnimatorControllerParameterType.Int)
+                {
+                    BytePacker.WriteValuePacked(writer, (uint)m_Animator.GetInteger(hash));
+                }
+
+                if (paramType == AnimatorControllerParameterType.Float)
+                {
+                   
+                    writer.WriteValueSafe(m_Animator.GetFloat(hash));
+                }
+
+                if (paramType == AnimatorControllerParameterType.Bool)
+                {
+                    writer.WriteValueSafe(m_Animator.GetBool(hash));
                 }
             }
 
-            return changed;
+            return writer.Length > 0;
         }
 
-        private bool StoreParameters()
+        private void ReadParameters(FastBufferReader reader, bool autoSend)
         {
-            bool changed = false;
-            foreach (var animParam in m_CachedAnimatorParameters)
+            if (m_CachedAnimatorParameters == null)
             {
-                var animParamHash = animParam.Item1;
-                var animParamType = animParam.Item2;
+                return;
+            }
 
-                switch (animParamType)
+            for (int i = 0; i < m_CachedAnimatorParameters.Count; i++)
+            {
+                if (autoSend && !GetParameterAutoSend(i))
                 {
-                    case AnimatorControllerParameterType.Float:
-                        changed = changed || m_AnimatorSnapshot.SetFloat(animParamHash, m_Animator.GetFloat(animParamHash));
-                        break;
-                    case AnimatorControllerParameterType.Int:
-                        changed = changed || m_AnimatorSnapshot.SetInt(animParamHash, m_Animator.GetInteger(animParamHash));
-                        break;
-                    case AnimatorControllerParameterType.Bool:
-                        changed = changed || m_AnimatorSnapshot.SetBool(animParamHash, m_Animator.GetBool(animParamHash));
-                        break;
-                    case AnimatorControllerParameterType.Trigger:
-                        if (m_Animator.GetBool(animParamHash))
-                        {
-                            changed = changed || m_AnimatorSnapshot.SetTrigger(animParamHash);
-                        }
-                        break;
+                    continue;
+                }
+
+                var (hash, paramType) = m_CachedAnimatorParameters[i];
+                if (paramType == AnimatorControllerParameterType.Int)
+                {
+                    ByteUnpacker.ReadValuePacked(reader, out int newValue);
+                    m_Animator.SetInteger(hash, newValue);
+                }
+
+                if (paramType == AnimatorControllerParameterType.Float)
+                {
+                    reader.ReadValueSafe(out float newFloatValue);
+
+                    m_Animator.SetFloat(hash, newFloatValue);
+                }
+
+                if (paramType == AnimatorControllerParameterType.Bool)
+                {
+                    reader.ReadValueSafe(out bool newBoolValue);
+                    m_Animator.SetBool(hash, newBoolValue);
                 }
             }
-
-            return changed;
-        }
-
-        private void SendAllParamsAndState()
-        {
-            if (IsServer)
-            {
-                var clientRpcParams = new ClientRpcParams
-                {
-                    Send = new ClientRpcSendParams
-                    {
-                        TargetClientIds = NetworkManager.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                            .Select(c => c.ClientId)
-                            .ToArray()
-                    }
-                };
-
-                SendParamsAndLayerStatesClientRpc(m_AnimatorSnapshot, clientRpcParams);
-            }
-            else
-            {
-                SendParamsAndLayerStatesServerRpc(m_AnimatorSnapshot);
-            }
-        }
-
-        [ServerRpc]
-        private void SendParamsAndLayerStatesServerRpc(AnimatorSnapshot animSnapshot, ServerRpcParams serverRpcParams = default)
-        {
-            if (!IsAuthorityOverAnimator)
-            {
-                ApplyAnimatorSnapshot(animSnapshot);
-            }
-
-            var clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
-                }
-            };
-
-            SendParamsAndLayerStatesClientRpc(animSnapshot, clientRpcParams);
         }
 
         [ClientRpc]
-        private void SendParamsAndLayerStatesClientRpc(AnimatorSnapshot animSnapshot, ClientRpcParams clientRpcParams = default)
+        private void SendParamsClientRpc(AnimationParametersMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsAuthorityOverAnimator)
+            if (animSnapshot.Parameters != null)
             {
-                ApplyAnimatorSnapshot(animSnapshot);
+                var reader = new FastBufferReader(animSnapshot.Parameters, Collections.Allocator.Temp, animSnapshot.Parameters.Length);
+
+                ReadParameters(reader, true);
             }
         }
 
-        private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
+        [ClientRpc]
+        private void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            foreach (var intParameter in animatorSnapshot.IntParameters)
+            if (animSnapshot.StateHash != 0)
             {
-                m_Animator.SetInteger(intParameter.Key, intParameter.Value);
+                m_Animator.Play(animSnapshot.StateHash, 0, animSnapshot.NormalizedTime);
             }
 
-            foreach (var floatParameter in animatorSnapshot.FloatParameters)
+            var reader = new FastBufferReader(animSnapshot.Parameters, Collections.Allocator.Temp, animSnapshot.Parameters.Length);
+
+            ReadParameters(reader, false);
+        }
+
+        [ClientRpc]
+        private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        {
+            m_Animator.SetTrigger(animSnapshot.Hash);
+        }
+
+        public void SetTrigger(string triggerName)
+        {
+            SetTrigger(Animator.StringToHash(triggerName));
+        }
+
+        public void SetTrigger(int hash)
+        {
+            var animMsg = new AnimationTriggerMessage();
+            animMsg.Hash = hash;
+
+            if (IsServer)
             {
-                m_Animator.SetFloat(floatParameter.Key, floatParameter.Value);
-            }
-
-            foreach (var boolParameter in animatorSnapshot.BoolParameters)
-            {
-                m_Animator.SetBool(boolParameter.Key, boolParameter.Value);
-            }
-
-            foreach (var triggerParameter in animatorSnapshot.TriggerParameters)
-            {
-                m_Animator.SetTrigger(triggerParameter);
-            }
-
-            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
-            {
-                var layerState = animatorSnapshot.LayerStates[layerIndex];
-
-                m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
-
-                var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
-
-                bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
-                bool forceAnimationCatchup = !stateChanged &&
-                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
-
-                if (stateChanged || forceAnimationCatchup)
-                {
-                    m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
-                }
+                SendAnimTriggerClientRpc(animMsg);
             }
         }
     }
