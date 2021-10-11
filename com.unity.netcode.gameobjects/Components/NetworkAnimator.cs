@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -238,7 +237,7 @@ namespace Unity.Netcode.Components
 
                 if (paramType == AnimatorControllerParameterType.Float)
                 {
-                   
+
                     writer.WriteValueSafe(m_Animator.GetFloat(hash));
                 }
 

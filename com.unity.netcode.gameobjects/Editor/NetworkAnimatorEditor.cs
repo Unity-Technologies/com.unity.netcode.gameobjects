@@ -3,7 +3,6 @@ using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
-using UnityEngine.Networking;
 
 
 namespace Unity.Netcode.Editor
@@ -64,7 +63,9 @@ namespace Unity.Netcode.Editor
             }
 
             if (m_AnimSync.Animator == null)
+            {
                 return;
+            }
 
             var controller = m_AnimSync.Animator.runtimeAnimatorController as AnimatorController;
             if (controller != null)
