@@ -52,6 +52,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the tickrate of the system of this <see cref="NetworkTime"/>.
+        /// Ticks per second.
         /// </summary>
         public uint TickRate => m_TickRate;
 
