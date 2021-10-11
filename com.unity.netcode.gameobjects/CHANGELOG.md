@@ -97,6 +97,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 Jaedyn:
 
+- [40011ed8] (2021-10-08) Jaedyn Draper / fix: issue #1151 - client RPCs invoked in OnNetworkSpawn being dropped (#1218)
+- [17320e07] (2021-10-06) Jaedyn Draper / fix: ensure server netvar initialization in OnNetworkSpawn replicates correctly to clients as initialization and not delta (#1266)
+- [1f4b894b] (2021-10-06) Jaedyn Draper / fix: Fixes unaligned BitReader reads when reading >= 8 bits. (#1240)
 - [3e935242] (2021-09-26) Jesse Olmer / revert: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219) (#1224)
 - [e1cc5a1b] (2021-09-23) Jaedyn Draper / fix: Removed an unnecessary (and almost certainly invalid) call to m_MessagingSystem.ClientConnected() in StartClient(). (#1219)
 - [6a6a1bf0] (2021-10-01) Jaedyn Draper / chore: Making INetworkMessage and accompanying structures internal since we have decided to continue with the existing NamedMessage and UnnamedMessage for this release. (#1244)
@@ -148,6 +151,13 @@ Philipp:
 
 Others (2nd iteration):
 
+- [058fdb55] (2021-10-11) Luke Stampfli / feat: Client networkrigidbody (#1202)
+- [0b80225d] (2021-10-08) Jesse Olmer / chore: transport adapter to 0.1.0-preview.1 (#1274)
+- [13478086] (2021-10-06) LPLafontaineB / Changed the transport for the Bootstrap sample, from Unet to UTP (#1268)
+- [9c61c51e] (2021-10-06) Benoit Doyon / fix: Fix metrics reporting for Ownership Change, Spawn and Destroy bytes (#1233)
+- [af827f3d] (2021-10-05) zain-mecklai / test: enable multiprocess tests on windows mac and ubuntu (#1195)
+- [dbe45842] (2021-10-05) Andrew Spiering / chore: Adding dry-run jobs and fixing deps fpr the actual per package publish (#1255)
+- [aee21f16] (2021-10-05) Albin Corén / fix: Prevent multiple NetworkTransforms on the same object (#1258)
 - [d3408ac5] (2021-10-01) Andrew Spiering / fix: Fixing an issue where OnClientDisconnectCallback was not being called when using UTP (#1243)
 - [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
 - [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
