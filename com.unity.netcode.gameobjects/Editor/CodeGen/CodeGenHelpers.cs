@@ -24,6 +24,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
         public static readonly string INetworkSerializable_NetworkSerialize_Name = nameof(INetworkSerializable.NetworkSerialize);
+        public static readonly string IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute_FullName = typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute).FullName;
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
         public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
         public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
@@ -263,6 +264,42 @@ namespace Unity.Netcode.Editor.CodeGen
                 Column = sequencePoint?.StartColumn ?? 0,
                 MessageData = $" - {message}"
             });
+        }
+
+        public static void RemoveRecursiveReferences(this ModuleDefinition moduleDefinition)
+        {
+            // Weird behavior from Cecil: When importing a reference to a specific implementation of a generic
+            // method, it's importing the main module as a reference into itself. This causes Unity to have issues
+            // when attempting to iterate the assemblies to discover unit tests, as it goes into infinite recursion
+            // and eventually hits a stack overflow. I wasn't able to find any way to stop Cecil from importing the module
+            // into itself, so at the end of it all, we're just going to go back and remove it again.
+            var moduleName = moduleDefinition.Name;
+            if (moduleName.EndsWith(".dll") || moduleName.EndsWith(".exe"))
+            {
+                moduleName = moduleName.Substring(0, moduleName.Length - 4);
+            }
+
+            foreach (var reference in moduleDefinition.AssemblyReferences)
+            {
+                var referenceName = reference.Name.Split(',')[0];
+                if (referenceName.EndsWith(".dll") || referenceName.EndsWith(".exe"))
+                {
+                    referenceName = referenceName.Substring(0, referenceName.Length - 4);
+                }
+
+                if (moduleName == referenceName)
+                {
+                    try
+                    {
+                        moduleDefinition.AssemblyReferences.Remove(reference);
+                        break;
+                    }
+                    catch (Exception)
+                    {
+                        //
+                    }
+                }
+            }
         }
 
         public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly, out PostProcessorAssemblyResolver assemblyResolver)
