@@ -624,22 +624,7 @@ namespace Unity.Netcode
             UseSnapshotSpawn = config.UseSnapshotSpawn;
             SnapshotMaxSpawnUsage = config.SnapshotMaxSpawnUsage;
 
-            if (networkManager)
-            {
-                m_IsServer = networkManager.IsServer;
-                m_IsConnectedClient = networkManager.IsConnectedClient;
-                m_ServerClientId = networkManager.ServerClientId;
-
-                // Todo: This is extremely inefficient. What is the efficient and idiomatic way ?
-                m_ConnectedClientsId.Clear();
-                if (m_IsServer)
-                {
-                    foreach (var id in networkManager.ConnectedClientsIds)
-                    {
-                        m_ConnectedClientsId.Add(id);
-                    }
-                }
-            }
+            UpdateClientServerData();
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 
@@ -647,6 +632,27 @@ namespace Unity.Netcode
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             Spawns = new SnapshotSpawnCommand[m_MaxSpawns];
             Despawns = new SnapshotDespawnCommand[m_MaxDespawns];
+        }
+
+        // since we don't want to access the NetworkManager directly, we refresh those values on Update
+        internal void UpdateClientServerData()
+        {
+            if (m_NetworkManager)
+            {
+                m_IsServer = m_NetworkManager.IsServer;
+                m_IsConnectedClient = m_NetworkManager.IsConnectedClient;
+                m_ServerClientId = m_NetworkManager.ServerClientId;
+
+                // todo: This is extremely inefficient. What is the efficient and idiomatic way ?
+                m_ConnectedClientsId.Clear();
+                if (m_IsServer)
+                {
+                    foreach (var id in m_NetworkManager.ConnectedClientsIds)
+                    {
+                        m_ConnectedClientsId.Add(id);
+                    }
+                }
+            }
         }
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
@@ -677,6 +683,8 @@ namespace Unity.Netcode
 
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
+                UpdateClientServerData();
+
                 var tick = m_NetworkTickSystem.LocalTime.Tick;
 
                 if (tick != m_CurrentTick)
