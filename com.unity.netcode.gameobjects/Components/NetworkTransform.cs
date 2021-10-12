@@ -838,7 +838,7 @@ namespace Unity.Netcode.Components
                 var cachedDeltaTime = Time.deltaTime;
                 var serverTime = NetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
-                var cachedRenderTime = serverTime.TimeLastTick().Time;
+                var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
 
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
