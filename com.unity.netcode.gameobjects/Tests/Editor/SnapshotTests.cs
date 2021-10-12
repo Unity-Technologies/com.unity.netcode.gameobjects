@@ -25,6 +25,12 @@ namespace Unity.Netcode.EditorTests
             Debug.Assert(message.Spawns.Length == 10);
             Debug.Assert(message.Entries.Length == 0);
 
+            using FastBufferWriter writer = new FastBufferWriter(1024, Allocator.Temp);
+            message.Serialize(writer);
+            using FastBufferReader reader = new FastBufferReader(writer, Allocator.Temp);
+            var context = new NetworkContext{SenderId = 0, Timestamp = 0.0f, SystemOwner = m_SnapshotSystem};
+            SnapshotDataMessage.Receive(reader, context);
+
             m_SnapshotSystem.HandleSnapshot(0, message);
 
             return 0;
