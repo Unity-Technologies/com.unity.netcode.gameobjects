@@ -778,7 +778,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a server
         /// </summary>
-        public SocketTasks StartServer()
+        public bool StartServer()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -792,7 +792,7 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start server while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -809,7 +809,7 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartServer();
+            var result = NetworkConfig.NetworkTransport.StartServer();
 
             IsServer = true;
             IsClient = false;
@@ -819,13 +819,13 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return socketTasks;
+            return result;
         }
 
         /// <summary>
         /// Starts a client
         /// </summary>
-        public SocketTasks StartClient()
+        public bool StartClient()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -839,25 +839,25 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start client while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             Initialize(false);
             MessagingSystem.ClientConnected(ServerClientId);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartClient();
+            var result = NetworkConfig.NetworkTransport.StartClient();
 
             IsServer = false;
             IsClient = true;
             IsListening = true;
 
-            return socketTasks;
+            return result;
         }
 
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public SocketTasks StartHost()
+        public bool StartHost()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -871,7 +871,7 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start host while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -888,7 +888,7 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartServer();
+            var result = NetworkConfig.NetworkTransport.StartServer();
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
@@ -924,7 +924,7 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return socketTasks;
+            return result;
         }
 
         public void SetSingleton()
