@@ -429,7 +429,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionY &&
-                isPositionDirty || (Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
+                (Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
                 !Mathf.Approximately(networkState.PositionY, position.y)))
             {
                 networkState.PositionY = position.y;
@@ -438,7 +438,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionZ &&
-                isPositionDirty || (Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
+                (Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
                 !Mathf.Approximately(networkState.PositionZ, position.z)))
             {
                 networkState.PositionZ = position.z;
@@ -456,7 +456,6 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                isRotationDirty ||
                 (Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold &&
                 !Mathf.Approximately(networkState.RotAngleY, rotAngles.y)))
             {
@@ -466,7 +465,6 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                isRotationDirty ||
                 (Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold &&
                 !Mathf.Approximately(networkState.RotAngleZ, rotAngles.z)))
             {
@@ -485,7 +483,6 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleY &&
-                isScaleDirty ||
                 (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold &&
                 !Mathf.Approximately(networkState.ScaleY, scale.y)))
             {
@@ -495,7 +492,6 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleZ &&
-                isScaleDirty ||
                 (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold &&
                 !Mathf.Approximately(networkState.ScaleZ, scale.z)))
             {
