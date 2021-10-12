@@ -186,7 +186,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
-                metric => metric.SceneEventType.Equals(SceneEventType.LoadComplete.ToString()));
+                metric => metric.SceneEventType.Equals(SceneEventType.LoadEventCompleted.ToString()));
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -202,7 +202,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(Server.ConnectedClients.Count, sentMetrics.Count);
 
             var filteredSentMetrics = sentMetrics
-                .Where(metric => metric.SceneEventType == SceneEventType.LoadComplete.ToString())
+                .Where(metric => metric.SceneEventType == SceneEventType.LoadEventCompleted.ToString())
                 .Where(metric => metric.SceneName == k_SimpleSceneName);
             CollectionAssert.AreEquivalent(filteredSentMetrics.Select(x => x.Connection.Id), Server.ConnectedClients.Select(x => x.Key));
         }
@@ -219,7 +219,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
-                metric => metric.SceneEventType.Equals(SceneEventType.LoadComplete.ToString()));
+                metric => metric.SceneEventType.Equals(SceneEventType.LoadEventCompleted.ToString()));
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -235,7 +235,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(1, receivedMetrics.Count);
             var receivedMetric = receivedMetrics.First();
 
-            Assert.AreEqual(SceneEventType.LoadComplete.ToString(), receivedMetric.SceneEventType);
+            Assert.AreEqual(SceneEventType.LoadEventCompleted.ToString(), receivedMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
@@ -412,7 +412,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
-                metric => metric.SceneEventType.Equals(SceneEventType.UnloadComplete.ToString()));
+                metric => metric.SceneEventType.Equals(SceneEventType.UnloadEventCompleted.ToString()));
 
             // Unload a scene to trigger the messages
             StartServerUnloadScene();
@@ -431,7 +431,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // so iterate over the connected client list on the server to ensure that we have a 1-1 match of connected
             // clients to sent metrics.
             var filteredSentMetrics = sentMetrics
-                .Where(metric => metric.SceneEventType == SceneEventType.UnloadComplete.ToString())
+                .Where(metric => metric.SceneEventType == SceneEventType.UnloadEventCompleted.ToString())
                 .Where(metric => metric.SceneName == k_SimpleSceneName);
             CollectionAssert.AreEquivalent(filteredSentMetrics.Select(x => x.Connection.Id), Server.ConnectedClients.Select(x => x.Key));
         }
@@ -451,7 +451,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
-                metric => metric.SceneEventType.Equals(SceneEventType.UnloadComplete.ToString()));
+                metric => metric.SceneEventType.Equals(SceneEventType.UnloadEventCompleted.ToString()));
 
             // Unload the scene to trigger the messages
             StartServerUnloadScene();
@@ -467,7 +467,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(1, receivedMetrics.Count);
             var receivedMetric = receivedMetrics.First();
 
-            Assert.AreEqual(SceneEventType.UnloadComplete.ToString(), receivedMetric.SceneEventType);
+            Assert.AreEqual(SceneEventType.UnloadEventCompleted.ToString(), receivedMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
