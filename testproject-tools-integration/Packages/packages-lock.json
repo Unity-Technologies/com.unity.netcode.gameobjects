@@ -43,7 +43,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.multiplayer.tools": {
-      "version": "0.0.1-preview.9",
+      "version": "0.0.1-preview.11",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -56,7 +56,7 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.netcode.gameobjects": "0.0.1-preview.1",
+        "com.unity.netcode.gameobjects": "0.2.0-preview.1",
         "com.unity.transport": "1.0.0-pre.5"
       }
     },
