@@ -23,11 +23,6 @@ namespace Unity.Netcode
             }
         }
 
-        public static double ComputeRenderTime(uint tickRate, double serverTime)
-        {
-            return serverTime - 1d / tickRate;
-        }
-
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
         private T m_InterpStartValue;
@@ -149,12 +144,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
-        public T Update(float deltaTime, double serverTime, uint m_TickRate)
-        {
-            return Update(deltaTime, serverTime - 1d / m_TickRate, serverTime);
-        }
-
-        public T Update(float deltaTime, NetworkTime serverTime )
+        public T Update(float deltaTime, NetworkTime serverTime)
         {
             return Update(deltaTime, serverTime.TimeLastTick().Time, serverTime.Time);
         }
