@@ -692,6 +692,8 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+
+            // Register for notifications when spawned
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
 
             if (m_AllFloatInterpolators.Count == 0)
@@ -711,6 +713,12 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
+        /// <summary>
+        /// Clean up interpolators in the event the associated
+        /// NetworkObject is part of an object pool and/or
+        /// it is part of an object pool that persists between
+        /// network sessions (i.e. different NetworkManagers)
+        /// </summary>
         public override void OnNetworkDespawn()
         {
             m_AllFloatInterpolators.Clear();
