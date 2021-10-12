@@ -296,12 +296,10 @@ namespace TestProject.ManualTests
 
                     if (!obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
                 var newObj = AddNewInstance();
-                newObj.SetActive(true);
                 return newObj;
             }
             return null;
@@ -363,7 +361,6 @@ namespace TestProject.ManualTests
                 m_IsSpawningObjects = false;
                 StopCoroutine(SpawnObjects());
             }
-
         }
 
 
@@ -409,14 +406,17 @@ namespace TestProject.ManualTests
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
-
+                                go.SetActive(true);
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
 
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(true);
+                                    if (no.NetworkManager != null)
+                                    {
+                                        no.Spawn(true);
+                                    }
                                 }
                             }
                         }
@@ -437,6 +437,7 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;
@@ -446,8 +447,8 @@ namespace TestProject.ManualTests
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
             {
-                networkObject.transform.position = Vector3.zero;
                 networkObject.gameObject.SetActive(false);
+                networkObject.transform.position = Vector3.zero;
             }
             else
             {

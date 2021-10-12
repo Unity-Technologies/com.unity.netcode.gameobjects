@@ -66,7 +66,6 @@ public class CommandLineProcessor
                 case "host":
                 case "client":
                     {
-
                         return true;
                     }
             }
@@ -225,12 +224,12 @@ public class CommandLineProcessor
 /// </summary>
 public class CommandLineHandler : MonoBehaviour
 {
-    private static CommandLineProcessor s_CommandLineProcessorInstance;
+    internal static CommandLineProcessor CommandLineProcessorInstance;
     private void Start()
     {
-        if (s_CommandLineProcessorInstance == null)
+        if (CommandLineProcessorInstance == null)
         {
-            s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
+            CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
         }
 
     }

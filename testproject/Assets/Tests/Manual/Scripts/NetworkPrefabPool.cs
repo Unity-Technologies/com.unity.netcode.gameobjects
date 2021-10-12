@@ -491,7 +491,10 @@ namespace TestProject.ManualTests
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(true);
+                                    if (no.NetworkManager != null)
+                                    {
+                                        no.Spawn(true);
+                                    }
                                 }
                             }
                         }
