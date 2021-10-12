@@ -20,13 +20,13 @@ namespace Unity.Netcode.EditorTests
 
             var serverTime = new NetworkTime(k_MockTickRate, 100f);
             interpolator.AddMeasurement(5, 1.0f);
-            var initVal = interpolator.Update(10f, serverTime.Time, serverTime.TimeLastTick().Time); // big value
+            var initVal = interpolator.Update(10f, serverTime.Time, serverTime.TimeTicksAgo(1).Time); // big value
             Assert.That(initVal, Is.EqualTo(5f));
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
 
             interpolator.ResetTo(100f, serverTime.Time);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(100f));
-            var val = interpolator.Update(1f, serverTime.Time, serverTime.TimeLastTick().Time);
+            var val = interpolator.Update(1f, serverTime.Time, serverTime.TimeTicksAgo(1).Time);
             Assert.That(val, Is.EqualTo(100f));
         }
 

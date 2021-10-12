@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Unity.Netcode
 {
 
-/// <summary>
+    /// <summary>
     /// Solves for incoming values that are jittered
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
