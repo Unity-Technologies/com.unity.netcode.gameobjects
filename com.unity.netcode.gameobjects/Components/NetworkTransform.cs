@@ -267,7 +267,7 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        protected bool CanCommitToTransform;
+        public bool CanCommitToTransform;
         protected bool CachedIsServer;
         protected NetworkManager CachedNetworkManager;
 
@@ -372,15 +372,18 @@ namespace Unity.Netcode.Components
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX);
-            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY);
-            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ);
+            var cachedServerTime = NetworkManager.ServerTime.Time;
+            var cachedRenderTime = cachedServerTime - 1f / NetworkManager.NetworkConfig.TickRate;
+            var serverTime = NetworkManager.ServerTime.Time;
+            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
+            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
+            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.Rotation));
+            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.Rotation), serverTime);
 
-            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX);
-            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY);
-            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ);
+            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
+            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
+            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
@@ -623,38 +626,39 @@ namespace Unity.Netcode.Components
 
         private void AddInterpolatedState(NetworkTransformState newState)
         {
-            var sentTime = new NetworkTime(CachedNetworkManager.ServerTime.TickRate, newState.SentTime);
+            var sentTime = new NetworkTime(CachedNetworkManager.ServerTime.TickRate, newState.SentTime).Time;
+            var serverTime = NetworkManager.ServerTime.Time;
 
             if (newState.HasPositionX)
             {
-                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
+                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime, serverTime);
             }
 
             if (newState.HasPositionY)
             {
-                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime, serverTime);
             }
 
             if (newState.HasPositionZ)
             {
-                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
+                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime, serverTime);
             }
 
-            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime, serverTime);
 
             if (newState.HasScaleX)
             {
-                m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
+                m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime, serverTime);
             }
 
             if (newState.HasScaleY)
             {
-                m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
+                m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime, serverTime);
             }
 
             if (newState.HasScaleZ)
             {
-                m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
+                m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime, serverTime);
             }
         }
 
@@ -698,13 +702,14 @@ namespace Unity.Netcode.Components
             CachedIsServer = IsServer;
             CachedNetworkManager = NetworkManager;
 
-            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
-            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
-            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
-            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
-            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
-            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
+            var tickRate = NetworkManager.NetworkTickSystem.TickRate;
+            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(tickRate); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);

@@ -14,9 +14,9 @@ namespace Unity.Netcode
         private struct BufferedItem
         {
             public T Item;
-            public NetworkTime TimeSent;
+            public double TimeSent;
 
-            public BufferedItem(T item, NetworkTime timeSent)
+            public BufferedItem(T item, double timeSent)
             {
                 Item = item;
                 TimeSent = timeSent;
@@ -29,8 +29,8 @@ namespace Unity.Netcode
         private T m_CurrentInterpValue;
         private T m_InterpEndValue;
 
-        private NetworkTime m_EndTimeConsumed;
-        private NetworkTime m_StartTimeConsumed;
+        private double m_EndTimeConsumed;
+        private double m_StartTimeConsumed;
 
         private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
 
@@ -64,25 +64,26 @@ namespace Unity.Netcode
         private int m_NbItemsReceivedThisFrame;
 
         private int m_LifetimeConsumedCount;
+        private uint m_TickRate;
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
-        internal BufferedLinearInterpolator()
+        internal BufferedLinearInterpolator(uint tickRate)
         {
+            m_TickRate = tickRate;
         }
 
-        public void ResetTo(T targetValue)
+        public void ResetTo(T targetValue, double serverTime)
         {
-            uint tickRate = NetworkManager.Singleton.NetworkConfig.TickRate;
             m_LifetimeConsumedCount = 1;
             m_InterpStartValue = targetValue;
             m_InterpEndValue = targetValue;
             m_CurrentInterpValue = targetValue;
             m_Buffer.Clear();
-            m_EndTimeConsumed = new NetworkTime(tickRate, 0);
-            m_StartTimeConsumed = new NetworkTime(tickRate, 0);
+            m_EndTimeConsumed = new NetworkTime(m_TickRate, 0).Time;
+            m_StartTimeConsumed = new NetworkTime(m_TickRate, 0).Time;
 
-            Update(0, NetworkManager.Singleton.ServerTime.Time, NetworkManager.Singleton.ServerTime.Time);
+            Update(0, serverTime, serverTime);
         }
 
 
@@ -96,7 +97,7 @@ namespace Unity.Netcode
             //   NetworkTransform has (currently) 7 buffered linear interpolators (3 position, 3 scale, 1 rot), and
             //   each has its own independent buffer and 'm_endTimeConsume'.  That means every frame I have to do 7x
             //   these checks vs. if we tracked these values in a unified way
-            if (renderTime >= m_EndTimeConsumed.Time)
+            if (renderTime >= m_EndTimeConsumed)
             {
                 BufferedItem? itemToInterpolateTo = null;
                 // assumes we're using sequenced messages for netvar syncing
@@ -108,9 +109,9 @@ namespace Unity.Netcode
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready and interpolate to last value we can consume. This can consume multiple values from the buffer
-                    if (bufferedValue.TimeSent.Time <= serverTime)
+                    if (bufferedValue.TimeSent <= serverTime)
                     {
-                        if (!itemToInterpolateTo.HasValue || bufferedValue.TimeSent.Time > itemToInterpolateTo.Value.TimeSent.Time)
+                        if (!itemToInterpolateTo.HasValue || bufferedValue.TimeSent > itemToInterpolateTo.Value.TimeSent)
                         {
                             if (m_LifetimeConsumedCount == 0)
                             {
@@ -125,7 +126,7 @@ namespace Unity.Netcode
                                 m_InterpStartValue = m_InterpEndValue;
                             }
 
-                            if (bufferedValue.TimeSent.Time > m_EndTimeConsumed.Time)
+                            if (bufferedValue.TimeSent > m_EndTimeConsumed)
                             {
                                 itemToInterpolateTo = bufferedValue;
                                 m_EndTimeConsumed = bufferedValue.TimeSent;
@@ -140,6 +141,11 @@ namespace Unity.Netcode
                     }
                 }
             }
+        }
+
+        public T Update(float deltaTime, double serverTime)
+        {
+            return Update(deltaTime, serverTime - 1d / m_TickRate, serverTime);
         }
 
         public T Update(float deltaTime, double renderTime, double serverTime)
@@ -159,14 +165,14 @@ namespace Unity.Netcode
             if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
                 float t = 1.0f;
-                double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
+                double range = m_EndTimeConsumed - m_StartTimeConsumed;
                 if (range > k_SmallValue)
                 {
-                    t = (float)((renderTime - m_StartTimeConsumed.Time) / range);
+                    t = (float)((renderTime - m_StartTimeConsumed) / range);
 
                     if (t < 0.0f)
                     {
-                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {renderTime}, Start time {m_StartTimeConsumed.Time}, end time {m_EndTimeConsumed.Time}");
+                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {renderTime}, Start time {m_StartTimeConsumed}, end time {m_EndTimeConsumed}");
                     }
 
                     if (t > 3.0f) // max extrapolation
@@ -186,7 +192,7 @@ namespace Unity.Netcode
             return m_CurrentInterpValue;
         }
 
-        public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
+        public void AddMeasurement(T newMeasurement, double sentTime, double serverTime)
         {
             m_NbItemsReceivedThisFrame++;
 
@@ -194,16 +200,16 @@ namespace Unity.Netcode
             // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
             if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
             {
-                if (m_LastBufferedItemReceived.TimeSent.Time < sentTime.Time)
+                if (m_LastBufferedItemReceived.TimeSent < sentTime)
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
-                    ResetTo(newMeasurement);
+                    ResetTo(newMeasurement, serverTime);
                 }
 
                 return;
             }
 
-            if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
+            if (sentTime > m_EndTimeConsumed || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                 m_Buffer.Add(m_LastBufferedItemReceived);
@@ -221,6 +227,10 @@ namespace Unity.Netcode
 
     internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
+        public BufferedLinearInterpolatorFloat(uint tickRate) : base(tickRate)
+        {
+        }
+
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
             return Mathf.LerpUnclamped(start, end, time);
@@ -234,6 +244,10 @@ namespace Unity.Netcode
 
     internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+        public BufferedLinearInterpolatorQuaternion(uint tickRate) : base(tickRate)
+        {
+        }
+
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
