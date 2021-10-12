@@ -10,7 +10,9 @@ namespace Unity.Netcode.EditorTests
 {
     public class SnapshotTests
     {
-        private const double k_Epsilon = 0.0001;
+        private SnapshotSystem m_SnapshotSystem;
+        private NetworkTimeSystem m_TimeSystem;
+        private NetworkTickSystem m_TickSystem;
 
         internal int SendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
         {
@@ -20,34 +22,37 @@ namespace Unity.Netcode.EditorTests
             Debug.Assert(message.Ack.ReceivedSequenceMask == 0);
             Debug.Assert(message.Despawns.IsEmpty);
             Debug.Assert(message.Sequence == 0);
-            Debug.Assert(message.Spawns.Length == 1);
+            Debug.Assert(message.Spawns.Length == 10);
             Debug.Assert(message.Entries.Length == 0);
+
+            m_SnapshotSystem.HandleSnapshot(0, message);
 
             return 0;
         }
 
-        [Test]
-        public void TestSnapshot()
+        private void PrepareSendSideSnapshot()
         {
             var config = new NetworkConfig();
-            var tickSystem = new NetworkTickSystem(15, 0.0, 0.0);
-            var timeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
 
             config.UseSnapshotDelta = false;
             config.UseSnapshotSpawn = true;
 
-            var snapshotSystem = new SnapshotSystem(null, config, tickSystem);
+            m_SnapshotSystem = new SnapshotSystem(null, config, m_TickSystem);
 
-            snapshotSystem.IsServer = true;
-            snapshotSystem.IsConnectedClient = false;
-            snapshotSystem.ServerClientId = 0;
-            snapshotSystem.ConnectedClientsId.Clear();
-            snapshotSystem.ConnectedClientsId.Add(1);
-            snapshotSystem.MockSendMessage = SendMessage;
+            m_SnapshotSystem.IsServer = true;
+            m_SnapshotSystem.IsConnectedClient = false;
+            m_SnapshotSystem.ServerClientId = 0;
+            m_SnapshotSystem.ConnectedClientsId.Clear();
+            m_SnapshotSystem.ConnectedClientsId.Add(1);
+            m_SnapshotSystem.MockSendMessage = SendMessage;
 
+        }
+
+        void SendSpawnToSnapshot(ulong objectId)
+        {
             SnapshotSpawnCommand command = default;
             // identity
-            command.NetworkObjectId = 0;
+            command.NetworkObjectId = objectId;
             // archetype
             command.GlobalObjectIdHash = 0;
             command.IsSceneObject = true;
@@ -60,11 +65,25 @@ namespace Unity.Netcode.EditorTests
             command.ObjectScale = new Vector3(1.0f, 1.0f, 1.0f);
 
             command.TargetClientIds = new List<ulong> { 1 };
-            snapshotSystem.Spawn(command);
+            m_SnapshotSystem.Spawn(command);
+        }
 
-            timeSystem.Advance(0.1);
-            tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
-            snapshotSystem.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+        [Test]
+        public void TestSnapshot()
+        {
+            m_TickSystem = new NetworkTickSystem(15, 0.0, 0.0);
+            m_TimeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
+
+            PrepareSendSideSnapshot();
+
+            for (int i = 0; i < 10; i++)
+            {
+                SendSpawnToSnapshot((ulong)i);
+            }
+
+            m_TimeSystem.Advance(0.1);
+            m_TickSystem.UpdateTick(m_TimeSystem.LocalTime, m_TimeSystem.ServerTime);
+            m_SnapshotSystem.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
     }
 }
