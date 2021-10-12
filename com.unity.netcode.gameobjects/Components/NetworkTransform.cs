@@ -372,8 +372,6 @@ namespace Unity.Netcode.Components
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            var cachedServerTime = NetworkManager.ServerTime.Time;
-            var cachedRenderTime = cachedServerTime - 1f / NetworkManager.NetworkConfig.TickRate;
             var serverTime = NetworkManager.ServerTime.Time;
             m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
             m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
@@ -416,6 +414,11 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
+            // we assume that if x, y or z are dirty then we'll have to send all 3 anyway, so for efficiency
+            //  we skip doing the (quite expensive) Math.Approximately() and check against PositionThreshold
+            //  this still is overly costly and could use more improvements.
+            //
+            // (ditto for scale components)
             if (SyncPositionX &&
                 Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold &&
                 !Mathf.Approximately(networkState.PositionX, position.x))

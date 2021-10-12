@@ -143,11 +143,24 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Convenience version of 'Update' mainly for testing
+        ///  the reason we don't want to always call this version is so that on the calling side we can compute
+        ///  the renderTime once for the many things being interpolated (and the many interpolators per object)
+        /// </summary>
+        /// <param name="deltaTime">time since call</param>
+        /// <param name="serverTime">current server time</param>
         public T Update(float deltaTime, double serverTime)
         {
             return Update(deltaTime, serverTime - 1d / m_TickRate, serverTime);
         }
 
+        /// <summary>
+        /// Call to update the state of the interpolators before reading out
+        /// </summary>
+        /// <param name="deltaTime">time since last call</param>
+        /// <param name="renderTime">our current time</param>
+        /// <param name="serverTime">current server time</param>
         public T Update(float deltaTime, double renderTime, double serverTime)
         {
             TryConsumeFromBuffer(renderTime, serverTime);
