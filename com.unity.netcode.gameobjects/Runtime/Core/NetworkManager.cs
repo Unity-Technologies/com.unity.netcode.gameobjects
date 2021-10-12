@@ -241,11 +241,7 @@ namespace Unity.Netcode
         public ulong LocalClientId
         {
             get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : m_LocalClientId;
-            internal set
-            {
-                m_LocalClientId = value;
-                MessagingSystem.SetLocalClientId(value);
-            }
+            internal set => m_LocalClientId = value;
         }
 
         private ulong m_LocalClientId;
@@ -497,7 +493,7 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
+            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this);
 
             MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
