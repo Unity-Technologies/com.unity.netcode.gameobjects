@@ -629,39 +629,38 @@ namespace Unity.Netcode.Components
 
         private void AddInterpolatedState(NetworkTransformState newState)
         {
-            var sentTime = new NetworkTime(CachedNetworkManager.ServerTime.TickRate, newState.SentTime).Time;
-            var serverTime = NetworkManager.ServerTime.Time;
+            var sentTime = newState.SentTime;
 
             if (newState.HasPositionX)
             {
-                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime, serverTime);
+                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
             }
 
             if (newState.HasPositionY)
             {
-                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime, serverTime);
+                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
             }
 
             if (newState.HasPositionZ)
             {
-                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime, serverTime);
+                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
 
-            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime, serverTime);
+            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
 
             if (newState.HasScaleX)
             {
-                m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime, serverTime);
+                m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
             }
 
             if (newState.HasScaleY)
             {
-                m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime, serverTime);
+                m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
             }
 
             if (newState.HasScaleZ)
             {
-                m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime, serverTime);
+                m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
         }
 

@@ -205,7 +205,7 @@ namespace Unity.Netcode
             return m_CurrentInterpValue;
         }
 
-        public void AddMeasurement(T newMeasurement, double sentTime, double serverTime)
+        public void AddMeasurement(T newMeasurement, double sentTime)
         {
             m_NbItemsReceivedThisFrame++;
 
@@ -216,7 +216,7 @@ namespace Unity.Netcode
                 if (m_LastBufferedItemReceived.TimeSent < sentTime)
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
-                    ResetTo(newMeasurement, serverTime);
+                    ResetTo(newMeasurement, sentTime);
                 }
 
                 return;

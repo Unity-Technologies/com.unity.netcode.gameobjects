@@ -19,8 +19,7 @@ namespace Unity.Netcode.EditorTests
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
             var serverTime = 100f;
-
-            interpolator.AddMeasurement(5, 1.0f, serverTime);
+            interpolator.AddMeasurement(5, 1.0f);
             var initVal = interpolator.Update(10f, serverTime); // big value
             Assert.That(initVal, Is.EqualTo(5f));
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
@@ -39,13 +38,12 @@ namespace Unity.Netcode.EditorTests
 
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
 
-            double serverTime = 0.01d;
-            interpolator.AddMeasurement(0f, 1.0f, serverTime);
-            interpolator.AddMeasurement(1f, 2.0f, serverTime);
+            interpolator.AddMeasurement(0f, 1.0f);
+            interpolator.AddMeasurement(1f, 2.0f);
 
             // too small update, nothing happens, doesn't consume from buffer yet
             float deltaTime = 0.01f;
-            serverTime = 0.01d;
+            double serverTime = 0.01d;
             interpolator.Update(deltaTime, serverTime);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
 
@@ -84,8 +82,8 @@ namespace Unity.Netcode.EditorTests
             double serverTime = 0.01d;
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
-            interpolator.AddMeasurement(0f, 0d, serverTime);
-            interpolator.AddMeasurement(2f, 2d, serverTime);
+            interpolator.AddMeasurement(0f, 0d);
+            interpolator.AddMeasurement(2f, 2d);
 
             serverTime = 1.5d;
 
@@ -101,7 +99,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1.5f).Within(k_Precision));
 
             // makes sure that interpolation still continues in right direction
-            interpolator.AddMeasurement(1, 1d, serverTime);
+            interpolator.AddMeasurement(1, 1d);
 
             serverTime = 3f;
             interpolator.Update(0.5f, serverTime);
@@ -114,13 +112,13 @@ namespace Unity.Netcode.EditorTests
             double serverTime = 0.01d;
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
-            interpolator.AddMeasurement(1f, 1d, serverTime);
-            interpolator.AddMeasurement(2f, 2d, serverTime);
+            interpolator.AddMeasurement(1f, 1d);
+            interpolator.AddMeasurement(2f, 2d);
             // message time=3 was lost
-            interpolator.AddMeasurement(4f, 4d, serverTime);
-            interpolator.AddMeasurement(5f, 5d, serverTime);
+            interpolator.AddMeasurement(4f, 4d);
+            interpolator.AddMeasurement(5f, 5d);
             // message time=6 was lost
-            interpolator.AddMeasurement(100f, 7d, serverTime); // high value to produce a misprediction
+            interpolator.AddMeasurement(100f, 7d); // high value to produce a misprediction
 
             // first value teleports interpolator
             serverTime = 1f;
@@ -192,8 +190,8 @@ namespace Unity.Netcode.EditorTests
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
             double serverTime = 0d;
-            interpolator.AddMeasurement(2f, 1d, serverTime);
-            interpolator.AddMeasurement(3f, 2d, serverTime);
+            interpolator.AddMeasurement(2f, 1d);
+            interpolator.AddMeasurement(3f, 2d);
 
             serverTime = 1f;
             var interpolatedValue = interpolator.Update(1f, serverTime);
@@ -220,8 +218,8 @@ namespace Unity.Netcode.EditorTests
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
             double serverTime = 0d;
-            interpolator.AddMeasurement(2f, 1d, serverTime);
-            interpolator.AddMeasurement(3f, 2d, serverTime);
+            interpolator.AddMeasurement(2f, 1d);
+            interpolator.AddMeasurement(3f, 2d);
 
             serverTime = 1f;
             var interpolatedValue = interpolator.Update(1f, serverTime);
@@ -239,9 +237,9 @@ namespace Unity.Netcode.EditorTests
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
             double serverTime = 0d;
-            interpolator.AddMeasurement(1f, 1f, serverTime);
-            interpolator.AddMeasurement(2f, 2f, serverTime);
-            interpolator.AddMeasurement(3f, 3f, serverTime);
+            interpolator.AddMeasurement(1f, 1f);
+            interpolator.AddMeasurement(2f, 2f);
+            interpolator.AddMeasurement(3f, 3f);
 
             // big time jump
             serverTime = 10d;
@@ -249,7 +247,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(interpolatedValue, Is.EqualTo(3f));
 
             // interpolation continues as normal
-            interpolator.AddMeasurement(11f, 11f, serverTime);
+            interpolator.AddMeasurement(11f, 11f);
             serverTime = 10.5d;
             interpolatedValue = interpolator.Update(0.5f, serverTime);
             Assert.That(interpolatedValue, Is.EqualTo(3f));
@@ -271,16 +269,16 @@ namespace Unity.Netcode.EditorTests
 
             // set first value
             double serverTime = 0d;
-            interpolator.AddMeasurement(-1f, 1d, serverTime);
+            interpolator.AddMeasurement(-1f, 1d);
 
             serverTime = 1f;
             interpolator.Update(1f, serverTime);
 
             // max + 1
-            interpolator.AddMeasurement(2, 2, serverTime); // +1, this should trigger a burst and teleport to last value
+            interpolator.AddMeasurement(2, 2); // +1, this should trigger a burst and teleport to last value
             for (int i = 0; i < 100; i++)
             {
-                interpolator.AddMeasurement(i + 3, i + 3d, serverTime);
+                interpolator.AddMeasurement(i + 3, i + 3d);
             }
 
             // client was paused for a while, some time has past, we just got a burst of values from the server that teleported us to the last value received
@@ -304,9 +302,9 @@ namespace Unity.Netcode.EditorTests
             var interpolator = new BufferedLinearInterpolatorFloat(k_MockTickRate);
 
             double serverTime = 0.0d;
-            interpolator.AddMeasurement(1f, 1d, serverTime);
-            interpolator.AddMeasurement(2f, 2d, serverTime);
-            interpolator.AddMeasurement(2f, 2d, serverTime);
+            interpolator.AddMeasurement(1f, 1d);
+            interpolator.AddMeasurement(2f, 2d);
+            interpolator.AddMeasurement(2f, 2d);
 
             // empty interpolator teleports to initial value
             serverTime = 1d;
@@ -335,7 +333,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(interp, Is.EqualTo(3f));
 
             // we add a measurement with an updated time
-            interpolator.AddMeasurement(2f, 3d, serverTime);
+            interpolator.AddMeasurement(2f, 3d);
             interp = interpolator.Update(0.5f, serverTime);
             Assert.That(interp, Is.EqualTo(2f));
         }
