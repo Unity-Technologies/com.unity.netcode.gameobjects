@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    /// <summary>
+
+/// <summary>
     /// Solves for incoming values that are jittered
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
@@ -22,6 +23,7 @@ namespace Unity.Netcode
                 TimeSent = timeSent;
             }
         }
+
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
@@ -97,9 +99,8 @@ namespace Unity.Netcode
                 // assumes we're using sequenced messages for netvar syncing
                 // buffer contains oldest values first, iterating from end to start to remove elements from list while iterating
 
-                // calling m_Buffer.Count is expensive.
-                var cacheCount = m_Buffer.Count - 1;
-                for (int i = cacheCount; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values due to packet loss
+                // calling m_Buffer.Count shows up hot in the profiler.
+                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values due to packet loss
                 {
                     var bufferedValue = m_Buffer[i];
                     // Consume when ready and interpolate to last value we can consume. This can consume multiple values from the buffer
@@ -129,7 +130,6 @@ namespace Unity.Netcode
                         }
 
                         m_Buffer.RemoveAt(i);
-                        cacheCount--;
                         consumedCount++;
                         m_LifetimeConsumedCount++;
                     }
@@ -146,7 +146,7 @@ namespace Unity.Netcode
         /// <param name="serverTime">current server time</param>
         public T Update(float deltaTime, NetworkTime serverTime)
         {
-            return Update(deltaTime, serverTime.TimeLastTick().Time, serverTime.Time);
+            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
         }
 
         /// <summary>
@@ -231,6 +231,7 @@ namespace Unity.Netcode
         protected abstract T Interpolate(T start, T end, float time);
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
+
 
     internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {

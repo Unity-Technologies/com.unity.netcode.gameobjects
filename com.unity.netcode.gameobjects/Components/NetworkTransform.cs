@@ -247,7 +247,9 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
-        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+        public float PositionThreshold = .001f;
+        public float RotAngleThreshold = .01f;
+        public float ScaleThreshold = .01f;
 
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
@@ -420,8 +422,7 @@ namespace Unity.Netcode.Components
             //
             // (ditto for scale components)
             if (SyncPositionX &&
-                Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold &&
-                !Mathf.Approximately(networkState.PositionX, position.x))
+                Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold)
             {
                 networkState.PositionX = position.x;
                 networkState.HasPositionX = true;
@@ -429,8 +430,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionY &&
-                (Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
-                !Mathf.Approximately(networkState.PositionY, position.y)))
+                Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold)
             {
                 networkState.PositionY = position.y;
                 networkState.HasPositionY = true;
@@ -438,8 +438,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncPositionZ &&
-                (Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
-                !Mathf.Approximately(networkState.PositionZ, position.z)))
+                Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold)
             {
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
@@ -447,8 +446,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleX &&
-                Mathf.Abs(networkState.RotAngleX - rotAngles.x) >= RotAngleThreshold &&
-                !Mathf.Approximately(networkState.RotAngleX, rotAngles.x))
+                Mathf.Abs(networkState.RotAngleX - rotAngles.x) >= RotAngleThreshold)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
@@ -456,8 +454,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                (Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold &&
-                !Mathf.Approximately(networkState.RotAngleY, rotAngles.y)))
+                Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -465,8 +462,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                (Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold &&
-                !Mathf.Approximately(networkState.RotAngleZ, rotAngles.z)))
+                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
@@ -474,8 +470,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleX &&
-                Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold &&
-                !Mathf.Approximately(networkState.ScaleX, scale.x))
+                Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold)
             {
                 networkState.ScaleX = scale.x;
                 networkState.HasScaleX = true;
@@ -483,8 +478,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleY &&
-                (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold &&
-                !Mathf.Approximately(networkState.ScaleY, scale.y)))
+                Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold)
             {
                 networkState.ScaleY = scale.y;
                 networkState.HasScaleY = true;
@@ -492,8 +486,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncScaleZ &&
-                (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold &&
-                !Mathf.Approximately(networkState.ScaleZ, scale.z)))
+                Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold)
             {
                 networkState.ScaleZ = scale.z;
                 networkState.HasScaleZ = true;
