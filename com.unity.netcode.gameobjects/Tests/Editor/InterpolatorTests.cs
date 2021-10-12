@@ -42,7 +42,7 @@ namespace Unity.Netcode.EditorTests
             interpolator.AddMeasurement(1f, 2.0f);
 
             // too small update, nothing happens, doesn't consume from buffer yet
-            var serverTime = new NetworkTime(k_MockTickRate,0.01d); // t = 0.1d
+            var serverTime = new NetworkTime(k_MockTickRate, 0.01d); // t = 0.1d
             interpolator.Update(.01f, serverTime);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
 
@@ -59,7 +59,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(valueFromUpdate, Is.EqualTo(interpolator.GetInterpolatedValue()).Within(k_Precision));
 
             // continue interpolation
-            serverTime = new NetworkTime(k_MockTickRate,2.5d); // t = 2.5d
+            serverTime = new NetworkTime(k_MockTickRate, 2.5d); // t = 2.5d
             interpolator.Update(2.5f - 2.01f, serverTime);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0.5f).Within(k_Precision));
 
@@ -300,7 +300,7 @@ namespace Unity.Netcode.EditorTests
         public void TestUpdatingInterpolatorWithNoData()
         {
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var serverTime = new NetworkTime(k_MockTickRate,0.0d);
+            var serverTime = new NetworkTime(k_MockTickRate, 0.0d);
             // invalid case, this is undefined behaviour
             Assert.Throws<InvalidOperationException>(() => interpolator.Update(1f, serverTime));
         }

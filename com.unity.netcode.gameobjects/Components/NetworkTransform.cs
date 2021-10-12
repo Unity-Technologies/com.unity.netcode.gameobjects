@@ -268,8 +268,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
         public bool CanCommitToTransform;
-        protected bool CachedIsServer;
-        protected NetworkManager CachedNetworkManager;
+        protected bool m_CachedIsServer;
+        protected NetworkManager m_CachedNetworkManager;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
@@ -322,7 +322,7 @@ namespace Unity.Netcode.Components
         {
             void Send(NetworkTransformState stateToSend)
             {
-                if (CachedIsServer)
+                if (m_CachedIsServer)
                 {
                     // server RPC takes a few frames to execute server side, we want this to execute immediately
                     CommitLocallyAndReplicate(stateToSend);
@@ -344,12 +344,12 @@ namespace Unity.Netcode.Components
             {
                 Send(m_LocalAuthoritativeNetworkState);
                 m_HasSentLastValue = false;
-                m_LastSentTick = CachedNetworkManager.LocalTime.Tick;
+                m_LastSentTick = m_CachedNetworkManager.LocalTime.Tick;
                 m_LastSentState = m_LocalAuthoritativeNetworkState;
             }
-            else if (!m_HasSentLastValue && CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
+            else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
-                m_LastSentState.SentTime = CachedNetworkManager.LocalTime.Time; // time 1+ tick later
+                m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
                 Send(m_LastSentState);
                 m_HasSentLastValue = true;
             }
@@ -682,7 +682,7 @@ namespace Unity.Netcode.Components
 
             AddInterpolatedState(newState);
 
-            if (CachedNetworkManager.LogLevel == LogLevel.Developer)
+            if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
                 Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
@@ -701,10 +701,9 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
             CanCommitToTransform = IsServer;
-            CachedIsServer = IsServer;
-            CachedNetworkManager = NetworkManager;
+            m_CachedIsServer = IsServer;
+            m_CachedNetworkManager = NetworkManager;
 
-            var tickRate = NetworkManager.NetworkTickSystem.TickRate;
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
@@ -712,6 +711,7 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
+
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -723,7 +723,7 @@ namespace Unity.Netcode.Components
             }
             if (CanCommitToTransform)
             {
-                TryCommitTransformToServer(m_Transform, CachedNetworkManager.LocalTime.Time);
+                TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
@@ -782,7 +782,7 @@ namespace Unity.Netcode.Components
                 throw new Exception("Trying to set a state on a not owned transform");
             }
 
-            if (CachedNetworkManager != null && !(CachedNetworkManager.IsConnectedClient || CachedNetworkManager.IsListening))
+            if (m_CachedNetworkManager && !(m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening))
             {
                 return;
             }
@@ -793,7 +793,7 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                if (!CachedIsServer)
+                if (!m_CachedIsServer)
                 {
                     SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
                 }
@@ -834,16 +834,16 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                if (CachedIsServer)
+                if (m_CachedIsServer)
                 {
-                    TryCommitTransformToServer(m_Transform, CachedNetworkManager.LocalTime.Time);
+                    TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }
 
                 m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
-            if (CachedNetworkManager.IsConnectedClient || CachedNetworkManager.IsListening)
+            if (m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening)
             {
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                 var cachedDeltaTime = Time.deltaTime;
@@ -860,7 +860,7 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-                    if (CachedNetworkManager.LogLevel == LogLevel.Developer)
+                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
                     {
                         var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
@@ -908,7 +908,7 @@ namespace Unity.Netcode.Components
             // set teleport flag in state to signal to ghosts not to interpolate
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
             // check server side
-            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, CachedNetworkManager.LocalTime.Time);
+            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
     }
