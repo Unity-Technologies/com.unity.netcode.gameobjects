@@ -680,13 +680,7 @@ namespace Unity.Netcode.Components
         private void Awake()
         {
             m_Transform = transform;
-
-
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
-
-
-
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
         public override void OnNetworkSpawn()
@@ -698,6 +692,8 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(NetworkManager);
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -714,6 +710,21 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
         }
+
+        public override void OnNetworkDespawn()
+        {
+            m_AllFloatInterpolators.Clear();
+            m_PositionXInterpolator = null;
+            m_PositionYInterpolator = null;
+            m_PositionZInterpolator = null;
+            m_RotationInterpolator = null;
+            m_ScaleXInterpolator = null;
+            m_ScaleYInterpolator = null;
+            m_ScaleZInterpolator = null;
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            base.OnNetworkDespawn();
+        }
+
 
         public override void OnGainedOwnership()
         {
@@ -737,13 +748,6 @@ namespace Unity.Netcode.Components
             {
                 ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
-        }
-
-        public override void OnDestroy()
-        {
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
-            base.OnDestroy();
         }
 
         #region state set
