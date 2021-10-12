@@ -23,6 +23,11 @@ namespace Unity.Netcode
             }
         }
 
+        public static double ComputeRenderTime(uint tickRate, double serverTime)
+        {
+            return serverTime - 1d / tickRate;
+        }
+
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
         private T m_InterpStartValue;
@@ -64,14 +69,8 @@ namespace Unity.Netcode
         private int m_NbItemsReceivedThisFrame;
 
         private int m_LifetimeConsumedCount;
-        private uint m_TickRate;
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
-
-        internal BufferedLinearInterpolator(uint tickRate)
-        {
-            m_TickRate = tickRate;
-        }
 
         public void ResetTo(T targetValue, double serverTime)
         {
@@ -80,8 +79,8 @@ namespace Unity.Netcode
             m_InterpEndValue = targetValue;
             m_CurrentInterpValue = targetValue;
             m_Buffer.Clear();
-            m_EndTimeConsumed = new NetworkTime(m_TickRate, 0).Time;
-            m_StartTimeConsumed = new NetworkTime(m_TickRate, 0).Time;
+            m_EndTimeConsumed = 0.0d;
+            m_StartTimeConsumed = 0.0d;
 
             Update(0, serverTime, serverTime);
         }
@@ -150,9 +149,14 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
-        public T Update(float deltaTime, double serverTime)
+        public T Update(float deltaTime, double serverTime, uint m_TickRate)
         {
             return Update(deltaTime, serverTime - 1d / m_TickRate, serverTime);
+        }
+
+        public T Update(float deltaTime, NetworkTime serverTime )
+        {
+            return Update(deltaTime, serverTime.TimeLastTick().Time, serverTime.Time);
         }
 
         /// <summary>
@@ -240,10 +244,6 @@ namespace Unity.Netcode
 
     internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
-        public BufferedLinearInterpolatorFloat(uint tickRate) : base(tickRate)
-        {
-        }
-
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
             return Mathf.LerpUnclamped(start, end, time);
@@ -257,10 +257,6 @@ namespace Unity.Netcode
 
     internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
-        public BufferedLinearInterpolatorQuaternion(uint tickRate) : base(tickRate)
-        {
-        }
-
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);

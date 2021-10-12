@@ -705,13 +705,13 @@ namespace Unity.Netcode.Components
             CachedNetworkManager = NetworkManager;
 
             var tickRate = NetworkManager.NetworkTickSystem.TickRate;
-            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
-            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
-            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(tickRate); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
-            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
-            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
-            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat(tickRate);
+            m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
+            m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
+            m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
+            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
+            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
+            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -845,9 +845,12 @@ namespace Unity.Netcode.Components
             // apply interpolated value
             if (CachedNetworkManager.IsConnectedClient || CachedNetworkManager.IsListening)
             {
+                // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                 var cachedDeltaTime = Time.deltaTime;
-                var cachedServerTime = NetworkManager.ServerTime.Time;
-                var cachedRenderTime = cachedServerTime - 1f / NetworkManager.NetworkConfig.TickRate;
+                var serverTime = NetworkManager.ServerTime;
+                var cachedServerTime = serverTime.Time;
+                var cachedRenderTime = serverTime.TimeLastTick().Time;
+
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
