@@ -8,7 +8,6 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageSendingTests
     {
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessageSendingTests))]
         private struct TestMessage : INetworkMessage
         {
             public int A;
@@ -37,6 +36,21 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private class TestMessageProvider : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessage),
+                        Handler = TestMessage.Receive
+                    }
+                };
+            }
+        }
+
         private TestMessageSender m_MessageSender;
         private MessagingSystem m_MessagingSystem;
         private ulong[] m_Clients = { 0 };
@@ -47,7 +61,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Serialized = false;
 
             m_MessageSender = new TestMessageSender();
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this);
+            m_MessagingSystem = new MessagingSystem(m_MessageSender, this, new TestMessageProvider());
             m_MessagingSystem.ClientConnected(0);
         }
 
