@@ -67,6 +67,7 @@ namespace Unity.Netcode.Components
         {
             m_IsAuthority = HasAuthority;
             m_OriginalKinematic = m_Rigidbody.isKinematic;
+            m_OriginalInterpolation = m_Rigidbody.interpolation;
             UpdateRigidbodyKinematicMode();
         }
 

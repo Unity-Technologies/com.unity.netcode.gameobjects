@@ -30,6 +30,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
                 playerPrefab.AddComponent<NetworkTransform>();
                 playerPrefab.AddComponent<Rigidbody2D>();
                 playerPrefab.AddComponent<NetworkRigidbody2D>();
+                playerPrefab.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
                 playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
             });
         }
@@ -58,11 +59,11 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
             // server rigidbody has authority and should have a kinematic mode of false
             Assert.True(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
-            Assert.True(serverPlayer.GetComponent<Rigidbody2D>().interpolation == RigidbodyInterpolation2D.Interpolate);
+            Assert.AreEqual(RigidbodyInterpolation2D.Interpolate, serverPlayer.GetComponent<Rigidbody2D>().interpolation);
 
             // client rigidbody has no authority and should have a kinematic mode of true
             Assert.True(clientPlayer.GetComponent<Rigidbody2D>().isKinematic);
-            Assert.True(serverPlayer.GetComponent<Rigidbody2D>().interpolation == RigidbodyInterpolation2D.None);
+            Assert.AreEqual(RigidbodyInterpolation2D.None, clientPlayer.GetComponent<Rigidbody2D>().interpolation);
 
             // despawn the server player, (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
