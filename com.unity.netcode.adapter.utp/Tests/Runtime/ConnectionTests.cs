@@ -92,7 +92,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ServerDisconnectSingleClient()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
@@ -152,7 +151,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectSingleClient()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
@@ -164,8 +162,6 @@ namespace Unity.Netcode.RuntimeTests
             m_Clients[0].DisconnectLocalClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
-
-            yield return null;
         }
 
         // Check client disconnection with multiple clients.
