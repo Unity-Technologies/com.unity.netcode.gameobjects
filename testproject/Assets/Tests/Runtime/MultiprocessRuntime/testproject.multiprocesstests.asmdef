@@ -7,5 +7,12 @@
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "macOSStandalone",
+        "LinuxStandalone64",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
     ]
 }
