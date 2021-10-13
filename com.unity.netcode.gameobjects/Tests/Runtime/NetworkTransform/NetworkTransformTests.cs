@@ -45,6 +45,13 @@ namespace Unity.Netcode.RuntimeTests
                 }
             });
 
+#if NGO_TRANSFORM_DEBUG
+            // Log assert for writing without authority is a developer log...
+            // TODO: This is why monolithic test base classes and test helpers are an anti-pattern - this is part of an individual test case setup but is separated from the code verifying it!
+            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
+            m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
+#endif
+
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
@@ -167,7 +174,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return null; // one frame
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
+#if NGO_TRANSFORM_DEBUG
+            // TODO: This should be a separate test - verify 1 behavior per test
             LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
+#endif
         }
 
         /*
