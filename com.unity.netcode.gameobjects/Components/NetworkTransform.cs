@@ -679,7 +679,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        protected virtual void Awake()
+        private void Awake()
         {
             m_Transform = transform;
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
