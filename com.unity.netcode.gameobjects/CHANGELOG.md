@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
+- Added Buffered interpolation for `NetworkTransform` that's resistent to jitter (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
@@ -99,6 +100,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
 - Removed `EnableNetworkVariable` in NetworkConfig. It's always enabled now (#1179)
+- Removed `NetworkTransform`'s FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
 
 ### Fixed
 
@@ -114,41 +116,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariables being zero-initialized on the client instead of being initialized with the desired value (#1266)
 - Improved performance and dramatically reduced the amount of garbage Netcode for Game Objects creates (#1187)
 - Fixed `Clients are receiving data from objects not visible to them.` (#1099)
+- Reducing log level for noisy logs and adding details for developer log (#926)
+- Fixed `NetworkTransform`'s Late Join issues. NetworkTransform now uses NetworkVariables instead of RPCs (#826)
+- Adding proper exception for silent failure when a client was trying to get another player's player object. Now only allowed server side #844
 
 ### Security
 
 - something
 
 ### TODO
-
-Samuel:
-
-- [92fc3e6d] (2021-09-20) Sam Bellomo / feat: transform teleport (#1200)
-- [d8a3a9b3] (2021-09-20) Sam Bellomo / feat: ClientNetworkTransform (#1177)
-- [5513c906] (2021-09-16) Sam Bellomo / feat: interpolation for network transform (#1060)
-- [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
-- [13e2b7f1] (2021-07-13) Sam Bellomo / test: multiprocess tests part 6: fixing issues runnings all tests together (#957)
-- [bf296660] (2021-07-13) Sam Bellomo / docs: Perf tests part 5. Adding documentation and instructions (#952)
-- [6c8efd66] (2021-07-12) Sam Bellomo / test: Perf tests part 4. Adding example of performance test with spawning x network objects at once (#925)
-- [725a77a9] (2021-07-12) Sam Bellomo / test: Perf tests part 3. Adding ExecuteStepInContext for better test readability (#924)
-- [833f1faf] (2021-07-09) Sam Bellomo / test: Perf tests part 2. Adding Test Coordinator and base test class (#923)
-- [d08b84ac] (2021-07-08) Sam Bellomo / test: Perf tests part 1. Basis for multiprocess tests process orchestration.  (#922)
-- [7ed627c6] (2021-06-30) Sam Bellomo / fix: reducing log level for noisy log and adding details for developer log (#926)
-- [4679474b] (2021-06-30) Sam Bellomo / feat: users can set authority on network transform programmatically (#868)
-- [e122376f] (2021-06-29) Sam Bellomo / refactor: move NetworkBehaviour update to a separate non-static class (#917)
-- [0855557e] (2021-06-29) Sam Bellomo / test: add utils for multi instance tests (#914)
-- [9a47c661] (2021-06-29) Sam Bellomo / test: downgrading testproject to 2020.3.12f1 (#927)
-- [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
-- [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
-- [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
-- [e2b17b10] (2021-05-21) Samuel Bellomo / some cleanup
-- [3566ea04] (2021-05-20) Samuel Bellomo / fixing a few issues when connecting and disconnecting additional clients Adding separate tests in SpawnManagerTests. Added Teardown
-- [b3c155b5] (2021-05-20) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [d783a4e0] (2021-05-20) Samuel Bellomo / adding more tests
-- [e2fd839c] (2021-05-19) Samuel Bellomo / Adding tests for that exception Adding the possibility to have multiple clients in MultiInstanceHelpers Updating exception check to make sure to use local networkmanager (so it works with tests)
-- [d11e22be] (2021-05-19) Sam Bellomo / feat: NetworkTransform now uses NetworkVariables instead of RPCs (#826)
-- [ad8ae404] (2021-05-18) Samuel Bellomo / Adding proper exception for invalid case. This is so users don't have silent failures calling this client side expecting to see other player objects. This solves issue https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/issues/581
 
 Philipp:
 
