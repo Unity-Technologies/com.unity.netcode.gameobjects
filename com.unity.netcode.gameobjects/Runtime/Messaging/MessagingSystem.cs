@@ -410,7 +410,7 @@ namespace Unity.Netcode
                     writeQueueItem.Writer.TryBeginWrite(sizeof(MessageHeader) + tmpSerializer.Length);
                     var header = new MessageHeader
                     {
-                        MessageSize = (short)tmpSerializer.Length,
+                        MessageSize = (ushort)tmpSerializer.Length,
                         MessageType = m_MessageTypes[typeof(TMessageType)],
                     };
 
