@@ -747,13 +747,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public override void OnDestroy()
-        {
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
-            base.OnDestroy();
-        }
-
         #region state set
 
         /// <summary>
