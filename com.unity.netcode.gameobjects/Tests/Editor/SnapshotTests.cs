@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
+using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -19,11 +20,14 @@ namespace Unity.Netcode.EditorTests
         private int m_SpawnedObjectCount;
         private int m_DespawnedObjectCount;
         private int m_NextSequence;
-        private int m_TicksToRun = 20;
+        private int m_TicksToRun;
         private uint m_TicksPerSec = 15;
+        private int m_MinSpawns;
+        private int m_MinDespawns;
 
         private bool m_ExpectSpawns;
         private bool m_ExpectDespawns;
+        private bool m_LoseNextMessage;
 
         public void Prepare()
         {
@@ -39,6 +43,7 @@ namespace Unity.Netcode.EditorTests
             m_TimeSystem.Advance(1.0f / m_TicksPerSec);
             m_TickSystem.UpdateTick(m_TimeSystem.LocalTime, m_TimeSystem.ServerTime);
             m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            m_RecvSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         internal int SpawnObject(SnapshotSpawnCommand command)
@@ -65,7 +70,7 @@ namespace Unity.Netcode.EditorTests
 
             if (m_ExpectSpawns)
             {
-                Debug.Assert(message.Spawns.Length > 1); // there has to be multiple spawns per SnapshotMessage
+                Debug.Assert(message.Spawns.Length >= m_MinSpawns); // there has to be multiple spawns per SnapshotMessage
             }
             else
             {
@@ -74,7 +79,7 @@ namespace Unity.Netcode.EditorTests
 
             if (m_ExpectDespawns)
             {
-                Debug.Assert(message.Despawns.Length > 1); // there has to be multiple despawns per SnapshotMessage
+                Debug.Assert(message.Despawns.Length >= m_MinDespawns); // there has to be multiple despawns per SnapshotMessage
             }
             else
             {
@@ -85,14 +90,23 @@ namespace Unity.Netcode.EditorTests
 
             m_NextSequence++;
 
-            using FastBufferWriter writer = new FastBufferWriter(1024, Allocator.Temp);
-            message.Serialize(writer);
-            using FastBufferReader reader = new FastBufferReader(writer, Allocator.Temp);
-            var context = new NetworkContext{SenderId = 0, Timestamp = 0.0f, SystemOwner = m_RecvSnapshot};
-            SnapshotDataMessage.Receive(reader, context);
+            if (!m_LoseNextMessage)
+            {
+                using FastBufferWriter writer = new FastBufferWriter(1024, Allocator.Temp);
+                message.Serialize(writer);
+                using FastBufferReader reader = new FastBufferReader(writer, Allocator.Temp);
+                var context = new NetworkContext {SenderId = 0, Timestamp = 0.0f, SystemOwner = m_RecvSnapshot};
+                SnapshotDataMessage.Receive(reader, context);
+            }
 
             return 0;
         }
+
+        internal int SendMessageRecvSide(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        {
+            return 0;
+        }
+
 
         private void PrepareSendSideSnapshot()
         {
@@ -127,7 +141,7 @@ namespace Unity.Netcode.EditorTests
             m_RecvSnapshot.ServerClientId = 0;
             m_RecvSnapshot.ConnectedClientsId.Clear();
             m_RecvSnapshot.ConnectedClientsId.Add(1);
-            m_RecvSnapshot.MockSendMessage = SendMessage;
+            m_RecvSnapshot.MockSendMessage = SendMessageRecvSide;
             m_RecvSnapshot.MockSpawnObject = SpawnObject;
             m_RecvSnapshot.MockDespawnObject = DespawnObject;
         }
@@ -171,6 +185,9 @@ namespace Unity.Netcode.EditorTests
             m_NextSequence = 0;
             m_ExpectSpawns = true;
             m_ExpectDespawns = false;
+            m_MinSpawns = 2; // many spawns are to be sent together
+            m_LoseNextMessage = false;
+            m_TicksToRun = 20;
 
             // spawns one more than current buffer size
             var objectsToSpawn= m_SendSnapshot.SpawnsBufferCount + 1;
@@ -186,6 +203,7 @@ namespace Unity.Netcode.EditorTests
                 AdvanceOneTick();
             }
 
+            Debug.Log($"m_SpawnedObjectCount is {m_SpawnedObjectCount} objectsToSpawn is {objectsToSpawn}");
             Debug.Assert(m_SpawnedObjectCount == objectsToSpawn);
             Debug.Assert(m_SendSnapshot.SpawnsBufferCount > objectsToSpawn); // spawn buffer should have grown
         }
@@ -199,6 +217,9 @@ namespace Unity.Netcode.EditorTests
             m_NextSequence = 0;
             m_ExpectSpawns = true;
             m_ExpectDespawns = false;
+            m_MinDespawns = 2; // many despawns are to be sent together
+            m_LoseNextMessage = false;
+            m_TicksToRun = 20;
 
             // spawns one more than current buffer size
             var objectsToSpawn = 10;
@@ -220,6 +241,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             m_ExpectSpawns = true; // the un'acked spawns will still be present
+            m_MinSpawns = 1; // but we don't really care how they are grouped then
             m_ExpectDespawns = true;
 
             for (int i = 0; i < m_TicksToRun; i++)
@@ -228,6 +250,33 @@ namespace Unity.Netcode.EditorTests
             }
 
             Debug.Assert(m_DespawnedObjectCount == objectsToSpawn);
+        }
+
+        [Test]
+        public void TestSnapshotMessageLoss()
+        {
+            Random r = new Random();
+            Prepare();
+
+            m_SpawnedObjectCount = 0;
+            m_NextSequence = 0;
+            m_ExpectSpawns = true;
+            m_ExpectDespawns = false;
+            m_MinSpawns = 1;
+            m_LoseNextMessage = false;
+            m_TicksToRun = 10;
+
+            for (int i = 0; i < m_TicksToRun; i++)
+            {
+                m_LoseNextMessage = false;// (r.Next() % 2) > 0;
+
+                SendSpawnToSnapshot((ulong)i);
+                AdvanceOneTick();
+            }
+            AdvanceOneTick();
+            AdvanceOneTick();
+
+            Debug.Assert(m_SpawnedObjectCount == m_TicksToRun);
         }
     }
 }
