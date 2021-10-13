@@ -98,6 +98,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
 - Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
+- Removed `EnableNetworkVariable` in NetworkConfig. It's always enabled now (#1179)
 
 ### Fixed
 
@@ -112,6 +113,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed various situations where messages could be processed in an invalid order, resulting in errors (#948, #1187, #1218)
 - Fixed NetworkVariables being zero-initialized on the client instead of being initialized with the desired value (#1266)
 - Improved performance and dramatically reduced the amount of garbage Netcode for Game Objects creates (#1187)
+- Fixed `Clients are receiving data from objects not visible to them.` (#1099)
 
 ### Security
 
@@ -177,16 +179,10 @@ Others (2nd iteration):
 - [7b361c64] (2021-09-17) Luke Stampfli / fix: network time arguments (#1194)
 - [4fe7a30c] (2021-09-17) Luke Stampfli / feat: network physics (#1175)
 - [0654eaf8] (2021-09-16) Luke Stampfli / feat: add `NetworkObject` and `NetworkBehaviour` reference types (#1173)
-- [80913c10] (2021-09-16) Jeffrey Rainy / feat: snapshot spawn pre-requisite 2 (#1192)
 - [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
-- [eaa2f196] (2021-09-14) Jeffrey Rainy / chore: removal of EnableNetworkVariable in NetworkConfig. It's always True now (#1179)
 - [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
-- [fbd893dc] (2021-09-13) Jeffrey Rainy / feat: snapshot spawn pre-requisite (#1166)
 - [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
-- [b5b40dec] (2021-09-02) Jeffrey Rainy / fix: snapshot system. last fixes for release (#1129)
 - [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
-- [9c759d6f] (2021-08-31) Jeffrey Rainy / feat: snapshot. MTU sizing option for Snapshot. MTT-1087 (#1111)
-- [b5f761cf] (2021-08-27) Jeffrey Rainy / fix: mtt-857 GitHub issue 915 (#1099)
 synchronized (#1090)
 
 ## [0.2.0] - 2021-06-03
