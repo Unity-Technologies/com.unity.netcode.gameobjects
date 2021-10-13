@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
 
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -73,7 +73,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 Debug.Log($"Received from {sender}");
             });
             var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageReceived);
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -95,7 +95,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
 
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -119,7 +119,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 Debug.Log($"Received from {sender}");
             });
 
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -188,7 +188,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackUnnamedMessageSentMetric()
         {
             var message = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(message);
 
@@ -213,7 +213,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var message = Guid.NewGuid();
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageSent);
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(message);
 
@@ -237,7 +237,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageSent);
             var messageName = Guid.NewGuid();
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
 
@@ -254,7 +254,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var message = Guid.NewGuid();
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageReceived);
-            using var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(message);
 
