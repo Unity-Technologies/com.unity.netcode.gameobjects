@@ -240,7 +240,7 @@ namespace Unity.Netcode
         /// </summary>
         protected bool IsHost => IsRunning && NetworkManager.IsHost;
 
-        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
+        private bool IsRunning => NetworkManager && NetworkManager.IsListening;
 
         /// <summary>
         /// Gets Whether or not the object has a owner
