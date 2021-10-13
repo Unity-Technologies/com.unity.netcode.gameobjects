@@ -139,7 +139,6 @@ Others (2nd iteration):
 
 - [058fdb55] (2021-10-11) Luke Stampfli / feat: Client networkrigidbody (#1202)
 - [0b80225d] (2021-10-08) Jesse Olmer / chore: transport adapter to 0.1.0-preview.1 (#1274)
-- [13478086] (2021-10-06) LPLafontaineB / Changed the transport for the Bootstrap sample, from Unet to UTP (#1268)
 - [9c61c51e] (2021-10-06) Benoit Doyon / fix: Fix metrics reporting for Ownership Change, Spawn and Destroy bytes (#1233)
 - [af827f3d] (2021-10-05) zain-mecklai / test: enable multiprocess tests on windows mac and ubuntu (#1195)
 - [dbe45842] (2021-10-05) Andrew Spiering / chore: Adding dry-run jobs and fixing deps fpr the actual per package publish (#1255)
