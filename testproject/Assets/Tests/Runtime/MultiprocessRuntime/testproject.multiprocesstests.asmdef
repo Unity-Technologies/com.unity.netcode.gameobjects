@@ -8,12 +8,13 @@
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
-    "excludePlatforms": [
-        "GameCoreScarlett",
-        "GameCoreXboxOne",
-        "XboxOne",
-        "PS4",
-        "PS5",
-        "Switch"
+    "includePlatforms": [
+        "Editor",
+        "Android",
+        "iOS",
+        "macOSStandalone",
+        "LinuxStandalone64",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
     ]
 }
