@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+#if NGO_TRANSFORM_DEBUG
 using System.Text.RegularExpressions;
+#endif
 using Unity.Netcode.Components;
 using NUnit.Framework;
 // using Unity.Netcode.Samples;
