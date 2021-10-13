@@ -10,8 +10,6 @@
     ],
     "includePlatforms": [
         "Editor",
-        "Android",
-        "iOS",
         "macOSStandalone",
         "LinuxStandalone64",
         "WindowsStandalone32",
