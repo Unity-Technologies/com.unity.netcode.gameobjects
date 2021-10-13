@@ -66,6 +66,10 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
             {
                 Assert.Pass();
             }
+            else
+            {
+                Assert.Fail();
+            }
         }
 
         public void Observe(MetricCollection collection)
