@@ -17,7 +17,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The TickRate of the tick system. This is used to decide how often a fixed network tick is run.
         /// </summary>
-        public uint TickRate { get; }
+        public uint TickRate { get; internal set; }
 
         /// <summary>
         /// The current local time. This is the time at which predicted or client authoritative objects move.

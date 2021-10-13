@@ -169,12 +169,11 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestThresholds(
             [Values] bool inLocalSpace,
-            [Values(0, 1.0f)] float positionThreshold,
-            [Values(0, 1.0f)] float rotAngleThreshold,
-            [Values(0, 0.5f)] float scaleThreshold)
+            [Values(NetworkTransform.PositionThresholdDefault, 1.0f)] float positionThreshold,
+            [Values(NetworkTransform.RotAngleThresholdDefault, 1.0f)] float rotAngleThreshold,
+            [Values(NetworkTransform.ScaleThresholdDefault, 0.5f)] float scaleThreshold)
         {
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestThresholds)}");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
             var networkTransform = gameObject.AddComponent<NetworkTransform>();
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
 
