@@ -149,7 +149,7 @@ namespace Unity.Netcode
         /// <summary>
         /// When Snapshot System spawn is enabled: max size of Snapshot Messages. Meant to fit MTU.
         /// </summary>
-        public int SnapshotMaxSpawnUsage { get; } = 1200;
+        public int SnapshotMaxSpawnUsage { get; } = 1000;
 
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
