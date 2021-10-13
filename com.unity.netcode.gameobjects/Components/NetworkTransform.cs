@@ -679,12 +679,9 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             m_Transform = transform;
-
-            // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
-
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
