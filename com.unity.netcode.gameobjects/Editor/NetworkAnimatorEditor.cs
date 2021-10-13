@@ -75,7 +75,7 @@ namespace Unity.Netcode.Editor
 
                 foreach (var p in controller.parameters)
                 {
-                    if (i >= 32)
+                    if (i >= NetworkAnimator.K_MaxAnimationParams)
                     {
                         showWarning = true;
                         break;
@@ -93,7 +93,7 @@ namespace Unity.Netcode.Editor
 
                 if (showWarning)
                 {
-                    EditorGUILayout.HelpBox("NetworkAnimator can only select between the first 32 parameters in a mecanim controller", MessageType.Warning);
+                    EditorGUILayout.HelpBox($"NetworkAnimator can only select between the first {NetworkAnimator.K_MaxAnimationParams} parameters in a mecanim controller", MessageType.Warning);
                 }
 
                 EditorGUI.indentLevel -= 1;

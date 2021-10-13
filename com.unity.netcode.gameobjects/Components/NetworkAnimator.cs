@@ -60,6 +60,14 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /* 
+         * AutoSend is the ability to select which parameters linked to this animator 
+         * get replicated on a regular basis regardless of a state change. The thinking
+         * behind this is that many of the parameters people use are usually booleans 
+         * which result in a state change and thus would cause a full sync of state. 
+         * Thus if you really care about a parameter syncing then you need to be explict
+         * by selecting it in the inspector when an NetworkAnimator is selected.
+         */
         public void SetParameterAutoSend(int index, bool value)
         {
             if (value)
@@ -78,12 +86,13 @@ namespace Unity.Netcode.Components
         }
 
         // Animators only support up to 32 params
-        private const int k_MaxAnimationParams = 32;
+        public static int K_MaxAnimationParams = 32;
 
-        private int m_AnimationHash;
         private int m_TransitionHash;
         private double m_NextSendTime = 0.0f;
 
+        private int m_AnimationHash;
+        public int AnimationHash { get => m_AnimationHash; }
 
         private unsafe struct AnimatorParamCache
         {
@@ -93,13 +102,23 @@ namespace Unity.Netcode.Components
         }
 
         // 128bytes per Animator 
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
-        private int m_AnimatorControllerParameterInt;
-        private int m_AnimatorControllerParameterFloat;
-        private int m_AnimatorControllerParameterBool;
+        // We cache these values because UnsafeUtility.EnumToInt use direct IL that allows a nonboxing conversion
+        private struct AnimationParamEnumWrapper
+        {
+            public static readonly int AnimatorControllerParameterInt;
+            public static readonly int AnimatorControllerParameterFloat;
+            public static readonly int AnimatorControllerParameterBool;
 
+            static AnimationParamEnumWrapper()
+            {
+                AnimatorControllerParameterInt = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Int);
+                AnimatorControllerParameterFloat = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Float);
+                AnimatorControllerParameterBool = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Bool);
+            }
+        }
 
         internal void ResetParameterOptions()
         {
@@ -122,7 +141,11 @@ namespace Unity.Netcode.Components
 
         public override void OnDestroy()
         {
-            m_CachedAnimatorParameters.Dispose();
+            if (m_CachedAnimatorParameters.IsCreated)
+            {
+                m_CachedAnimatorParameters.Dispose();
+            }
+
             m_ParameterWriter.Dispose();
         }
 
@@ -131,10 +154,7 @@ namespace Unity.Netcode.Components
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
 
-            // We cache these values because UnsafeUtility.EnumToInt use direct IL that allows a nonboxing conversion
-            m_AnimatorControllerParameterInt = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Int);
-            m_AnimatorControllerParameterInt = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Float);
-            m_AnimatorControllerParameterBool = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Bool);
+            m_AnimationHash = -1;
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -148,7 +168,6 @@ namespace Unity.Netcode.Components
 
                 var cacheParam = new AnimatorParamCache();
 
-                //gross
                 cacheParam.Type = UnsafeUtility.EnumToInt(parameter.type);
                 cacheParam.Hash = parameter.nameHash;
                 unsafe
@@ -185,12 +204,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            CheckSendRate();
-
             int stateHash;
             float normalizedTime;
             if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
+                // We only want to check and send if we don't have any other state to since
+                // as we will sync all params as part of the state sync
+                CheckAndSend();
+
                 return;
             }
 
@@ -207,22 +228,24 @@ namespace Unity.Netcode.Components
             SendAnimStateClientRpc(animMsg);
         }
 
-        private void CheckSendRate()
+        private void CheckAndSend()
         {
             var networkTime = NetworkManager.ServerTime.Time;
             if (sendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + m_SendRate;
 
-                // we then sync the params we care about
-                var animMsg = new AnimationParametersMessage();
-
                 m_ParameterWriter.Seek(0);
                 m_ParameterWriter.Truncate();
 
                 if (WriteParameters(m_ParameterWriter, true))
                 {
-                    animMsg.Parameters = m_ParameterWriter.ToArray();
+                    // we then sync the params we care about
+                    var animMsg = new AnimationParametersMessage()
+                    {
+                        Parameters = m_ParameterWriter.ToArray()
+                    };
+
                     SendParamsClientRpc(animMsg);
                 }
             }
@@ -278,10 +301,9 @@ namespace Unity.Netcode.Components
                 }
 
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
-                var paramType = cacheValue.Type;
                 var hash = cacheValue.Hash;
 
-                if (paramType == m_AnimatorControllerParameterInt)
+                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     var valueInt = m_Animator.GetInteger(hash);
                     fixed (void* value = cacheValue.Value)
@@ -293,10 +315,21 @@ namespace Unity.Netcode.Components
                             BytePacker.WriteValuePacked(writer, (uint)valueInt);
                         }
                     }
-
                 }
-
-                if (paramType == m_AnimatorControllerParameterFloat)
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
+                {
+                    var valueBool = m_Animator.GetBool(hash);
+                    fixed (void* value = cacheValue.Value)
+                    {
+                        var oldValue = UnsafeUtility.AsRef<bool>(value);
+                        if (valueBool != oldValue)
+                        {
+                            UnsafeUtility.WriteArrayElement(value, 0, valueBool);
+                            writer.WriteValueSafe(valueBool);
+                        }
+                    }
+                }
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                 {
                     var valueFloat = m_Animator.GetFloat(hash);
                     fixed (void* value = cacheValue.Value)
@@ -309,25 +342,10 @@ namespace Unity.Netcode.Components
                             writer.WriteValueSafe(valueFloat);
                         }
                     }
-
-                }
-
-                if (paramType == m_AnimatorControllerParameterBool)
-                {
-                    var valueBool = m_Animator.GetBool(hash);
-
-                    fixed (void* value = cacheValue.Value)
-                    {
-                        var oldValue = UnsafeUtility.AsRef<bool>(value);
-                        if (valueBool != oldValue)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueBool);
-                            writer.WriteValueSafe(valueBool);
-                        }
-                    }
                 }
             }
 
+            // If we do not write any values to the writer then we should not send any data
             return writer.Length > 0;
         }
 
@@ -345,10 +363,9 @@ namespace Unity.Netcode.Components
                     continue;
                 }
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
-                var paramType = cacheValue.Type;
                 var hash = cacheValue.Hash;
 
-                if (paramType == m_AnimatorControllerParameterInt)
+                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     ByteUnpacker.ReadValuePacked(reader, out int newValue);
                     m_Animator.SetInteger(hash, newValue);
@@ -356,58 +373,59 @@ namespace Unity.Netcode.Components
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, newValue);
                     }
-
                 }
-
-                if (paramType == m_AnimatorControllerParameterFloat)
-                {
-                    reader.ReadValueSafe(out float newFloatValue);
-
-                    m_Animator.SetFloat(hash, newFloatValue);
-
-                    fixed (void* value = cacheValue.Value)
-                    {
-                        UnsafeUtility.WriteArrayElement(value, 0, newFloatValue);
-                    }
-
-                }
-
-                if (paramType == m_AnimatorControllerParameterBool)
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
                     reader.ReadValueSafe(out bool newBoolValue);
                     m_Animator.SetBool(hash, newBoolValue);
-
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, newBoolValue);
                     }
                 }
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
+                {
+                    reader.ReadValueSafe(out float newFloatValue);
+                    m_Animator.SetFloat(hash, newFloatValue);
+                    fixed (void* value = cacheValue.Value)
+                    {
+                        UnsafeUtility.WriteArrayElement(value, 0, newFloatValue);
+                    }
+                }
             }
         }
 
         [ClientRpc]
-        private void SendParamsClientRpc(AnimationParametersMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        private unsafe void SendParamsClientRpc(AnimationParametersMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (animSnapshot.Parameters != null)
             {
-                var reader = new FastBufferReader(animSnapshot.Parameters, Allocator.Temp, animSnapshot.Parameters.Length);
-
-                ReadParameters(reader, true);
+                // We use a fixed value here to avoid the copy of data from the byte buffer since we own the data
+                fixed (byte* parameters = animSnapshot.Parameters)
+                {
+                    var reader = new FastBufferReader(parameters, Allocator.None, animSnapshot.Parameters.Length);
+                    ReadParameters(reader, true);
+                }
             }
         }
 
         [ClientRpc]
-        private void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (animSnapshot.StateHash != 0)
             {
+                m_AnimationHash = animSnapshot.StateHash;
                 m_Animator.Play(animSnapshot.StateHash, 0, animSnapshot.NormalizedTime);
             }
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
             {
-                var reader = new FastBufferReader(animSnapshot.Parameters, Allocator.Temp, animSnapshot.Parameters.Length);
-                ReadParameters(reader, false);
+                // We use a fixed value here to avoid the copy of data from the byte buffer since we own the data
+                fixed (byte* parameters = animSnapshot.Parameters)
+                {
+                    var reader = new FastBufferReader(parameters, Allocator.None, animSnapshot.Parameters.Length);
+                    ReadParameters(reader, false);
+                }
             }
         }
 
