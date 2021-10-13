@@ -702,11 +702,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public override void OnNetworkDespawn()
-        {
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-        }
-
         public override void OnNetworkSpawn()
         {
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
@@ -721,6 +716,11 @@ namespace Unity.Netcode.Components
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             Initialize();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         public override void OnGainedOwnership()
