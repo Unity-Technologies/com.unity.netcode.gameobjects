@@ -682,14 +682,6 @@ namespace Unity.Netcode.Components
         private void Awake()
         {
             m_Transform = transform;
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            CanCommitToTransform = IsServer;
-            m_CachedIsServer = IsServer;
-            m_CachedNetworkManager = NetworkManager;
 
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
@@ -708,6 +700,21 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+
+            CanCommitToTransform = IsServer;
+            m_CachedIsServer = IsServer;
+            m_CachedNetworkManager = NetworkManager;
+
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
