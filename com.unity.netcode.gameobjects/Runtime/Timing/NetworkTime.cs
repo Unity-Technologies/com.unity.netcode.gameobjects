@@ -105,9 +105,9 @@ namespace Unity.Netcode
             return new NetworkTime(m_TickRate, m_CachedTick);
         }
 
-        public NetworkTime TimeTicksAgo(uint ticks)
+        public NetworkTime TimeTicksAgo(int ticks)
         {
-            return this - new NetworkTime(TickRate, (int)ticks);
+            return this - new NetworkTime(TickRate, ticks);
         }
 
         private void UpdateCache()

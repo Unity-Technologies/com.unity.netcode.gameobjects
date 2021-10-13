@@ -683,6 +683,8 @@ namespace Unity.Netcode.Components
         {
             m_Transform = transform;
 
+            // we only want to create our interpolators during Awake so that, when pooled, we do not create tons
+            //  of gc thrash each time objects wink out and are re-used
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
