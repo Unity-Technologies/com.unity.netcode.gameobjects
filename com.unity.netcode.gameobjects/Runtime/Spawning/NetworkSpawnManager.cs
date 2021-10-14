@@ -477,6 +477,8 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 
+            // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
+            // processed before the object is fully spawned. This must be the last thing done in the spawn process.
             if (m_Triggers.ContainsKey(networkId))
             {
                 var triggerInfo = m_Triggers[networkId];

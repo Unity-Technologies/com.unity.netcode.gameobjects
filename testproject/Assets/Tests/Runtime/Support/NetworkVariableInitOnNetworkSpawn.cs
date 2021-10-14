@@ -1,7 +1,5 @@
-using System;
 using Unity.Netcode;
 using NUnit.Framework;
-using UnityEngine.Serialization;
 
 namespace TestProject.RuntimeTests.Support
 {
@@ -16,7 +14,7 @@ namespace TestProject.RuntimeTests.Support
         {
             Variable.OnValueChanged += OnValueChanged;
         }
-        
+
         public void OnValueChanged(int previousValue, int newValue)
         {
             if (!IsServer)

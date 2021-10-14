@@ -59,7 +59,7 @@ namespace TestProject.RuntimeTests.Support
         {
             ClientNetworkSpawnRpcCalled = true;
         }
-        
+
         public void Awake()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
