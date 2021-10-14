@@ -475,6 +475,8 @@ namespace Unity.Netcode
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
 
+            networkObject.InvokeBehaviourNetworkSpawn();
+
             if (m_Triggers.ContainsKey(networkId))
             {
                 var triggerInfo = m_Triggers[networkId];
@@ -487,8 +489,6 @@ namespace Unity.Netcode
                 triggerInfo.TriggerData.Dispose();
                 m_Triggers.Remove(networkId);
             }
-
-            networkObject.InvokeBehaviourNetworkSpawn();
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)

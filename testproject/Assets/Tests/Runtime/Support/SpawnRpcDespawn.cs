@@ -11,6 +11,7 @@ namespace TestProject.RuntimeTests.Support
         public static int ClientUpdateCount;
         public static int ServerUpdateCount;
         public static bool ClientNetworkSpawnRpcCalled;
+        public static bool ExecuteClientRpc;
         public static NetworkUpdateStage StageExecutedByReceiver;
 
         private bool m_Active = false;
@@ -42,10 +43,15 @@ namespace TestProject.RuntimeTests.Support
         {
             if (!IsServer)
             {
+                // Asserting that the RPC is not called before OnNetworkSpawn
+                Assert.IsFalse(ClientNetworkSpawnRpcCalled);
                 return;
             }
 
-            TestClientRpc();
+            if (ExecuteClientRpc)
+            {
+                TestClientRpc();
+            }
         }
 
         [ClientRpc]
@@ -53,13 +59,7 @@ namespace TestProject.RuntimeTests.Support
         {
             ClientNetworkSpawnRpcCalled = true;
         }
-
-        public void NetworkStart()
-        {
-            Debug.Log($"Network Start on client {NetworkManager.LocalClientId.ToString()}");
-            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
-        }
-
+        
         public void Awake()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
