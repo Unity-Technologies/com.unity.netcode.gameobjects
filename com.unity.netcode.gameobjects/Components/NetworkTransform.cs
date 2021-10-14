@@ -681,7 +681,7 @@ namespace Unity.Netcode.Components
 
         private void Awake()
         {
-            m_Transform = transform;
+           
 
             // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
 
@@ -690,6 +690,8 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            m_Transform = transform;
+
             CanCommitToTransform = IsServer;
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;

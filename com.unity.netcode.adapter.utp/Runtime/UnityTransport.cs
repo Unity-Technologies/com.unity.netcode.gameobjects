@@ -43,14 +43,18 @@ namespace Unity.Netcode
 
         [SerializeField] private ProtocolType m_ProtocolType;
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
+
+        [Tooltip("The maximum size of possible fragmented packet")]
+        [SerializeField] private int m_FragmentationBufferSize = MaximumMessageLength;
+
         [SerializeField] private int m_ReciveQueueSize = 128;
         [SerializeField] private int m_SendQueueSize = 128;
 
         [Tooltip("The maximum size of the send queue for batching Netcode events")]
         [SerializeField] private int m_SendQueueBatchSize = 4096;
 
-        [SerializeField] private string m_ServerAddress = "127.0.0.1";
-        [SerializeField] private ushort m_ServerPort = 7777;
+        [SerializeField]
+        public NetworkEndPoint ConnectionData { get; private set; }
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -171,7 +175,7 @@ namespace Unity.Netcode
             }
             else
             {
-                serverEndpoint = NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort);
+                serverEndpoint = ConnectionData;
             }
 
             InitDriver();
@@ -273,8 +277,15 @@ namespace Unity.Netcode
         /// </summary>
         public void SetConnectionData(string ipv4Address, ushort port)
         {
-            m_ServerAddress = ipv4Address;
-            m_ServerPort = port;
+            ConnectionData = NetworkEndPoint.Parse(ipv4Address, port);
+        }
+
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        public void SetConnectionData(NetworkEndPoint endPoint)
+        {
+            ConnectionData = endPoint;
         }
 
         private bool StartRelayServer()
@@ -372,25 +383,23 @@ namespace Unity.Netcode
 
         private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection)
         {
-            if (size > m_MessageBufferSize)
+            if (size > m_FragmentationBufferSize + 128)
             {
-                Debug.LogError("The received message does not fit into the message buffer");
+                Debug.LogError($"The received message does not fit into the message buffer {size} {m_MessageBufferSize}");
             }
             else
             {
                 unsafe
                 {
-                    fixed (byte* buffer = &m_MessageBuffer[0])
-                    {
-                        reader.ReadBytes(buffer, size);
-                    }
-                }
+                    using var data = new NativeArray<byte>(size, Allocator.Temp);
+                    reader.ReadBytes(data);
 
-                InvokeOnTransportEvent(NetcodeNetworkEvent.Data,
-                    ParseClientId(networkConnection),
-                    new ArraySegment<byte>(m_MessageBuffer, 0, size),
-                    Time.realtimeSinceStartup
-                );
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Data,
+                        ParseClientId(networkConnection),
+                        new ArraySegment<byte>(data.ToArray(), 0, size),
+                        Time.realtimeSinceStartup
+                    );
+                }
             }
         }
 
@@ -498,7 +507,7 @@ namespace Unity.Netcode
             // If we want to be able to actually handle messages MaximumMessageLength bytes in
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
-            var maxFragmentationCapacity = MaximumMessageLength + 128;
+            var maxFragmentationCapacity = m_FragmentationBufferSize + 128;
             m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = maxFragmentationCapacity });
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
@@ -506,8 +515,6 @@ namespace Unity.Netcode
                 receiveQueueCapacity = m_ReciveQueueSize,
                 sendQueueCapacity = m_SendQueueSize
             });
-
-            m_MessageBuffer = new byte[m_MessageBufferSize];
         }
 
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -556,7 +563,6 @@ namespace Unity.Netcode
         {
             var payloadSize = data.Length + 1; // One extra byte to mark whether this message is batched or not
             var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
-
             if (result == 0)
             {
                 if (data.IsCreated)
@@ -573,13 +579,14 @@ namespace Unity.Netcode
                 }
             }
 
-            Debug.LogError($"Error sending the message {result}");
+            Debug.LogError($"Error sending the message {result} {data.Length}");
         }
 
         private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkPipeline pipeline)
         {
             var payloadSize = data.Count + 1 + 4; // 1 byte to indicate if the message is batched and 4 for the payload size
             var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
+
             if (result == 0)
             {
                 if (data.Array != null)
@@ -604,7 +611,7 @@ namespace Unity.Netcode
                 }
             }
 
-            Debug.LogError($"Error sending the message {result}");
+            Debug.LogError($"Error sending instantly the message {result} {data.Count}");
         }
 
         /// <summary>
@@ -657,7 +664,7 @@ namespace Unity.Netcode
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    return ServerBindAndListen(NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort));
+                    return ServerBindAndListen(ConnectionData);
                 case ProtocolType.RelayUnityTransport:
                     return StartRelayServer();
                 default:
