@@ -180,7 +180,6 @@ namespace Unity.Netcode.RuntimeTests
             // We are no longer emitting this warning, and we are banishing tests that rely on console output, so
             //  needs re-implementation
             // TODO: This should be a separate test - verify 1 behavior per test
-            // TODO: We are no longer emitting this warning, and we are banishing tests that rely on console output, so
             LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
 #endif
         }

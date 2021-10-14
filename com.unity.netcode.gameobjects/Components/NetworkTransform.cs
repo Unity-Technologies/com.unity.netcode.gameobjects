@@ -864,9 +864,10 @@ namespace Unity.Netcode.Components
                         }
                     }
 #endif
+
+                    // Apply updated interpolated value
+                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
-                // Apply updated interpolated value
-                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
 
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
