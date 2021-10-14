@@ -681,21 +681,10 @@ namespace Unity.Netcode.Components
 
         private void Awake()
         {
-           
-
-            // ReplNetworkState.NetworkVariableChannel = NetworkChannel.PositionUpdate; // todo figure this out, talk with Matt/Fatih, this should be unreliable
-
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
-        }
-
-        public override void OnNetworkSpawn()
-        {
             m_Transform = transform;
 
-            CanCommitToTransform = IsServer;
-            m_CachedIsServer = IsServer;
-            m_CachedNetworkManager = NetworkManager;
-
+            // we only want to create our interpolators during Awake so that, when pooled, we do not create tons
+            //  of gc thrash each time objects wink out and are re-used
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
@@ -713,12 +702,30 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+
+            CanCommitToTransform = IsServer;
+            m_CachedIsServer = IsServer;
+            m_CachedNetworkManager = NetworkManager;
+
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+
+            // crucial we do this to reset the interpolators so that recycled objects when using a pool will
+            //  not have leftover interpolator state from the previous object
             Initialize();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         public override void OnGainedOwnership()
@@ -743,13 +750,6 @@ namespace Unity.Netcode.Components
             {
                 ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
-        }
-
-        public override void OnDestroy()
-        {
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
-            base.OnDestroy();
         }
 
         #region state set
