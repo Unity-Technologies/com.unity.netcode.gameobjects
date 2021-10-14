@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
-- Added Buffered interpolation for `NetworkTransform` that's resistent to jitter (#1060)
+- Added a jitter-resistent `BufferedLinearInterpolator<T>` for `NetworkTransform` (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
@@ -48,34 +48,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
-  
 - Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
-
 - Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
-
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
-
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
-
 - `NetworkManager, NetworkConfig, and NetworkSceneManager` scene registration replaced with scenes in build list (#1080)
-
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
-
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
-
 - Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
-
 - `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
-
-- `INetworkSerializable`'s `NetworkSerialize` method signature was changed to:
-
-  ```c#
-  void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter;
-  ```
-
-  `BufferSerializer<T>` uses `FastBufferReader` and `FastBufferWriter` implementations that offer much better performance and zero garbage. (#1187)
-
-- The signatures for all custom message methods have been changed from using `Stream` to using `FastBufferWriter` on the sending side and `FastBufferReader` on the receiving side. (#1187)
+- Changed `INetworkSerializable.NetworkSerialize` method signature to use `BufferSerializer<T>` instead of `NetworkSerializer` (#1187)
+- Changed `CustomMessagingManager`'s methods to use `FastBufferWriter` and `FastBufferReader` instead of `Stream` (#1187)
 
 ### Deprecated
 
@@ -99,7 +82,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
 - Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
-- Removed `EnableNetworkVariable` in NetworkConfig. It's always enabled now (#1179)
+- Removed `EnableNetworkVariable` in `NetworkConfig`, it is always enabled now (#1179)
 - Removed `NetworkTransform`'s FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
 
 ### Fixed
@@ -113,12 +96,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed Only one `PlayerPrefab` can be selected on `NetworkManager` inspector UI in the editor (#676)
 - Fixed connection approval not being triggered for host (#675)
 - Fixed various situations where messages could be processed in an invalid order, resulting in errors (#948, #1187, #1218)
-- Fixed NetworkVariables being zero-initialized on the client instead of being initialized with the desired value (#1266)
-- Improved performance and dramatically reduced the amount of garbage Netcode for Game Objects creates (#1187)
-- Fixed `Clients are receiving data from objects not visible to them.` (#1099)
-- Reducing log level for noisy logs and adding details for developer log (#926)
-- Fixed `NetworkTransform`'s Late Join issues. NetworkTransform now uses NetworkVariables instead of RPCs (#826)
-- Adding proper exception for silent failure when a client was trying to get another player's player object. Now only allowed server side #844
+- Fixed `NetworkVariable`s being default-initialized on the client instead of being initialized with the desired value (#1266)
+- Improved runtime performance and reduced GC pressure (#1187)
+- Fixed #915 - clients are receiving data from objects not visible to them (#1099)
+- Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
+- Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
 
 ### Security
 
