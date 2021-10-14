@@ -1,14 +1,35 @@
 #if MULTIPLAYER_TOOLS
+using System;
 using System.Collections.Generic;
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using ToolsSceneEventType = Unity.Multiplayer.Tools.MetricTypes.SceneEventType;
 
 namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
+        private static Dictionary<uint, string> s_SceneEventTypeNames;
+
+        static NetworkMetrics()
+        {
+            s_SceneEventTypeNames = new Dictionary<uint, string>();
+            foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
+            {
+                s_SceneEventTypeNames[(uint)type] = type.ToString();
+            }
+        }
+
+        private static string GetSceneEventTypeName(uint typeCode)
+        {
+            if (!s_SceneEventTypeNames.TryGetValue(typeCode, out string name))
+            {
+                name = "Unknown";
+            }
+
+            return name;
+        }
+
         private readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)
         {
             ShouldResetOnDispatch = true,
@@ -267,13 +288,13 @@ namespace Unity.Netcode
 
         public void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), (ToolsSceneEventType)sceneEventType, sceneName, bytesCount));
+            m_SceneEventSentEvent.Mark(new SceneEventMetric(new ConnectionInfo(receiverClientId), GetSceneEventTypeName(sceneEventType), sceneName, bytesCount));
             MarkDirty();
         }
 
         public void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), (ToolsSceneEventType)sceneEventType, sceneName, bytesCount));
+            m_SceneEventReceivedEvent.Mark(new SceneEventMetric(new ConnectionInfo(senderClientId), GetSceneEventTypeName(sceneEventType), sceneName, bytesCount));
             MarkDirty();
         }
 
