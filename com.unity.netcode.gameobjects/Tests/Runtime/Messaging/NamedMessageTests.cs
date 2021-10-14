@@ -94,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator SendingNamedMessageWithNullClientListSendsToAll()
+        public IEnumerator WhenSendingNamedMessageToAll_AllClientsReceiveIt()
         {
             var messageName = Guid.NewGuid().ToString();
             var messageContent = Guid.NewGuid();
@@ -102,10 +102,7 @@ namespace Unity.Netcode.RuntimeTests
             using (writer)
             {
                 writer.WriteValueSafe(messageContent);
-                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
-                    messageName,
-                    null,
-                    writer);
+                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessageToAll(messageName, writer);
             }
 
             ulong firstReceivedMessageSender = 0;
@@ -137,6 +134,23 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(messageContent, secondReceivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, secondReceivedMessageSender);
+        }
+
+        [Test]
+        public void WhenSendingNamedMessageToNullClientList_ArgumentNullExceptionIsThrown()
+        {
+            var messageName = Guid.NewGuid().ToString();
+            var messageContent = Guid.NewGuid();
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                Assert.Throws<ArgumentNullException>(
+                    () =>
+                    {
+                        m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, null, writer);
+                    });
+            }
         }
     }
 }

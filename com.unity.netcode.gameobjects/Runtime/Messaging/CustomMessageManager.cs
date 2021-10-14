@@ -44,6 +44,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Sends unnamed message to all clients
+        /// </summary>
+        /// <param name="messageBuffer">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendUnnamedMessageToAll(FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        {
+            SendUnnamedMessage(m_NetworkManager.ConnectedClientsIds, messageBuffer, networkDelivery);
+        }
+
+
+        /// <summary>
         /// Sends unnamed message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
@@ -58,7 +69,7 @@ namespace Unity.Netcode
 
             if (clientIds == null)
             {
-                clientIds = m_NetworkManager.ConnectedClientsIds;
+                throw new ArgumentNullException("You must pass in a valid clientId List");
             }
 
             var message = new UnnamedMessage
@@ -173,6 +184,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Sends a named message to all clients
+        /// </summary>
+        /// <param name="messageStream">The message stream containing the data</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        public void SendNamedMessageToAll(string messageName, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
+        {
+            SendNamedMessage(messageName, m_NetworkManager.ConnectedClientsIds, messageStream, networkDelivery);
+        }
+
+        /// <summary>
         /// Sends a named message
         /// </summary>
         /// <param name="messageName">The message name to send</param>
@@ -217,7 +238,7 @@ namespace Unity.Netcode
 
             if (clientIds == null)
             {
-                clientIds = m_NetworkManager.ConnectedClientsIds;
+                throw new ArgumentNullException("You must pass in a valid clientId List");
             }
 
             ulong hash = 0;
