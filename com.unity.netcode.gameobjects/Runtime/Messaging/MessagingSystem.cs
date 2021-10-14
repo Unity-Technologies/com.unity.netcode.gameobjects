@@ -17,13 +17,6 @@ namespace Unity.Netcode
 
     internal class MessagingSystem : IDisposable
     {
-
-
-#pragma warning disable IDE1006 // disable naming rule violation check
-        // This is NOT modified by RuntimeAccessModifiersILPP right now, but is populated by ILPP.
-        internal static readonly List<Type> __network_message_types = new List<Type>();
-#pragma warning restore IDE1006 // restore naming rule violation check
-
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -61,7 +54,6 @@ namespace Unity.Netcode
         private byte m_HighMessageType;
         private object m_Owner;
         private IMessageSender m_MessageSender;
-        private ulong m_LocalClientId;
         private bool m_Disposed;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
@@ -76,50 +68,26 @@ namespace Unity.Netcode
         public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
         public const int FRAGMENTED_MESSAGE_MAX_SIZE = 64000;
 
-        public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = long.MaxValue)
+        internal struct MessageWithHandler
+        {
+            public Type MessageType;
+            public MessageHandler Handler;
+        }
+
+        public MessagingSystem(IMessageSender messageSender, object owner, IMessageProvider provider = null)
         {
             try
             {
-                m_LocalClientId = localClientId;
                 m_MessageSender = messageSender;
                 m_Owner = owner;
 
-                var allowedTypes = new List<Type>();
-                foreach (var type in __network_message_types)
+                if (provider == null)
                 {
-                    var attributes = type.GetCustomAttributes(typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute), false);
-                    // If [IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute(ownerType)] isn't provided, it defaults
-                    // to being bound to NetworkManager. This is technically a breach of domain by having
-                    // MessagingSystem know about the existence of NetworkManager... but ultimately,
-                    // IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute is provided to support testing, not to support
-                    // general use of MessagingSystem outside of Netcode for GameObjects, so having MessagingSystem
-                    // know about NetworkManager isn't so bad. Especially since it's just a default value.
-                    // This is just a convenience to keep us and our users from having to use
-                    // [Bind(typeof(NetworkManager))] on every message - only tests that don't want to use
-                    // the full NetworkManager need to worry about it.
-                    var shouldSkip = attributes.Length != 0 || !(m_Owner is NetworkManager);
-                    for (var i = 0; i < attributes.Length; ++i)
-                    {
-                        var bindAttribute = (IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute)attributes[i];
-                        if (
-                            (bindAttribute.BoundType != null &&
-                             bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
-                            (m_Owner == null && bindAttribute.BoundType == null))
-                        {
-                            shouldSkip = false;
-                            break;
-                        }
-                    }
-
-                    if (shouldSkip)
-                    {
-                        continue;
-                    }
-
-                    allowedTypes.Add(type);
+                    provider = new ILPPMessageProvider();
                 }
+                var allowedTypes = provider.GetMessages();
 
-                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
+                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
@@ -154,40 +122,16 @@ namespace Unity.Netcode
             Dispose();
         }
 
-        public void SetLocalClientId(ulong localClientId)
-        {
-            m_LocalClientId = localClientId;
-        }
-
         public void Hook(INetworkHooks hooks)
         {
             m_Hooks.Add(hooks);
         }
 
-        private void RegisterMessageType(Type messageType)
+        private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
-            if (!typeof(INetworkMessage).IsAssignableFrom(messageType))
-            {
-                throw new ArgumentException("RegisterMessageType types must be INetworkMessage types.");
-            }
-
-            var method = messageType.GetMethod("Receive");
-            if (method == null)
-            {
-                throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
-            }
-
-            var asDelegate = Delegate.CreateDelegate(typeof(MessageHandler), method, false);
-            if (asDelegate == null)
-            {
-                throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
-            }
-
-            m_MessageHandlers[m_HighMessageType] = (MessageHandler)asDelegate;
-            m_ReverseTypeMap[m_HighMessageType] = messageType;
-            m_MessageTypes[messageType] = m_HighMessageType++;
+            m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
+            m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
+            m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)

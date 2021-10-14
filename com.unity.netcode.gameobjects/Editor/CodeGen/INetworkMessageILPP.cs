@@ -59,7 +59,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     try
                     {
-                        types.ForEach(b => ProcessINetworkMessage(b));
                         CreateModuleInitializer(assemblyDefinition, types);
                     }
                     catch (Exception e)
@@ -98,7 +97,11 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private TypeReference m_FastBufferReader_TypeRef;
         private TypeReference m_NetworkContext_TypeRef;
-        private FieldReference m_MessagingSystem___network_message_types_FieldRef;
+        private TypeReference m_MessagingSystem_MessageWithHandler_TypeRef;
+        private MethodReference m_MessagingSystem_MessageHandler_Constructor_TypeRef;
+        private FieldReference m_ILPPMessageProvider___network_message_types_FieldRef;
+        private FieldReference m_MessagingSystem_MessageWithHandler_MessageType_FieldRef;
+        private FieldReference m_MessagingSystem_MessageWithHandler_Handler_FieldRef;
         private MethodReference m_Type_GetTypeFromHandle_MethodRef;
 
         private MethodReference m_List_Add_MethodRef;
@@ -107,6 +110,24 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(typeof(FastBufferReader));
             m_NetworkContext_TypeRef = moduleDefinition.ImportReference(typeof(NetworkContext));
+            m_MessagingSystem_MessageHandler_Constructor_TypeRef =
+                moduleDefinition.ImportReference(typeof(MessagingSystem.MessageHandler).GetConstructors()[0]);
+
+            var messageWithHandlerType = typeof(MessagingSystem.MessageWithHandler);
+            m_MessagingSystem_MessageWithHandler_TypeRef =
+                moduleDefinition.ImportReference(messageWithHandlerType);
+            foreach (var fieldInfo in messageWithHandlerType.GetFields())
+            {
+                switch (fieldInfo.Name)
+                {
+                    case nameof(MessagingSystem.MessageWithHandler.MessageType):
+                        m_MessagingSystem_MessageWithHandler_MessageType_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                    case nameof(MessagingSystem.MessageWithHandler.Handler):
+                        m_MessagingSystem_MessageWithHandler_Handler_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                }
+            }
 
             var typeType = typeof(Type);
             foreach (var methodInfo in typeType.GetMethods())
@@ -119,23 +140,23 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var messagingSystemType = typeof(MessagingSystem);
-            foreach (var fieldInfo in messagingSystemType.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
+            var ilppMessageProviderType = typeof(ILPPMessageProvider);
+            foreach (var fieldInfo in ilppMessageProviderType.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(MessagingSystem.__network_message_types):
-                        m_MessagingSystem___network_message_types_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                    case nameof(ILPPMessageProvider.__network_message_types):
+                        m_ILPPMessageProvider___network_message_types_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            var listType = typeof(List<Type>);
+            var listType = typeof(List<MessagingSystem.MessageWithHandler>);
             foreach (var methodInfo in listType.GetMethods())
             {
                 switch (methodInfo.Name)
                 {
-                    case nameof(List<Type>.Add):
+                    case nameof(List<MessagingSystem.MessageWithHandler>.Add):
                         m_List_Add_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -145,9 +166,8 @@ namespace Unity.Netcode.Editor.CodeGen
             return true;
         }
 
-        private void ProcessINetworkMessage(TypeDefinition typeDefinition)
+        private MethodReference GetNetworkMessageRecieveHandler(TypeDefinition typeDefinition)
         {
-            var foundAValidMethod = false;
             SequencePoint typeSequence = null;
             foreach (var method in typeDefinition.Methods)
             {
@@ -168,15 +188,12 @@ namespace Unity.Netcode.Editor.CodeGen
                     && resolved.Parameters[1].ParameterType.GetElementType().Resolve() == m_NetworkContext_TypeRef.Resolve()
                     && resolved.ReturnType == resolved.Module.TypeSystem.Void)
                 {
-                    foundAValidMethod = true;
-                    break;
+                    return method;
                 }
             }
 
-            if (!foundAValidMethod)
-            {
-                m_Diagnostics.AddError(typeSequence, $"Class {typeDefinition.FullName} does not implement required function: `public static void Receive(FastBufferReader, in NetworkContext)`");
-            }
+            m_Diagnostics.AddError(typeSequence, $"Class {typeDefinition.FullName} does not implement required method: `public static void Receive(FastBufferReader, in NetworkContext)`");
+            return null;
         }
 
         private MethodDefinition GetOrCreateStaticConstructor(TypeDefinition typeDefinition)
@@ -198,12 +215,32 @@ namespace Unity.Netcode.Editor.CodeGen
             return staticCtorMethodDef;
         }
 
-        private void CreateInstructionsToRegisterType(ILProcessor processor, List<Instruction> instructions, TypeReference type)
+        private void CreateInstructionsToRegisterType(ILProcessor processor, List<Instruction> instructions, TypeReference type, MethodReference receiveMethod)
         {
-            // MessagingSystem.__network_message_types.Add(typeof(type));
-            instructions.Add(processor.Create(OpCodes.Ldsfld, m_MessagingSystem___network_message_types_FieldRef));
+            // MessagingSystem.__network_message_types.Add(new MessagingSystem.MessageWithHandler{MessageType=typeof(type), Handler=type.Receive});
+            processor.Body.Variables.Add(new VariableDefinition(m_MessagingSystem_MessageWithHandler_TypeRef));
+            int messageWithHandlerLocIdx = processor.Body.Variables.Count - 1;
+
+            instructions.Add(processor.Create(OpCodes.Ldsfld, m_ILPPMessageProvider___network_message_types_FieldRef));
+            instructions.Add(processor.Create(OpCodes.Ldloca, messageWithHandlerLocIdx));
+            instructions.Add(processor.Create(OpCodes.Initobj, m_MessagingSystem_MessageWithHandler_TypeRef));
+
+            // tmp.MessageType = typeof(type);
+            instructions.Add(processor.Create(OpCodes.Ldloca, messageWithHandlerLocIdx));
             instructions.Add(processor.Create(OpCodes.Ldtoken, type));
             instructions.Add(processor.Create(OpCodes.Call, m_Type_GetTypeFromHandle_MethodRef));
+            instructions.Add(processor.Create(OpCodes.Stfld, m_MessagingSystem_MessageWithHandler_MessageType_FieldRef));
+
+            // tmp.Handler = type.Receive
+            instructions.Add(processor.Create(OpCodes.Ldloca, messageWithHandlerLocIdx));
+            instructions.Add(processor.Create(OpCodes.Ldnull));
+
+            instructions.Add(processor.Create(OpCodes.Ldftn, receiveMethod));
+            instructions.Add(processor.Create(OpCodes.Newobj, m_MessagingSystem_MessageHandler_Constructor_TypeRef));
+            instructions.Add(processor.Create(OpCodes.Stfld, m_MessagingSystem_MessageWithHandler_Handler_FieldRef));
+
+            // ILPPMessageProvider.__network_message_types.Add(tmp);
+            instructions.Add(processor.Create(OpCodes.Ldloc, messageWithHandlerLocIdx));
             instructions.Add(processor.Create(OpCodes.Callvirt, m_List_Add_MethodRef));
         }
 
@@ -227,7 +264,12 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in networkMessageTypes)
                     {
-                        CreateInstructionsToRegisterType(processor, instructions, type);
+                        var receiveMethod = GetNetworkMessageRecieveHandler(type);
+                        if (receiveMethod == null)
+                        {
+                            continue;
+                        }
+                        CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod);
                     }
 
                     instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
