@@ -448,7 +448,6 @@ namespace TestProject.ManualTests
             if (genericBehaviour.IsRegisteredPoolObject)
             {
                 networkObject.gameObject.SetActive(false);
-                networkObject.transform.position = Vector3.zero;
             }
             else
             {

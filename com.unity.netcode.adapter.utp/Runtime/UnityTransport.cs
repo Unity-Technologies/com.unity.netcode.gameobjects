@@ -277,6 +277,16 @@ namespace Unity.Netcode
             m_ServerPort = port;
         }
 
+        public void SetAddress(string ipv4Address)
+        {
+            m_ServerAddress = ipv4Address;
+        }
+
+        public void SetPort(ushort port)
+        {
+            m_ServerPort = port;
+        }
+
         private bool StartRelayServer()
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use

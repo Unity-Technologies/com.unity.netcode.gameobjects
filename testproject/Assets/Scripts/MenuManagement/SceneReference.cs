@@ -5,65 +5,65 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-[CreateAssetMenu(fileName = nameof(SceneReference), menuName = "Netcode/" + nameof(SceneReference))]
-[Serializable]
-public class SceneReference : ScriptableObject, ISceneReference
-{
-#if UNITY_EDITOR
-    public SceneAsset SceneToReference;
-    [SerializeField]
-    private List<SceneAsset> m_IncludedScenes;
-#endif
-    [SerializeField]
-    private string m_DisplayName;
 
-    [HideInInspector]
-    [SerializeField]
-    private List<string> m_ReferencedScenes;
-
-#if UNITY_EDITOR
-    private void OnValidate()
+    [CreateAssetMenu(fileName = nameof(SceneReference), menuName = "Netcode/" + nameof(SceneReference))]
+    [Serializable]
+    public class SceneReference : ScriptableObject, ISceneReference
     {
-        if (m_ReferencedScenes == null)
-        {
-            m_ReferencedScenes = new List<string>();
-        }
-        else
-        {
-            m_ReferencedScenes.Clear();
-        }
+#if UNITY_EDITOR
+        public SceneAsset SceneToReference;
+        [SerializeField]
+        private List<SceneAsset> m_IncludedScenes;
+#endif
+        [SerializeField]
+        private string m_DisplayName;
 
-        if (SceneToReference != null)
-        {
-            m_ReferencedScenes.Add(SceneToReference.name);
-        }
+        [HideInInspector]
+        [SerializeField]
+        private List<string> m_ReferencedScenes;
 
-        foreach (var includedScene in m_IncludedScenes)
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            if (includedScene != null)
+            if (m_ReferencedScenes == null)
             {
-                m_ReferencedScenes.Add(includedScene.name);
+                m_ReferencedScenes = new List<string>();
+            }
+            else
+            {
+                m_ReferencedScenes.Clear();
+            }
+
+            if (SceneToReference != null)
+            {
+                m_ReferencedScenes.Add(SceneToReference.name);
+            }
+
+            foreach (var includedScene in m_IncludedScenes)
+            {
+                if (includedScene != null)
+                {
+                    m_ReferencedScenes.Add(includedScene.name);
+                }
             }
         }
-    }
 #endif
 
-    public string GetDisplayName()
-    {
-        return m_DisplayName;
+        public string GetDisplayName()
+        {
+            return m_DisplayName;
+        }
+
+        public List<string> GetReferencedScenes()
+        {
+            return m_ReferencedScenes;
+        }
     }
 
-    public List<string> GetReferencedScenes()
+
+    public interface ISceneReference
     {
-        return m_ReferencedScenes;
+        string GetDisplayName();
+        List<string> GetReferencedScenes();
     }
 
-
-}
-
-
-public interface ISceneReference
-{
-    string GetDisplayName();
-    List<string> GetReferencedScenes();
-}
