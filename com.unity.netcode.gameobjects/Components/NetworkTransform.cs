@@ -847,15 +847,14 @@ namespace Unity.Netcode.Components
                         var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
                         Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
 
- 
                         // try to update previously consumed NetworkState
                         // if we have any changes, that means made some updates locally
                         // we apply the latest ReplNetworkState again to revert our changes
                         var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
 
                         // there are several bugs in this code, as we the message is dumped out under odd circumstances
-						//  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
-                    	//  object vs. explicitly rotating it
+                        //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
+                        //  object vs. explicitly rotating it
                         if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                         {
                             // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
@@ -865,10 +864,9 @@ namespace Unity.Netcode.Components
                         }
                     }
 #endif
-
-                    // Apply updated interpolated value
-                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
+                // Apply updated interpolated value
+                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
 
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
