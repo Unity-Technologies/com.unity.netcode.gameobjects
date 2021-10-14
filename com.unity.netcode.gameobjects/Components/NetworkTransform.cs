@@ -298,7 +298,6 @@ namespace Unity.Netcode.Components
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
 
-
         /// <summary>
         /// Tries updating the server authoritative transform, only if allowed.
         /// If this called server side, this will commit directly.
@@ -396,7 +395,7 @@ namespace Unity.Netcode.Components
         {
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
-            var scale = InLocalSpace ? transformToUse.localScale : transformToUse.lossyScale;
+            var scale = transformToUse.localScale;
             return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
         }
 
@@ -510,7 +509,7 @@ namespace Unity.Netcode.Components
 
             // todo: we should store network state w/ quats vs. euler angles
             var interpolatedRotAngles = InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
-            var interpolatedScale = InLocalSpace ? transformToUpdate.localScale : transformToUpdate.lossyScale;
+            var interpolatedScale = transformToUpdate.localScale;
 
             // InLocalSpace Read
             InLocalSpace = networkState.InLocalSpace;
@@ -599,18 +598,7 @@ namespace Unity.Netcode.Components
             // Scale Apply
             if (SyncScaleX || SyncScaleY || SyncScaleZ)
             {
-                if (InLocalSpace)
-                {
-                    transformToUpdate.localScale = interpolatedScale;
-                }
-                else
-                {
-                    transformToUpdate.localScale = Vector3.one;
-                    var lossyScale = transformToUpdate.lossyScale;
-                    // todo this conversion is messing with interpolation. local scale interpolates fine, lossy scale is jittery. must investigate. MTT-1208
-                    transformToUpdate.localScale = new Vector3(interpolatedScale.x / lossyScale.x, interpolatedScale.y / lossyScale.y, interpolatedScale.z / lossyScale.z);
-                }
-
+                transformToUpdate.localScale = interpolatedScale;
                 m_PrevNetworkState.Scale = interpolatedScale;
             }
         }
@@ -679,8 +667,6 @@ namespace Unity.Netcode.Components
 
         private void Awake()
         {
-            m_Transform = transform;
-
             // we only want to create our interpolators during Awake so that, when pooled, we do not create tons
             //  of gc thrash each time objects wink out and are re-used
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
@@ -704,6 +690,10 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
+            //  and thus awake won't be called.
+            // TODO: investigate further on not sending data for something that is not enabled
+            m_Transform = transform;
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
 
             CanCommitToTransform = IsServer;
@@ -863,6 +853,8 @@ namespace Unity.Netcode.Components
                         var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
 
                         // there are several bugs in this code, as we the message is dumped out under odd circumstances
+                        //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
+                        //  object vs. explicitly rotating it
                         if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
                         {
                             // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
