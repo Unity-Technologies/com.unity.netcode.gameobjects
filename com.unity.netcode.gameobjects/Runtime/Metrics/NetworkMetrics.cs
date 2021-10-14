@@ -10,7 +10,7 @@ namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
-        const ulong k_MaxMetricsPerFrame = 999L;
+        const ulong k_MaxMetricsPerFrame = 1000L;
 
         static Dictionary<uint, string> s_SceneEventTypeNames;
 
@@ -86,7 +86,7 @@ namespace Unity.Netcode
 
         internal IMetricDispatcher Dispatcher { get; }
 
-        private bool CanSendMetrics => m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame;
+        private bool CanSendMetrics => m_NumberOfMetricsThisFrame < k_MaxMetricsPerFrame;
 
         public void SetConnectionId(ulong connectionId)
         {
@@ -408,7 +408,7 @@ namespace Unity.Netcode
         {
             if (!CanSendMetrics)
             {
-                Debug.LogWarning($"Logged more than {k_MaxMetricsPerFrame + 1} network metrics this frame. Not all metrics will be available in the profiler.");
+                Debug.LogWarning($"Logged more than {k_MaxMetricsPerFrame} network metrics this frame. Not all metrics will be available in the profiler.");
             }
 
             if (m_NumberOfMetricsThisFrame > 0)
