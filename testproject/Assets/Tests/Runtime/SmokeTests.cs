@@ -22,6 +22,10 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            if (m_SmokeTestGameObject != null)
+            {
+                Object.Destroy(m_SmokeTestGameObject);
+            }
             yield break;
         }
 

@@ -9,7 +9,7 @@ namespace TestProject.RuntimeTests
         public delegate void OnStateFinishedProcessingDelegateHandler(float timeToProcess);
         public event OnStateFinishedProcessingDelegateHandler OnStateFinishedProcessing;
 
-        private const float k_TimeOutPeriod = 10.0f;
+        private const float k_TimeOutPeriod = 30.0f;
 
         public SmokeTestState StateBeingProcessed { get; internal set; }
 
@@ -57,8 +57,5 @@ namespace TestProject.RuntimeTests
             }
             yield break;
         }
-
-
-
     }
 }

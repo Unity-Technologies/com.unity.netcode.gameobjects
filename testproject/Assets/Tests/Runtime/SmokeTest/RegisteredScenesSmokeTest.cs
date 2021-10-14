@@ -52,6 +52,9 @@ namespace TestProject.RuntimeTests
             Assert.That(ManualTests.MenuManagerReferences.GetMenuMaangers().Count > 0);
             var menuScenes = ManualTests.MenuManagerReferences.GetMenuMaangers()[0].GetAllMenuScenes();
             Assert.That(menuScenes != null && menuScenes.Count > 0);
+
+            yield return UnloadScenes();
+
             var sceneMenuManagerCount = ManualTests.MenuManagerReferences.GetSceneMenuManagers().Count;
             foreach (var sceneToLoad in menuScenes)
             {
@@ -65,15 +68,15 @@ namespace TestProject.RuntimeTests
                 // sub-menus
                 var newCount = ManualTests.MenuManagerReferences.GetSceneMenuManagers().Count;
                 Assert.That(newCount > sceneMenuManagerCount);
+                var currentCount = m_SceneReferenced.Count;
+                foreach (var sceneMenuManager in ManualTests.MenuManagerReferences.GetSceneMenuManagers())
+                {
+                    m_SceneReferenced.AddRange(sceneMenuManager.GetAllSceneReferences());
+                }
+                Assert.That(currentCount < m_SceneReferenced.Count);
+                yield return UnloadScenes();
             }
 
-            // Now get all of the primary scenes used in all of the samples and manual tests
-            var currentCount = m_SceneReferenced.Count;
-            foreach (var sceneMenuManager in ManualTests.MenuManagerReferences.GetSceneMenuManagers())
-            {
-                m_SceneReferenced.AddRange(sceneMenuManager.GetAllSceneReferences());
-            }
-            Assert.That(currentCount < m_SceneReferenced.Count);
             SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
 
             yield return base.OnStartState();
@@ -138,12 +141,8 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
-        /// <summary>
-        /// Unload all of the loaded scenes
-        /// </summary>
-        protected override IEnumerator OnStopState()
+        private IEnumerator UnloadScenes()
         {
-            Debug.Log($"Stopping {nameof(RegisteredScenesSmokeTest)}.");
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
 
             foreach (var sceneToUnload in m_LoadedScenes)
@@ -158,6 +157,18 @@ namespace TestProject.RuntimeTests
 
             SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
             m_LoadedScenes.Clear();
+            yield return null;
+        }
+
+
+        /// <summary>
+        /// Unload all of the loaded scenes
+        /// </summary>
+        protected override IEnumerator OnStopState()
+        {
+            Debug.Log($"Stopping {nameof(RegisteredScenesSmokeTest)}.");
+            yield return UnloadScenes();
+
             m_SceneReferenced.Clear();
 
             yield return base.OnStopState();
