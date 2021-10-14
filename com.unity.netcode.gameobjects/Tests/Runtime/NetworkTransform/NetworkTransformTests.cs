@@ -177,6 +177,8 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
 #if NGO_TRANSFORM_DEBUG
+            // We are no longer emitting this warning, and we are banishing tests that rely on console output, so
+            //  needs re-implementation
             // TODO: This should be a separate test - verify 1 behavior per test
             LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
 #endif
