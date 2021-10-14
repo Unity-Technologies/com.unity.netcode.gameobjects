@@ -80,6 +80,9 @@ namespace Unity.Netcode
         public const int InitialBatchQueueSize = 6 * 1024;
         public const int InitialMaxPacketSize = NetworkParameterConstants.MTU;
 
+        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
+        { Address = "127.0.0.1", Port = 7777 };
+
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
@@ -97,8 +100,20 @@ namespace Unity.Netcode
         [Tooltip("The maximum size in bytes of the send queue for batching Netcode events")]
         [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
 
-        [SerializeField]
-        public NetworkEndPoint ConnectionData { get; private set; }
+        [Serializable]
+        public struct ConnectionAddressData
+        {
+            [SerializeField] public string Address;
+            [SerializeField] public int Port;
+
+            public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
+                NetworkEndPoint.Parse(d.Address, (ushort)d.Port);
+
+            public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
+                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port };
+        }
+
+        public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -321,7 +336,8 @@ namespace Unity.Netcode
         /// </summary>
         public void SetConnectionData(string ipv4Address, ushort port)
         {
-            ConnectionData = NetworkEndPoint.Parse(ipv4Address, port);
+            ConnectionData.Address = ipv4Address;
+            ConnectionData.Port = port;
         }
 
         /// <summary>
