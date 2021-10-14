@@ -2,6 +2,16 @@
     "name": "Unity.Netcode.Components",
     "rootNamespace": "Unity.Netcode.Components",
     "references": [
-        "Unity.Netcode.Runtime"
-    ]
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

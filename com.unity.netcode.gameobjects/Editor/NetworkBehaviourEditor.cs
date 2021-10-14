@@ -91,7 +91,7 @@ namespace Unity.Netcode.Editor
             var behaviour = (NetworkBehaviour)target;
 
             // Only server can MODIFY. So allow modification if network is either not running or we are server
-            if (behaviour.NetworkManager == null || !behaviour.NetworkManager.IsListening || behaviour.NetworkManager.IsServer)
+            if (behaviour.IsBehaviourEditable())
             {
                 if (type == typeof(int))
                 {

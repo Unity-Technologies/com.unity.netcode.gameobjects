@@ -38,7 +38,7 @@ namespace Unity.Netcode
     /// <see cref="NetworkManager.SendMessage{T, U}(T, NetworkDelivery, U, bool)"/>
     /// <see cref="NetworkManager.SendMessage{T}(T, NetworkDelivery, NativeArray{ulong}, bool)"/>
     /// </summary>
-    public interface INetworkMessage
+    internal interface INetworkMessage
     {
         /// <summary>
         /// Used to serialize the message.

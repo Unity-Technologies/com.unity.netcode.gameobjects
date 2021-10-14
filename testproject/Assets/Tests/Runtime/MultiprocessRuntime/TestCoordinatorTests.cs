@@ -20,14 +20,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             m_WorkerCount = workerCount;
         }
 
+        static private float s_ValueToValidateAgainst;
+        private static void ValidateSimpleCoordinatorTestValue(float resultReceived)
+        {
+            Assert.AreEqual(s_ValueToValidateAgainst, resultReceived);
+        }
+
         private static void ExecuteSimpleCoordinatorTest()
         {
-            TestCoordinator.Instance.WriteTestResultsServerRpc(float.PositiveInfinity);
+            s_ValueToValidateAgainst = float.PositiveInfinity;
+            TestCoordinator.Instance.WriteTestResultsServerRpc(s_ValueToValidateAgainst);
         }
 
         private static void ExecuteWithArgs(byte[] args)
         {
-            TestCoordinator.Instance.WriteTestResultsServerRpc(args[0]);
+            s_ValueToValidateAgainst = args[0];
+            TestCoordinator.Instance.WriteTestResultsServerRpc(s_ValueToValidateAgainst);
         }
 
         [UnityTest]

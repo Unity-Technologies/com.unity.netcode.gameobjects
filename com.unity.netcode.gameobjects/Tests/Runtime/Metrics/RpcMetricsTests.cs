@@ -26,13 +26,14 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, metricValues.Count); // Server will receive this, since it's host
+            var serverRpcSentValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(2, serverRpcSentValues.Count); // Server will receive this, since it's host
 
-            Assert.That(metricValues, Has.All.Matches<RpcEvent>(x => x.Name == nameof(RpcTestComponent.MyClientRpc)));
-            Assert.That(metricValues, Has.All.Matches<RpcEvent>(x => x.NetworkBehaviourName == nameof(RpcTestComponent)));
-
-            AssertLocalAndRemoteMetricsSent(metricValues);
+            Assert.That(serverRpcSentValues, Has.All.Matches<RpcEvent>(x => x.Name == nameof(RpcTestComponent.MyClientRpc)));
+            Assert.That(serverRpcSentValues, Has.All.Matches<RpcEvent>(x => x.NetworkBehaviourName == nameof(RpcTestComponent)));
+            Assert.That(serverRpcSentValues, Has.All.Matches<RpcEvent>(x => x.BytesCount != 0));
+            Assert.Contains(Server.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
+            Assert.Contains(Client.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
         }
 
         [UnityTest]

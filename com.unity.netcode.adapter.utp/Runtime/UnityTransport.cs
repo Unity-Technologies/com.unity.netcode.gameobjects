@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
@@ -57,6 +56,7 @@ namespace Unity.Netcode
         private NetworkDriver m_Driver;
         private List<INetworkParameter> m_NetworkParameters;
         private byte[] m_MessageBuffer;
+        private NetworkConnection m_ServerConnection;
         private ulong m_ServerClientId;
 
         private NetworkPipeline m_UnreliableSequencedPipeline;
@@ -153,7 +153,7 @@ namespace Unity.Netcode
             }
         }
 
-        private IEnumerator ClientBindAndConnect(SocketTask task)
+        private bool ClientBindAndConnect()
         {
             var serverEndpoint = default(NetworkEndPoint);
 
@@ -164,9 +164,7 @@ namespace Unity.Netcode
                 if (m_RelayServerData.Equals(default(RelayServerData)))
                 {
                     Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
-                    task.IsDone = true;
-                    task.Success = false;
-                    yield break;
+                    return false;
                 }
 
                 m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
@@ -178,66 +176,39 @@ namespace Unity.Netcode
 
             InitDriver();
 
-            if (m_Driver.Bind(NetworkEndPoint.AnyIpv4) != 0)
+            int result = m_Driver.Bind(NetworkEndPoint.AnyIpv4);
+            if (result != 0)
             {
                 Debug.LogError("Client failed to bind");
-            }
-            else
-            {
-                while (!m_Driver.Bound)
-                {
-                    yield return null;
-                }
-
-                var serverConnection = m_Driver.Connect(serverEndpoint);
-                m_ServerClientId = ParseClientId(serverConnection);
-
-                while (m_Driver.GetConnectionState(serverConnection) == NetworkConnection.State.Connecting)
-                {
-                    yield return null;
-                }
-
-                if (m_Driver.GetConnectionState(serverConnection) == NetworkConnection.State.Connected)
-                {
-                    task.Success = true;
-                    m_State = State.Connected;
-                }
-                else
-                {
-                    Debug.LogError("Client failed to connect to server");
-                }
+                return false;
             }
 
-            task.IsDone = true;
+            m_ServerConnection = m_Driver.Connect(serverEndpoint);
+            m_ServerClientId = ParseClientId(m_ServerConnection);
+
+            return true;
         }
 
-        private IEnumerator ServerBindAndListen(SocketTask task, NetworkEndPoint endPoint)
+        private bool ServerBindAndListen(NetworkEndPoint endPoint)
         {
             InitDriver();
 
-            if (m_Driver.Bind(endPoint) != 0)
+            int result = m_Driver.Bind(endPoint);
+            if (result != 0)
             {
                 Debug.LogError("Server failed to bind");
+                return false;
             }
-            else
+
+            result = m_Driver.Listen();
+            if (result != 0)
             {
-                while (!m_Driver.Bound)
-                {
-                    yield return null;
-                }
-
-                if (m_Driver.Listen() == 0)
-                {
-                    task.Success = true;
-                    m_State = State.Listening;
-                }
-                else
-                {
-                    Debug.LogError("Server failed to listen");
-                }
+                Debug.LogError("Server failed to listen");
+                return false;
             }
 
-            task.IsDone = true;
+            m_State = State.Listening;
+            return true;
         }
 
         private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
@@ -306,22 +277,19 @@ namespace Unity.Netcode
             m_ServerPort = port;
         }
 
-        private IEnumerator StartRelayServer(SocketTask task)
+        private bool StartRelayServer()
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
             //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
             if (m_RelayServerData.Equals(default(RelayServerData)))
             {
                 Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
-                task.IsDone = true;
-                task.Success = false;
-                yield break;
+                return false;
             }
             else
             {
                 m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
-
-                yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
+                return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
             }
         }
 
@@ -336,7 +304,7 @@ namespace Unity.Netcode
 
             InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                 ParseClientId(connection),
-                default(ArraySegment<byte>),
+                default,
                 Time.realtimeSinceStartup);
 
             return true;
@@ -350,37 +318,53 @@ namespace Unity.Netcode
             switch (eventType)
             {
                 case TransportNetworkEvent.Type.Connect:
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
-                        ParseClientId(networkConnection),
-                        default(ArraySegment<byte>),
-                        Time.realtimeSinceStartup);
-                    return true;
-
-                case TransportNetworkEvent.Type.Disconnect:
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
-                        ParseClientId(networkConnection),
-                        default(ArraySegment<byte>),
-                        Time.realtimeSinceStartup);
-                    return true;
-
-                case TransportNetworkEvent.Type.Data:
-                    var isBatched = reader.ReadByte();
-                    if (isBatched == 1)
                     {
-                        while (reader.GetBytesRead() < reader.Length)
+                        InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
+                            ParseClientId(networkConnection),
+                            default(ArraySegment<byte>),
+                            Time.realtimeSinceStartup);
+
+                        m_State = State.Connected;
+                        return true;
+                    }
+                case TransportNetworkEvent.Type.Disconnect:
+                    {
+                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                            ParseClientId(networkConnection),
+                            default(ArraySegment<byte>),
+                            Time.realtimeSinceStartup);
+
+                        if (m_ServerConnection.IsCreated)
+                        {
+                            m_ServerConnection = default;
+                            if (m_Driver.GetConnectionState(m_ServerConnection) == NetworkConnection.State.Connecting)
+                            {
+                                Debug.LogError("Client failed to connect to server");
+                            }
+                        }
+
+                        m_State = State.Disconnected;
+                        return true;
+                    }
+                case TransportNetworkEvent.Type.Data:
+                    {
+                        var isBatched = reader.ReadByte();
+                        if (isBatched == 1)
+                        {
+                            while (reader.GetBytesRead() < reader.Length)
+                            {
+                                var payloadSize = reader.ReadInt();
+                                ReadData(payloadSize, ref reader, ref networkConnection);
+                            }
+                        }
+                        else // If is not batched, then read the entire buffer at once
                         {
                             var payloadSize = reader.ReadInt();
                             ReadData(payloadSize, ref reader, ref networkConnection);
                         }
-                    }
-                    else // If is not batched, then read the entire buffer at once
-                    {
-                        var payloadSize = reader.ReadInt();
 
-                        ReadData(payloadSize, ref reader, ref networkConnection);
+                        return true;
                     }
-
-                    return true;
             }
 
             return false;
@@ -428,7 +412,6 @@ namespace Unity.Netcode
                     ;
                 }
             }
-
         }
 
         private void OnDestroy()
@@ -448,11 +431,22 @@ namespace Unity.Netcode
 
         public override void DisconnectLocalClient()
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectLocalClient should be called on a connected client");
-
             if (m_State == State.Connected)
             {
-                m_Driver.Disconnect(ParseClientId(m_ServerClientId));
+                if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
+                {
+
+                    m_State = State.Disconnected;
+
+
+                    // If we successfully disconnect we dispatch a local disconnect message
+                    // this how uNET and other transports worked and so this is just keeping with the old behavior
+                    // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        m_ServerClientId,
+                        default(ArraySegment<byte>),
+                        Time.realtimeSinceStartup);
+                }
             }
         }
 
@@ -582,11 +576,9 @@ namespace Unity.Netcode
             Debug.LogError($"Error sending the message {result}");
         }
 
-        private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data,
-            NetworkPipeline pipeline)
+        private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkPipeline pipeline)
         {
-            var payloadSize =
-                data.Count + 1 + 4; // 1 byte to indicate if the message is batched and 4 for the payload size
+            var payloadSize = data.Count + 1 + 4; // 1 byte to indicate if the message is batched and 4 for the payload size
             var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, payloadSize);
             if (result == 0)
             {
@@ -645,41 +637,46 @@ namespace Unity.Netcode
             sendQueue.Clear();
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
             if (m_Driver.IsCreated)
             {
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
-            var task = SocketTask.Working;
-            StartCoroutine(ClientBindAndConnect(task));
-            return task.AsTasks();
+            return ClientBindAndConnect();
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
             if (m_Driver.IsCreated)
             {
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
-            var task = SocketTask.Working;
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    StartCoroutine(ServerBindAndListen(task, NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort)));
-                    break;
+                    return ServerBindAndListen(NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort));
                 case ProtocolType.RelayUnityTransport:
-                    StartCoroutine(StartRelayServer(task));
-                    break;
+                    return StartRelayServer();
+                default:
+                    return false;
             }
-
-            return task.AsTasks();
         }
 
         public override void Shutdown()
         {
+            if (!m_Driver.IsCreated)
+            {
+                return;
+            }
+
+            // Flush the driver's internal send queue. If we're shutting down because the
+            // NetworkManager is shutting down, it probably has disconnected some peer(s)
+            // in the process and we want to get these disconnect messages on the wire.
+            m_Driver.ScheduleFlushSend(default).Complete();
+
             DisposeDriver();
 
             foreach (var queue in m_SendQueue.Values)
@@ -689,6 +686,9 @@ namespace Unity.Netcode
 
             // make sure we don't leak queues when we shutdown
             m_SendQueue.Clear();
+
+            // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
+            m_ServerClientId = 0;
         }
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)

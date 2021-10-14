@@ -467,38 +467,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 typeDefinition.Methods.Add(newGetTypeNameMethod);
             }
 
-            // Weird behavior from Cecil: When importing a reference to a specific implementation of a generic
-            // method, it's importing the main module as a reference into itself. This causes Unity to have issues
-            // when attempting to iterate the assemblies to discover unit tests, as it goes into infinite recursion
-            // and eventually hits a stack overflow. I wasn't able to find any way to stop Cecil from importing the module
-            // into itself, so at the end of it all, we're just going to go back and remove it again.
-            var moduleName = m_MainModule.Name;
-            if (moduleName.EndsWith(".dll") || moduleName.EndsWith(".exe"))
-            {
-                moduleName = moduleName.Substring(0, moduleName.Length - 4);
-            }
-
-            foreach (var reference in m_MainModule.AssemblyReferences)
-            {
-                var referenceName = reference.Name.Split(',')[0];
-                if (referenceName.EndsWith(".dll") || referenceName.EndsWith(".exe"))
-                {
-                    referenceName = referenceName.Substring(0, referenceName.Length - 4);
-                }
-
-                if (moduleName == referenceName)
-                {
-                    try
-                    {
-                        m_MainModule.AssemblyReferences.Remove(reference);
-                        break;
-                    }
-                    catch (Exception)
-                    {
-                        //
-                    }
-                }
-            }
+            m_MainModule.RemoveRecursiveReferences();
         }
 
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
