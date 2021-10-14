@@ -98,12 +98,21 @@ namespace Unity.Netcode.EditorTests
                 var context = new NetworkContext {SenderId = 0, Timestamp = 0.0f, SystemOwner = m_RecvSnapshot};
                 SnapshotDataMessage.Receive(reader, context);
             }
+            else
+            {
+                message.Spawns.Dispose();
+                message.Despawns.Dispose();
+                message.Entries.Dispose();
+            }
 
             return 0;
         }
 
         internal int SendMessageRecvSide(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
         {
+            message.Spawns.Dispose();
+            message.Despawns.Dispose();
+            message.Entries.Dispose();
             return 0;
         }
 
@@ -268,14 +277,17 @@ namespace Unity.Netcode.EditorTests
 
             for (int i = 0; i < m_TicksToRun; i++)
             {
-                m_LoseNextMessage = false;// (r.Next() % 2) > 0;
+                m_LoseNextMessage = (r.Next() % 2) > 0;
 
                 SendSpawnToSnapshot((ulong)i);
                 AdvanceOneTick();
             }
+
+            m_LoseNextMessage = false;
             AdvanceOneTick();
             AdvanceOneTick();
 
+            Debug.Log($"m_SpawnedObjectCount is {m_SpawnedObjectCount} m_TicksToRun is {m_TicksToRun}");
             Debug.Assert(m_SpawnedObjectCount == m_TicksToRun);
         }
     }
