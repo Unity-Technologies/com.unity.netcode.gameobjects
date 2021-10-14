@@ -28,8 +28,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
 - `NetworkBehaviour.IsSpawned` a quick (and stable) way to determine if the associated NetworkObject is spawned (#1190)
-- Added `NetworkRigidbody` and `NetworkRigidbody2D` components to support physics/rigidbodies (#1202, #1175)
-- Added `NetworkObjectReference` and `NetworkBehaviourReference` structs which allow to send `NetworkObject/Behaviours` over RPCs/NetworkVariable (#1173)
+- Added `NetworkRigidbody` and `NetworkRigidbody2D` components to support networking `Rigidbody` and `Rigidbody2D` components (#1202, #1175)
+- Added `NetworkObjectReference` and `NetworkBehaviourReference` structs which allow to sending `NetworkObject/Behaviours` over RPCs/`NetworkVariable`s (#1173)
+- Added `NetworkAnimator` component to support networking `Animator` component (#1281, #872)
 
 ### Changed
 
@@ -105,27 +106,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
 - Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
 
-### Security
-
-- something
-
 ### TODO
-
-Philipp:
-
-- [c73e2324] (2021-09-20) Jesse Olmer / revert: ClientNetworkAnimator (#1191) (#1203)
-- [e47b73fa] (2021-09-17) Philipp Deschain / feat: NetworkAnimator and ClientNetworkAnimator (#1191)
-- [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
-- [4fad5915] (2021-07-27) Phil Deschain / fix: Network animator server authority fixes (#972)
-- [be0ca068] (2021-07-06) Phil Deschain / feat: network animator Trigger parameter support (#872)
-- [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
 
 Others (2nd iteration):
 
-- [0b80225d] (2021-10-08) Jesse Olmer / chore: transport adapter to 0.1.0-preview.1 (#1274)
-- [9c61c51e] (2021-10-06) Benoit Doyon / fix: Fix metrics reporting for Ownership Change, Spawn and Destroy bytes (#1233)
-- [af827f3d] (2021-10-05) zain-mecklai / test: enable multiprocess tests on windows mac and ubuntu (#1195)
-- [dbe45842] (2021-10-05) Andrew Spiering / chore: Adding dry-run jobs and fixing deps fpr the actual per package publish (#1255)
 - [aee21f16] (2021-10-05) Albin Corén / fix: Prevent multiple NetworkTransforms on the same object (#1258)
 - [d3408ac5] (2021-10-01) Andrew Spiering / fix: Fixing an issue where OnClientDisconnectCallback was not being called when using UTP (#1243)
 - [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
