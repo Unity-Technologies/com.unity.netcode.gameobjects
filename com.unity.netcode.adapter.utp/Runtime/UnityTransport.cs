@@ -19,6 +19,49 @@ namespace Unity.Netcode
         void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
     }
 
+    public static class ErrorUtilities
+    {
+        private const string k_NetworkSuccess = "Success";
+        private const string k_NetworkIdMismatch = "NetworkId is invalid, likely caused by stale connection {0}.";
+        private const string k_NetworkVersionMismatch = "NetworkVersion is invalid, likely caused by stale connection {0}.";
+        private const string k_NetworkStateMismatch = "Sending data while connecting on connectionId{0} is now allowed";
+        private const string k_NetworkPacketOverflow = "Unable to allocate packet due to buffer overflow.";
+        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many inflight packets.";
+        private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
+        private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
+        private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
+        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
+
+        public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
+        {
+            switch (error)
+            {
+                case Networking.Transport.Error.StatusCode.Success:
+                    return k_NetworkSuccess;
+                case Networking.Transport.Error.StatusCode.NetworkIdMismatch:
+                    return string.Format(k_NetworkIdMismatch, connectionId);
+                case Networking.Transport.Error.StatusCode.NetworkVersionMismatch:
+                    return string.Format(k_NetworkVersionMismatch, connectionId);
+                case Networking.Transport.Error.StatusCode.NetworkStateMismatch:
+                    return string.Format(k_NetworkStateMismatch, connectionId);
+                case Networking.Transport.Error.StatusCode.NetworkPacketOverflow:
+                    return k_NetworkPacketOverflow;
+                case Networking.Transport.Error.StatusCode.NetworkSendQueueFull:
+                    return k_NetworkSendQueueFull;
+                case Networking.Transport.Error.StatusCode.NetworkHeaderInvalid:
+                    return k_NetworkHeaderInvalid;
+                case Networking.Transport.Error.StatusCode.NetworkDriverParallelForErr:
+                    return k_NetworkDriverParallelForErr;
+                case Networking.Transport.Error.StatusCode.NetworkSendHandleInvalid:
+                    return k_NetworkSendHandleInvalid;
+                case Networking.Transport.Error.StatusCode.NetworkArgumentMismatch:
+                    return k_NetworkArgumentMismatch;
+            }
+
+            return $"Unknown ErrorCode {Enum.GetName(typeof(Networking.Transport.Error.StatusCode), error)}";
+        }
+    }
+
     public class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         public enum ProtocolType
@@ -34,24 +77,25 @@ namespace Unity.Netcode
             Connected,
         }
 
-        public const int MaximumMessageLength = 6 * 1024;
+        public const int InitialBatchQueueSize = 6 * 1024;
+        public const int InitialMaxPacketSize = NetworkParameterConstants.MTU;
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
         public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor != null ? s_DriverConstructor : this;
 
+        [Tooltip("Which protocol should be selected Relay/Non-Relay")]
         [SerializeField] private ProtocolType m_ProtocolType;
-        [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
 
-        [Tooltip("The maximum size of possible fragmented packet")]
-        [SerializeField] private int m_FragmentationBufferSize = MaximumMessageLength;
+        [Tooltip("Maximum size in bytes for a given packet")]
+        [SerializeField] private int m_MaximumPacketSize = InitialMaxPacketSize;
 
-        [SerializeField] private int m_ReciveQueueSize = 128;
-        [SerializeField] private int m_SendQueueSize = 128;
+        [Tooltip("The maximum amount of packets that can be in the send/recv queues")]
+        [SerializeField] private int m_MaxPacketQueueSize = 128;
 
-        [Tooltip("The maximum size of the send queue for batching Netcode events")]
-        [SerializeField] private int m_SendQueueBatchSize = 4096;
+        [Tooltip("The maximum size in bytes of the send queue for batching Netcode events")]
+        [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
 
         [SerializeField]
         public NetworkEndPoint ConnectionData { get; private set; }
@@ -383,9 +427,9 @@ namespace Unity.Netcode
 
         private unsafe void ReadData(int size, ref DataStreamReader reader, ref NetworkConnection networkConnection)
         {
-            if (size > m_FragmentationBufferSize + 128)
+            if (size > m_SendQueueBatchSize)
             {
-                Debug.LogError($"The received message does not fit into the message buffer {size} {m_MessageBufferSize}");
+                Debug.LogError($"The received message does not fit into the message buffer: {size} {m_SendQueueBatchSize}");
             }
             else
             {
@@ -447,7 +491,6 @@ namespace Unity.Netcode
 
                     m_State = State.Disconnected;
 
-
                     // If we successfully disconnect we dispatch a local disconnect message
                     // this how uNET and other transports worked and so this is just keeping with the old behavior
                     // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
@@ -500,20 +543,19 @@ namespace Unity.Netcode
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
                 "Netcode connection id size does not match UTP connection id size");
-            Debug.Assert(m_MessageBufferSize > 5, "Message buffer size must be greater than 5");
+            Debug.Assert(m_MaximumPacketSize > 5, "Message buffer size must be greater than 5");
 
             m_NetworkParameters = new List<INetworkParameter>();
 
             // If we want to be able to actually handle messages MaximumMessageLength bytes in
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
-            var maxFragmentationCapacity = m_FragmentationBufferSize + 128;
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = maxFragmentationCapacity });
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = m_SendQueueBatchSize });
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
-                maximumPayloadSize = (uint)m_MessageBufferSize,
-                receiveQueueCapacity = m_ReciveQueueSize,
-                sendQueueCapacity = m_SendQueueSize
+                maximumPayloadSize = (uint)m_MaximumPacketSize,
+                receiveQueueCapacity = m_MaxPacketQueueSize,
+                sendQueueCapacity = m_MaxPacketQueueSize
             });
         }
 
@@ -579,7 +621,7 @@ namespace Unity.Netcode
                 }
             }
 
-            Debug.LogError($"Error sending the message {result} {data.Length}");
+            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId)}");
         }
 
         private unsafe void SendMessageInstantly(ulong clientId, ArraySegment<byte> data, NetworkPipeline pipeline)
@@ -611,7 +653,7 @@ namespace Unity.Netcode
                 }
             }
 
-            Debug.LogError($"Error sending instantly the message {result} {data.Count}");
+            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId)}");
         }
 
         /// <summary>
@@ -749,7 +791,6 @@ namespace Unity.Netcode
                 );
             }
         }
-
 
         // -------------- Utility Types -------------------------------------------------------------------------------
 
