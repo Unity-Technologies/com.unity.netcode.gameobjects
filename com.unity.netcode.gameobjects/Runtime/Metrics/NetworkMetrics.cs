@@ -86,6 +86,8 @@ namespace Unity.Netcode
 
         internal IMetricDispatcher Dispatcher { get; }
 
+        private bool CanSendMetrics => m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame;
+
         public void SetConnectionId(ulong connectionId)
         {
             Dispatcher.SetConnectionId(connectionId);
@@ -103,7 +105,7 @@ namespace Unity.Netcode
 
         public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -114,7 +116,7 @@ namespace Unity.Netcode
 
         public void TrackNetworkMessageReceived(ulong senderClientId, string messageType, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -125,7 +127,7 @@ namespace Unity.Netcode
 
         public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -144,7 +146,7 @@ namespace Unity.Netcode
 
         public void TrackNamedMessageReceived(ulong senderClientId, string messageName, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -155,7 +157,7 @@ namespace Unity.Netcode
 
         public void TrackUnnamedMessageSent(ulong receiverClientId, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -174,7 +176,7 @@ namespace Unity.Netcode
 
         public void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -190,7 +192,7 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -212,7 +214,7 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -229,7 +231,7 @@ namespace Unity.Netcode
 
         public void TrackOwnershipChangeSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -240,7 +242,7 @@ namespace Unity.Netcode
 
         public void TrackOwnershipChangeReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -252,7 +254,7 @@ namespace Unity.Netcode
 
         public void TrackObjectSpawnSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -263,7 +265,7 @@ namespace Unity.Netcode
 
         public void TrackObjectSpawnReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -274,7 +276,7 @@ namespace Unity.Netcode
 
         public void TrackObjectDestroySent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -285,7 +287,7 @@ namespace Unity.Netcode
 
         public void TrackObjectDestroyReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -301,7 +303,7 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -336,7 +338,7 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -352,7 +354,7 @@ namespace Unity.Netcode
 
         public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -363,7 +365,7 @@ namespace Unity.Netcode
 
         public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -382,7 +384,7 @@ namespace Unity.Netcode
 
         public void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -393,7 +395,7 @@ namespace Unity.Netcode
 
         public void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount)
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 return;
             }
@@ -404,7 +406,7 @@ namespace Unity.Netcode
 
         public void DispatchFrame()
         {
-            if (m_NumberOfMetricsThisFrame > k_MaxMetricsPerFrame)
+            if (!CanSendMetrics)
             {
                 Debug.LogWarning($"Logged more than {k_MaxMetricsPerFrame + 1} network metrics this frame. Not all metrics will be available in the profiler.");
             }
