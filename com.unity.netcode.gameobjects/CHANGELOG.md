@@ -64,10 +64,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `CustomMessagingManager`'s methods to use `FastBufferWriter` and `FastBufferReader` instead of `Stream` (#1187)
 - Reduced internal runtime allocations by removing LINQ calls and replacing managed lists/arrays with native collections (#1196)
 
-### Deprecated
-
-- something
-
 ### Removed
 
 - Removed `NetworkNavMeshAgent` (#1150)
@@ -88,6 +84,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
 - Removed `EnableNetworkVariable` in `NetworkConfig`, it is always enabled now (#1179)
 - Removed `NetworkTransform`'s FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
+- Removed `NetworkManager`'s `StopServer()`, `StopClient()` and `StopHost()` methods and replaced with single `NetworkManager.Shutdown()` method for all (#1108)
 
 ### Fixed
 
@@ -105,23 +102,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed #915 - clients are receiving data from objects not visible to them (#1099)
 - Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
 - Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
-
-### TODO
-
-Others (2nd iteration):
-
-- [aee21f16] (2021-10-05) Albin Corén / fix: Prevent multiple NetworkTransforms on the same object (#1258)
-- [d3408ac5] (2021-10-01) Andrew Spiering / fix: Fixing an issue where OnClientDisconnectCallback was not being called when using UTP (#1243)
-- [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
-- [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
-- [d4678fd2] (2021-09-28) Andrew Spiering / fix: fixing MTT-1299 (#1227)
-- [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
-- [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
-- [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
-- [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
-- [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
-- [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
-synchronized (#1090)
 
 ## [0.2.0] - 2021-06-03
 
