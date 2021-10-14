@@ -28,6 +28,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
 - `NetworkBehaviour.IsSpawned` a quick (and stable) way to determine if the associated NetworkObject is spawned (#1190)
+- Added `NetworkRigidbody` and `NetworkRigidbody2D` components to support physics/rigidbodies (#1202, #1175)
+- Added `NetworkObjectReference` and `NetworkBehaviourReference` structs which allow to send `NetworkObject/Behaviours` over RPCs/NetworkVariable (#1173)
 
 ### Changed
 
@@ -59,6 +61,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
 - Changed `INetworkSerializable.NetworkSerialize` method signature to use `BufferSerializer<T>` instead of `NetworkSerializer` (#1187)
 - Changed `CustomMessagingManager`'s methods to use `FastBufferWriter` and `FastBufferReader` instead of `Stream` (#1187)
+- Reduced internal runtime allocations by removing LINQ calls and replacing managed lists/arrays with native collections (#1196)
 
 ### Deprecated
 
@@ -119,7 +122,6 @@ Philipp:
 
 Others (2nd iteration):
 
-- [058fdb55] (2021-10-11) Luke Stampfli / feat: Client networkrigidbody (#1202)
 - [0b80225d] (2021-10-08) Jesse Olmer / chore: transport adapter to 0.1.0-preview.1 (#1274)
 - [9c61c51e] (2021-10-06) Benoit Doyon / fix: Fix metrics reporting for Ownership Change, Spawn and Destroy bytes (#1233)
 - [af827f3d] (2021-10-05) zain-mecklai / test: enable multiprocess tests on windows mac and ubuntu (#1195)
@@ -129,13 +131,8 @@ Others (2nd iteration):
 - [4e0dfd5b] (2021-09-29) Simon Lemay / fix: Flush the UnityTransport send queue on shutdown (#1234)
 - [e2728c3b] (2021-09-29) Albin Corén / fix: NetworkVariable render code triggering value set (MTT-1288) (#1229)
 - [d4678fd2] (2021-09-28) Andrew Spiering / fix: fixing MTT-1299 (#1227)
-- [c215d154] (2021-09-28) Luke Stampfli / perf!: reduce linq, cleanup connectedclients (#1196)
-- [2c1997c4] (2021-09-22) Luke Stampfli / feat: Add a warning box to NetworkTransform to indicate missing NetworkRigidbody (#1210)
 - [46051e43] (2021-09-21) Andrew Spiering / fix: exposing way to set ip and port for Unity Transport Adapter (#1208)
 - [dc2094da] (2021-09-21) Andrew Spiering / fix: remove optimization that breaks Unity Transport Adapter (#1205)
-- [7b361c64] (2021-09-17) Luke Stampfli / fix: network time arguments (#1194)
-- [4fe7a30c] (2021-09-17) Luke Stampfli / feat: network physics (#1175)
-- [0654eaf8] (2021-09-16) Luke Stampfli / feat: add `NetworkObject` and `NetworkBehaviour` reference types (#1173)
 - [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
 - [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
 - [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
