@@ -11,7 +11,7 @@ namespace Unity.Netcode
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        internal static LogLevel CurrentLogLevel => NetworkManager.Singleton == null ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
+        public static LogLevel CurrentLogLevel => NetworkManager.Singleton == null ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
 
         // internal logging
         internal static void LogInfo(string message) => Debug.Log($"[Netcode] {message}");
