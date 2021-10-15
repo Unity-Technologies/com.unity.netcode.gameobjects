@@ -241,11 +241,7 @@ namespace Unity.Netcode
         public ulong LocalClientId
         {
             get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : m_LocalClientId;
-
-            internal set
-            {
-                m_LocalClientId = value;
-            }
+            internal set => m_LocalClientId = value;
         }
 
         private ulong m_LocalClientId;

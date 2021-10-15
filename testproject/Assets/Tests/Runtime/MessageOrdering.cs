@@ -20,7 +20,6 @@ namespace TestProject.RuntimeTests
             Support.SpawnRpcDespawn.ServerUpdateCount = 0;
             Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
             Support.SpawnRpcDespawn.ExecuteClientRpc = false;
-
             yield break;
         }
 
