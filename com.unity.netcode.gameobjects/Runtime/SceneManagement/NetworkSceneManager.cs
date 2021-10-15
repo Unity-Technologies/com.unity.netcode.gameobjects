@@ -704,7 +704,7 @@ namespace Unity.Netcode
                 EventData = SceneEventDataStore[sceneEventId]
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, targetClientIds);
-            var messageSize = MessageUtil.TotalMessageSize(size);
+            var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), messageSize);
@@ -827,7 +827,7 @@ namespace Unity.Netcode
                 EventData = sceneEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
-            var messageSize = MessageUtil.TotalMessageSize(size);
+            var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 m_NetworkManager.ConnectedClientsIds,
@@ -1297,7 +1297,7 @@ namespace Unity.Netcode
                         EventData = sceneEventData
                     };
                     var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-                    var messageSize = MessageUtil.TotalMessageSize(size);
+                    var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, messageSize);
                 }
             }
@@ -1405,7 +1405,7 @@ namespace Unity.Netcode
                 EventData = sceneEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
-            var messageSize = MessageUtil.TotalMessageSize(size);
+            var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 clientId, (uint)sceneEventData.SceneEventType, "", messageSize);
 
@@ -1553,7 +1553,7 @@ namespace Unity.Netcode
                 EventData = responseSceneEventData
             };
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, m_NetworkManager.ServerClientId);
-            var messageSize = MessageUtil.TotalMessageSize(size);
+            var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)responseSceneEventData.SceneEventType, sceneName, messageSize);
 
@@ -1780,7 +1780,7 @@ namespace Unity.Netcode
                 var sceneEventData = BeginSceneEvent();
 
                 sceneEventData.Deserialize(reader);
-                var messageSize = MessageUtil.TotalMessageSize(reader.Length);
+                var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(reader.Length);
 
                 m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
                    clientId, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), messageSize);

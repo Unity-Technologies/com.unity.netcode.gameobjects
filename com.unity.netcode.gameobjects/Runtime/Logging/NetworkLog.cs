@@ -64,7 +64,7 @@ namespace Unity.Netcode
                 };
                 var size = NetworkManager.Singleton.SendMessage(networkMessage, NetworkDelivery.ReliableFragmentedSequenced,
                     NetworkManager.Singleton.ServerClientId);
-                var messageSize = MessageUtil.TotalMessageSize(size);
+                var messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(size);
 
                 NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, messageSize);
             }

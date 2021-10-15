@@ -40,7 +40,7 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
-            var bytesCount = MessageUtil.TotalMessageSize(reader.Length);
+            var bytesCount = MessageUtil.GetTotalMessageSizeFromPayloadSize(reader.Length);
             m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesCount);
         }
 
@@ -81,7 +81,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, MessageUtil.TotalMessageSize(size));
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, MessageUtil.GetTotalMessageSizeFromPayloadSize(size));
             }
         }
 
@@ -101,7 +101,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, MessageUtil.TotalMessageSize(size));
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, MessageUtil.GetTotalMessageSizeFromPayloadSize(size));
             }
         }
 
@@ -119,7 +119,7 @@ namespace Unity.Netcode
         internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
             var bytesCount = reader.Length;
-            bytesCount = MessageUtil.TotalMessageSize(bytesCount);
+            bytesCount = MessageUtil.GetTotalMessageSizeFromPayloadSize(bytesCount);
 
             if (m_NetworkManager == null)
             {
@@ -275,7 +275,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, MessageUtil.TotalMessageSize(size));
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, MessageUtil.GetTotalMessageSizeFromPayloadSize(size));
             }
         }
     }
