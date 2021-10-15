@@ -14,7 +14,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     public class MessagingMetricsTests : DualClientMetricTestBase
     {
-        const uint MessageNameHashSize = 12;
+        const uint MessageNameHashSize = 8;
+        const uint MessageHeaderSize = 4;
 
         const uint MessageOverhead = MessageNameHashSize;
 
@@ -205,7 +206,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageSent = unnamedMessageSentMetricValues.First();
             Assert.AreEqual(FirstClient.LocalClientId, unnamedMessageSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(message), unnamedMessageSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(message) + MessageHeaderSize, unnamedMessageSent.BytesCount);
         }
 
         [UnityTest]
@@ -225,7 +226,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, unnamedMessageSentMetricValues.Count);
-            Assert.That(unnamedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(message)));
+            Assert.That(unnamedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(message) + MessageHeaderSize));
 
             var clientIds = unnamedMessageSentMetricValues.Select(x => x.Connection.Id).ToList();
             Assert.Contains(FirstClient.LocalClientId, clientIds);
@@ -268,7 +269,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageReceived = unnamedMessageReceivedValues.First();
             Assert.AreEqual(Server.LocalClientId, unnamedMessageReceived.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(message), unnamedMessageReceived.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(message) + MessageHeaderSize, unnamedMessageReceived.BytesCount);
         }
     }
 }
