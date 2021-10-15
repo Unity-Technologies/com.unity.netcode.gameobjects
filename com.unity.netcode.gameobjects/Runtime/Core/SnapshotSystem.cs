@@ -101,8 +101,8 @@ namespace Unity.Netcode
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
-        internal int SpawnsBufferCount {get; private set; } = 100;
-        internal int DespawnsBufferCount { get; private set; }  = 100;
+        internal int SpawnsBufferCount { get; private set; } = 100;
+        internal int DespawnsBufferCount { get; private set; } = 100;
 
         private const int k_BufferSize = 30000;
 

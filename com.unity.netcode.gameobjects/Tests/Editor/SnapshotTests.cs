@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Random = System.Random;
 
@@ -104,10 +102,10 @@ namespace Unity.Netcode.EditorTests
 
             if (!m_LoseNextMessage)
             {
-                using FastBufferWriter writer = new FastBufferWriter(1024, Allocator.Temp);
+                using var writer = new FastBufferWriter(1024, Allocator.Temp);
                 message.Serialize(writer);
-                using FastBufferReader reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext {SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0)};
+                using var reader = new FastBufferReader(writer, Allocator.Temp);
+                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0) };
                 SnapshotDataMessage.Receive(reader, context);
             }
             else
@@ -124,10 +122,10 @@ namespace Unity.Netcode.EditorTests
         {
             if (m_PassBackResponses)
             {
-                using FastBufferWriter writer = new FastBufferWriter(1024, Allocator.Temp);
+                using var writer = new FastBufferWriter(1024, Allocator.Temp);
                 message.Serialize(writer);
-                using FastBufferReader reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext {SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1)};
+                using var reader = new FastBufferReader(writer, Allocator.Temp);
+                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1) };
                 SnapshotDataMessage.Receive(reader, context);
             }
             else
@@ -231,7 +229,7 @@ namespace Unity.Netcode.EditorTests
             var ticksToRun = 20;
 
             // spawns one more than current buffer size
-            var objectsToSpawn= m_SendSnapshot.SpawnsBufferCount + 1;
+            var objectsToSpawn = m_SendSnapshot.SpawnsBufferCount + 1;
 
             for (int i = 0; i < objectsToSpawn; i++)
             {
@@ -305,7 +303,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestSnapshotMessageLoss()
         {
-            Random r = new Random();
+            var r = new Random();
             Prepare();
 
             m_SpawnedObjectCount = 0;
