@@ -266,6 +266,17 @@ namespace Unity.Netcode
             }
         }
 
+        internal void ReduceBufferUsage()
+        {
+            var count = Math.Max(1, NumDespawns);
+            Array.Resize(ref Despawns, count);
+            DespawnsBufferCount = count;
+
+            count = Math.Max(1, NumSpawns);
+            Array.Resize(ref Spawns, count);
+            SpawnsBufferCount = count;
+        }
+
         internal ClientData.SentSpawn GetSpawnData(in ClientData clientData, in SnapshotSpawnCommand spawn, out SnapshotDataMessage.SpawnData data)
         {
             // remember which spawn we sent this connection with which sequence number

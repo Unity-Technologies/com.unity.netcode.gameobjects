@@ -162,8 +162,9 @@ namespace Unity.Netcode
             }
             else
             {
-                var snapshotSystem = (SnapshotSystem)systemOwner;
-                snapshotSystem.HandleSnapshot(senderId, this);
+                var ownerData = (Tuple<SnapshotSystem, ulong>) systemOwner;
+                var snapshotSystem = ownerData.Item1;
+                snapshotSystem.HandleSnapshot(ownerData.Item2, this);
                 return;
             }
         }
