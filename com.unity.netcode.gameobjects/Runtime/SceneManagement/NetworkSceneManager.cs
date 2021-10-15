@@ -706,11 +706,8 @@ namespace Unity.Netcode
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, targetClientIds);
             var messageSize = MessageUtil.TotalMessageSize(size);
 
-            foreach (var clientId in targetClientIds)
-            {
-                m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    clientId, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), messageSize);
-            }
+            m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
+                targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), messageSize);
         }
 
         /// <summary>
@@ -832,14 +829,11 @@ namespace Unity.Netcode
             var size = m_NetworkManager.SendMessage(message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
             var messageSize = MessageUtil.TotalMessageSize(size);
 
-            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
-            {
-                m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                    clientId,
-                    (uint)sceneEventProgress.SceneEventType,
-                    SceneNameFromHash(sceneEventProgress.SceneHash),
-                    messageSize);
-            }
+            m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
+                m_NetworkManager.ConnectedClientsIds,
+                (uint)sceneEventProgress.SceneEventType,
+               SceneNameFromHash(sceneEventProgress.SceneHash),
+                messageSize);
 
             // Send a local notification to the server that all clients are done loading or unloading
             OnSceneEvent?.Invoke(new SceneEvent()

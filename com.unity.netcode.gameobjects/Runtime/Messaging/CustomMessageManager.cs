@@ -54,7 +54,6 @@ namespace Unity.Netcode
             SendUnnamedMessage(m_NetworkManager.ConnectedClientsIds, messageBuffer, networkDelivery);
         }
 
-
         /// <summary>
         /// Sends unnamed message to a list of clients
         /// </summary>
@@ -82,11 +81,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                size = MessageUtil.TotalMessageSize(size);
-                foreach (var clientId in clientIds)
-                {
-                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
-                }
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, MessageUtil.TotalMessageSize(size));
             }
         }
 
@@ -106,8 +101,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                size = MessageUtil.TotalMessageSize(size);
-                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, MessageUtil.TotalMessageSize(size));
             }
         }
 
@@ -121,7 +115,6 @@ namespace Unity.Netcode
 
         private Dictionary<ulong, string> m_MessageHandlerNameLookup32 = new Dictionary<ulong, string>();
         private Dictionary<ulong, string> m_MessageHandlerNameLookup64 = new Dictionary<ulong, string>();
-
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
@@ -235,12 +228,11 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
-            var messageSize = MessageUtil.TotalMessageSize(size);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, messageSize);
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
             }
         }
 
@@ -283,11 +275,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                size = MessageUtil.TotalMessageSize(size);
-                foreach (var clientId in clientIds)
-                {
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
-                }
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, MessageUtil.TotalMessageSize(size));
             }
         }
     }
