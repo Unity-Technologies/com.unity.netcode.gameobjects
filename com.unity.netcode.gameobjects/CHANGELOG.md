@@ -78,7 +78,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Allow Runtime Scene Changes was no longer needed and was removed
 - Removed the NetworkObject.Spawn payload parameter (#1005)
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
-- Removed NetworkSet, NetworkDictionary (#1149)
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
 - Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
 - Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)

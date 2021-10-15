@@ -1610,7 +1610,8 @@ namespace Unity.Netcode
                 message.ObjectInfo.Header.HasParent = false;
                 message.ObjectInfo.Header.IsPlayerObject = true;
                 message.ObjectInfo.Header.OwnerClientId = clientId;
-                SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
     }
