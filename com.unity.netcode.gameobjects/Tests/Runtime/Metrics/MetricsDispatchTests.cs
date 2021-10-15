@@ -150,11 +150,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
         private void SendMetric()
         {
-            var writer = new FastBufferWriter(1300, Allocator.Temp);
-            using (writer)
-            {
-                m_NetworkManager.CustomMessagingManager.SendNamedMessage("FakeMetric", m_NetworkManager.LocalClientId, writer);
-            }
+            m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(0, "message-name", 1);
         }
 
     }
