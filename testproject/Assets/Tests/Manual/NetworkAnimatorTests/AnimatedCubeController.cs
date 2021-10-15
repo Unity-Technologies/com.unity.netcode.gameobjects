@@ -28,18 +28,6 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private void Update()
         {
-            if (m_NetworkAnimator.IsAuthorityOverAnimator)
-            {
-                if (Input.GetKeyDown(KeyCode.C))
-                {
-                    ToggleRotateAnimation();
-                }
-                if (Input.GetKeyDown(KeyCode.Space))
-                {
-                    PlayPulseAnimation();
-                }
-            }
-            else
             {
                 if (Input.GetKeyDown(KeyCode.C))
                 {
@@ -60,7 +48,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private void PlayPulseAnimation()
         {
-            m_Animator.SetTrigger("Pulse");
+            m_NetworkAnimator.SetTrigger("Pulse");
         }
 
         [ServerRpc]

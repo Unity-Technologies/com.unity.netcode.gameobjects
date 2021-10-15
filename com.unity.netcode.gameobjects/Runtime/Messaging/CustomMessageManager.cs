@@ -62,7 +62,11 @@ namespace Unity.Netcode
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientIds);
 
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, size);
+            // Size is zero if we were only sending the message to ourself in which case it isn't sent.
+            if (size != 0)
+            {
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, size);
+            }
         }
 
         /// <summary>
@@ -78,7 +82,11 @@ namespace Unity.Netcode
                 Data = messageBuffer
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
+            // Size is zero if we were only sending the message to ourself in which case it isn't sent.
+            if (size != 0)
+            {
+                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
+            }
         }
 
         /// <summary>
@@ -193,7 +201,12 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
-            m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+
+            // Size is zero if we were only sending the message to ourself in which case it isn't sent.
+            if (size != 0)
+            {
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+            }
         }
 
         /// <summary>
@@ -226,7 +239,12 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientIds);
-            m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, size);
+
+            // Size is zero if we were only sending the message to ourself in which case it isn't sent.
+            if (size != 0)
+            {
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, size);
+            }
         }
     }
 }

@@ -19,6 +19,8 @@ namespace TestProject.RuntimeTests
             Support.SpawnRpcDespawn.ClientUpdateCount = 0;
             Support.SpawnRpcDespawn.ServerUpdateCount = 0;
             Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
+            Support.SpawnRpcDespawn.ExecuteClientRpc = false;
+
             yield break;
         }
 
@@ -34,6 +36,7 @@ namespace TestProject.RuntimeTests
                 Support.SpawnRpcDespawn.ClientUpdateCount = 0;
                 Support.SpawnRpcDespawn.ServerUpdateCount = 0;
                 Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
+                Support.SpawnRpcDespawn.ExecuteClientRpc = false;
             }
             yield break;
         }
@@ -175,6 +178,8 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator RpcOnNetworkSpawn()
         {
+            Support.SpawnRpcDespawn.ExecuteClientRpc = true;
+
             // Must be 1 for this test.
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
