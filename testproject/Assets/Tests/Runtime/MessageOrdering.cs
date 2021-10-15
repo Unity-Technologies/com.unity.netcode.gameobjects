@@ -178,7 +178,6 @@ namespace TestProject.RuntimeTests
         public IEnumerator RpcOnNetworkSpawn()
         {
             Support.SpawnRpcDespawn.ExecuteClientRpc = true;
-
             // Must be 1 for this test.
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
