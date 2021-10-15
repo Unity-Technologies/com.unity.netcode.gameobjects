@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Unity.Netcode
 {
     internal interface INetworkMetrics
@@ -16,13 +14,9 @@ namespace Unity.Netcode
 
         void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount);
 
-        void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, long bytesCount);
-
         void TrackNamedMessageReceived(ulong senderClientId, string messageName, long bytesCount);
 
         void TrackUnnamedMessageSent(ulong receiverClientId, long bytesCount);
-
-        void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, long bytesCount);
 
         void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount);
 
@@ -59,13 +53,6 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount);
 
-        void TrackRpcSent(
-            ulong[] receiverClientIds,
-            NetworkObject networkObject,
-            string rpcName,
-            string networkBehaviourName,
-            long bytesCount);
-
         void TrackRpcReceived(
             ulong senderClientId,
             NetworkObject networkObject,
@@ -76,8 +63,6 @@ namespace Unity.Netcode
         void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount);
 
         void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount);
-
-        void TrackSceneEventSent(IReadOnlyList<ulong> receiverClientIds, uint sceneEventType, string sceneName, long bytesCount);
 
         void TrackSceneEventSent(ulong receiverClientId, uint sceneEventType, string sceneName, long bytesCount);
 

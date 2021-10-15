@@ -40,7 +40,8 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length);
+            var bytesCount = MessageUtil.TotalMessageSize(reader.Length);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesCount);
         }
 
         /// <summary>
@@ -65,7 +66,11 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, size);
+                size = MessageUtil.TotalMessageSize(size);
+                foreach (var clientId in clientIds)
+                {
+                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
+                }
             }
         }
 
@@ -85,6 +90,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
+                size= MessageUtil.TotalMessageSize(size);
                 m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, size);
             }
         }
@@ -100,9 +106,11 @@ namespace Unity.Netcode
         private Dictionary<ulong, string> m_MessageHandlerNameLookup32 = new Dictionary<ulong, string>();
         private Dictionary<ulong, string> m_MessageHandlerNameLookup64 = new Dictionary<ulong, string>();
 
+
         internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
             var bytesCount = reader.Length;
+            bytesCount = MessageUtil.TotalMessageSize(bytesCount);
 
             if (m_NetworkManager == null)
             {
@@ -201,11 +209,12 @@ namespace Unity.Netcode
                 Data = messageStream
             };
             var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
+            var messageSize = MessageUtil.TotalMessageSize(size);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, messageSize);
             }
         }
 
@@ -243,7 +252,11 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, messageName, size);
+                size = MessageUtil.TotalMessageSize(size);
+                foreach (var clientId in clientIds)
+                {
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+                }
             }
         }
     }

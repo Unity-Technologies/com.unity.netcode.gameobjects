@@ -135,14 +135,6 @@ namespace Unity.Netcode
             MarkDirty();
         }
 
-        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, long bytesCount)
-        {
-            foreach (var receiverClientId in receiverClientIds)
-            {
-                TrackUnnamedMessageSent(receiverClientId, bytesCount);
-            }
-        }
-
         public void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount)
         {
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));

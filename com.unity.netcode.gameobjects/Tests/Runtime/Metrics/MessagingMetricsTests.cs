@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     public class MessagingMetricsTests : DualClientMetricTestBase
     {
-        const uint MessageNameHashSize = 8;
+        const uint MessageNameHashSize = 12;
 
         const uint MessageOverhead = MessageNameHashSize;
 

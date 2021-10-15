@@ -11,6 +11,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class ServerLogsMetricTests : SingleClientMetricTestBase
     {
+        const uint MessageOverhead = 6;
+
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
@@ -27,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var sentMetric = sentMetrics.First();
             Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
-            Assert.AreEqual(message.Length + 2, sentMetric.BytesCount);
+            Assert.AreEqual(message.Length + MessageOverhead, sentMetric.BytesCount);
         }
 
         [UnityTest]
@@ -46,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var receivedMetric = receivedMetrics.First();
             Assert.AreEqual(Client.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)receivedMetric.LogLevel);
-            Assert.AreEqual(message.Length + 2, receivedMetric.BytesCount);
+            Assert.AreEqual(message.Length + MessageOverhead, receivedMetric.BytesCount);
         }
     }
 }
