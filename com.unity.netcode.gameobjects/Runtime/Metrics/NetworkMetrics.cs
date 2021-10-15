@@ -411,11 +411,8 @@ namespace Unity.Netcode
                 Debug.LogWarning($"Logged more than {k_MaxMetricsPerFrame} network metrics this frame. Not all metrics will be available in the profiler.");
             }
 
-            if (m_NumberOfMetricsThisFrame > 0)
-            {
-                Dispatcher.Dispatch();
-                m_NumberOfMetricsThisFrame = 0;
-            }
+            Dispatcher.Dispatch();
+            m_NumberOfMetricsThisFrame = 0;
         }
 
         private void IncrementMetricCount()
