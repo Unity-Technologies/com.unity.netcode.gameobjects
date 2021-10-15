@@ -35,7 +35,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         private void Awake()
         {
-            var maxCap = UnityTransport.MaximumMessageLength + 128;
+            var maxCap = UnityTransport.InitialBatchQueueSize + 128;
             var fragParams = new FragmentationUtility.Parameters() { PayloadCapacity = maxCap };
 
             m_Driver = NetworkDriver.Create(fragParams);

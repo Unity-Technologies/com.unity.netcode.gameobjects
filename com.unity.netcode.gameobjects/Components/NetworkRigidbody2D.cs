@@ -14,6 +14,7 @@ namespace Unity.Netcode.Components
         private NetworkTransform m_NetworkTransform;
 
         private bool m_OriginalKinematic;
+        private RigidbodyInterpolation2D m_OriginalInterpolation;
 
         // Used to cache the authority state of this rigidbody during the last frame
         private bool m_IsAuthority;
@@ -48,11 +49,16 @@ namespace Unity.Netcode.Components
             {
                 m_OriginalKinematic = m_Rigidbody.isKinematic;
                 m_Rigidbody.isKinematic = true;
+
+                m_OriginalInterpolation = m_Rigidbody.interpolation;
+                // Set interpolation to none, the NetworkTransform component interpolates the position of the object.
+                m_Rigidbody.interpolation = RigidbodyInterpolation2D.None;
             }
             else
             {
                 // Resets the rigidbody back to it's non replication only state. Happens on shutdown and when authority is lost
                 m_Rigidbody.isKinematic = m_OriginalKinematic;
+                m_Rigidbody.interpolation = m_OriginalInterpolation;
             }
         }
 
@@ -61,6 +67,7 @@ namespace Unity.Netcode.Components
         {
             m_IsAuthority = HasAuthority;
             m_OriginalKinematic = m_Rigidbody.isKinematic;
+            m_OriginalInterpolation = m_Rigidbody.interpolation;
             UpdateRigidbodyKinematicMode();
         }
 

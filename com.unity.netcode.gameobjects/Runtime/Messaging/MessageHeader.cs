@@ -16,6 +16,6 @@ namespace Unity.Netcode
         /// <summary>
         /// The total size of the message, NOT including the header.
         /// </summary>
-        public short MessageSize;
+        public ushort MessageSize;
     }
 }
