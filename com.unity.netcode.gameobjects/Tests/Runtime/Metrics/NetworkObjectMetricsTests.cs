@@ -51,7 +51,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectSpawnedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, objectSpawnedSentMetricValues.Count);
+            Assert.AreEqual(1, objectSpawnedSentMetricValues.Count);
 
             var objectSpawned = objectSpawnedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectSpawned.Connection.Id);
