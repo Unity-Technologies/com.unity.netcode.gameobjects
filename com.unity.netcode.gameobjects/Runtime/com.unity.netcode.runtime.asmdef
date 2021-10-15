@@ -6,7 +6,9 @@
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.NetStatsReporting",
         "Unity.Multiplayer.NetworkSolutionInterface",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Netcode.Runtime.Transports",
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -20,6 +22,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "UNITY_TRANSPORT_ADAPTER"
         }
     ],
     "noEngineReferences": false

@@ -3,7 +3,9 @@
     "rootNamespace": "Unity.Netcode.Editor",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components"
+        "Unity.Netcode.Components",
+        "Unity.Netcode.Runtime.Transports",
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [
         "Editor"
@@ -19,6 +21,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "UNITY_TRANSPORT_ADAPTER"
         }
     ],
     "noEngineReferences": false

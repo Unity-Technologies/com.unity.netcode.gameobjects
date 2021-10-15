@@ -5,6 +5,16 @@
         "TestProject",
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Components"
-    ]
+        "Unity.Netcode.Components",
+        "Unity.Netcode.Runtime.Transports"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

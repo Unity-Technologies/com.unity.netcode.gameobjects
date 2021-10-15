@@ -151,6 +151,10 @@ namespace Unity.Netcode
         /// </summary>
         public int SnapshotMaxSpawnUsage { get; } = 1200;
 
+        [SerializeField]
+        // ReSharper disable once NotAccessedField.Local
+        private bool m_TransportDefaultInitialized;
+
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
         /// <summary>

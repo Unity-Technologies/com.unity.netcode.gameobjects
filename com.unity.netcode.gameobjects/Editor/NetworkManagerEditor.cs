@@ -23,6 +23,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_NetworkConfigProperty;
 
         // NetworkConfig fields
+        private SerializedProperty m_TransportDefaultInitializedProperty;
         private SerializedProperty m_PlayerPrefabProperty;
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
@@ -91,6 +92,7 @@ namespace Unity.Netcode.Editor
             m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
             // NetworkConfig properties
+            m_TransportDefaultInitializedProperty = m_NetworkConfigProperty.FindPropertyRelative("m_TransportDefaultInitialized");
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
@@ -105,7 +107,6 @@ namespace Unity.Netcode.Editor
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
 
-
             ReloadTransports();
         }
 
@@ -118,6 +119,7 @@ namespace Unity.Netcode.Editor
             m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
             // NetworkConfig properties
+            m_TransportDefaultInitializedProperty = m_NetworkConfigProperty.FindPropertyRelative("m_TransportDefaultInitialized");
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
@@ -238,6 +240,28 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
 
                 EditorGUILayout.PropertyField(m_NetworkTransportProperty);
+
+#if UNITY_TRANSPORT_ADAPTER
+                if (m_TransportDefaultInitializedProperty.boolValue == false)
+                {
+                    if (m_NetworkTransportProperty.objectReferenceValue == null)
+                    {
+                        var unityTransport = m_NetworkManager.gameObject.GetComponent<UnityTransport>();
+                        if (unityTransport == null)
+                        {
+                            unityTransport = m_NetworkManager.gameObject.AddComponent<UnityTransport>();
+                        }
+
+                        if (unityTransport != null)
+                        {
+                            m_NetworkTransportProperty.objectReferenceValue = unityTransport;
+                            Repaint();
+                        }
+                    }
+
+                    m_TransportDefaultInitializedProperty.boolValue = true;
+                }
+#endif
 
                 if (m_NetworkTransportProperty.objectReferenceValue == null)
                 {
