@@ -40,8 +40,7 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
-            var bytesCount = MessageUtil.GetTotalMessageSizeFromPayloadSize(reader.Length);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesCount);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, MessageUtil.GetTotalMessageSizeFromPayloadSize(reader.Length));
         }
 
         /// <summary>
@@ -118,8 +117,7 @@ namespace Unity.Netcode
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
-            var bytesCount = reader.Length;
-            bytesCount = MessageUtil.GetTotalMessageSizeFromPayloadSize(bytesCount);
+            var bytesCount = MessageUtil.GetTotalMessageSizeFromPayloadSize(reader.Length);
 
             if (m_NetworkManager == null)
             {

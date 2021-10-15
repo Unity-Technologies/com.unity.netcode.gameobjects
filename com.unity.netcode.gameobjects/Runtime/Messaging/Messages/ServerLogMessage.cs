@@ -31,8 +31,7 @@ namespace Unity.Netcode
 
         public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
         {
-            messageSize = MessageUtil.GetTotalMessageSizeFromPayloadSize(messageSize);
-            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, messageSize);
+            networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, MessageUtil.GetTotalMessageSizeFromPayloadSize(messageSize));
 
             switch (LogType)
             {
