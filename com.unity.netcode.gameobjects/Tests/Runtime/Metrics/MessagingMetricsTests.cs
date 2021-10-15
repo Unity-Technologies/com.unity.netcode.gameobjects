@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         const uint MessageNameHashSize = 8;
         const uint MessageHeaderSize = 4;
 
-        const uint MessageOverhead = MessageNameHashSize;
+        const uint MessageOverhead = MessageNameHashSize + MessageHeaderSize;
 
         protected override int NbClients => 2;
 
