@@ -439,8 +439,6 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject, 0);
-
             if (ownerClientId != null)
             {
                 if (NetworkManager.IsServer)
