@@ -5,23 +5,38 @@ namespace TestProject.RuntimeTests.Support
 {
     public class NetworkVariableInitOnNetworkSpawn : NetworkBehaviour
     {
-        private NetworkVariable<int> m_Variable = new NetworkVariable<int>();
+        public NetworkVariable<int> Variable = new NetworkVariable<int>();
         public static bool NetworkSpawnCalledOnServer;
         public static bool NetworkSpawnCalledOnClient;
+        public static bool OnValueChangedCalledOnClient = false;
+
+        private void Awake()
+        {
+            Variable.OnValueChanged += OnValueChanged;
+        }
+
+        public void OnValueChanged(int previousValue, int newValue)
+        {
+            if (!IsServer)
+            {
+                OnValueChangedCalledOnClient = true;
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
+            Assert.IsFalse(OnValueChangedCalledOnClient);
             base.OnNetworkSpawn();
             if (IsServer)
             {
                 NetworkSpawnCalledOnServer = true;
-                m_Variable.Value = 5;
+                Variable.Value = 5;
             }
             else
             {
                 NetworkSpawnCalledOnClient = true;
             }
-            Assert.AreEqual(5, m_Variable.Value);
+            Assert.AreEqual(5, Variable.Value);
         }
     }
 }
