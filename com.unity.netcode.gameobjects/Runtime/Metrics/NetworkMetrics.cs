@@ -406,11 +406,6 @@ namespace Unity.Netcode
 
         public void DispatchFrame()
         {
-            if (!CanSendMetrics)
-            {
-                Debug.LogWarning($"Logged more than {k_MaxMetricsPerFrame} network metrics this frame. Not all metrics will be available in the profiler.");
-            }
-
             Dispatcher.Dispatch();
             m_NumberOfMetricsThisFrame = 0;
         }
