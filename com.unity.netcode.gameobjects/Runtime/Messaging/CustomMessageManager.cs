@@ -230,7 +230,7 @@ namespace Unity.Netcode
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, size);
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, messageName, MessageUtility.GetTotalMessageSizeFromPayloadSize(size));
             }
         }
 
