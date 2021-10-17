@@ -10,9 +10,10 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed 
 
-- No longer use courourtines when connecting to relay
+- No longer use coroutines when connecting to relay
 - Consolidated the Send/Recv queue properties as they always needed to be the same.
 - Consolidated the Fragmentation/Queue size as they always needed to be the same.
+- Updated Unity Transport package to 1.0.0-pre.6
 
 ### Fixed
 
