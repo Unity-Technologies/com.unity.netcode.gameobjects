@@ -56,12 +56,12 @@ namespace TestProject.ManualTests
             {
                 switch (sceneEvent.SceneEventType)
                 {
-                    case SceneEventData.SceneEventTypes.S2C_LoadComplete:
+                    case SceneEventType.LoadComplete:
                         {
                             SendRpcOnLoadClientRpc(sceneEvent.SceneName);
                             break;
                         }
-                    case SceneEventData.SceneEventTypes.C2S_SyncComplete:
+                    case SceneEventType.SynchronizeComplete:
                         {
                             SendRpcOnSynchClientRpc();
                             break;

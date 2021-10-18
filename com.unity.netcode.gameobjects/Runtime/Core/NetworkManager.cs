@@ -56,7 +56,7 @@ namespace Unity.Netcode
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
-        private MessagingSystem m_MessagingSystem;
+        internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
 
@@ -241,11 +241,7 @@ namespace Unity.Netcode
         public ulong LocalClientId
         {
             get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : m_LocalClientId;
-            internal set
-            {
-                m_LocalClientId = value;
-                m_MessagingSystem.SetLocalClientId(value);
-            }
+            internal set => m_LocalClientId = value;
         }
 
         private ulong m_LocalClientId;
@@ -497,14 +493,16 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-            m_MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this, ulong.MaxValue);
+            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this);
 
-            m_MessagingSystem.Hook(new NetworkManagerHooks(this));
+            MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_MessagingSystem.Hook(new ProfilingHooks());
+            MessagingSystem.Hook(new ProfilingHooks());
 #endif
-            m_MessagingSystem.Hook(new MetricHooks(this));
 
+#if MULTIPLAYER_TOOLS
+            MessagingSystem.Hook(new MetricHooks(this));
+#endif
             LocalClientId = ulong.MaxValue;
 
             PendingClients.Clear();
@@ -536,7 +534,7 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS
             NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
             {
-                NetworkObjectProvider = new NetworkObjectProvider(this)
+                NetworkObjectProvider = new NetworkObjectProvider(this),
             });
 #endif
 
@@ -780,7 +778,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a server
         /// </summary>
-        public SocketTasks StartServer()
+        public bool StartServer()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -794,7 +792,7 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start server while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -811,7 +809,7 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartServer();
+            var result = NetworkConfig.NetworkTransport.StartServer();
 
             IsServer = true;
             IsClient = false;
@@ -821,13 +819,13 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return socketTasks;
+            return result;
         }
 
         /// <summary>
         /// Starts a client
         /// </summary>
-        public SocketTasks StartClient()
+        public bool StartClient()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -841,25 +839,25 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start client while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             Initialize(false);
-            m_MessagingSystem.ClientConnected(ServerClientId);
+            MessagingSystem.ClientConnected(ServerClientId);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartClient();
+            var result = NetworkConfig.NetworkTransport.StartClient();
 
             IsServer = false;
             IsClient = true;
             IsListening = true;
 
-            return socketTasks;
+            return result;
         }
 
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public SocketTasks StartHost()
+        public bool StartHost()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -873,7 +871,7 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Cannot start host while an instance is already running");
                 }
 
-                return SocketTask.Fault.AsTasks();
+                return false;
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -890,9 +888,10 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var socketTasks = NetworkConfig.NetworkTransport.StartServer();
-            m_MessagingSystem.ClientConnected(ServerClientId);
+            var result = NetworkConfig.NetworkTransport.StartServer();
+            MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
+            NetworkMetrics.SetConnectionId(LocalClientId);
 
             IsServer = true;
             IsClient = true;
@@ -925,7 +924,7 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return socketTasks;
+            return result;
         }
 
         public void SetSingleton()
@@ -1000,9 +999,9 @@ namespace Unity.Netcode
             if (IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
-                if (m_MessagingSystem != null)
+                if (MessagingSystem != null)
                 {
-                    m_MessagingSystem.ProcessSendQueues();
+                    MessagingSystem.ProcessSendQueues();
                 }
 
                 var disconnectedIds = new HashSet<ulong>();
@@ -1063,10 +1062,10 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
-            if (m_MessagingSystem != null)
+            if (MessagingSystem != null)
             {
-                m_MessagingSystem.Dispose();
-                m_MessagingSystem = null;
+                MessagingSystem.Dispose();
+                MessagingSystem = null;
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -1142,7 +1141,7 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
-            m_MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem.ProcessIncomingMessageQueue();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
@@ -1174,7 +1173,9 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            m_MessagingSystem.ProcessSendQueues();
+            MessagingSystem.ProcessSendQueues();
+            NetworkMetrics.DispatchFrame();
+            SpawnManager.CleanupStaleTriggers();
         }
 
         /// <summary>
@@ -1193,8 +1194,6 @@ namespace Unity.Netcode
             {
                 SyncTime();
             }
-
-            NetworkMetrics.DispatchFrame();
         }
 
         private void SendConnectionRequest()
@@ -1238,7 +1237,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
-                    m_MessagingSystem.ClientConnected(clientId);
+                    MessagingSystem.ClientConnected(clientId);
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1330,9 +1329,9 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return m_MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
-            return m_MessagingSystem.SendMessage(message, delivery, clientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
         internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
@@ -1358,10 +1357,10 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return m_MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
 
-            return m_MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
         internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
@@ -1378,7 +1377,7 @@ namespace Unity.Netcode
             {
                 return 0;
             }
-            return m_MessagingSystem.SendMessage(message, delivery, clientId);
+            return MessagingSystem.SendMessage(message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1387,7 +1386,7 @@ namespace Unity.Netcode
             s_HandleIncomingData.Begin();
 #endif
 
-            m_MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
+            MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1483,7 +1482,7 @@ namespace Unity.Netcode
 
                 m_ConnectedClients.Remove(clientId);
             }
-            m_MessagingSystem.ClientDisconnected(clientId);
+            MessagingSystem.ClientDisconnected(clientId);
         }
 
         private void SyncTime()
@@ -1611,7 +1610,8 @@ namespace Unity.Netcode
                 message.ObjectInfo.Header.HasParent = false;
                 message.ObjectInfo.Header.IsPlayerObject = true;
                 message.ObjectInfo.Header.OwnerClientId = clientId;
-                SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
     }
