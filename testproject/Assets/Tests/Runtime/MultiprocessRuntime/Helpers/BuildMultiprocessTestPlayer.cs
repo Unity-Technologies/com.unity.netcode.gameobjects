@@ -56,6 +56,37 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        [MenuItem(MultiprocessBaseMenuName + "/Windows Standalone Player")]
+        public static void BuildWindowsStandalonePlayer()
+        {
+            SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
+
+            var buildPathToUse = BuildPath;
+            buildPathToUse += ".exe";
+
+            var buildPlayerOptions = new BuildPlayerOptions();
+            buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
+            buildPlayerOptions.locationPathName = buildPathToUse;
+            buildPlayerOptions.target = BuildTarget.StandaloneWindows64;
+            buildPlayerOptions.options = BuildOptions.StrictMode |
+                BuildOptions.IncludeTestAssemblies;
+
+            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            BuildSummary summary = report.summary;
+
+            if (summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log("Build succeeded: " + summary.totalSize + " bytes");
+                Debug.Log($"ZZZ LOCATION: {summary.outputPath}");
+            }
+
+            if (summary.result == BuildResult.Failed)
+            {
+                throw new Exception("Build failed");
+            }
+        }
+
+
         /// <summary>
         /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
         /// reporting. We only want to main node to do that, worker nodes should be dumb

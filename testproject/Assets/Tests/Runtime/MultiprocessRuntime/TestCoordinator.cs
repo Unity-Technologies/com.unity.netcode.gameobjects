@@ -5,7 +5,6 @@ using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
 
