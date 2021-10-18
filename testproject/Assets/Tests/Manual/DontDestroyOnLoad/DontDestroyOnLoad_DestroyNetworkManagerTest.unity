@@ -286,6 +286,7 @@ GameObject:
   - component: {fileID: 677472850}
   - component: {fileID: 677472849}
   - component: {fileID: 677472848}
+  - component: {fileID: 677472851}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -300,7 +301,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 677472847}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
@@ -311,7 +312,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  Channels: []
   MessageSendMode: 0
 --- !u!114 &677472849
 MonoBehaviour:
@@ -330,12 +330,7 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 677472848}
-    RegisteredScenes:
-    - DontDestroyOnLoad_DestroyNetworkManagerTest
-    RegisteredSceneAssets:
-    - {fileID: 102900000, guid: 7dc1ab12373402546befc7d54e447258, type: 3}
-    AllowRuntimeSceneChanges: 0
+    NetworkTransport: {fileID: 677472851}
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
     NetworkPrefabs:
@@ -351,7 +346,6 @@ MonoBehaviour:
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -375,6 +369,25 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &677472851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 677472847}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ProtocolType: 0
+  m_MaximumPacketSize: 1400
+  m_MaxPacketQueueSize: 128
+  m_SendQueueBatchSize: 6144
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
 --- !u!1 &814382416
 GameObject:
   m_ObjectHideFlags: 0

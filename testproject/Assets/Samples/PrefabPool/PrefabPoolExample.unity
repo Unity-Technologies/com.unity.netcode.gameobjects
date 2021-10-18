@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641275, b: 0.5748172, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -849,6 +849,7 @@ GameObject:
   - component: {fileID: 1024114720}
   - component: {fileID: 1024114719}
   - component: {fileID: 1024114718}
+  - component: {fileID: 1024114721}
   m_Layer: 0
   m_Name: '[NetworkManager]'
   m_TagString: Untagged
@@ -873,10 +874,7 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 1024114719}
-    RegisteredScenes:
-    - PrefabPoolExample
-    AllowRuntimeSceneChanges: 0
+    NetworkTransport: {fileID: 1024114721}
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
     NetworkPrefabs:
@@ -894,7 +892,6 @@ MonoBehaviour:
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -911,7 +908,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1024114717}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
@@ -922,12 +919,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  ServerWebsocketListenPort: 8887
-  SupportWebsocket: 0
-  Channels: []
-  UseNetcodeRelay: 0
-  NetcodeRelayAddress: 127.0.0.1
-  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!4 &1024114720
 Transform:
@@ -943,6 +934,25 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1024114721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024114717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ProtocolType: 0
+  m_MaximumPacketSize: 1400
+  m_MaxPacketQueueSize: 128
+  m_SendQueueBatchSize: 6144
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
@@ -1775,6 +1785,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 1588117327}
+  m_TrackSceneEvents: 0
+  m_LogSceneEventsToConsole: 0
 --- !u!114 &2107482023
 MonoBehaviour:
   m_ObjectHideFlags: 0

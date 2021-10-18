@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 57527692}
   - component: {fileID: 57527691}
   - component: {fileID: 57527694}
+  - component: {fileID: 57527695}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -173,10 +174,7 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 57527691}
-    RegisteredScenes:
-    - NetworkAnimatorEnhancement
-    AllowRuntimeSceneChanges: 0
+    NetworkTransport: {fileID: 57527695}
     PlayerPrefab: {fileID: 3214090169675393154, guid: 978fc8cd63a1294438ebf3b352814970,
       type: 3}
     NetworkPrefabs:
@@ -187,16 +185,12 @@ MonoBehaviour:
         type: 3}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -204,7 +198,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!4 &57527693
@@ -233,6 +226,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 267a1a5dc6c7aca4ea8c2a2386712802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &57527695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57527690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ProtocolType: 0
+  m_MaximumPacketSize: 1400
+  m_MaxPacketQueueSize: 128
+  m_SendQueueBatchSize: 6144
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
 --- !u!1 &146283178
 GameObject:
   m_ObjectHideFlags: 0
