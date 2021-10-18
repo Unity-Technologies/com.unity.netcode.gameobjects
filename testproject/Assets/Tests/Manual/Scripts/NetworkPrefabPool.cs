@@ -165,7 +165,7 @@ namespace TestProject.ManualTests
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+            if (EnableHandler && IsSpawned && NetworkManager && NetworkManager.PrefabHandler != null)
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -381,7 +381,6 @@ namespace TestProject.ManualTests
                 {
                     if (obj != null && !obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
@@ -484,6 +483,7 @@ namespace TestProject.ManualTests
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
+                                go.SetActive(true);
 
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
@@ -512,6 +512,7 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;
