@@ -350,12 +350,12 @@ namespace Unity.Netcode
 
         public void SetAddress(string ipv4Address)
         {
-            m_ServerAddress = ipv4Address;
+            ConnectionData.Address = ipv4Address;
         }
 
         public void SetPort(ushort port)
         {
-            m_ServerPort = port;
+            ConnectionData.Port = port;
         }
 
         private bool StartRelayServer()
