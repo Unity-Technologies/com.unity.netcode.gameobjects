@@ -119,7 +119,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
-            ReadDelta(reader, false);
+            reader.ReadValueSafe(out m_InternalValue);
         }
 
         /// <inheritdoc />
