@@ -9,14 +9,22 @@ namespace TestProject.RuntimeTests
 {
     public class SmokeTests
     {
+        public enum DebugLevel
+        {
+            NONE,
+            NORMAL,
+            VERBOSE
+        }
+
+        public static DebugLevel DebugVerbosity = DebugLevel.NORMAL;
         private GameObject m_SmokeTestGameObject;
         private SmokeTestOrchestrator m_SmokeTestOrchestrator;
-        private List<string> m_RegisteredSceneReferences;
+        private List<List<string>> m_RegisteredSceneReferences;
 
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            m_RegisteredSceneReferences = new List<string>();
+            m_RegisteredSceneReferences = new List<List<string>>();
             m_SmokeTestGameObject = new GameObject();
             m_SmokeTestOrchestrator = m_SmokeTestGameObject.AddComponent<SmokeTestOrchestrator>();
         }
@@ -47,7 +55,7 @@ namespace TestProject.RuntimeTests
             yield break;
         }
 
-        private void RegisteredScenesSmokeTest_OnCollectedRegisteredScenes(List<string> registeredSceneNames)
+        private void RegisteredScenesSmokeTest_OnCollectedRegisteredScenes(List<List<string>> registeredSceneNames)
         {
             m_RegisteredSceneReferences.AddRange(registeredSceneNames);
         }
@@ -63,13 +71,40 @@ namespace TestProject.RuntimeTests
                 yield return new WaitForSeconds(0.1f);
             }
 
-            var scenesReferenced = "Scenes Referenced:\n";
-            foreach(var sceneName in m_RegisteredSceneReferences)
+            DebugRegisteredSceneReferences();
+
+            yield break;
+        }
+
+
+        private void DebugRegisteredSceneReferences()
+        {
+            if (DebugVerbosity == DebugLevel.NONE)
             {
-                scenesReferenced += $"{sceneName}\n";
+                return;
+            }
+
+            var scenesReferenced = "Scenes Referenced:\n";
+            foreach (var sceneGroup in m_RegisteredSceneReferences)
+            {
+                if (sceneGroup.Count > 1)
+                {
+                    scenesReferenced += $"SceneGroup [{sceneGroup[0]}]\n";
+                    foreach (var sceneName in sceneGroup)
+                    {
+                        if (sceneName == sceneGroup[0])
+                        {
+                            continue;
+                        }
+                        scenesReferenced += $"{sceneName}\n";
+                    }
+                }
+                else
+                {
+                    scenesReferenced += $"SceneGroup [{sceneGroup[0]}] : {sceneGroup[0]}\n";
+                }
             }
             Debug.Log(scenesReferenced);
-            yield break;
         }
     }
 

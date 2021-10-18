@@ -11,30 +11,30 @@ namespace TestProject.RuntimeTests
     /// for the menu system are included in the
     /// Build Settings Scenes in Build list.
     /// </summary>
-    public class RegisteredScenesSmokeTest : SmokeTestState
+    public class RegisteredScenesSmokeTest : SceneAwareSmokeTestState
     {
         private const string k_MainMenuScene = "MainMenu";
 
-        private List<string> m_SceneReferenced;
+        private List<List<string>> m_SceneReferenced;
         private List<Scene> m_LoadedScenes;
 
-        private string m_SceneBeingProcessed;
-        private bool m_SceneIsProcessed;
-
-        internal delegate void OnCollectedRegisteredScenesDelegateHandler(List<string> registeredSceneNames);
+        internal delegate void OnCollectedRegisteredScenesDelegateHandler(List<List<string>> registeredSceneNames);
         internal event OnCollectedRegisteredScenesDelegateHandler OnCollectedRegisteredScenes;
 
-        #region Start and Initialize
-        private bool StartLoadingScene(string sceneName)
+        /// <summary>
+        /// Called when a scene is loaded
+        /// </summary>
+        /// <param name="sceneLoaded"></param>
+        /// <param name="loadMode"></param>
+        /// <returns></returns>
+        public override bool OnSceneLoaded(Scene sceneLoaded, LoadSceneMode loadMode)
         {
-            m_SceneBeingProcessed = sceneName;
-            var asyncOp = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            if (asyncOp == null)
+            if (loadMode == LoadSceneMode.Additive && sceneLoaded.name.Contains(SceneBeingProcessed))
             {
-                return false;
+                m_LoadedScenes.Add(sceneLoaded);
+                SceneIsProcessed = true;
             }
-            m_SceneIsProcessed = false;
-            return true;
+            return SceneIsProcessed;
         }
 
         /// <summary>
@@ -43,11 +43,10 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnStartState()
         {
             m_LoadedScenes = new List<Scene>();
-            m_SceneReferenced = new List<string>();
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            m_SceneReferenced = new List<List<string>>();
 
             Assert.That(StartLoadingScene(k_MainMenuScene) == true);
-            while (!m_SceneIsProcessed)
+            while (!SceneIsProcessed)
             {
                 yield return new WaitForSeconds(0.1f);
             }
@@ -62,7 +61,7 @@ namespace TestProject.RuntimeTests
             foreach (var sceneToLoad in menuScenes)
             {
                 Assert.That(StartLoadingScene(sceneToLoad) == true);
-                while (!m_SceneIsProcessed)
+                while (!SceneIsProcessed)
                 {
                     yield return new WaitForSeconds(0.1f);
                 }
@@ -80,37 +79,7 @@ namespace TestProject.RuntimeTests
                 yield return UnloadScenes();
             }
 
-            SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
-
             yield return base.OnStartState();
-        }
-
-        private void SceneManager_sceneLoaded(Scene sceneLoaded, LoadSceneMode loadMode)
-        {
-            if (loadMode == LoadSceneMode.Additive && sceneLoaded.name.Contains(m_SceneBeingProcessed))
-            {
-                m_LoadedScenes.Add(sceneLoaded);
-                m_SceneIsProcessed = true;
-            }
-        }
-        #endregion
-
-        #region Process/Validate Registered Scenes
-        internal string GetSceneNameFromPath(string scenePath)
-        {
-            var begin = scenePath.LastIndexOf("/", System.StringComparison.Ordinal) + 1;
-            var end = scenePath.LastIndexOf(".", System.StringComparison.Ordinal);
-            return scenePath.Substring(begin, end - begin);
-        }
-
-        private List<string> GetSceneNamesFromBuildSettings()
-        {
-            var sceneNamesInBuildSettings = new List<string>();
-            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-            {
-                sceneNamesInBuildSettings.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
-            }
-            return sceneNamesInBuildSettings;
         }
 
         /// <summary>
@@ -121,45 +90,30 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         protected override bool OnProcessState()
         {
-
             var sceneNamesInBuildSettings = GetSceneNamesFromBuildSettings();
-            foreach (var sceneName in m_SceneReferenced)
+            foreach (var sceneGroup in m_SceneReferenced)
             {
-                Assert.That(sceneNamesInBuildSettings.Contains(sceneName));
+                foreach (var sceneName in sceneGroup)
+                {
+                    Assert.That(sceneNamesInBuildSettings.Contains(sceneName));
+                }
             }
             return base.OnProcessState();
         }
-        #endregion
 
-        #region Finalize and Unload
-        private bool StartUnloadingScene(Scene sceneToUnload)
-        {
-            m_SceneBeingProcessed = sceneToUnload.name;
-            var asyncOp = SceneManager.UnloadSceneAsync(sceneToUnload);
-            if (asyncOp == null)
-            {
-                return false;
-            }
-
-            m_SceneIsProcessed = false;
-            return true;
-        }
-
+        /// <summary>
+        /// Unloads all loaded scenes
+        /// </summary>
         private IEnumerator UnloadScenes()
         {
-            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
-
             foreach (var sceneToUnload in m_LoadedScenes)
             {
                 Assert.That(StartUnloadingScene(sceneToUnload) == true);
-
-                while (!m_SceneIsProcessed)
+                while (!SceneIsProcessed)
                 {
                     yield return new WaitForSeconds(0.1f);
                 }
             }
-
-            SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
             m_LoadedScenes.Clear();
             yield return null;
         }
@@ -176,13 +130,18 @@ namespace TestProject.RuntimeTests
             yield return base.OnStopState();
         }
 
-        private void SceneManager_sceneUnloaded(Scene sceneUnloaded)
+        /// <summary>
+        /// Called when a scene is unloaded
+        /// </summary>
+        /// <param name="sceneUnloaded"></param>
+        /// <returns></returns>
+        protected override bool OnSceneUnloaded(Scene sceneUnloaded)
         {
-            if (sceneUnloaded.name == m_SceneBeingProcessed)
+            if (sceneUnloaded.name == SceneBeingProcessed)
             {
-                m_SceneIsProcessed = true;
+                SceneIsProcessed = true;
             }
+            return SceneIsProcessed;
         }
-        #endregion
     }
 }

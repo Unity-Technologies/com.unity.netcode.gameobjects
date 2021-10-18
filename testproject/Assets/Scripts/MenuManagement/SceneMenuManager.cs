@@ -6,13 +6,12 @@ public class SceneMenuManager : MenuManager<SceneReference>
 {
     public static List<SceneMenuManager> SceneMenuManagers = new List<SceneMenuManager>();
 
-    public List<string> GetAllSceneReferences()
+    public List<List<string>> GetAllSceneReferences()
     {
-        var allSceneReferences = new List<string>();
-
+        var allSceneReferences = new List<List<string>>();
         foreach (var keypair in m_SceneMenuReferencesByDisplayName)
         {
-            allSceneReferences.AddRange(keypair.Value.GetReferencedScenes());
+            allSceneReferences.Add(new List<string>(keypair.Value.GetReferencedScenes()));
         }
         return allSceneReferences;
     }

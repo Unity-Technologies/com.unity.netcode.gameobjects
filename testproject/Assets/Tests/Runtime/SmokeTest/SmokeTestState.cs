@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {
@@ -97,5 +99,93 @@ namespace TestProject.RuntimeTests
             Debug.Log($"Stopping {GetStateName()}.");
             return OnStopState();
         }
+
+
+
     }
+
+    public class SceneAwareSmokeTestState:SmokeTestState
+    {
+        public string SceneBeingProcessed { get; internal set; }
+        public bool SceneIsProcessed { get; internal set; }
+
+
+        protected string GetSceneNameFromPath(string scenePath)
+        {
+            var begin = scenePath.LastIndexOf("/", System.StringComparison.Ordinal) + 1;
+            var end = scenePath.LastIndexOf(".", System.StringComparison.Ordinal);
+            return scenePath.Substring(begin, end - begin);
+        }
+
+        protected List<string> GetSceneNamesFromBuildSettings()
+        {
+            var sceneNamesInBuildSettings = new List<string>();
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                sceneNamesInBuildSettings.Add(GetSceneNameFromPath(SceneUtility.GetScenePathByBuildIndex(i)));
+            }
+            return sceneNamesInBuildSettings;
+        }
+
+        protected bool StartLoadingScene(string sceneName)
+        {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneBeingProcessed = sceneName;
+            var asyncOp = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            if (asyncOp == null)
+            {
+                return false;
+            }
+            SceneIsProcessed = false;
+            return true;
+        }
+
+        public virtual bool OnSceneLoaded(Scene sceneLoaded, LoadSceneMode loadMode)
+        {
+            return true;
+        }
+
+        private void SceneManager_sceneLoaded(Scene sceneLoaded, LoadSceneMode loadMode)
+        {
+            // Always check SceneIsProcessed last!
+            // Order of operations rule: If either SceneIsProcessed is set to true or the
+            // OnSceneLoaded method returns true, then we no longer need to be subscribed
+            // to the sceneLoaded event.
+            var sceneProcessed = OnSceneLoaded(sceneLoaded, loadMode) | SceneIsProcessed;
+            if (sceneProcessed)
+            {
+                SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+            }
+        }
+
+        protected bool StartUnloadingScene(Scene sceneToUnload)
+        {
+            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
+            SceneBeingProcessed = sceneToUnload.name;
+            var asyncOp = SceneManager.UnloadSceneAsync(sceneToUnload);
+            if (asyncOp == null)
+            {
+                return false;
+            }
+
+            SceneIsProcessed = false;
+            return true;
+        }
+
+        protected virtual bool OnSceneUnloaded(Scene sceneUnloaded)
+        {
+            return true;
+        }
+
+        private void SceneManager_sceneUnloaded(Scene sceneUnloaded)
+        {
+            var sceneProcessed = OnSceneUnloaded(sceneUnloaded) | SceneIsProcessed;
+            if (sceneProcessed)
+            {
+                SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
+            }
+        }
+
+    }
+
 }
