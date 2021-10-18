@@ -21,6 +21,9 @@ namespace TestProject.RuntimeTests
         private string m_SceneBeingProcessed;
         private bool m_SceneIsProcessed;
 
+        internal delegate void OnCollectedRegisteredScenesDelegateHandler(List<string> registeredSceneNames);
+        internal event OnCollectedRegisteredScenesDelegateHandler OnCollectedRegisteredScenes;
+
         #region Start and Initialize
         private bool StartLoadingScene(string sceneName)
         {
@@ -118,7 +121,7 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         protected override bool OnProcessState()
         {
-            Debug.Log($"Processing {nameof(RegisteredScenesSmokeTest)}.");
+
             var sceneNamesInBuildSettings = GetSceneNamesFromBuildSettings();
             foreach (var sceneName in m_SceneReferenced)
             {
@@ -137,6 +140,7 @@ namespace TestProject.RuntimeTests
             {
                 return false;
             }
+
             m_SceneIsProcessed = false;
             return true;
         }
@@ -160,15 +164,13 @@ namespace TestProject.RuntimeTests
             yield return null;
         }
 
-
         /// <summary>
         /// Unload all of the loaded scenes
         /// </summary>
         protected override IEnumerator OnStopState()
         {
-            Debug.Log($"Stopping {nameof(RegisteredScenesSmokeTest)}.");
             yield return UnloadScenes();
-
+            OnCollectedRegisteredScenes?.Invoke(m_SceneReferenced);
             m_SceneReferenced.Clear();
 
             yield return base.OnStopState();

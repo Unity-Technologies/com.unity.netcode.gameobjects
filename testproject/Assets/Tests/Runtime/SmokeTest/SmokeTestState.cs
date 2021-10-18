@@ -38,11 +38,13 @@ namespace TestProject.RuntimeTests
         protected virtual IEnumerator OnStartState()
         {
             CurrentState = StateStatus.Processing;
+
             yield break;
         }
 
         private IEnumerator StartState()
         {
+            Debug.Log($"Starting {GetStateName()}.");
             return OnStartState();
         }
 
@@ -53,6 +55,7 @@ namespace TestProject.RuntimeTests
 
         private IEnumerator ProcessState()
         {
+            Debug.Log($"Processing {GetStateName()}.");
             if (!OnProcessState())
             {
                 CurrentState = StateStatus.Stopping;
@@ -91,6 +94,7 @@ namespace TestProject.RuntimeTests
 
         private IEnumerator StopState()
         {
+            Debug.Log($"Stopping {GetStateName()}.");
             return OnStopState();
         }
     }

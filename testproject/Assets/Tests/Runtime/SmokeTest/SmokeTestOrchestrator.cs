@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
 
         public void SetState(SmokeTestState smokeTestState,float timeOut = k_TimeOutPeriod,  bool startState = true)
         {
-            if (StateBeingProcessed == null || (StateBeingProcessed != null && StateBeingProcessed.CurrentState != SmokeTestState.StateStatus.Stopped))
+            if (StateBeingProcessed == null || (StateBeingProcessed != null && StateBeingProcessed.CurrentState == SmokeTestState.StateStatus.Stopped))
             {
                 StateBeingProcessed = smokeTestState;
                 if (startState)
