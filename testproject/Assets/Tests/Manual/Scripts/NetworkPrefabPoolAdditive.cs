@@ -227,7 +227,6 @@ namespace TestProject.ManualTests
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
 
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
@@ -296,6 +295,7 @@ namespace TestProject.ManualTests
 
                     if (!obj.activeInHierarchy)
                     {
+                        obj.SetActive(true);
                         return obj;
                     }
                 }
@@ -408,7 +408,6 @@ namespace TestProject.ManualTests
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
-                                go.SetActive(true);
 
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
@@ -437,7 +436,6 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
-                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;
