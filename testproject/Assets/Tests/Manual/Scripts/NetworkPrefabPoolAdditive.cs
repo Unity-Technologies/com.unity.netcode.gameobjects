@@ -68,7 +68,7 @@ namespace TestProject.ManualTests
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+            if (EnableHandler && NetworkObject != null && NetworkManager && NetworkManager.PrefabHandler != null)
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -82,7 +82,7 @@ namespace TestProject.ManualTests
         /// General clean up
         /// The custom prefab handler is unregistered here
         /// </summary>
-        public override void OnDestroy()
+        public override void OnNetworkDespawn()
         {
             if (IsServer)
             {
@@ -97,7 +97,7 @@ namespace TestProject.ManualTests
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
 
-            base.OnDestroy();
+            base.OnNetworkDespawn();
         }
 
         // Start is called before the first frame update

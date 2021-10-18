@@ -181,7 +181,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -440,7 +439,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -549,7 +547,7 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
+  CanCommitToTransform: 0
 --- !u!1 &403665142
 GameObject:
   m_ObjectHideFlags: 0
@@ -652,7 +650,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -749,7 +746,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -903,7 +899,6 @@ MonoBehaviour:
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -939,13 +934,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ProtocolType: 1
-  m_MessageBufferSize: 1024
-  m_ReciveQueueSize: 128
-  m_SendQueueSize: 128
+  m_ProtocolType: 0
+  m_MaximumPacketSize: 1400
+  m_MaxPacketQueueSize: 128
   m_SendQueueBatchSize: 4096
-  m_ServerAddress: 127.0.0.1
-  m_ServerPort: 7777
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1725,7 +1720,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1844,7 +1838,7 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
+  CanCommitToTransform: 0
 --- !u!114 &963826006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1885,7 +1879,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2342,7 +2335,7 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
+  CanCommitToTransform: 0
 --- !u!114 &1397037319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2399,7 +2392,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2511,7 +2503,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2612,7 +2603,7 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
+  CanCommitToTransform: 0
 --- !u!114 &1402467446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2669,7 +2660,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2767,7 +2757,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2878,7 +2867,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2975,7 +2963,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3070,7 +3057,7 @@ MonoBehaviour:
   ScaleThreshold: 0
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 30
+  CanCommitToTransform: 0
 --- !u!224 &1536251758 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
@@ -3214,7 +3201,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -3503,7 +3489,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
