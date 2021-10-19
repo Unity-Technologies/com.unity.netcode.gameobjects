@@ -15,10 +15,10 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            MultiInstanceHelpers.Destroy();
             // Shutdown and clean up both of our NetworkManager instances
             if (m_Prefab)
             {
-                MultiInstanceHelpers.Destroy();
                 Object.Destroy(m_Prefab);
             }
             yield break;
