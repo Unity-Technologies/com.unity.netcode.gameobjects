@@ -902,13 +902,29 @@ namespace Unity.Netcode.Editor.CodeGen
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
                     // ServerRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
                     {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ServerRpcParams)} must be the last parameter in a ServerRpc.");
+                        }
+                        if (!isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ClientRpcs may not accept {nameof(ServerRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
                     // ClientRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
                     {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ClientRpcParams)} must be the last parameter in a ClientRpc.");
+                        }
+                        if (isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ServerRpcs may not accept {nameof(ClientRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
 
