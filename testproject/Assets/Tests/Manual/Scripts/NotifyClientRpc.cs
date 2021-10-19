@@ -7,7 +7,7 @@ namespace TestProject.ManualTests
     {
         private static NotifyClientRpc s_Singleton;
 
-        private void OnEnable()
+        private void Awake()
         {
             if (s_Singleton != null && s_Singleton != this)
             {
@@ -22,7 +22,6 @@ namespace TestProject.ManualTests
             NetworkObject.DestroyWithScene = false;
         }
 
-
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -36,6 +35,16 @@ namespace TestProject.ManualTests
                 NetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             }
             NetworkObject.DestroyWithScene = false;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            base.OnNetworkDespawn();
+
+            if (IsServer && NetworkManager.SceneManager != null)
+            {
+                NetworkManager.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
+            }
         }
 
         [ClientRpc]

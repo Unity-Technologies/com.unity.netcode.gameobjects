@@ -78,7 +78,7 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
 
     private void OnDisable()
     {
-        if (NetworkManager && NetworkManager.PrefabHandler != null)
+        if (IsSpawned && NetworkManager && NetworkManager.PrefabHandler != null)
         {
             NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToPool);
         }
