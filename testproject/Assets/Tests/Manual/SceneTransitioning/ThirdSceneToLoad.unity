@@ -259,7 +259,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -591,7 +590,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1114,6 +1112,7 @@ MonoBehaviour:
   SpawnsPerSecond: 5
   PoolSize: 128
   ObjectSpeed: 8
+  DontDestroy: 0
   EnableHandler: 1
   RegisterUsingNetworkObject: 1
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
@@ -1231,7 +1230,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1658,7 +1656,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1865,7 +1862,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1970,7 +1966,7 @@ MonoBehaviour:
   m_SwitchSceneButtonObject: {fileID: 519083277}
   m_SceneToSwitchTo: SceneTransitioningTest
   m_EnableAutoSwitch: 1
-  m_AutoSwitchTimeOut: 300
+  m_AutoSwitchTimeOut: 30
 --- !u!1 &2058276875
 GameObject:
   m_ObjectHideFlags: 0
@@ -2058,7 +2054,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 550
   m_WholeNumbers: 1
-  m_Value: 6
+  m_Value: 10
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -2119,6 +2115,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 2126410740}
+  m_TrackSceneEvents: 0
+  m_LogSceneEventsToConsole: 0
 --- !u!114 &2107482023
 MonoBehaviour:
   m_ObjectHideFlags: 0

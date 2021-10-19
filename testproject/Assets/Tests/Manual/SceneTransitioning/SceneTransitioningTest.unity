@@ -175,7 +175,7 @@ MonoBehaviour:
   m_SwitchSceneButtonObject: {fileID: 1347823141}
   m_SceneToSwitchTo: SecondSceneToLoad
   m_EnableAutoSwitch: 1
-  m_AutoSwitchTimeOut: 300
+  m_AutoSwitchTimeOut: 30
 --- !u!1 &37242881
 GameObject:
   m_ObjectHideFlags: 0
@@ -318,7 +318,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -619,7 +618,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -943,7 +941,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98053ab7ec00f624f823d137f3af6316, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkManager: {fileID: 1024114718}
 --- !u!114 &797949415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1072,12 +1069,6 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1024114719}
-    RegisteredScenes:
-    - SceneTransitioningTest
-    - SecondSceneToLoad
-    - ThirdSceneToLoad
-    RegisteredSceneAssets: []
-    AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
     NetworkPrefabs:
@@ -1113,7 +1104,6 @@ MonoBehaviour:
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -1141,7 +1131,6 @@ MonoBehaviour:
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777
-  Channels: []
   MessageSendMode: 0
 --- !u!4 &1024114720
 Transform:
@@ -1204,6 +1193,7 @@ MonoBehaviour:
   SpawnsPerSecond: 2
   PoolSize: 10
   ObjectSpeed: 8
+  DontDestroy: 0
   EnableHandler: 1
   RegisterUsingNetworkObject: 0
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
@@ -1320,7 +1310,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2092,7 +2081,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2424,7 +2412,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -2564,7 +2551,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 550
   m_WholeNumbers: 1
-  m_Value: 2
+  m_Value: 10
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
