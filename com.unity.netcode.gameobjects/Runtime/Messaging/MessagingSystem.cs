@@ -55,6 +55,7 @@ namespace Unity.Netcode
         private object m_Owner;
         private IMessageSender m_MessageSender;
         private bool m_Disposed;
+        private int m_CurrentIncomingMessageQueueIndex;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
@@ -100,7 +101,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void Dispose()
+        public unsafe void Dispose()
         {
             if (m_Disposed)
             {
@@ -112,6 +113,16 @@ namespace Unity.Netcode
             foreach (var kvp in m_SendQueues)
             {
                 CleanupDisconnectedClient(kvp.Key);
+            }
+
+            // If there's a message currently being processed, it'll dispose itself, so we can't dispose here or that'll
+            // double-dispose.
+            ++m_CurrentIncomingMessageQueueIndex;
+            for ( ; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
+            {
+                // Avoid copies...
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(m_CurrentIncomingMessageQueueIndex);
+                item.Reader.Dispose();
             }
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
@@ -253,11 +264,15 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
-            for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
+            for (m_CurrentIncomingMessageQueueIndex = 0; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(m_CurrentIncomingMessageQueueIndex);
                 HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                if (m_Disposed)
+                {
+                    return;
+                }
             }
 
             m_IncomingMessageQueue.Clear();
@@ -456,15 +471,15 @@ namespace Unity.Netcode
                     try
                     {
                         m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
+
+                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                        {
+                            m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                        }
                     }
                     finally
                     {
                         queueItem.Writer.Dispose();
-                    }
-
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                    {
-                        m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
                 }
                 sendQueueItem.Clear();
