@@ -4,6 +4,15 @@
 
 <!-- Add RFC link here if applicable. -->
 
+<!-- Original PR link if this is a backport PR -->
+
+<!-- When backporting is required please add the backport:release-<version> label to this PR. This should include all versions in which this should be backported to. -->
+
+### PR Checklist
+- [ ] Have you added a backport label (if needed)? For example, the `type:backport-release-*` label. After you backport the PR, the label changes to `stat:backported-release-*`.
+- [ ] Have you updated the changelog? Each package has a `CHANGELOG.md` file.
+- [ ] Have you updated or added the documentation for your PR? When you add a new feature, change a property name, or change the behavior of a feature, it's best practice to include related documentation changes in the same PR or a link to the documenation repo PR if this is a manual update. 
+
 ## Changelog
 
 ### com.unity.netcode.gameobjects
