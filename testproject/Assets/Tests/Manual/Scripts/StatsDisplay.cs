@@ -147,6 +147,8 @@ namespace TestProject.ManualTests
         {
             m_LastStatsDump = "Server Stats";
             m_LastStatsDump += "\ndeltaTime: [" + statsinfo.StatValues[0] + "]";
+            var spawnedObjectCount = IsSpawned ? NetworkManager.SpawnManager.SpawnedObjectsList.Count : 0;
+            m_LastStatsDump += $"NetworkObjects: {spawnedObjectCount}\n";
             m_LastStatsDump += $"\nActive Scene: {SceneManager.GetActiveScene().name}";
         }
 
@@ -182,6 +184,8 @@ namespace TestProject.ManualTests
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
                         m_LastStatsDump += "\n";
+                        var spawnedObjectCount = IsSpawned ? NetworkManager.SpawnManager.SpawnedObjectsList.Count : 0;
+                        m_LastStatsDump += $"NetworkObjects: {spawnedObjectCount}\n";
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
                         if (m_SceneEventNotificationQueue != null)
                         {
