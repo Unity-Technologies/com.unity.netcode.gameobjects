@@ -8,7 +8,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [1.0.0-pre.2] - 2020-12-20
 
-Added label for `1.0.0-pre.1` changelog section, and added associated Known Issues
+### Added
+
+- Associated Known Issues for the 1.0.0-pre.1 release in the changelog
+
+### Changed
+
+- Updated label for `1.0.0-pre.1` changelog section
+
 ## [1.0.0-pre.1] - 2020-12-20
 
 ### Added
