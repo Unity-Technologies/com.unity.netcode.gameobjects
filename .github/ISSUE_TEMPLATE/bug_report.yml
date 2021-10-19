@@ -1,7 +1,7 @@
 name: Bug report
 description: Create a report to help us improve
 title: ""
-labels: [stat:awaiting triage, type:bug]
+labels: ["stat:awaiting triage", "type:bug"]
 body:
   - type: checkboxes
     attributes:
