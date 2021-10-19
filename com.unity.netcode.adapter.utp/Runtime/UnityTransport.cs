@@ -566,7 +566,7 @@ namespace Unity.Netcode
             // If we want to be able to actually handle messages MaximumMessageLength bytes in
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = m_SendQueueBatchSize });
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = m_SendQueueBatchSize + 128 });
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
                 maximumPayloadSize = (uint)m_MaximumPacketSize,
@@ -599,7 +599,8 @@ namespace Unity.Netcode
             if (!success) // This would be false only when the SendQueue is full already or we are sending a super large message at once
             {
                 // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
-                if (payload.Count > queue.Size)
+                // Extra 4 bytes here are to account for the data size that will need to be stored in the queue too.
+                if (payload.Count + 4 > queue.Size)
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
                     Debug.LogWarning($"Sent {payload.Count} bytes based on delivery method: {networkDelivery}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}). This can be the initial payload!");
