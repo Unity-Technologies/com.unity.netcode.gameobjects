@@ -38,11 +38,12 @@ namespace Unity.Netcode.Components
         internal struct AnimationTriggerMessage : INetworkSerializable
         {
             public int Hash;
+            public bool Reset;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref Hash);
-
+                serializer.SerializeValue(ref Reset);
             }
         }
 
@@ -432,7 +433,14 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            m_Animator.SetTrigger(animSnapshot.Hash);
+            if (animSnapshot.Reset)
+            {
+                m_Animator.ResetTrigger(animSnapshot.Hash);
+            }
+            else
+            {
+                m_Animator.SetTrigger(animSnapshot.Hash);
+            }
         }
 
         public void SetTrigger(string triggerName)
@@ -440,15 +448,26 @@ namespace Unity.Netcode.Components
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
-        public void SetTrigger(int hash)
+        public void SetTrigger(int hash, bool reset = false)
         {
             var animMsg = new AnimationTriggerMessage();
             animMsg.Hash = hash;
+            animMsg.Reset = reset;
 
             if (IsServer)
             {
                 SendAnimTriggerClientRpc(animMsg);
             }
+        }
+
+        public void ResetTrigger(string triggerName)
+        {
+            ResetTrigger(Animator.StringToHash(triggerName));
+        }
+
+        public void ResetTrigger(int hash)
+        {
+            SetTrigger(hash, true);
         }
     }
 }
