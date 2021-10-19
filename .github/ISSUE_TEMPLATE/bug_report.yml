@@ -3,13 +3,6 @@ description: Create a report to help us improve
 title: "<title>"
 labels: ["stat:awaiting triage", "type:bug"]
 body:
-- type: checkboxes
-  attributes:
-    label: Is there an existing issue for this?
-    description: Please search to see if an issue already exists for the bug you encountered.
-    options:
-    - label: I have searched the existing issues
-      required: false
 - type: textarea
   attributes:
     label: Describe the bug
@@ -60,8 +53,8 @@ body:
         - Netcode Version:
         - Netcode Commit:
     render: markdown
-    validations:
-      required: true
+  validations:
+    required: true
 - type: textarea
   attributes:
     label: Additional context
