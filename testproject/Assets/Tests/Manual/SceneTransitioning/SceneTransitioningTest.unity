@@ -1173,7 +1173,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ProtocolType: 0
   m_MaximumPacketSize: 1400
-  m_MaxPacketQueueSize: 128
+  m_MaxPacketQueueSize: 512
   m_SendQueueBatchSize: 6144
   ConnectionData:
     Address: 127.0.0.1
