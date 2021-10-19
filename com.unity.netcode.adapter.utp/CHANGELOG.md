@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this package will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
+## [1.0.0-pre.2] - TBD
+
+#### Added 
+
+- Exposed `m_HeartbeatTimeoutMS`, `m_ConnectTimeoutMS`, `m_MaxConnectAttempts`, and `m_DisconnectTimeoutMS` parameters.
+
+### Fixed
+
+-Heartbeats API not working for Unity Transport when running in the editor or development builds.
+
 ## [1.0.0-pre.1] - 2020-12-20
 
 ### Added
