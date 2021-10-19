@@ -3,67 +3,67 @@ description: Create a report to help us improve
 title: "<title>"
 labels: ["stat:awaiting triage", "type:bug"]
 body:
-  - type: checkboxes
-    attributes:
-      label: Is there an existing issue for this?
-      description: Please search to see if an issue already exists for the bug you encountered.
-      options:
-      - label: I have searched the existing issues
-        required: true
-  - type: textarea
-    attributes:
-      label: Describe the bug
-      description: A clear and concise description of what the bug is.
-    validations:
+- type: checkboxes
+  attributes:
+    label: Is there an existing issue for this?
+    description: Please search to see if an issue already exists for the bug you encountered.
+    options:
+    - label: I have searched the existing issues
       required: true
-  - type: textarea
-    attributes:
-      label: To Reproduce
-      description: Steps to reproduce the behavior.
-      placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Actual outcome
-      description: A clear and concise description of what broke.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Expected outcome
-      description: A clear and concise description of what you expected to happen.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Environment
-      description: |
-        examples:
-          - **OS**: [e.g. Windows 10]
-          - **Unity Version**: [e.g. 2019.1]
-          - **Netcode Version**: [e.g. v6.0.1]
-          - **Netcode Commit**: [e.g. https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/commit/c102935df1d7e0928283b48948fe96e5d96dd961]
-      value: |
-          - OS:
-          - Unity Version:
-          - Netcode Version:
-          - Netcode Commit:
-      render: markdown
-      required: true
-  - type: textarea
-    attributes:
-      label: Additional context
-      description: Add any other context about the problem here. Logs, code snippets would be useful here but please also consider attaching a minimal Unity project that reproduces the issue.
-    validations:
-      required: false
+- type: textarea
+  attributes:
+    label: Describe the bug
+    description: A clear and concise description of what the bug is.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: To Reproduce
+    description: Steps to reproduce the behavior.
+    placeholder: |
+      1. Go to '...'
+      2. Click on '....'
+      3. Scroll down to '....'
+      4. See error
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Actual outcome
+    description: A clear and concise description of what broke.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Expected outcome
+    description: A clear and concise description of what you expected to happen.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Screenshots
+    description: If applicable, add screenshots to help explain your problem.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Environment
+    description: |
+      examples:
+        - **OS**: [e.g. Windows 10]
+        - **Unity Version**: [e.g. 2019.1]
+        - **Netcode Version**: [e.g. v6.0.1]
+        - **Netcode Commit**: [e.g. https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/commit/c102935df1d7e0928283b48948fe96e5d96dd961]
+    value: |
+        - OS:
+        - Unity Version:
+        - Netcode Version:
+        - Netcode Commit:
+    render: markdown
+    required: true
+- type: textarea
+  attributes:
+    label: Additional context
+    description: Add any other context about the problem here. Logs, code snippets would be useful here but please also consider attaching a minimal Unity project that reproduces the issue.
+  validations:
+    required: false
