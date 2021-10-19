@@ -1072,6 +1072,7 @@ namespace Unity.Netcode
 
             if (SpawnManager != null)
             {
+                SpawnManager.CleanupAllTriggers();
                 SpawnManager.DestroyNonSceneObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
