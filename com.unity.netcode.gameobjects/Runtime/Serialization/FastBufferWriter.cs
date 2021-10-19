@@ -365,6 +365,11 @@ namespace Unity.Netcode
         internal unsafe ArraySegment<byte> ToTempByteArray()
         {
             var length = Length;
+            if (length > m_ByteArrayCache.Length)
+            {
+                return new ArraySegment<byte>(ToArray(), 0, length);
+            }
+
             fixed (byte* b = m_ByteArrayCache)
             {
                 UnsafeUtility.MemCpy(b, Handle->BufferPointer, length);
