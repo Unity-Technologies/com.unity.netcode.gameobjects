@@ -6,7 +6,7 @@
 
 <!-- Original PR link if this is a backport PR -->
 
-<!-- When backporting is required please add the backport:release-<version> label to this PR. This should include all versions in which this should be backported to. -->
+<!-- When backporting is required please add the type:backport-release-<version> label to this PR. This should include all versions in which this should be backported to. -->
 
 ### PR Checklist
 - [ ] Have you added a backport label (if needed)? For example, the `type:backport-release-*` label. After you backport the PR, the label changes to `stat:backported-release-*`.
