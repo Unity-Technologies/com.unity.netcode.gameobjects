@@ -11,7 +11,7 @@ namespace TestProject.RuntimeTests
     public class NoMemoryLeakOnNetworkManagerShutdownTest
     {
         private GameObject m_Prefab;
-        
+
         [UnityTearDown]
         public IEnumerator Teardown()
         {
@@ -36,7 +36,7 @@ namespace TestProject.RuntimeTests
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
- 
+
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
             server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);

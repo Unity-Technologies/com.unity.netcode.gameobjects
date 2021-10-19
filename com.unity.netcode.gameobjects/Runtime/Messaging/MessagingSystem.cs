@@ -118,7 +118,7 @@ namespace Unity.Netcode
             // If there's a message currently being processed, it'll dispose itself, so we can't dispose here or that'll
             // double-dispose.
             ++m_CurrentIncomingMessageQueueIndex;
-            for ( ; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
+            for (; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
             {
                 // Avoid copies...
                 ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(m_CurrentIncomingMessageQueueIndex);
