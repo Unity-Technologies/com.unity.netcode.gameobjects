@@ -599,24 +599,21 @@ namespace Unity.Netcode
             }
 
             var success = queue.AddEvent(payload);
-            if (!success) // This would be false only when the SendQueue is full already or we are sending a super large message at once
+            if (!success) // No more room in the send queue for the message.
             {
-                // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
-                // Extra 4 bytes here are to account for the data size that will need to be stored in the queue too.
-                if (payload.Count + 4 > queue.Size)
+                // Flushing the send queue ensures we preserve the order of sends.
+                SendBatchedMessageAndClearQueue(sendTarget, queue);
+                Debug.Assert(queue.IsEmpty() == true);
+                queue.Clear();
+
+                // Try add the message to the queue as there might be enough room now that it's empty.
+                success = queue.AddEvent(payload);
+                if (!success) // Message is too large to fit in the queue. Shouldn't happen under normal operation.
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
                     Debug.LogWarning($"Sent {payload.Count} bytes based on delivery method: {networkDelivery}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}). This can be the initial payload!");
                     Debug.Assert(networkDelivery == NetworkDelivery.ReliableFragmentedSequenced); // Messages like this, should always be sent via the fragmented pipeline.
                     SendMessageInstantly(sendTarget.ClientId, payload, pipeline);
-                }
-                else
-                {
-                    // Since our queue buffer is full then send that right away, clear it and queue this new data
-                    SendBatchedMessageAndClearQueue(sendTarget, queue);
-                    Debug.Assert(queue.IsEmpty() == true);
-                    queue.Clear();
-                    queue.AddEvent(payload);
                 }
             }
         }
