@@ -41,6 +41,25 @@ promote_{{ project.name }}_{{ package.name }}:
     - .yamato/project-pack.yml#pack_{{ project.name }}
     - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 
+promote_{{ project.name }}_{{ package.name }}_dry_run:
+  name: Promote Project {{ project.name }} - Package {{ package.name }} to Production (dry-run)
+  agent:
+    type: Unity::VM
+    image: package-ci/win10:stable
+    flavor: b1.small
+  variables:
+    UPMCI_PROMOTION: 1
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci package promote --package-path {{ package.path }} --dry-run
+  artifacts:
+    artifacts:
+      paths:
+        - "upm-ci~/packages/*.tgz"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+
 {% endfor -%}
 
 promote_{{ project.name }}:
