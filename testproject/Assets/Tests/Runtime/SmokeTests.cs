@@ -4,7 +4,6 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
-
 namespace TestProject.RuntimeTests
 {
     public class SmokeTests
@@ -44,6 +43,7 @@ namespace TestProject.RuntimeTests
         /// the three states (Starting, Processing, and Stopping)
         /// </summary>
         [UnityTest]
+        [Order(1)]
         public IEnumerator SmokeTestStateTest()
         {
             m_SmokeTestOrchestrator.SetState(new TestSmokeTestState());
@@ -55,15 +55,28 @@ namespace TestProject.RuntimeTests
             yield break;
         }
 
+        /// <summary>
+        /// Updates the global m_RegisteredSceneReferences.
+        /// These are stored as SceneReference Groups:
+        ///     A SceneReference Group is the list of all scenes referenced within a given SceneReference asset
+        ///     The first scene is always the "master scene" which will contain the in-scene placed GameObject with
+        ///     NetworkManager component.
+        /// </summary>
         private void RegisteredScenesSmokeTest_OnCollectedRegisteredScenes(List<List<string>> registeredSceneNames)
         {
             m_RegisteredSceneReferences.AddRange(registeredSceneNames);
         }
 
+        /// <summary>
+        /// Validates that all menu references and the scenes that each menu references
+        /// are valid, registered with the Build Settings Scenes in Build, and this builds
+        /// a global list of registered scene references to be used by the SceneReferenceValidation
+        /// </summary>
         [UnityTest]
-        public IEnumerator RegisteredScenesValidation()
+        [Order(2)]
+        public IEnumerator RegisteredSceneValidation()
         {
-            var registeredScenesSmokeTest = new RegisteredScenesSmokeTest();
+            var registeredScenesSmokeTest = new RegisteredSceneValidationState();
             registeredScenesSmokeTest.OnCollectedRegisteredScenes += RegisteredScenesSmokeTest_OnCollectedRegisteredScenes;
             m_SmokeTestOrchestrator.SetState(registeredScenesSmokeTest);
             while (m_SmokeTestOrchestrator.StateBeingProcessed.CurrentState != SmokeTestState.StateStatus.Stopped)
@@ -76,7 +89,9 @@ namespace TestProject.RuntimeTests
             yield break;
         }
 
-
+        /// <summary>
+        /// Primarily used for debugging and sanity check.
+        /// </summary>
         private void DebugRegisteredSceneReferences()
         {
             if (DebugVerbosity == DebugLevel.NONE)
@@ -106,8 +121,30 @@ namespace TestProject.RuntimeTests
             }
             Debug.Log(scenesReferenced);
         }
-    }
 
+        /// <summary>
+        /// Does a very basic check to make sure each master scene within
+        /// a SceneReference asset can be loaded and the NetworkManager
+        /// can be started.
+        /// </summary>
+        [UnityTest]
+        [Order(3)]
+        public IEnumerator SceneReferenceValidation()
+        {
+            var sceneLoadingValidationState = new SceneReferenceValidationState();
+            foreach (var sceneGroup in m_RegisteredSceneReferences)
+            {
+                sceneLoadingValidationState.SetScenes(sceneGroup);
+                m_SmokeTestOrchestrator.SetState(sceneLoadingValidationState);
+                while (m_SmokeTestOrchestrator.StateBeingProcessed.CurrentState != SmokeTestState.StateStatus.Stopped)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+            yield break;
+        }
+    }
 
     /// <summary>
     /// Tests the SmokeTestState
@@ -116,7 +153,7 @@ namespace TestProject.RuntimeTests
     {
         protected override IEnumerator OnStartState()
         {
-             return base.OnStartState();
+            return base.OnStartState();
         }
 
         protected override bool OnProcessState()

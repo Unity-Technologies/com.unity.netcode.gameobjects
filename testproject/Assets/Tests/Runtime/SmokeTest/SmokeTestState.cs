@@ -104,7 +104,7 @@ namespace TestProject.RuntimeTests
 
     }
 
-    public class SceneAwareSmokeTestState:SmokeTestState
+    public class SceneAwareSmokeTestState : SmokeTestState
     {
         public string SceneBeingProcessed { get; internal set; }
         public bool SceneIsProcessed { get; internal set; }

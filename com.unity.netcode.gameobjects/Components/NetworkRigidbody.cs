@@ -32,7 +32,7 @@ namespace Unity.Netcode.Components
 
         private void FixedUpdate()
         {
-            if (NetworkManager.IsListening)
+            if (IsSpawned && NetworkManager.IsListening)
             {
                 if (HasAuthority != m_IsAuthority)
                 {

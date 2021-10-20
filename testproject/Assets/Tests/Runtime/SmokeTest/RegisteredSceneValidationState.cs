@@ -11,7 +11,7 @@ namespace TestProject.RuntimeTests
     /// for the menu system are included in the
     /// Build Settings Scenes in Build list.
     /// </summary>
-    public class RegisteredScenesSmokeTest : SceneAwareSmokeTestState
+    public class RegisteredSceneValidationState : SceneAwareSmokeTestState
     {
         private const string k_MainMenuScene = "MainMenu";
 

@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
             DontDestroyOnLoad(this);
         }
 
-        public void SetState(SmokeTestState smokeTestState,float timeOut = k_TimeOutPeriod,  bool startState = true)
+        public void SetState(SmokeTestState smokeTestState, float timeOut = k_TimeOutPeriod, bool startState = true)
         {
             if (StateBeingProcessed == null || (StateBeingProcessed != null && StateBeingProcessed.CurrentState == SmokeTestState.StateStatus.Stopped))
             {
