@@ -563,10 +563,13 @@ namespace Unity.Netcode
 
             m_NetworkParameters = new List<INetworkParameter>();
 
-            // If we want to be able to actually handle messages MaximumMessageLength bytes in
-            // size, we need to allow a bit more than that in FragmentationUtility since this needs
-            // to account for headers and such. 128 bytes is plenty enough for such overhead.
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = m_SendQueueBatchSize + 128 });
+            // If the user sends a message of exactly m_SendQueueBatchSize length, we'll need an
+            // extra byte to mark it as non-batched and 4 bytes for its length. If the user fills
+            // up the send queue to its capacity (batched messages total m_SendQueueBatchSize), we
+            // still need one extra byte to mark the payload as batched.
+            var fragmentationCapacity = m_SendQueueBatchSize + 1 + 4;
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = fragmentationCapacity });
+
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
                 maximumPayloadSize = (uint)m_MaximumPacketSize,
