@@ -611,7 +611,7 @@ namespace Unity.Netcode
                 if (!success) // Message is too large to fit in the queue. Shouldn't happen under normal operation.
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
-                    Debug.LogWarning($"Sent {payload.Count} bytes based on delivery method: {networkDelivery}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}). This can be the initial payload!");
+                    Debug.LogWarning($"Event of size {payload.Count} too large to fit in send queue (of size {m_SendQueueBatchSize}). Trying to send directly. This could be the initial payload!");
                     Debug.Assert(networkDelivery == NetworkDelivery.ReliableFragmentedSequenced); // Messages like this, should always be sent via the fragmented pipeline.
                     SendMessageInstantly(sendTarget.ClientId, payload, pipeline);
                 }
