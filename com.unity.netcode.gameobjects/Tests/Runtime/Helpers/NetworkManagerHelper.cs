@@ -19,7 +19,6 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static SocketTasks StartHostSocketTasks { get; internal set; }
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 

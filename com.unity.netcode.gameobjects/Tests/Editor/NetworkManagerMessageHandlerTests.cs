@@ -20,15 +20,14 @@ namespace Unity.Netcode.EditorTests
             return NetworkEvent.Nothing;
         }
 
-        public override SocketTasks StartClient()
+        public override bool StartClient()
         {
-            return SocketTask.Done.AsTasks();
+            return true;
         }
 
-        public override SocketTasks StartServer()
+        public override bool StartServer()
         {
-            return SocketTask.Done.AsTasks();
-
+            return true;
         }
 
         public override void DisconnectRemoteClient(ulong clientId)

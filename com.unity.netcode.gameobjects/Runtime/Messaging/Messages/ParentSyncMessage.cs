@@ -47,10 +47,10 @@ namespace Unity.Netcode
                 }
             }
 
-            message.Handle(networkManager);
+            message.Handle(reader, context, networkManager);
         }
 
-        public void Handle(NetworkManager networkManager)
+        public void Handle(FastBufferReader reader, in NetworkContext context, NetworkManager networkManager)
         {
             if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
@@ -58,9 +58,9 @@ namespace Unity.Netcode
                 networkObject.SetNetworkParenting(IsReparented, LatestParent);
                 networkObject.ApplyNetworkParenting();
             }
-            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            else
             {
-                NetworkLog.LogWarning($"Read {nameof(ParentSyncMessage)} for {nameof(NetworkObject)} #{NetworkObjectId} but could not find it in the {nameof(networkManager.SpawnManager.SpawnedObjects)}");
+                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, reader, context);
             }
         }
     }
