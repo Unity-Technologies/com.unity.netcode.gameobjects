@@ -32,7 +32,7 @@ namespace TestProject.RuntimeTests
             m_MasterScene = new Scene();
             m_NetworkManager = null;
             m_MasterSceneName = scenes[0];
-            m_SupportScenes = new List<string>(scenes.Count > 1 ? new List<string>() : scenes.GetRange(1, scenes.Count -1));
+            m_SupportScenes = new List<string>(scenes.Count > 1 ? new List<string>() : scenes.GetRange(1, scenes.Count - 1));
         }
 
         public override bool OnSceneLoaded(Scene sceneLoaded, LoadSceneMode loadMode)

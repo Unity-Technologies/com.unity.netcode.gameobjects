@@ -15,7 +15,7 @@ public class MainMenuManager : MenuManager<MenuReference>
     {
         var allSceneReferences = new List<string>();
 
-        foreach(var keypair in m_SceneMenuReferencesByDisplayName)
+        foreach (var keypair in m_SceneMenuReferencesByDisplayName)
         {
             allSceneReferences.AddRange(keypair.Value.GetReferencedScenes());
         }
