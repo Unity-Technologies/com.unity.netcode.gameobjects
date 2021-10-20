@@ -48,8 +48,10 @@ public class CommandLineProcessor
             {
                 var value = i < args.Length - 1 ? args[i + 1].ToLower() : null;
                 value = (value?.StartsWith("-") ?? false) ? null : value;
-
-                m_CommandLineArguments.Add(arg, value);
+                if (!m_CommandLineArguments.ContainsKey(arg))
+                {
+                    m_CommandLineArguments.Add(arg, value);
+                }
             }
         }
 
