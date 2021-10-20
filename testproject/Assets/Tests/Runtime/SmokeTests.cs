@@ -15,7 +15,7 @@ namespace TestProject.RuntimeTests
             VERBOSE
         }
 
-        public static DebugLevel DebugVerbosity = DebugLevel.NORMAL;
+        public static DebugLevel DebugVerbosity = DebugLevel.NONE;
         private GameObject m_SmokeTestGameObject;
         private SmokeTestOrchestrator m_SmokeTestOrchestrator;
         private List<List<string>> m_RegisteredSceneReferences;

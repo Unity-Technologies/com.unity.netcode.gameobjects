@@ -99,11 +99,12 @@ namespace TestProject.RuntimeTests
             Debug.Log($"Stopping {GetStateName()}.");
             return OnStopState();
         }
-
-
-
     }
 
+    /// <summary>
+    /// This provides basic scene loading and unloading
+    /// functionality for smoke tests.
+    /// </summary>
     public class SceneAwareSmokeTestState : SmokeTestState
     {
         public string SceneBeingProcessed { get; internal set; }
@@ -185,7 +186,5 @@ namespace TestProject.RuntimeTests
                 SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
             }
         }
-
     }
-
 }

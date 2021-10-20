@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace TestProject.RuntimeTests
 {
+    /// <summary>
+    /// Used for all smoke tests
+    /// </summary>
     public class SmokeTestOrchestrator : MonoBehaviour
     {
         public delegate void OnStateFinishedProcessingDelegateHandler(float timeToProcess);
