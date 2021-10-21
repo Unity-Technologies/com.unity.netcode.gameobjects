@@ -52,6 +52,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the tickrate of the system of this <see cref="NetworkTime"/>.
+        /// Ticks per second.
         /// </summary>
         public uint TickRate => m_TickRate;
 
@@ -102,6 +103,11 @@ namespace Unity.Netcode
         public NetworkTime ToFixedTime()
         {
             return new NetworkTime(m_TickRate, m_CachedTick);
+        }
+
+        public NetworkTime TimeTicksAgo(int ticks)
+        {
+            return this - new NetworkTime(TickRate, ticks);
         }
 
         private void UpdateCache()

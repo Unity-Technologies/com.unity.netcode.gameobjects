@@ -18,18 +18,14 @@ namespace Unity.Netcode
                 return;
             }
             reader.ReadValueSafe(out ChangeOwnershipMessage message);
-            message.Handle(context.SenderId, networkManager, reader.Length);
+            message.Handle(reader, context, context.SenderId, networkManager, reader.Length);
         }
 
-        public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
+        public void Handle(FastBufferReader reader, in NetworkContext context, ulong senderId, NetworkManager networkManager, int messageSize)
         {
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Trying to handle owner change but {nameof(NetworkObject)} #{NetworkObjectId} does not exist in {nameof(NetworkSpawnManager.SpawnedObjects)} anymore!");
-                }
-
+                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, reader, context);
                 return;
             }
 
@@ -47,7 +43,7 @@ namespace Unity.Netcode
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
-            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject.NetworkObjectId, networkObject.name, messageSize);
+            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject, messageSize);
         }
     }
 }

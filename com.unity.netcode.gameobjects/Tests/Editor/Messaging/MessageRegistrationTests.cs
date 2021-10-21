@@ -1,21 +1,11 @@
-
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
 {
     public class MessageRegistrationTests
     {
-        private class MessagingSystemOwnerOne
-        {
 
-        }
-
-        private class MessagingSystemOwnerTwo
-        {
-
-        }
-
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerOne))]
         private struct TestMessageOne : INetworkMessage
         {
             public int A;
@@ -33,7 +23,6 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerOne))]
         private struct TestMessageTwo : INetworkMessage
         {
             public int A;
@@ -50,8 +39,26 @@ namespace Unity.Netcode.EditorTests
 
             }
         }
+        private class TestMessageProviderOne : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessageOne),
+                        Handler = TestMessageOne.Receive
+                    },
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessageTwo),
+                        Handler = TestMessageTwo.Receive
+                    }
+                };
+            }
+        }
 
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessagingSystemOwnerTwo))]
         private struct TestMessageThree : INetworkMessage
         {
             public int A;
@@ -68,8 +75,21 @@ namespace Unity.Netcode.EditorTests
 
             }
         }
+        private class TestMessageProviderTwo : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessageThree),
+                        Handler = TestMessageThree.Receive
+                    }
+                };
+            }
+        }
 
-        [IgnoreMessageIfSystemOwnerIsNotOfType(null)]
         private struct TestMessageFour : INetworkMessage
         {
             public int A;
@@ -86,17 +106,29 @@ namespace Unity.Netcode.EditorTests
 
             }
         }
+        private class TestMessageProviderThree : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessageFour),
+                        Handler = TestMessageFour.Receive
+                    }
+                };
+            }
+        }
 
         [Test]
-        public void WhenCreatingMessageSystem_OnlyBoundTypesAreRegistered()
+        public void WhenCreatingMessageSystem_OnlyProvidedTypesAreRegistered()
         {
-            var ownerOne = new MessagingSystemOwnerOne();
-            var ownerTwo = new MessagingSystemOwnerTwo();
             var sender = new NopMessageSender();
 
-            var systemOne = new MessagingSystem(sender, ownerOne);
-            var systemTwo = new MessagingSystem(sender, ownerTwo);
-            var systemThree = new MessagingSystem(sender, null);
+            var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
+            var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
+            var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
@@ -116,13 +148,11 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenCreatingMessageSystem_BoundTypeMessageHandlersAreRegistered()
         {
-            var ownerOne = new MessagingSystemOwnerOne();
-            var ownerTwo = new MessagingSystemOwnerTwo();
             var sender = new NopMessageSender();
 
-            var systemOne = new MessagingSystem(sender, ownerOne);
-            var systemTwo = new MessagingSystem(sender, ownerTwo);
-            var systemThree = new MessagingSystem(sender, null);
+            var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
+            var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
+            var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
