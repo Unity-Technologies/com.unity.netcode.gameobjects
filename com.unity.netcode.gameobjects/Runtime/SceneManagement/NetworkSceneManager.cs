@@ -1884,6 +1884,7 @@ namespace Unity.Netcode
             {
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
                 {
+                    sobj.gameObject.SetActive(true);
                     continue;
                 }
 
