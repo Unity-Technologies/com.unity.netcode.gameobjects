@@ -288,6 +288,12 @@ namespace Unity.Netcode.Components
             return false;
         }
 
+        /* $AS TODO: Right now we are not checking for changed values this is because
+        the read side of this function doesn't have similar logic which would cause
+        an overflow read because it doesn't know if the value is there or not. So 
+        there needs to be logic to track which indexes changed in order for there 
+        to be proper value change checking. Will revist in 1.1.0.
+        */
         private unsafe bool WriteParameters(FastBufferWriter writer, bool autoSend)
         {
             if (m_CachedAnimatorParameters == null)
