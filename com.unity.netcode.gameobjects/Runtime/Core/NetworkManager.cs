@@ -380,7 +380,7 @@ namespace Unity.Netcode
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        internal INetworkMetrics NetworkMetrics { get; private set; }
+        internal NetworkMetrics NetworkMetrics { get; private set; }
 
         internal static event Action OnSingletonReady;
 
@@ -524,11 +524,7 @@ namespace Unity.Netcode
 
             if (NetworkMetrics == null)
             {
-#if MULTIPLAYER_TOOLS
                 NetworkMetrics = new NetworkMetrics();
-#else
-                NetworkMetrics = new NullNetworkMetrics();
-#endif
             }
 
 #if MULTIPLAYER_TOOLS
