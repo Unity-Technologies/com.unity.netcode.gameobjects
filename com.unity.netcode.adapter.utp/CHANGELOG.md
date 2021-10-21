@@ -3,6 +3,10 @@ All notable changes to this package will be documented in this file. The format 
 
 ## [1.0.0-pre.3] - TBD
 
+### Changed
+
+- Updated Unity Transport package to 1.0.0-pre.7
+
 ### Fixed
 
 - Fixed sends failing when send queue is filled or close to be filled.
