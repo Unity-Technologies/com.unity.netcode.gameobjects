@@ -2,6 +2,7 @@
     "name": "Unity.Netcode.EditorTests",
     "rootNamespace": "Unity.Netcode.EditorTests",
     "references": [
+        "Unity.Collections",
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",

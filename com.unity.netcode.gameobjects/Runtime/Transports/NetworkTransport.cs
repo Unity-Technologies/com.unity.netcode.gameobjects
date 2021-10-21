@@ -62,12 +62,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Connects client to the server
         /// </summary>
-        public abstract SocketTasks StartClient();
+        public abstract bool StartClient();
 
         /// <summary>
         /// Starts to listening for incoming clients
         /// </summary>
-        public abstract SocketTasks StartServer();
+        public abstract bool StartServer();
 
         /// <summary>
         /// Disconnects a client from the server

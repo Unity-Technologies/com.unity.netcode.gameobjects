@@ -24,7 +24,7 @@ namespace Unity.Netcode
         public void Handle(ulong senderId, FastBufferReader reader, NetworkManager networkManager)
         {
             var networkObject = NetworkObject.AddSceneObject(ObjectInfo, reader, networkManager);
-            networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject.NetworkObjectId, networkObject.name, reader.Length);
+            networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject, reader.Length);
         }
     }
 }

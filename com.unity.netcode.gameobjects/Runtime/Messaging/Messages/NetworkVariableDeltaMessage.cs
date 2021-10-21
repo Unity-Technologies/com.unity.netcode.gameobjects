@@ -85,8 +85,7 @@ namespace Unity.Netcode
 
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         ClientId,
-                        NetworkBehaviour.NetworkObjectId,
-                        NetworkBehaviour.name,
+                        NetworkBehaviour.NetworkObject,
                         NetworkBehaviour.NetworkVariableFields[k].Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length);
@@ -107,10 +106,10 @@ namespace Unity.Netcode
             }
             reader.ReadValue(out message.NetworkObjectId);
             reader.ReadValue(out message.NetworkBehaviourIndex);
-            message.Handle(context.SenderId, reader, networkManager);
+            message.Handle(context.SenderId, reader, context, networkManager);
         }
 
-        public void Handle(ulong senderId, FastBufferReader reader, NetworkManager networkManager)
+        public void Handle(ulong senderId, FastBufferReader reader, in NetworkContext context, NetworkManager networkManager)
         {
             if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
             {
@@ -183,8 +182,7 @@ namespace Unity.Netcode
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             senderId,
-                            behaviour.NetworkObjectId,
-                            behaviour.name,
+                            networkObject,
                             behaviour.NetworkVariableFields[i].Name,
                             behaviour.__getTypeName(),
                             reader.Length);
@@ -216,12 +214,9 @@ namespace Unity.Netcode
                     }
                 }
             }
-            else if (networkManager.IsServer)
+            else
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Network variable delta message received for a non-existent object with {nameof(NetworkObjectId)}: {NetworkObjectId}. This delta was lost.");
-                }
+                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, reader, context);
             }
         }
     }

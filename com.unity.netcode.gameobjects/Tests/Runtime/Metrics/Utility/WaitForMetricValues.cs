@@ -55,6 +55,23 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
             return m_Values;
         }
 
+        public void AssertMetricValuesHaveNotBeenFound()
+        {
+            if (m_HasError)
+            {
+                Assert.Fail(m_Error);
+            }
+
+            if (!m_Found)
+            {
+                Assert.Pass();
+            }
+            else
+            {
+                Assert.Fail();
+            }
+        }
+
         public void Observe(MetricCollection collection)
         {
             if (m_Found || m_HasError)
