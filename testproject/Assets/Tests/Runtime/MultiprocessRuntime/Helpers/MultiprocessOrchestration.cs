@@ -180,9 +180,13 @@ public class MultiprocessOrchestration
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
     {
+        MultiprocessLogger.Log("StartWorkerOnRemoteNodes");
         // That suggests sufficient information to determine that we can run remotely
         string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
         var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
+        var fileNameInfo = new FileInfo(fileName);
+
+        MultiprocessLogger.Log($"launching {fileName} does it exist {fileNameInfo.Exists} ");
 
         var workerProcess = new Process();
         // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
@@ -193,15 +197,19 @@ public class MultiprocessOrchestration
         workerProcess.StartInfo.Arguments = $"{fileName} launch";
         try
         {
+            MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
                 throw new Exception("Failed to start worker process!");
+            } else
+            {
+                MultiprocessLogger.Log($" {workerProcess.HasExited} ");
             }
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+            MultiprocessLogger.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
             throw;
         }
     }
