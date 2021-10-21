@@ -40,7 +40,8 @@ namespace Unity.Netcode
         public double FixedTime => m_CachedTick * m_TickInterval;
 
         /// <summary>
-        /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant. Similar to <see cref="Time.fixedDeltaTime"/> There is no equivalent to <see cref="Time.deltaTime"/>
+        /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant.
+        /// Similar to <see cref="Time.fixedDeltaTime"/> There is no equivalent to <see cref="Time.deltaTime"/>
         /// </summary>
         public float FixedDeltaTime => (float)m_TickInterval;
 
@@ -51,6 +52,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the tickrate of the system of this <see cref="NetworkTime"/>.
+        /// Ticks per second.
         /// </summary>
         public uint TickRate => m_TickRate;
 
@@ -101,6 +103,11 @@ namespace Unity.Netcode
         public NetworkTime ToFixedTime()
         {
             return new NetworkTime(m_TickRate, m_CachedTick);
+        }
+
+        public NetworkTime TimeTicksAgo(int ticks)
+        {
+            return this - new NetworkTime(TickRate, ticks);
         }
 
         private void UpdateCache()

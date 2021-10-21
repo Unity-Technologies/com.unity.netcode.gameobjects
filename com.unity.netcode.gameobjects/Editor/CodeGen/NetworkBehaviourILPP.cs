@@ -20,6 +20,9 @@ namespace Unity.Netcode.Editor.CodeGen
 
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
+        private const string k_ReadValueMethodName = nameof(FastBufferReader.ReadValueSafe);
+        private const string k_WriteValueMethodName = nameof(FastBufferWriter.WriteValueSafe);
+
         public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
@@ -464,38 +467,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 typeDefinition.Methods.Add(newGetTypeNameMethod);
             }
 
-            // Weird behavior from Cecil: When importing a reference to a specific implementation of a generic
-            // method, it's importing the main module as a reference into itself. This causes Unity to have issues
-            // when attempting to iterate the assemblies to discover unit tests, as it goes into infinite recursion
-            // and eventually hits a stack overflow. I wasn't able to find any way to stop Cecil from importing the module
-            // into itself, so at the end of it all, we're just going to go back and remove it again.
-            var moduleName = m_MainModule.Name;
-            if (moduleName.EndsWith(".dll") || moduleName.EndsWith(".exe"))
-            {
-                moduleName = moduleName.Substring(0, moduleName.Length - 4);
-            }
-
-            foreach (var reference in m_MainModule.AssemblyReferences)
-            {
-                var referenceName = reference.Name.Split(',')[0];
-                if (referenceName.EndsWith(".dll") || referenceName.EndsWith(".exe"))
-                {
-                    referenceName = referenceName.Substring(0, referenceName.Length - 4);
-                }
-
-                if (moduleName == referenceName)
-                {
-                    try
-                    {
-                        m_MainModule.AssemblyReferences.Remove(reference);
-                        break;
-                    }
-                    catch (Exception)
-                    {
-                        //
-                    }
-                }
-            }
+            m_MainModule.RemoveRecursiveReferences();
         }
 
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
@@ -637,7 +609,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var parameters = method.Resolve().Parameters;
 
-                    if (method.Name == "WriteValueSafe")
+                    if (method.Name == k_WriteValueMethodName)
                     {
                         if (parameters[1].IsIn)
                         {
@@ -668,7 +640,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 var typeMethod = GetFastBufferWriterWriteMethod("WriteNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetFastBufferWriterWriteMethod("WriteValueSafe", paramType);
+                    typeMethod = GetFastBufferWriterWriteMethod(k_WriteValueMethodName, paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -754,7 +726,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var parameters = method.Resolve().Parameters;
                     if (
-                        method.Name == "ReadValueSafe"
+                        method.Name == k_ReadValueMethodName
                         && parameters[1].IsOut
                         && parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve()
                         && ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
@@ -770,7 +742,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 var typeMethod = GetFastBufferReaderReadMethod("ReadNetworkSerializable", paramType);
                 if (typeMethod == null)
                 {
-                    typeMethod = GetFastBufferReaderReadMethod("ReadValueSafe", paramType);
+                    typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
                 }
                 if (typeMethod != null)
                 {
@@ -1014,13 +986,12 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement INetworkSerializable or add an extension method to FastBufferWriter to define serialization.");
+                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                         continue;
                     }
 
                     if (jumpInstruction != null)
                     {
-                        // }
                         instructions.Add(jumpInstruction);
                     }
                 }
@@ -1305,13 +1276,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement INetworkSerializable or add an extension method to FastBufferReader to define serialization.");
+                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferReader)}.{k_ReadValueMethodName} to define serialization.");
                     continue;
                 }
 
                 if (jumpInstruction != null)
                 {
-                    // }
                     processor.Append(jumpInstruction);
                 }
             }

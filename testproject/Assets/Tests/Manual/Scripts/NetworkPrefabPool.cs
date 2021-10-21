@@ -179,7 +179,7 @@ namespace TestProject.ManualTests
         {
             switch (sceneEvent.SceneEventType)
             {
-                case SceneEventData.SceneEventTypes.S2C_Unload:
+                case SceneEventType.Unload:
                     {
                         if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneEvent.SceneName))
                         {
@@ -266,7 +266,7 @@ namespace TestProject.ManualTests
                             {
                                 if (networkObject.IsSpawned)
                                 {
-                                    networkObject.Despawn(true);
+                                    networkObject.Despawn();
                                 }
                                 else if (!DontDestroy)
                                 {

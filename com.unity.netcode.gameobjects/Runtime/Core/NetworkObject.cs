@@ -167,6 +167,18 @@ namespace Unity.Netcode
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
+#if MULTIPLAYER_TOOLS
+        private string m_CachedNameForMetrics;
+#endif
+        internal string GetNameForMetrics()
+        {
+#if MULTIPLAYER_TOOLS
+            return m_CachedNameForMetrics ??= name;
+#else
+            return null;
+#endif
+        }
+
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
@@ -317,10 +329,7 @@ namespace Unity.Netcode
                 };
                 // Send destroy call
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                        ? 0
-                        : size;
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
 
@@ -514,7 +523,7 @@ namespace Unity.Netcode
         /// Despawns the <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
         /// </summary>
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
-        public void Despawn(bool destroy = false)
+        public void Despawn(bool destroy = true)
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }

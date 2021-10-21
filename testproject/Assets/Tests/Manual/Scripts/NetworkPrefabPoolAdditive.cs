@@ -117,7 +117,7 @@ namespace TestProject.ManualTests
         {
             switch (sceneEvent.SceneEventType)
             {
-                case SceneEventData.SceneEventTypes.S2C_Unload:
+                case SceneEventType.Unload:
                     {
                         if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
                         {
@@ -125,7 +125,7 @@ namespace TestProject.ManualTests
                         }
                         break;
                     }
-                case SceneEventData.SceneEventTypes.S2C_Load:
+                case SceneEventType.Load:
                     {
                         if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
                         {
@@ -157,7 +157,7 @@ namespace TestProject.ManualTests
                         {
                             if (DestroyOnUnload)
                             {
-                                networkObject.Despawn(true);
+                                networkObject.Despawn();
                             }
                             else if (SpawnInSourceScene)
                             {

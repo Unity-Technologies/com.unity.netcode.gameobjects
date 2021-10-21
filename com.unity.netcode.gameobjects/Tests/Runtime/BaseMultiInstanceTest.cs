@@ -19,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected abstract int NbClients { get; }
 
+        protected bool m_BypassStartAndWaitForClients = false;
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
@@ -59,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
         /// </summary>
-        private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
             if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
@@ -74,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
         /// scene and its handle for both client(s) and server-host.
         /// </summary>
-        private void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        public static void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
         {
             // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
             // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
@@ -82,7 +84,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
                 // If a unit/integration test does not handle this on their own, then Ignore the validation warning
-                networkManager.SceneManager.IgnoreSceneValidationWarning = true;
+                networkManager.SceneManager.DisableValidationWarnings(true);
             }
 
             // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
@@ -153,19 +155,22 @@ namespace Unity.Netcode.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
-            // is started and after each client is started.
-            if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+            if (!m_BypassStartAndWaitForClients)
             {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                // Wait for connection on client side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+
+                // Wait for connection on server side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
             }
-
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
     }
 }

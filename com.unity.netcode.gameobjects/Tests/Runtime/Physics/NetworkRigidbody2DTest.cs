@@ -6,12 +6,12 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Physics
 {
-    public class NetworkRigidbody2DDynamicTest : NetworkRigidbodyTestBase
+    public class NetworkRigidbody2DDynamicTest : NetworkRigidbody2DTestBase
     {
         public override bool Kinematic => false;
     }
 
-    public class NetworkRigidbody2DKinematicTest : NetworkRigidbodyTestBase
+    public class NetworkRigidbody2DKinematicTest : NetworkRigidbody2DTestBase
     {
         public override bool Kinematic => true;
     }
@@ -29,7 +29,8 @@ namespace Unity.Netcode.RuntimeTests.Physics
             {
                 playerPrefab.AddComponent<NetworkTransform>();
                 playerPrefab.AddComponent<Rigidbody2D>();
-                playerPrefab.AddComponent<NetworkRigidbody>();
+                playerPrefab.AddComponent<NetworkRigidbody2D>();
+                playerPrefab.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
                 playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
             });
         }
@@ -54,24 +55,27 @@ namespace Unity.Netcode.RuntimeTests.Physics
             Assert.IsNotNull(serverPlayer);
             Assert.IsNotNull(clientPlayer);
 
-            int waitFor = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= waitFor);
+            yield return NetworkRigidbodyTestBase.WaitForFrames(5);
 
             // server rigidbody has authority and should have a kinematic mode of false
             Assert.True(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
+            Assert.AreEqual(RigidbodyInterpolation2D.Interpolate, serverPlayer.GetComponent<Rigidbody2D>().interpolation);
 
             // client rigidbody has no authority and should have a kinematic mode of true
             Assert.True(clientPlayer.GetComponent<Rigidbody2D>().isKinematic);
+            Assert.AreEqual(RigidbodyInterpolation2D.None, clientPlayer.GetComponent<Rigidbody2D>().interpolation);
 
-            // despawn the server player
+            // despawn the server player, (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
-            yield return null;
+            yield return NetworkRigidbodyTestBase.WaitForFrames(5);
 
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 
-            yield return null;
+            yield return NetworkRigidbodyTestBase.WaitForFrames(5);
+
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
         }
+
     }
 }
