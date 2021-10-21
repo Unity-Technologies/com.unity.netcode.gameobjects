@@ -1127,6 +1127,11 @@ namespace Unity.Netcode.Editor.CodeGen
             nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, m_RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
+
+            // begin Try/Catch
+            var tryStart = processor.Create(OpCodes.Nop);
+            processor.Append(tryStart);
+
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
             var requireOwnership = true; // default value MUST be = `ServerRpcAttribute.RequireOwnership`
             foreach (var attrField in rpcAttribute.Fields)
@@ -1303,7 +1308,46 @@ namespace Unity.Netcode.Editor.CodeGen
             processor.Emit(OpCodes.Ldc_I4, (int)NetworkBehaviour.__RpcExecStage.None);
             processor.Emit(OpCodes.Stfld, m_NetworkBehaviour_rpc_exec_stage_FieldRef);
 
+            //try ends/catch begins
+            var catchEnds = processor.Create(OpCodes.Nop);
+            processor.Emit(OpCodes.Leave, catchEnds);
+
+            // Load the Exception onto the stack
+            var catchStarts = processor.Create(OpCodes.Stloc_1);
+            processor.Append(catchStarts);
+
+            // pull in the Exception Module
+            var exception = m_MainModule.ImportReference(typeof(Exception));
+
+            // Get Exception.Message
+            var exp = m_MainModule.ImportReference(typeof(Exception).GetMethod("get_Message", new Type[] { }));
+
+            // Get String.Format (This is equivelent to an interpolated string)
+            var stringFormat = m_MainModule.ImportReference(typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }));
+
+            // Load string for the error log that will be shown
+            processor.Emit(OpCodes.Ldstr, $"You have thrown an exception in an RPC function {methodDefinition.FullName} {{0}}");
+            processor.Emit(OpCodes.Ldloc_1);
+            processor.Emit(OpCodes.Callvirt, exp);
+            processor.Emit(OpCodes.Call, stringFormat);
+
+            // Call Debug.LogError
+            processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
+
+            // catch ends
+            processor.Append(catchEnds);
+
+            processor.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+            {
+                CatchType = exception,
+                TryStart = tryStart,
+                TryEnd = catchStarts,
+                HandlerStart = catchStarts,
+                HandlerEnd = catchEnds
+            });
+
             processor.Emit(OpCodes.Ret);
+
             return nhandler;
         }
     }
