@@ -555,8 +555,6 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem(this);
-
             if (server)
             {
                 NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
@@ -568,6 +566,8 @@ namespace Unity.Netcode
 
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
             NetworkTickSystem.Tick += OnNetworkManagerTick;
+
+            SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
