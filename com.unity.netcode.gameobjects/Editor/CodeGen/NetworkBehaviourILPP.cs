@@ -1319,14 +1319,14 @@ namespace Unity.Netcode.Editor.CodeGen
             // pull in the Exception Module
             var exception = m_MainModule.ImportReference(typeof(Exception));
 
-            // Get Exception.Message
-            var exp = m_MainModule.ImportReference(typeof(Exception).GetMethod("get_Message", new Type[] { }));
+            // Get Exception.ToString()
+            var exp = m_MainModule.ImportReference(typeof(Exception).GetMethod("ToString", new Type[] { }));
 
             // Get String.Format (This is equivelent to an interpolated string)
             var stringFormat = m_MainModule.ImportReference(typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }));
 
             // Load string for the error log that will be shown
-            processor.Emit(OpCodes.Ldstr, $"You have thrown an exception in an RPC function {methodDefinition.FullName} {{0}}");
+            processor.Emit(OpCodes.Ldstr, $"Unhandled RPC Exception:\n {{0}}");
             processor.Emit(OpCodes.Ldloc_0);
             processor.Emit(OpCodes.Callvirt, exp);
             processor.Emit(OpCodes.Call, stringFormat);
