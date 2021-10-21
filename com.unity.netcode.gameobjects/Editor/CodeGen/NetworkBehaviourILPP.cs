@@ -1313,7 +1313,7 @@ namespace Unity.Netcode.Editor.CodeGen
             processor.Emit(OpCodes.Leave, catchEnds);
 
             // Load the Exception onto the stack
-            var catchStarts = processor.Create(OpCodes.Stloc_1);
+            var catchStarts = processor.Create(OpCodes.Stloc_0);
             processor.Append(catchStarts);
 
             // pull in the Exception Module
@@ -1327,12 +1327,17 @@ namespace Unity.Netcode.Editor.CodeGen
 
             // Load string for the error log that will be shown
             processor.Emit(OpCodes.Ldstr, $"You have thrown an exception in an RPC function {methodDefinition.FullName} {{0}}");
-            processor.Emit(OpCodes.Ldloc_1);
+            processor.Emit(OpCodes.Ldloc_0);
             processor.Emit(OpCodes.Callvirt, exp);
             processor.Emit(OpCodes.Call, stringFormat);
 
             // Call Debug.LogError
             processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
+
+            // reset NetworkBehaviour.__rpc_exec_stage = __RpcExecStage.None;
+            processor.Emit(OpCodes.Ldarg_0);
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkBehaviour.__RpcExecStage.None);
+            processor.Emit(OpCodes.Stfld, m_NetworkBehaviour_rpc_exec_stage_FieldRef);
 
             // catch ends
             processor.Append(catchEnds);
