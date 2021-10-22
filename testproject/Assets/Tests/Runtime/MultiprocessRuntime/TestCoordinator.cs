@@ -72,14 +72,14 @@ public class TestCoordinator : NetworkBehaviour
 
             }
         }
-
+        MultiprocessLogger.Log($"{m_Port}");
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         MultiprocessLogger.Log($"Transport is {transport.ToString()}");
         switch (transport)
         {
             case UNetTransport unetTransport:
-                MultiprocessLogger.Log("Setting ConnectPort and ServerListenPort");
+                MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (isClient)
@@ -106,6 +106,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
+        MultiprocessLogger.Log($"Update() - {Time.time - m_TimeSinceLastKeepAlive}");
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication();
@@ -125,6 +126,10 @@ public class TestCoordinator : NetworkBehaviour
                 QuitApplication();
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
+        }
+        else
+        {
+            MultiprocessLogger.Log($"isClient {IsClient} ISConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 
