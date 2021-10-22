@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed 
 
 - Overflow exception when syncing Animator state.
+- Added Try/Catch around RPC calls, preventing exception from causing further RPC calls to fail
 
 ## [1.0.0-pre.2] - 2020-12-20
 
