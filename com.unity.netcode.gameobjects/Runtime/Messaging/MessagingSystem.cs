@@ -226,7 +226,7 @@ namespace Unity.Netcode
 
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
+                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
             }
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
@@ -247,7 +247,7 @@ namespace Unity.Netcode
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
+                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
             }
         }
 
@@ -310,8 +310,13 @@ namespace Unity.Netcode
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
+            if (clientIds.Count == 0)
+            {
+                return 0;
+            }
+
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
-            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(MessageHeader), Allocator.Temp, maxSize - sizeof(MessageHeader));
+            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
             using (tmpSerializer)
             {
                 message.Serialize(tmpSerializer);
@@ -342,7 +347,7 @@ namespace Unity.Netcode
                         ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
                         if (lastQueueItem.NetworkDelivery != delivery ||
                             lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
-                            < tmpSerializer.Length + sizeof(MessageHeader))
+                            < tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>())
                         {
                             sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                                 maxSize));
@@ -351,7 +356,7 @@ namespace Unity.Netcode
                     }
 
                     ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
-                    writeQueueItem.Writer.TryBeginWrite(sizeof(MessageHeader) + tmpSerializer.Length);
+                    writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
                     var header = new MessageHeader
                     {
                         MessageSize = (ushort)tmpSerializer.Length,
@@ -363,11 +368,11 @@ namespace Unity.Netcode
                     writeQueueItem.BatchHeader.BatchSize++;
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
+                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
                     }
                 }
 
-                return tmpSerializer.Length;
+                return tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>();
             }
         }
 

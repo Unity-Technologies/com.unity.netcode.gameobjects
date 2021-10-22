@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>(), ownershipChangeSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + FastBufferWriter.GetWriteSize<MessageHeader>(), ownershipChangeSent.BytesCount);
         }
 
         [UnityTest]
