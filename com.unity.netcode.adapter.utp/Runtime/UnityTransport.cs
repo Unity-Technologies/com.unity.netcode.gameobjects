@@ -100,6 +100,21 @@ namespace Unity.Netcode
         [Tooltip("The maximum size in bytes of the send queue for batching Netcode events")]
         [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
 
+        [Tooltip("A timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
+        [SerializeField] private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
+
+        [Tooltip("A timeout in milliseconds indicating how long we will wait until we send a new connection attempt.")]
+        [SerializeField] private int m_ConnectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS;
+
+        [Tooltip("The maximum amount of connection attempts we will try before disconnecting.")]
+        [SerializeField] private int m_MaxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts;
+
+        [Tooltip("A timeout in milliseconds indicating how long we will wait for a connection event, before we disconnect it. " +
+            "(The connection needs to receive data from the connected endpoint within this timeout." +
+            "Note that with heartbeats enabled, simply not" +
+            "sending any data will not be enough to trigger this timeout (since heartbeats count as connection event)")]
+        [SerializeField] private int m_DisconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS;
+
         [Serializable]
         public struct ConnectionAddressData
         {
@@ -758,20 +773,23 @@ namespace Unity.Netcode
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             var netParams = new NetworkConfigParameter
             {
-                maxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts,
-                connectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS,
-                disconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS,
-                maxFrameTimeMS = 100
+                maxConnectAttempts = transport.m_MaxConnectAttempts,
+                connectTimeoutMS = transport.m_ConnectTimeoutMS,
+                disconnectTimeoutMS = transport.m_DisconnectTimeoutMS,
+                heartbeatTimeoutMS = transport.m_HeartbeatTimeoutMS,
+                maxFrameTimeMS = 0
             };
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            netParams.maxFrameTimeMS = 100;
 
             var simulatorParams = ClientSimulatorParameters;
             transport.m_NetworkParameters.Insert(0, simulatorParams);
-            transport.m_NetworkParameters.Insert(0, netParams);
 #endif
+            transport.m_NetworkParameters.Insert(0, netParams);
+
             if (transport.m_NetworkParameters.Count > 0)
             {
                 driver = NetworkDriver.Create(transport.m_NetworkParameters.ToArray());
