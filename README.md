@@ -1,5 +1,5 @@
 [![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/) [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
-[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://docs-multiplayer.unity3d.com/) [![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/docs/mlapi-api/introduction)
+[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://docs-multiplayer.unity3d.com/) [![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/docs/api/introduction)
 
 [![GitHub Release](https://img.shields.io/github/release/Unity-Technologies/com.unity.netcode.gameobjects.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/releases/latest)
 
