@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [1.0.0-pre.3] - 2021-10-22
+
+### Added
+
+- ResetTrigger function to NetworkAnimator
+
+### Fixed 
+
+- Overflow exception when syncing Animator state.
+
 ## [1.0.0-pre.2] - 2020-12-20
 
 ### Added
