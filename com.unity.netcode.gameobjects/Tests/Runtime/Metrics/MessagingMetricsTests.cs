@@ -14,9 +14,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     public class MessagingMetricsTests : DualClientMetricTestBase
     {
-        const uint MessageNameHashSize = 8;
-
-        const uint MessageOverhead = MessageNameHashSize;
+        private const uint k_MessageNameHashSize = 8;
+        private static readonly int k_NamedMessageOverhead = (int)k_MessageNameHashSize + FastBufferWriter.GetWriteSize<MessageHeader>();
+        private static readonly int k_UnnamedMessageOverhead = FastBufferWriter.GetWriteSize<MessageHeader>();
 
         protected override int NbClients => 2;
 
@@ -111,7 +111,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var namedMessageSent = namedMessageSentMetricValues.First();
             Assert.AreEqual(messageName.ToString(), namedMessageSent.Name);
             Assert.AreEqual(FirstClient.LocalClientId, namedMessageSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, namedMessageSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_NamedMessageOverhead, namedMessageSent.BytesCount);
         }
 
         [UnityTest]
@@ -132,7 +132,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var namedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, namedMessageSentMetricValues.Count);
             Assert.That(namedMessageSentMetricValues.Select(x => x.Name), Has.All.EqualTo(messageName.ToString()));
-            Assert.That(namedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead));
+            Assert.That(namedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(messageName) + k_NamedMessageOverhead));
         }
 
         [UnityTest]
@@ -181,7 +181,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var namedMessageReceived = namedMessageReceivedValues.First();
             Assert.AreEqual(messageName.ToString(), namedMessageReceived.Name);
             Assert.AreEqual(Server.LocalClientId, namedMessageReceived.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, namedMessageReceived.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_NamedMessageOverhead, namedMessageReceived.BytesCount);
         }
 
         [UnityTest]
@@ -205,7 +205,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageSent = unnamedMessageSentMetricValues.First();
             Assert.AreEqual(FirstClient.LocalClientId, unnamedMessageSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(message), unnamedMessageSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(message) + k_UnnamedMessageOverhead, unnamedMessageSent.BytesCount);
         }
 
         [UnityTest]
@@ -225,7 +225,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, unnamedMessageSentMetricValues.Count);
-            Assert.That(unnamedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(message)));
+            Assert.That(unnamedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(FastBufferWriter.GetWriteSize(message) + k_UnnamedMessageOverhead));
 
             var clientIds = unnamedMessageSentMetricValues.Select(x => x.Connection.Id).ToList();
             Assert.Contains(FirstClient.LocalClientId, clientIds);
@@ -268,7 +268,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var unnamedMessageReceived = unnamedMessageReceivedValues.First();
             Assert.AreEqual(Server.LocalClientId, unnamedMessageReceived.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(message), unnamedMessageReceived.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(message) + k_UnnamedMessageOverhead, unnamedMessageReceived.BytesCount);
         }
     }
 }
