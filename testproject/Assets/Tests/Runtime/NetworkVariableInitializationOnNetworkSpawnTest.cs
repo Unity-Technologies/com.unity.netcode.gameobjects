@@ -102,6 +102,8 @@ namespace TestProject.RuntimeTests
         public IEnumerator WhenANetworkVariableIsInitializedInOnNetworkSpawnOnTheServer_TheSpawnedObjectsNetworkVariableOnTheClientIsInitializedWithTheSameValue()
         {
             yield return RunTest();
+            var nextFrameNumber = Time.frameCount + 3;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             Assert.IsTrue(NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer);
             Assert.IsTrue(NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient);
         }

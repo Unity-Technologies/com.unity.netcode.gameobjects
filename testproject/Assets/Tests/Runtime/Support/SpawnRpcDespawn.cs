@@ -14,6 +14,8 @@ namespace TestProject.RuntimeTests.Support
         public static bool ExecuteClientRpc;
         public static NetworkUpdateStage StageExecutedByReceiver;
 
+        internal int CallClientRpcInFrames = 0;
+
         private bool m_Active = false;
 
         [ClientRpc]
@@ -50,7 +52,7 @@ namespace TestProject.RuntimeTests.Support
 
             if (ExecuteClientRpc)
             {
-                TestClientRpc();
+                CallClientRpcInFrames = 3;
             }
         }
 
@@ -89,6 +91,15 @@ namespace TestProject.RuntimeTests.Support
 
         public void NetworkUpdate(NetworkUpdateStage stage)
         {
+            if (CallClientRpcInFrames > 0)
+            {
+                CallClientRpcInFrames--;
+                if (CallClientRpcInFrames == 0)
+                {
+                    TestClientRpc();
+                }
+            }
+
             if (IsServer && m_Active && stage == TestStage)
             {
                 RunTest();

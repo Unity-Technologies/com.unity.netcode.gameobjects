@@ -169,7 +169,7 @@ namespace TestProject.RuntimeTests
 
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            var lastFrameNumber = Time.frameCount + 1;
+            var lastFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
             Assert.True(handler.WasDestroyed);
         }
@@ -240,11 +240,18 @@ namespace TestProject.RuntimeTests
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
+            var waitFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+
             Assert.True(handler.WasSpawned);
             Assert.True(Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled);
             var lastFrameNumber = Time.frameCount + 1;
             Object.Destroy(serverObject);
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
+
+            waitFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+
             Assert.True(handler.WasDestroyed);
         }
     }
