@@ -1070,7 +1070,6 @@ namespace Unity.Netcode
                 InterestManager = null;
             }
 
-            IsListening = false;
             if (MessagingSystem != null)
             {
                 MessagingSystem.Dispose();

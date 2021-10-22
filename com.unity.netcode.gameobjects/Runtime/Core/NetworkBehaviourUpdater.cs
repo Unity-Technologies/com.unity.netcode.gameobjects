@@ -24,12 +24,19 @@ namespace Unity.Netcode
                     m_Touched.Clear();
                     for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                     {
+       					var client = networkManager.ConnectedClientsList[i];
+					#if INTEREST_SYSTEM
                         m_TouchedThisClient.Clear();
-                        var client = networkManager.ConnectedClientsList[i];
                         networkManager.InterestManager.QueryFor(client, m_TouchedThisClient);
 
                         m_Touched.UnionWith(m_TouchedThisClient);
                         foreach (var sobj in m_TouchedThisClient)
+					#else
+				        var spawnedObjs = networkManager.SpawnManager.SpawnedObjectsList;
+                        m_Touched.UnionWith(spawnedObjs);
+                        foreach (var sobj in spawnedObjs)
+					#endif
+
                         {
                             if (sobj.IsNetworkVisibleTo(client.ClientId))
                             {
