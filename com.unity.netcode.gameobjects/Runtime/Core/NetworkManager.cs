@@ -149,14 +149,9 @@ namespace Unity.Netcode
 
             public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
-
-                var length = batchData.Length;
-                //TODO: Transport needs to have a way to send it data without copying and allocating here.
-                var bytes = batchData.ToArray();
-                var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
+                var sendBuffer = batchData.ToTempByteArray();
 
                 m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, delivery);
-
             }
         }
 
