@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this package will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
+## [1.0.0-pre.3] - 2021-10-22
+
+#### Added 
+
+- Exposed `m_HeartbeatTimeoutMS`, `m_ConnectTimeoutMS`, `m_MaxConnectAttempts`, and `m_DisconnectTimeoutMS` parameters. (#1314)
+
+### Changed
+
+- Updated Unity Transport package to 1.0.0-pre.7
+- Updated Netcode for GameObjects dependency to 1.0.0-pre.3
+
+### Fixed
+
+- Fixed sends failing when send queue is filled or close to be filled. (#1317)
+- Heartbeats API not working for Unity Transport when running in the editor or development builds. (#1314)
+
 ## [1.0.0-pre.2] - 2020-12-20
 
 ### Changed
