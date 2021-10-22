@@ -5,7 +5,7 @@ All notable changes to this package will be documented in this file. The format 
 
 #### Added 
 
-- Exposed `m_HeartbeatTimeoutMS`, `m_ConnectTimeoutMS`, `m_MaxConnectAttempts`, and `m_DisconnectTimeoutMS` parameters.
+- Exposed `m_HeartbeatTimeoutMS`, `m_ConnectTimeoutMS`, `m_MaxConnectAttempts`, and `m_DisconnectTimeoutMS` parameters. (#1314)
 
 ### Changed
 
@@ -14,8 +14,8 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Fixed
 
-- Fixed sends failing when send queue is filled or close to be filled.
-- Heartbeats API not working for Unity Transport when running in the editor or development builds.
+- Fixed sends failing when send queue is filled or close to be filled. (#1317)
+- Heartbeats API not working for Unity Transport when running in the editor or development builds. (#1314)
 
 ## [1.0.0-pre.2] - 2020-12-20
 
