@@ -76,8 +76,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return null;
         }
 
-
-
         // Check if can make a simple data exchange (both ways at a time).
         [UnityTest]
         public IEnumerator PingPongSimultaneous()
@@ -109,6 +107,55 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             Assert.That(m_ServerEvents[2].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("pong")));
             Assert.That(m_Client1Events[2].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("pong")));
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator FilledSendQueueSingleSend()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+
+            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
+            m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator FilledSendQueueMultipleSends()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+
+            var numSends = UnityTransport.InitialBatchQueueSize / 1024;
+
+            for (int i = 0; i < numSends; i++)
+            {
+                // We remove 4 bytes because each send carries a 4 bytes overhead in the send queue.
+                // Without that we wouldn't fill the send queue; it would get flushed right when we
+                // try to send the last message.
+                var payload = new ArraySegment<byte>(new byte[1024 - 4]);
+                m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+            }
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            // Extra event is for the Connect event.
+            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
 
             yield return null;
         }

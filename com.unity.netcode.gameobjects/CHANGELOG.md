@@ -6,7 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [1.0.0-pre.3] - 2021-10-22
+
+### Added
+
+- ResetTrigger function to NetworkAnimator
+
+### Fixed 
+
+- Overflow exception when syncing Animator state.
+
+## [1.0.0-pre.2] - 2020-12-20
+
+### Added
+
+- Associated Known Issues for the 1.0.0-pre.1 release in the changelog
+
+### Changed
+
+- Updated label for `1.0.0-pre.1` changelog section
+
+## [1.0.0-pre.1] - 2020-12-20
 
 ### Added
 
@@ -101,6 +121,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed #915 - clients are receiving data from objects not visible to them (#1099)
 - Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
 - Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
+
+### Known Issues
+
+- `NetworkVariable` does not serialize `INetworkSerializable` types through their `NetworkSerialize` implementation
+- `NetworkObjects` marked as `DontDestroyOnLoad` are disabled during some network scene transitions
+- `NetworkTransform` interpolates from the origin when switching Local Space synchronization
+- Exceptions thrown in `OnNetworkSpawn` user code for an object will prevent the callback in other objects
+- Cannot send an array of `INetworkSerializable` in RPCs
+- ILPP generation fails with special characters in project path
 
 ## [0.2.0] - 2021-06-03
 
