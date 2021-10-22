@@ -46,9 +46,10 @@ public class CommandLineProcessor
             var arg = args[i].ToLower();
             if (arg.StartsWith("-"))
             {
+                Debug.Log($"Arg is {arg}");
                 var value = i < args.Length - 1 ? args[i + 1].ToLower() : null;
                 value = (value?.StartsWith("-") ?? false) ? null : value;
-
+                Debug.Log($"Value is {value}");
                 m_CommandLineArguments.Add(arg, value);
             }
         }

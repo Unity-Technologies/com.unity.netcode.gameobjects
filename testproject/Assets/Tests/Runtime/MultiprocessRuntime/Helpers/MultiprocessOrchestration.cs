@@ -180,6 +180,7 @@ public class MultiprocessOrchestration
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
     {
+        string launch_platform = Environment.GetEnvironmentVariable("LAUNCH_PLATFORM");
         MultiprocessLogger.Log("StartWorkerOnRemoteNodes");
         // That suggests sufficient information to determine that we can run remotely
         string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
@@ -194,7 +195,7 @@ public class MultiprocessOrchestration
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;
         workerProcess.StartInfo.RedirectStandardOutput = true;
-        workerProcess.StartInfo.Arguments = $"{fileName} launch";
+        workerProcess.StartInfo.Arguments = $"{fileName} launch {launch_platform}";
         try
         {
             MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
