@@ -1,5 +1,6 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -38,11 +39,12 @@ namespace Unity.Netcode.Components
         internal struct AnimationTriggerMessage : INetworkSerializable
         {
             public int Hash;
+            public bool Reset;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref Hash);
-
+                serializer.SerializeValue(ref Reset);
             }
         }
 
@@ -286,6 +288,12 @@ namespace Unity.Netcode.Components
             return false;
         }
 
+        /* $AS TODO: Right now we are not checking for changed values this is because
+        the read side of this function doesn't have similar logic which would cause
+        an overflow read because it doesn't know if the value is there or not. So 
+        there needs to be logic to track which indexes changed in order for there 
+        to be proper value change checking. Will revist in 1.1.0.
+        */
         private unsafe bool WriteParameters(FastBufferWriter writer, bool autoSend)
         {
             if (m_CachedAnimatorParameters == null)
@@ -308,12 +316,8 @@ namespace Unity.Netcode.Components
                     var valueInt = m_Animator.GetInteger(hash);
                     fixed (void* value = cacheValue.Value)
                     {
-                        var oldValue = UnsafeUtility.AsRef<int>(value);
-                        if (valueInt != oldValue)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueInt);
-                            BytePacker.WriteValuePacked(writer, (uint)valueInt);
-                        }
+                        UnsafeUtility.WriteArrayElement(value, 0, valueInt);
+                        BytePacker.WriteValuePacked(writer, (uint)valueInt);
                     }
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
@@ -321,12 +325,8 @@ namespace Unity.Netcode.Components
                     var valueBool = m_Animator.GetBool(hash);
                     fixed (void* value = cacheValue.Value)
                     {
-                        var oldValue = UnsafeUtility.AsRef<bool>(value);
-                        if (valueBool != oldValue)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueBool);
-                            writer.WriteValueSafe(valueBool);
-                        }
+                        UnsafeUtility.WriteArrayElement(value, 0, valueBool);
+                        writer.WriteValueSafe(valueBool);
                     }
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
@@ -334,13 +334,9 @@ namespace Unity.Netcode.Components
                     var valueFloat = m_Animator.GetFloat(hash);
                     fixed (void* value = cacheValue.Value)
                     {
-                        var oldValue = UnsafeUtility.AsRef<float>(value);
-                        if (valueFloat != oldValue)
-                        {
-                            UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
 
-                            writer.WriteValueSafe(valueFloat);
-                        }
+                        UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
+                        writer.WriteValueSafe(valueFloat);
                     }
                 }
             }
@@ -432,7 +428,14 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            m_Animator.SetTrigger(animSnapshot.Hash);
+            if (animSnapshot.Reset)
+            {
+                m_Animator.ResetTrigger(animSnapshot.Hash);
+            }
+            else
+            {
+                m_Animator.SetTrigger(animSnapshot.Hash);
+            }
         }
 
         public void SetTrigger(string triggerName)
@@ -440,15 +443,26 @@ namespace Unity.Netcode.Components
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
-        public void SetTrigger(int hash)
+        public void SetTrigger(int hash, bool reset = false)
         {
             var animMsg = new AnimationTriggerMessage();
             animMsg.Hash = hash;
+            animMsg.Reset = reset;
 
             if (IsServer)
             {
                 SendAnimTriggerClientRpc(animMsg);
             }
+        }
+
+        public void ResetTrigger(string triggerName)
+        {
+            ResetTrigger(Animator.StringToHash(triggerName));
+        }
+
+        public void ResetTrigger(int hash)
+        {
+            SetTrigger(hash, true);
         }
     }
 }
