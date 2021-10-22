@@ -40,7 +40,7 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
         }
 
         /// <summary>
@@ -52,7 +52,6 @@ namespace Unity.Netcode
         {
             SendUnnamedMessage(m_NetworkManager.ConnectedClientsIds, messageBuffer, networkDelivery);
         }
-
 
         /// <summary>
         /// Sends unnamed message to a list of clients
@@ -118,7 +117,7 @@ namespace Unity.Netcode
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
         {
-            var bytesCount = reader.Length;
+            var bytesCount = reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>();
 
             if (m_NetworkManager == null)
             {
