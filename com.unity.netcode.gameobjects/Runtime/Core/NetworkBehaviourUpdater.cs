@@ -6,7 +6,7 @@ namespace Unity.Netcode
     public class NetworkBehaviourUpdater
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();
-        private HashSet<NetworkObject> m_TouchedThisClient = new HashSet<NetworkObject>();
+        private HashSet<NetworkObject> m_InterestUpdateThisFrame = new HashSet<NetworkObject>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
@@ -25,21 +25,15 @@ namespace Unity.Netcode
                     for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                     {
        					var client = networkManager.ConnectedClientsList[i];
-					#if INTEREST_SYSTEM
-                        m_TouchedThisClient.Clear();
-                        networkManager.InterestManager.QueryFor(client, m_TouchedThisClient);
 
-                        m_Touched.UnionWith(m_TouchedThisClient);
-                        foreach (var sobj in m_TouchedThisClient)
-					#else
-				        var spawnedObjs = networkManager.SpawnManager.SpawnedObjectsList;
-                        m_Touched.UnionWith(spawnedObjs);
-                        foreach (var sobj in spawnedObjs)
-					#endif
+                        m_InterestUpdateThisFrame.Clear();
+                        networkManager.InterestManager.QueryFor(client, m_InterestUpdateThisFrame);
+                        foreach (var sobj in m_InterestUpdateThisFrame)
 
                         {
                             if (sobj.IsNetworkVisibleTo(client.ClientId))
                             {
+                                m_Touched.Add(sobj);
                                 // Sync just the variables for just the objects this client sees
                                 for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                                 {

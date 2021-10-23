@@ -16,17 +16,17 @@ namespace Unity.Netcode.Interest
             ManagedObjects = new HashSet<TObject>();
         }
 
-        public override void AddObject(in TObject obj)
+        public override void AddObject(TObject obj)
         {
             ManagedObjects.Add(obj);
         }
 
-        public override void RemoveObject(in TObject obj)
+        public override void RemoveObject(TObject obj)
         {
             ManagedObjects.Remove(obj);
         }
 
-        public override void QueryFor(in TClient client, HashSet<TObject> results)
+        public override void QueryFor(TClient client, HashSet<TObject> results)
         {
             if (InterestKernels.Count > 0)
             {
@@ -44,7 +44,7 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public override void UpdateObject(in TObject obj)
+        public override void UpdateObject(TObject obj)
         {
         }
     }

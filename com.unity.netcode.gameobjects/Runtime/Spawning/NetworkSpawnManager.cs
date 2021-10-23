@@ -474,9 +474,7 @@ namespace Unity.Netcode
             NetworkObject.CheckOrphanChildren();
 
             networkObject.InvokeBehaviourNetworkSpawn();
-		#if INTEREST_SYSTEM
 			NetworkManager.InterestManager.AddObject(networkObject, networkObject.InterestNodes);
-		#endif
 
             // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
             // processed before the object is fully spawned. This must be the last thing done in the spawn process.
@@ -750,17 +748,13 @@ namespace Unity.Netcode
 
             networkObject.IsSpawned = false;
             var gobj = networkObject.gameObject;
-         #if INTEREST_SYSTEM
-            var gobj = networkObject.gameObject;
-            NetworkObject no = gobj.GetComponent<NetworkObject>();
-            NetworkManager.InterestManager.RemoveObject(no, no.InterestNodes);
-         #else
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
-         #endif
 
+            NetworkObject no = gobj.GetComponent<NetworkObject>();
+            NetworkManager.InterestManager.RemoveObject(no, no.InterestNodes);
 
 
             if (destroyGameObject && gobj != null)

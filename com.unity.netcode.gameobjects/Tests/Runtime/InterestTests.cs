@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
         public class OddEvenInterestKernel : InterestKernel<NetworkClient, NetworkObject>
         {
             public bool IsOdd = true;
-            public override void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results)
+            public override void QueryFor(NetworkClient client, NetworkObject obj, HashSet<NetworkObject> results)
             {
                 if (obj.NetworkObjectId % 2 == 0 ^ IsOdd)
                 {
@@ -51,7 +51,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Evens = new InterestNodeStatic<NetworkClient, NetworkObject>();
         }
 
-        public override void AddObject(in NetworkObject obj)
+        public override void AddObject(NetworkObject obj)
         {
             if (obj.NetworkObjectId % 2 == 0)
             {
@@ -63,7 +63,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public override void RemoveObject(in NetworkObject obj)
+        public override void RemoveObject(NetworkObject obj)
         {
             if (obj.NetworkObjectId % 2 == 0)
             {
@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+        public override void QueryFor(NetworkClient client, HashSet<NetworkObject> results)
         {
             // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
             if (client.PlayerObject.NetworkObjectId % 2 == 0)
@@ -88,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public override void UpdateObject(in NetworkObject obj)
+        public override void UpdateObject(NetworkObject obj)
         {
             m_Odds.RemoveObject(obj);
             m_Evens.RemoveObject(obj);

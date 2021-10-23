@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Unity.Netcode.Interest;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Interest
 {
     // interest *system* instead of interest node ?
     public class InterestManager<TClient, TObject>
@@ -33,17 +33,18 @@ namespace Unity.Netcode
             // else add myself to whatever Interest Nodes I am associated with
             else
             {
-            // I am walking through each of the interest nodes that this object has
-            //  I should probably optimize for this later vs. doing this for every add!
+                // I am walking through each of the interest nodes that this object has
+                //  I should probably optimize for this later vs. doing this for every add!
                 foreach (var node in nodes)
                 {
-            // cover the case with an empty list entry
+                    // cover the case with an empty list entry
                     if (node != null)
                     {
-            // the Interest Manager lazily adds nodes to itself when it sees
-            //  new nodes that associate with the objects being added
+                       // the Interest Manager lazily adds nodes to itself when it sees
+                       //  new nodes that associate with the objects being added
                        m_ChildNodes.Add(node);
-            // tell this node to add this object to itself
+
+                       // tell this node to add this object to itself
                        node.AddObject(obj);
                     }
                 }

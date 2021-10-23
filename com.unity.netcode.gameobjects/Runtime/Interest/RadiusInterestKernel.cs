@@ -8,7 +8,7 @@ namespace Unity.Netcode
     public class RadiusInterestKernel : InterestKernel<NetworkClient, NetworkObject>
     {
         public float Radius = 0.0f;
-        public override void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results)
+        public override void QueryFor(NetworkClient client, NetworkObject obj, HashSet<NetworkObject> results)
         {
             if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) <= Radius)
             {
