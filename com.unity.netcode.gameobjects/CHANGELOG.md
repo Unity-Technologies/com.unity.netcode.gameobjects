@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [1.0.0-pre.2] - 2021-10-19
 
+
 ### Added
 
 - Associated Known Issues for the 1.0.0-pre.1 release in the changelog
