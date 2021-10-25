@@ -317,7 +317,6 @@ namespace TestProject.ManualTests
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
 
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
