@@ -164,7 +164,7 @@ namespace TestProject.ManualTests
                     }
                 }
             }
-            else if (!IsSpawned && IsRegisteredPoolObject)
+            else if (IsRegisteredPoolObject)
             {
                 if (m_MeshRenderer != null && m_MeshRenderer.enabled)
                 {
