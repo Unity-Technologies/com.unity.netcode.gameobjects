@@ -1048,7 +1048,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public class ForcedInSceneBehaviour:NetworkBehaviour
+        public class ForcedInSceneBehaviour : NetworkBehaviour
         {
             public event Action OnNetworkObjectSpawned;
             public event Action OnNetworkObjectDisabled;
