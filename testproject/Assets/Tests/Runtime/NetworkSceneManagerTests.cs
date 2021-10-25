@@ -8,7 +8,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
-using TestProject.ManualTests;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
