@@ -348,16 +348,6 @@ namespace Unity.Netcode
             ConnectionData = endPoint;
         }
 
-        public void SetAddress(string ipv4Address)
-        {
-            ConnectionData.Address = ipv4Address;
-        }
-
-        public void SetPort(ushort port)
-        {
-            ConnectionData.Port = port;
-        }
-
         private bool StartRelayServer()
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use

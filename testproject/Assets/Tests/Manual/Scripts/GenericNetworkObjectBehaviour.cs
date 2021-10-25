@@ -102,7 +102,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void FixedUpdate()
         {
-            if (IsSpawned && NetworkManager != null && NetworkManager.IsListening)
+            if (IsSpawned)
             {
                 if (IsOwner)
                 {

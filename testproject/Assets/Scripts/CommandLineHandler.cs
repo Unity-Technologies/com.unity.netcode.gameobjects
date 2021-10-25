@@ -205,7 +205,7 @@ public class CommandLineProcessor
                 unetTransport.ConnectAddress = address;
                 break;
             case UnityTransport unityTransport:
-                unityTransport.SetAddress(address);
+                unityTransport.ConnectionData.Address = address;
                 break;
         }
     }
@@ -220,7 +220,7 @@ public class CommandLineProcessor
                 unetTransport.ServerListenPort = port;
                 break;
             case UnityTransport unityTransport:
-                unityTransport.SetPort(port);
+                unityTransport.ConnectionData.Port = port;
                 break;
         }
     }
