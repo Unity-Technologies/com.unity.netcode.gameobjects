@@ -1916,6 +1916,7 @@ namespace Unity.Netcode
             {
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
                 {
+                    // set in-scene placed NetworkObjects back to active
                     sobj.gameObject.SetActive(true);
                     continue;
                 }
