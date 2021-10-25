@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
+using TestProject.ManualTests;
+using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
@@ -882,6 +884,9 @@ namespace TestProject.RuntimeTests
             ClientProcessedNotification(clientId, SceneEventType.Load, true);
         }
         #endregion
+
+
+
     }
 
     /// <summary>
@@ -935,7 +940,143 @@ namespace TestProject.RuntimeTests
             nativeArray.Dispose();
             fastBufferWriter.Dispose();
             networkManager.Shutdown();
-            UnityEngine.Object.Destroy(networkManagerGameObject);
+            Object.Destroy(networkManagerGameObject);
         }
     }
+
+    public class InSceneNetworkObjectDDOLTest
+    {
+        private NetworkManager m_ServerNetworkManager;
+        private GameObject m_NetworkManagerGameObject;
+        private GameObject m_ObjectToSpawn;
+        private bool m_ConditionMet;
+        protected float m_ConditionMetFrequency = 0.1f;
+
+        protected void ConditionMet(bool isConditionMet)
+        {
+            m_ConditionMet = isConditionMet;
+        }
+
+        protected IEnumerator WaitForCondition()
+        {
+            while (!m_ConditionMet)
+            {
+                yield return new WaitForSeconds(m_ConditionMetFrequency);
+            }
+        }
+
+        [UnitySetUp]
+        protected IEnumerator SetUp()
+        {
+            m_NetworkManagerGameObject = new GameObject("NetworkManager - Host");
+            m_ServerNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
+            m_TestingState = TestingState.None;
+
+            m_ObjectToSpawn = new GameObject();
+            var networkObject = m_ObjectToSpawn.AddComponent<NetworkObject>();
+            var forcedInSceneBehaviour = m_ObjectToSpawn.AddComponent<ForcedInSceneBehaviour>();
+            forcedInSceneBehaviour.OnNetworkObjectDisabled += ForcedInSceneBehaviour_OnNetworkObjectDisabled;
+            forcedInSceneBehaviour.OnNetworkObjectEnabled += ForcedInSceneBehaviour_OnNetworkObjectEnabled;
+
+            m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
+            {
+                ConnectionApproval = false,
+                NetworkPrefabs = new List<NetworkPrefab>(),
+                NetworkTransport = m_NetworkManagerGameObject.AddComponent<SIPTransport>(),
+            };
+            m_ServerNetworkManager.StartHost();
+            yield break;
+        }
+
+        [UnityTearDown]
+        protected IEnumerator TearDown()
+        {
+            m_ServerNetworkManager.Shutdown();
+
+            Object.Destroy(m_NetworkManagerGameObject);
+            Object.Destroy(m_ObjectToSpawn);
+
+            yield break;
+        }
+
+        public enum TestingState
+        {
+            None,
+            Disabled,
+            Enabled
+        }
+
+        private TestingState m_TestingState;
+
+        [UnityTest]
+        public IEnumerator DDOLMoveAndRestoreInSceneNetworkObject()
+        {
+            var networkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
+            Assert.That(networkObject.IsSpawned);
+
+            ConditionMet(false);
+            m_TestingState = TestingState.Disabled;
+            m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
+            yield return WaitForCondition();
+            // It should be disabled when MoveObjectsToDontDestroyOnLoad is called.
+            Assert.That(!networkObject.isActiveAndEnabled);
+
+            m_TestingState = TestingState.Enabled;
+            ConditionMet(false);
+            m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
+            yield return WaitForCondition();
+            // It should be enabled when MoveObjectsFromDontDestroyOnLoadToScene is called.
+            Assert.That(networkObject.isActiveAndEnabled);
+
+            //Done
+            networkObject.Despawn(false);
+        }
+
+        private void ForcedInSceneBehaviour_OnNetworkObjectEnabled()
+        {
+            if (m_TestingState == TestingState.Enabled)
+            {
+                ConditionMet(true);
+            }
+        }
+
+        private void ForcedInSceneBehaviour_OnNetworkObjectDisabled()
+        {
+            if (m_TestingState == TestingState.Disabled)
+            {
+                ConditionMet(true);
+            }
+        }
+
+        public class ForcedInSceneBehaviour:NetworkBehaviour
+        {
+            public event Action OnNetworkObjectSpawned;
+            public event Action OnNetworkObjectDisabled;
+            public event Action OnNetworkObjectEnabled;
+
+            private void Start()
+            {
+                DontDestroyOnLoad(gameObject);
+                var networkObject = GetComponent<NetworkObject>();
+                networkObject.IsSceneObject = true;
+            }
+            public override void OnNetworkSpawn()
+            {
+                OnNetworkObjectSpawned?.Invoke();
+                base.OnNetworkSpawn();
+            }
+
+            private void OnDisable()
+            {
+                OnNetworkObjectDisabled?.Invoke();
+            }
+
+            private void OnEnable()
+            {
+                OnNetworkObjectEnabled?.Invoke();
+            }
+        }
+
+    }
+
 }

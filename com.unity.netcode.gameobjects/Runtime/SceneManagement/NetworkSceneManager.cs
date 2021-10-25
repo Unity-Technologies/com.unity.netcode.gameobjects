@@ -1830,7 +1830,7 @@ namespace Unity.Netcode
         /// Moves all NetworkObjects that don't have the <see cref="NetworkObject.DestroyWithScene"/> set to
         /// the "Do not destroy on load" scene.
         /// </summary>
-        private void MoveObjectsToDontDestroyOnLoad()
+        internal void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
@@ -1907,7 +1907,7 @@ namespace Unity.Netcode
         /// Moves all spawned NetworkObjects (from do not destroy on load) to the scene specified
         /// </summary>
         /// <param name="scene">scene to move the NetworkObjects to</param>
-        private void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
+        internal void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = m_NetworkManager.SpawnManager.SpawnedObjectsList;
