@@ -223,10 +223,12 @@ namespace Unity.Netcode
 
         public NetworkSceneManager SceneManager { get; private set; }
 
+        public ulong ServerClientId = 0;
+        
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ??
+        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ??
                                        throw new NullReferenceException(
                                            $"The transport in the active {nameof(NetworkConfig)} is null");
 
@@ -242,6 +244,10 @@ namespace Unity.Netcode
         private ulong m_LocalClientId;
 
         private Dictionary<ulong, NetworkClient> m_ConnectedClients = new Dictionary<ulong, NetworkClient>();
+
+        private ulong m_NextClientId = 1;
+        private Dictionary<ulong, ulong> m_ClientIdToTransportIdMap = new Dictionary<ulong, ulong>();
+        private Dictionary<ulong, ulong> m_TransportIdToClientIdMap = new Dictionary<ulong, ulong>();
 
         private List<NetworkClient> m_ConnectedClientsList = new List<NetworkClient>();
 
@@ -1098,6 +1104,9 @@ namespace Unity.Netcode
                 NetworkConfig?.NetworkTransport?.Shutdown();
             }
 
+            m_ClientIdToTransportIdMap.Clear();
+            m_TransportIdToClientIdMap.Clear();
+
             IsListening = false;
         }
 
@@ -1224,6 +1233,16 @@ namespace Unity.Netcode
             }
         }
 
+        private ulong TransportIdToClientId(ulong transportId)
+        {
+            return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
+        }
+
+        private ulong ClientIdToTransportId(ulong clientId)
+        {
+            return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
+        }
+
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
             switch (networkEvent)
@@ -1232,6 +1251,12 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
+
+                    var transportId = clientId;
+                    clientId = m_NextClientId++;
+                    m_ClientIdToTransportIdMap[clientId] = transportId;
+                    m_TransportIdToClientIdMap[transportId] = clientId;
+                    
                     MessagingSystem.ClientConnected(clientId);
                     if (IsServer)
                     {
@@ -1270,6 +1295,8 @@ namespace Unity.Netcode
                             NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
                         }
 
+                        clientId = TransportIdToClientId(clientId);
+
                         HandleIncomingData(clientId, payload, receiveTime);
                         break;
                     }
@@ -1277,6 +1304,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
+                    clientId = TransportIdToClientId(clientId);
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
@@ -1407,6 +1435,9 @@ namespace Unity.Netcode
         private void OnClientDisconnectFromServer(ulong clientId)
         {
             PendingClients.Remove(clientId);
+            
+            m_TransportIdToClientIdMap.Remove(m_ClientIdToTransportIdMap[clientId]);
+            m_ClientIdToTransportIdMap.Remove(clientId);
 
             if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
