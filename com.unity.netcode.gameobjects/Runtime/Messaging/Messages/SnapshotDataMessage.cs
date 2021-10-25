@@ -104,7 +104,6 @@ namespace Unity.Netcode
 
         public static unsafe void Receive(FastBufferReader reader, in NetworkContext context)
         {
-            var networkManager = (NetworkManager)context.SystemOwner;
             var message = new SnapshotDataMessage();
             if (!reader.TryBeginRead(
                 FastBufferWriter.GetWriteSize(message.CurrentTick) +
@@ -142,20 +141,32 @@ namespace Unity.Netcode
             using (message.Spawns)
             using (message.Despawns)
             {
-                message.Handle(context.SenderId, networkManager);
+                message.Handle(context.SenderId, context.SystemOwner);
             }
         }
 
-        public void Handle(ulong senderId, NetworkManager networkManager)
+        public void Handle(ulong senderId, object systemOwner)
         {
-            // todo: temporary hack around bug
-            if (!networkManager.IsServer)
+            if (systemOwner is NetworkManager)
             {
-                senderId = networkManager.ServerClientId;
-            }
+                var networkManager = (NetworkManager)systemOwner;
 
-            var snapshotSystem = networkManager.SnapshotSystem;
-            snapshotSystem.HandleSnapshot(senderId, this);
+                // todo: temporary hack around bug
+                if (!networkManager.IsServer)
+                {
+                    senderId = networkManager.ServerClientId;
+                }
+
+                var snapshotSystem = networkManager.SnapshotSystem;
+                snapshotSystem.HandleSnapshot(senderId, this);
+            }
+            else
+            {
+                var ownerData = (Tuple<SnapshotSystem, ulong>)systemOwner;
+                var snapshotSystem = ownerData.Item1;
+                snapshotSystem.HandleSnapshot(ownerData.Item2, this);
+                return;
+            }
         }
     }
 }
