@@ -52,6 +52,10 @@ public class CommandLineProcessor
                 {
                     m_CommandLineArguments.Add(arg, value);
                 }
+                else
+                {
+                    Debug.LogWarning($"Duplicate command line argument for {arg} - ignoring");
+                }
             }
         }
 
