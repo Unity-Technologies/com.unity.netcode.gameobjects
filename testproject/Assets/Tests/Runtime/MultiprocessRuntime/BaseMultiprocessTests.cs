@@ -80,10 +80,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"OnSceneLoaded {scene.name}");
             SceneManager.sceneLoaded -= OnSceneLoaded;
             var ushortport = ushort.Parse(m_Port);
+            MultiprocessLogger.Log($"Parsing m_Port {m_Port} as {ushortport}");
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
             switch (transport)
             {
                 case UNetTransport unetTransport:
+                    MultiprocessLogger.Log($"Setting connect port and server listen port to {ushortport}");
                     unetTransport.ConnectPort = ushortport;
                     unetTransport.ServerListenPort = ushortport;
                     break;
@@ -94,6 +96,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
+            MultiprocessLogger.Log("Starting Host");
             NetworkManager.Singleton.StartHost();
 
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
