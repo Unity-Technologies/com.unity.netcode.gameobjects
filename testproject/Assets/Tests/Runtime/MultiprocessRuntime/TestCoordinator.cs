@@ -58,18 +58,20 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log("Start");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
-        foreach (string arg in args)
+        for (int i = 0; i < args.Length; ++i)
         {
-            if (arg.StartsWith("-ip="))
+            string arg = args[i];
+            if (arg.Equals("-ip"))
             {
-                m_ConnectAddress = arg.Replace("-ip=", "");
+                m_ConnectAddress = args[i + 1];
+                MultiprocessLogger.Log($"command line ip was {m_ConnectAddress}");
 
             }
 
-            if (arg.StartsWith("-port="))
+            if (arg.Equals("-p"))
             {
-                m_Port = arg.Replace("-port=", "");
-
+                m_Port = args[i + 1];
+                MultiprocessLogger.Log($"command line port was {m_Port}");
             }
         }
         MultiprocessLogger.Log($"{m_Port}");
