@@ -6,17 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+### Fixed
+### Changed
+
 ## [1.0.0-pre.3] - 2021-10-22
 
 ### Added
 
-- ResetTrigger function to NetworkAnimator
+- ResetTrigger function to NetworkAnimator (#1327)
 
 ### Fixed 
 
-- Overflow exception when syncing Animator state.
+- Overflow exception when syncing Animator state. (#1327)
+- Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
 
-## [1.0.0-pre.2] - 2020-12-20
+## [1.0.0-pre.2] - 2021-10-19
 
 ### Added
 
@@ -26,7 +33,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Updated label for `1.0.0-pre.1` changelog section
 
-## [1.0.0-pre.1] - 2020-12-20
+## [1.0.0-pre.1] - 2021-10-19
 
 ### Added
 
