@@ -10,7 +10,7 @@ namespace Unity.Netcode.Interest
 
         public InterestManager()
         {
-            m_ChildNodes = new HashSet<InterestNode<TClient, TObject>>();
+            m_ChildNodes = new HashSet<IInterestNode<TClient, TObject>>();
 
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
@@ -19,7 +19,7 @@ namespace Unity.Netcode.Interest
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
 
-        public void AddObject(in TObject obj, List<InterestNode<TClient, TObject>> nodes) // ?? another class ??
+        public void AddObject(in TObject obj, List<IInterestNode<TClient, TObject>> nodes) // ?? another class ??
         {
             // If this new object has no associated Interest Nodes, then we put it in the
             //  default node, which all clients will then get.
@@ -51,7 +51,7 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void RemoveObject(in TObject oldObject, List<InterestNode<TClient, TObject>> nodes)
+        public void RemoveObject(in TObject oldObject, List<IInterestNode<TClient, TObject>> nodes)
         {
             // if the node never had an InterestNode, then it was using the default
             //  interest node
@@ -84,6 +84,6 @@ namespace Unity.Netcode.Interest
         {
         }
 
-        private HashSet<InterestNode<TClient, TObject>> m_ChildNodes;
+        private HashSet<IInterestNode<TClient, TObject>> m_ChildNodes;
     }
 }

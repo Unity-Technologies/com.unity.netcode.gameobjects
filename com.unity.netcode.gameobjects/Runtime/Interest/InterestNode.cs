@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace Unity.Netcode.Interest
 {
-    public abstract class InterestNode<TClient, TObject>
+    public interface IInterestNode<TClient, TObject>
     {
-        public abstract void QueryFor(TClient client, HashSet<TObject> results);
-        public abstract void AddObject(TObject obj);
-        public abstract void RemoveObject(TObject obj);
-        public abstract void UpdateObject(TObject obj);
+        public void QueryFor(TClient client, HashSet<TObject> results);
+        public void AddObject(TObject obj);
+        public void RemoveObject(TObject obj);
+        public void UpdateObject(TObject obj);
     };
 
     public abstract class InterestKernel<TClient, TObject>

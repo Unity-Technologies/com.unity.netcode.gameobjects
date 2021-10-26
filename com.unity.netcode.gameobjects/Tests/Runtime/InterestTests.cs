@@ -43,63 +43,63 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-    public class OddsEvensNode : InterestNode<NetworkClient, NetworkObject>
-    {
-        public OddsEvensNode()
+        public class OddsEvensNode : IInterestNode<NetworkClient, NetworkObject>
         {
-            m_Odds = new InterestNodeStatic<NetworkClient, NetworkObject>();
-            m_Evens = new InterestNodeStatic<NetworkClient, NetworkObject>();
-        }
+            public OddsEvensNode()
+            {
+                m_Odds = new InterestNodeStatic<NetworkClient, NetworkObject>();
+                m_Evens = new InterestNodeStatic<NetworkClient, NetworkObject>();
+            }
 
-        public override void AddObject(NetworkObject obj)
-        {
-            if (obj.NetworkObjectId % 2 == 0)
+            public void AddObject(NetworkObject obj)
             {
-                m_Evens.AddObject(obj);
+                if (obj.NetworkObjectId % 2 == 0)
+                {
+                    m_Evens.AddObject(obj);
+                }
+                else
+                {
+                    m_Odds.AddObject(obj);
+                }
             }
-            else
-            {
-                m_Odds.AddObject(obj);
-            }
-        }
 
-        public override void RemoveObject(NetworkObject obj)
-        {
-            if (obj.NetworkObjectId % 2 == 0)
+            public void RemoveObject(NetworkObject obj)
             {
-                m_Evens.RemoveObject(obj);
+                if (obj.NetworkObjectId % 2 == 0)
+                {
+                    m_Evens.RemoveObject(obj);
+                }
+                else
+                {
+                    m_Odds.RemoveObject(obj);
+                }
             }
-            else
+
+            public void QueryFor(NetworkClient client, HashSet<NetworkObject> results)
+            {
+                // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
+                if (client.PlayerObject.NetworkObjectId % 2 == 0)
+                {
+                    m_Evens.QueryFor(client, results);
+                }
+                else
+                {
+                    m_Odds.QueryFor(client, results);
+                }
+            }
+
+            public void UpdateObject(NetworkObject obj)
             {
                 m_Odds.RemoveObject(obj);
+                m_Evens.RemoveObject(obj);
+                AddObject(obj);
             }
+
+            private InterestNodeStatic<NetworkClient, NetworkObject> m_Odds;
+            private InterestNodeStatic<NetworkClient, NetworkObject> m_Evens;
         }
 
-        public override void QueryFor(NetworkClient client, HashSet<NetworkObject> results)
-        {
-            // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
-            if (client.PlayerObject.NetworkObjectId % 2 == 0)
-            {
-                m_Evens.QueryFor(client, results);
-            }
-            else
-            {
-                m_Odds.QueryFor(client, results);
-            }
-        }
-
-        public override void UpdateObject(NetworkObject obj)
-        {
-            m_Odds.RemoveObject(obj);
-            m_Evens.RemoveObject(obj);
-            AddObject(obj);
-        }
-
-        private InterestNodeStatic<NetworkClient, NetworkObject> m_Odds;
-        private InterestNodeStatic<NetworkClient, NetworkObject> m_Evens;
-    }
-
-        private (NetworkObject, Guid) MakeGameInterestObjectHelper(InterestNode<NetworkClient, NetworkObject> comn = null)
+        private (NetworkObject, Guid) MakeGameInterestObjectHelper(IInterestNode<NetworkClient, NetworkObject> comn = null)
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
             NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
@@ -112,7 +112,7 @@ namespace Unity.Netcode.RuntimeTests
             return (no, objGuid);
         }
 
-        private (NetworkObject, Guid) MakeGameInterestObjectHelper(Vector3 coords, InterestNode<NetworkClient, NetworkObject> comn = null)
+        private (NetworkObject, Guid) MakeGameInterestObjectHelper(Vector3 coords, IInterestNode<NetworkClient, NetworkObject> comn = null)
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
             NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
@@ -324,7 +324,7 @@ namespace Unity.Netcode.RuntimeTests
             var objsToMakePerNode = 10;
             var nodesToMake = 100;
             var objsToMake = objsToMakePerNode * nodesToMake;
-            List<InterestNode<NetworkClient, NetworkObject>> nodes = new List<InterestNode<NetworkClient, NetworkObject>>();
+            List<IInterestNode<NetworkClient, NetworkObject>> nodes = new List<IInterestNode<NetworkClient, NetworkObject>>();
             List<NetworkObject> objs = new List<NetworkObject>();
 
             for (var i = 0; i < nodesToMake; ++i)

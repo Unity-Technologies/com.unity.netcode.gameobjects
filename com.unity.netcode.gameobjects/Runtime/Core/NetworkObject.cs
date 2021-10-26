@@ -15,7 +15,7 @@ namespace Unity.Netcode
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public List<InterestNode<NetworkClient, NetworkObject>> InterestNodes = new List<InterestNode<NetworkClient, NetworkObject>>();
+        public List<IInterestNode<NetworkClient, NetworkObject>> InterestNodes = new List<IInterestNode<NetworkClient, NetworkObject>>();
 
         [HideInInspector]
         [SerializeField]
