@@ -883,9 +883,6 @@ namespace TestProject.RuntimeTests
             ClientProcessedNotification(clientId, SceneEventType.Load, true);
         }
         #endregion
-
-
-
     }
 
     /// <summary>
