@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+
 [CreateAssetMenu(fileName = nameof(SceneReference), menuName = "Netcode/" + nameof(SceneReference))]
 [Serializable]
 public class SceneReference : ScriptableObject, ISceneReference
@@ -57,8 +58,6 @@ public class SceneReference : ScriptableObject, ISceneReference
     {
         return m_ReferencedScenes;
     }
-
-
 }
 
 
@@ -67,3 +66,4 @@ public interface ISceneReference
     string GetDisplayName();
     List<string> GetReferencedScenes();
 }
+
