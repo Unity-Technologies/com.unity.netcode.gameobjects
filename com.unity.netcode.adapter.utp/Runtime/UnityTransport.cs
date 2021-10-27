@@ -123,7 +123,7 @@ namespace Unity.Netcode
 
             public static implicit operator NetworkEndPoint(ConnectionAddressData d)
             {
-                if (!NetworkEndPoint.TryParse(d.Address, (ushort) d.Port, out var networkEndPoint))
+                if (!NetworkEndPoint.TryParse(d.Address, (ushort)d.Port, out var networkEndPoint))
                 {
                     Debug.LogError($"Invalid address {d.Address}:{d.Port}");
                     return default;
