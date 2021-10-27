@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode.Interest;
 
 namespace Unity.Netcode.Interest
@@ -78,6 +79,8 @@ namespace Unity.Netcode.Interest
             {
                 c.QueryFor(client, results);
             }
+
+//            return new NativeHashSet<TObject>();
         }
 
         public void Dispose()

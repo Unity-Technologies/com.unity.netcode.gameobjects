@@ -99,7 +99,8 @@ namespace Unity.Netcode.RuntimeTests
             private InterestNodeStatic<NetworkClient, NetworkObject> m_Evens;
         }
 
-        private (NetworkObject, Guid) MakeGameInterestObjectHelper(IInterestNode<NetworkClient, NetworkObject> comn = null)
+        // create a game object & add it to the indicated node
+        private (NetworkObject, Guid) MakeInterestGameObjectHelper(IInterestNode<NetworkClient, NetworkObject> comn = null)
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
             NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
@@ -112,7 +113,8 @@ namespace Unity.Netcode.RuntimeTests
             return (no, objGuid);
         }
 
-        private (NetworkObject, Guid) MakeGameInterestObjectHelper(Vector3 coords, IInterestNode<NetworkClient, NetworkObject> comn = null)
+        // create a game object, initialize its position & add it to the indicated node
+        private (NetworkObject, Guid) MakeInterestGameObjectHelper(Vector3 coords, IInterestNode<NetworkClient, NetworkObject> comn = null)
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
             NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
@@ -141,16 +143,16 @@ namespace Unity.Netcode.RuntimeTests
             var objectsBeforeAdd = results.Count;
 
             var numNodes = 4;
-            var nodes = new NetworkObject[4];
+            var nodes = new NetworkObject[numNodes];
             for (var i = 0; i < numNodes; i++)
             {
-                var (thisObj, thisGuid)  = MakeGameInterestObjectHelper(oddsEvensNode);
+                var (thisObj, thisGuid)  = MakeInterestGameObjectHelper(oddsEvensNode);
                 nodes[i] = thisObj;
                 nodes[i].NetworkObjectId = (ulong)(i + 100);
                 NetworkManagerHelper.SpawnNetworkObject(thisGuid);
             }
 
-            var (obj, guid) = MakeGameInterestObjectHelper();
+            var (obj, guid) = MakeInterestGameObjectHelper();
             nc.PlayerObject = obj;
 
             results.Clear();
@@ -213,22 +215,22 @@ namespace Unity.Netcode.RuntimeTests
                 ClientId = 1,
             };
 
-            var (playerObj, playerGuid) = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var (playerObj, playerGuid) = MakeInterestGameObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nc.PlayerObject = playerObj;
 
             NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             int objectsBeforeAdd = results.Count;
 
-            var (ok1Obj, ok1Guid) = MakeGameInterestObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
+            var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
-            var (ok2Obj, ok2Guid) = MakeGameInterestObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
+            var (ok2Obj, ok2Guid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok2Guid);
 
-            var (tooFarObj, tooFarGuid) = MakeGameInterestObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
+            var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
-            var (alwaysObj, alwaysGuid)  = MakeGameInterestObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
+            var (alwaysObj, alwaysGuid)  = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
             NetworkManagerHelper.SpawnNetworkObject(alwaysGuid);
 
             NetworkManagerHelper.SpawnNetworkObject(playerGuid);
@@ -276,13 +278,13 @@ namespace Unity.Netcode.RuntimeTests
             dualNode.InterestKernels.Add(oddKernel);
             dualNode.InterestKernels.Add(evenKernel);
 
-            var (object1, object1Guid) = MakeGameInterestObjectHelper(dualNode);
+            var (object1, object1Guid) = MakeInterestGameObjectHelper(dualNode);
             NetworkManagerHelper.SpawnNetworkObject(object1Guid);
 
-            var (object2, object2Guid) = MakeGameInterestObjectHelper(dualNode);
+            var (object2, object2Guid) = MakeInterestGameObjectHelper(dualNode);
             NetworkManagerHelper.SpawnNetworkObject(object2Guid);
 
-            var (playerObject, playerObjGuid) = MakeGameInterestObjectHelper(dualNode);
+            var (playerObject, playerObjGuid) = MakeInterestGameObjectHelper(dualNode);
             nc.PlayerObject = playerObject;
             NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
@@ -332,13 +334,13 @@ namespace Unity.Netcode.RuntimeTests
                 nodes.Add(new InterestNodeStatic<NetworkClient, NetworkObject>());
                 for (var j = 0; j < objsToMakePerNode; j++)
                 {
-                    var (obj, guid) = MakeGameInterestObjectHelper(nodes[i]);
+                    var (obj, guid) = MakeInterestGameObjectHelper(nodes[i]);
                     NetworkManagerHelper.SpawnNetworkObject(guid);
                     objs.Add(obj);
                 }
             }
 
-            var (playerObj, playerObjGuid) = MakeGameInterestObjectHelper();
+            var (playerObj, playerObjGuid) = MakeInterestGameObjectHelper();
             nc.PlayerObject = playerObj;
             NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
@@ -371,13 +373,13 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var objectsBeforeAdd = results.Count;
 
-            var (object1, object1Guid) = MakeGameInterestObjectHelper();
+            var (object1, object1Guid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(object1Guid);
 
-            var (object2, object2Guid) = MakeGameInterestObjectHelper();
+            var (object2, object2Guid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(object2Guid);
 
-            var (playerObj, playerObjGuid) = MakeGameInterestObjectHelper();
+            var (playerObj, playerObjGuid) = MakeInterestGameObjectHelper();
             nc.PlayerObject = playerObj;
             NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
@@ -408,11 +410,11 @@ namespace Unity.Netcode.RuntimeTests
 
             var objSettings = new TestInterestSettings();
             objSettings.SomeSetting = 2;
-            var (object1Obj, object1Guid) = MakeGameInterestObjectHelper();
+            var (object1Obj, object1Guid) = MakeInterestGameObjectHelper();
             object1Obj.InterestSettings = objSettings;
 
             // no override settings, should receive from NetworkManager
-            var (object2Obj, object2Guid) = MakeGameInterestObjectHelper();
+            var (object2Obj, object2Guid) = MakeInterestGameObjectHelper();
 
             var checkObj1 = (TestInterestSettings)object1Obj.InterestSettings;
             var checkObj2 = (TestInterestSettings)object2Obj.InterestSettings;

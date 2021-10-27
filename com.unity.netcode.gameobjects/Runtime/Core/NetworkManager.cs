@@ -12,6 +12,7 @@ using UnityEditor;
 using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
+using UnityEditor.Search;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
@@ -61,6 +62,15 @@ namespace Unity.Netcode
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
+        public Dictionary<uint, InterestKernel<NetworkClient, NetworkObject>> InterestDirectory = new Dictionary<uint, InterestKernel<NetworkClient, NetworkObject>>();
+
+
+        public void RegisterInterestHandler(GameObject go, InterestKernel<NetworkClient, NetworkObject> kernel)
+        {
+            InterestDirectory.Add(go.GetComponent<NetworkObject>().GlobalObjectIdHash, kernel);
+        }
+
 
         public NetworkPrefabHandler PrefabHandler
         {
