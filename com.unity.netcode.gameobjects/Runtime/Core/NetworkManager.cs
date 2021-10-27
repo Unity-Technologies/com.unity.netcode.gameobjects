@@ -224,7 +224,7 @@ namespace Unity.Netcode
         public NetworkSceneManager SceneManager { get; private set; }
 
         public readonly ulong ServerClientId = 0;
-        
+
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
@@ -1262,7 +1262,7 @@ namespace Unity.Netcode
                     clientId = m_NextClientId++;
                     m_ClientIdToTransportIdMap[clientId] = transportId;
                     m_TransportIdToClientIdMap[transportId] = clientId;
-                    
+
                     MessagingSystem.ClientConnected(clientId);
                     if (IsServer)
                     {
@@ -1311,7 +1311,7 @@ namespace Unity.Netcode
                     s_TransportDisconnect.Begin();
 #endif
                     clientId = TransportIdToClientId(clientId);
-            
+
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);
 

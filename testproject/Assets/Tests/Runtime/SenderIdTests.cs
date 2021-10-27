@@ -3,20 +3,19 @@ using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
-using TestProject.RuntimeTests.Support;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    public class SenderIdTests :BaseMultiInstanceTest
+    public class SenderIdTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 2;
 
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
-     
+
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
         {
@@ -47,7 +46,7 @@ namespace TestProject.RuntimeTests
                 };
 
             yield return new WaitForSeconds(0.2f);
-            
+
             Assert.IsTrue(firstReceived);
             Assert.IsTrue(secondReceived);
         }
@@ -60,7 +59,7 @@ namespace TestProject.RuntimeTests
             {
                 FirstClient.CustomMessagingManager.SendNamedMessage("FirstClient", FirstClient.ServerClientId, writer);
                 SecondClient.CustomMessagingManager.SendNamedMessage("SecondClient", SecondClient.ServerClientId, writer);
-                
+
             }
 
             bool firstReceived = false;
@@ -86,7 +85,7 @@ namespace TestProject.RuntimeTests
                 });
 
             yield return new WaitForSeconds(0.2f);
-            
+
             Assert.IsTrue(firstReceived);
             Assert.IsTrue(secondReceived);
         }
