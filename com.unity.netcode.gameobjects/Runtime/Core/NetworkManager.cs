@@ -151,7 +151,7 @@ namespace Unity.Netcode
             {
                 var sendBuffer = batchData.ToTempByteArray();
 
-                m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, delivery);
+                m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ClientIdToTransportId(clientId), sendBuffer, delivery);
             }
         }
 
@@ -223,7 +223,7 @@ namespace Unity.Netcode
 
         public NetworkSceneManager SceneManager { get; private set; }
 
-        public ulong ServerClientId = 0;
+        public readonly ulong ServerClientId = 0;
         
         /// <summary>
         /// Gets the networkId of the server
@@ -986,6 +986,12 @@ namespace Unity.Netcode
             }
         }
 
+        private void DisconnectRemoteClient(ulong clientId)
+        {
+            var transportId = ClientIdToTransportId(clientId);
+            NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+        }
+
         /// <summary>
         /// Globally shuts down the library.
         /// Disconnects clients if connected and stops server if running.
@@ -1020,7 +1026,7 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                        DisconnectRemoteClient(pair.Key);
                     }
                 }
 
@@ -1034,7 +1040,7 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                        DisconnectRemoteClient(pair.Key);
                     }
                 }
             }
@@ -1245,6 +1251,7 @@ namespace Unity.Netcode
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
+            var transportId = clientId;
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
@@ -1252,7 +1259,6 @@ namespace Unity.Netcode
                     s_TransportConnect.Begin();
 #endif
 
-                    var transportId = clientId;
                     clientId = m_NextClientId++;
                     m_ClientIdToTransportIdMap[clientId] = transportId;
                     m_TransportIdToClientIdMap[transportId] = clientId;
@@ -1305,8 +1311,11 @@ namespace Unity.Netcode
                     s_TransportDisconnect.Begin();
 #endif
                     clientId = TransportIdToClientId(clientId);
+            
+                    m_TransportIdToClientIdMap.Remove(transportId);
+                    m_ClientIdToTransportIdMap.Remove(clientId);
 
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    //if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
@@ -1428,16 +1437,12 @@ namespace Unity.Netcode
             }
 
             OnClientDisconnectFromServer(clientId);
-
-            NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
+            DisconnectRemoteClient(clientId);
         }
 
         private void OnClientDisconnectFromServer(ulong clientId)
         {
             PendingClients.Remove(clientId);
-            
-            m_TransportIdToClientIdMap.Remove(m_ClientIdToTransportIdMap[clientId]);
-            m_ClientIdToTransportIdMap.Remove(clientId);
 
             if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
@@ -1606,7 +1611,7 @@ namespace Unity.Netcode
             else
             {
                 PendingClients.Remove(ownerClientId);
-                NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
+                DisconnectRemoteClient(ownerClientId);
             }
         }
 
