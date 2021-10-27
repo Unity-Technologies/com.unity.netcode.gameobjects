@@ -20,6 +20,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         private NetworkSceneManager m_ClientNetworkSceneManager;
         private NetworkSceneManager m_ServerNetworkSceneManager;
         private Scene m_LoadedScene;
+        private bool m_ServerLoadedScene = false; // Used to synchronize clients to assure the server loaded a scene before spoof loading
 
         [UnitySetUp]
         public override IEnumerator Setup()
@@ -29,29 +30,64 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ServerNetworkSceneManager = Server.SceneManager;
             Server.NetworkConfig.EnableSceneManagement = true;
 
-            m_ClientNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
+            m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
+        }
+
+        /// <summary>
+        /// Just ignores all unload scene events (for clients during Teardown)
+        /// </summary>
+        /// <returns>false</returns>
+        private bool IgnoreAllSceneRequests(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            return false;
         }
 
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
+            // Since clients don't load scenes, we set the client to ignore all of the final unload scene events
+            m_ClientNetworkSceneManager.VerifySceneBeforeLoading = IgnoreAllSceneRequests;
 
+            var waitForReceiveMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
             yield return UnloadTestScene(m_LoadedScene);
+
+            // Now start the wait for the metric to be emitted when the message is received.
+            yield return waitForReceiveMetric.WaitForMetricsReceived();
+
             yield return base.Teardown();
+        }
+
+        /// <summary>
+        /// Prevents clients from thinking they are "done loading"
+        /// until the server has completely loaded its scene
+        /// </summary>
+        protected override bool CanClientsLoad()
+        {
+            return m_ServerLoadedScene;
         }
 
         [UnityTest]
         public IEnumerator TestS2CLoadSent()
         {
-            var serverSceneLoaded = false;
-            // Register a callback so we know when the scene has loaded server side, as this is when
-            // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
+            m_ServerLoadedScene = false;
+
+            // Register callback for when the server is done loading the scene as this is when it sends the
+            // load notification
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Load))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
                 {
-                    serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
+                    m_ServerLoadedScene = true;
+                }
+            };
+
+            var clientReceivedLoadEvent = false;
+            // Register callback for when the client receives the load event from the server
+            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete))
+                {
+                    clientReceivedLoadEvent = true;
                 }
             };
 
@@ -61,11 +97,15 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             StartServerLoadScene();
 
             // Wait for the server to load the scene locally first.
-            yield return WaitForCondition(() => serverSceneLoaded);
-            Assert.IsTrue(serverSceneLoaded);
+            yield return WaitForCondition(() => m_ServerLoadedScene);
+            Assert.IsTrue(m_ServerLoadedScene);
 
             // Now start the wait for the metric to be emitted when the message is sent.
             yield return waitForSentMetric.WaitForMetricsReceived();
+
+            // Finally wait for the client to confirm it loaded the scene
+            yield return WaitForCondition(() => clientReceivedLoadEvent);
+            Assert.IsTrue(clientReceivedLoadEvent);
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, sentMetrics.Count);
@@ -79,15 +119,23 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestS2CLoadReceived()
         {
-            var serverSceneLoaded = false;
-            // Register a callback so we know when the scene has loaded server side, as this is when
-            // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
+            m_ServerLoadedScene = false;
+            // Register callback for when the server is done loading the scene
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId != m_ServerNetworkManager.LocalClientId)
+                {
+                    m_ServerLoadedScene = true;
+                }
+            };
+
+            var clientReceivedLoadEvent = false;
+            // Register callback for when the client receives the load event from the server
+            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
                 if (sceneEvent.SceneEventType.Equals(SceneEventType.Load))
                 {
-                    serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
+                    clientReceivedLoadEvent = true;
                 }
             };
 
@@ -97,11 +145,15 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             StartServerLoadScene();
 
             // Wait for the server to load the scene locally first.
-            yield return WaitForCondition(() => serverSceneLoaded);
-            Assert.IsTrue(serverSceneLoaded);
+            yield return WaitForCondition(() => m_ServerLoadedScene);
+            Assert.IsTrue(m_ServerLoadedScene);
 
             // Now start the wait for the metric to be emitted when the message is received.
             yield return waitForReceivedMetric.WaitForMetricsReceived();
+
+            // Finally wait for the client to confirm it loaded the scene
+            yield return WaitForCondition(() => clientReceivedLoadEvent);
+            Assert.IsTrue(clientReceivedLoadEvent);
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, receivedMetrics.Count);
@@ -125,7 +177,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
-
 
             // Wait for the client to complete loading the scene locally
             yield return waitForClientLoadComplete.Wait();
@@ -673,26 +724,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             }
         }
 
-        // Registers a callback for the client's NetworkSceneManager which will synchronize the scene handles from
-        // the server to the client. This only needs to be done in multi-instance unit tests as the client and the
-        // server share a (Unity) SceneManager.
+        // Primarily used to get a reference to the Scene loaded
         private void RegisterLoadedSceneCallback(SceneEvent sceneEvent)
         {
-            if (!sceneEvent.SceneEventType.Equals(SceneEventType.Load))
+            if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
             {
-                return;
+                m_LoadedScene = sceneEvent.Scene;
             }
-
-            m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
-            if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle))
-            {
-                return;
-            }
-
-            // As we are running the client and the server using the multi-instance test runner we need to sync the
-            // scene handles manually here, as they share a SceneManager.
-            m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
-            m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
         }
 
         private class WaitForSceneEvent

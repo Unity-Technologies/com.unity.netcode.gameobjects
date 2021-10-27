@@ -102,8 +102,8 @@ namespace Unity.Netcode.RuntimeTests
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }
         }
-
-        protected float m_ClientLoadingSimulatedDelay = 0.05f;
+        protected const float k_ClientLoadingSimulatedDelay = 0.02f;
+        protected float m_ClientLoadingSimulatedDelay = k_ClientLoadingSimulatedDelay;
         protected virtual bool CanClientsLoad()
         {
             return true;
