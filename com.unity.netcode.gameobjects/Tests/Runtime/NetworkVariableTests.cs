@@ -214,8 +214,8 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     return m_Player1OnServer.TheList.Count == 1 &&
                            m_Player1OnClient1.TheList.Count == 1 &&
-                           m_Player1OnServer.TheList.Contains(k_TestKey1) &&
-                           m_Player1OnClient1.TheList.Contains(k_TestKey1);
+                           m_Player1OnServer.TheList.Contains(k_TestVal1) &&
+                           m_Player1OnClient1.TheList.Contains(k_TestVal1);
                 }
             );
         }

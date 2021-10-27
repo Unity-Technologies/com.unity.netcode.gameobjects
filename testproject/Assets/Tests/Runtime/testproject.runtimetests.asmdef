@@ -9,7 +9,8 @@
         "UnityEditor.TestRunner",
         "Unity.Netcode.Components",
         "Sample",
-        "ClientNetworkTransform"
+        "ClientNetworkTransform",
+        "TestProject"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
