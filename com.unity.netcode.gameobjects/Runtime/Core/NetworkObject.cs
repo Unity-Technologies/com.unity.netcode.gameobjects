@@ -15,8 +15,6 @@ namespace Unity.Netcode
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public List<IInterestNode<NetworkClient, NetworkObject>> InterestNodes = new List<IInterestNode<NetworkClient, NetworkObject>>();
-
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
@@ -1178,14 +1176,5 @@ namespace Unity.Netcode
             return GlobalObjectIdHash;
         }
 
-        // Trigger the Interest system to do an update sweep on any Interest nodes
-        //  I am associated with
-        public void UpdateInterest()
-        {
-            foreach (var node in InterestNodes)
-            {
-                node?.UpdateObject(this);
-            }
-        }
     }
 }

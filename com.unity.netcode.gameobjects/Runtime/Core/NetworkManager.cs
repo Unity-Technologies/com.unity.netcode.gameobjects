@@ -55,21 +55,13 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        internal InterestManager<NetworkClient, NetworkObject> InterestManager { get; private set; }
+        internal InterestManager<NetworkClient, NetworkObject, uint> InterestManager { get; private set; }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
-
-        public Dictionary<uint, InterestKernel<NetworkClient, NetworkObject>> InterestDirectory = new Dictionary<uint, InterestKernel<NetworkClient, NetworkObject>>();
-
-
-        public void RegisterInterestHandler(GameObject go, InterestKernel<NetworkClient, NetworkObject> kernel)
-        {
-            InterestDirectory.Add(go.GetComponent<NetworkObject>().GlobalObjectIdHash, kernel);
-        }
 
 
         public NetworkPrefabHandler PrefabHandler
@@ -580,7 +572,7 @@ namespace Unity.Netcode
 
             SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
-            InterestManager = new InterestManager<NetworkClient, NetworkObject>();
+            InterestManager = new InterestManager<NetworkClient, NetworkObject, uint>();
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             // This is used to remove entries not needed or invalid

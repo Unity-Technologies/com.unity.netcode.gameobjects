@@ -5,9 +5,32 @@ using Unity.Netcode.Interest;
 namespace Unity.Netcode.Interest
 {
     // interest *system* instead of interest node ?
-    public class InterestManager<TClient, TObject>
+    public class InterestManager<TClient, TObject, TTypeID>
     {
         private readonly InterestNodeStatic<TClient, TObject> m_DefaultInterestNode;
+
+        private Dictionary<TTypeID, HashSet<IInterestNode<TClient, TObject>>> m_InterestNodes = new() ;
+
+        // unregister?
+        public void RegisterInterestNode(TTypeID typeId, IInterestNode<TClient, TObject> node)
+        {
+            if (!m_InterestNodes.ContainsKey(typeId))
+            {
+                m_InterestNodes.Add(typeId, new HashSet<IInterestNode<TClient, TObject>>());
+            }
+            m_InterestNodes[typeId].Add(node);
+        }
+
+        // Trigger the Interest system to do an update sweep on any Interest nodes
+        //  I am associated with
+        public void UpdateObject(TObject obj, TTypeID typeId)
+        {
+            var nodes = m_InterestNodes[typeId];
+            foreach (var node in nodes)
+            {
+                node.UpdateObject(obj);
+            }
+        }
 
         public InterestManager()
         {
@@ -20,13 +43,21 @@ namespace Unity.Netcode.Interest
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
 
-        public void AddObject(in TObject obj, List<IInterestNode<TClient, TObject>> nodes) // ?? another class ??
+        public void AddObject(TObject obj, TTypeID typeId)
         {
             // If this new object has no associated Interest Nodes, then we put it in the
             //  default node, which all clients will then get.
             //
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
+            if (!m_InterestNodes.ContainsKey(typeId))
+            {
+                m_DefaultInterestNode.AddObject(obj);
+                return;
+            }
+
+            var nodes = m_InterestNodes[typeId];
+
             if (nodes.Count == 0)
             {
                 m_DefaultInterestNode.AddObject(obj);
@@ -52,10 +83,18 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void RemoveObject(in TObject oldObject, List<IInterestNode<TClient, TObject>> nodes)
+        public void RemoveObject(in TObject oldObject, TTypeID typeId)
         {
             // if the node never had an InterestNode, then it was using the default
             //  interest node
+            if (!m_InterestNodes.ContainsKey(typeId))
+            {
+                m_DefaultInterestNode.RemoveObject(oldObject);
+                return;
+            }
+
+            var nodes = m_InterestNodes[typeId];
+
             if (nodes.Count == 0)
             {
                 m_DefaultInterestNode.RemoveObject(oldObject);
