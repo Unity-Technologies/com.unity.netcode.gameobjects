@@ -1323,7 +1323,7 @@ namespace Unity.Netcode.Editor.CodeGen
             //try ends/catch begins
             var catchEnds = processor.Create(OpCodes.Nop);
             processor.Emit(OpCodes.Leave, catchEnds);
-            
+
             // Load the Exception onto the stack
             var catchStarts = processor.Create(OpCodes.Stloc, exceptionVariableIndex);
             processor.Append(catchStarts);
