@@ -137,7 +137,7 @@ namespace Unity.Netcode.RuntimeTests
         internal virtual IEnumerator ClientUnloadSceneCoroutine(NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            while(!CanClientsUnload())
+            while (!CanClientsUnload())
             {
                 yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             }
@@ -147,7 +147,6 @@ namespace Unity.Netcode.RuntimeTests
         internal virtual AsyncOperation OnClientUnloadScene(Scene scene, NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
         {
             m_ServerNetworkManager.StartCoroutine(ClientUnloadSceneCoroutine(completedOperation, sceneEventId));
-            //completedOperation.Invoke(sceneEventId);
             return new AsyncOperation();
         }
 

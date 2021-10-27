@@ -424,7 +424,7 @@ namespace TestProject.RuntimeTests
             ResetWait();
 
             // All clients did not load this scene, so we can ignore them for the wait
-            foreach(var listItem in m_ShouldWaitList)
+            foreach (var listItem in m_ShouldWaitList)
             {
                 if (listItem.ClientId == m_ServerNetworkManager.LocalClientId)
                 {
