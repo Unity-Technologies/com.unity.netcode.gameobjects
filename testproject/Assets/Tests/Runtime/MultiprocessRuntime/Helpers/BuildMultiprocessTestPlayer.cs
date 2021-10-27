@@ -86,6 +86,35 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        [MenuItem(MultiprocessBaseMenuName + "/Build OSX")]
+        public static void BuildOSX()
+        {
+            var buildPlayerOptions = new BuildPlayerOptions();
+            var buildPathToUse = BuildPath + ".app";
+            Debug.Log(buildPathToUse);
+            buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
+            buildPlayerOptions.locationPathName = buildPathToUse;
+            buildPlayerOptions.target = BuildTarget.StandaloneOSX;
+            buildPlayerOptions.options = BuildOptions.Development |
+                BuildOptions.AllowDebugging |
+                BuildOptions.StrictMode |
+                BuildOptions.IncludeTestAssemblies;
+
+            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            BuildSummary summary = report.summary;
+
+            if (summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log("Build succeeded: " + summary.totalSize + " bytes");
+            }
+
+            if (summary.result == BuildResult.Failed)
+            {
+                Debug.Log("Build failed");
+            }
+        }
+
+
 
         /// <summary>
         /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
