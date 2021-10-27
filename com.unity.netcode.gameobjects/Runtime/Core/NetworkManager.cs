@@ -1315,7 +1315,7 @@ namespace Unity.Netcode
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);
 
-                    //if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
