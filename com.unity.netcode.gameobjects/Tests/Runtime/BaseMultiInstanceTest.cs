@@ -103,6 +103,68 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        protected float m_ClientLoadingSimulatedDelay = 0.05f;
+        protected virtual bool CanClientsLoad()
+        {
+            return true;
+        }
+        internal virtual IEnumerator ClientLoadSceneCoroutine(NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
+        {
+            yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
+            while (!CanClientsUnload())
+            {
+                yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
+            }
+            completedOperation.Invoke(sceneEventId, sceneName);
+        }
+
+        internal virtual AsyncOperation OnClientLoadScene(string sceneName, LoadSceneMode loadSceneMode, NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        {
+            m_ServerNetworkManager.StartCoroutine(ClientLoadSceneCoroutine(completedOperation, sceneEventId, sceneName));
+            return new AsyncOperation();
+        }
+
+        private AsyncOperation DefaultClientLoadScene(string sceneName, LoadSceneMode loadSceneMode, NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        {
+            return OnClientLoadScene(sceneName, loadSceneMode, completedOperation, sceneEventId);
+        }
+
+        protected virtual bool CanClientsUnload()
+        {
+            return true;
+        }
+
+        internal virtual IEnumerator ClientUnloadSceneCoroutine(NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        {
+            yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
+            while(!CanClientsUnload())
+            {
+                yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
+            }
+            completedOperation.Invoke(sceneEventId);
+        }
+
+        internal virtual AsyncOperation OnClientUnloadScene(Scene scene, NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        {
+            m_ServerNetworkManager.StartCoroutine(ClientUnloadSceneCoroutine(completedOperation, sceneEventId));
+            //completedOperation.Invoke(sceneEventId);
+            return new AsyncOperation();
+        }
+
+        internal AsyncOperation DefaultClientUnloadScene(Scene scene, NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        {
+            return OnClientUnloadScene(scene, completedOperation, sceneEventId);
+        }
+
+        protected void RegisterClientCallbacks()
+        {
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            {
+                m_ClientNetworkManagers[i].SceneManager.LoadSceneOverride = DefaultClientLoadScene;
+                m_ClientNetworkManagers[i].SceneManager.UnloadSceneOverride = DefaultClientUnloadScene;
+            }
+        }
+
         /// <summary>
         /// Utility to spawn some clients and a server and set them up
         /// </summary>
@@ -166,6 +228,8 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
+
+                RegisterClientCallbacks();
 
                 // Wait for connection on client side
                 yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));

@@ -296,19 +296,7 @@ namespace TestProject.RuntimeTests
                             {
                                 m_ScenesLoaded.Add(scene);
                             }
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
+                            m_ClientsAreOkToLoad = true;
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
@@ -361,6 +349,12 @@ namespace TestProject.RuntimeTests
                 m_ClientsThatFailedVerification++;
             }
             return m_ClientVerifyScene;
+        }
+
+        private bool m_ClientsAreOkToLoad = true;
+        protected override bool CanClientsLoad()
+        {
+            return m_ClientsAreOkToLoad;
         }
 
         /// <summary>
@@ -418,6 +412,7 @@ namespace TestProject.RuntimeTests
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
             m_ClientsThatFailedVerification = 0;
+            m_ClientsAreOkToLoad = false;
             result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
@@ -427,7 +422,19 @@ namespace TestProject.RuntimeTests
 
             // Now unload the scene the server loaded from last test
             ResetWait();
+
+            // All clients did not load this scene, so we can ignore them for the wait
+            foreach(var listItem in m_ShouldWaitList)
+            {
+                if (listItem.ClientId == m_ServerNetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                listItem.ProcessedEvent = true;
+            }
+
             m_IsTestingVerifyScene = false;
+
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.Started);
 
@@ -693,7 +700,7 @@ namespace TestProject.RuntimeTests
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
-
+            RegisterClientCallbacks();
             // Immediately register for all pertinent event notifications we want to test and validate working
             // For the server:
             m_ServerNetworkManager.SceneManager.OnLoad += Server_OnLoad;
@@ -820,26 +827,10 @@ namespace TestProject.RuntimeTests
             {
                 case SceneEventType.LoadComplete:
                     {
-                        // We have to manually add the loaded scene to the clients when server is done loading
-                        // since the clients do not load scenes in MultiInstance tests.
                         if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
                         {
+                            // Set the scene currently loaded
                             m_CurrentScene = sceneEvent.Scene;
-                            var sceneHandle = sceneEvent.Scene.handle;
-                            var scene = sceneEvent.Scene;
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
                         }
                         break;
                     }
