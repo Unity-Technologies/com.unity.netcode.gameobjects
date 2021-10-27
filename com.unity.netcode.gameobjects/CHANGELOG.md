@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Overflow exception when syncing Animator state. (#1327)
 - Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
+- IL2CPP would not properly compile (#1359)
 
 ## [1.0.0-pre.2] - 2021-10-19
 
