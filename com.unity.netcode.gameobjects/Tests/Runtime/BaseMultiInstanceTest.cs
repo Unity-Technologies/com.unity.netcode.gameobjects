@@ -108,14 +108,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             return true;
         }
-        internal IEnumerator ClientLoadSceneCoroutine(ISceneManagerHandler.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
+        internal IEnumerator ClientLoadSceneCoroutine(string sceneName, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             while (!CanClientsLoad())
             {
                 yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             }
-            completedOperation.Invoke(sceneEventId, sceneName);
+            sceneEventAction.Invoke();
         }
 
         protected virtual bool CanClientsUnload()
@@ -123,14 +123,14 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        internal IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        internal IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             while (!CanClientsUnload())
             {
                 yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             }
-            completedOperation.Invoke(sceneEventId);
+            sceneEventAction.Invoke();
         }
 
         internal class UnitTestSceneHandler : ISceneManagerHandler
@@ -138,25 +138,24 @@ namespace Unity.Netcode.RuntimeTests
             internal NetworkManager NetworkManager;
             internal BaseMultiInstanceTest BaseMultiInstanceTest;
 
-            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, ISceneManagerHandler.LoadCompletedCallbackDelegateHandler loadCallback)
+            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
             {
-                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientLoadSceneCoroutine(loadCallback, sceneEventId, sceneName));
+                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientLoadSceneCoroutine(sceneName, sceneEventAction));
                 // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
                 return new AsyncOperation();
             }
 
-            public AsyncOperation UnloadSceneAsync(Scene scene, uint sceneEventId, ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler unloadCallback)
+            public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
             {
-                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientUnloadSceneCoroutine(unloadCallback, sceneEventId));
+                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientUnloadSceneCoroutine(sceneEventAction));
                 // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
                 return new AsyncOperation();
             }
         }
 
-        internal UnitTestSceneHandler ClientSceneHandler;
+        internal UnitTestSceneHandler ClientSceneHandler = new UnitTestSceneHandler();
         protected void RegisterClientCallbacks()
         {
-            ClientSceneHandler = new UnitTestSceneHandler();
             ClientSceneHandler.BaseMultiInstanceTest = this;
             ClientSceneHandler.NetworkManager = m_ServerNetworkManager;
             for (int i = 0; i < m_ClientNetworkManagers.Length; i++)

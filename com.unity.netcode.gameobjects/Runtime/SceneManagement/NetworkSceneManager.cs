@@ -208,18 +208,17 @@ namespace Unity.Netcode
 
         private class DefaultSceneManagerHandler : ISceneManagerHandler
         {
-            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, ISceneManagerHandler.LoadCompletedCallbackDelegateHandler loadCallback)
+            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
             {
                 var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-                operation.completed += new Action<AsyncOperation>(asyncOp2 => { loadCallback.Invoke(sceneEventId, sceneName); });
+                operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
                 return operation;
             }
 
-            public AsyncOperation UnloadSceneAsync(Scene scene, uint sceneEventId, ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler unloadCallback)
+            public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
             {
                 var operation = SceneManager.UnloadSceneAsync(scene);
-
-                operation.completed += new Action<AsyncOperation>(asyncOp2 => { unloadCallback.Invoke(sceneEventId); });
+                operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
                 return operation;
             }
         }
@@ -837,7 +836,9 @@ namespace Unity.Netcode
 
             ScenesLoaded.Remove(scene.handle);
 
-            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventData.SceneEventId, OnSceneUnloaded);
+            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene,
+                    new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
+
             sceneEventProgress.SetSceneLoadOperation(sceneUnload);
 
             // Notify local server that a scene is going to be unloaded
@@ -885,7 +886,9 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
 
-            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle], sceneEventData.SceneEventId, OnSceneUnloaded);
+            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle],
+                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
+
 
             ScenesLoaded.Remove(sceneHandle);
 
@@ -971,7 +974,9 @@ namespace Unity.Netcode
                 // Validate the scene as well as ignore the DDOL (which will have a negative buildIndex)
                 if (currentActiveScene.name != keyHandleEntry.Value.name && keyHandleEntry.Value.buildIndex >= 0)
                 {
-                    AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value, sceneEventId, EmptySceneUnloadedOperation);
+                    AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value,
+                        new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = EmptySceneUnloadedOperation });
+
                     OnSceneEvent?.Invoke(new SceneEvent()
                     {
                         AsyncOperation = sceneUnload,
@@ -1034,7 +1039,8 @@ namespace Unity.Netcode
             }
 
             // Now start loading the scene
-            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventData.SceneEventId, OnSceneLoaded);
+            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
+                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneLoaded });
 
             sceneEventProgress.SetSceneLoadOperation(sceneLoad);
 
@@ -1090,7 +1096,8 @@ namespace Unity.Netcode
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             }
 
-            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode, sceneEventId, OnSceneLoaded);
+            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode,
+                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded });
 
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1109,10 +1116,10 @@ namespace Unity.Netcode
         /// Client and Server:
         /// Generic on scene loaded callback method to be called upon a scene loading
         /// </summary>
-        private void OnSceneLoaded(uint sceneEventId, string sceneName)
+        private void OnSceneLoaded(uint sceneEventId)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
+            var nextScene = GetAndAddNewlyLoadedSceneByName(SceneNameFromHash(sceneEventData.SceneHash));
             if (!nextScene.isLoaded || !nextScene.IsValid())
             {
                 throw new Exception($"Failed to find valid scene internal Unity.Netcode for {nameof(GameObject)}s error!");

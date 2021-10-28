@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -5,11 +6,19 @@ namespace Unity.Netcode
 {
     internal interface ISceneManagerHandler
     {
-        internal delegate void LoadCompletedCallbackDelegateHandler(uint sceneEventId, string sceneName);
+        internal struct SceneEventAction
+        {
+            internal uint SceneEventId;
+            internal Action<uint> EventAction;
+            internal void Invoke()
+            {
+                EventAction.Invoke(SceneEventId);
+            }
+        }
 
-        AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, LoadCompletedCallbackDelegateHandler loadCallback);
+        AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventAction sceneEventAction);
 
-        internal delegate void UnloadCompletedCallbackDelegateHandler(uint sceneEventId);
-        AsyncOperation UnloadSceneAsync(Scene scene, uint sceneEventId, UnloadCompletedCallbackDelegateHandler unloadCallback);
+        AsyncOperation UnloadSceneAsync(Scene scene, SceneEventAction sceneEventAction);
     }
+
 }
