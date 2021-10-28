@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             return true;
         }
-        internal virtual IEnumerator ClientLoadSceneCoroutine(ISceneManagerHandler.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
+        internal IEnumerator ClientLoadSceneCoroutine(ISceneManagerHandler.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             while (!CanClientsLoad())
@@ -123,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        internal virtual IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        internal IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             while (!CanClientsUnload())
