@@ -291,6 +291,149 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
 
+        public class UnloadEvent
+        {
+            public SceneEventType ServerEventToCheck;
+            public SceneEventType MetricEventToCheck;
+
+            public bool CheckSending;
+            public bool ExpectServerId;
+            public bool ServerDispatcher;
+        }
+
+        private UnloadEvent[] m_UnloadEventsToCheck = new UnloadEvent[]
+            {
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.Unload,
+                    CheckSending = true,                        // Check that we sent the Unload event
+                    ExpectServerId = false,                     // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.Unload,
+                    CheckSending = false,                       // Check that we received the Unload event
+                    ExpectServerId = true,                      // Check that we received from the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadComplete,
+                    CheckSending = true,                        // Check that we sent the UnloadComplete event
+                    ExpectServerId = true,                      // Check that we are sending to the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadComplete,
+                    CheckSending = false,                       // Check that we received the UnloadComplete event
+                    ExpectServerId = false,                     // Check that we are receiving from the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
+                    CheckSending = true,                        // Check that we send the UnloadEventCompleted event
+                    ExpectServerId = true,                      // UnloadEventCompleted is always a broadcast by server
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new UnloadEvent()
+                {
+                    ServerEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
+                    CheckSending = false,                      // Check that we received the UnloadEventCompleted event
+                    ExpectServerId = true,                     // Check that we are receiving from the server
+                    ServerDispatcher = false,                  // We listen to the client dispatcher for this
+                }
+            };
+
+        public enum UnloadEventType
+        {
+            TestS2CUnloadSent,
+            TestS2CUnloadReceived,
+            TestC2SUnloadCompleteSent,
+            TestC2SUnloadCompleteReceived,
+            TestS2CUnloadEventCompletedSent,
+            TestS2CUnloadEventCompletedReceived
+        }
+
+        [UnityTest]
+        public IEnumerator TestUnloadEvents([Values(UnloadEventType.TestS2CUnloadSent,
+            UnloadEventType.TestS2CUnloadReceived, UnloadEventType.TestC2SUnloadCompleteSent,
+            UnloadEventType.TestC2SUnloadCompleteReceived, UnloadEventType.TestS2CUnloadEventCompletedSent,
+            UnloadEventType.TestS2CUnloadEventCompletedReceived)] UnloadEventType unloadEventType)
+        {
+            // Load a scene so that we can unload it
+            yield return LoadTestScene(k_SimpleSceneName);
+
+            var unloadEvent = m_UnloadEventsToCheck[(int)unloadEventType];
+            var clientIdToExpect = unloadEvent.ExpectServerId ? Server.LocalClientId : Client.LocalClientId;
+            var metricType = unloadEvent.CheckSending ? NetworkMetricTypes.SceneEventSent : NetworkMetricTypes.SceneEventReceived;
+            var metricsDispatcher = unloadEvent.ServerDispatcher ? ServerMetrics.Dispatcher : ClientMetrics.Dispatcher;
+
+            var serverSceneUnloaded = false;
+            var clientSceneUnloaded = false;
+            // Subscribe to the server OnSceneEvent to detect when both client and server are done unloading
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(unloadEvent.ServerEventToCheck))
+                {
+                    if (sceneEvent.ClientId == Server.LocalClientId)
+                    {
+                        serverSceneUnloaded = true;
+                    }
+                    else
+                    {
+                        clientSceneUnloaded = true;
+                    }
+                }
+            };
+
+            var waitForMetric = new WaitForMetricValues<SceneEventMetric>(
+                metricsDispatcher,
+                metricType,
+                metric => metric.SceneEventType.Equals(unloadEvent.MetricEventToCheck.ToString()));
+
+            // Unload the scene to trigger the messages
+            StartServerUnloadScene();
+
+            // Wait for the scene to unload for the server
+            yield return WaitForCondition(() => serverSceneUnloaded);
+            Assert.IsTrue(serverSceneUnloaded);
+
+            // Wait for the scene  to unload for the client
+            yield return WaitForCondition(() => clientSceneUnloaded);
+            Assert.IsTrue(clientSceneUnloaded);
+
+            // if the server is listening for incoming client messages
+            if (unloadEvent.ServerDispatcher && !unloadEvent.CheckSending)
+            {
+                // Wait for the metric to be emitted when the message is received
+                yield return waitForMetric.WaitForMetricsReceived();
+
+            }
+
+            if (unloadEvent.MetricEventToCheck == SceneEventType.UnloadEventCompleted)
+            {
+                yield return waitForMetric.WaitForMetricsReceived();
+            }
+
+            var metrics = waitForMetric.AssertMetricValuesHaveBeenFound();
+            Assert.That(metrics.Count > 0);
+
+            var metric = metrics.First();
+            Assert.AreEqual(unloadEvent.MetricEventToCheck.ToString(), metric.SceneEventType);
+            Assert.AreEqual(clientIdToExpect, metric.Connection.Id);
+            Assert.AreEqual(k_SimpleSceneName, metric.SceneName);
+        }
+
+#if USE_ORIGINAL
         [UnityTest]
         public IEnumerator TestS2CUnloadSent()
         {
@@ -298,14 +441,24 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             yield return LoadTestScene(k_SimpleSceneName);
 
             var serverSceneUnloaded = false;
+            var clientSceneUnloaded = false;
             // Register a callback so we can notify the test when the scene has started to unload server side
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload))
+                // Since the server sends the SceneEventType.Unload event once it has unloaded
+                // the scene, we wait for SceneEventType.UnloadComplete event to make sure the
+                // message was sent.
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.UnloadComplete))
                 {
-                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
+                    if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
+                    {
+                        serverSceneUnloaded = true;
+                    }
+                    else
+                    {
+                        clientSceneUnloaded = true;
+                    }
                 }
             };
 
@@ -317,12 +470,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Unload the scene to trigger the messages
             StartServerUnloadScene();
 
-            // Wait for the scene to unload locally
+            // Wait for the scene to unload for the server
             yield return WaitForCondition(() => serverSceneUnloaded);
             Assert.IsTrue(serverSceneUnloaded);
 
-            // Now wait for the metric to be emitted when the message is sent
-            yield return waitForSentMetric.WaitForMetricsReceived();
+            // Wait for the scene  to unload for the client
+            yield return WaitForCondition(() => clientSceneUnloaded);
+            Assert.IsTrue(clientSceneUnloaded);
 
             var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, sentMetrics.Count);
@@ -522,6 +676,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
+#endif
 
         [UnityTest]
         public IEnumerator TestS2CSyncSent()
