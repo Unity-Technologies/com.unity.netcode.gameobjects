@@ -323,7 +323,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         /// Load Scene Event Tests
         /// </summary>
         [UnityTest]
-        public IEnumerator TestLoadEvents([Values(EventToCheck.TestS2CLoadSent,EventToCheck.TestS2CLoadReceived,
+        public IEnumerator TestLoadEvent([Values(EventToCheck.TestS2CLoadSent,EventToCheck.TestS2CLoadReceived,
             EventToCheck.TestC2SLoadCompleteSent, EventToCheck.TestC2SLoadCompleteReceived, EventToCheck.TestS2CLoadEventCompletedSent,
             EventToCheck.TestS2CLoadEventCompletedReceived)] EventToCheck eventConfigurationType)
         {
@@ -389,7 +389,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         /// Unload Scene Event Tests
         /// </summary>
         [UnityTest]
-        public IEnumerator TestUnloadEvents([Values(EventToCheck.TestS2CUnloadSent,
+        public IEnumerator TestUnloadEvent([Values(EventToCheck.TestS2CUnloadSent,
             EventToCheck.TestS2CUnloadReceived, EventToCheck.TestC2SUnloadCompleteSent,
             EventToCheck.TestC2SUnloadCompleteReceived, EventToCheck.TestS2CUnloadEventCompletedSent,
             EventToCheck.TestS2CUnloadEventCompletedReceived)] EventToCheck eventConfigurationType)
@@ -459,7 +459,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestSynchronizeEvents([Values(EventToCheck.TestS2CSyncSent, EventToCheck.TestS2CSyncReceived,
+        public IEnumerator TestSynchronizeEvent([Values(EventToCheck.TestS2CSyncSent, EventToCheck.TestS2CSyncReceived,
             EventToCheck.TestC2SSyncCompleteSent, EventToCheck.TestC2SSyncCompleteReceived)] EventToCheck eventConfigurationType)
         {
             var syncEvent = m_EventConfigurations[(int)eventConfigurationType];
