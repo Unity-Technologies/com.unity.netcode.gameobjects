@@ -5,6 +5,64 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class CustomType : INetworkSerializable
+    {
+        public int SomeValue;
+        private const int k_ByteFactor = 256;
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsReader)
+            {
+                var reader = serializer.GetFastBufferReader();
+                reader.TryBeginRead(2);
+                byte value;
+                reader.ReadByte(out value);
+                SomeValue = value * k_ByteFactor;
+                reader.ReadByte(out value);
+                SomeValue += value;
+            }
+            else
+            {
+                var writer = serializer.GetFastBufferWriter();
+                writer.TryBeginWrite(2);
+                writer.WriteByte((byte)(SomeValue / k_ByteFactor));
+                writer.WriteByte((byte)(SomeValue % k_ByteFactor));
+            }
+        }
+    };
+
+    public class DifferentCustomType : INetworkSerializable
+    {
+        public int SomeValue;
+        public bool SomeBoolean;
+        private const int k_ByteFactor = 256;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsReader)
+            {
+                var reader = serializer.GetFastBufferReader();
+                reader.TryBeginRead(3);
+                byte value;
+                reader.ReadByte(out value);
+                SomeValue = value * k_ByteFactor;
+                reader.ReadByte(out value);
+                SomeValue += value;
+
+                reader.ReadByte(out value);
+                SomeBoolean = value > 0;
+            }
+            else
+            {
+                var writer = serializer.GetFastBufferWriter();
+                writer.TryBeginWrite(3);
+                writer.WriteByte((byte)(SomeValue / k_ByteFactor));
+                writer.WriteByte((byte)(SomeValue % k_ByteFactor));
+                writer.WriteByte((byte)(SomeBoolean ? 1 : 0));
+            }
+        }
+    };
+
     public class RpcOwnershipTest : NetworkBehaviour
     {
 
@@ -14,6 +72,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public int RequireOwnershipCount = 0;
         public int DoesntRequireOwnershipCount = 0;
+        public int ArrayRpcCount = 0;
 
         [ServerRpc(RequireOwnership = true)]
         public void RequireOwnershipServerRpc()
@@ -26,9 +85,37 @@ namespace Unity.Netcode.RuntimeTests
         {
             DoesntRequireOwnershipCount++;
         }
+
+        [ServerRpc]
+        public void TwoCustomTypesAndVect3ServerRpc(CustomType someObject, DifferentCustomType someOtherObject, Vector3 vect)
+        {
+            Debug.Assert(someObject.SomeValue == 50);
+            Debug.Assert(someOtherObject.SomeValue == 300);
+            Debug.Assert(someOtherObject.SomeBoolean = true);
+            Debug.Assert(vect.x == 20);
+            Debug.Assert(vect.y == 30);
+            Debug.Assert(vect.z == 40);
+        }
+
+        [ServerRpc]
+        public void ArrayOfCustomTypesServerRpc(CustomType[] arrayOfObjects, CustomType[] emptyArray)
+        {
+            Debug.Assert(arrayOfObjects.Length > 0);
+            for (int i = 0; i < arrayOfObjects.Length; i++)
+            {
+                if (i > 0)
+                {
+                    Debug.Assert(arrayOfObjects[i].SomeValue > arrayOfObjects[i - 1].SomeValue);
+                }
+            }
+
+            Debug.Assert(emptyArray.Length == 0);
+
+            ArrayRpcCount++;
+        }
     }
 
-    public class RpcOwnershipTests : BaseMultiInstanceTest
+    public class RpcOwnershipCustomTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 2;
 
@@ -68,6 +155,45 @@ namespace Unity.Netcode.RuntimeTests
         {
             yield return RunTests(false);
             yield return RunTests(true);
+        }
+
+        [UnityTest]
+        public IEnumerator RpcArrayCustomTypesTest()
+        {
+            var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var netSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
+            netSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
+
+            netSpawnedObject.Spawn();
+
+            var arrayOfObjects = new CustomType[2] { new CustomType(), new CustomType() };
+            var emptyArray = new CustomType[0];
+
+            arrayOfObjects[0].SomeValue = 1;
+            arrayOfObjects[1].SomeValue = 2;
+
+            netSpawnedObject.GetComponent<RpcOwnershipObject>().ArrayOfCustomTypesServerRpc(arrayOfObjects, emptyArray);
+
+            Debug.Assert(netSpawnedObject.GetComponent<RpcOwnershipObject>().ArrayRpcCount == 1);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CustomTypesTest()
+        {
+            var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var netSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
+            netSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
+
+            netSpawnedObject.Spawn();
+
+            var someObject = new CustomType() { SomeValue = 50 };
+            var someOtherObject = new DifferentCustomType() { SomeValue = 300, SomeBoolean = true };
+            var vect = new Vector3() { x = 20, y = 30, z = 40 };
+
+            spawnedObject.GetComponent<RpcOwnershipObject>().TwoCustomTypesAndVect3ServerRpc(someObject, someOtherObject, vect);
+
+            yield return null;
         }
 
         private IEnumerator RunTests(bool serverOwned)
@@ -126,7 +252,8 @@ namespace Unity.Netcode.RuntimeTests
             netSpawnedObjectOnClient.GetComponent<RpcOwnershipObject>().RequireOwnershipServerRpc();
             netSpawnedObjectOnClient.GetComponent<RpcOwnershipObject>().DoesntRequireOwnershipServerRpc();
 
-            yield return new WaitForSeconds(1.0f);
+            var nextFrameNumber = Time.frameCount + 3;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // verify counts
             Debug.Assert(spawnedObject.GetComponent<RpcOwnershipObject>().RequireOwnershipCount == m_ExpectedRequireOwnershipCount);
