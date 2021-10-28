@@ -20,7 +20,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         private NetworkSceneManager m_ClientNetworkSceneManager;
         private NetworkSceneManager m_ServerNetworkSceneManager;
         private Scene m_LoadedScene;
-        private bool m_ServerLoadedScene = false; // Used to synchronize clients to assure the server loaded a scene before spoof loading
 
         [UnitySetUp]
         public override IEnumerator Setup()
@@ -29,17 +28,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ClientNetworkSceneManager = Client.SceneManager;
             m_ServerNetworkSceneManager = Server.SceneManager;
             Server.NetworkConfig.EnableSceneManagement = true;
-
             m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
-        }
-
-        /// <summary>
-        /// Just ignores all unload scene events (for clients during Teardown)
-        /// </summary>
-        /// <returns>false</returns>
-        private bool IgnoreAllSceneRequests(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
-        {
-            return false;
         }
 
         [UnityTearDown]
@@ -55,14 +44,566 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         }
 
         /// <summary>
-        /// Prevents clients from thinking they are "done loading"
-        /// until the server has completely loaded its scene
+        /// Used to create configurations for each scene event metric test
         /// </summary>
-        protected override bool CanClientsLoad()
+        public class EventConfiguration
         {
-            return m_ServerLoadedScene;
+            /// <summary>
+            /// Scene event to wait for in order for the metric event
+            /// to be sent.
+            /// </summary>
+            public SceneEventType SceneEventToCheck;
+
+            /// <summary>
+            /// What scene event metric we are testing/expecting
+            /// </summary>
+            public SceneEventType MetricEventToCheck;
+
+            /// <summary>
+            /// If true: use NetworkMetricTypes.SceneEventSent to check for MetricEventToCheck
+            /// If false: use NetworkMetricTypes.SceneEventReceived to check for MetricEventToCheck
+            /// </summary>
+            public bool CheckSending;
+
+            /// <summary>
+            /// If true: we are expecting to be sending to or receiving from the server id
+            /// If false: we are expecting to be sending to or receiving from the client id
+            /// </summary>
+            public bool ExpectServerId;
+
+            /// <summary>
+            /// If true: We use the ServerMetrics.Dispatcher
+            /// If false: We use the ClientMetrics.Dispatcher
+            /// </summary>
+            public bool ServerDispatcher;
         }
 
+        /// <summary>
+        /// This is the list of tests to be performed by:
+        /// TestLoadEvents: Tests all loading event metrics
+        /// TestUnloadEvents: Tests all unloading event metrics
+        /// TestSynchronizeEvents: Tests all synchronization event metrics
+        /// Note: The names are the same as the original methods
+        /// </summary>
+        public enum EventToCheck
+        {
+            TestS2CLoadSent,
+            TestS2CLoadReceived,
+            TestC2SLoadCompleteSent,
+            TestC2SLoadCompleteReceived,
+            TestS2CLoadEventCompletedSent,
+            TestS2CLoadEventCompletedReceived,
+            TestS2CUnloadSent,
+            TestS2CUnloadReceived,
+            TestC2SUnloadCompleteSent,
+            TestC2SUnloadCompleteReceived,
+            TestS2CUnloadEventCompletedSent,
+            TestS2CUnloadEventCompletedReceived,
+            TestS2CSyncSent,
+            TestS2CSyncReceived,
+            TestC2SSyncCompleteSent,
+            TestC2SSyncCompleteReceived
+        }
+
+        /// <summary>
+        /// Configurations to be tested
+        /// </summary>
+        private EventConfiguration[] m_EventConfigurations = new EventConfiguration[]
+            {
+                new EventConfiguration()                        // TestS2CLoadSent
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.Load,
+                    CheckSending = true,                        // Check that we sent the Load event
+                    ExpectServerId = false,                     // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CLoadReceived
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.Load,
+                    CheckSending = false,                       // Check that we received the Load event
+                    ExpectServerId = true,                      // Check that we are receiving from the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SLoadCompleteSent
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.LoadComplete,
+                    CheckSending = true,                        // Check that we sent the LoadComplete event
+                    ExpectServerId = true,                      // Check that we are sending to the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SLoadCompleteReceived
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.LoadComplete,
+                    CheckSending = false,                       // Check that we received the LoadComplete event
+                    ExpectServerId = false,                     // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CLoadEventCompletedSent
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.LoadEventCompleted,
+                    CheckSending = true,                        // Check that we sent the LoadEventCompleted event
+                    ExpectServerId = true,                      // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CLoadEventCompletedReceived
+                {
+                    SceneEventToCheck = SceneEventType.LoadEventCompleted,
+                    MetricEventToCheck = SceneEventType.LoadEventCompleted,
+                    CheckSending = false,                       // Check that we received the LoadEventCompleted event
+                    ExpectServerId = true,                      // Check that we received from the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CUnloadSent
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.Unload,
+                    CheckSending = true,                        // Check that we sent the Unload event
+                    ExpectServerId = false,                     // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CUnloadReceived
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.Unload,
+                    CheckSending = false,                       // Check that we received the Unload event
+                    ExpectServerId = true,                      // Check that we received from the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SUnloadCompleteSent
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadComplete,
+                    CheckSending = true,                        // Check that we sent the UnloadComplete event
+                    ExpectServerId = true,                      // Check that we are sending to the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SUnloadCompleteReceived
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadComplete,
+                    CheckSending = false,                       // Check that we received the UnloadComplete event
+                    ExpectServerId = false,                     // Check that we are receiving from the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CUnloadEventCompletedSent
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
+                    CheckSending = true,                        // Check that we send the UnloadEventCompleted event
+                    ExpectServerId = true,                      // UnloadEventCompleted is always a broadcast by server
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CUnloadEventCompletedReceived
+                {
+                    SceneEventToCheck = SceneEventType.UnloadComplete,
+                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
+                    CheckSending = false,                      // Check that we received the UnloadEventCompleted event
+                    ExpectServerId = true,                     // Check that we are receiving from the server
+                    ServerDispatcher = false,                  // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CSyncSent
+                {
+                    SceneEventToCheck = SceneEventType.SynchronizeComplete,
+                    MetricEventToCheck = SceneEventType.Synchronize,
+                    CheckSending = true,                        // Check that we send the Synchronize event
+                    ExpectServerId = false,                     // Check that we are sending to the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                },
+                new EventConfiguration()                        // TestS2CSyncReceived
+                {
+                    SceneEventToCheck = SceneEventType.SynchronizeComplete,
+                    MetricEventToCheck = SceneEventType.Synchronize,
+                    CheckSending = false,                      // Check that we receive the Synchronize event
+                    ExpectServerId = true,                     // Check that we are receiving from the server
+                    ServerDispatcher = false,                  // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SSyncCompleteSent
+                {
+                    SceneEventToCheck = SceneEventType.SynchronizeComplete,
+                    MetricEventToCheck = SceneEventType.SynchronizeComplete,
+                    CheckSending = true,                        // Check that we send the SynchronizeComplete event
+                    ExpectServerId = true,                      // Check that we are sending to the server
+                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
+                },
+                new EventConfiguration()                        // TestC2SSyncCompleteReceived
+                {
+                    SceneEventToCheck = SceneEventType.SynchronizeComplete,
+                    MetricEventToCheck = SceneEventType.SynchronizeComplete,
+                    CheckSending = false,                       // Check that we receive the SynchronizeComplete event
+                    ExpectServerId = false,                     // Check that we are receiving from the client
+                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
+                }
+            };
+
+        /// <summary>
+        /// The first thing to test is that we are in alignment
+        /// with the configurations vs the event types.
+        /// </summary>
+        [Test]
+        [Order(0)]
+        public void ValidateEventTestConfigurations()
+        {
+            var eventTypesCount = Enum.GetNames(typeof(EventToCheck)).Length;
+            Assert.That(eventTypesCount == m_EventConfigurations.Length);
+            var eventTestTypes = Enum.GetValues(typeof(EventToCheck));
+
+            // Make sure we have aligned all configuration types with scene event types
+            for (int i = 0; i < eventTypesCount; i++)
+            {
+                var eventTestType = (EventToCheck)eventTestTypes.GetValue(i);
+                var eventConfiguration = m_EventConfigurations[i];
+                var validatedConfigToEventTest = false;
+                switch (eventTestType)
+                {
+                    case EventToCheck.TestS2CLoadSent:
+                    case EventToCheck.TestS2CLoadReceived:
+                    case EventToCheck.TestC2SLoadCompleteSent:
+                    case EventToCheck.TestC2SLoadCompleteReceived:
+                    case EventToCheck.TestS2CLoadEventCompletedSent:
+                    case EventToCheck.TestS2CLoadEventCompletedReceived:
+                        {
+                            switch (eventConfiguration.MetricEventToCheck)
+                            {
+                                case SceneEventType.Load:
+                                case SceneEventType.LoadComplete:
+                                case SceneEventType.LoadEventCompleted:
+                                    {
+                                        validatedConfigToEventTest = true;
+                                        break;
+                                    }
+                            }
+                            break;
+                        }
+                    case EventToCheck.TestS2CUnloadSent:
+                    case EventToCheck.TestS2CUnloadReceived:
+                    case EventToCheck.TestC2SUnloadCompleteSent:
+                    case EventToCheck.TestC2SUnloadCompleteReceived:
+                    case EventToCheck.TestS2CUnloadEventCompletedSent:
+                    case EventToCheck.TestS2CUnloadEventCompletedReceived:
+                        {
+                            switch (eventConfiguration.MetricEventToCheck)
+                            {
+                                case SceneEventType.Unload:
+                                case SceneEventType.UnloadComplete:
+                                case SceneEventType.UnloadEventCompleted:
+                                    {
+                                        validatedConfigToEventTest = true;
+                                        break;
+                                    }
+                            }
+                            break;
+                        }
+                    case EventToCheck.TestS2CSyncSent:
+                    case EventToCheck.TestS2CSyncReceived:
+                    case EventToCheck.TestC2SSyncCompleteSent:
+                    case EventToCheck.TestC2SSyncCompleteReceived:
+                        {
+                            switch (eventConfiguration.MetricEventToCheck)
+                            {
+                                case SceneEventType.Synchronize:
+                                case SceneEventType.SynchronizeComplete:
+                                    {
+                                        validatedConfigToEventTest = true;
+                                        break;
+                                    }
+                            }
+                            break;
+                        }
+                }
+                Assert.IsTrue(validatedConfigToEventTest);
+            }
+        }
+
+        /// <summary>
+        /// Load Scene Event Tests
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestLoadEvents([Values(EventToCheck.TestS2CLoadSent,EventToCheck.TestS2CLoadReceived,
+            EventToCheck.TestC2SLoadCompleteSent, EventToCheck.TestC2SLoadCompleteReceived, EventToCheck.TestS2CLoadEventCompletedSent,
+            EventToCheck.TestS2CLoadEventCompletedReceived)] EventToCheck eventConfigurationType)
+        {
+            var loadEvent = m_EventConfigurations[(int)eventConfigurationType];
+            var clientIdToExpect = loadEvent.ExpectServerId ? Server.LocalClientId : Client.LocalClientId;
+            var metricType = loadEvent.CheckSending ? NetworkMetricTypes.SceneEventSent : NetworkMetricTypes.SceneEventReceived;
+            var metricsDispatcher = loadEvent.ServerDispatcher ? ServerMetrics.Dispatcher : ClientMetrics.Dispatcher;
+
+            var waitForServerSceneLoaded = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                loadEvent.SceneEventToCheck);
+
+            var waitForClientSceneLoaded = new WaitForSceneEvent(
+                 m_ClientNetworkSceneManager,
+                 loadEvent.SceneEventToCheck);
+
+            var waitForMetric = new WaitForMetricValues<SceneEventMetric>(
+                 metricsDispatcher,
+                 metricType,
+                 metric => metric.SceneEventType.Equals(loadEvent.MetricEventToCheck.ToString()));
+
+            // Load a scene to trigger the messages
+            StartServerLoadScene();
+
+            // Wait for the scene to be loaded completely
+            yield return waitForServerSceneLoaded.Wait();
+            Assert.IsTrue(waitForServerSceneLoaded.Done);
+
+            yield return waitForClientSceneLoaded.Wait();
+            Assert.IsTrue(waitForClientSceneLoaded.Done);
+
+            if (loadEvent.MetricEventToCheck == SceneEventType.LoadEventCompleted)
+            {
+                yield return waitForMetric.WaitForMetricsReceived();
+            }
+
+            var metrics = waitForMetric.AssertMetricValuesHaveBeenFound();
+            Assert.That(metrics.Count > 0);
+
+            var allResultsVerified = false;
+            foreach (var metric in metrics)
+            {
+                if (metric.SceneEventType != loadEvent.MetricEventToCheck.ToString())
+                {
+                    continue;
+                }
+                if (clientIdToExpect != metric.Connection.Id)
+                {
+                    continue;
+                }
+
+                if (metric.SceneName != k_SimpleSceneName)
+                {
+                    continue;
+                }
+                allResultsVerified = true;
+                break;
+            }
+            Assert.IsTrue(allResultsVerified);
+        }
+
+        /// <summary>
+        /// Unload Scene Event Tests
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestUnloadEvents([Values(EventToCheck.TestS2CUnloadSent,
+            EventToCheck.TestS2CUnloadReceived, EventToCheck.TestC2SUnloadCompleteSent,
+            EventToCheck.TestC2SUnloadCompleteReceived, EventToCheck.TestS2CUnloadEventCompletedSent,
+            EventToCheck.TestS2CUnloadEventCompletedReceived)] EventToCheck eventConfigurationType)
+        {
+            var unloadEvent = m_EventConfigurations[(int)eventConfigurationType];
+            var clientIdToExpect = unloadEvent.ExpectServerId ? Server.LocalClientId : Client.LocalClientId;
+            var metricType = unloadEvent.CheckSending ? NetworkMetricTypes.SceneEventSent : NetworkMetricTypes.SceneEventReceived;
+            var metricsDispatcher = unloadEvent.ServerDispatcher ? ServerMetrics.Dispatcher : ClientMetrics.Dispatcher;
+
+            // Load a scene so that we can unload it
+            yield return LoadTestScene(k_SimpleSceneName);
+
+            var serverSceneUnloaded = false;
+            var clientSceneUnloaded = false;
+            // Subscribe to the server OnSceneEvent to detect when both client and server are done unloading
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(unloadEvent.SceneEventToCheck))
+                {
+                    if (sceneEvent.ClientId == Server.LocalClientId)
+                    {
+                        serverSceneUnloaded = true;
+                    }
+                    else
+                    {
+                        clientSceneUnloaded = true;
+                    }
+                }
+            };
+
+            var waitForMetric = new WaitForMetricValues<SceneEventMetric>(
+                metricsDispatcher,
+                metricType,
+                metric => metric.SceneEventType.Equals(unloadEvent.MetricEventToCheck.ToString()));
+
+            // Unload the scene to trigger the messages
+            StartServerUnloadScene();
+
+            // Wait for the scene to unload for the server
+            yield return WaitForCondition(() => serverSceneUnloaded);
+            Assert.IsTrue(serverSceneUnloaded);
+
+            // Wait for the scene  to unload for the client
+            yield return WaitForCondition(() => clientSceneUnloaded);
+            Assert.IsTrue(clientSceneUnloaded);
+
+            // if the server is listening for incoming client messages
+            if (unloadEvent.ServerDispatcher && !unloadEvent.CheckSending)
+            {
+                // Wait for the metric to be emitted when the message is received
+                yield return waitForMetric.WaitForMetricsReceived();
+
+            }
+
+            if (unloadEvent.MetricEventToCheck == SceneEventType.UnloadEventCompleted)
+            {
+                yield return waitForMetric.WaitForMetricsReceived();
+            }
+
+            var metrics = waitForMetric.AssertMetricValuesHaveBeenFound();
+            Assert.That(metrics.Count > 0);
+
+            var metric = metrics.First();
+            Assert.AreEqual(unloadEvent.MetricEventToCheck.ToString(), metric.SceneEventType);
+            Assert.AreEqual(clientIdToExpect, metric.Connection.Id);
+            Assert.AreEqual(k_SimpleSceneName, metric.SceneName);
+        }
+
+        [UnityTest]
+        public IEnumerator TestSynchronizeEvents([Values(EventToCheck.TestS2CSyncSent, EventToCheck.TestS2CSyncReceived,
+            EventToCheck.TestC2SSyncCompleteSent, EventToCheck.TestC2SSyncCompleteReceived)] EventToCheck eventConfigurationType)
+        {
+            var syncEvent = m_EventConfigurations[(int)eventConfigurationType];
+
+            var metricType = syncEvent.CheckSending ? NetworkMetricTypes.SceneEventSent : NetworkMetricTypes.SceneEventReceived;
+
+            // Register a callback so we can notify the test when the client and server have completed their sync
+            var waitForServerSyncComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                syncEvent.SceneEventToCheck);
+
+            var newClient = CreateAndStartClient();
+            var metricsDispatcher = syncEvent.ServerDispatcher ? ServerMetrics.Dispatcher : (newClient.NetworkMetrics as NetworkMetrics).Dispatcher;
+            var waitForMetric = new WaitForMetricValues<SceneEventMetric>(
+                metricsDispatcher,
+                metricType,
+                metric => metric.SceneEventType.Equals(syncEvent.MetricEventToCheck.ToString()));
+
+            // Although the metric should have been emitted, wait for the sync to complete
+            // as the client/server IDs have not been fully initialized until this is done.
+            yield return waitForServerSyncComplete.Wait();
+            Assert.IsTrue(waitForServerSyncComplete.Done);
+
+            if (syncEvent.MetricEventToCheck == SceneEventType.SynchronizeComplete)
+            {
+                yield return waitForMetric.WaitForMetricsReceived();
+            }
+
+            var metrics = waitForMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, metrics.Count);
+
+            var clientIdToExpect = syncEvent.ExpectServerId ? Server.LocalClientId : newClient.LocalClientId;
+            var sentMetric = metrics.First();
+
+            Assert.AreEqual(syncEvent.MetricEventToCheck.ToString(), sentMetric.SceneEventType);
+            Assert.AreEqual(clientIdToExpect, sentMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
+        }
+
+        // Create a new client to connect to an already started server to trigger a server sync.
+        private NetworkManager CreateAndStartClient()
+        {
+            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
+            var newClient = newClients[0];
+
+            // Set up the client so it has the same NetworkConfig as the server
+            newClient.NetworkConfig.EnableSceneManagement = true;
+            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            // Start the client to trigger the sync
+            newClient.StartClient();
+
+            return newClient;
+        }
+
+        private void StartServerLoadScene()
+        {
+            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(k_SimpleSceneName, LoadSceneMode.Additive);
+            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
+        }
+
+        private void StartServerUnloadScene()
+        {
+            var unloadSceneResult = m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+            Assert.AreEqual(SceneEventProgressStatus.Started, unloadSceneResult);
+        }
+
+        // Loads a scene, then waits for the client to notify the server
+        // that it has finished loading the scene, as this is the last thing that happens.
+        private IEnumerator LoadTestScene(string sceneName)
+        {
+            var serverLoadComplete = false;
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+                {
+                    serverLoadComplete = true;
+                }
+            };
+
+            var clientLoadComplete = false;
+            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+                {
+                    clientLoadComplete = true;
+                }
+            };
+
+            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
+
+            yield return WaitForCondition(() => serverLoadComplete);
+            yield return WaitForCondition(() => clientLoadComplete);
+
+            Assert.IsTrue(serverLoadComplete && clientLoadComplete);
+        }
+
+        private static IEnumerator WaitForCondition(Func<bool> condition, int maxFrames = 240)
+        {
+            for (var i = 0; i < maxFrames; i++)
+            {
+                if (condition.Invoke())
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+        }
+
+        // Primarily used to get a reference to the Scene loaded
+        private void RegisterLoadedSceneCallback(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
+            {
+                m_LoadedScene = sceneEvent.Scene;
+            }
+        }
+
+        private class WaitForSceneEvent
+        {
+            public WaitForSceneEvent(NetworkSceneManager sceneManager, SceneEventType sceneEventType)
+            {
+                sceneManager.OnSceneEvent += sceneEvent =>
+                {
+                    if (sceneEvent.SceneEventType == sceneEventType)
+                    {
+                        Done = true;
+                    }
+                };
+            }
+
+            public bool Done { get; private set; }
+
+            public IEnumerator Wait()
+            {
+                yield return WaitForCondition(() => Done);
+            }
+        }
+
+        // TODO: Remove this once the changes have been approved by the tools team
+#if USE_ORIGINAL
         [UnityTest]
         public IEnumerator TestS2CLoadSent()
         {
@@ -288,149 +829,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
 
-        public class EventConfiguration
-        {
-            public SceneEventType ServerEventToCheck;
-            public SceneEventType MetricEventToCheck;
-
-            public bool CheckSending;
-            public bool ExpectServerId;
-            public bool ServerDispatcher;
-        }
-
-        private EventConfiguration[] m_EventConfigurations = new EventConfiguration[]
-            {
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.Unload,
-                    CheckSending = true,                        // Check that we sent the Unload event
-                    ExpectServerId = false,                     // Check that we are sending to the client
-                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
-                },
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.Unload,
-                    CheckSending = false,                       // Check that we received the Unload event
-                    ExpectServerId = true,                      // Check that we received from the server
-                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
-                },
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.UnloadComplete,
-                    CheckSending = true,                        // Check that we sent the UnloadComplete event
-                    ExpectServerId = true,                      // Check that we are sending to the server
-                    ServerDispatcher = false,                   // We listen to the client dispatcher for this
-                },
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.UnloadComplete,
-                    CheckSending = false,                       // Check that we received the UnloadComplete event
-                    ExpectServerId = false,                     // Check that we are receiving from the client
-                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
-                },
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
-                    CheckSending = true,                        // Check that we send the UnloadEventCompleted event
-                    ExpectServerId = true,                      // UnloadEventCompleted is always a broadcast by server
-                    ServerDispatcher = true,                    // We listen to the server dispatcher for this
-                },
-                new EventConfiguration()
-                {
-                    ServerEventToCheck = SceneEventType.UnloadComplete,
-                    MetricEventToCheck = SceneEventType.UnloadEventCompleted,
-                    CheckSending = false,                      // Check that we received the UnloadEventCompleted event
-                    ExpectServerId = true,                     // Check that we are receiving from the server
-                    ServerDispatcher = false,                  // We listen to the client dispatcher for this
-                }
-            };
-
-        public enum EvenToCheck
-        {
-            TestS2CUnloadSent,
-            TestS2CUnloadReceived,
-            TestC2SUnloadCompleteSent,
-            TestC2SUnloadCompleteReceived,
-            TestS2CUnloadEventCompletedSent,
-            TestS2CUnloadEventCompletedReceived
-        }
-
-        [UnityTest]
-        public IEnumerator TestUnloadEvents([Values(EvenToCheck.TestS2CUnloadSent,
-            EvenToCheck.TestS2CUnloadReceived, EvenToCheck.TestC2SUnloadCompleteSent,
-            EvenToCheck.TestC2SUnloadCompleteReceived, EvenToCheck.TestS2CUnloadEventCompletedSent,
-            EvenToCheck.TestS2CUnloadEventCompletedReceived)] EvenToCheck eventType)
-        {
-            // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName);
-
-            var unloadEvent = m_EventConfigurations[(int)eventType];
-            var clientIdToExpect = unloadEvent.ExpectServerId ? Server.LocalClientId : Client.LocalClientId;
-            var metricType = unloadEvent.CheckSending ? NetworkMetricTypes.SceneEventSent : NetworkMetricTypes.SceneEventReceived;
-            var metricsDispatcher = unloadEvent.ServerDispatcher ? ServerMetrics.Dispatcher : ClientMetrics.Dispatcher;
-
-            var serverSceneUnloaded = false;
-            var clientSceneUnloaded = false;
-            // Subscribe to the server OnSceneEvent to detect when both client and server are done unloading
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType.Equals(unloadEvent.ServerEventToCheck))
-                {
-                    if (sceneEvent.ClientId == Server.LocalClientId)
-                    {
-                        serverSceneUnloaded = true;
-                    }
-                    else
-                    {
-                        clientSceneUnloaded = true;
-                    }
-                }
-            };
-
-            var waitForMetric = new WaitForMetricValues<SceneEventMetric>(
-                metricsDispatcher,
-                metricType,
-                metric => metric.SceneEventType.Equals(unloadEvent.MetricEventToCheck.ToString()));
-
-            // Unload the scene to trigger the messages
-            StartServerUnloadScene();
-
-            // Wait for the scene to unload for the server
-            yield return WaitForCondition(() => serverSceneUnloaded);
-            Assert.IsTrue(serverSceneUnloaded);
-
-            // Wait for the scene  to unload for the client
-            yield return WaitForCondition(() => clientSceneUnloaded);
-            Assert.IsTrue(clientSceneUnloaded);
-
-            // if the server is listening for incoming client messages
-            if (unloadEvent.ServerDispatcher && !unloadEvent.CheckSending)
-            {
-                // Wait for the metric to be emitted when the message is received
-                yield return waitForMetric.WaitForMetricsReceived();
-
-            }
-
-            if (unloadEvent.MetricEventToCheck == SceneEventType.UnloadEventCompleted)
-            {
-                yield return waitForMetric.WaitForMetricsReceived();
-            }
-
-            var metrics = waitForMetric.AssertMetricValuesHaveBeenFound();
-            Assert.That(metrics.Count > 0);
-
-            var metric = metrics.First();
-            Assert.AreEqual(unloadEvent.MetricEventToCheck.ToString(), metric.SceneEventType);
-            Assert.AreEqual(clientIdToExpect, metric.Connection.Id);
-            Assert.AreEqual(k_SimpleSceneName, metric.SceneName);
-        }
-
-#if USE_ORIGINAL
         [UnityTest]
         public IEnumerator TestS2CUnloadSent()
         {
@@ -673,181 +1071,121 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
         }
-#endif
 
-        //[UnityTest]
-        //public IEnumerator TestS2CSyncSent()
-        //{
-        //    // Register a callback so we can notify the test when the client and server have completed their sync
-        //    var waitForServerSyncComplete = new WaitForSceneEvent(
-        //        m_ServerNetworkSceneManager,
-        //        SceneEventType.SynchronizeComplete);
-
-        //    var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
-        //        ServerMetrics.Dispatcher,
-        //        NetworkMetricTypes.SceneEventSent,
-        //        metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
-
-        //    // To trigger a sync, we need to connect a new client to an already started server, so create a client
-        //    var newClient = CreateAndStartClient();
-
-        //    // Wait for the metric to be emitted when the server sends the sync message back to the client
-        //    yield return waitForSentMetric.WaitForMetricsReceived();
-
-        //    var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
-        //    Assert.AreEqual(1, sentMetrics.Count);
-
-        //    // Although the metric should have been emitted, wait for the sync to complete
-        //    // as the client/server IDs have not been fully initialized until this is done.
-        //    yield return waitForServerSyncComplete.Wait();
-        //    Assert.IsTrue(waitForServerSyncComplete.Done);
-
-        //    var sentMetric = sentMetrics.First();
-
-        //    Assert.AreEqual(SceneEventType.Synchronize.ToString(), sentMetric.SceneEventType);
-        //    Assert.AreEqual(newClient.LocalClientId, sentMetric.Connection.Id);
-
-        //    MultiInstanceHelpers.StopOneClient(newClient);
-        //}
-
-        //[UnityTest]
-        //public IEnumerator TestS2CSyncReceived()
-        //{
-        //    // To trigger a sync, we need to connect a new client to an already started server, so create a client
-        //    var newClient = CreateAndStartClient();
-
-        //    // Now the client is started we can grab the NetworkMetrics field from it
-        //    var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
-
-        //    var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
-        //        newClientMetrics.Dispatcher,
-        //        NetworkMetricTypes.SceneEventReceived,
-        //        metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
-
-        //    // Wait for the metric to be emitted when the message is received on the client from the server
-        //    yield return waitForReceivedMetric.WaitForMetricsReceived();
-
-        //    var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
-        //    Assert.AreEqual(1, receivedMetrics.Count);
-        //    var receivedMetric = receivedMetrics.First();
-
-        //    Assert.AreEqual(SceneEventType.Synchronize.ToString(), receivedMetric.SceneEventType);
-        //    Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
-
-        //    MultiInstanceHelpers.StopOneClient(newClient);
-        //}
-
-        //[UnityTest]
-        //public IEnumerator TestC2SSyncCompleteSent()
-        //{
-        //    // To trigger a sync, we need to connect a new client to an already started server, so create a client
-        //    var newClient = CreateAndStartClient();
-
-        //    // Now the client is started we can grab the NetworkMetrics field from it
-        //    var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
-
-        //    var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
-        //        newClientMetrics.Dispatcher,
-        //        NetworkMetricTypes.SceneEventSent,
-        //        metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
-
-        //    // Wait for the metric to be emitted when the client has completed the sync locally and sends the message
-        //    // to the server
-        //    yield return waitForSentMetric.WaitForMetricsReceived();
-
-        //    var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
-        //    Assert.AreEqual(1, sentMetrics.Count);
-        //    var sentMetric = sentMetrics.First();
-
-        //    Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), sentMetric.SceneEventType);
-        //    Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
-
-        //    MultiInstanceHelpers.StopOneClient(newClient);
-        //}
-
-        //[UnityTest]
-        //public IEnumerator TestC2SSyncCompleteReceived()
-        //{
-        //    var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
-        //        ServerMetrics.Dispatcher,
-        //        NetworkMetricTypes.SceneEventReceived,
-        //        metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
-
-        //    // To trigger a sync, we need to connect a new client to an already started server, so create a client
-        //    var newClient = CreateAndStartClient();
-
-        //    // Wait for the metric to be emitted when the client has completed the sync locally and the message is
-        //    // received on the server
-        //    yield return waitForReceivedMetric.WaitForMetricsReceived();
-
-        //    var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
-        //    Assert.AreEqual(1, receivedMetrics.Count);
-
-        //    var receivedMetric = receivedMetrics.First();
-
-        //    Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), receivedMetric.SceneEventType);
-        //    Assert.AreEqual(newClient.LocalClientId, receivedMetric.Connection.Id);
-
-        //    MultiInstanceHelpers.StopOneClient(newClient);
-        //}
-
-        // Create a new client to connect to an already started server to trigger a server sync.
-        private NetworkManager CreateAndStartClient()
+        [UnityTest]
+        public IEnumerator TestS2CSyncSent()
         {
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
-            var newClient = newClients[0];
+            // Register a callback so we can notify the test when the client and server have completed their sync
+            var waitForServerSyncComplete = new WaitForSceneEvent(
+                m_ServerNetworkSceneManager,
+                SceneEventType.SynchronizeComplete);
 
-            // Set up the client so it has the same NetworkConfig as the server
-            newClient.NetworkConfig.EnableSceneManagement = true;
-            newClient.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+                ServerMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventSent,
+                metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
 
-            // Start the client to trigger the sync
-            newClient.StartClient();
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            return newClient;
+            // Wait for the metric to be emitted when the server sends the sync message back to the client
+            yield return waitForSentMetric.WaitForMetricsReceived();
+
+            var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, sentMetrics.Count);
+
+            // Although the metric should have been emitted, wait for the sync to complete
+            // as the client/server IDs have not been fully initialized until this is done.
+            yield return waitForServerSyncComplete.Wait();
+            Assert.IsTrue(waitForServerSyncComplete.Done);
+
+            var sentMetric = sentMetrics.First();
+
+            Assert.AreEqual(SceneEventType.Synchronize.ToString(), sentMetric.SceneEventType);
+            Assert.AreEqual(newClient.LocalClientId, sentMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
-        private void StartServerLoadScene()
+        [UnityTest]
+        public IEnumerator TestS2CSyncReceived()
         {
-            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(k_SimpleSceneName, LoadSceneMode.Additive);
-            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
+
+            // Now the client is started we can grab the NetworkMetrics field from it
+            var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
+
+            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+                newClientMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventReceived,
+                metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
+
+            // Wait for the metric to be emitted when the message is received on the client from the server
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
+
+            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, receivedMetrics.Count);
+            var receivedMetric = receivedMetrics.First();
+
+            Assert.AreEqual(SceneEventType.Synchronize.ToString(), receivedMetric.SceneEventType);
+            Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
-        private void StartServerUnloadScene()
+        [UnityTest]
+        public IEnumerator TestC2SSyncCompleteSent()
         {
-            var unloadSceneResult = m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
-            Assert.AreEqual(SceneEventProgressStatus.Started, unloadSceneResult);
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
+
+            // Now the client is started we can grab the NetworkMetrics field from it
+            var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
+
+            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+                newClientMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventSent,
+                metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
+
+            // Wait for the metric to be emitted when the client has completed the sync locally and sends the message
+            // to the server
+            yield return waitForSentMetric.WaitForMetricsReceived();
+
+            var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, sentMetrics.Count);
+            var sentMetric = sentMetrics.First();
+
+            Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), sentMetric.SceneEventType);
+            Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
-        // Loads a scene, then waits for the client to notify the server
-        // that it has finished loading the scene, as this is the last thing that happens.
-        private IEnumerator LoadTestScene(string sceneName)
+        [UnityTest]
+        public IEnumerator TestC2SSyncCompleteReceived()
         {
-            var serverLoadComplete = false;
-            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
-                {
-                    serverLoadComplete = true;
-                }
-            };
+            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+                ServerMetrics.Dispatcher,
+                NetworkMetricTypes.SceneEventReceived,
+                metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
 
-            var clientLoadComplete = false;
-            m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
-            {
-                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
-                {
-                    clientLoadComplete = true;
-                }
-            };
+            // To trigger a sync, we need to connect a new client to an already started server, so create a client
+            var newClient = CreateAndStartClient();
 
-            var loadSceneResult = m_ServerNetworkSceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
-            Assert.AreEqual(SceneEventProgressStatus.Started, loadSceneResult);
+            // Wait for the metric to be emitted when the client has completed the sync locally and the message is
+            // received on the server
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
 
-            yield return WaitForCondition(() => serverLoadComplete);
-            yield return WaitForCondition(() => clientLoadComplete);
+            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, receivedMetrics.Count);
 
-            Assert.IsTrue(serverLoadComplete && clientLoadComplete);
+            var receivedMetric = receivedMetrics.First();
+
+            Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), receivedMetric.SceneEventType);
+            Assert.AreEqual(newClient.LocalClientId, receivedMetric.Connection.Id);
+
+            MultiInstanceHelpers.StopOneClient(newClient);
         }
 
         // Unloads a loaded scene. If the scene is not loaded, this is a no-op
@@ -872,48 +1210,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
             Assert.IsTrue(sceneUnloaded);
         }
-
-        private static IEnumerator WaitForCondition(Func<bool> condition, int maxFrames = 240)
-        {
-            for (var i = 0; i < maxFrames; i++)
-            {
-                if (condition.Invoke())
-                {
-                    break;
-                }
-
-                yield return null;
-            }
-        }
-
-        // Primarily used to get a reference to the Scene loaded
-        private void RegisterLoadedSceneCallback(SceneEvent sceneEvent)
-        {
-            if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
-            {
-                m_LoadedScene = sceneEvent.Scene;
-            }
-        }
-
-        private class WaitForSceneEvent
-        {
-            public WaitForSceneEvent(NetworkSceneManager sceneManager, SceneEventType sceneEventType)
-            {
-                sceneManager.OnSceneEvent += sceneEvent =>
-                {
-                    if (sceneEvent.SceneEventType == sceneEventType)
-                    {
-                        Done = true;
-                    }
-                };
-            }
-
-            public bool Done { get; private set; }
-
-            public IEnumerator Wait()
-            {
-                yield return WaitForCondition(() => Done);
-            }
-        }
+#endif
     }
 }
