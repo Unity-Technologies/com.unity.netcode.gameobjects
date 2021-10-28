@@ -8,17 +8,22 @@ using UnityEngine.SceneManagement;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Used for local notifications of various scene events.
-    /// The <see cref="NetworkSceneManager.OnSceneEvent"/> of delegate type <see cref="NetworkSceneManager.SceneEventDelegate"/> uses this class to provide
-    /// scene event status/state.
+    /// Used for local notifications of various scene events.  The <see cref="NetworkSceneManager.OnSceneEvent"/> of
+    /// delegate type <see cref="NetworkSceneManager.SceneEventDelegate"/> uses this class to provide
+    /// scene event status.<br/>
+    /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br/>
+    /// See also: <br/>
+    /// <seealso cref="SceneEventType"/>
     /// </summary>
     public class SceneEvent
     {
         /// <summary>
-        /// The <see cref="UnityEngine.AsyncOperation"/> returned by <see cref="SceneManager"/>
+        /// The <see cref="UnityEngine.AsyncOperation"/> returned by <see cref="SceneManager"/><BR/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.Load"/>
-        /// <see cref="SceneEventType.Unload"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.Load"/></term></item>
+        /// <item><term><see cref="SceneEventType.Unload"/></term></item>
+        /// </list>
         /// </summary>
         public AsyncOperation AsyncOperation;
 
@@ -28,71 +33,92 @@ namespace Unity.Netcode
         public SceneEventType SceneEventType;
 
         /// <summary>
-        /// If applicable, this reflects the type of scene loading or unloading that is occurring.
+        /// If applicable, this reflects the type of scene loading or unloading that is occurring.<BR/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.Load"/>
-        /// <see cref="SceneEventType.Unload"/>
-        /// <see cref="SceneEventType.LoadComplete"/>
-        /// <see cref="SceneEventType.UnloadComplete"/>
-        /// <see cref="SceneEventType.LoadEventCompleted"/>
-        /// <see cref="SceneEventType.UnloadEventCompleted"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.Load"/></term></item>
+        /// <item><term><see cref="SceneEventType.Unload"/></term></item>
+        /// <item><term><see cref="SceneEventType.LoadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
+        /// </list>
         /// </summary>
         public LoadSceneMode LoadSceneMode;
 
         /// <summary>
-        /// This will be set to the scene name that the event pertains to.
+        /// This will be set to the scene name that the event pertains to.<BR/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.Load"/>
-        /// <see cref="SceneEventType.Unload"/>
-        /// <see cref="SceneEventType.LoadComplete"/>
-        /// <see cref="SceneEventType.UnloadComplete"/>
-        /// <see cref="SceneEventType.LoadEventCompleted"/>
-        /// <see cref="SceneEventType.UnloadEventCompleted"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.Load"/></term></item>
+        /// <item><term><see cref="SceneEventType.Unload"/></term></item>
+        /// <item><term><see cref="SceneEventType.LoadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
+        /// </list>
         /// </summary>
         public string SceneName;
 
         /// <summary>
-        /// When a scene is loaded, the Scene structure is returned.
+        /// When a scene is loaded, the Scene structure is returned.<BR/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.LoadComplete"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.LoadComplete"/></term></item>
+        /// </list>
         /// </summary>
         public Scene Scene;
 
         /// <summary>
-        /// Events that always set the <see cref="ClientId"/> to the local client identifier,
-        /// are initiated (and processed locally) by the server-host, and sent to all clients
-        /// to be processed:
-        /// <see cref="SceneEventType.Load"/>
-        /// <see cref="SceneEventType.Unload"/>
-        /// <see cref="SceneEventType.Synchronize"/>
-        /// <see cref="SceneEventType.ReSynchronize"/>
-        ///
-        /// Events that always set the <see cref="ClientId"/> to the local client identifier,
+        /// The client identifier can vary depending upon the following conditions: <br/>
+        /// <list type="number">
+        /// <item><term><see cref="Netcode.SceneEventType"/>s that always set the <see cref="ClientId"/>
+        /// to the local client identifier, are initiated (and processed locally) by the
+        /// server-host, and sent to all clients to be processed.<br/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.Load"/></term></item>
+        /// <item><term><see cref="SceneEventType.Unload"/></term></item>
+        /// <item><term><see cref="SceneEventType.Synchronize"/></term></item>
+        /// <item><term><see cref="SceneEventType.ReSynchronize"/></term></item>
+        /// </list>
+        /// </term></item>
+        /// <item><term>Events that always set the <see cref="ClientId"/> to the local client identifier,
         /// are initiated (and processed locally) by a client or server-host, and if initiated
         /// by a client will always be sent to and processed on the server-host:
-        /// <see cref="SceneEventType.LoadComplete"/>
-        /// <see cref="SceneEventType.UnloadComplete"/>
-        /// <see cref="SceneEventType.SynchronizeComplete"/>
-        ///
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.LoadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadComplete"/></term></item>
+        /// <item><term><see cref="SceneEventType.SynchronizeComplete"/></term></item>
+        /// </list>
+        /// </term></item>
+        /// <item><term>
         /// Events that always set the <see cref="ClientId"/> to the ServerId:
-        /// <see cref="SceneEventType.LoadEventCompleted"/>
-        /// <see cref="SceneEventType.UnloadEventCompleted"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
+        /// </list>
+        /// </term></item>
+        /// </list>
         /// </summary>
         public ulong ClientId;
 
         /// <summary>
-        /// List of clients that completed a loading or unloading event
+        /// List of clients that completed a loading or unloading event.<br/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.LoadEventCompleted"/>
-        /// <see cref="SceneEventType.UnloadEventCompleted"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
+        /// </list>
         /// </summary>
         public List<ulong> ClientsThatCompleted;
 
         /// <summary>
-        /// List of clients that timed out during a loading or unloading event
+        /// List of clients that timed out during a loading or unloading event.<br/>
         /// This is set for the following <see cref="Netcode.SceneEventType"/>s:
-        /// <see cref="SceneEventType.LoadEventCompleted"/>
-        /// <see cref="SceneEventType.UnloadEventCompleted"/>
+        /// <list type="bullet">
+        /// <item><term><see cref="SceneEventType.LoadEventCompleted"/></term></item>
+        /// <item><term><see cref="SceneEventType.UnloadEventCompleted"/></term></item>
+        /// </list>
         /// </summary>
         public List<ulong> ClientsThatTimedOut;
     }
@@ -122,34 +148,37 @@ namespace Unity.Netcode
 #endif
 
         /// <summary>
-        /// The delegate callback definition for scene event notifications
-        /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
+        /// The delegate callback definition for scene event notifications.<br/>
+        /// See also: <br/>
+        /// <seealso cref="SceneEvent"/><br/>
+        /// <seealso cref="SceneEventData"/>
         /// </summary>
         /// <param name="sceneEvent"></param>
         public delegate void SceneEventDelegate(SceneEvent sceneEvent);
 
         /// <summary>
-        /// Event that will notify the local client or server of all scene events that take place
-        /// For more details review over <see cref="SceneEvent"/>, <see cref="SceneEventData"/>, and <see cref="SceneEventType"/>
-        /// Subscribe to this event to receive all <see cref="SceneEventType"/> notifications
-        ///
-        /// Alternate Single Event Type Notification Registration Options
+        /// Subscribe to this event to receive all <see cref="SceneEventType"/> notifications.<br/>
+        /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventType"/>.<br/>
+        /// <b>Alternate Single Event Type Notification Registration Options</b><br/>
         /// To receive only a specific event type notification or a limited set of notifications you can alternately subscribe to
-        /// each notification type individually via the following events:
-        /// -- <see cref="OnLoad"/> Invoked only when a <see cref="SceneEventType.Load"/> event is being processed
-        /// -- <see cref="OnUnload"/> Invoked only when an <see cref="SceneEventType.Unload"/> event is being processed
-        /// -- <see cref="OnSynchronize"/> Invoked only when a <see cref="SceneEventType.Synchronize"/> event is being processed
-        /// -- <see cref="OnLoadEventCompleted"/> Invoked only when a <see cref="SceneEventType.LoadEventCompleted"/> event is being processed
-        /// -- <see cref="OnUnloadEventCompleted"/> Invoked only when an <see cref="SceneEventType.UnloadEventCompleted"/> event is being processed
-        /// -- <see cref="OnLoadComplete"/> Invoked only when a <see cref="SceneEventType.LoadComplete"/> event is being processed
-        /// -- <see cref="OnUnloadComplete"/> Invoked only when an <see cref="SceneEventType.UnloadComplete"/> event is being processed
-        /// -- <see cref="OnSynchronizeComplete"/> Invoked only when a <see cref="SceneEventType.SynchronizeComplete"/> event is being processed
+        /// each notification type individually via the following events:<br/>
+        /// <list type="bullet">
+        /// <item><term><see cref="OnLoad"/> Invoked only when a <see cref="SceneEventType.Load"/> event is being processed</term></item>
+        /// <item><term><see cref="OnUnload"/> Invoked only when an <see cref="SceneEventType.Unload"/> event is being processed</term></item>
+        /// <item><term><see cref="OnSynchronize"/> Invoked only when a <see cref="SceneEventType.Synchronize"/> event is being processed</term></item>
+        /// <item><term><see cref="OnLoadEventCompleted"/> Invoked only when a <see cref="SceneEventType.LoadEventCompleted"/> event is being processed</term></item>
+        /// <item><term><see cref="OnUnloadEventCompleted"/> Invoked only when an <see cref="SceneEventType.UnloadEventCompleted"/> event is being processed</term></item>
+        /// <item><term><see cref="OnLoadComplete"/> Invoked only when a <see cref="SceneEventType.LoadComplete"/> event is being processed</term></item>
+        /// <item><term><see cref="OnUnloadComplete"/> Invoked only when an <see cref="SceneEventType.UnloadComplete"/> event is being processed</term></item>
+        /// <item><term><see cref="OnSynchronizeComplete"/> Invoked only when a <see cref="SceneEventType.SynchronizeComplete"/> event is being processed</term></item>
+        /// </list>
         /// </summary>
         public event SceneEventDelegate OnSceneEvent;
 
         /// <summary>
-        /// Delegate declaration for the OnLoad event
-        /// View <see cref="SceneEventType.Load"/> for more information
+        /// Delegate declaration for the OnLoad event.<br/>
+        /// See also: <br/>
+        /// <seealso cref="SceneEventType.Load"/>for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -158,8 +187,9 @@ namespace Unity.Netcode
         public delegate void OnLoadDelegateHandler(ulong clientId, string sceneName, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation);
 
         /// <summary>
-        /// Delegate declaration for the OnUnload event
-        /// View <see cref="SceneEventType.Unload"/> for more information
+        /// Delegate declaration for the OnUnload event.<br/>
+        /// See also: <br/>
+        /// <seealso cref="SceneEventType.Unload"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -167,16 +197,18 @@ namespace Unity.Netcode
         public delegate void OnUnloadDelegateHandler(ulong clientId, string sceneName, AsyncOperation asyncOperation);
 
         /// <summary>
-        /// Delegate declaration for the OnSynchronize event
-        /// View <see cref="SceneEventType.Synchronize"/> for more information
+        /// Delegate declaration for the OnSynchronize event.<br/>
+        /// See also: <br/>
+        /// <seealso cref="SceneEventType.Synchronize"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         public delegate void OnSynchronizeDelegateHandler(ulong clientId);
 
         /// <summary>
-        /// Delegate declaration for the OnLoadEventCompleted and OnUnloadEventCompleted events
-        /// View <see cref="SceneEventType.LoadEventCompleted"/> for more information
-        /// View <see cref="SceneEventType.UnloadEventCompleted"/> for more information
+        /// Delegate declaration for the OnLoadEventCompleted and OnUnloadEventCompleted events.<br/>
+        /// See also:<br/>
+        /// <seealso cref="SceneEventType.LoadEventCompleted"/><br/>
+        /// <seealso cref="SceneEventType.UnloadEventCompleted"/>
         /// </summary>
         /// <param name="sceneName">scene pertaining to this event</param>
         /// <param name="loadSceneMode"><see cref="LoadSceneMode"/> of the associated event completed</param>
@@ -185,8 +217,9 @@ namespace Unity.Netcode
         public delegate void OnEventCompletedDelegateHandler(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut);
 
         /// <summary>
-        /// Delegate declaration for the OnLoadComplete event
-        /// View <see cref="SceneEventType.LoadComplete"/> for more information
+        /// Delegate declaration for the OnLoadComplete event.<br/>
+        /// See also:<br/>
+        /// <seealso cref="SceneEventType.LoadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
@@ -194,38 +227,40 @@ namespace Unity.Netcode
         public delegate void OnLoadCompleteDelegateHandler(ulong clientId, string sceneName, LoadSceneMode loadSceneMode);
 
         /// <summary>
-        /// Delegate declaration for the OnUnloadComplete event
-        /// View <see cref="SceneEventType.UnloadComplete"/> for more information
+        /// Delegate declaration for the OnUnloadComplete event.<br/>
+        /// See also:<br/>
+        /// <seealso cref="SceneEventType.UnloadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
         public delegate void OnUnloadCompleteDelegateHandler(ulong clientId, string sceneName);
 
         /// <summary>
-        /// Delegate declaration for the OnSynchronizeComplete event
-        /// View <see cref="SceneEventType.SynchronizeComplete"/> for more information
+        /// Delegate declaration for the OnSynchronizeComplete event.<br/>
+        /// See also:<br/>
+        /// <seealso cref="SceneEventType.SynchronizeComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that completed this event</param>
         public delegate void OnSynchronizeCompleteDelegateHandler(ulong clientId);
 
         /// <summary>
-        /// Invoked when a <see cref="SceneEventType.Load"/> event is started by the server
-        /// The server and client(s) will receive this notification
+        /// Invoked when a <see cref="SceneEventType.Load"/> event is started by the server.<br/>
+        /// <em>Note: The server and connected client(s) will always receive this notification.</em>
         /// </summary>
         public event OnLoadDelegateHandler OnLoad;
 
         /// <summary>
-        /// Invoked when a <see cref="SceneEventType.Unload"/> event is started by the server
-        /// The server and client(s) will receive this notification
+        /// Invoked when a <see cref="SceneEventType.Unload"/> event is started by the server.<br/>
+        /// <em>Note: The server and connected client(s) will always receive this notification.</em>
         /// </summary>
         public event OnUnloadDelegateHandler OnUnload;
 
         /// <summary>
         /// Invoked when a <see cref="SceneEventType.Synchronize"/> event is started by the server
         /// after a client is approved for connection in order to synchronize the client with the currently loaded
-        /// scenes and NetworkObjects.  This event signifies the beginning of the synchronization event.
-        /// The server and client will receive this notification
-        /// Note: this event is generated on a per newly connected and approved client basis
+        /// scenes and NetworkObjects.  This event signifies the beginning of the synchronization event.<br/>
+        /// <em>Note: The server and connected client(s) will always receive this notification.
+        /// This event is generated on a per newly connected and approved client basis.</em>
         /// </summary>
         public event OnSynchronizeDelegateHandler OnSynchronize;
 
@@ -233,8 +268,8 @@ namespace Unity.Netcode
         /// Invoked when a <see cref="SceneEventType.LoadEventCompleted"/> event is generated by the server.
         /// This event signifies the end of an existing <see cref="SceneEventType.Load"/> event as it pertains
         /// to all clients connected when the event was started.  This event signifies that all clients (and server) have
-        /// finished the <see cref="SceneEventType.Load"/> event.
-        /// Note: this is useful to know when all clients have loaded the same scene (single or additive mode)
+        /// finished the <see cref="SceneEventType.Load"/> event.<br/>
+        /// <em>Note: this is useful to know when all clients have loaded the same scene (single or additive mode)</em>
         /// </summary>
         public event OnEventCompletedDelegateHandler OnLoadEventCompleted;
 
@@ -242,32 +277,31 @@ namespace Unity.Netcode
         /// Invoked when a <see cref="SceneEventType.UnloadEventCompleted"/> event is generated by the server.
         /// This event signifies the end of an existing <see cref="SceneEventType.Unload"/> event as it pertains
         /// to all clients connected when the event was started.  This event signifies that all clients (and server) have
-        /// finished the <see cref="SceneEventType.Unload"/> event.
-        /// Note: this is useful to know when all clients have unloaded a specific scene.  The <see cref="LoadSceneMode"/> will
-        /// always be <see cref="LoadSceneMode.Additive"/> for this event
+        /// finished the <see cref="SceneEventType.Unload"/> event.<br/>
+        /// <em>Note: this is useful to know when all clients have unloaded a specific scene.  The <see cref="LoadSceneMode"/> will
+        /// always be <see cref="LoadSceneMode.Additive"/> for this event.</em>
         /// </summary>
         public event OnEventCompletedDelegateHandler OnUnloadEventCompleted;
 
         /// <summary>
-        /// Invoked when a <see cref="SceneEventType.LoadComplete"/> event is generated by a client or server.
-        /// The server receives this message from all clients (including itself).
-        /// Each client receives their own notification sent to the server.
+        /// Invoked when a <see cref="SceneEventType.LoadComplete"/> event is generated by a client or server.<br/>
+        /// <em>Note: The server receives this message from all clients (including itself).
+        /// Each client receives their own notification sent to the server.</em>
         /// </summary>
         public event OnLoadCompleteDelegateHandler OnLoadComplete;
 
         /// <summary>
-        /// Invoked when a <see cref="SceneEventType.UnloadComplete"/> event is generated by a client or server.
-        /// The server receives this message from all clients (including itself).
-        /// Each client receives their own notification sent to the server.
+        /// Invoked when a <see cref="SceneEventType.UnloadComplete"/> event is generated by a client or server.<br/>
+        /// <em>Note: The server receives this message from all clients (including itself).
+        /// Each client receives their own notification sent to the server.</em>
         /// </summary>
         public event OnUnloadCompleteDelegateHandler OnUnloadComplete;
 
         /// <summary>
-        /// Invoked when a <see cref="SceneEventType.SynchronizeComplete"/> event is generated by a client.
-        /// The server receives this message from the client, but will never generate this event for itself.
-        /// Each client receives their own notification sent to the server.
-        /// Note: This is useful to know that a client has completed the entire connection sequence, loaded all scenes, and
-        /// synchronized all NetworkObjects.
+        /// Invoked when a <see cref="SceneEventType.SynchronizeComplete"/> event is generated by a client. <br/>
+        /// <em> Note: The server receives this message from the client, but will never generate this event for itself.
+        /// Each client receives their own notification sent to the server.  This is useful to know that a client has
+        /// completed the entire connection sequence, loaded all scenes, and synchronized all NetworkObjects.</em>
         /// </summary>
         public event OnSynchronizeCompleteDelegateHandler OnSynchronizeComplete;
 
@@ -284,9 +318,9 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Delegate handler defined by <see cref="VerifySceneBeforeLoadingDelegateHandler"/> that is invoked before the
-        /// server or client loads a scene during an active netcode game session.
-        /// Client Side: In order for clients to be notified of this condition you must assign the <see cref="VerifySceneBeforeLoading"/> delegate handler.
-        /// Server Side: <see cref="LoadScene(string, LoadSceneMode)"/> will return <see cref="SceneEventProgressStatus.SceneFailedVerification"/>.
+        /// server or client loads a scene during an active netcode game session.<br/>
+        /// <b>Client Side:</b> In order for clients to be notified of this condition you must assign the <see cref="VerifySceneBeforeLoading"/> delegate handler.<br/>
+        /// <b>Server Side:</b> <see cref="LoadScene(string, LoadSceneMode)"/> will return <see cref="SceneEventProgressStatus"/>.
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
@@ -353,11 +387,10 @@ namespace Unity.Netcode
         internal Scene DontDestroyOnLoadScene;
 
         /// <summary>
-        /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
+        /// <b>LoadSceneMode.Single:</b> All currently loaded scenes on the client will be unloaded and
         /// the server's currently active scene will be loaded in single mode on the client
-        /// unless it was already loaded.
-        ///
-        /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
+        /// unless it was already loaded.<br/>
+        /// <b>LoadSceneMode.Additive:</b> All currently loaded scenes are left as they are and any newly loaded
         /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
         /// <see cref="VerifySceneBeforeLoading"/> method.
         /// </summary>
@@ -506,12 +539,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This will change how clients are initially synchronized.
-        /// LoadSceneMode.Single: All currently loaded scenes on the client will be unloaded and
+        /// This will change how clients are initially synchronized.<br/>
+        /// <b>LoadSceneMode.Single:</b> All currently loaded scenes on the client will be unloaded and
         /// the server's currently active scene will be loaded in single mode on the client
-        /// unless it was already loaded.
-        ///
-        /// LoadSceneMode.Additive: All currently loaded scenes are left as they are and any newly loaded
+        /// unless it was already loaded. <br/>
+        /// <b>LoadSceneMode.Additive:</b> All currently loaded scenes are left as they are and any newly loaded
         /// scenes will be loaded additively.  Users need to determine which scenes are valid to load via the
         /// <see cref="VerifySceneBeforeLoading"/> method.
         /// </summary>
@@ -858,7 +890,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server Side:
+        /// <b>Server Side:</b>
         /// Unloads an additively loaded scene.  If you want to unload a <see cref="LoadSceneMode.Single"/> mode loaded scene load another <see cref="LoadSceneMode.Single"/> scene.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
@@ -918,7 +950,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Client Side:
+        /// <b>Client Side:</b>
         /// Handles <see cref="SceneEventType.Unload"/> scene events.
         /// </summary>
         private void OnClientUnloadScene(uint sceneEventId)
@@ -1056,7 +1088,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server side:
+        /// <b>Server side:</b>
         /// Loads the scene name in either additive or single loading mode.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via <see cref="OnSceneEvent"/>
         /// </summary>
