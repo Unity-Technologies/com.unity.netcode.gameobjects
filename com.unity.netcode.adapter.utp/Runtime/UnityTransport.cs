@@ -121,8 +121,16 @@ namespace Unity.Netcode
             [SerializeField] public string Address;
             [SerializeField] public int Port;
 
-            public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
-                NetworkEndPoint.Parse(d.Address, (ushort)d.Port);
+            public static implicit operator NetworkEndPoint(ConnectionAddressData d)
+            {
+                if (!NetworkEndPoint.TryParse(d.Address, (ushort)d.Port, out var networkEndPoint))
+                {
+                    Debug.LogError($"Invalid address {d.Address}:{d.Port}");
+                    return default;
+                }
+
+                return networkEndPoint;
+            }
 
             public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
                 new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port };
@@ -322,12 +330,26 @@ namespace Unity.Netcode
             }
         }
 
+        private void SetProtocol(ProtocolType inProtocol)
+        {
+            m_ProtocolType = inProtocol;
+        }
+
         public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes,
             byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
             RelayConnectionData hostConnectionData;
 
-            var serverEndpoint = NetworkEndPoint.Parse(ipv4Address, port);
+            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var serverEndpoint))
+            {
+                Debug.LogError($"Invalid address {ipv4Address}:{port}");
+
+                // We set this to default to cause other checks to fail to state you need to call this
+                // function again.
+                m_RelayServerData = default;
+                return;
+            }
+
             var allocationId = ConvertFromAllocationIdBytes(allocationIdBytes);
             var key = ConvertFromHMAC(keyBytes);
             var connectionData = ConvertConnectionData(connectionDataBytes);
@@ -344,6 +366,9 @@ namespace Unity.Netcode
             m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData,
                 ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
+
+
+            SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
         /// <summary>
@@ -351,8 +376,15 @@ namespace Unity.Netcode
         /// </summary>
         public void SetConnectionData(string ipv4Address, ushort port)
         {
-            ConnectionData.Address = ipv4Address;
-            ConnectionData.Port = port;
+            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var endPoint))
+            {
+                Debug.LogError($"Invalid address {ipv4Address}:{port}");
+                ConnectionData = default;
+
+                return;
+            }
+
+            SetConnectionData(endPoint);
         }
 
         /// <summary>
@@ -361,6 +393,7 @@ namespace Unity.Netcode
         public void SetConnectionData(NetworkEndPoint endPoint)
         {
             ConnectionData = endPoint;
+            SetProtocol(ProtocolType.UnityTransport);
         }
 
         private bool StartRelayServer()
