@@ -108,25 +108,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             return true;
         }
-        internal virtual IEnumerator ClientLoadSceneCoroutine(NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
+        internal virtual IEnumerator ClientLoadSceneCoroutine(ISceneManagerHandler.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId, string sceneName)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            while (!CanClientsUnload())
+            while (!CanClientsLoad())
             {
                 yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             }
             completedOperation.Invoke(sceneEventId, sceneName);
-        }
-
-        internal virtual AsyncOperation OnClientLoadScene(string sceneName, LoadSceneMode loadSceneMode, NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
-        {
-            m_ServerNetworkManager.StartCoroutine(ClientLoadSceneCoroutine(completedOperation, sceneEventId, sceneName));
-            return new AsyncOperation();
-        }
-
-        private AsyncOperation DefaultClientLoadScene(string sceneName, LoadSceneMode loadSceneMode, NetworkSceneManager.LoadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
-        {
-            return OnClientLoadScene(sceneName, loadSceneMode, completedOperation, sceneEventId);
         }
 
         protected virtual bool CanClientsUnload()
@@ -134,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        internal virtual IEnumerator ClientUnloadSceneCoroutine(NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        internal virtual IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
             while (!CanClientsUnload())
@@ -144,23 +133,35 @@ namespace Unity.Netcode.RuntimeTests
             completedOperation.Invoke(sceneEventId);
         }
 
-        internal virtual AsyncOperation OnClientUnloadScene(Scene scene, NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
+        internal class UnitTestSceneHandler : ISceneManagerHandler
         {
-            m_ServerNetworkManager.StartCoroutine(ClientUnloadSceneCoroutine(completedOperation, sceneEventId));
-            return new AsyncOperation();
+            internal NetworkManager NetworkManager;
+            internal BaseMultiInstanceTest BaseMultiInstanceTest;
+
+            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, ISceneManagerHandler.LoadCompletedCallbackDelegateHandler loadCallback)
+            {
+                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientLoadSceneCoroutine(loadCallback, sceneEventId, sceneName));
+                // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
+                return new AsyncOperation();
+            }
+
+            public AsyncOperation UnloadSceneAsync(Scene scene, uint sceneEventId, ISceneManagerHandler.UnloadCompletedCallbackDelegateHandler unloadCallback)
+            {
+                NetworkManager.StartCoroutine(BaseMultiInstanceTest.ClientUnloadSceneCoroutine(unloadCallback, sceneEventId));
+                // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
+                return new AsyncOperation();
+            }
         }
 
-        internal AsyncOperation DefaultClientUnloadScene(Scene scene, NetworkSceneManager.UnloadCompletedCallbackDelegateHandler completedOperation, uint sceneEventId)
-        {
-            return OnClientUnloadScene(scene, completedOperation, sceneEventId);
-        }
-
+        internal UnitTestSceneHandler ClientSceneHandler;
         protected void RegisterClientCallbacks()
         {
+            ClientSceneHandler = new UnitTestSceneHandler();
+            ClientSceneHandler.BaseMultiInstanceTest = this;
+            ClientSceneHandler.NetworkManager = m_ServerNetworkManager;
             for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
-                m_ClientNetworkManagers[i].SceneManager.LoadSceneOverride = DefaultClientLoadScene;
-                m_ClientNetworkManagers[i].SceneManager.UnloadSceneOverride = DefaultClientUnloadScene;
+                m_ClientNetworkManagers[i].SceneManager.SceneManagerHandler = ClientSceneHandler;
             }
         }
 
