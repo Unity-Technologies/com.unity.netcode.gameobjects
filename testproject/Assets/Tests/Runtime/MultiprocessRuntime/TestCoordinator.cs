@@ -108,7 +108,12 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
-        MultiprocessLogger.Log($"Update() - {Time.time - m_TimeSinceLastKeepAlive}");
+        if (IsClient)
+        {
+            MultiprocessLogger.Log(
+                $"Update() IsClient: true - IsConnectedClient {NetworkManager.Singleton.IsConnectedClient} - {Time.time - m_TimeSinceLastKeepAlive}");
+        }
+
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication();
@@ -131,7 +136,7 @@ public class TestCoordinator : NetworkBehaviour
         }
         else
         {
-            MultiprocessLogger.Log($"isClient {IsClient} ISConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
+            MultiprocessLogger.Log($"isClient {IsClient} IsConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 
