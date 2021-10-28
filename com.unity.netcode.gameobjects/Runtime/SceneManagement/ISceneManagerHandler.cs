@@ -7,7 +7,7 @@ namespace Unity.Netcode
     {
         internal delegate void LoadCompletedCallbackDelegateHandler(uint sceneEventId, string sceneName);
 
-        AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, LoadCompletedCallbackDelegateHandler loadCallback );
+        AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, uint sceneEventId, LoadCompletedCallbackDelegateHandler loadCallback);
 
         internal delegate void UnloadCompletedCallbackDelegateHandler(uint sceneEventId);
         AsyncOperation UnloadSceneAsync(Scene scene, uint sceneEventId, UnloadCompletedCallbackDelegateHandler unloadCallback);
