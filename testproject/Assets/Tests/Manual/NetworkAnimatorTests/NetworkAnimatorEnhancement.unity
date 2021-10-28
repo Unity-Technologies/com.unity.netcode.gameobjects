@@ -133,8 +133,8 @@ GameObject:
   m_Component:
   - component: {fileID: 57527693}
   - component: {fileID: 57527692}
-  - component: {fileID: 57527691}
   - component: {fileID: 57527694}
+  - component: {fileID: 57527691}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -151,11 +151,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 57527690}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fc5ef7b69296d69458910681f29471e6, type: 3}
+  m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Port: 7777
-  Address: 127.0.0.1
+  MessageBufferSize: 5120
+  MaxConnections: 100
+  MaxSentMessageQueueSize: 128
+  ConnectAddress: 127.0.0.1
+  ConnectPort: 7777
+  ServerListenPort: 7777
+  MessageSendMode: 0
 --- !u!114 &57527692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,9 +179,6 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 57527691}
-    RegisteredScenes:
-    - NetworkAnimatorEnhancement
-    AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 3214090169675393154, guid: 978fc8cd63a1294438ebf3b352814970,
       type: 3}
     NetworkPrefabs:
@@ -187,16 +189,12 @@ MonoBehaviour:
         type: 3}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkVariable: 1
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
@@ -204,7 +202,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!4 &57527693
