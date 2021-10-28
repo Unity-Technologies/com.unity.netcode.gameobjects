@@ -578,10 +578,13 @@ namespace Unity.Netcode
 
             m_NetworkParameters = new List<INetworkParameter>();
 
-            // If we want to be able to actually handle messages MaximumMessageLength bytes in
-            // size, we need to allow a bit more than that in FragmentationUtility since this needs
-            // to account for headers and such. 128 bytes is plenty enough for such overhead.
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = m_SendQueueBatchSize });
+            // If the user sends a message of exactly m_SendQueueBatchSize length, we'll need an
+            // extra byte to mark it as non-batched and 4 bytes for its length. If the user fills
+            // up the send queue to its capacity (batched messages total m_SendQueueBatchSize), we
+            // still need one extra byte to mark the payload as batched.
+            var fragmentationCapacity = m_SendQueueBatchSize + 1 + 4;
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = fragmentationCapacity });
+
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
                 maximumPayloadSize = (uint)m_MaximumPacketSize,
@@ -611,23 +614,21 @@ namespace Unity.Netcode
             }
 
             var success = queue.AddEvent(payload);
-            if (!success) // This would be false only when the SendQueue is full already or we are sending a super large message at once
+            if (!success) // No more room in the send queue for the message.
             {
-                // If we are in here data exceeded remaining queue size. This should not happen under normal operation.
-                if (payload.Count > queue.Size)
+                // Flushing the send queue ensures we preserve the order of sends.
+                SendBatchedMessageAndClearQueue(sendTarget, queue);
+                Debug.Assert(queue.IsEmpty() == true);
+                queue.Clear();
+
+                // Try add the message to the queue as there might be enough room now that it's empty.
+                success = queue.AddEvent(payload);
+                if (!success) // Message is too large to fit in the queue. Shouldn't happen under normal operation.
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
-                    Debug.LogWarning($"Sent {payload.Count} bytes based on delivery method: {networkDelivery}. Event size exceeds sendQueueBatchSize: ({m_SendQueueBatchSize}). This can be the initial payload!");
+                    Debug.LogWarning($"Event of size {payload.Count} too large to fit in send queue (of size {m_SendQueueBatchSize}). Trying to send directly. This could be the initial payload!");
                     Debug.Assert(networkDelivery == NetworkDelivery.ReliableFragmentedSequenced); // Messages like this, should always be sent via the fragmented pipeline.
                     SendMessageInstantly(sendTarget.ClientId, payload, pipeline);
-                }
-                else
-                {
-                    // Since our queue buffer is full then send that right away, clear it and queue this new data
-                    SendBatchedMessageAndClearQueue(sendTarget, queue);
-                    Debug.Assert(queue.IsEmpty() == true);
-                    queue.Clear();
-                    queue.AddEvent(payload);
                 }
             }
         }
