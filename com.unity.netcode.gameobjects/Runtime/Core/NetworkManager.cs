@@ -12,7 +12,6 @@ using UnityEditor;
 using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
-using UnityEditor.Search;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
@@ -55,7 +54,18 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        internal InterestManager<NetworkClient, NetworkObject, uint> InterestManager { get; private set; }
+        private InterestManager<NetworkClient, NetworkObject, uint> m_InterestManager;
+
+        public InterestManager<NetworkClient, NetworkObject, uint> InterestManager {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager<NetworkClient, NetworkObject, uint>();
+                }
+                return m_InterestManager;
+            }
+        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
@@ -572,7 +582,6 @@ namespace Unity.Netcode
 
             SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
-            InterestManager = new InterestManager<NetworkClient, NetworkObject, uint>();
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             // This is used to remove entries not needed or invalid
@@ -1066,10 +1075,10 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
-            if (InterestManager != null)
+            if (m_InterestManager != null)
             {
-                InterestManager.Dispose();
-                InterestManager = null;
+                m_InterestManager.Dispose();
+                m_InterestManager = null;
             }
 
             if (MessagingSystem != null)

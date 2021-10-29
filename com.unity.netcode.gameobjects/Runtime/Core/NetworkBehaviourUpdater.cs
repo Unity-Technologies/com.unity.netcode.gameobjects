@@ -6,6 +6,9 @@ namespace Unity.Netcode
     public class NetworkBehaviourUpdater
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();
+
+        // reused each call to NetworkBehaviourUpdate to avoid GC.
+        //  should investigate using a native container
         private HashSet<NetworkObject> m_InterestUpdateThisFrame = new HashSet<NetworkObject>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

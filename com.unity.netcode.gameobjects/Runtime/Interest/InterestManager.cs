@@ -4,29 +4,22 @@ using Unity.Netcode.Interest;
 
 namespace Unity.Netcode.Interest
 {
+    public interface IInterestAssociateable<TClient, TObject>
+    {
+        public List<IInterestNode<TClient, TObject>> GetInterestNodes();
+    }
+
     // interest *system* instead of interest node ?
-    public class InterestManager<TClient, TObject, TTypeID>
+    public class InterestManager<TClient, TObject, TTypeID> where TObject : IInterestAssociateable<TClient, TObject>
     {
         private readonly InterestNodeStatic<TClient, TObject> m_DefaultInterestNode;
 
-        private Dictionary<TTypeID, HashSet<IInterestNode<TClient, TObject>>> m_InterestNodes = new() ;
-
-        // unregister?
-        public void RegisterInterestNode(TTypeID typeId, IInterestNode<TClient, TObject> node)
-        {
-            if (!m_InterestNodes.ContainsKey(typeId))
-            {
-                m_InterestNodes.Add(typeId, new HashSet<IInterestNode<TClient, TObject>>());
-            }
-            m_InterestNodes[typeId].Add(node);
-        }
-
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
-        public void UpdateObject(TObject obj, TTypeID typeId)
+        public void UpdateObject(TObject obj)
         {
-            var nodes = m_InterestNodes[typeId];
-            foreach (var node in nodes)
+            var nodesForObj = obj.GetInterestNodes();
+            foreach (var node in nodesForObj)
             {
                 node.UpdateObject(obj);
             }
@@ -43,22 +36,16 @@ namespace Unity.Netcode.Interest
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
 
-        public void AddObject(TObject obj, TTypeID typeId)
+        public void AddObject(TObject obj)
         {
             // If this new object has no associated Interest Nodes, then we put it in the
             //  default node, which all clients will then get.
             //
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
-            if (!m_InterestNodes.ContainsKey(typeId))
-            {
-                m_DefaultInterestNode.AddObject(obj);
-                return;
-            }
+            var nodesForObj = obj.GetInterestNodes();
 
-            var nodes = m_InterestNodes[typeId];
-
-            if (nodes.Count == 0)
+            if (nodesForObj == null || nodesForObj.Count < 1)
             {
                 m_DefaultInterestNode.AddObject(obj);
             }
@@ -67,7 +54,7 @@ namespace Unity.Netcode.Interest
             {
                 // I am walking through each of the interest nodes that this object has
                 //  I should probably optimize for this later vs. doing this for every add!
-                foreach (var node in nodes)
+                foreach (var node in nodesForObj)
                 {
                     // cover the case with an empty list entry
                     if (node != null)
@@ -83,25 +70,19 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void RemoveObject(in TObject oldObject, TTypeID typeId)
+        public void RemoveObject(in TObject oldObject)
         {
             // if the node never had an InterestNode, then it was using the default
             //  interest node
-            if (!m_InterestNodes.ContainsKey(typeId))
-            {
-                m_DefaultInterestNode.RemoveObject(oldObject);
-                return;
-            }
+            var nodesForObj = oldObject.GetInterestNodes();
 
-            var nodes = m_InterestNodes[typeId];
-
-            if (nodes.Count == 0)
+            if (nodesForObj == null || nodesForObj.Count < 1)
             {
                 m_DefaultInterestNode.RemoveObject(oldObject);
             }
             else
             {
-                foreach (var node in nodes)
+                foreach (var node in nodesForObj)
                 {
                     if (node == null)
                     {
@@ -118,8 +99,6 @@ namespace Unity.Netcode.Interest
             {
                 c.QueryFor(client, results);
             }
-
-//            return new NativeHashSet<TObject>();
         }
 
         public void Dispose()

@@ -475,7 +475,7 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 
-            NetworkManager.InterestManager.AddObject(networkObject, networkObject.GlobalObjectIdHash);
+            NetworkManager.InterestManager.AddObject(networkObject);
 
             // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
             // processed before the object is fully spawned. This must be the last thing done in the spawn process.
@@ -755,7 +755,7 @@ namespace Unity.Netcode
             }
 
             NetworkObject no = gobj.GetComponent<NetworkObject>();
-            NetworkManager.InterestManager.RemoveObject(no, no.GlobalObjectIdHash);
+            NetworkManager.InterestManager.RemoveObject(no);
 
 
             if (destroyGameObject && gobj != null)
