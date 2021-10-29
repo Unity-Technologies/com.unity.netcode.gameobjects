@@ -203,9 +203,9 @@ namespace Unity.Netcode
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
         /// <summary>
-        ///  Proof of concept to provide control
+        ///  Proof of concept: Interface version that allows for the decoupling from
+        ///  the SceneManager's Load and Unload methods for testing purposes (potentially other future usage)
         /// </summary>
-
         private class DefaultSceneManagerHandler : ISceneManagerHandler
         {
             public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
@@ -224,11 +224,7 @@ namespace Unity.Netcode
         }
 
         internal ISceneManagerHandler SceneManagerHandler = new DefaultSceneManagerHandler();
-
-        /// <summary>
         /// End of Proof of Concept
-        /// </summary>
-
 
 
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
@@ -868,8 +864,6 @@ namespace Unity.Netcode
 
             if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.SceneHandle))
             {
-                //throw new Exception($"Client failed to unload scene {sceneName} " +
-                //    $"because we are missing the client scene handle due to the server scene handle {sceneEventData.SceneHandle} not being found!");
                 Debug.Log($"Client failed to unload scene {sceneName} " +
                     $"because we are missing the client scene handle due to the server scene handle {sceneEventData.SceneHandle} not being found.");
                 EndSceneEvent(sceneEventId);
@@ -888,7 +882,6 @@ namespace Unity.Netcode
 
             AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle],
                 new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
-
 
             ScenesLoaded.Remove(sceneHandle);
 

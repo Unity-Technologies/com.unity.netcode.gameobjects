@@ -67,7 +67,6 @@ namespace TestProject.ManualTests
 
         private void DeregisterCustomPrefabHandler()
         {
-            // Register the custom spawn handler?
             if (EnableHandler && (IsSpawned || (NetworkManager != null && NetworkManager.PrefabHandler != null)))
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);

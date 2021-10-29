@@ -700,7 +700,7 @@ namespace TestProject.RuntimeTests
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
-            RegisterClientCallbacks();
+            RegisterSceneManagerHandler();
             // Immediately register for all pertinent event notifications we want to test and validate working
             // For the server:
             m_ServerNetworkManager.SceneManager.OnLoad += Server_OnLoad;

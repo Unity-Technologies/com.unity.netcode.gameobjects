@@ -154,7 +154,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         internal UnitTestSceneHandler ClientSceneHandler = new UnitTestSceneHandler();
-        protected void RegisterClientCallbacks()
+        protected void RegisterSceneManagerHandler()
         {
             ClientSceneHandler.BaseMultiInstanceTest = this;
             ClientSceneHandler.NetworkManager = m_ServerNetworkManager;
@@ -228,7 +228,7 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail("Failed to start instances");
                 }
 
-                RegisterClientCallbacks();
+                RegisterSceneManagerHandler();
 
                 // Wait for connection on client side
                 yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));

@@ -20,5 +20,4 @@ namespace Unity.Netcode
 
         AsyncOperation UnloadSceneAsync(Scene scene, SceneEventAction sceneEventAction);
     }
-
 }
