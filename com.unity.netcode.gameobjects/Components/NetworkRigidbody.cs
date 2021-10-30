@@ -32,13 +32,10 @@ namespace Unity.Netcode.Components
 
         private void FixedUpdate()
         {
-            if (NetworkManager.IsListening)
+            if (IsSpawned && (HasAuthority != m_IsAuthority))
             {
-                if (HasAuthority != m_IsAuthority)
-                {
-                    m_IsAuthority = HasAuthority;
-                    UpdateRigidbodyKinematicMode();
-                }
+                m_IsAuthority = HasAuthority;
+                UpdateRigidbodyKinematicMode();
             }
         }
 
