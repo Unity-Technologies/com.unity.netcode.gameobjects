@@ -105,7 +105,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && NetworkObjectId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
