@@ -9,7 +9,6 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageReceivingTests
     {
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessageReceivingTests))]
         private struct TestMessage : INetworkMessage
         {
             public int A;
@@ -31,6 +30,21 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private class TestMessageProvider : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessage),
+                        Handler = TestMessage.Receive
+                    }
+                };
+            }
+        }
+
         private MessagingSystem m_MessagingSystem;
 
         [SetUp]
@@ -39,7 +53,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Deserialized = false;
             TestMessage.DeserializedValues.Clear();
 
-            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this);
+            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestMessageProvider());
         }
 
         [TearDown]
@@ -64,7 +78,7 @@ namespace Unity.Netcode.EditorTests
         {
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -95,7 +109,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -129,7 +143,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -165,7 +179,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (short)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();

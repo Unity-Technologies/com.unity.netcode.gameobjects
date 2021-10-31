@@ -244,6 +244,33 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public unsafe void TestWritingMultipleBytesFromLongsMisaligned([Range(1U, 63U)] uint numBits)
+        {
+            var writer = new FastBufferWriter(sizeof(ulong), Allocator.Temp);
+            using (writer)
+            {
+                ulong* asUlong = (ulong*)writer.GetUnsafePtr();
+
+                Assert.AreEqual(0, *asUlong);
+                var mask = 0UL;
+                for (var i = 0; i < numBits; ++i)
+                {
+                    mask |= (1UL << i);
+                }
+
+                ulong value = 0xFFFFFFFFFFFFFFFF;
+
+                Assert.IsTrue(writer.TryBeginWrite(sizeof(ulong)));
+                using (var bitWriter = writer.EnterBitwiseContext())
+                {
+                    bitWriter.WriteBit(false);
+                    bitWriter.WriteBits(value, numBits);
+                }
+                Assert.AreEqual(value & mask, *asUlong >> 1);
+            }
+        }
+
+        [Test]
         public unsafe void TestWritingBitsThrowsIfTryBeginWriteNotCalled()
         {
             var writer = new FastBufferWriter(4, Allocator.Temp);

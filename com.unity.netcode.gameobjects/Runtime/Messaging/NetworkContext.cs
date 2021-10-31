@@ -3,7 +3,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Metadata passed into the Receive handler for <see cref="INetworkMessage"/>.
     /// </summary>
-    public ref struct NetworkContext
+    internal ref struct NetworkContext
     {
         /// <summary>
         /// An opaque object used to represent the owner of the MessagingSystem that's receiving the message.

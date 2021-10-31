@@ -7,16 +7,6 @@ using Unity.Collections;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public struct FixedString32Struct : INetworkSerializable
-    {
-        public FixedString32Bytes FixedString;
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref FixedString);
-        }
-    }
-
     public struct TestStruct : INetworkSerializable
     {
         public uint SomeInt;
@@ -34,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
 
-        public readonly NetworkVariable<FixedString32Struct> FixedStringStruct = new NetworkVariable<FixedString32Struct>();
+        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -166,26 +156,23 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FixedString32StructTest([Values(true, false)] bool useHost)
+        public IEnumerator FixedString32Test([Values(true, false)] bool useHost)
         {
             m_TestWithHost = useHost;
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    var tmp = m_Player1OnServer.FixedStringStruct.Value;
-                    tmp.FixedString = k_FixedStringTestValue;
-                    m_Player1OnServer.FixedStringStruct.Value = tmp;
+                    m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
 
                     // we are writing to the private and public variables on player 1's object...
                 },
                 () =>
                 {
-                    var tmp = m_Player1OnClient1.FixedStringStruct.Value;
 
                     // ...and we should see the writes to the private var only on the server & the owner,
                     //  but the public variable everywhere
                     return
-                        m_Player1OnClient1.FixedStringStruct.Value.FixedString == k_FixedStringTestValue;
+                        m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue;
                 }
             );
         }
@@ -227,8 +214,8 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     return m_Player1OnServer.TheList.Count == 1 &&
                            m_Player1OnClient1.TheList.Count == 1 &&
-                           m_Player1OnServer.TheList.Contains(k_TestKey1) &&
-                           m_Player1OnClient1.TheList.Contains(k_TestKey1);
+                           m_Player1OnServer.TheList.Contains(k_TestVal1) &&
+                           m_Player1OnClient1.TheList.Contains(k_TestVal1);
                 }
             );
         }

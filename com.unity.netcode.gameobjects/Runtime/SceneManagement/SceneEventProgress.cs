@@ -9,10 +9,10 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Used by <see cref="NetworkSceneManager"/> to determine if a server invoked scene event has started.
-    /// The returned status is stored in the <see cref="SceneEventProgress.Status"/> property.
-    /// Note: This was formally known as SwitchSceneProgress which contained the <see cref="AsyncOperation"/>.
+    /// The returned status is stored in the <see cref="SceneEventProgress.Status"/> property.<br/>
+    /// <em>Note: This was formally known as SwitchSceneProgress which contained the <see cref="AsyncOperation"/>.
     /// All <see cref="AsyncOperation"/>s are now delivered by the <see cref="NetworkSceneManager.OnSceneEvent"/> event handler
-    /// via the <see cref="SceneEvent"/> parameter.
+    /// via the <see cref="SceneEvent"/> parameter.</em>
     /// </summary>
     public enum SceneEventProgressStatus
     {
@@ -21,31 +21,30 @@ namespace Unity.Netcode
         /// </summary>
         None,
         /// <summary>
-        /// The scene event was successfully started
+        /// The scene event was successfully started.
         /// </summary>
         Started,
         /// <summary>
-        /// Returned if you try to unload a scene that was not yet loaded
+        /// Returned if you try to unload a scene that was not yet loaded.
         /// </summary>
         SceneNotLoaded,
         /// <summary>
-        /// Returned if you try to start a new scene event before a previous one is finished
+        /// Returned if you try to start a new scene event before a previous one is finished.
         /// </summary>
         SceneEventInProgress,
         /// <summary>
         /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/>
-        /// or <see cref="NetworkSceneManager.UnloadScene(Scene)"/>is invalid
+        /// or <see cref="NetworkSceneManager.UnloadScene(Scene)"/>is invalid.
         /// </summary>
         InvalidSceneName,
         /// <summary>
         /// Server side: Returned if the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> delegate handler returns false
-        /// (i.e. scene is considered not valid/safe to load)
+        /// (<em>i.e. scene is considered not valid/safe to load</em>).
         /// </summary>
         SceneFailedVerification,
         /// <summary>
-        /// This is used for internal error notifications.
-        /// If you receive this event then it is most likely due to a bug.
-        /// If you receive this event repeatedly, then please open a GitHub issue with steps to replicate
+        /// This is used for internal error notifications.<br/>
+        /// If you receive this event then it is most likely due to a bug (<em>please open a GitHub issue with steps to replicate</em>).<br/>
         /// </summary>
         InternalNetcodeError,
     }
@@ -88,7 +87,10 @@ namespace Unity.Netcode
         /// </summary>
         internal bool AreAllClientsDoneLoading { get; private set; }
 
-        internal uint SceneBuildIndex { get; set; }
+        /// <summary>
+        /// The hash value generated from the full scene path
+        /// </summary>
+        internal uint SceneHash { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 
@@ -99,7 +101,7 @@ namespace Unity.Netcode
 
         internal SceneEventProgressStatus Status { get; set; }
 
-        internal SceneEventData.SceneEventTypes SceneEventType { get; set; }
+        internal SceneEventType SceneEventType { get; set; }
 
         internal LoadSceneMode LoadSceneMode;
 
