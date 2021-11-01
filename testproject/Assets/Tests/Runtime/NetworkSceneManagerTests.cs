@@ -1012,13 +1012,12 @@ namespace TestProject.RuntimeTests
             var networkObject = m_DDOL_ObjectToSpawn.GetComponent<NetworkObject>();
             var ddolBehaviour = m_DDOL_ObjectToSpawn.GetComponent<DDOLBehaviour>();
 
+            // All tests require this to be false
+            networkObject.DestroyWithScene = false;
+
             if (movedIntoDDOLBy == MovedIntoDDOLBy.User)
             {
                 ddolBehaviour.MoveToDDOL();
-            }
-            else //NetworkSceneManager moves it into the DDOL
-            {
-                networkObject.DestroyWithScene = false;
             }
 
             // Sets whether we are in-scene or dynamically spawned NetworkObject
