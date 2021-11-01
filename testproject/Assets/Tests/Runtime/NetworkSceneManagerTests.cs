@@ -1004,8 +1004,8 @@ namespace TestProject.RuntimeTests
         /// This tests both in-scene placed and dynamically spawned NetworkObjects
         [UnityTest]
         public IEnumerator InSceneNetworkObjectState([Values(DefaultState.IsEnabled, DefaultState.IsDisabled)] DefaultState activeState,
-            [Values (MovedIntoDDOLBy.User, MovedIntoDDOLBy.NetworkSceneManager)] MovedIntoDDOLBy movedIntoDDOLBy,
-            [Values (NetworkObjectType.InScenePlaced, NetworkObjectType.DynamicallySpawned)] NetworkObjectType networkObjectType)
+            [Values(MovedIntoDDOLBy.User, MovedIntoDDOLBy.NetworkSceneManager)] MovedIntoDDOLBy movedIntoDDOLBy,
+            [Values(NetworkObjectType.InScenePlaced, NetworkObjectType.DynamicallySpawned)] NetworkObjectType networkObjectType)
         {
             var isActive = activeState == DefaultState.IsEnabled ? true : false;
             var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
