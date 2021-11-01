@@ -940,39 +940,23 @@ namespace TestProject.RuntimeTests
         }
     }
 
-    public class InSceneNetworkObjectDDOLTest
+    public class NetworkSceneManagerDDOLTests
     {
         private NetworkManager m_ServerNetworkManager;
         private GameObject m_NetworkManagerGameObject;
-        private GameObject m_ObjectToSpawn;
-        private bool m_ConditionMet;
+        private GameObject m_DDOL_ObjectToSpawn;
+
         protected float m_ConditionMetFrequency = 0.1f;
-
-        protected void ConditionMet(bool isConditionMet)
-        {
-            m_ConditionMet = isConditionMet;
-        }
-
-        protected IEnumerator WaitForCondition()
-        {
-            while (!m_ConditionMet)
-            {
-                yield return new WaitForSeconds(m_ConditionMetFrequency);
-            }
-        }
 
         [UnitySetUp]
         protected IEnumerator SetUp()
         {
             m_NetworkManagerGameObject = new GameObject("NetworkManager - Host");
             m_ServerNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
-            m_TestingState = TestingState.None;
 
-            m_ObjectToSpawn = new GameObject();
-            var networkObject = m_ObjectToSpawn.AddComponent<NetworkObject>();
-            var forcedInSceneBehaviour = m_ObjectToSpawn.AddComponent<ForcedInSceneBehaviour>();
-            forcedInSceneBehaviour.OnNetworkObjectDisabled += ForcedInSceneBehaviour_OnNetworkObjectDisabled;
-            forcedInSceneBehaviour.OnNetworkObjectEnabled += ForcedInSceneBehaviour_OnNetworkObjectEnabled;
+            m_DDOL_ObjectToSpawn = new GameObject();
+            m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
+            m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
 
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
@@ -990,86 +974,89 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.Shutdown();
 
             Object.Destroy(m_NetworkManagerGameObject);
-            Object.Destroy(m_ObjectToSpawn);
+            Object.Destroy(m_DDOL_ObjectToSpawn);
 
             yield break;
         }
 
-        public enum TestingState
+        public enum DefaultState
         {
-            None,
-            Disabled,
-            Enabled
+            IsEnabled,
+            IsDisabled
         }
 
-        private TestingState m_TestingState;
-
-        [UnityTest]
-        public IEnumerator DDOLMoveAndRestoreInSceneNetworkObject()
+        public enum MovedIntoDDOLBy
         {
-            var networkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
+            User,
+            NetworkSceneManager
+        }
+
+        public enum NetworkObjectType
+        {
+            InScenePlaced,
+            DynamicallySpawned
+        }
+
+        /// <summary>
+        /// Tests to make sure NetworkObjects moved into the DDOL will
+        /// restore back to their currently active state when a full
+        /// scene transition is complete.
+        /// This tests both in-scene placed and dynamically spawned NetworkObjects
+        [UnityTest]
+        public IEnumerator InSceneNetworkObjectState([Values(DefaultState.IsEnabled, DefaultState.IsDisabled)] DefaultState activeState,
+            [Values (MovedIntoDDOLBy.User, MovedIntoDDOLBy.NetworkSceneManager)] MovedIntoDDOLBy movedIntoDDOLBy,
+            [Values (NetworkObjectType.InScenePlaced, NetworkObjectType.DynamicallySpawned)] NetworkObjectType networkObjectType)
+        {
+            var isActive = activeState == DefaultState.IsEnabled ? true : false;
+            var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
+            var networkObject = m_DDOL_ObjectToSpawn.GetComponent<NetworkObject>();
+            var ddolBehaviour = m_DDOL_ObjectToSpawn.GetComponent<DDOLBehaviour>();
+
+            if (movedIntoDDOLBy == MovedIntoDDOLBy.User)
+            {
+                ddolBehaviour.MoveToDDOL();
+            }
+            else //NetworkSceneManager moves it into the DDOL
+            {
+                networkObject.DestroyWithScene = false;
+            }
+
+            // Sets whether we are in-scene or dynamically spawned NetworkObject
+            ddolBehaviour.SetInScene(isInScene);
+
             Assert.That(networkObject.IsSpawned);
 
-            ConditionMet(false);
-            m_TestingState = TestingState.Disabled;
-            m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
-            yield return WaitForCondition();
-            // It should be disabled when MoveObjectsToDontDestroyOnLoad is called.
-            Assert.That(!networkObject.isActiveAndEnabled);
+            m_DDOL_ObjectToSpawn.SetActive(isActive);
 
-            m_TestingState = TestingState.Enabled;
-            ConditionMet(false);
+            m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
+
+            yield return new WaitForSeconds(0.03f);
+
+            // It should be disabled when MoveObjectsToDontDestroyOnLoad is called.
+            Assert.That(networkObject.isActiveAndEnabled == false);
+
             m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
-            yield return WaitForCondition();
+
+            yield return new WaitForSeconds(0.03f);
+
             // It should be enabled when MoveObjectsFromDontDestroyOnLoadToScene is called.
-            Assert.That(networkObject.isActiveAndEnabled);
+            Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             //Done
             networkObject.Despawn(false);
         }
 
-        private void ForcedInSceneBehaviour_OnNetworkObjectEnabled()
+        public class DDOLBehaviour : NetworkBehaviour
         {
-            if (m_TestingState == TestingState.Enabled)
-            {
-                ConditionMet(true);
-            }
-        }
-
-        private void ForcedInSceneBehaviour_OnNetworkObjectDisabled()
-        {
-            if (m_TestingState == TestingState.Disabled)
-            {
-                ConditionMet(true);
-            }
-        }
-
-        public class ForcedInSceneBehaviour : NetworkBehaviour
-        {
-            public event Action OnNetworkObjectSpawned;
-            public event Action OnNetworkObjectDisabled;
-            public event Action OnNetworkObjectEnabled;
-
-            private void Start()
+            public void MoveToDDOL()
             {
                 DontDestroyOnLoad(gameObject);
+            }
+
+            public void SetInScene(bool isInScene)
+            {
                 var networkObject = GetComponent<NetworkObject>();
-                networkObject.IsSceneObject = true;
-            }
-            public override void OnNetworkSpawn()
-            {
-                OnNetworkObjectSpawned?.Invoke();
-                base.OnNetworkSpawn();
-            }
-
-            private void OnDisable()
-            {
-                OnNetworkObjectDisabled?.Invoke();
-            }
-
-            private void OnEnable()
-            {
-                OnNetworkObjectEnabled?.Invoke();
+                networkObject.IsSceneObject = isInScene;
             }
         }
 

@@ -367,6 +367,11 @@ namespace Unity.Netcode
         /// </summary>
         internal Dictionary<int, uint> BuildIndexToHash = new Dictionary<int, uint>();
 
+        // For full scene transitions we want to keep track of in-scene placed NetworkObjects' active state that are moved into the DDOL
+        // by user code.
+        private Dictionary<ulong, bool> m_NetworkObjectDDOLActiveState = new Dictionary<ulong, bool>();
+        private Dictionary<ulong, bool> m_NetworkObjectUserMovedDDOLActiveState = new Dictionary<ulong, bool>();
+
         /// <summary>
         /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         /// they need to be moved into the do not destroy temporary scene
@@ -1834,17 +1839,36 @@ namespace Unity.Netcode
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
-
+            m_NetworkObjectDDOLActiveState.Clear();
             foreach (var sobj in objectsToKeep)
             {
-                if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
+                // Determine if we are already in the DDOL (i.e. moved by user)
+                bool isUserMovedNetworkObjectInDDOL = sobj.gameObject.scene == DontDestroyOnLoadScene;
+                if (!sobj.DestroyWithScene || isUserMovedNetworkObjectInDDOL)
                 {
                     // Only move objects with no parent as child objects will follow
                     if (sobj.gameObject.transform.parent == null)
                     {
-                        UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
-                        // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
-                        sobj.gameObject.SetActive(false);
+                        // If this is network object was moved into the DDOL by the user
+                        if (isUserMovedNetworkObjectInDDOL)
+                        {
+                            // Keep track of its active state in the m_NetworkObjectUserMovedDDOLActiveState list
+                            m_NetworkObjectUserMovedDDOLActiveState.Add(sobj.NetworkObjectId, sobj.gameObject.activeInHierarchy);
+
+                            // Since we are doing a scene transition, disable the GameObject until the next scene is loaded (LoadSceneMode.Single only)
+                            sobj.gameObject.SetActive(false);
+                        }
+                        else
+                        {
+                            // Otherwise, keep track of its active state in m_NetworkObjectDDOLActiveState
+                            m_NetworkObjectDDOLActiveState.Add(sobj.NetworkObjectId, sobj.gameObject.activeInHierarchy);
+
+                            // We then move it into the DDOL
+                            UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+
+                            // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
+                            sobj.gameObject.SetActive(false);
+                        }
                     }
                 }
                 else if (m_NetworkManager.IsServer)
@@ -1914,19 +1938,26 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
-                if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
-                {
-                    // set in-scene placed NetworkObjects back to active
-                    sobj.gameObject.SetActive(true);
-                    continue;
-                }
-
                 // Only move objects with no parent as child objects will follow
                 if (sobj.gameObject.transform.parent == null)
                 {
-                    // set it back to active at this point
-                    sobj.gameObject.SetActive(true);
-                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                    if (m_NetworkObjectUserMovedDDOLActiveState.ContainsKey(sobj.NetworkObjectId))
+                    {
+                        // If so, restore to the original state (in the event the user had disabled it prior to the scene transition)
+                        sobj.gameObject.SetActive(m_NetworkObjectUserMovedDDOLActiveState[sobj.NetworkObjectId]);
+                        m_NetworkObjectUserMovedDDOLActiveState.Remove(sobj.NetworkObjectId);
+
+                        // We leave it in the DDOL as the user moved it there so continue to next NetworkObject
+                        continue;
+                    }
+                    else if (m_NetworkObjectDDOLActiveState.ContainsKey(sobj.NetworkObjectId))
+                    {
+                        // set it back to its original active state
+                        sobj.gameObject.SetActive(m_NetworkObjectDDOLActiveState[sobj.NetworkObjectId]);
+
+                        // Move it back into the currently active scene
+                        SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                    }
                 }
             }
         }
