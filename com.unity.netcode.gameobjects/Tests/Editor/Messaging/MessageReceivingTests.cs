@@ -143,7 +143,7 @@ namespace Unity.Netcode.EditorTests
             };
             var messageHeader = new MessageHeader
             {
-                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageSize = UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
@@ -151,12 +151,10 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) +
-                                     FastBufferWriter.GetWriteSize(messageHeader) +
-                                     FastBufferWriter.GetWriteSize(message));
-                writer.WriteValue(batchHeader);
-                writer.WriteValue(messageHeader);
-                writer.WriteValue(message);
+                writer.WriteValueSafe(batchHeader);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
+                writer.WriteValueSafe(message);
 
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
@@ -188,14 +186,13 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(batchHeader) +
-                                     FastBufferWriter.GetWriteSize(messageHeader) * 2 +
-                                     FastBufferWriter.GetWriteSize(message) * 2);
-                writer.WriteValue(batchHeader);
-                writer.WriteValue(messageHeader);
-                writer.WriteValue(message);
-                writer.WriteValue(messageHeader);
-                writer.WriteValue(message2);
+                writer.WriteValueSafe(batchHeader);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
+                writer.WriteValueSafe(message);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
+                BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
+                writer.WriteValueSafe(message2);
 
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
