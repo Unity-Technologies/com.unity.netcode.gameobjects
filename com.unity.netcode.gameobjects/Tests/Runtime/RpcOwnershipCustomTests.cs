@@ -73,6 +73,16 @@ namespace Unity.Netcode.RuntimeTests
         public int RequireOwnershipCount = 0;
         public int DoesntRequireOwnershipCount = 0;
         public int ArrayRpcCount = 0;
+        public bool ReliableServerRpcCalled;
+        public bool ReliableClientRpcCalled;
+        public bool UnreliableServerRpcCalled;
+        public bool UnreliableClientRpcCalled;
+
+        [ServerRpc]
+        public void ExpectingNullObjectServerRpc(CustomType anObject)
+        {
+            Debug.Assert(anObject == null);
+        }
 
         [ServerRpc(RequireOwnership = true)]
         public void RequireOwnershipServerRpc()
@@ -98,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [ServerRpc]
-        public void ArrayOfCustomTypesServerRpc(CustomType[] arrayOfObjects, CustomType[] emptyArray)
+        public void ArrayOfCustomTypesServerRpc(CustomType[] arrayOfObjects, CustomType[] emptyArray, CustomType[] nullArray)
         {
             Debug.Assert(arrayOfObjects.Length > 0);
             for (int i = 0; i < arrayOfObjects.Length; i++)
@@ -110,8 +120,30 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Debug.Assert(emptyArray.Length == 0);
+            Debug.Assert(nullArray == null);
 
             ArrayRpcCount++;
+        }
+
+        [ServerRpc(Delivery = RpcDelivery.Unreliable)]
+        public void UnreliableServerRpc()
+        {
+            UnreliableServerRpcCalled = true;
+        }
+        [ServerRpc(Delivery = RpcDelivery.Reliable)]
+        public void ReliableServerRpc()
+        {
+            ReliableServerRpcCalled = true;
+        }
+        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
+        public void UnreliableClientRpc()
+        {
+            UnreliableClientRpcCalled = true;
+        }
+        [ClientRpc(Delivery = RpcDelivery.Reliable)]
+        public void ReliableClientRpc()
+        {
+            ReliableClientRpcCalled = true;
         }
     }
 
@@ -166,13 +198,15 @@ namespace Unity.Netcode.RuntimeTests
 
             netSpawnedObject.Spawn();
 
+            netSpawnedObject.GetComponent<RpcOwnershipObject>().ExpectingNullObjectServerRpc(null);
+
             var arrayOfObjects = new CustomType[2] { new CustomType(), new CustomType() };
             var emptyArray = new CustomType[0];
 
             arrayOfObjects[0].SomeValue = 1;
             arrayOfObjects[1].SomeValue = 2;
 
-            netSpawnedObject.GetComponent<RpcOwnershipObject>().ArrayOfCustomTypesServerRpc(arrayOfObjects, emptyArray);
+            netSpawnedObject.GetComponent<RpcOwnershipObject>().ArrayOfCustomTypesServerRpc(arrayOfObjects, emptyArray, null);
 
             Debug.Assert(netSpawnedObject.GetComponent<RpcOwnershipObject>().ArrayRpcCount == 1);
             yield return null;
@@ -194,6 +228,38 @@ namespace Unity.Netcode.RuntimeTests
             spawnedObject.GetComponent<RpcOwnershipObject>().TwoCustomTypesAndVect3ServerRpc(someObject, someOtherObject, vect);
 
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RpcDeliveryTests()
+        {
+            var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var netSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
+            netSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
+
+            var rpcObject = spawnedObject.GetComponent<RpcOwnershipObject>();
+
+            netSpawnedObject.Spawn();
+
+            rpcObject.ReliableServerRpc();
+            rpcObject.ReliableClientRpc();
+
+            // Those two calls are unreliable. So, for testing, we'll call them multiple
+            // times (just one call might be dropped). If it so happens that 10 calls in a row are missed, then some
+            // debugging would be worth.
+            for (int i = 0; i < 10; i++)
+            {
+                rpcObject.UnreliableServerRpc();
+                rpcObject.UnreliableClientRpc();
+
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            }
+
+            Debug.Assert(rpcObject.ReliableServerRpcCalled);
+            Debug.Assert(rpcObject.UnreliableServerRpcCalled);
+            Debug.Assert(rpcObject.ReliableClientRpcCalled);
+            Debug.Assert(rpcObject.UnreliableClientRpcCalled);
         }
 
         private IEnumerator RunTests(bool serverOwned)
