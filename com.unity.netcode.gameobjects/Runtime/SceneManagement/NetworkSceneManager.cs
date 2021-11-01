@@ -832,7 +832,7 @@ namespace Unity.Netcode
 
             ScenesLoaded.Remove(scene.handle);
 
-            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene,
+            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene,
                     new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
 
             sceneEventProgress.SetSceneLoadOperation(sceneUnload);
@@ -880,7 +880,7 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
 
-            AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle],
+            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle],
                 new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
 
             ScenesLoaded.Remove(sceneHandle);
@@ -967,7 +967,7 @@ namespace Unity.Netcode
                 // Validate the scene as well as ignore the DDOL (which will have a negative buildIndex)
                 if (currentActiveScene.name != keyHandleEntry.Value.name && keyHandleEntry.Value.buildIndex >= 0)
                 {
-                    AsyncOperation sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value,
+                    var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value,
                         new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = EmptySceneUnloadedOperation });
 
                     OnSceneEvent?.Invoke(new SceneEvent()
@@ -1032,7 +1032,7 @@ namespace Unity.Netcode
             }
 
             // Now start loading the scene
-            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
+            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
                 new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneLoaded });
 
             sceneEventProgress.SetSceneLoadOperation(sceneLoad);
@@ -1089,7 +1089,7 @@ namespace Unity.Netcode
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             }
 
-            AsyncOperation sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode,
+            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode,
                 new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded });
 
             OnSceneEvent?.Invoke(new SceneEvent()
