@@ -13,10 +13,10 @@ namespace Unity.Netcode
         // side, but it gets the best achievable user experience and performance.
         //
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static void InitializeDelegates<U>() where U : unmanaged, INetworkSerializable
+        internal static void InitializeDelegates<T>() where T : unmanaged, INetworkSerializable
         {
-            NetworkVariable<U>.Write = NetworkVariable<U>.WriteNetworkSerializable;
-            NetworkVariable<U>.Read = NetworkVariable<U>.ReadNetworkSerializable;
+            NetworkVariable<T>.Write = NetworkVariable<T>.WriteNetworkSerializable;
+            NetworkVariable<T>.Read = NetworkVariable<T>.ReadNetworkSerializable;
         }
     }
 }
