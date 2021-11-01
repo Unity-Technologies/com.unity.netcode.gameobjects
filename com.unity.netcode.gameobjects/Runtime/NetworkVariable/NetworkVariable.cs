@@ -35,7 +35,7 @@ namespace Unity.Netcode
 
         internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, ref TForMethod value);
 
-        internal delegate void ReadDelegate<TForMethod(FastBufferReader reader, out TForMethod value);
+        internal delegate void ReadDelegate<TForMethod>(FastBufferReader reader, out TForMethod value);
 
         // These static delegates provide the right implementation for writing and reading a particular network variable
         // type.
