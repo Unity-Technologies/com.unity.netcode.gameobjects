@@ -10,32 +10,32 @@ namespace Unity.Netcode
     public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
     {
         // Functions that know how to serialize INetworkSerializable
-        internal static void WriteNetworkSerializable<U>(FastBufferWriter writer, ref U value)
-            where U : INetworkSerializable, new()
+        internal static void WriteNetworkSerializable<TForMethod>(FastBufferWriter writer, ref TForMethod value)
+            where TForMethod : INetworkSerializable, new()
         {
             writer.WriteNetworkSerializable(value);
         }
-        internal static void ReadNetworkSerializable<U>(FastBufferReader reader, out U value)
-            where U : INetworkSerializable, new()
+        internal static void ReadNetworkSerializable<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : INetworkSerializable, new()
         {
             reader.ReadNetworkSerializable(out value);
         }
 
         // Functions that serialize other types
-        private static void WriteValue<U>(FastBufferWriter writer, ref U value) where U : unmanaged
+        private static void WriteValue<TForMethod>(FastBufferWriter writer, ref TForMethod value) where TForMethod : unmanaged
         {
             writer.WriteValueSafe(value);
         }
 
-        private static void ReadValue<U>(FastBufferReader reader, out U value)
-            where U : unmanaged
+        private static void ReadValue<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged
         {
             reader.ReadValueSafe(out value);
         }
 
-        internal delegate void WriteDelegate<U>(FastBufferWriter writer, ref U value);
+        internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, ref TForMethod value);
 
-        internal delegate void ReadDelegate<U>(FastBufferReader reader, out U value);
+        internal delegate void ReadDelegate<TForMethod(FastBufferReader reader, out TForMethod value);
 
         // These static delegates provide the right implementation for writing and reading a particular network variable
         // type.
