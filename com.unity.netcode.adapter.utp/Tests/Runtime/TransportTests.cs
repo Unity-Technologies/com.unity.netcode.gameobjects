@@ -225,7 +225,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             byte c1Data = m_Client1Events[1].Data.First();
             byte c2Data = m_Client2Events[1].Data.First();
-            Assert.True((c1Data == 11 && c2Data == 22) || (c1Data == 22 && c2Data == 11));
+            Assert.That((c1Data == 11 && c2Data == 22) || (c1Data == 22 && c2Data == 11));
 
             yield return null;
         }
@@ -262,7 +262,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             byte sData1 = m_ServerEvents[2].Data.First();
             byte sData2 = m_ServerEvents[3].Data.First();
-            Assert.True((sData1 == 11 && sData2 == 22) || (sData1 == 22 && sData2 == 11));
+            Assert.That((sData1 == 11 && sData2 == 22) || (sData1 == 22 && sData2 == 11));
 
             yield return null;
         }

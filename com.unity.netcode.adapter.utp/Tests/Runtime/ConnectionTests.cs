@@ -28,7 +28,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Check that all clients received the correct event.
-            Assert.True(m_ClientsEvents.All(evs => evs[0].Type == NetworkEvent.Connect));
+            Assert.That(m_ClientsEvents.All(evs => evs[0].Type == NetworkEvent.Connect));
 
             // Check that server received all Connect events.
             Assert.AreEqual(k_NumClients, m_ServerEvents.Count);
@@ -154,8 +154,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitForSeconds(MaxNetworkEventWaitTime);
 
             // Check that all clients got a Disconnect event.
-            Assert.True(m_ClientsEvents.All(evs => evs.Count == 2));
-            Assert.True(m_ClientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
+            Assert.That(m_ClientsEvents.All(evs => evs.Count == 2));
+            Assert.That(m_ClientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
 
             yield return null;
         }
