@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using Unity.PerformanceTesting;
-using Unity.PerformanceTesting.Measurements;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests.Performance
