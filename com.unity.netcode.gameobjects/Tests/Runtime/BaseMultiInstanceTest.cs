@@ -30,9 +30,11 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
-                MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
-                MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
-
+                if (MultiInstanceHelpers.ClientSceneHandler != null)
+                {
+                    MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+                    MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+                }
                 MultiInstanceHelpers.Destroy();
             }
             catch (Exception e) { throw e; }
@@ -147,8 +149,6 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
-
-                RegisterSceneManagerHandler();
 
                 // Wait for connection on client side
                 yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
