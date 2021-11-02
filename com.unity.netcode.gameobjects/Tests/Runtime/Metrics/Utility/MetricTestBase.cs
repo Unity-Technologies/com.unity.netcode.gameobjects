@@ -28,6 +28,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         public override IEnumerator Setup()
         {
             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
+
             Server = m_ServerNetworkManager;
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             Client = m_ClientNetworkManagers[0];
@@ -57,6 +58,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         public override IEnumerator Setup()
         {
             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
+
             Server = m_ServerNetworkManager;
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             FirstClient = m_ClientNetworkManagers[0];

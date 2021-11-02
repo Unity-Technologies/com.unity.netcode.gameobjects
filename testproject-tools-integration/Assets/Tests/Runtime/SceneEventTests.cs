@@ -28,12 +28,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ClientNetworkSceneManager = Client.SceneManager;
             m_ServerNetworkSceneManager = Server.SceneManager;
             Server.NetworkConfig.EnableSceneManagement = true;
+
             m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
         }
 
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
+
             yield return UnloadTestScene(m_LoadedScene);
             yield return base.Teardown();
         }
