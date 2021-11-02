@@ -10,6 +10,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 ### Fixed
+
+- Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (i.e. LoadSceneMode.Single).
+- Fixed all NetworkObjects marked to persist a full scene transition now are restored to their original active state (enabled/disabled) after a full scene transition (i.e. LoadSceneMode.Single).
+
 ### Changed
 
 ## [1.0.0-pre.3] - 2021-10-22
