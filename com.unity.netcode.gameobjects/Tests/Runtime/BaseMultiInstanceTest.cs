@@ -150,6 +150,8 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail("Failed to start instances");
                 }
 
+                RegisterSceneManagerHandler();
+
                 // Wait for connection on client side
                 yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
