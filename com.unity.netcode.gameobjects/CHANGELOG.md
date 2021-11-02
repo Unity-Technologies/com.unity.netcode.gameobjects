@@ -6,17 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+### Fixed
+### Changed
+
 ## [1.0.0-pre.3] - 2021-10-22
 
 ### Added
 
-- ResetTrigger function to NetworkAnimator
+- ResetTrigger function to NetworkAnimator (#1327)
 
 ### Fixed 
 
-- Overflow exception when syncing Animator state.
+- Overflow exception when syncing Animator state. (#1327)
+- Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
+- Fixed an issue where ServerClientId and LocalClientId could have the same value, causing potential confusion, and also fixed an issue with the UNet where the server could be identified with two different values, one of which might be the same as LocalClientId, and the other of which would not.(#1368)
+- IL2CPP would not properly compile (#1359)
 
-## [1.0.0-pre.2] - 2020-12-20
+## [1.0.0-pre.2] - 2021-10-19
 
 ### Added
 
@@ -26,7 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Updated label for `1.0.0-pre.1` changelog section
 
-## [1.0.0-pre.1] - 2020-12-20
+## [1.0.0-pre.1] - 2021-10-19
 
 ### Added
 
