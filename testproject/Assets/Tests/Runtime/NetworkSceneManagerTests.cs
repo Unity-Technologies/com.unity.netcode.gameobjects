@@ -695,7 +695,7 @@ namespace TestProject.RuntimeTests
             yield return Setup();
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");

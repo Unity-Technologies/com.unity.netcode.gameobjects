@@ -25,7 +25,9 @@ namespace Unity.Netcode.RuntimeTests
             if (m_Server)
             {
                 m_Server.Shutdown();
-                Object.DestroyImmediate(m_Server);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                Object.DestroyImmediate(m_Server.gameObject);
             }
 
             foreach (var transport in m_Clients)
@@ -33,7 +35,9 @@ namespace Unity.Netcode.RuntimeTests
                 if (transport)
                 {
                     transport.Shutdown();
-                    Object.DestroyImmediate(transport);
+
+                    // Need to destroy the GameObject (all assigned components will get destroyed too)
+                    Object.DestroyImmediate(transport.gameObject);
                 }
             }
 
