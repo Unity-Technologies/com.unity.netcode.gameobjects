@@ -580,7 +580,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void DespawnNetworkObjects()
+        internal void DespawnAndDestroyNetworkObjects()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
@@ -590,11 +590,11 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                     {
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                        // Leave destruction up to the handler
                         OnDespawnObject(networkObjects[i], false);
+                        // Leave destruction up to the handler
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
                     }
-                    else
+                    else if (networkObjects[i].IsSpawned)
                     {
                         // If it is an in-scene placed NetworkObject then just despawn
                         // and let it be destroyed when the scene is unloaded.  Otherwise,
@@ -603,6 +603,10 @@ namespace Unity.Netcode
                                     && networkObjects[i].IsSceneObject.Value);
 
                         OnDespawnObject(networkObjects[i], shouldDestroy);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
             }
