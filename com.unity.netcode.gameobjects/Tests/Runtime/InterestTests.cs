@@ -41,10 +41,10 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        public class OddEvenInterestKernel : InterestKernel<NetworkObject>
+        public class OddEvenInterestKernel : IInterestKernel<NetworkObject>
         {
             public bool IsOdd = true;
-            public override void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
             {
                 if (obj.NetworkObjectId % 2 == 0 ^ IsOdd)
                 {
@@ -55,9 +55,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public class OddsEvensNode : IInterestNode<NetworkObject>
         {
-            public OddsEvensNode(NetworkManager nm)
+            public OddsEvensNode()
             {
-                m_NetworkManager = nm;
                 m_Odds = new InterestNodeStatic<NetworkObject>();
                 m_Evens = new InterestNodeStatic<NetworkObject>();
             }
@@ -109,7 +108,6 @@ namespace Unity.Netcode.RuntimeTests
 
             private InterestNodeStatic<NetworkObject> m_Odds;
             private InterestNodeStatic<NetworkObject> m_Evens;
-            private NetworkManager m_NetworkManager;
         }
 
         // create a game object & add it to the indicated node
@@ -140,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var objectsBeforeAdd = results.Count;
-            var oddsEvensNode = new OddsEvensNode(m_NetworkManager);
+            var oddsEvensNode = new OddsEvensNode();
 
             var numObjs = 4;
             var objs = new NetworkObject[numObjs];

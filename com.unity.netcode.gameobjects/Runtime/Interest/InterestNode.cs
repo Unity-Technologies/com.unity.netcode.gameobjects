@@ -12,8 +12,8 @@ namespace Unity.Netcode.Interest
         public void UpdateObject(TObject obj);
     };
 
-    public abstract class InterestKernel<TObject>
+    public interface IInterestKernel<TObject>
     {
-        public abstract void QueryFor(TObject client, TObject obj, HashSet<TObject> results);
+        public void QueryFor(TObject client, TObject obj, HashSet<TObject> results);
     }
 }

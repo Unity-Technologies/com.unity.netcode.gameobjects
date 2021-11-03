@@ -748,16 +748,14 @@ namespace Unity.Netcode
             }
 
             networkObject.IsSpawned = false;
-            var gobj = networkObject.gameObject;
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            NetworkObject no = gobj.GetComponent<NetworkObject>();
-            NetworkManager.InterestManager.RemoveObject(no);
+            NetworkManager.InterestManager.RemoveObject(networkObject);
 
-
+            var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))

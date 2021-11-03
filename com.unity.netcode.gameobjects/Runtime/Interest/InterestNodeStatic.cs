@@ -6,7 +6,7 @@ namespace Unity.Netcode.Interest
 {
     public class InterestNodeStatic <TObject> : IInterestNode<TObject>
     {
-        public List<InterestKernel<TObject>> InterestKernels = new List<InterestKernel<TObject>>();
+        public List<IInterestKernel<TObject>> InterestKernels = new List<IInterestKernel<TObject>>();
 
         // these are the objects under my purview
         protected HashSet<TObject> ManagedObjects;
