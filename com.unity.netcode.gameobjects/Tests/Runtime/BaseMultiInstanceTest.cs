@@ -80,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Registers the CanClientsLoad and CanClientsUnload events of the
-        /// default SceneManagerHandler.
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
