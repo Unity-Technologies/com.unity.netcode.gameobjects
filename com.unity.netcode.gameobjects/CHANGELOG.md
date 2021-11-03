@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 ### Fixed
+
+- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager.
+
 ### Changed
 
 ## [1.0.0-pre.3] - 2021-10-22
