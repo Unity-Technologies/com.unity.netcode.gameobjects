@@ -110,7 +110,7 @@ namespace Unity.Netcode.Interest
 
         public void RemoveInterestNode(TObject obj)
         {
-            if (!m_NodesForObject.ContainsKey(obj))
+            if (m_NodesForObject.ContainsKey(obj))
             {
                 m_NodesForObject.Remove(obj);
             }
