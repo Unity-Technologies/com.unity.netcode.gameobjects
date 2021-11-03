@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace Unity.Netcode.Interest
 {
-    public class InterestNodeStatic <TClient, TObject> : IInterestNode<TClient, TObject>
+    public class InterestNodeStatic <TObject> : IInterestNode<TObject>
     {
-        public List<InterestKernel<TClient, TObject>> InterestKernels = new List<InterestKernel<TClient, TObject>>();
+        public List<InterestKernel<TObject>> InterestKernels = new List<InterestKernel<TObject>>();
 
         // these are the objects under my purview
         protected HashSet<TObject> ManagedObjects;
@@ -26,7 +26,7 @@ namespace Unity.Netcode.Interest
             ManagedObjects.Remove(obj);
         }
 
-        public void QueryFor(TClient client, HashSet<TObject> results)
+        public void QueryFor(TObject client, HashSet<TObject> results)
         {
             if (InterestKernels.Count > 0)
             {

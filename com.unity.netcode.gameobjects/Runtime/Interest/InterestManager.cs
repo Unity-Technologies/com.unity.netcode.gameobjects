@@ -2,15 +2,15 @@ using System.Collections.Generic;
 namespace Unity.Netcode.Interest
 {
     // interest *system* instead of interest node ?
-    public class InterestManager<TClient, TObject> //where TClient //where TObject : unmanaged
+    public class InterestManager<TObject>
     {
-        private readonly InterestNodeStatic<TClient, TObject> m_DefaultInterestNode;
+        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode;
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
         public void UpdateObject(TObject obj)
         {
-            List<IInterestNode<TClient, TObject>> nodes;
+            List<IInterestNode<TObject>> nodes;
             if (m_NodesForObject.TryGetValue(obj, out nodes))
             {
                 foreach (var node in nodes)
@@ -22,13 +22,13 @@ namespace Unity.Netcode.Interest
 
         public InterestManager()
         {
-            m_ChildNodes = new HashSet<IInterestNode<TClient, TObject>>();
-            m_NodesForObject = new Dictionary<TObject, List<IInterestNode<TClient, TObject>>>();
+            m_ChildNodes = new HashSet<IInterestNode<TObject>>();
+            m_NodesForObject = new Dictionary<TObject, List<IInterestNode<TObject>>>();
 
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
             //??ScriptableObject.CreateInstance<InterestNodeStatic<NetworkClient, NetworkObject>>();
-            m_DefaultInterestNode = new InterestNodeStatic<TClient, TObject>();
+            m_DefaultInterestNode = new InterestNodeStatic<TObject>();
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
 
@@ -40,7 +40,7 @@ namespace Unity.Netcode.Interest
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
 
-            List<IInterestNode<TClient, TObject>> nodes;
+            List<IInterestNode<TObject>> nodes;
             if (m_NodesForObject.TryGetValue(obj, out nodes))
             {
                 // I am walking through each of the interest nodes that this object has
@@ -70,7 +70,7 @@ namespace Unity.Netcode.Interest
         {
             // if the node never had an InterestNode, then it was using the default
             //  interest node
-            List<IInterestNode<TClient, TObject>> nodes;
+            List<IInterestNode<TObject>> nodes;
             if (m_NodesForObject.TryGetValue(oldObject, out nodes))
             {
                 foreach (var node in nodes)
@@ -90,7 +90,7 @@ namespace Unity.Netcode.Interest
             RemoveInterestNode(oldObject);
         }
 
-        public void QueryFor(TClient client, HashSet<TObject> results)
+        public void QueryFor(TObject client, HashSet<TObject> results)
         {
             foreach (var c in m_ChildNodes)
             {
@@ -98,12 +98,12 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void AddInterestNode(TObject obj, IInterestNode<TClient, TObject> node)
+        public void AddInterestNode(TObject obj, IInterestNode<TObject> node)
         {
-            List<IInterestNode<TClient, TObject>> nodes;
+            List<IInterestNode<TObject>> nodes;
             if (!m_NodesForObject.TryGetValue(obj, out nodes))
             {
-                m_NodesForObject[obj] = new List<IInterestNode<TClient, TObject>>();
+                m_NodesForObject[obj] = new List<IInterestNode<TObject>>();
                 m_NodesForObject[obj].Add(node);
             }
         }
@@ -120,7 +120,7 @@ namespace Unity.Netcode.Interest
         {
         }
 
-        private HashSet<IInterestNode<TClient, TObject>> m_ChildNodes;
-        private Dictionary<TObject, List<IInterestNode<TClient, TObject>>> m_NodesForObject;
+        private HashSet<IInterestNode<TObject>> m_ChildNodes;
+        private Dictionary<TObject, List<IInterestNode<TObject>>> m_NodesForObject;
     }
 }

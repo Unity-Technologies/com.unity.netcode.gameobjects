@@ -19,9 +19,9 @@ namespace Unity.Netcode
         [SerializeField]
         public uint GlobalObjectIdHash;
 
-        private List<IInterestNode<NetworkClient, NetworkObject>> m_InterestNodes;
+        private List<IInterestNode<NetworkObject>> m_InterestNodes;
 
-        public List<IInterestNode<NetworkClient, NetworkObject>> GetInterestNodes()
+        public List<IInterestNode<NetworkObject>> GetInterestNodes()
         {
             return m_InterestNodes;
         }

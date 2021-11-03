@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class RadiusInterestKernel : InterestKernel<NetworkObject, NetworkObject>
+    public class RadiusInterestKernel : InterestKernel<NetworkObject>
     {
         public float Radius = 0.0f;
         private NetworkManager m_NetworkManager;

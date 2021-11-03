@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         private NetworkObject m_PlayerNetworkObject;
         private NetworkManager m_NetworkManager;
-        private InterestManager<NetworkObject, NetworkObject> m_InterestManager;
+        private InterestManager<NetworkObject> m_InterestManager;
 
         [SetUp]
         public void Setup()
@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        public class OddEvenInterestKernel : InterestKernel<NetworkObject, NetworkObject>
+        public class OddEvenInterestKernel : InterestKernel<NetworkObject>
         {
             public bool IsOdd = true;
             public override void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
@@ -53,13 +53,13 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class OddsEvensNode : IInterestNode<NetworkObject, NetworkObject>
+        public class OddsEvensNode : IInterestNode<NetworkObject>
         {
             public OddsEvensNode(NetworkManager nm)
             {
                 m_NetworkManager = nm;
-                m_Odds = new InterestNodeStatic<NetworkObject, NetworkObject>();
-                m_Evens = new InterestNodeStatic<NetworkObject, NetworkObject>();
+                m_Odds = new InterestNodeStatic<NetworkObject>();
+                m_Evens = new InterestNodeStatic<NetworkObject>();
             }
 
             public void AddObject(NetworkObject obj)
@@ -107,8 +107,8 @@ namespace Unity.Netcode.RuntimeTests
                 AddObject(obj);
             }
 
-            private InterestNodeStatic<NetworkObject, NetworkObject> m_Odds;
-            private InterestNodeStatic<NetworkObject, NetworkObject> m_Evens;
+            private InterestNodeStatic<NetworkObject> m_Odds;
+            private InterestNodeStatic<NetworkObject> m_Evens;
             private NetworkManager m_NetworkManager;
         }
 
@@ -201,7 +201,7 @@ namespace Unity.Netcode.RuntimeTests
         // Start is called before the first frame update
         public void InterestRadiusCheck()
         {
-            InterestNodeStatic<NetworkObject, NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
+            InterestNodeStatic<NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
             var naiveRadiusKernel = new RadiusInterestKernel(m_NetworkManager);
             naiveRadiusKernel.Radius = 1.5f;
             naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var objectsBeforeAdd = results.Count;
 
-            var dualNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
+            var dualNode = new InterestNodeStatic<NetworkObject>();
 
             var oddKernel = new OddEvenInterestKernel();
             oddKernel.IsOdd = true;
@@ -316,12 +316,12 @@ namespace Unity.Netcode.RuntimeTests
             var objsToMakePerNode = 10;
             var nodesToMake = 100;
             var objsToMake = objsToMakePerNode * nodesToMake;
-            List<IInterestNode<NetworkObject, NetworkObject>> nodes = new List<IInterestNode<NetworkObject, NetworkObject>>();
+            List<IInterestNode<NetworkObject>> nodes = new List<IInterestNode<NetworkObject>>();
             List<NetworkObject> objs = new List<NetworkObject>();
 
             for (var i = 0; i < nodesToMake; ++i)
             {
-                var thisNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
+                var thisNode = new InterestNodeStatic<NetworkObject>();
                 nodes.Add(thisNode);
                 for (var j = 0; j < objsToMakePerNode; j++)
                 {
