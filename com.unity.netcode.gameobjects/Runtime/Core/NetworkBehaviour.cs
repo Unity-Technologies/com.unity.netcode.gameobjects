@@ -282,7 +282,8 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal && !NetworkManager.Singleton.ShutdownInProgress)
+                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal && NetworkManager.Singleton == null ||
+                    NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress)
                 {
                     NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
