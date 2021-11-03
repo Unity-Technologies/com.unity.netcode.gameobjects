@@ -5,12 +5,18 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class RadiusInterestKernel : InterestKernel<NetworkClient, NetworkObject>
+    public class RadiusInterestKernel : InterestKernel<NetworkObject, NetworkObject>
     {
         public float Radius = 0.0f;
-        public override void QueryFor(NetworkClient client, NetworkObject obj, HashSet<NetworkObject> results)
+        private NetworkManager m_NetworkManager;
+
+        public RadiusInterestKernel(NetworkManager nm)
         {
-            if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) <= Radius)
+            m_NetworkManager = nm;
+        }
+        public override void QueryFor(NetworkObject clientNetworkObject, NetworkObject obj, HashSet<NetworkObject> results)
+        {
+            if (Vector3.Distance(obj.transform.position, clientNetworkObject.gameObject.transform.position) <= Radius)
             {
                 results.Add(obj.GetComponent<NetworkObject>());
             }

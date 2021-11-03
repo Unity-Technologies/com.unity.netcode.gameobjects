@@ -54,14 +54,14 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        private InterestManager<NetworkClient, NetworkObject, uint> m_InterestManager;
+        private InterestManager<NetworkObject, NetworkObject> m_InterestManager;
 
-        public InterestManager<NetworkClient, NetworkObject, uint> InterestManager {
+        public InterestManager<NetworkObject, NetworkObject> InterestManager {
             get
             {
                 if (m_InterestManager == null)
                 {
-                    m_InterestManager = new InterestManager<NetworkClient, NetworkObject, uint>();
+                    m_InterestManager = new InterestManager<NetworkObject, NetworkObject>();
                 }
                 return m_InterestManager;
             }

@@ -16,13 +16,22 @@ namespace Unity.Netcode.RuntimeTests
 
     public class InterestTests
     {
+        private NetworkObject m_PlayerNetworkObject;
+        private NetworkManager m_NetworkManager;
+        private InterestManager<NetworkObject, NetworkObject> m_InterestManager;
 
         [SetUp]
         public void Setup()
         {
             // Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager,
+            NetworkManagerHelper.StartNetworkManager(out m_NetworkManager,
                 NetworkManagerHelper.NetworkManagerOperatingMode.Server);
+
+            m_InterestManager = m_NetworkManager.InterestManager;
+
+            Guid thisGuid;
+            (m_PlayerNetworkObject, thisGuid)  = MakeInterestGameObjectHelper();
+            NetworkManagerHelper.SpawnNetworkObject(thisGuid);
         }
 
         [TearDown]
@@ -32,10 +41,10 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        public class OddEvenInterestKernel : InterestKernel<NetworkClient, NetworkObject>
+        public class OddEvenInterestKernel : InterestKernel<NetworkObject, NetworkObject>
         {
             public bool IsOdd = true;
-            public override void QueryFor(NetworkClient client, NetworkObject obj, HashSet<NetworkObject> results)
+            public override void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
             {
                 if (obj.NetworkObjectId % 2 == 0 ^ IsOdd)
                 {
@@ -44,12 +53,13 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class OddsEvensNode : IInterestNode<NetworkClient, NetworkObject>
+        public class OddsEvensNode : IInterestNode<NetworkObject, NetworkObject>
         {
-            public OddsEvensNode()
+            public OddsEvensNode(NetworkManager nm)
             {
-                m_Odds = new InterestNodeStatic<NetworkClient, NetworkObject>();
-                m_Evens = new InterestNodeStatic<NetworkClient, NetworkObject>();
+                m_NetworkManager = nm;
+                m_Odds = new InterestNodeStatic<NetworkObject, NetworkObject>();
+                m_Evens = new InterestNodeStatic<NetworkObject, NetworkObject>();
             }
 
             public void AddObject(NetworkObject obj)
@@ -76,10 +86,11 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            public void QueryFor(NetworkClient client, HashSet<NetworkObject> results)
+            public void QueryFor(NetworkObject client, HashSet<NetworkObject> results)
             {
                 // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
-                if (client.PlayerObject.NetworkObjectId % 2 == 0)
+                var networkObject = client.GetComponent<NetworkObject>();
+                if (networkObject.NetworkObjectId % 2 == 0)
                 {
                     m_Evens.QueryFor(client, results);
                 }
@@ -96,8 +107,9 @@ namespace Unity.Netcode.RuntimeTests
                 AddObject(obj);
             }
 
-            private InterestNodeStatic<NetworkClient, NetworkObject> m_Odds;
-            private InterestNodeStatic<NetworkClient, NetworkObject> m_Evens;
+            private InterestNodeStatic<NetworkObject, NetworkObject> m_Odds;
+            private InterestNodeStatic<NetworkObject, NetworkObject> m_Evens;
+            private NetworkManager m_NetworkManager;
         }
 
         // create a game object & add it to the indicated node
@@ -125,14 +137,10 @@ namespace Unity.Netcode.RuntimeTests
         public void InterestCustomStorageTests()
         {
             var results = new HashSet<NetworkObject>();
-            var nc = new NetworkClient()
-            {
-                ClientId = 1,
-            };
-            var interestManager = NetworkManager.Singleton.InterestManager;
-            interestManager.QueryFor(nc, results);
+
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var objectsBeforeAdd = results.Count;
-            var oddsEvensNode = new OddsEvensNode();
+            var oddsEvensNode = new OddsEvensNode(m_NetworkManager);
 
             var numObjs = 4;
             var objs = new NetworkObject[numObjs];
@@ -140,22 +148,19 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var (thisObj, thisGuid)  = MakeInterestGameObjectHelper();
                 objs[i] = thisObj;
-                objs[i].NetworkObjectId = (ulong)(i + 100);
-                objs[i].AddInterestNode(oddsEvensNode);
+                m_InterestManager.AddInterestNode(objs[i], oddsEvensNode);
                 NetworkManagerHelper.SpawnNetworkObject(thisGuid);
+                objs[i].NetworkObjectId = (ulong)(i + 100);
             }
 
-            var (obj, guid) = MakeInterestGameObjectHelper();
-            nc.PlayerObject = obj;
-
+            m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
             results.Clear();
-            nc.PlayerObject.NetworkObjectId = 100;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == numObjs / 2);
 
+            m_PlayerNetworkObject.NetworkObjectId = 2; // force player to be even
             results.Clear();
-            nc.PlayerObject.NetworkObjectId = 101;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == numObjs / 2);
 
             // now re-number the objects
@@ -164,66 +169,61 @@ namespace Unity.Netcode.RuntimeTests
                 objs[i].NetworkObjectId = (ulong)(2 * i + 101); // 101, 103, 105, 107
             }
 
+            m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
             results.Clear();
-            nc.PlayerObject.NetworkObjectId = 100;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == numObjs / 2); // should be unchanged
 
+            m_PlayerNetworkObject.NetworkObjectId = 2; // force player to be even
             results.Clear();
-            nc.PlayerObject.NetworkObjectId = 101;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == numObjs / 2); // should be unchanged
 
             // now update the objs
             for (var i = 0; i < numObjs; i++)
             {
-                interestManager.UpdateObject(objs[i]);
+                m_InterestManager.UpdateObject(objs[i]);
             }
 
+            m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
             results.Clear();
-            nc.PlayerObject.NetworkObjectId = 100;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == objs.Length); // now 4, all are odd
+
+            m_PlayerNetworkObject.NetworkObjectId = 2; // force player to be even
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == 0); // now zero, all are odd
 
-            results.Clear();
-            nc.PlayerObject.NetworkObjectId = 101;
-            interestManager.QueryFor(nc, results);
-            Assert.True(results.Count - objectsBeforeAdd == objs.Length); // now 4, all are odd
         }
 
         [Test]
         // Start is called before the first frame update
         public void InterestRadiusCheck()
         {
-            InterestNodeStatic<NetworkClient, NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkClient, NetworkObject>();
-            var naiveRadiusKernel = new RadiusInterestKernel();
+            InterestNodeStatic<NetworkObject, NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
+            var naiveRadiusKernel = new RadiusInterestKernel(m_NetworkManager);
             naiveRadiusKernel.Radius = 1.5f;
             naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
-//            interestManager.RegisterInterestNode(k_Prefab1, naiveRadiusNode);
 
             var results = new HashSet<NetworkObject>();
-            var nc = new NetworkClient()
-            {
-                ClientId = 1,
-            };
 
             var (playerObj, playerGuid) = MakeInterestGameObjectHelper(new Vector3(0.0f, 0.0f, 0.0f));
-            nc.PlayerObject = playerObj;
 
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             int objectsBeforeAdd = results.Count;
-            playerObj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(playerObj, naiveRadiusNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
-            ok1Obj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ok1Obj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
             var (ok2Obj, ok2Guid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
-            ok2Obj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ok2Obj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok2Guid);
 
             var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
-            tooFarObj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(tooFarObj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
             var (alwaysObj, alwaysGuid)  = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
@@ -232,11 +232,11 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.SpawnNetworkObject(playerGuid);
 
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var hits = results.Count - objectsBeforeAdd;
             Assert.True(results.Contains(ok1Obj));
             Assert.True(results.Contains(ok2Obj));
-            Assert.True(results.Contains(nc.PlayerObject));
+            Assert.True(results.Contains(m_PlayerNetworkObject));
             Assert.True(results.Contains(alwaysObj));
             Assert.False(results.Contains(tooFarObj));
             Assert.True(hits == 4);
@@ -244,11 +244,11 @@ namespace Unity.Netcode.RuntimeTests
             // remove an object, should not be in replication manager
             alwaysObj.Despawn();
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             hits = results.Count - objectsBeforeAdd;
             Assert.True(results.Contains(ok1Obj));
             Assert.True(results.Contains(ok2Obj));
-            Assert.True(results.Contains(nc.PlayerObject));
+            Assert.True(results.Contains(m_PlayerNetworkObject));
             Assert.False(results.Contains(alwaysObj));
             Assert.False(results.Contains(tooFarObj));
             Assert.True(hits == 3);
@@ -258,22 +258,18 @@ namespace Unity.Netcode.RuntimeTests
         public void CheckMultipleNodes()
         {
             var results = new HashSet<NetworkObject>();
-            var nc = new NetworkClient()
-            {
-                ClientId = 1,
-            };
 
-            var interestManager = NetworkManager.Singleton.InterestManager;
-            interestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var objectsBeforeAdd = results.Count;
 
-            var dualNode = new InterestNodeStatic<NetworkClient, NetworkObject>();
-//!!            interestManager.RegisterInterestNode(k_Prefab1, dualNode);
+            var dualNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
 
             var oddKernel = new OddEvenInterestKernel();
             oddKernel.IsOdd = true;
+
             var evenKernel = new OddEvenInterestKernel();
             evenKernel.IsOdd = false;
+
             dualNode.InterestKernels.Add(oddKernel);
             dualNode.InterestKernels.Add(evenKernel);
 
@@ -283,17 +279,13 @@ namespace Unity.Netcode.RuntimeTests
             var (object2, object2Guid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(object2Guid);
 
-            var (playerObject, playerObjGuid) = MakeInterestGameObjectHelper();
-            nc.PlayerObject = playerObject;
-            NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
-
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var hits = results.Count;
-            Assert.True(hits == (3 + objectsBeforeAdd));
+            Assert.True(hits == (2 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
             Assert.True(results.Contains(object2));
-            Assert.True(results.Contains(nc.PlayerObject));
+            Assert.True(results.Contains(m_PlayerNetworkObject));
         }
 
         [Test]
@@ -313,7 +305,7 @@ namespace Unity.Netcode.RuntimeTests
             var t = clock.UtcNow;
             for (var z = 0; z < 10000; z++)
             {
-                NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+                m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             }
 
             var tElapsed = clock.UtcNow - t;
@@ -324,17 +316,17 @@ namespace Unity.Netcode.RuntimeTests
             var objsToMakePerNode = 10;
             var nodesToMake = 100;
             var objsToMake = objsToMakePerNode * nodesToMake;
-            List<IInterestNode<NetworkClient, NetworkObject>> nodes = new List<IInterestNode<NetworkClient, NetworkObject>>();
+            List<IInterestNode<NetworkObject, NetworkObject>> nodes = new List<IInterestNode<NetworkObject, NetworkObject>>();
             List<NetworkObject> objs = new List<NetworkObject>();
 
             for (var i = 0; i < nodesToMake; ++i)
             {
-                var thisNode = new InterestNodeStatic<NetworkClient, NetworkObject>();
+                var thisNode = new InterestNodeStatic<NetworkObject, NetworkObject>();
                 nodes.Add(thisNode);
                 for (var j = 0; j < objsToMakePerNode; j++)
                 {
                     var (obj, guid) = MakeInterestGameObjectHelper();
-                    obj.AddInterestNode(thisNode);
+                    m_InterestManager.AddInterestNode(obj, thisNode);
                     NetworkManagerHelper.SpawnNetworkObject(guid);
                     objs.Add(obj);
                 }
@@ -345,7 +337,7 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
 
             // reality check
             var hits = results.Count;
@@ -356,7 +348,7 @@ namespace Unity.Netcode.RuntimeTests
             for (var i = 0; i < nodesToMake; ++i)
             {
                 var nodeResults = new HashSet<NetworkObject>();
-                nodes[i].QueryFor(nc, nodeResults);
+                nodes[i].QueryFor(m_PlayerNetworkObject, nodeResults);
                 Assert.True(nodeResults.Count == objsToMakePerNode);
             }
         }
@@ -370,7 +362,7 @@ namespace Unity.Netcode.RuntimeTests
                 ClientId = 1,
             };
 
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var objectsBeforeAdd = results.Count;
 
             var (object1, object1Guid) = MakeInterestGameObjectHelper();
@@ -384,7 +376,7 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             var hits = results.Count;
             Assert.True(hits == (3 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
@@ -396,7 +388,7 @@ namespace Unity.Netcode.RuntimeTests
             object2.Despawn();
             playerObj.Despawn();
             results.Clear();
-            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
         }
@@ -406,7 +398,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var rootSettings = new TestInterestSettings();
             rootSettings.SomeSetting = 1;
-            NetworkManager.Singleton.InterestSettings = rootSettings;
+            m_NetworkManager.InterestSettings = rootSettings;
 
             var objSettings = new TestInterestSettings();
             objSettings.SomeSetting = 2;

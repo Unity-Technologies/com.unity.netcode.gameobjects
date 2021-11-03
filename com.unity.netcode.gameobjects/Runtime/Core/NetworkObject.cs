@@ -13,7 +13,7 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
 
-    public sealed class NetworkObject : MonoBehaviour, IInterestAssociateable<NetworkClient, NetworkObject>
+    public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
         [SerializeField]
@@ -26,17 +26,6 @@ namespace Unity.Netcode
             return m_InterestNodes;
         }
 
-        public void AddInterestNode(IInterestNode<NetworkClient, NetworkObject> node)
-        {
-            if (NetworkManager.IsServer)
-            {
-                if (m_InterestNodes == null)
-                {
-                    m_InterestNodes = new List<IInterestNode<NetworkClient, NetworkObject>>();
-                }
-                m_InterestNodes.Add(node);
-            }
-        }
 
 #if UNITY_EDITOR
         private void OnValidate()
