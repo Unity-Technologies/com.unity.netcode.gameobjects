@@ -82,7 +82,7 @@ namespace TestProject.RuntimeTests
             var isHost = serverType == ServerType.Host ? true : false;
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
