@@ -42,6 +42,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
@@ -60,6 +61,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectSpawnReceivedMetric()
         {
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedReceived);
@@ -79,6 +81,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectDestroySentMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -101,6 +104,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectDestroyReceivedMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -124,6 +128,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackMultipleNetworkObjectSpawnSentMetric()
         {
             var networkObject1 = SpawnNetworkObject();
@@ -161,6 +166,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackMultipleNetworkObjectDestroySentMetric()
         {
             var networkObject1 = SpawnNetworkObject();

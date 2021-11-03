@@ -20,6 +20,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
         protected override int NbClients => 2;
 
+        [Ignore("Snapshot transition")]
         [UnityTest]
         public IEnumerator TrackNetworkMessageSentMetric()
         {
