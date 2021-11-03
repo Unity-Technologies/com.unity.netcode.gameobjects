@@ -13,6 +13,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager.
 
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
+
 ### Changed
 
 ## [1.0.0-pre.3] - 2021-10-22
