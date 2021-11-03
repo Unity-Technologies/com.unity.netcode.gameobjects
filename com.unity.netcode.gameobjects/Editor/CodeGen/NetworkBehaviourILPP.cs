@@ -575,20 +575,27 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         if (method.GenericParameters[0].HasConstraints)
                         {
+                            var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
                                 var resolvedConstraint = constraint.Resolve();
 
                                 if (
                                     (resolvedConstraint.IsInterface &&
-                                     checkType.HasInterface(resolvedConstraint.FullName))
+                                     !checkType.HasInterface(resolvedConstraint.FullName))
                                     || (resolvedConstraint.IsClass &&
-                                        checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName)))
+                                        !checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName))
+                                    || (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
                                 {
-                                    var instanceMethod = new GenericInstanceMethod(method);
-                                    instanceMethod.GenericArguments.Add(checkType);
-                                    return instanceMethod;
+                                    meetsConstraints = false;
+                                    break;
                                 }
+                            }
+                            if (meetsConstraints)
+                            {
+                                var instanceMethod = new GenericInstanceMethod(method);
+                                instanceMethod.GenericArguments.Add(checkType);
+                                return instanceMethod;
                             }
                         }
                     }
@@ -950,17 +957,23 @@ namespace Unity.Netcode.Editor.CodeGen
                         // writer.WriteValueSafe(param) for value types, OR
                         // writer.WriteValueSafe(param, -1, 0) for arrays of value types, OR
                         // writer.WriteValueSafe(param, false) for strings
-                        instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
                         var method = methodRef.Resolve();
                         var checkParameter = method.Parameters[0];
                         var isExtensionMethod = false;
-                        if (checkParameter.ParameterType.Resolve() ==
-                            m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
+                        if (methodRef.Resolve().DeclaringType != m_FastBufferWriter_TypeRef.Resolve())
                         {
                             isExtensionMethod = true;
                             checkParameter = method.Parameters[1];
                         }
-                        if (checkParameter.IsIn)
+                        if (!isExtensionMethod || method.Parameters[0].ParameterType.IsByReference)
+                        {
+                            instructions.Add(processor.Create(OpCodes.Ldloca, serializerLocIdx));
+                        }
+                        else
+                        {
+                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        }
+                        if (checkParameter.IsIn || checkParameter.IsOut || checkParameter.ParameterType.IsByReference)
                         {
                             instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
                         }
@@ -1271,7 +1284,18 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (foundMethodRef)
                 {
                     // reader.ReadValueSafe(out localVar);
-                    processor.Emit(OpCodes.Ldarga, 1);
+
+                    var checkParameter = methodRef.Resolve().Parameters[0];
+
+                    var isExtensionMethod = methodRef.Resolve().DeclaringType != m_FastBufferReader_TypeRef.Resolve();
+                    if (!isExtensionMethod || checkParameter.ParameterType.IsByReference)
+                    {
+                        processor.Emit(OpCodes.Ldarga, 1);
+                    }
+                    else
+                    {
+                        processor.Emit(OpCodes.Ldarg, 1);
+                    }
                     processor.Emit(OpCodes.Ldloca, localIndex);
                     if (paramType == typeSystem.String)
                     {
