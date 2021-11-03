@@ -1079,7 +1079,7 @@ namespace Unity.Netcode
 
             if (SpawnManager != null)
             {
-                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.DespawnNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
