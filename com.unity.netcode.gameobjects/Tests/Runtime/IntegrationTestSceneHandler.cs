@@ -7,11 +7,18 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// The default SceneManagerHandler used for all unit/integration tests that
+    /// require MultiInstance tests.
+    /// </summary>
     internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
     {
         internal CoroutineRunner CoroutineRunner;
 
+        // Default client simulated delay time
         protected const float k_ClientLoadingSimulatedDelay = 0.02f;
+
+        // Controls the client simulated delay time
         protected float m_ClientLoadingSimulatedDelay = k_ClientLoadingSimulatedDelay;
 
         public delegate bool CanClientsLoadUnloadDelegateHandler();
@@ -20,6 +27,15 @@ namespace Unity.Netcode.RuntimeTests
 
         internal List<Coroutine> CoroutinesRunning = new List<Coroutine>();
 
+        /// <summary>
+        /// Used to control when clients should attempt to fake-load a scene
+        /// Note: Unit/Integration tests that only use MutiInstanceHelpers
+        /// need to subscribe to the CanClientsLoad and CanClientsUnload events
+        /// in order to control when clients can fake-load.
+        /// Tests that derive from BaseMultiInstanceTest already have integrated
+        /// support and you can override BaseMultiInstanceTest.CanClientsLoad and
+        /// BaseMultiInstanceTest.CanClientsUnload.
+        /// </summary>
         protected bool OnCanClientsLoad()
         {
             if (CanClientsLoad != null)
@@ -29,6 +45,9 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Fake-Loads a scene for a client
+        /// </summary>
         internal IEnumerator ClientLoadSceneCoroutine(string sceneName, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
@@ -48,6 +67,9 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Fake-Unloads a scene for a client
+        /// </summary>
         internal IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);

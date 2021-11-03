@@ -60,16 +60,28 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
         }
 
+        /// <summary>
+        /// Override this method to control when clients
+        /// fake-load a scene.
+        /// </summary>
         protected virtual bool CanClientsLoad()
         {
             return true;
         }
 
+        /// <summary>
+        /// Override this method to control when clients
+        /// fake-unload a scene.
+        /// </summary>
         protected virtual bool CanClientsUnload()
         {
             return true;
         }
 
+        /// <summary>
+        /// Registers the CanClientsLoad and CanClientsUnload events of the
+        /// default SceneManagerHandler.
+        /// </summary>
         protected void RegisterSceneManagerHandler()
         {
             MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;

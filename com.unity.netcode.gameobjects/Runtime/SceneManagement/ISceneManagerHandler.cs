@@ -4,8 +4,13 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Used to override the LoadSceneAsync and UnloadSceneAsync methods called
+    /// within the NetworkSceneManager.
+    /// </summary>
     internal interface ISceneManagerHandler
     {
+        // Generic action to call when a scene is finished loading/unloading
         internal struct SceneEventAction
         {
             internal uint SceneEventId;

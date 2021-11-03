@@ -27,6 +27,10 @@ namespace Unity.Netcode.RuntimeTests
 
         internal static IntegrationTestSceneHandler ClientSceneHandler = null;
 
+        /// <summary>
+        /// Registers the IntegrationTestSceneHandler for integration tests.
+        /// The default client behavior is to not load scenes on the client side.
+        /// </summary>
         private static void RegisterSceneManagerHandler(NetworkManager networkManager)
         {
             if (!networkManager.IsServer)
@@ -39,6 +43,12 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Call this to clean up the IntegrationTestSceneHandler and destroy the s_CoroutineRunner.
+        /// Note:
+        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// typically won't need to do this.
+        /// </summary>
         internal static void CleanUpHandlers()
         {
             if (ClientSceneHandler != null)
@@ -55,6 +65,12 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Call this to register scene validation and the IntegrationTestSceneHandler
+        /// Note:
+        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// typically won't need to call this.
+        /// </summary>
         internal static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
         {
             SceneManagerValidationAndTestRunnerInitialization(networkManager);
