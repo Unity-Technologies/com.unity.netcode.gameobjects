@@ -9,21 +9,11 @@ namespace Unity.Netcode.RuntimeTests.Physics
     public class NetworkRigidbody2DDynamicTest : NetworkRigidbody2DTestBase
     {
         public override bool Kinematic => false;
-
-        protected override bool CheckFinalKinematicValue(GameObject gameObject)
-        {
-            return gameObject.GetComponent<Rigidbody2D>().isKinematic != Kinematic;
-        }
     }
 
     public class NetworkRigidbody2DKinematicTest : NetworkRigidbody2DTestBase
     {
         public override bool Kinematic => true;
-
-        protected override bool CheckFinalKinematicValue(GameObject gameObject)
-        {
-            return gameObject.GetComponent<Rigidbody2D>().isKinematic == Kinematic;
-        }
     }
 
     public abstract class NetworkRigidbody2DTestBase : BaseMultiInstanceTest
@@ -43,11 +33,6 @@ namespace Unity.Netcode.RuntimeTests.Physics
                 playerPrefab.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
                 playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
             });
-        }
-
-        protected virtual bool CheckFinalKinematicValue(GameObject gameObject)
-        {
-            return true;
         }
 
         /// <summary>
@@ -85,8 +70,8 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
             yield return NetworkRigidbodyTestBase.WaitForFrames(5);
 
-            // This should not equal Kinematic
-            Assert.IsTrue(CheckFinalKinematicValue(serverPlayer));
+            // This should equal Kinematic
+            Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 
             yield return NetworkRigidbodyTestBase.WaitForFrames(5);
 

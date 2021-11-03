@@ -74,7 +74,6 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkDespawn()
         {
-            m_IsAuthority = false;
             UpdateRigidbodyKinematicMode();
         }
     }
