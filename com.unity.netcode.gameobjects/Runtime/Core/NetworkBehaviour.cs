@@ -82,7 +82,8 @@ namespace Unity.Netcode
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // Passing false to canDefer prevents it being accessed.
-                    Header = new MessageHeader()
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
                 };
                 message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 rpcMessageSize = tempBuffer.Length;
@@ -188,7 +189,8 @@ namespace Unity.Netcode
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // Passing false to canDefer prevents it being accessed.
-                    Header = new MessageHeader()
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
                 };
                 message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 messageSize = tempBuffer.Length;

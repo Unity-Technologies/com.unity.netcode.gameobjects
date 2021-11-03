@@ -23,6 +23,7 @@ namespace Unity.Netcode
             public MessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
+            public int MessageHeaderSerializedSize;
         }
 
         private struct SendQueueItem
@@ -46,21 +47,21 @@ namespace Unity.Netcode
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
         private Type[] m_ReverseTypeMap = new Type[255];
 
-        private Dictionary<Type, int> m_MessageTypes = new Dictionary<Type, int>();
+        private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
 
         private List<INetworkHooks> m_Hooks = new List<INetworkHooks>();
 
-        private int m_HighMessageType;
+        private uint m_HighMessageType;
         private object m_Owner;
         private IMessageSender m_MessageSender;
         private bool m_Disposed;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
-        internal int MessageHandlerCount => m_HighMessageType;
+        internal uint MessageHandlerCount => m_HighMessageType;
 
-        internal int GetMessageType(Type t)
+        internal uint GetMessageType(Type t)
         {
             return m_MessageTypes[t];
         }
@@ -159,6 +160,7 @@ namespace Unity.Netcode
                     {
 
                         var messageHeader = new MessageHeader();
+                        var position = batchReader.Position;
                         try
                         {
                             ByteUnpacker.ReadValueBitPacked(batchReader, out messageHeader.MessageType);
@@ -170,7 +172,9 @@ namespace Unity.Netcode
                             throw;
                         }
 
-                        if (!batchReader.TryBeginRead(messageHeader.MessageSize))
+                        var receivedHeaderSize = batchReader.Position - position;
+
+                        if (!batchReader.TryBeginRead((int)messageHeader.MessageSize))
                         {
                             NetworkLog.LogWarning("Received a message that claimed a size larger than the packet, ending early!");
                             return;
@@ -183,9 +187,10 @@ namespace Unity.Netcode
                             // Copy the data for this message into a new FastBufferReader that owns that memory.
                             // We can't guarantee the memory in the ArraySegment stays valid because we don't own it,
                             // so we must move it to memory we do own.
-                            Reader = new FastBufferReader(batchReader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, messageHeader.MessageSize)
+                            Reader = new FastBufferReader(batchReader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, (int)messageHeader.MessageSize),
+                            MessageHeaderSerializedSize = receivedHeaderSize,
                         });
-                        batchReader.Seek(batchReader.Position + messageHeader.MessageSize);
+                        batchReader.Seek(batchReader.Position + (int)messageHeader.MessageSize);
                     }
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
@@ -208,7 +213,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp)
+        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
         {
             if (header.MessageType >= m_HighMessageType)
             {
@@ -221,19 +226,10 @@ namespace Unity.Netcode
                 SystemOwner = m_Owner,
                 SenderId = senderId,
                 Timestamp = timestamp,
-                Header = header
+                Header = header,
+                SerializedHeaderSize = serializedHeaderSize,
             };
-            var type = m_ReverseTypeMap[header.MessageType];
-            if (!CanReceive(senderId, type))
-            {
-                reader.Dispose();
-                return;
-            }
 
-            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-            {
-                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
-            }
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
@@ -251,10 +247,6 @@ namespace Unity.Netcode
                     Debug.LogException(e);
                 }
             }
-            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-            {
-                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
-            }
         }
 
         internal unsafe void ProcessIncomingMessageQueue()
@@ -263,7 +255,24 @@ namespace Unity.Netcode
             {
                 // Avoid copies...
                 ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                var type = m_ReverseTypeMap[item.Header.MessageType];
+                if (!CanReceive(item.SenderId, type))
+                {
+                    item.Reader.Dispose();
+                    return;
+                }
+
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnBeforeReceiveMessage(item.SenderId, type, item.Reader.Length + item.MessageHeaderSerializedSize);
+                }
+
+                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, item.MessageHeaderSerializedSize);
+
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnAfterReceiveMessage(item.SenderId, type, item.Reader.Length + item.MessageHeaderSerializedSize);
+                }
             }
 
             m_IncomingMessageQueue.Clear();
