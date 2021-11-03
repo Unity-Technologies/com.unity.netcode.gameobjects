@@ -207,7 +207,7 @@ namespace Unity.Netcode
                 return NetworkManager.ConnectedClients.TryGetValue(clientId, out networkClient);
             }
 
-            if (clientId == NetworkManager.LocalClient.ClientId)
+            if (NetworkManager.LocalClient != null && clientId == NetworkManager.LocalClient.ClientId)
             {
                 networkClient = NetworkManager.LocalClient;
                 return true;
@@ -672,17 +672,21 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Move child NetworkObjects to the root when parent NetworkObject is destroyed
-            foreach (var spawnedNetObj in SpawnedObjectsList)
+            // If we are shutting down the NetworkManager, then ignore resetting the parent
+            if (!NetworkManager.ShutdownInProgress)
             {
-                var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
-                if (isReparented && latestParent == networkObject.NetworkObjectId)
+                // Move child NetworkObjects to the root when parent NetworkObject is destroyed
+                foreach (var spawnedNetObj in SpawnedObjectsList)
                 {
-                    spawnedNetObj.gameObject.transform.parent = null;
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
+                    if (isReparented && latestParent == networkObject.NetworkObjectId)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        spawnedNetObj.gameObject.transform.parent = null;
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        }
                     }
                 }
             }

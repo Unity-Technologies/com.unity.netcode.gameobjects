@@ -333,6 +333,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
 
+
+        public bool ShutdownInProgress { get; internal set; }
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
@@ -998,6 +1001,7 @@ namespace Unity.Netcode
         /// </summary>
         public void Shutdown()
         {
+            ShutdownInProgress = true;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Shutdown));
@@ -1114,6 +1118,7 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
+            ShutdownInProgress = false;
         }
 
         // INetworkUpdateSystem
