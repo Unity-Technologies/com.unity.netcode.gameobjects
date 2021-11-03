@@ -52,13 +52,49 @@ namespace TestProject.RuntimeTests
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
 
+        public enum ServerType
+        {
+            Host,
+            Server
+        }
+
         /// <summary>
         /// Tests the different types of NetworkSceneManager notifications (including exceptions) generated
         /// Also tests invalid loading scenarios (i.e. client trying to load a scene)
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
+        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(ServerType.Host, ServerType.Server)] ServerType serverType)
         {
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return Teardown();
+
+            // Give a little time for handling clean-up and the like
+            yield return new WaitForSeconds(0.01f);
+
+            // We set this to true in order to bypass the automatic starting of the host and clients
+            m_BypassStartAndWaitForClients = true;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return Setup();
+
+            // This provides both host and server coverage, when a server we should still get SceneEventType.LoadEventCompleted and SceneEventType.UnloadEventCompleted events
+            // but the client count as a server should be 1 less than when a host
+            var isHost = serverType == ServerType.Host ? true : false;
+
+            // Start the host and  clients
+            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            {
+                Debug.LogError("Failed to start instances");
+                Assert.Fail("Failed to start instances");
+            }
+
+            // Wait for connection on client side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+
+            var numberOfClients = isHost ? NbClients + 1 : NbClients;
+            // Wait for connection on server side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
+
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
 
@@ -327,8 +363,17 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+
+                        // If we are a server and this is being processed by the server, then add the server to the completed list
+                        // to validate that the event completed on all clients (and the server).
+                        if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
+                            !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
+                        {
+                            sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
+                        }
                         Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
                         SetClientWaitDone(sceneEvent.ClientsThatCompleted);
+
                         break;
                     }
             }
