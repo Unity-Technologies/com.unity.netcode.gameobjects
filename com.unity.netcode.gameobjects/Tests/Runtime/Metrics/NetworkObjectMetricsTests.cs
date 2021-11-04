@@ -42,7 +42,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
@@ -61,7 +60,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectSpawnReceivedMetric()
         {
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedReceived);
@@ -81,7 +79,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectDestroySentMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -95,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count); // As there's a client and server, this event is emitted twice.
+            Assert.AreEqual(1, objectDestroyedSentMetricValues.Count);
 
             var objectDestroyed = objectDestroyedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectDestroyed.Connection.Id);
@@ -104,7 +101,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkObjectDestroyReceivedMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -128,7 +124,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackMultipleNetworkObjectSpawnSentMetric()
         {
             var networkObject1 = SpawnNetworkObject();
@@ -166,7 +161,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackMultipleNetworkObjectDestroySentMetric()
         {
             var networkObject1 = SpawnNetworkObject();

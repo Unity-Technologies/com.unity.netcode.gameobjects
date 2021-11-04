@@ -37,6 +37,9 @@ namespace Unity.Netcode
         internal int TickWritten;
         internal List<ulong> TargetClientIds;
         internal int TimesWritten;
+
+        // for Metrics
+        internal NetworkObject NetworkObject;
     }
 
     internal struct SnapshotSpawnCommand
@@ -60,6 +63,9 @@ namespace Unity.Netcode
         internal int TickWritten;
         internal List<ulong> TargetClientIds;
         internal int TimesWritten;
+
+        // for Metrics
+        internal NetworkObject NetworkObject;
     }
 
     internal class ClientData
@@ -240,6 +246,11 @@ namespace Unity.Netcode
                     Spawns[NumSpawns] = command;
                     NumSpawns++;
                 }
+
+                foreach (var dstClientId in command.TargetClientIds)
+                {
+                    m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, command.NetworkObject, 8);
+                }
             }
         }
 
@@ -262,6 +273,11 @@ namespace Unity.Netcode
                 {
                     Despawns[NumDespawns] = command;
                     NumDespawns++;
+                }
+
+                foreach (var dstClientId in command.TargetClientIds)
+                {
+                    m_NetworkManager.NetworkMetrics.TrackObjectDestroySent(dstClientId, command.NetworkObject, 8);
                 }
             }
         }
