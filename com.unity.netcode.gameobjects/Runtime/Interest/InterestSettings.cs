@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-
 namespace Unity.Netcode.Interest
 {
     // these are settings used by the Interest management system to

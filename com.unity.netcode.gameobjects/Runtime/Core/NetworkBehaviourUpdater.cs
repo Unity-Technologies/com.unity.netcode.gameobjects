@@ -27,7 +27,7 @@ namespace Unity.Netcode
                     m_Touched.Clear();
                     for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                     {
-       					var client = networkManager.ConnectedClientsList[i];
+                        var client = networkManager.ConnectedClientsList[i];
 
                         m_InterestUpdateThisFrame.Clear();
                         networkManager.InterestManager.QueryFor(client.PlayerObject, m_InterestUpdateThisFrame);

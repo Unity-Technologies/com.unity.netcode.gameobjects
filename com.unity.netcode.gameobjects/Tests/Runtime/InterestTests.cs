@@ -16,11 +16,11 @@ namespace Unity.Netcode.RuntimeTests
 
     public class AliveOrDeadBehaviour : NetworkBehaviour
     {
-        public bool isAlive;
+        public bool IsAlive;
 
         public void Awake()
         {
-            isAlive = true;
+            IsAlive = true;
         }
     }
 
@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager = m_NetworkManager.InterestManager;
 
             Guid thisGuid;
-            (m_PlayerNetworkObject, thisGuid)  = MakeInterestGameObjectHelper();
+            (m_PlayerNetworkObject, thisGuid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(thisGuid);
         }
 
@@ -56,7 +56,7 @@ namespace Unity.Netcode.RuntimeTests
             public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
             {
                 var aliveOrDead = obj.GetComponent<AliveOrDeadBehaviour>();
-                if (aliveOrDead.isAlive)
+                if (aliveOrDead.IsAlive)
                 {
                     results.Add(obj);
                 }
@@ -136,7 +136,7 @@ namespace Unity.Netcode.RuntimeTests
         private (NetworkObject, Guid) MakeInterestGameObjectHelper()
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
-            NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
+            var no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(no);
 
             return (no, objGuid);
@@ -146,7 +146,7 @@ namespace Unity.Netcode.RuntimeTests
         private (NetworkObject, Guid) MakeInterestGameObjectHelper(Vector3 coords)
         {
             Guid objGuid = NetworkManagerHelper.AddGameNetworkObject("");
-            NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
+            var no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(no);
             no.transform.position = coords;
 
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
             var nodeA = new InterestNodeStatic<NetworkObject>();
             nodeA.InterestKernels.Add(new AliveOrDeadKernel());
 
-            var (objA, objAGuid)  = MakeInterestGameObjectHelper();
+            var (objA, objAGuid) = MakeInterestGameObjectHelper();
             objA.gameObject.AddComponent<AliveOrDeadBehaviour>();
             objA.AddInterestNode(nodeA);
             NetworkManagerHelper.SpawnNetworkObject(objAGuid);
@@ -175,13 +175,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(results.Count - objectsBeforeAdd == 1);
 
             // 'kill' nodeA.  It should not show up now
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = false;
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = false;
             results.Clear();
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == 0);
 
             // 'resurrect' nodeA.  It should be back
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = true;
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = true;
             results.Clear();
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             Assert.True(results.Count - objectsBeforeAdd == 1);
@@ -193,7 +193,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(results.Count - objectsBeforeAdd == 0);
 
             // put objA back in the catch-all node.  It should show up unconditionally
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = false;
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = false;
             m_InterestManager.AddDefaultInterestNode(objA);
             results.Clear();
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
@@ -213,7 +213,7 @@ namespace Unity.Netcode.RuntimeTests
             var objs = new NetworkObject[numObjs];
             for (var i = 0; i < numObjs; i++)
             {
-                var (thisObj, thisGuid)  = MakeInterestGameObjectHelper();
+                var (thisObj, thisGuid) = MakeInterestGameObjectHelper();
                 thisObj.NetworkObjectId = (ulong)(i + 100);
                 thisObj.AddInterestNode(oddsEvensNode);
                 objs[i] = thisObj;
@@ -268,7 +268,7 @@ namespace Unity.Netcode.RuntimeTests
         // Start is called before the first frame update
         public void InterestRadiusCheck()
         {
-            InterestNodeStatic<NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
+            var naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
             var naiveRadiusKernel = new RadiusInterestKernel();
             naiveRadiusKernel.Radius = 1.5f;
             naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
@@ -293,7 +293,7 @@ namespace Unity.Netcode.RuntimeTests
             tooFarObj.AddInterestNode(naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
-            var (alwaysObj, alwaysGuid)  = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
+            var (alwaysObj, alwaysGuid) = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
             NetworkManagerHelper.SpawnNetworkObject(alwaysGuid);
 
             NetworkManagerHelper.SpawnNetworkObject(playerGuid);
@@ -383,8 +383,7 @@ namespace Unity.Netcode.RuntimeTests
             var objsToMakePerNode = 10;
             var nodesToMake = 100;
             var objsToMake = objsToMakePerNode * nodesToMake;
-            List<IInterestNode<NetworkObject>> nodes = new List<IInterestNode<NetworkObject>>();
-            List<NetworkObject> objs = new List<NetworkObject>();
+            var nodes = new List<IInterestNode<NetworkObject>>();
 
             for (var i = 0; i < nodesToMake; ++i)
             {
@@ -395,7 +394,6 @@ namespace Unity.Netcode.RuntimeTests
                     var (obj, guid) = MakeInterestGameObjectHelper();
                     obj.AddInterestNode(thisNode);
                     NetworkManagerHelper.SpawnNetworkObject(guid);
-                    objs.Add(obj);
                 }
             }
 

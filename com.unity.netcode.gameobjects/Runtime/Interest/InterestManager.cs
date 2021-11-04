@@ -32,9 +32,7 @@ namespace Unity.Netcode.Interest
             //  specified, which means they always get replicated
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
-/*
- *  UNIT TEST TRANSFER WHICH NODE
- */
+
         public void AddObject(TObject obj)
         {
             // If this new object has no associated Interest Nodes, then we put it in the
@@ -50,9 +48,9 @@ namespace Unity.Netcode.Interest
                 // I am walking through each of the interest nodes that this object has
                 foreach (var node in nodes)
                 {
-                   // the Interest Manager lazily adds nodes to itself when it sees
-                   //  new nodes that associate with the objects being added
-                   m_ChildNodes.Add(node);
+                    // the Interest Manager lazily adds nodes to itself when it sees
+                    //  new nodes that associate with the objects being added
+                    m_ChildNodes.Add(node);
                 }
             }
             else

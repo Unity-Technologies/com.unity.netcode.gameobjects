@@ -1,36 +1,34 @@
 using System.Collections.Generic;
-using Unity.Netcode;
-using UnityEngine;
 
 namespace Unity.Netcode.Interest
 {
-    public class InterestNodeStatic <TObject> : IInterestNode<TObject>
+    public class InterestNodeStatic<TObject> : IInterestNode<TObject>
     {
         public List<IInterestKernel<TObject>> InterestKernels = new List<IInterestKernel<TObject>>();
 
         // these are the objects under my purview
-        protected HashSet<TObject> ManagedObjects;
+        protected HashSet<TObject> m_ManagedObjects;
 
         public InterestNodeStatic()
         {
-            ManagedObjects = new HashSet<TObject>();
+            m_ManagedObjects = new HashSet<TObject>();
         }
 
         public void AddObject(TObject obj)
         {
-            ManagedObjects.Add(obj);
+            m_ManagedObjects.Add(obj);
         }
 
         public void RemoveObject(TObject obj)
         {
-            ManagedObjects.Remove(obj);
+            m_ManagedObjects.Remove(obj);
         }
 
         public void QueryFor(TObject client, HashSet<TObject> results)
         {
             if (InterestKernels.Count > 0)
             {
-                foreach (var obj in ManagedObjects)
+                foreach (var obj in m_ManagedObjects)
                 {
                     foreach (var ik in InterestKernels)
                     {
@@ -40,7 +38,7 @@ namespace Unity.Netcode.Interest
             }
             else
             {
-                results.UnionWith(ManagedObjects);
+                results.UnionWith(m_ManagedObjects);
             }
         }
 
