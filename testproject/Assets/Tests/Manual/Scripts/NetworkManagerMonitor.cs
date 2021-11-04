@@ -8,7 +8,7 @@ using Unity.Netcode;
 public class NetworkManagerMonitor : MonoBehaviour
 {
     // Start is called before the first frame update
-    private void Start()
+    private void Awake()
     {
         var networkManagerInstances = FindObjectsOfType<NetworkManager>();
         foreach (var instance in networkManagerInstances)

@@ -95,4 +95,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Runtime/ObjectParenting/NetworkObjectParentingTests.unity
     guid: 7522f8723c5674939a3c24acfd83a688
+  - enabled: 1
+    path: Assets/Tests/Manual/NetworkAnimatorTests/NetworkAnimatorEnhancement.unity
+    guid: f88da8bb8d07e11418eaad6524d5cc12
   m_configObjects: {}
