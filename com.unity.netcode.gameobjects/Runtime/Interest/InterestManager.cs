@@ -1,37 +1,40 @@
 using System.Collections.Generic;
 namespace Unity.Netcode.Interest
 {
-    // interest *system* instead of interest node ?
-    public class InterestManager<TObject>
+    internal interface IInterestObject<TObject>
     {
-        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode;
+        public void AddInterestNode(IInterestNode<TObject> obj);
+        public void RemoveInterestNode(IInterestNode<TObject> obj);
+        public HashSet<IInterestNode<TObject>> GetInterestNodes();
+    }
+
+    // interest *system* instead of interest node ?
+    internal class InterestManager<TObject> where TObject : IInterestObject<TObject>
+    {
+        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
         public void UpdateObject(TObject obj)
         {
-            List<IInterestNode<TObject>> nodes;
-            if (m_NodesForObject.TryGetValue(obj, out nodes))
+            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+            foreach (var node in nodes)
             {
-                foreach (var node in nodes)
-                {
-                    node.UpdateObject(obj);
-                }
+                node.UpdateObject(obj);
             }
         }
 
         public InterestManager()
         {
             m_ChildNodes = new HashSet<IInterestNode<TObject>>();
-            m_NodesForObject = new Dictionary<TObject, List<IInterestNode<TObject>>>();
 
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
-            //??ScriptableObject.CreateInstance<InterestNodeStatic<NetworkClient, NetworkObject>>();
-            m_DefaultInterestNode = new InterestNodeStatic<TObject>();
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
-
+/*
+ *  UNIT TEST TRANSFER WHICH NODE
+ */
         public void AddObject(TObject obj)
         {
             // If this new object has no associated Interest Nodes, then we put it in the
@@ -40,54 +43,41 @@ namespace Unity.Netcode.Interest
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
 
-            List<IInterestNode<TObject>> nodes;
-            if (m_NodesForObject.TryGetValue(obj, out nodes))
+            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+
+            if (nodes.Count > 0)
             {
                 // I am walking through each of the interest nodes that this object has
-                //  I should probably optimize for this later vs. doing this for every add!
                 foreach (var node in nodes)
                 {
-                    // cover the case with an empty list entry
-                    if (node != null)
-                    {
-                       // the Interest Manager lazily adds nodes to itself when it sees
-                       //  new nodes that associate with the objects being added
-                       m_ChildNodes.Add(node);
-
-                       // tell this node to add this object to itself
-                       node.AddObject(obj);
-                    }
+                   // the Interest Manager lazily adds nodes to itself when it sees
+                   //  new nodes that associate with the objects being added
+                   m_ChildNodes.Add(node);
                 }
             }
             else
             {
-                // else add myself to whatever Interest Nodes I am associated with
-                m_DefaultInterestNode.AddObject(obj);
+                // if the object doesn't have any nodes, we assign it to the default node
+                AddDefaultInterestNode(obj);
             }
         }
 
-        public void RemoveObject(in TObject oldObject)
+        public void AddDefaultInterestNode(TObject obj)
         {
-            // if the node never had an InterestNode, then it was using the default
-            //  interest node
-            List<IInterestNode<TObject>> nodes;
-            if (m_NodesForObject.TryGetValue(oldObject, out nodes))
-            {
-                foreach (var node in nodes)
-                {
-                    if (node == null)
-                    {
-                        continue;
-                    }
-                    node.RemoveObject(oldObject);
-                }
-            }
-            else
-            {
-                m_DefaultInterestNode.RemoveObject(oldObject);
-            }
+            obj.AddInterestNode(m_DefaultInterestNode);
+        }
 
-            RemoveInterestNode(oldObject);
+        public void RemoveObject(in TObject obj)
+        {
+            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+            foreach (var node in nodes)
+            {
+                if (node == null)
+                {
+                    continue;
+                }
+                node.RemoveObject(obj);
+            }
         }
 
         public void QueryFor(TObject client, HashSet<TObject> results)
@@ -98,29 +88,6 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void AddInterestNode(TObject obj, IInterestNode<TObject> node)
-        {
-            List<IInterestNode<TObject>> nodes;
-            if (!m_NodesForObject.TryGetValue(obj, out nodes))
-            {
-                m_NodesForObject[obj] = new List<IInterestNode<TObject>>();
-                m_NodesForObject[obj].Add(node);
-            }
-        }
-
-        public void RemoveInterestNode(TObject obj)
-        {
-            if (m_NodesForObject.ContainsKey(obj))
-            {
-                m_NodesForObject.Remove(obj);
-            }
-        }
-
-        public void Dispose()
-        {
-        }
-
         private HashSet<IInterestNode<TObject>> m_ChildNodes;
-        private Dictionary<TObject, List<IInterestNode<TObject>>> m_NodesForObject;
     }
 }

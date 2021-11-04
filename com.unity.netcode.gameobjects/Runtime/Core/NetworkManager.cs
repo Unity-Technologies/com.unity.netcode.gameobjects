@@ -58,7 +58,7 @@ namespace Unity.Netcode
 
         // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
         //  to use the InterestManager
-        public InterestManager<NetworkObject> InterestManager {
+        internal InterestManager<NetworkObject> InterestManager {
             get
             {
                 if (m_InterestManager == null)
@@ -1079,7 +1079,6 @@ namespace Unity.Netcode
 
             if (m_InterestManager != null)
             {
-                m_InterestManager.Dispose();
                 m_InterestManager = null;
             }
 

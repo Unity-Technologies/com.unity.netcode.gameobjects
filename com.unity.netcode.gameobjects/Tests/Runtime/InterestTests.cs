@@ -14,6 +14,16 @@ namespace Unity.Netcode.RuntimeTests
         public int SomeSetting;
     }
 
+    public class AliveOrDeadBehaviour : NetworkBehaviour
+    {
+        public bool isAlive;
+
+        public void Awake()
+        {
+            isAlive = true;
+        }
+    }
+
     public class InterestTests
     {
         private NetworkObject m_PlayerNetworkObject;
@@ -39,6 +49,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
+        }
+
+        public class AliveOrDeadKernel : IInterestKernel<NetworkObject>
+        {
+            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            {
+                var aliveOrDead = obj.GetComponent<AliveOrDeadBehaviour>();
+                if (aliveOrDead.isAlive)
+                {
+                    results.Add(obj);
+                }
+            }
         }
 
         public class OddEvenInterestKernel : IInterestKernel<NetworkObject>
@@ -131,6 +153,53 @@ namespace Unity.Netcode.RuntimeTests
             return (no, objGuid);
         }
 
+
+        [Test]
+        public void ChangeInterestNodesTest()
+        {
+            var results = new HashSet<NetworkObject>();
+
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            var objectsBeforeAdd = results.Count;
+
+            var nodeA = new InterestNodeStatic<NetworkObject>();
+            nodeA.InterestKernels.Add(new AliveOrDeadKernel());
+
+            var (objA, objAGuid)  = MakeInterestGameObjectHelper();
+            objA.gameObject.AddComponent<AliveOrDeadBehaviour>();
+            objA.AddInterestNode(nodeA);
+            NetworkManagerHelper.SpawnNetworkObject(objAGuid);
+
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == 1);
+
+            // 'kill' nodeA.  It should not show up now
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = false;
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == 0);
+
+            // 'resurrect' nodeA.  It should be back
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = true;
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == 1);
+
+            // remove nodeA from objA. now it shouldn't show up; it's orphaned
+            objA.RemoveInterestNode(nodeA);
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == 0);
+
+            // put objA back in the catch-all node.  It should show up unconditionally
+            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().isAlive = false;
+            m_InterestManager.AddDefaultInterestNode(objA);
+            results.Clear();
+            m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
+            Assert.True(results.Count - objectsBeforeAdd == 1);
+        }
+
         [Test]
         public void InterestCustomStorageTests()
         {
@@ -145,10 +214,10 @@ namespace Unity.Netcode.RuntimeTests
             for (var i = 0; i < numObjs; i++)
             {
                 var (thisObj, thisGuid)  = MakeInterestGameObjectHelper();
+                thisObj.NetworkObjectId = (ulong)(i + 100);
+                thisObj.AddInterestNode(oddsEvensNode);
                 objs[i] = thisObj;
-                m_InterestManager.AddInterestNode(objs[i], oddsEvensNode);
                 NetworkManagerHelper.SpawnNetworkObject(thisGuid);
-                objs[i].NetworkObjectId = (ulong)(i + 100);
             }
 
             m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
@@ -200,28 +269,28 @@ namespace Unity.Netcode.RuntimeTests
         public void InterestRadiusCheck()
         {
             InterestNodeStatic<NetworkObject> naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
-            var naiveRadiusKernel = new RadiusInterestKernel(m_NetworkManager);
+            var naiveRadiusKernel = new RadiusInterestKernel();
             naiveRadiusKernel.Radius = 1.5f;
             naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
 
             var results = new HashSet<NetworkObject>();
 
             var (playerObj, playerGuid) = MakeInterestGameObjectHelper(new Vector3(0.0f, 0.0f, 0.0f));
+            playerObj.AddInterestNode(naiveRadiusNode);
 
             m_InterestManager.QueryFor(m_PlayerNetworkObject, results);
             int objectsBeforeAdd = results.Count;
-            m_InterestManager.AddInterestNode(playerObj, naiveRadiusNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
-            m_InterestManager.AddInterestNode(ok1Obj, naiveRadiusNode);
+            ok1Obj.AddInterestNode(naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
             var (ok2Obj, ok2Guid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
-            m_InterestManager.AddInterestNode(ok2Obj, naiveRadiusNode);
+            ok2Obj.AddInterestNode(naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok2Guid);
 
             var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
-            m_InterestManager.AddInterestNode(tooFarObj, naiveRadiusNode);
+            tooFarObj.AddInterestNode(naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
             var (alwaysObj, alwaysGuid)  = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
@@ -324,7 +393,7 @@ namespace Unity.Netcode.RuntimeTests
                 for (var j = 0; j < objsToMakePerNode; j++)
                 {
                     var (obj, guid) = MakeInterestGameObjectHelper();
-                    m_InterestManager.AddInterestNode(obj, thisNode);
+                    obj.AddInterestNode(thisNode);
                     NetworkManagerHelper.SpawnNetworkObject(guid);
                     objs.Add(obj);
                 }
