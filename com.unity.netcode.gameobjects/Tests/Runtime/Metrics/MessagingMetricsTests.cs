@@ -20,7 +20,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
         protected override int NbClients => 2;
 
-        [Ignore("Snapshot transition")]
         [UnityTest]
         public IEnumerator TrackNetworkMessageSentMetric()
         {
@@ -37,11 +36,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricValues.WaitForMetricsReceived();
 
             var networkMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(1, networkMessageSentMetricValues.Count);
 
-            var networkMessageEvent = networkMessageSentMetricValues.First();
-            Assert.AreEqual(nameof(NamedMessage), networkMessageEvent.Name);
-            Assert.AreEqual(FirstClient.LocalClientId, networkMessageEvent.Connection.Id);
+            // We should have 1 NamedMessage and some potential SnapshotMessage
+            Assert.That(networkMessageSentMetricValues, Has.Exactly(1).Matches<NetworkMessageEvent>(x => x.Name == nameof(NamedMessage)));
         }
 
         [UnityTest]
@@ -64,7 +61,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkMessageReceivedMetric()
         {
             var messageName = Guid.NewGuid();
@@ -85,10 +81,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricValues.WaitForMetricsReceived();
 
             var networkMessageReceivedValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(1, networkMessageReceivedValues.Count(x => x.Name.Equals(nameof(NamedMessage))));
-
-            var namedMessageReceived = networkMessageReceivedValues.First();
-            Assert.AreEqual(Server.LocalClientId, namedMessageReceived.Connection.Id);
+            // We should have 1 NamedMessage and some potential SnapshotMessage
+            Assert.That(networkMessageReceivedValues, Has.Exactly(1).Matches<NetworkMessageEvent>(x => x.Name == nameof(NamedMessage)));
         }
 
         [UnityTest]
