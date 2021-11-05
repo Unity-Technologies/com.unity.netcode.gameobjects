@@ -247,9 +247,12 @@ namespace Unity.Netcode
                     NumSpawns++;
                 }
 
-                foreach (var dstClientId in command.TargetClientIds)
+                if (m_NetworkManager)
                 {
-                    m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, command.NetworkObject, 8);
+                    foreach (var dstClientId in command.TargetClientIds)
+                    {
+                        m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, command.NetworkObject, 8);
+                    }
                 }
             }
         }
@@ -275,9 +278,12 @@ namespace Unity.Netcode
                     NumDespawns++;
                 }
 
-                foreach (var dstClientId in command.TargetClientIds)
+                if (m_NetworkManager)
                 {
-                    m_NetworkManager.NetworkMetrics.TrackObjectDestroySent(dstClientId, command.NetworkObject, 8);
+                    foreach (var dstClientId in command.TargetClientIds)
+                    {
+                        m_NetworkManager.NetworkMetrics.TrackObjectDestroySent(dstClientId, command.NetworkObject, 8);
+                    }
                 }
             }
         }
