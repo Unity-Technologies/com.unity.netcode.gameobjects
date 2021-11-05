@@ -34,9 +34,8 @@ namespace Unity.Netcode.RuntimeTests
             // server time should be 0
             Assert.AreEqual(0, server.NetworkTickSystem.ServerTime.Time);
 
-            // wait 2 frames to ensure network tick is run
-            yield return null;
-            yield return null;
+            // wait until at least 1 server tick passed
+            yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 0);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
             var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
