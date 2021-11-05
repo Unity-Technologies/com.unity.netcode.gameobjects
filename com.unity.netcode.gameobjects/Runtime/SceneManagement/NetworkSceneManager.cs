@@ -1200,6 +1200,7 @@ namespace Unity.Netcode
             // When it is set: Just before starting the asynchronous loading call
             // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
             // not destroy temporary scene are moved into the active scene
+            // TODO: When Snapshot scene spawning is enabled this needs to be removed.
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -1473,21 +1474,40 @@ namespace Unity.Netcode
             sceneEventData.ClientSceneHandle = sceneHandle;
             sceneEventData.ClientSceneHash = sceneHash;
 
-            // load the scene
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
+            var shouldPassThrough = false;
+            var sceneLoad = (AsyncOperation)null;
+
+            // Check to see if the client already has loaded the scene to be loaded
+            if (sceneName == activeScene.name)
+            {
+                // If the client is already in the same scene, then pass through and
+                // don't try to reload it.
+                shouldPassThrough = true;
+            }
+
+            if (!shouldPassThrough)
+            {
+                // If not, then load the scene
+                sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
                 new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = ClientLoadedSynchronization });
 
-            // Notify local client that a scene load has begun
-            OnSceneEvent?.Invoke(new SceneEvent()
-            {
-                AsyncOperation = sceneLoad,
-                SceneEventType = SceneEventType.Load,
-                LoadSceneMode = loadSceneMode,
-                SceneName = sceneName,
-                ClientId = m_NetworkManager.LocalClientId,
-            });
+                // Notify local client that a scene load has begun
+                OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    AsyncOperation = sceneLoad,
+                    SceneEventType = SceneEventType.Load,
+                    LoadSceneMode = loadSceneMode,
+                    SceneName = sceneName,
+                    ClientId = m_NetworkManager.LocalClientId,
+                });
 
-            OnLoad?.Invoke(m_NetworkManager.LocalClientId, sceneName, loadSceneMode, sceneLoad);
+                OnLoad?.Invoke(m_NetworkManager.LocalClientId, sceneName, loadSceneMode, sceneLoad);
+            }
+            else
+            {
+                // If so, then pass through
+                ClientLoadedSynchronization(sceneEventId);
+            }
         }
 
         /// <summary>
