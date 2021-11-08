@@ -78,7 +78,6 @@ namespace Unity.Netcode
         }
 
         public const int InitialBatchQueueSize = 6 * 1024;
-        public const int InitialMaxPacketSize = NetworkParameterConstants.MTU;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
         { Address = "127.0.0.1", Port = 7777 };
@@ -90,9 +89,6 @@ namespace Unity.Netcode
 
         [Tooltip("Which protocol should be selected Relay/Non-Relay")]
         [SerializeField] private ProtocolType m_ProtocolType;
-
-        [Tooltip("Maximum size in bytes for a given packet")]
-        [SerializeField] private int m_MaximumPacketSize = InitialMaxPacketSize;
 
         [Tooltip("The maximum amount of packets that can be in the send/recv queues")]
         [SerializeField] private int m_MaxPacketQueueSize = 128;
@@ -607,7 +603,6 @@ namespace Unity.Netcode
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
                 "Netcode connection id size does not match UTP connection id size");
-            Debug.Assert(m_MaximumPacketSize > 5, "Message buffer size must be greater than 5");
 
             m_NetworkParameters = new List<INetworkParameter>();
 
@@ -620,7 +615,7 @@ namespace Unity.Netcode
 
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
-                maximumPayloadSize = (uint)m_MaximumPacketSize,
+                maximumPayloadSize = NetworkParameterConstants.MTU,
                 receiveQueueCapacity = m_MaxPacketQueueSize,
                 sendQueueCapacity = m_MaxPacketQueueSize
             });
