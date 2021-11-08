@@ -98,7 +98,7 @@ namespace TestProject.RuntimeTests
             {
                 Assert.AreEqual(m_UserSerializableClass.MyByteListValues[i], i);
             }
-            
+
             Assert.AreEqual(m_UserSerializableStruct.MyintValue, userSerializableStruct.MyintValue + 1);
             Assert.AreEqual(m_UserSerializableStruct.MyulongValue, userSerializableStruct.MyulongValue + 1);
 
@@ -401,7 +401,7 @@ namespace TestProject.RuntimeTests
                     //Used for testing order of the array
                     userSerializableClass.MyintValue = i;
                     m_UserSerializableClassArray.Add(userSerializableClass);
-                    
+
                     var userSerializableStruct = new UserSerializableStruct();
                     //Used for testing order of the array
                     userSerializableStruct.MyintValue = i;
@@ -548,7 +548,7 @@ namespace TestProject.RuntimeTests
     {
         public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
         public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
-        
+
         public delegate void OnSerializableStructUpdatedDelgateHandler(UserSerializableStruct userSerializableStruct);
         public OnSerializableStructUpdatedDelgateHandler OnSerializableStructUpdated;
 
