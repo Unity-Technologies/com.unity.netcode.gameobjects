@@ -25,6 +25,11 @@ namespace Unity.Netcode.RuntimeTests
                 return Dirty;
             }
 
+            public DummyNetVar()
+            {
+
+            }
+
             public override void WriteDelta(FastBufferWriter writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
