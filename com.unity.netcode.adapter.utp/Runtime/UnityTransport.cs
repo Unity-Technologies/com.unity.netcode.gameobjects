@@ -606,7 +606,7 @@ namespace Unity.Netcode
 
             m_NetworkParameters.Add(new BaselibNetworkParameter()
             {
-                maximumPayloadSize = NetworkParameterConstants.MTU,
+                maximumPayloadSize = 2000, // Default value in UTP.
                 receiveQueueCapacity = m_MaxPacketQueueSize,
                 sendQueueCapacity = m_MaxPacketQueueSize
             });
