@@ -16,7 +16,7 @@ namespace Unity.Netcode
     /// </summary>
     public interface INetworkStreamDriverConstructor
     {
-        void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
+        void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
     }
 
     public static class ErrorUtilities
@@ -142,7 +142,6 @@ namespace Unity.Netcode
         private ulong m_ServerClientId;
 
         private NetworkPipeline m_UnreliableSequencedPipeline;
-        private NetworkPipeline m_ReliableSequencedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
@@ -195,7 +194,7 @@ namespace Unity.Netcode
 
         private void InitDriver()
         {
-            DriverConstructor.CreateDriver(this, out m_Driver, out m_UnreliableSequencedPipeline, out m_ReliableSequencedPipeline, out m_ReliableSequencedFragmentedPipeline);
+            DriverConstructor.CreateDriver(this, out m_Driver, out m_UnreliableSequencedPipeline, out m_ReliableSequencedFragmentedPipeline);
         }
 
         private void DisposeDriver()
@@ -218,15 +217,7 @@ namespace Unity.Netcode
 
                 case NetworkDelivery.Reliable:
                 case NetworkDelivery.ReliableSequenced:
-                    return m_ReliableSequencedPipeline;
-
                 case NetworkDelivery.ReliableFragmentedSequenced:
-                    // No need to send on the fragmented pipeline if data is smaller than MTU.
-                    if (size < NetworkParameterConstants.MTU)
-                    {
-                        return m_ReliableSequencedPipeline;
-                    }
-
                     return m_ReliableSequencedFragmentedPipeline;
 
                 default:
@@ -738,7 +729,7 @@ namespace Unity.Netcode
             var payloadSize = sendQueue.Count + 1; // 1 extra byte to tell whether the message is batched or not
             if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
             {
-                pipeline = SelectSendPipeline(NetworkDelivery.ReliableFragmentedSequenced, payloadSize);
+                pipeline = m_ReliableSequencedFragmentedPipeline;
             }
 
             var sendBuffer = sendQueue.GetData();
@@ -800,7 +791,7 @@ namespace Unity.Netcode
             m_ServerClientId = 0;
         }
 
-        public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
+        public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
             var netParams = new NetworkConfigParameter
             {
@@ -834,10 +825,6 @@ namespace Unity.Netcode
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend));
-                reliableSequencedPipeline = driver.CreatePipeline(
-                    typeof(ReliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(ReliableSequencedPipelineStage),
@@ -848,7 +835,6 @@ namespace Unity.Netcode
 #endif
             {
                 unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
-                reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
                 );
