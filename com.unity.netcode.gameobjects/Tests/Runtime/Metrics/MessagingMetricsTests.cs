@@ -61,6 +61,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkMessageReceivedMetric()
         {
             var messageName = Guid.NewGuid();
@@ -86,6 +87,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackNamedMessageSentMetric()
         {
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
