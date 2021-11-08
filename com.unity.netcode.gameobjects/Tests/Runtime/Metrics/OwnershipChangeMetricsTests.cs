@@ -41,6 +41,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackOwnershipChangeSentMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -62,6 +63,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackOwnershipChangeReceivedMetric()
         {
             var networkObject = SpawnNetworkObject();
