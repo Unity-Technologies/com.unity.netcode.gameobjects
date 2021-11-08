@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -68,7 +67,9 @@ namespace Unity.Netcode.UTP.RuntimeTests
                 // Copy the data since the backing array will be reused for future messages.
                 if (data != default(ArraySegment<byte>))
                 {
-                    data = new ArraySegment<byte>(data.ToArray());
+                    var dataCopy = new byte[data.Count];
+                    Array.Copy(data.Array, data.Offset, dataCopy, 0, data.Count);
+                    data = new ArraySegment<byte>(dataCopy);
                 }
 
                 m_Events.Add(new TransportEvent
