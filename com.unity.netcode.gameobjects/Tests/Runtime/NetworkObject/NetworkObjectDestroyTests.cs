@@ -46,7 +46,8 @@ namespace Unity.Netcode.RuntimeTests
             // destroy the server player
             Object.Destroy(serverClientPlayerResult.Result.gameObject);
 
-            yield return null;
+            var nextFrameNumber = Time.frameCount + 3;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             Assert.IsTrue(serverClientPlayerResult.Result == null); // Assert.IsNull doesn't work here
 

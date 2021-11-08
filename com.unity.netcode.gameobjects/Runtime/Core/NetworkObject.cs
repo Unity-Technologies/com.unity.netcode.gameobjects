@@ -401,6 +401,8 @@ namespace Unity.Netcode
             var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
 
+            command.NetworkObject = this;
+
             return command;
         }
 
@@ -428,6 +430,8 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
+
+            command.NetworkObject = this;
 
             return command;
         }
