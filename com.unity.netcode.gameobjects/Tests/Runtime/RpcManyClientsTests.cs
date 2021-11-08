@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
     public class RpcManyClientsObject : NetworkBehaviour
     {
         public int Count = 0;
-        [ServerRpc (RequireOwnership = false)]
+        [ServerRpc(RequireOwnership = false)]
         public void ResponseServerRpc()
         {
             Count++;
