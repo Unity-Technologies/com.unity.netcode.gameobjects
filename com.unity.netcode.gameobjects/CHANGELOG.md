@@ -12,7 +12,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
-- Fixed all NetworkObjects marked to persist a full scene transition now are restored to their original active state (enabled/disabled) after a full scene transition (#1354)
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
 
 ### Changed
