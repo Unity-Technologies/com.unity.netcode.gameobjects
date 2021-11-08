@@ -1076,14 +1076,14 @@ namespace TestProject.RuntimeTests
 
             yield return new WaitForSeconds(0.03f);
 
-            // It should be disabled when MoveObjectsToDontDestroyOnLoad is called.
-            Assert.That(networkObject.isActiveAndEnabled == false);
+            // It should be isActive when MoveObjectsToDontDestroyOnLoad is called.
+            Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
 
             yield return new WaitForSeconds(0.03f);
 
-            // It should be enabled when MoveObjectsFromDontDestroyOnLoadToScene is called.
+            // It should be isActive when MoveObjectsFromDontDestroyOnLoadToScene is called.
             Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             //Done
