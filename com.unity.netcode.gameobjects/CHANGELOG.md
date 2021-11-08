@@ -9,7 +9,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
 ### Fixed
+
+- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
+
 ### Changed
 
 ## [1.0.0-pre.3] - 2021-10-22
@@ -24,7 +28,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
 - Fixed an issue where ServerClientId and LocalClientId could have the same value, causing potential confusion, and also fixed an issue with the UNet where the server could be identified with two different values, one of which might be the same as LocalClientId, and the other of which would not.(#1368)
 - IL2CPP would not properly compile (#1359)
-- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 
 ## [1.0.0-pre.2] - 2021-10-19
 
