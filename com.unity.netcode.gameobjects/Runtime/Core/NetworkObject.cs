@@ -1143,9 +1143,9 @@ namespace Unity.Netcode
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
                 else
-                if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                if (NetworkManager.NetworkConfig.PrefabConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
                 {
-                    return NetworkManager.NetworkConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                    return NetworkManager.NetworkConfig.PrefabConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
                 }
             }
 

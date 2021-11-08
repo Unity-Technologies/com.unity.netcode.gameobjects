@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(exceptionOccurred);
 
             // In the end we should only have 3 valid registered network prefabs
-            Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabOverrideLinks.Count == 3);
+            Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.Count == 3);
         }
 
         private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";

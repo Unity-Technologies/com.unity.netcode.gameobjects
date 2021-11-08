@@ -48,11 +48,6 @@ namespace Unity.Netcode
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
         private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
-        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
-        {
-            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
-        }
-
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
@@ -166,25 +161,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="gameObject">the <see cref="GameObject"/> to be checked for a <see cref="NetworkManager"/> defined NetworkPrefab override</param>
         /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
-        public GameObject GetNetworkPrefabOverride(GameObject gameObject)
-        {
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-            if (networkObject != null)
-            {
-                if (NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
-                {
-                    switch (NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
-                    {
-                        case NetworkPrefabOverride.Hash:
-                        case NetworkPrefabOverride.Prefab:
-                            {
-                                return NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
-                            }
-                    }
-                }
-            }
-            return gameObject;
-        }
+        public GameObject GetNetworkPrefabOverride(GameObject gameObject) => NetworkConfig.PrefabConfig.GetNetworkPrefabOverride(gameObject);
 
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
@@ -410,7 +387,7 @@ namespace Unity.Netcode
             }
 
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
-            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+            NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.Clear();
 
             // Check network prefabs and assign to dictionary for quick look up
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -424,7 +401,7 @@ namespace Unity.Netcode
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogError($"Cannot register {PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
+                            NetworkLog.LogError($"Cannot register {NetworkPrefabConfig.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
                         }
                     }
                     else
@@ -436,7 +413,7 @@ namespace Unity.Netcode
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
-                                    NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                                    NetworkLog.LogWarning($"{NetworkPrefabConfig.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
                                 }
                             }
                         }
@@ -468,9 +445,9 @@ namespace Unity.Netcode
                         }
 
                         // Add to the NetworkPrefabOverrideLinks or handle a new (blank) entries
-                        if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                        if (!NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                         {
-                            NetworkConfig.NetworkPrefabOverrideLinks.Add(globalObjectIdHash, networkPrefab);
+                            NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.Add(globalObjectIdHash, networkPrefab);
                         }
                         else
                         {
@@ -572,204 +549,41 @@ namespace Unity.Netcode
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
-            // This is used to remove entries not needed or invalid
-            var removeEmptyPrefabs = new List<int>();
-
-            // Always clear our prefab override links before building
-            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
-
-            // Build the NetworkPrefabOverrideLinks dictionary
-            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
-            {
-                var sourcePrefabGlobalObjectIdHash = (uint)0;
-                var targetPrefabGlobalObjectIdHash = (uint)0;
-                var networkObject = (NetworkObject)null;
-                if (NetworkConfig.NetworkPrefabs[i] == null || (NetworkConfig.NetworkPrefabs[i].Prefab == null && NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogWarning(
-                            $"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
-                    }
-
-                    removeEmptyPrefabs.Add(i);
-                    continue;
-                }
-                else if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
-                {
-                    var networkPrefab = NetworkConfig.NetworkPrefabs[i];
-                    networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-                    if (networkObject == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} is missing " +
-                                $"a {nameof(NetworkObject)} component (entry will be ignored).");
-                        }
-                        removeEmptyPrefabs.Add(i);
-                        continue;
-                    }
-
-                    // Otherwise get the GlobalObjectIdHash value
-                    sourcePrefabGlobalObjectIdHash = networkObject.GlobalObjectIdHash;
-                }
-                else // Validate Overrides
-                {
-                    // Validate source prefab override values first
-                    switch (NetworkConfig.NetworkPrefabs[i].Override)
-                    {
-                        case NetworkPrefabOverride.Hash:
-                            {
-                                if (NetworkConfig.NetworkPrefabs[i].SourceHashToOverride == 0)
-                                {
-                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                                    {
-                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourceHashToOverride)} is zero " +
-                                            "(entry will be ignored).");
-                                    }
-                                    removeEmptyPrefabs.Add(i);
-                                    continue;
-                                }
-                                sourcePrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourceHashToOverride;
-                                break;
-                            }
-                        case NetworkPrefabOverride.Prefab:
-                            {
-                                if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null)
-                                {
-                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                                    {
-                                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.SourcePrefabToOverride)} is null (entry will be ignored).");
-                                    }
-                                    Debug.LogWarning($"{nameof(NetworkPrefab)} override entry {NetworkConfig.NetworkPrefabs[i].SourceHashToOverride} will be removed and ignored.");
-                                    removeEmptyPrefabs.Add(i);
-                                    continue;
-                                }
-                                else
-                                {
-                                    networkObject = NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>();
-                                    if (networkObject == null)
-                                    {
-                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                                        {
-                                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}) " +
-                                                $"is missing a {nameof(NetworkObject)} component (entry will be ignored).");
-                                        }
-                                        Debug.LogWarning($"{nameof(NetworkPrefab)} override entry (\"{NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}\") will be removed and ignored.");
-                                        removeEmptyPrefabs.Add(i);
-                                        continue;
-                                    }
-                                    sourcePrefabGlobalObjectIdHash = networkObject.GlobalObjectIdHash;
-                                }
-                                break;
-                            }
-                    }
-
-                    // Validate target prefab override values next
-                    if (NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(NetworkPrefab.OverridingTargetPrefab)} is null!");
-                        }
-                        removeEmptyPrefabs.Add(i);
-                        switch (NetworkConfig.NetworkPrefabs[i].Override)
-                        {
-                            case NetworkPrefabOverride.Hash:
-                                {
-                                    Debug.LogWarning($"{nameof(NetworkPrefab)} override entry {NetworkConfig.NetworkPrefabs[i].SourceHashToOverride} will be removed and ignored.");
-                                    break;
-                                }
-                            case NetworkPrefabOverride.Prefab:
-                                {
-                                    Debug.LogWarning($"{nameof(NetworkPrefab)} override entry ({NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}) will be removed and ignored.");
-                                    break;
-                                }
-                        }
-                        continue;
-                    }
-                    else
-                    {
-                        targetPrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    }
-                }
-
-                // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
-                if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
-                {
-                    if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
-                    {
-                        NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
-                    }
-                    else
-                    {
-                        if (!NetworkConfig.OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
-                        {
-                            switch (NetworkConfig.NetworkPrefabs[i].Override)
-                            {
-                                case NetworkPrefabOverride.Prefab:
-                                    {
-                                        NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
-                                        NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                                    }
-                                    break;
-                                case NetworkPrefabOverride.Hash:
-                                    {
-                                        NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
-                                        NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                                    }
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                            Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {targetPrefabGlobalObjectIdHash}! Removing entry from list!");
-                            removeEmptyPrefabs.Add(i);
-                        }
-                    }
-                }
-                else
-                {
-                    // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                    Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {sourcePrefabGlobalObjectIdHash}! Removing entry from list!");
-                    removeEmptyPrefabs.Add(i);
-                }
-            }
-
             // If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
             if (NetworkConfig.PlayerPrefab != null)
             {
                 var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                if (playerPrefabNetworkObject != null)
-                {
-                    //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
-                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject
-                        .GlobalObjectIdHash))
-                    {
-                        //Then add a new entry for the player prefab
-                        var playerNetworkPrefab = new NetworkPrefab();
-                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
-                        NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
-                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash,
-                            playerNetworkPrefab);
-                    }
-                }
-                else
+                if (playerPrefabNetworkObject == null)
                 {
                     // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
                     Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
                 }
+                else
+                {
+                    bool present = false;
+                    for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
+                    {
+                        if (NetworkConfig.NetworkPrefabs[i]?.Prefab == NetworkConfig.PlayerPrefab)
+                        {
+                            present = true;
+                            break;
+                        }
+                    }
+
+                    if (!present)
+                    {
+                        // TODO(jesseo): This skips the NetworkPrefabs validation that happens in OnValidate...
+                        // But is similar to the "shortcut" we had here previously which added directly to the
+                        // overrides map. Need to come back to this and verify behavior.
+                        NetworkConfig.NetworkPrefabs.Insert(0, new NetworkPrefab
+                        {
+                            Prefab = NetworkConfig.PlayerPrefab
+                        });
+                    }
+                }
             }
 
-            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            // Iterate backwards so indices don't shift as we remove
-            for (int i = removeEmptyPrefabs.Count - 1; i >= 0; i--)
-            {
-                NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
-            }
-
-            removeEmptyPrefabs.Clear();
+            NetworkConfig.PrefabConfig.InitializeOverrides(NetworkConfig);
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 

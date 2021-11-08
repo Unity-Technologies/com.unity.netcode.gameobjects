@@ -37,14 +37,7 @@ namespace Unity.Netcode
         [Tooltip("The prefabs that can be spawned across the network")]
         internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
-        /// <summary>
-        /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
-        /// Generated at runtime and OnValidate
-        /// </summary>
-        internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
-
-        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
-
+        internal NetworkPrefabConfig PrefabConfig = new();
 
         /// <summary>
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
@@ -232,7 +225,7 @@ namespace Unity.Netcode
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    var sortedDictionary = PrefabConfig.NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
                     foreach (var sortedEntry in sortedDictionary)
 
                     {
