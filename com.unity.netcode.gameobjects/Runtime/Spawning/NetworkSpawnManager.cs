@@ -305,24 +305,8 @@ namespace Unity.Netcode
                 else
                 {
                     // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
-                    GameObject networkPrefabReference = null;
-                    if (NetworkManager.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
-                    {
-                        switch (NetworkManager.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
-                        {
-                            default:
-                            case NetworkPrefabOverride.None:
-                                networkPrefabReference = NetworkManager.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
-                                break;
-                            case NetworkPrefabOverride.Hash:
-                            case NetworkPrefabOverride.Prefab:
-                                networkPrefabReference = NetworkManager.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                                break;
-                        }
-                    }
-
-                    // If not, then there is an issue (user possibly didn't register the prefab properly?)
-                    if (networkPrefabReference == null)
+                    if (!NetworkManager.NetworkConfig.PrefabConfig.TryGetPrefab(globalObjectIdHash, out var networkPrefabReference) ||
+                        networkPrefabReference == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {

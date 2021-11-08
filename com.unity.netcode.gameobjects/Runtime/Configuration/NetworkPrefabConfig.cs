@@ -11,14 +11,14 @@ namespace Unity.Netcode
             var networkObject = gameObject.GetComponent<NetworkObject>();
             if (networkObject != null)
             {
-                if (NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
+                if (m_NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
                 {
-                    switch (NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
+                    switch (m_NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
                     {
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
                         {
-                            return NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
+                            return m_NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
                         }
                     }
                 }
@@ -32,7 +32,7 @@ namespace Unity.Netcode
             var removeEmptyPrefabs = new List<int>();
 
             // Always clear our prefab override links before building
-            NetworkPrefabOverrideLinks.Clear();
+            m_NetworkPrefabOverrideLinks.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < config.NetworkPrefabs.Count; i++)
@@ -151,28 +151,28 @@ namespace Unity.Netcode
                 }
 
                 // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
-                if (!NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
+                if (!m_NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
                 {
                     if (config.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
                     {
-                        NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
+                        m_NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
                     }
                     else
                     {
-                        if (!OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
+                        if (!m_OverrideToSourceHash.ContainsKey(targetPrefabGlobalObjectIdHash))
                         {
                             switch (config.NetworkPrefabs[i].Override)
                             {
                                 case NetworkPrefabOverride.Prefab:
                                 {
-                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
-                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                                    m_NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
+                                    m_OverrideToSourceHash.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
                                 }
                                     break;
                                 case NetworkPrefabOverride.Hash:
                                 {
-                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
-                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                                    m_NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, config.NetworkPrefabs[i]);
+                                    m_OverrideToSourceHash.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
                                 }
                                     break;
                             }
@@ -203,17 +203,63 @@ namespace Unity.Netcode
             removeEmptyPrefabs.Clear();
         }
 
+        /// <summary>
+        /// Looks for the appropriate prefab for a given hash based on override configs.
+        /// </summary>
+        /// <param name="sourceHash">The GlobalObjectIdHash to search for.</param>
+        /// <param name="prefab">Out param will be set to the appropriate GameObject reference if one is found, else null.</param>
+        /// <returns>True if a configuration was found for the given hash.</returns>
+        public bool TryGetPrefab(uint sourceHash, out GameObject prefab)
+        {
+            if (m_NetworkPrefabOverrideLinks.TryGetValue(sourceHash, out NetworkPrefab prefabConfig))
+            {
+                switch (prefabConfig.Override)
+                {
+                    default:
+                    case NetworkPrefabOverride.None:
+                        prefab = prefabConfig.Prefab;
+                        break;
+                    case NetworkPrefabOverride.Hash:
+                    case NetworkPrefabOverride.Prefab:
+                        prefab = prefabConfig.OverridingTargetPrefab;
+                        break;
+                }
+
+                return true;
+            }
+
+            prefab = null;
+            return false;
+        }
+
+        public bool TryGetSourcePrefabHashForOverride(uint overrideHash, out uint originalHash)
+        {
+            if (m_OverrideToSourceHash.ContainsKey(overrideHash))
+            {
+                originalHash = m_OverrideToSourceHash[overrideHash];
+                return true;
+            }
+
+            originalHash = 0;
+            return false;
+        }
+
         internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
         {
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
+        }
+
+        internal IEnumerable<uint> GetRegisteredPrefabHashCodes()
+        {
+            return m_NetworkPrefabOverrideLinks.Keys;
         }
 
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
         /// Generated at runtime and OnValidate
         /// </summary>
-        internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
+        private Dictionary<uint, NetworkPrefab> m_NetworkPrefabOverrideLinks = new();
 
-        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
+        private Dictionary<uint, uint> m_OverrideToSourceHash = new();
     }
 }

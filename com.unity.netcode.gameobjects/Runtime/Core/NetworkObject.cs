@@ -1132,7 +1132,7 @@ namespace Unity.Netcode
         /// Will return the registered source NetworkPrefab's GlobalObjectIdHash if one exists.
         /// Server and Clients will always return the NetworkObject's GlobalObjectIdHash.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Overridden NetworkPrefab's GlobalObjectIdHash if this is an override, otherwise returns this GlobalObjectIdHash.</returns>
         internal uint HostCheckForGlobalObjectIdHashOverride()
         {
             if (NetworkManager.IsHost)
@@ -1143,9 +1143,9 @@ namespace Unity.Netcode
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
                 else
-                if (NetworkManager.NetworkConfig.PrefabConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                if (NetworkManager.NetworkConfig.PrefabConfig.TryGetSourcePrefabHashForOverride(GlobalObjectIdHash, out uint originalHash))
                 {
-                    return NetworkManager.NetworkConfig.PrefabConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                    return originalHash;
                 }
             }
 

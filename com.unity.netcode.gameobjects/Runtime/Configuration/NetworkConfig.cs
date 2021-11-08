@@ -225,11 +225,10 @@ namespace Unity.Netcode
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedDictionary = PrefabConfig.NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    var sortedDictionary = PrefabConfig.GetRegisteredPrefabHashCodes().OrderBy(x => x);
                     foreach (var sortedEntry in sortedDictionary)
-
                     {
-                        writer.WriteValueSafe(sortedEntry.Key);
+                        writer.WriteValueSafe(sortedEntry);
                     }
                 }
                 writer.WriteValueSafe(ConnectionApproval);
