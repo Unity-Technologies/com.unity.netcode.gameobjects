@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
@@ -515,7 +514,7 @@ namespace TestProject.RuntimeTests
 
         public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
         public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
-        
+
         public delegate void OnMyObjectPassedWithThisRefUpdatedDelgateHandler(MyObjectPassedWithThisRef obj);
         public OnMyObjectPassedWithThisRefUpdatedDelgateHandler OnMyObjectPassedWithThisRefUpdated;
 
@@ -858,7 +857,7 @@ namespace TestProject.RuntimeTests
                 writer.WriteValueSafe(values[i]);
             }
         }
-        
+
         public static void ReadValueSafe(this ref FastBufferReader reader, out MyObjectPassedWithThisRef[] values)
         {
             reader.ReadValueSafe(out int length);
