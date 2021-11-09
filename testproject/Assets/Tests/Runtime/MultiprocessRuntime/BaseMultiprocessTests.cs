@@ -36,6 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
         /// </summary>
         protected abstract int WorkerCount { get; }
+        protected abstract string[] platformList { get; }
 
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -146,8 +147,18 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 1; i <= numProcessesToCreate; i++)
                 {
+                    string logPath = "";
                     MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
-                    string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    if (platformList != null)
+                    {
+                        MultiprocessLogger.Log($"{platformList}");
+                        MultiprocessLogger.Log($"{platformList.Length}");
+                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1]); // will automatically start built player as clients
+                    } else
+                    {
+                        logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                    }
+                    
                     MultiprocessLogger.Log($"logPath to new process is {logPath}");
                     MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }

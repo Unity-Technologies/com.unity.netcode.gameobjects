@@ -77,7 +77,7 @@ public class MultiprocessOrchestration
         return activeWorkerCount;
     }
 
-    public static string StartWorkerNode()
+    public static string StartWorkerNode(string platform = "default")
     {
         if (s_Processes == null)
         {
@@ -90,8 +90,14 @@ public class MultiprocessOrchestration
 
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
         {
-            MultiprocessLogger.Log("Run on remote nodes");
+            MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
             StartWorkersOnRemoteNodes(rootdir_fileinfo);
+            return "";
+        }
+        else if (!platform.Equals("default"))
+        {
+            MultiprocessLogger.Log($"Start MultiprocessTestPlayer on remote {platform} ");
+            StartWorkersOnRemoteNodes(rootdir_fileinfo, platform);
             return "";
         }
         else
@@ -176,6 +182,24 @@ public class MultiprocessOrchestration
             throw;
         }
         return logPath;
+    }
+
+    /**
+     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\win.json --type Unity::VM --image package-ci/win10:stable --flavor b1.small --name ngo-win
+    - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\linux.json --type Unity::VM --image package-ci/ubuntu:stable --flavor b1.small --name ngo-linux
+    - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\mac.json --type Unity::VM::osx --image unity-ci/macos-10.15-dotnetcore:latest --flavor b1.small --name ngo-mac
+    */
+    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform)
+    {
+        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
+        var fileName = Path.Combine(rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
+        var fileNameInfo = new FileInfo(fileName);
+        var workerProcess = new Process();
+    }
+
+    public static void ProvisionRemoteNode()
+    {
+
     }
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)

@@ -6,18 +6,22 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
-    [TestFixture(1)]
-    [TestFixture(2)]
+    [TestFixture(1, new string[] { "mac" })]
+    [TestFixture(2, new string[] { "mac", "win" })]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
         protected override int WorkerCount => m_WorkerCount;
 
+        private string[] m_Platforms;
+        protected override string[] platformList => m_Platforms;
+
         protected override bool IsPerformanceTest => false;
 
-        public TestCoordinatorTests(int workerCount)
+        public TestCoordinatorTests(int workerCount, string[] platformList)
         {
             m_WorkerCount = workerCount;
+            m_Platforms = platformList;
         }
 
         static private float s_ValueToValidateAgainst;
