@@ -24,19 +24,21 @@ if len(sys.argv) == 1:
 args = parser.parse_args()
 
 
-tool_min_ver = 6
+dotnet_min_ver = 6
 ver_run = subprocess.run(["dotnet", "format", "--version"], capture_output=True)
 if ver_run.returncode != 0:
     print("> dotnet format --version`")
-    print("cannot execute the tool version command")
-    print("please make sure to have the tool installed")
+    print("cannot execute version check command")
+    print(f"please make sure to have dotnet {dotnet_min_ver}+ installed")
+    print("https://dotnet.microsoft.com/download/dotnet")
     exit(1)
 
 ver_run_str = ver_run.stdout.decode("utf-8")[:-1]
-if int(ver_run_str[0]) < tool_min_ver:
+if int(ver_run_str[0]) < dotnet_min_ver:
     print("> dotnet format --version`")
     print(f"lower than minimum required version: {ver_run_str}")
-    print(f"please make sure to upgrade the tool version")
+    print(f"please make sure to upgrade to dotnet {dotnet_min_ver}+")
+    print("https://dotnet.microsoft.com/download/dotnet")
     exit(1)
 
 
