@@ -5,11 +5,6 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class RpcManyClientsTest : NetworkBehaviour
-    {
-
-    }
-
     public class RpcManyClientsObject : NetworkBehaviour
     {
         public int Count = 0;
@@ -48,7 +43,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                    var networkTransform = playerPrefab.AddComponent<RpcManyClientsTest>();
                     m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject));
                 });
         }
