@@ -14,7 +14,6 @@ parser.add_argument("--check", action="store_true")
 parser.add_argument("--fix", action="store_true")
 
 parser.add_argument("--verbosity", default="minimal")
-parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
 parser.add_argument("--project-glob", default="*.sln")
 
@@ -26,16 +25,16 @@ args = parser.parse_args()
 
 
 tool_min_ver = 6
-ver_run = subprocess.run([args.tool_path, "--version"], capture_output=True)
+ver_run = subprocess.run(["dotnet", "format", "--version"], capture_output=True)
 if ver_run.returncode != 0:
-    print(f"> `{args.tool_path} --version`")
+    print("> dotnet format --version`")
     print("cannot execute the tool version command")
     print("please make sure to have the tool installed")
     exit(1)
 
 ver_run_str = ver_run.stdout.decode("utf-8")[:-1]
 if int(ver_run_str[0]) < tool_min_ver:
-    print(f"> `{args.tool_path} --version`")
+    print("> dotnet format --version`")
     print(f"lower than minimum required version: {ver_run_str}")
     print(f"please make sure to upgrade the tool version")
     exit(1)
@@ -74,13 +73,13 @@ if args.check:
         print(f"check: project -> {project_file}")
 
         print("check: whitespace")
-        ws_run = subprocess.run([args.tool_path, project_file, "whitespace", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
+        ws_run = subprocess.run(["dotnet", "format", project_file, "whitespace", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
         if ws_run.returncode != 0:
             print("check: whitespace failed")
             any_error = True
 
         print("check: code style")
-        cs_run = subprocess.run([args.tool_path, project_file, "style", "--severity", "error", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
+        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
         if cs_run.returncode != 0:
             print("check: code style failed")
             any_error = True
@@ -99,13 +98,13 @@ if args.fix:
         print(f"fix: project -> {project_file}")
 
         print("fix: whitespace")
-        ws_run = subprocess.run([args.tool_path, project_file, "whitespace", "--no-restore", "--verbosity", args.verbosity])
+        ws_run = subprocess.run(["dotnet", "format", project_file, "whitespace", "--no-restore", "--verbosity", args.verbosity])
         if ws_run.returncode != 0:
             print("fix: whitespace failed")
             any_error = True
 
         print("fix: code style")
-        cs_run = subprocess.run([args.tool_path, project_file, "style", "--severity", "error", "--verify-no-changes", "--verbosity", args.verbosity])
+        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--verify-no-changes", "--verbosity", args.verbosity])
         if cs_run.returncode != 0:
             print("fix: code style failed")
             any_error = True
