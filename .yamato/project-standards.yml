@@ -9,7 +9,7 @@ standards_{{ projects.first.name }}:
   commands:
     - dotnet --version
     - dotnet format --version
-    - python3 --version
+    - python3.9 --version
     - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -u {{ projects.first.test_editors.first }} -c editor --wait --fast
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ projects.first.path }} -quit
