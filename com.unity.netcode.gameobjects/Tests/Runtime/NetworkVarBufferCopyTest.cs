@@ -25,11 +25,6 @@ namespace Unity.Netcode.RuntimeTests
                 return Dirty;
             }
 
-            public DummyNetVar()
-            {
-
-            }
-
             public override void WriteDelta(FastBufferWriter writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
@@ -85,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public class DummyNetBehaviour : NetworkBehaviour
         {
-            public DummyNetVar NetVar;
+            public DummyNetVar NetVar = new DummyNetVar();
         }
         protected override int NbClients => 1;
 
