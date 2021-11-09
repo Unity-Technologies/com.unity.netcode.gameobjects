@@ -35,6 +35,9 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(0, server.NetworkTickSystem.ServerTime.Time);
 
             // wait until at least more than 2 server ticks have passed
+            // Note: Waiting for more than 2 ticks on the server is due
+            // to the time system applying buffering to the received time
+            // in NetworkTimeSystem.Sync
             yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
