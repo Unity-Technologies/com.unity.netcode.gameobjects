@@ -9,11 +9,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
+### Removed
+
+- Removed `FixedQueue` (#1398)
+- Removed `StreamExtensions` (#1398)
+- Removed `TypeExtensions` (#1398)
+
 ### Fixed
 
-- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager.
+- Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
+- Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
+- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
+- Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
+- NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
+- Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
 
 ### Changed
+
+- ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
 
 ## [1.0.0-pre.3] - 2021-10-22
 
