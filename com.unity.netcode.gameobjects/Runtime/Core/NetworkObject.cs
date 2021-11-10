@@ -1143,7 +1143,7 @@ namespace Unity.Netcode
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
                 else
-                if (NetworkManager.NetworkConfig.PrefabConfig.TryGetSourcePrefabHashForOverride(GlobalObjectIdHash, out uint originalHash))
+                if (NetworkManager.NetworkConfig.PrefabConfig.TryGetSourcePrefabHash(GlobalObjectIdHash, out uint originalHash))
                 {
                     return originalHash;
                 }

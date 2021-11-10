@@ -65,20 +65,10 @@ namespace Unity.Netcode.RuntimeTests
             // Add a NetworkPrefab override with a valid prefab and valid target prefab
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.Prefab, SourcePrefabToOverride = MakeValidNetworkPrefab(), OverridingTargetPrefab = MakeValidNetworkPrefab() });
 
-            var exceptionOccurred = false;
-            try
-            {
-                NetworkManagerHelper.NetworkManagerObject.StartHost();
-            }
-            catch
-            {
-                exceptionOccurred = true;
-            }
-
-            Assert.False(exceptionOccurred);
+            NetworkManagerHelper.NetworkManagerObject.StartHost();
 
             // In the end we should only have 3 valid registered network prefabs
-            Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.Count == 3);
+            Assert.AreEqual(3, NetworkManagerHelper.NetworkManagerObject.NetworkConfig.PrefabConfig.GetRegisteredPrefabHashCodes().Count(), "Something broke, but can't tell you what it is, because this test verifies almost a dozen different things at once!");
         }
 
         private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";

@@ -51,9 +51,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(networkManager.NetworkConfig.NetworkPrefabs.Count, Is.GreaterThan(1));
 
             var hashSet = new HashSet<uint>();
-            foreach (var networkPrefab in networkManager.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks)
+            foreach (var idHash in networkManager.NetworkConfig.PrefabConfig.GetRegisteredPrefabHashCodes())
             {
-                var idHash = networkPrefab.Key;
                 Assert.That(idHash, Is.Not.EqualTo(0));
                 Assert.That(hashSet.Contains(idHash), Is.False);
                 hashSet.Add(idHash);

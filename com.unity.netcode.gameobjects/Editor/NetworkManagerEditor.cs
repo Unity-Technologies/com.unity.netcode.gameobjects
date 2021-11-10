@@ -197,6 +197,18 @@ namespace Unity.Netcode.Editor
                 }
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
+            m_NetworkPrefabsList.onAddCallback = list =>
+            {
+                list.serializedProperty.arraySize += 1;
+                var element = list.serializedProperty.GetArrayElementAtIndex(list.serializedProperty.arraySize - 1);
+                // TODO: Figure out how to just element = new NetworkPrefab
+                // Reset all the values since default behavior is to copy whatever was in the previous index in the array.
+                element.FindPropertyRelative(nameof(NetworkPrefab.Override)).enumValueIndex = (int)NetworkPrefabOverride.None;
+                element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)).objectReferenceValue = null;
+                element.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride)).objectReferenceValue = null;
+                element.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride)).intValue = 0;
+                element.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab)).objectReferenceValue = null;
+            };
         }
 
         public override void OnInspectorGUI()

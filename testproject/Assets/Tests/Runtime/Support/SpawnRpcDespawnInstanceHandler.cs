@@ -21,26 +21,8 @@ namespace TestProject.RuntimeTests.Support
             WasSpawned = true;
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
 
-
             // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
-            GameObject networkPrefabReference = null;
-            if (NetworkManager.Singleton.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks.ContainsKey(m_PrefabHash))
-            {
-                switch (NetworkManager.Singleton.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[m_PrefabHash].Override)
-                {
-                    default:
-                    case NetworkPrefabOverride.None:
-                        networkPrefabReference = NetworkManager.Singleton.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[m_PrefabHash].Prefab;
-                        break;
-                    case NetworkPrefabOverride.Hash:
-                    case NetworkPrefabOverride.Prefab:
-                        networkPrefabReference = NetworkManager.Singleton.NetworkConfig.PrefabConfig.NetworkPrefabOverrideLinks[m_PrefabHash].OverridingTargetPrefab;
-                        break;
-                }
-            }
-
-            // If not, then there is an issue (user possibly didn't register the prefab properly?)
-            if (networkPrefabReference == null)
+            if (!NetworkManager.Singleton.NetworkConfig.PrefabConfig.TryGetPrefab(m_PrefabHash, out GameObject networkPrefabReference))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
