@@ -17,6 +17,23 @@ namespace Unity.Netcode.RuntimeTests
         private List<TransportEvent> m_ServerEvents;
         private List<TransportEvent>[] m_ClientsEvents = new List<TransportEvent>[k_NumClients];
 
+        private IEnumerator WaitForAllClientsConnected()
+        {
+            for (int i = 0; i < k_NumClients; i++)
+            {
+                if (m_ClientsEvents[i].Count == 0)
+                {
+                    yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[i]);
+                }
+            }
+
+            // Check that all clients received the correct event.
+            Assert.That(m_ClientsEvents.All(evs => evs[0].Type == NetworkEvent.Connect));
+
+            // Check that server received all Connect events.
+            Assert.AreEqual(k_NumClients, m_ServerEvents.Count);
+        }
+
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
@@ -56,11 +73,11 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
-            // Check we've received Connect event on client too.
-            Assert.AreEqual(1, m_ClientsEvents[0].Count);
-            Assert.AreEqual(NetworkEvent.Connect, m_ClientsEvents[0][0].Type);
+            // Check we've received Connect event on server too.
+            Assert.AreEqual(1, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Connect, m_ServerEvents[0].Type);
 
             yield return null;
         }
@@ -79,11 +96,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Clients[i].StartClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
-
-            // Check that every client also received a Connect event.
-            Assert.True(m_ClientsEvents.All(evs => evs.Count == 1));
-            Assert.True(m_ClientsEvents.All(evs => evs[0].Type == NetworkEvent.Connect));
+            yield return WaitForAllClientsConnected();
 
             yield return null;
         }
@@ -92,14 +105,13 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ServerDisconnectSingleClient()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
 
@@ -121,7 +133,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Clients[i].StartClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForAllClientsConnected();
 
             // Disconnect a single client.
             m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
@@ -142,8 +154,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitForSeconds(MaxNetworkEventWaitTime);
 
             // Check that all clients got a Disconnect event.
-            Assert.True(m_ClientsEvents.All(evs => evs.Count == 2));
-            Assert.True(m_ClientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
+            Assert.That(m_ClientsEvents.All(evs => evs.Count == 2));
+            Assert.That(m_ClientsEvents.All(evs => evs[1].Type == NetworkEvent.Disconnect));
 
             yield return null;
         }
@@ -152,20 +164,17 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectSingleClient()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             m_Clients[0].DisconnectLocalClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
-
-            yield return null;
         }
 
         // Check client disconnection with multiple clients.
@@ -181,7 +190,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Clients[i].StartClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForAllClientsConnected();
 
             // Disconnect a single client.
             m_Clients[0].DisconnectLocalClient();
@@ -213,7 +222,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
 
@@ -245,7 +254,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             m_Clients[0].DisconnectLocalClient();
 
@@ -262,8 +271,6 @@ namespace Unity.Netcode.RuntimeTests
             // Check we haven't received anything else on the client or server.
             Assert.AreEqual(m_ServerEvents.Count, previousServerEventsCount);
             Assert.AreEqual(m_ClientsEvents[0].Count, previousClientEventsCount);
-
-            m_Server.Shutdown();
 
             yield return null;
         }

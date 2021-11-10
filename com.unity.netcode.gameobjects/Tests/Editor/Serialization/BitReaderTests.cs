@@ -99,13 +99,9 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitReader.ReadBit(out b);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
                     Assert.IsTrue(bitReader.TryBeginReadBits(3));
                     bitReader.ReadBit(out b);
@@ -120,26 +116,18 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitReader.ReadBits(out byteVal, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
 
                     try
                     {
                         bitReader.ReadBits(out byteVal, 1);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
                     Assert.IsTrue(bitReader.TryBeginReadBits(3));
 
@@ -147,13 +135,9 @@ namespace Unity.Netcode.EditorTests
                     {
                         bitReader.ReadBits(out byteVal, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         // Should get called here.
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
                     }
                     Assert.IsTrue(bitReader.TryBeginReadBits(4));
                     bitReader.ReadBits(out byteVal, 3);
@@ -305,6 +289,34 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public unsafe void TestReadingMultipleBytesToLongsMisaligned([Range(1U, 63U)] uint numBits)
+        {
+            ulong value = 0b01010101_10101010_01010101_10101010_01010101_10101010_01010101_10101010;
+            var reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
+            using (reader)
+            {
+                ulong* asUlong = (ulong*)reader.GetUnsafePtr();
+
+                Assert.AreEqual(value, *asUlong);
+                var mask = 0UL;
+                for (var i = 0; i < numBits; ++i)
+                {
+                    mask |= (1UL << i);
+                }
+
+                ulong readValue;
+
+                Assert.IsTrue(reader.TryBeginRead(sizeof(ulong)));
+                using (var bitReader = reader.EnterBitwiseContext())
+                {
+                    bitReader.ReadBit(out bool unused);
+                    bitReader.ReadBits(out readValue, numBits);
+                }
+                Assert.AreEqual((value >> 1) & mask, readValue);
+            }
+        }
+
+        [Test]
         public unsafe void TestReadingBitsThrowsIfTryBeginReadNotCalled()
         {
             var nativeArray = new NativeArray<byte>(4, Allocator.Temp);
@@ -345,7 +357,7 @@ namespace Unity.Netcode.EditorTests
                         bitReader.ReadBits(out ul, 4);
                         bitReader.ReadBits(out ul, 4);
                     }
-                    catch (OverflowException e)
+                    catch (OverflowException)
                     {
                         Assert.Fail("Overflow exception was thrown too early.");
                         throw;

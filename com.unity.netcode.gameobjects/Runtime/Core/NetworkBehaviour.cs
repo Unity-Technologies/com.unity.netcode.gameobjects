@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using System.Reflection;
-using System.Linq;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -69,24 +69,36 @@ namespace Unity.Netcode
                 RpcData = writer
             };
 
+            var rpcMessageSize = 0;
+
             // If we are a server/host then we just no op and send to ourself
             if (IsHost || IsServer)
             {
-                var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkBehaviourId);
-                tempBuffer.Dispose();
-
-                return;
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
+                rpcMessageSize = tempBuffer.Length;
+            }
+            else
+            {
+                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
             }
 
-            var rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId, true);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
                     NetworkManager.ServerClientId,
-                    NetworkObjectId,
+                    NetworkObject,
                     rpcMethodName,
                     __getTypeName(),
                     rpcMessageSize);
@@ -129,24 +141,57 @@ namespace Unity.Netcode
             };
             int messageSize;
 
+            // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
+            // to ourself. Sadly we have to figure that out from the list of clientIds :(
+            bool shouldSendToHost = false;
+
             if (rpcParams.Send.TargetClientIds != null)
             {
-                // Copy into a localArray because SendMessage doesn't take IEnumerable, only IReadOnlyList
-                ulong* localArray = stackalloc ulong[rpcParams.Send.TargetClientIds.Count()];
-                var index = 0;
                 foreach (var clientId in rpcParams.Send.TargetClientIds)
                 {
-                    localArray[index++] = clientId;
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
                 }
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, localArray, index, true);
+
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
+                foreach (var clientId in rpcParams.Send.TargetClientIdsNativeArray)
+                {
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        shouldSendToHost = true;
+                        break;
+                    }
+                }
+
                 messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds, true);
+                shouldSendToHost = IsHost;
+                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+            }
+
+            // If we are a server/host then we just no op and send to ourself
+            if (shouldSendToHost)
+            {
+                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader()
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
+                messageSize = tempBuffer.Length;
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -154,15 +199,12 @@ namespace Unity.Netcode
             {
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : messageSize;
                     NetworkManager.NetworkMetrics.TrackRpcSent(
                         client.Key,
-                        NetworkObjectId,
+                        NetworkObject,
                         rpcMethodName,
                         __getTypeName(),
-                        bytesReported);
+                        messageSize);
                 }
             }
 #endif
@@ -170,6 +212,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
+        ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
@@ -198,7 +241,7 @@ namespace Unity.Netcode
         /// </summary>
         protected bool IsHost => IsRunning && NetworkManager.IsHost;
 
-        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
+        private bool IsRunning => NetworkManager && NetworkManager.IsListening;
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -211,8 +254,24 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
 
+        internal bool IsBehaviourEditable()
+        {
+            // Only server can MODIFY. So allow modification if network is either not running or we are server
+            return !m_NetworkObject ||
+                   (m_NetworkObject.NetworkManager == null ||
+                    !m_NetworkObject.NetworkManager.IsListening ||
+                    m_NetworkObject.NetworkManager.IsServer);
+        }
+
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
+        ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
+        ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
+        ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
+        ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
+        ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
+        ///   how NetworkObject works but it was close to the release and too risky to change
+        ///
         /// </summary>
         public NetworkObject NetworkObject
         {
@@ -595,7 +654,7 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
-        public void OnDestroy()
+        public virtual void OnDestroy()
         {
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any

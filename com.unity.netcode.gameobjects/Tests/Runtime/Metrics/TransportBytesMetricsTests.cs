@@ -16,6 +16,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + FastBufferWriter.GetWriteSize<MessageHeader>();
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackTotalNumberOfBytesSent()
         {
             var messageName = Guid.NewGuid();
@@ -24,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             try
             {
                 writer.WriteValueSafe(messageName);
-                
+
                 Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally
@@ -44,6 +45,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackTotalNumberOfBytesReceived()
         {
             var messageName = Guid.NewGuid();
@@ -52,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             try
             {
                 writer.WriteValueSafe(messageName);
-                
+
                 Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally

@@ -54,7 +54,6 @@ namespace Unity.Netcode
         private byte m_HighMessageType;
         private object m_Owner;
         private IMessageSender m_MessageSender;
-        private ulong m_LocalClientId;
         private bool m_Disposed;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
@@ -69,62 +68,27 @@ namespace Unity.Netcode
         public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
         public const int FRAGMENTED_MESSAGE_MAX_SIZE = 64000;
 
-        public MessagingSystem(IMessageSender messageSender, object owner, ulong localClientId = long.MaxValue)
+        internal struct MessageWithHandler
+        {
+            public Type MessageType;
+            public MessageHandler Handler;
+        }
+
+        public MessagingSystem(IMessageSender messageSender, object owner, IMessageProvider provider = null)
         {
             try
             {
-                m_LocalClientId = localClientId;
                 m_MessageSender = messageSender;
                 m_Owner = owner;
 
-                var interfaceType = typeof(INetworkMessage);
-                var implementationTypes = new List<Type>();
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                if (provider == null)
                 {
-                    foreach (var type in assembly.GetTypes())
-                    {
-                        if (type.IsInterface || type.IsAbstract)
-                        {
-                            continue;
-                        }
-
-                        if (interfaceType.IsAssignableFrom(type))
-                        {
-                            var attributes = type.GetCustomAttributes(typeof(IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute), false);
-                            // If [Bind(ownerType)] isn't provided, it defaults to being bound to NetworkManager
-                            // This is technically a breach of domain by having MessagingSystem know about the existence
-                            // of NetworkManager... but ultimately, Bind is provided to support testing, not to support
-                            // general use of MessagingSystem outside of Netcode for GameObjects, so having MessagingSystem
-                            // know about NetworkManager isn't so bad. Especially since it's just a default value.
-                            // This is just a convenience to keep us and our users from having to use
-                            // [Bind(typeof(NetworkManager))] on every message - only tests that don't want to use
-                            // the full NetworkManager need to worry about it.
-                            var allowedToBind = attributes.Length == 0 && m_Owner is NetworkManager;
-                            for (var i = 0; i < attributes.Length; ++i)
-                            {
-                                var bindAttribute = (IgnoreMessageIfSystemOwnerIsNotOfTypeAttribute)attributes[i];
-                                if (
-                                    (bindAttribute.BoundType != null &&
-                                     bindAttribute.BoundType.IsInstanceOfType(m_Owner)) ||
-                                    (m_Owner == null && bindAttribute.BoundType == null))
-                                {
-                                    allowedToBind = true;
-                                    break;
-                                }
-                            }
-
-                            if (!allowedToBind)
-                            {
-                                continue;
-                            }
-
-                            implementationTypes.Add(type);
-                        }
-                    }
+                    provider = new ILPPMessageProvider();
                 }
+                var allowedTypes = provider.GetMessages();
 
-                implementationTypes.Sort((a, b) => string.CompareOrdinal(a.FullName, b.FullName));
-                foreach (var type in implementationTypes)
+                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
+                foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
                 }
@@ -158,40 +122,16 @@ namespace Unity.Netcode
             Dispose();
         }
 
-        public void SetLocalClientId(ulong localClientId)
-        {
-            m_LocalClientId = localClientId;
-        }
-
         public void Hook(INetworkHooks hooks)
         {
             m_Hooks.Add(hooks);
         }
 
-        private void RegisterMessageType(Type messageType)
+        private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
-            if (!typeof(INetworkMessage).IsAssignableFrom(messageType))
-            {
-                throw new ArgumentException("RegisterMessageType types must be INetworkMessage types.");
-            }
-
-            var method = messageType.GetMethod("Receive");
-            if (method == null)
-            {
-                throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
-            }
-
-            var asDelegate = Delegate.CreateDelegate(typeof(MessageHandler), method, false);
-            if (asDelegate == null)
-            {
-                throw new InvalidMessageStructureException(
-                    $"{messageType.FullName}: All INetworkMessage types must implement public static void Receive(FastBufferReader reader, in NetworkContext context)");
-            }
-
-            m_MessageHandlers[m_HighMessageType] = (MessageHandler)asDelegate;
-            m_ReverseTypeMap[m_HighMessageType] = messageType;
-            m_MessageTypes[messageType] = m_HighMessageType++;
+            m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
+            m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
+            m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
@@ -286,7 +226,7 @@ namespace Unity.Netcode
 
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length);
+                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
             }
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
@@ -307,7 +247,7 @@ namespace Unity.Netcode
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length);
+                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
             }
         }
 
@@ -370,8 +310,13 @@ namespace Unity.Netcode
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
+            if (clientIds.Count == 0)
+            {
+                return 0;
+            }
+
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
-            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(MessageHeader), Allocator.Temp, maxSize - sizeof(MessageHeader));
+            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
             using (tmpSerializer)
             {
                 message.Serialize(tmpSerializer);
@@ -402,7 +347,7 @@ namespace Unity.Netcode
                         ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
                         if (lastQueueItem.NetworkDelivery != delivery ||
                             lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
-                            < tmpSerializer.Length + sizeof(MessageHeader))
+                            < tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>())
                         {
                             sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                                 maxSize));
@@ -411,10 +356,10 @@ namespace Unity.Netcode
                     }
 
                     ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
-                    writeQueueItem.Writer.TryBeginWrite(sizeof(MessageHeader) + tmpSerializer.Length);
+                    writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
                     var header = new MessageHeader
                     {
-                        MessageSize = (short)tmpSerializer.Length,
+                        MessageSize = (ushort)tmpSerializer.Length,
                         MessageType = m_MessageTypes[typeof(TMessageType)],
                     };
 
@@ -423,11 +368,11 @@ namespace Unity.Netcode
                     writeQueueItem.BatchHeader.BatchSize++;
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
-                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + sizeof(MessageHeader));
+                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
                     }
                 }
 
-                return tmpSerializer.Length;
+                return tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>();
             }
         }
 

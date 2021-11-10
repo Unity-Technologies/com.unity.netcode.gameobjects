@@ -43,10 +43,13 @@ namespace TestProject.ManualTests
         }
 
         private bool m_ExitingScene;
-        private void OnDestroy()
+
+        public override void OnDestroy()
         {
             m_ExitingScene = true;
             StopCoroutine(CheckForVisibility());
+
+            base.OnDestroy();
         }
 
         private IEnumerator CheckForVisibility()
@@ -90,7 +93,7 @@ namespace TestProject.ManualTests
         {
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
             {
-                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
+                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
                 {
                     if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.IsValid()
                         && sceneEvent.Scene.IsValid() && sceneEvent.Scene.name == m_SceneToLoad)
@@ -99,7 +102,7 @@ namespace TestProject.ManualTests
                         m_WaitForSceneLoadOrUnload = false;
                     }
                 }
-                else if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete)
+                else if (sceneEvent.SceneEventType == SceneEventType.UnloadComplete)
                 {
                     if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.isLoaded)
                     {

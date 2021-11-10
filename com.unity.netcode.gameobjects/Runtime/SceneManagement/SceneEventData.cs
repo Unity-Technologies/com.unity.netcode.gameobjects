@@ -8,96 +8,100 @@ using UnityEngine.SceneManagement;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Used by <see cref="NetworkSceneManager"/> for <see cref="SceneEventMessage"/> messages
-    /// Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled
+    /// The different types of scene events communicated between a server and client. <br/>
+    /// Used by <see cref="NetworkSceneManager"/> for <see cref="SceneEventMessage"/> messages.<br/>
+    /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br/>
+    /// See also: <br/>
+    /// <seealso cref="SceneEvent"/>
     /// </summary>
-    public class SceneEventData : IDisposable
+    public enum SceneEventType : byte
     {
         /// <summary>
-        /// The different types of scene events communicated between a server and client.
-        /// Scene event types can be:
-        /// A Server To Client Event (S2C)
-        /// A Client to Server Event (C2S)
+        /// Load a scene<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to client<br/>
+        /// <b>Event Notification:</b> Both server and client are notified a load scene event started
         /// </summary>
-        public enum SceneEventTypes : byte
-        {
-            /// <summary>
-            /// Load a scene
-            /// Invocation: Server Side
-            /// Message Flow: Server to client
-            /// Event Notification: Both server and client are notified a load scene event started
-            /// </summary>
-            S2C_Load,
-            /// <summary>
-            /// Unload a scene
-            /// Invocation: Server Side
-            /// Message Flow: Server to client
-            /// Event Notification: Both server and client are notified an unload scene event started
-            /// </summary>
-            S2C_Unload,
-            /// <summary>
-            /// Synchronize current game session state for approved clients
-            /// Invocation: Server Side
-            /// Message Flow: Server to client
-            /// Event Notification: Server and Client receives a local notification (server receives the ClientId being synchronized)
-            /// </summary>
-            S2C_Sync,
-            /// <summary>
-            /// Game session re-synchronization of NetworkOjects that were destroyed during a <see cref="S2C_Sync"/> event
-            /// Invocation: Server Side
-            /// Message Flow: Server to client
-            /// Event Notification: Both server and client receive a local notification
-            /// </summary>
-            S2C_ReSync,
-            /// <summary>
-            /// All clients have finished loading a scene
-            /// Invocation: Server Side
-            /// Message Flow: Server to Client
-            /// Event Notification: Both server and client receive a local notification containing the clients that finished
-            /// as well as the clients that timed out (if any).
-            /// </summary>
-            S2C_LoadComplete,
-            /// <summary>
-            /// All clients have unloaded a scene
-            /// Invocation: Server Side
-            /// Message Flow: Server to Client
-            /// Event Notification: Both server and client receive a local notification containing the clients that finished
-            /// as well as the clients that timed out (if any).
-            /// </summary>
-            S2C_UnLoadComplete,
-            /// <summary>
-            /// A client has finished loading a scene
-            /// Invocation: Client Side
-            /// Message Flow: Client to Server
-            /// Event Notification: Both server and client receive a local notification
-            /// </summary>
-            C2S_LoadComplete,
-            /// <summary>
-            /// A client has finished unloading a scene
-            /// Invocation: Client Side
-            /// Message Flow: Client to Server
-            /// Event Notification: Both server and client receive a local notification
-            /// </summary>
-            C2S_UnloadComplete,
-            /// <summary>
-            /// A client has finished synchronizing from a <see cref="S2C_Sync"/> event
-            /// Invocation: Client Side
-            /// Message Flow: Client to Server
-            /// Event Notification: Both server and client receive a local notification
-            /// </summary>
-            C2S_SyncComplete,
-        }
+        Load,
+        /// <summary>
+        /// Unload a scene<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to client<br/>
+        /// <b>Event Notification:</b> Both server and client are notified an unload scene event started.
+        /// </summary>
+        Unload,
+        /// <summary>
+        /// Synchronizes current game session state for newly approved clients<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to client<br/>
+        /// <b>Event Notification:</b> Server and Client receives a local notification (<em>server receives the ClientId being synchronized</em>).
+        /// </summary>
+        Synchronize,
+        /// <summary>
+        /// Game session re-synchronization of NetworkObjects that were destroyed during a <see cref="Synchronize"/> event<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to client<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification<br/>
+        /// <em>Note: This will be removed once snapshot and buffered messages are finalized as it will no longer be needed at that point.</em>
+        /// </summary>
+        ReSynchronize,
+        /// <summary>
+        /// All clients have finished loading a scene<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to Client<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification containing the clients that finished
+        /// as well as the clients that timed out(<em>if any</em>).
+        /// </summary>
+        LoadEventCompleted,
+        /// <summary>
+        /// All clients have unloaded a scene<br/>
+        /// <b>Invocation:</b> Server Side<br/>
+        /// <b>Message Flow:</b> Server to Client<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification containing the clients that finished
+        /// as well as the clients that timed out(<em>if any</em>).
+        /// </summary>
+        UnloadEventCompleted,
+        /// <summary>
+        /// A client has finished loading a scene<br/>
+        /// <b>Invocation:</b> Client Side<br/>
+        /// <b>Message Flow:</b> Client to Server<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification.
+        /// </summary>
+        LoadComplete,
+        /// <summary>
+        /// A client has finished unloading a scene<br/>
+        /// <b>Invocation:</b> Client Side<br/>
+        /// <b>Message Flow:</b> Client to Server<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification.
+        /// </summary>
+        UnloadComplete,
+        /// <summary>
+        /// A client has finished synchronizing from a <see cref="Synchronize"/> event<br/>
+        /// <b>Invocation:</b> Client Side<br/>
+        /// <b>Message Flow:</b> Client to Server<br/>
+        /// <b>Event Notification:</b> Both server and client receive a local notification.
+        /// </summary>
+        SynchronizeComplete,
+    }
 
-        internal SceneEventTypes SceneEventType;
+    /// <summary>
+    /// Used by <see cref="NetworkSceneManager"/> for <see cref="SceneEventMessage"/> messages
+    /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br/>
+    /// See also: <seealso cref="SceneEvent"/>
+    /// </summary>
+    internal class SceneEventData : IDisposable
+    {
+        internal SceneEventType SceneEventType;
         internal LoadSceneMode LoadSceneMode;
-        internal Guid SceneEventGuid;
+        internal Guid SceneEventProgressId;
+        internal uint SceneEventId;
 
-        internal uint SceneIndex;
+
+        internal uint SceneHash;
         internal int SceneHandle;
 
-        /// Only used for S2C_Synch scene events, this assures permissions when writing
-        /// NetworkVariable information.  If that process changes, then we need to update
-        /// this
+        /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
+        /// NetworkVariable information.  If that process changes, then we need to update this
         internal ulong TargetClientId;
 
         private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
@@ -124,13 +128,6 @@ namespace Unity.Netcode
 
         private NetworkManager m_NetworkManager;
 
-        /// <summary>
-        /// Client side and only applies to the following scene event types:
-        /// <see cref="C2S_LoadComplete"/>
-        /// <see cref="C2S_UnLoadComplete"/>
-        /// </summary>
-        internal SceneEvent SceneEvent;
-
         internal List<ulong> ClientsCompleted;
         internal List<ulong> ClientsTimedOut;
 
@@ -152,18 +149,18 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="sceneHandle"></param>
-        internal void AddSceneToSynchronize(uint sceneIndex, int sceneHandle)
+        internal void AddSceneToSynchronize(uint sceneHash, int sceneHandle)
         {
-            ScenesToSynchronize.Enqueue(sceneIndex);
+            ScenesToSynchronize.Enqueue(sceneHash);
             SceneHandlesToSynchronize.Enqueue((uint)sceneHandle);
         }
 
         /// <summary>
         /// Client Side:
-        /// Gets the next scene index to be loaded for approval and/or late joining
+        /// Gets the next scene hash to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        internal uint GetNextSceneSynchronizationIndex()
+        internal uint GetNextSceneSynchronizationHash()
         {
             return ScenesToSynchronize.Dequeue();
         }
@@ -262,12 +259,12 @@ namespace Unity.Netcode
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Load:
-                case SceneEventTypes.S2C_Unload:
-                case SceneEventTypes.S2C_Sync:
-                case SceneEventTypes.S2C_ReSync:
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventType.Load:
+                case SceneEventType.Unload:
+                case SceneEventType.Synchronize:
+                case SceneEventType.ReSynchronize:
+                case SceneEventType.LoadEventCompleted:
+                case SceneEventType.UnloadEventCompleted:
                     {
                         return true;
                     }
@@ -303,7 +300,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Client and Server Side:
-        /// Serializes data based on the SceneEvent type (<see cref="SceneEventTypes"/>)
+        /// Serializes data based on the SceneEvent type (<see cref="SceneEventType"/>)
         /// </summary>
         /// <param name="writer"><see cref="FastBufferWriter"/> to write the scene event data</param>
         internal void Serialize(FastBufferWriter writer)
@@ -315,39 +312,39 @@ namespace Unity.Netcode
             writer.WriteValueSafe(LoadSceneMode);
 
             // Write the scene event progress Guid
-            if (SceneEventType != SceneEventTypes.S2C_Sync)
+            if (SceneEventType != SceneEventType.Synchronize)
             {
-                writer.WriteValueSafe(SceneEventGuid);
+                writer.WriteValueSafe(SceneEventProgressId);
             }
 
             // Write the scene index and handle
-            writer.WriteValueSafe(SceneIndex);
+            writer.WriteValueSafe(SceneHash);
             writer.WriteValueSafe(SceneHandle);
 
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Sync:
+                case SceneEventType.Synchronize:
                     {
                         WriteSceneSynchronizationData(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_Load:
+                case SceneEventType.Load:
                     {
                         SerializeScenePlacedObjects(writer);
                         break;
                     }
-                case SceneEventTypes.C2S_SyncComplete:
+                case SceneEventType.SynchronizeComplete:
                     {
                         WriteClientSynchronizationResults(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_ReSync:
+                case SceneEventType.ReSynchronize:
                     {
                         WriteClientReSynchronizationData(writer);
                         break;
                     }
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventType.LoadEventCompleted:
+                case SceneEventType.UnloadEventCompleted:
                     {
                         WriteSceneEventProgressDone(writer);
                         break;
@@ -357,7 +354,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server Side:
-        /// Called at the end of an S2C_Load event once the scene is loaded and scene placed NetworkObjects
+        /// Called at the end of a <see cref="SceneEventType.Load"/> event once the scene is loaded and scene placed NetworkObjects
         /// have been locally spawned
         /// </summary>
         internal void WriteSceneSynchronizationData(FastBufferWriter writer)
@@ -399,7 +396,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server Side:
-        /// Called at the end of an S2C_Load event once the scene is loaded and scene placed NetworkObjects
+        /// Called at the end of a <see cref="SceneEventType.Load"/> event once the scene is loaded and scene placed NetworkObjects
         /// have been locally spawned
         /// Maximum number of objects that could theoretically be synchronized is 65536
         /// </summary>
@@ -446,44 +443,45 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out SceneEventType);
             reader.ReadValueSafe(out LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.S2C_Sync)
+            if (SceneEventType != SceneEventType.Synchronize)
             {
-                reader.ReadValueSafe(out SceneEventGuid);
+                reader.ReadValueSafe(out SceneEventProgressId);
             }
 
-            reader.ReadValueSafe(out SceneIndex);
+            reader.ReadValueSafe(out SceneHash);
             reader.ReadValueSafe(out SceneHandle);
 
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Sync:
+                case SceneEventType.Synchronize:
                     {
-                        CopySceneSyncrhonizationData(reader);
+                        CopySceneSynchronizationData(reader);
                         break;
                     }
-                case SceneEventTypes.C2S_SyncComplete:
+                case SceneEventType.SynchronizeComplete:
                     {
                         CheckClientSynchronizationResults(reader);
                         break;
                     }
-                case SceneEventTypes.S2C_Load:
+                case SceneEventType.Load:
                     {
                         unsafe
                         {
                             // We store off the trailing in-scene placed serialized NetworkObject data to
                             // be processed once we are done loading.
                             m_HasInternalBuffer = true;
-                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, reader.Length - reader.Position);
+                            // We use Allocator.Persistent since scene loading could take longer than 4 frames
+                            InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, reader.Length - reader.Position);
                         }
                         break;
                     }
-                case SceneEventTypes.S2C_ReSync:
+                case SceneEventType.ReSynchronize:
                     {
                         ReadClientReSynchronizationData(reader);
                         break;
                     }
-                case SceneEventTypes.S2C_LoadComplete:
-                case SceneEventTypes.S2C_UnLoadComplete:
+                case SceneEventType.LoadEventCompleted:
+                case SceneEventType.UnloadEventCompleted:
                     {
                         ReadSceneEventProgressDone(reader);
                         break;
@@ -497,7 +495,7 @@ namespace Unity.Netcode
         /// into the internal buffer to be used throughout the synchronization process.
         /// </summary>
         /// <param name="reader"></param>
-        internal void CopySceneSyncrhonizationData(FastBufferReader reader)
+        internal void CopySceneSynchronizationData(FastBufferReader reader)
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
@@ -515,13 +513,14 @@ namespace Unity.Netcode
                 }
 
                 m_HasInternalBuffer = true;
-                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, sizeToCopy);
+                // We use Allocator.Persistent since scene synchronization will most likely take longer than 4 frames
+                InternalBuffer = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, sizeToCopy);
             }
         }
 
         /// <summary>
         /// Client Side:
-        /// This needs to occur at the end of a S2C_Load event when the scene has finished loading
+        /// This needs to occur at the end of a <see cref="SceneEventType.Load"/> event when the scene has finished loading
         /// Maximum number of objects that could theoretically be synchronized is 65536
         /// </summary>
         internal void DeserializeScenePlacedObjects()
@@ -766,6 +765,7 @@ namespace Unity.Netcode
         internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
+            SceneEventId = XXHash.Hash32(Guid.NewGuid().ToString());
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -20,6 +21,20 @@ namespace Unity.Netcode
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
+        private struct TriggerData
+        {
+            public FastBufferReader Reader;
+            public MessageHeader Header;
+            public ulong SenderId;
+            public float Timestamp;
+        }
+        private struct TriggerInfo
+        {
+            public float Expiry;
+            public NativeList<TriggerData> TriggerData;
+        }
+
+        private readonly Dictionary<ulong, TriggerInfo> m_Triggers = new Dictionary<ulong, TriggerInfo>();
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -69,12 +84,75 @@ namespace Unity.Netcode
                 throw new NotServerException("Only the server can find player objects from other clients.");
             }
 
-            if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
+            if (TryGetNetworkClient(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Defers processing of a message until the moment a specific networkObjectId is spawned.
+        /// This is to handle situations where an RPC or other object-specific message arrives before the spawn does,
+        /// either due to it being requested in OnNetworkSpawn before the spawn call has been executed, or with
+        /// snapshot spawns enabled where the spawn is sent unreliably and not until the end of the frame.
+        ///
+        /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
+        /// without the requested object ID being spawned, the triggers for it are automatically deleted.
+        /// </summary>
+        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
+        {
+            if (!m_Triggers.ContainsKey(networkObjectId))
+            {
+                m_Triggers[networkObjectId] = new TriggerInfo
+                {
+                    Expiry = Time.realtimeSinceStartup + 1,
+                    TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
+                };
+            }
+
+            m_Triggers[networkObjectId].TriggerData.Add(new TriggerData
+            {
+                Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
+                Header = context.Header,
+                Timestamp = context.Timestamp,
+                SenderId = context.SenderId
+            });
+        }
+
+        /// <summary>
+        /// Cleans up any trigger that's existed for more than a second.
+        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
+        /// </summary>
+        internal unsafe void CleanupStaleTriggers()
+        {
+            ulong* staleKeys = stackalloc ulong[m_Triggers.Count()];
+            int index = 0;
+            foreach (var kvp in m_Triggers)
+            {
+                if (kvp.Value.Expiry < Time.realtimeSinceStartup)
+                {
+
+                    staleKeys[index++] = kvp.Key;
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Deferred messages were received for {nameof(NetworkObject)} #{kvp.Key}, but it did not spawn within 1 second.");
+                    }
+
+                    foreach (var data in kvp.Value.TriggerData)
+                    {
+                        data.Reader.Dispose();
+                    }
+
+                    kvp.Value.TriggerData.Dispose();
+                }
+            }
+
+            for (var i = 0; i < index; ++i)
+            {
+                m_Triggers.Remove(staleKeys[i]);
+            }
         }
 
         internal void RemoveOwnership(NetworkObject networkObject)
@@ -110,11 +188,33 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
+        }
+
+        /// <summary>
+        /// Helper function to get a network client for a clientId from the NetworkManager.
+        /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
+        /// On a non-server this will check the <see cref="NetworkManager.LocalClient"/> only.
+        /// </summary>
+        /// <param name="clientId">The clientId for which to try getting the NetworkClient for.</param>
+        /// <param name="networkClient">The found NetworkClient. Null if no client was found.</param>
+        /// <returns>True if a NetworkClient with a matching id was found else false.</returns>
+        private bool TryGetNetworkClient(ulong clientId, out NetworkClient networkClient)
+        {
+            if (NetworkManager.IsServer)
+            {
+                return NetworkManager.ConnectedClients.TryGetValue(clientId, out networkClient);
+            }
+
+            if (clientId == NetworkManager.LocalClient.ClientId)
+            {
+                networkClient = NetworkManager.LocalClient;
+                return true;
+            }
+
+            networkClient = null;
+            return false;
         }
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
@@ -129,7 +229,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (NetworkManager.ConnectedClients.TryGetValue(networkObject.OwnerClientId, out NetworkClient networkClient))
+            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
                 for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                 {
@@ -154,10 +254,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -342,9 +439,6 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject.NetworkObjectId, networkObject.name, 0);
-
             if (ownerClientId != null)
             {
                 if (NetworkManager.IsServer)
@@ -360,7 +454,7 @@ namespace Unity.Netcode
                 }
                 else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
                 {
-                    NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
+                    NetworkManager.LocalClient.PlayerObject = networkObject;
                 }
             }
 
@@ -378,7 +472,23 @@ namespace Unity.Netcode
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
+
             networkObject.InvokeBehaviourNetworkSpawn();
+
+            // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
+            // processed before the object is fully spawned. This must be the last thing done in the spawn process.
+            if (m_Triggers.ContainsKey(networkId))
+            {
+                var triggerInfo = m_Triggers[networkId];
+                foreach (var trigger in triggerInfo.TriggerData)
+                {
+                    // Reader will be disposed within HandleMessage
+                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp);
+                }
+
+                triggerInfo.TriggerData.Dispose();
+                m_Triggers.Remove(networkId);
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -395,13 +505,10 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
 
                 networkObject.MarkVariablesDirty();
             }
@@ -524,7 +631,6 @@ namespace Unity.Netcode
             }
         }
 
-
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
@@ -577,7 +683,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && NetworkManager.Singleton.ConnectedClients.TryGetValue(networkObject.OwnerClientId, out NetworkClient networkClient))
+            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
                 //Someone owns it.
                 for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
@@ -632,15 +738,13 @@ namespace Unity.Netcode
                             var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                             foreach (var targetClientId in m_TargetClientIds)
                             {
-                                var bytesReported = NetworkManager.LocalClientId == targetClientId
-                                    ? 0
-                                    : size;
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
                             }
                         }
                     }
                 }
             }
+
             networkObject.IsSpawned = false;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))

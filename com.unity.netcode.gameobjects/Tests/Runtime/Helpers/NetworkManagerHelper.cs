@@ -19,7 +19,6 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static SocketTasks StartHostSocketTasks { get; internal set; }
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 
@@ -217,7 +216,6 @@ namespace Unity.Netcode.RuntimeTests
 
             if (NetworkManagerGameObject != null)
             {
-                NetworkManagerObject.ConnectedClientsList.Clear();
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
                 StopNetworkManagerMode();
