@@ -10,6 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Removed
+
+- Removed `FixedQueue` (#1398)
+- Removed `StreamExtensions` (#1398)
+- Removed `TypeExtensions` (#1398)
+
 ### Fixed
 
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
