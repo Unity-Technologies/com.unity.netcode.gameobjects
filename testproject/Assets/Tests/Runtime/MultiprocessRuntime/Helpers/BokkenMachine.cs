@@ -146,7 +146,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception("PathToJson must not be null or empty");
             }
 
-            string s = $" --command exec --input-path {PathToJson}";
+            string s = $" --command exec --input-path {PathToJson} --remote-command testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe ";
             return s;
         }
     }

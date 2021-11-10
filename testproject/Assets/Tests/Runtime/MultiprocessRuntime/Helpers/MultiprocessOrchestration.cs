@@ -192,6 +192,7 @@ public class MultiprocessOrchestration
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform)
     {
         var bokkenMachine = BokkenMachine.Parse(launch_platform);
+        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, "machine1.json");
         bokkenMachine.Provision();
         bokkenMachine.Setup();
         bokkenMachine.Launch();
