@@ -106,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
             var dummyNetworkObjectId = dummyNetworkObject.NetworkObjectId;
             Assert.That(dummyNetworkObjectId, Is.GreaterThan(0));
 
-            int nextFrameNumber = Time.frameCount + 2;
+            int nextFrameNumber = Time.frameCount + 4;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
