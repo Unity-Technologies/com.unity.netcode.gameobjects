@@ -545,7 +545,7 @@ namespace Unity.Netcode.RuntimeTests
 
             if (!waitResult.Result)
             {
-                throw new Exception();
+                Assert.Fail("Predicate condition failed");
             }
         }
 
