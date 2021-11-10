@@ -69,7 +69,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Provision()
         {
-            ExecuteCommand(GenerateCreateCommand());
+            ExecuteCommand(GenerateCreateCommand(), true, 5000);
         }
 
         // 1. Put built player file on remote machine
@@ -77,7 +77,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // 3. Enable the firewall rules, etc. to allow to run
         public void Setup()
         {
-            ExecuteCommand(GenerateSetupMachineCommand());
+            ExecuteCommand(GenerateSetupMachineCommand(), true);
         }
 
         public void Launch(string ip)
@@ -85,10 +85,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateLaunchCommand(ip));
         }
 
-        public void ExecuteCommand(string command)
+        public void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
         {
             
-            MultiprocessLogger.Log("StartWorkerOnRemoteNodes");            
+            MultiprocessLogger.Log($"Execute Command {command}");
             
             var workerProcess = new Process();
 
@@ -114,6 +114,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
                 throw;
+            }
+
+            if (waitForResult)
+            {
+                MultiprocessLogger.Log("Starting to wait");
+                workerProcess.WaitForExit(timeToWait);
+                MultiprocessLogger.Log("Done waiting");
+                string so = workerProcess.StandardOutput.ReadToEnd();
+                MultiprocessLogger.Log(so);
             }
         }
 
@@ -146,7 +155,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception("PathToJson must not be null or empty");
             }
 
-            string s = $" --command exec --input-path {PathToJson} --remote-command testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}";
+            string s = $" --command exec --input-path {PathToJson} --remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
             return s;
         }
     }

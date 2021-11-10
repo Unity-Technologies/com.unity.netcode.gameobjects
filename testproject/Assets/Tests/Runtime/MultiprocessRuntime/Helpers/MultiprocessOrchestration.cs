@@ -196,19 +196,25 @@ public class MultiprocessOrchestration
     **/
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform, string pathtojson)
     {
+        MultiprocessLogger.Log($"Start Worker on Remote Nodes {launch_platform} {pathtojson}");
         var bokkenMachine = BokkenMachine.Parse(launch_platform);
+        MultiprocessLogger.Log("parsing complete");
         bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, pathtojson);
+        MultiprocessLogger.Log($"pathtojson {bokkenMachine.PathToJson}");
         var fi = new FileInfo(bokkenMachine.PathToJson);
         if (!fi.Exists)
         {
+            MultiprocessLogger.Log("Need to provision and set up a new machine");
             bokkenMachine.Provision();
             bokkenMachine.Setup();
         }
         else
         {
             // Kill previous run
+            MultiprocessLogger.Log("Machine already exists");
         }
         
+        MultiprocessLogger.Log("Launching");
         bokkenMachine.Launch(GetLocalIPAddress());
     }
 
