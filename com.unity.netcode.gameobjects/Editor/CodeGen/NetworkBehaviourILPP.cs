@@ -798,7 +798,7 @@ namespace Unity.Netcode.Editor.CodeGen
             int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
-                var returnInstr = processor.Create(OpCodes.Ret);
+                var logInstruction = processor.Create(OpCodes.Ldstr, $"Attempting to invoke {methodDefinition.Name} with no active {nameof(NetworkManager)} listening");
                 var lastInstr = processor.Create(OpCodes.Nop);
 
                 // networkManager = this.NetworkManager;
@@ -808,12 +808,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // if (networkManager == null || !networkManager.IsListening) return;
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
+                instructions.Add(processor.Create(OpCodes.Brfalse, logInstruction));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsListening_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
 
-                instructions.Add(returnInstr);
+                // Debug.LogError(...);
+                instructions.Add(logInstruction);
+                instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
+
+                instructions.Add(processor.Create(OpCodes.Ret));
                 instructions.Add(lastInstr);
             }
 
