@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -6,6 +8,24 @@ namespace Unity.Netcode.EditorTests
 {
     public class NetworkPrefabTests
     {
+        [Test]
+        public void OnAfterDeserialize_PrefabOverride_SetsPrefabField()
+        {
+            const string prefabName = "Correct Prefab";
+            var np = new NetworkPrefab
+            {
+                Prefab = new GameObject { name = "Prefab to overwrite" },
+#pragma warning disable 618
+                SourcePrefabToOverride = new GameObject { name = prefabName },
+#pragma warning restore 618
+                Override = NetworkPrefabOverride.Prefab
+            };
+
+            np.OnAfterDeserialize();
+
+            Assert.AreEqual(prefabName, np.Prefab.name);
+        }
+
         // Should return false because if you don't have an override you need the base prefab set
         [Test]
         public void IsValid_NoPrefabSet_ReturnsFalse()
@@ -81,25 +101,13 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void IsValid_PrefabOverrideSourceIsNull_ReturnsFalse()
-        {
-            NetworkPrefab np = new NetworkPrefab
-            {
-                Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = null
-            };
-
-            Assert.False(np.Validate());
-        }
-
-        [Test]
         public void IsValid_PrefabOverrideSourceIsNotNetworkObject_ReturnsFalse()
         {
             GameObject prefab = new GameObject();
             NetworkPrefab np = new NetworkPrefab
             {
                 Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = prefab
+                Prefab = prefab
             };
 
             Assert.False(np.Validate());
@@ -126,8 +134,8 @@ namespace Unity.Netcode.EditorTests
 
             NetworkPrefab np = new NetworkPrefab
             {
-                Override = NetworkPrefabOverride.Hash,
-                SourcePrefabToOverride = prefab,
+                Override = NetworkPrefabOverride.Prefab,
+                Prefab = prefab,
                 OverridingTargetPrefab = null
             };
 
@@ -156,7 +164,7 @@ namespace Unity.Netcode.EditorTests
             NetworkPrefab np = new NetworkPrefab
             {
                 Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = prefab,
+                Prefab = prefab,
                 OverridingTargetPrefab = new GameObject()
             };
 
@@ -206,7 +214,7 @@ namespace Unity.Netcode.EditorTests
             var np = new NetworkPrefab
             {
                 Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = prefab
+                Prefab = prefab
             };
 
             Assert.AreEqual(hash, np.GetSourcePrefabHash());
@@ -218,7 +226,7 @@ namespace Unity.Netcode.EditorTests
             var np = new NetworkPrefab
             {
                 Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = null
+                Prefab = null
             };
             Assert.Throws<InvalidOperationException>(() => np.GetSourcePrefabHash());
         }
@@ -229,7 +237,7 @@ namespace Unity.Netcode.EditorTests
             var np = new NetworkPrefab
             {
                 Override = NetworkPrefabOverride.Prefab,
-                SourcePrefabToOverride = new GameObject()
+                Prefab = new GameObject()
             };
             Assert.Throws<InvalidOperationException>(() => np.GetSourcePrefabHash());
         }

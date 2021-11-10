@@ -302,7 +302,7 @@ namespace Unity.Netcode.EditorTests
                     new()
                     {
                         Override = NetworkPrefabOverride.Prefab,
-                        SourcePrefabToOverride = sourceGo,
+                        Prefab = sourceGo,
                         OverridingTargetPrefab = targetGo
                     },
                 }

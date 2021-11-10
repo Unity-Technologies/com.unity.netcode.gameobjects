@@ -151,7 +151,7 @@ namespace Unity.Netcode.Editor
                 var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
                 var networkPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Prefab));
                 var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride));
-                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride));
+                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Prefab));
                 var networkTargetPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab));
                 var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;
@@ -205,7 +205,6 @@ namespace Unity.Netcode.Editor
                 // Reset all the values since default behavior is to copy whatever was in the previous index in the array.
                 element.FindPropertyRelative(nameof(NetworkPrefab.Override)).enumValueIndex = (int)NetworkPrefabOverride.None;
                 element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)).objectReferenceValue = null;
-                element.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride)).objectReferenceValue = null;
                 element.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride)).intValue = 0;
                 element.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab)).objectReferenceValue = null;
             };
