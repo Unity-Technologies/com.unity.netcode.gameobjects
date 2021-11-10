@@ -11,9 +11,13 @@ namespace TestProject.RuntimeTests
     public class RpcUserSerializableTypesTest : BaseMultiInstanceTest
     {
         private UserSerializableClass m_UserSerializableClass;
+        private UserSerializableStruct m_UserSerializableStruct;
         private List<UserSerializableClass> m_UserSerializableClassArray;
+        private List<UserSerializableStruct> m_UserSerializableStructArray;
 
         private bool m_FinishedTest;
+        private bool m_FinishedStructTest;
+        private bool m_FinishedClassTest;
 
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
@@ -34,6 +38,8 @@ namespace TestProject.RuntimeTests
         public IEnumerator NetworkSerializableTest()
         {
             m_FinishedTest = false;
+            m_FinishedStructTest = false;
+            m_FinishedClassTest = false;
             var startTime = Time.realtimeSinceStartup;
 
             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
@@ -46,6 +52,7 @@ namespace TestProject.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassUpdated = OnClientReceivedUserSerializableClassUpdated;
+            clientSideNetworkBehaviourClass.OnSerializableStructUpdated = OnClientReceivedUserSerializableStructUpdated;
 
 
             var userSerializableClass = new UserSerializableClass();
@@ -57,7 +64,13 @@ namespace TestProject.RuntimeTests
             userSerializableClass.MyintValue = 1;
             userSerializableClass.MyulongValue = 100;
 
+            var userSerializableStruct = new UserSerializableStruct();
+
+            userSerializableStruct.MyintValue = 1;
+            userSerializableStruct.MyulongValue = 100;
+
             clientSideNetworkBehaviourClass.ClientStartTest(userSerializableClass);
+            clientSideNetworkBehaviourClass.ClientStartTest(userSerializableStruct);
 
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
@@ -85,6 +98,9 @@ namespace TestProject.RuntimeTests
             {
                 Assert.AreEqual(m_UserSerializableClass.MyByteListValues[i], i);
             }
+
+            Assert.AreEqual(m_UserSerializableStruct.MyintValue, userSerializableStruct.MyintValue + 1);
+            Assert.AreEqual(m_UserSerializableStruct.MyulongValue, userSerializableStruct.MyulongValue + 1);
 
             // End of test
             m_ClientNetworkManagers[0].Shutdown();
@@ -334,7 +350,19 @@ namespace TestProject.RuntimeTests
         private void OnClientReceivedUserSerializableClassUpdated(UserSerializableClass userSerializableClass)
         {
             m_UserSerializableClass = userSerializableClass;
-            m_FinishedTest = true;
+            m_FinishedClassTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
+        }
+
+        /// <summary>
+        /// Delegate handler invoked towards the end of the when the NetworkSerializableTest
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        private void OnClientReceivedUserSerializableStructUpdated(UserSerializableStruct userSerializableStruct)
+        {
+            m_UserSerializableStruct = userSerializableStruct;
+            m_FinishedStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
         }
 
         /// <summary>
@@ -400,14 +428,17 @@ namespace TestProject.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             serverSideNetworkBehaviourClass.OnSerializableClassesUpdatedServerRpc = OnServerReceivedUserSerializableClassesUpdated;
+            serverSideNetworkBehaviourClass.OnSerializableStructsUpdatedServerRpc = OnServerReceivedUserSerializableStructsUpdated;
 
             // [Client-Side] Get the client side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassesUpdatedClientRpc = OnClientReceivedUserSerializableClassesUpdated;
+            clientSideNetworkBehaviourClass.OnSerializableStructsUpdatedClientRpc = OnClientReceivedUserSerializableStructsUpdated;
 
             m_UserSerializableClassArray = new List<UserSerializableClass>();
+            m_UserSerializableStructArray = new List<UserSerializableStruct>();
 
             if (!m_IsSendingNull)
             {
@@ -418,13 +449,20 @@ namespace TestProject.RuntimeTests
                     //Used for testing order of the array
                     userSerializableClass.MyintValue = i;
                     m_UserSerializableClassArray.Add(userSerializableClass);
+
+                    var userSerializableStruct = new UserSerializableStruct();
+                    //Used for testing order of the array
+                    userSerializableStruct.MyintValue = i;
+                    m_UserSerializableStructArray.Add(userSerializableStruct);
                 }
 
                 clientSideNetworkBehaviourClass.ClientStartTest(m_UserSerializableClassArray.ToArray());
+                clientSideNetworkBehaviourClass.ClientStartStructTest(m_UserSerializableStructArray.ToArray());
             }
             else
             {
                 clientSideNetworkBehaviourClass.ClientStartTest(null);
+                clientSideNetworkBehaviourClass.ClientStartStructTest(null);
             }
 
             // Wait until the test has finished or we time out
@@ -485,7 +523,8 @@ namespace TestProject.RuntimeTests
         private void OnClientReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
         {
             ValidateUserSerializableClasses(userSerializableClass);
-            m_FinishedTest = true;
+            m_FinishedClassTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
         }
 
         /// <summary>
@@ -498,6 +537,55 @@ namespace TestProject.RuntimeTests
             ValidateUserSerializableClasses(userSerializableClass);
         }
 
+        /// <summary>
+        /// Verifies that the UserSerializableStruct array is in the same order
+        /// that it was sent.
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        private void ValidateUserSerializableStructs(UserSerializableStruct[] userSerializableStruct)
+        {
+            if (m_IsSendingNull)
+            {
+                Assert.IsNull(userSerializableStruct);
+            }
+            else if (m_IsArrayEmpty)
+            {
+                Assert.AreEqual(userSerializableStruct.Length, 0);
+            }
+            else
+            {
+                var indexCount = 0;
+                // Check the order of the array
+                foreach (var customTypeEntry in userSerializableStruct)
+                {
+                    Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
+                    indexCount++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Delegate handler invoked when the server sends the client
+        /// the UserSerializableStruct array during the NetworkSerializableArrayTest
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        private void OnClientReceivedUserSerializableStructsUpdated(UserSerializableStruct[] userSerializableStruct)
+        {
+            ValidateUserSerializableStructs(userSerializableStruct);
+            m_FinishedStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
+        }
+
+        /// <summary>
+        /// Delegate handler invoked when the client sends the server
+        /// the UserSerializableStruct array during the NetworkSerializableArrayTest
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        private void OnServerReceivedUserSerializableStructsUpdated(UserSerializableStruct[] userSerializableStruct)
+        {
+            ValidateUserSerializableStructs(userSerializableStruct);
+        }
+
     }
 
     /// <summary>
@@ -508,6 +596,9 @@ namespace TestProject.RuntimeTests
     {
         public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
         public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
+
+        public delegate void OnSerializableStructUpdatedDelgateHandler(UserSerializableStruct userSerializableStruct);
+        public OnSerializableStructUpdatedDelgateHandler OnSerializableStructUpdated;
 
         public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
         public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
@@ -559,6 +650,41 @@ namespace TestProject.RuntimeTests
             if (OnSerializableClassUpdated != null)
             {
                 OnSerializableClassUpdated.Invoke(userSerializableClass);
+            }
+        }
+
+        /// <summary>
+        /// Starts the unit test and passes the UserSerializableStruct from the client to the server
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        public void ClientStartTest(UserSerializableStruct userSerializableStruct)
+        {
+            SendServerSerializedDataServerRpc(userSerializableStruct);
+        }
+
+        /// <summary>
+        /// Server receives the UserSerializableStruct, modifies it, and sends it back
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        [ServerRpc(RequireOwnership = false)]
+        private void SendServerSerializedDataServerRpc(UserSerializableStruct userSerializableStruct)
+        {
+            userSerializableStruct.MyintValue++;
+            userSerializableStruct.MyulongValue++;
+
+            SendClientSerializedDataClientRpc(userSerializableStruct);
+        }
+
+        /// <summary>
+        /// Client receives the UserSerializableStruct and then invokes the OnSerializableStructUpdated (if set)
+        /// </summary>
+        /// <param name="userSerializableStruct"></param>
+        [ClientRpc]
+        private void SendClientSerializedDataClientRpc(UserSerializableStruct userSerializableStruct)
+        {
+            if (OnSerializableStructUpdated != null)
+            {
+                OnSerializableStructUpdated.Invoke(userSerializableStruct);
             }
         }
 
@@ -628,6 +754,7 @@ namespace TestProject.RuntimeTests
     public class TestCustomTypesArrayComponent : NetworkBehaviour
     {
         public delegate void OnSerializableClassesUpdatedDelgateHandler(UserSerializableClass[] userSerializableClasses);
+        public delegate void OnSerializableStructsUpdatedDelgateHandler(UserSerializableStruct[] userSerializableStructs);
 
         public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById[] obj);
         public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
@@ -639,6 +766,8 @@ namespace TestProject.RuntimeTests
 
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedServerRpc;
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
+        public OnSerializableStructsUpdatedDelgateHandler OnSerializableStructsUpdatedServerRpc;
+        public OnSerializableStructsUpdatedDelgateHandler OnSerializableStructsUpdatedClientRpc;
 
         /// <summary>
         /// Starts the unit test and passes the userSerializableClasses array
@@ -666,16 +795,55 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Client receives the UserSerializableClasses array and invokes the callback
+        /// Client receives the UserSerializableClass array and invokes the callback
         /// for verification and signaling the test is complete.
         /// </summary>
-        /// <param name="userSerializableClass"></param>
+        /// <param name="userSerializableClasses"></param>
         [ClientRpc]
         private void SendClientSerializedDataClientRpc(UserSerializableClass[] userSerializableClasses)
         {
             if (OnSerializableClassesUpdatedClientRpc != null)
             {
                 OnSerializableClassesUpdatedClientRpc.Invoke(userSerializableClasses);
+            }
+        }
+
+        /// <summary>
+        /// Starts the unit test and passes the userSerializableStructs array
+        /// from the client to the server
+        /// </summary>
+        /// <param name="userSerializableStructs"></param>
+        public void ClientStartStructTest(UserSerializableStruct[] userSerializableStructs)
+        {
+            SendServerSerializedDataServerRpc(userSerializableStructs);
+        }
+
+        /// <summary>
+        /// Server receives the UserSerializableStructs array, invokes the callback
+        /// that checks the order, and then passes it back to the client
+        /// </summary>
+        /// <param name="userSerializableStructs"></param>
+        [ServerRpc(RequireOwnership = false)]
+        private void SendServerSerializedDataServerRpc(UserSerializableStruct[] userSerializableStructs)
+        {
+            if (OnSerializableStructsUpdatedServerRpc != null)
+            {
+                OnSerializableStructsUpdatedServerRpc.Invoke(userSerializableStructs);
+            }
+            SendClientSerializedDataClientRpc(userSerializableStructs);
+        }
+
+        /// <summary>
+        /// Client receives the userSerializableStructs array and invokes the callback
+        /// for verification and signaling the test is complete.
+        /// </summary>
+        /// <param name="userSerializableStructs"></param>
+        [ClientRpc]
+        private void SendClientSerializedDataClientRpc(UserSerializableStruct[] userSerializableStructs)
+        {
+            if (OnSerializableStructsUpdatedClientRpc != null)
+            {
+                OnSerializableStructsUpdatedClientRpc.Invoke(userSerializableStructs);
             }
         }
 
@@ -769,6 +937,21 @@ namespace TestProject.RuntimeTests
         public UserSerializableClass()
         {
             MyByteListValues = new List<byte>();
+        }
+    }
+
+    /// <summary>
+    /// The test version of a custom user-defined struct that implements INetworkSerializable
+    /// </summary>
+    public struct UserSerializableStruct : INetworkSerializable
+    {
+        public int MyintValue;
+        public ulong MyulongValue;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref MyintValue);
+            serializer.SerializeValue(ref MyulongValue);
         }
     }
 
