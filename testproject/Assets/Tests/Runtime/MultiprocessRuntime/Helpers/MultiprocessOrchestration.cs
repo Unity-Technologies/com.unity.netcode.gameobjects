@@ -1,5 +1,8 @@
 using System;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,6 +14,7 @@ using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
+    private static FileInfo s_Localip_fileinfo;
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static DirectoryInfo MultiprocessDirInfo
@@ -38,6 +42,7 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
+        s_Localip_fileinfo = new FileInfo(Path.Join(s_MultiprocessDirInfo.FullName, "localip"));
         return s_MultiprocessDirInfo;
     }
 
@@ -77,7 +82,7 @@ public class MultiprocessOrchestration
         return activeWorkerCount;
     }
 
-    public static string StartWorkerNode(string platform = "default")
+    public static string StartWorkerNode(string platform = "default", string pathtojson = "")
     {
         if (s_Processes == null)
         {
@@ -97,7 +102,7 @@ public class MultiprocessOrchestration
         else if (!platform.Equals("default"))
         {
             MultiprocessLogger.Log($"Start MultiprocessTestPlayer on remote {platform} ");
-            StartWorkersOnRemoteNodes(rootdir_fileinfo, platform);
+            StartWorkersOnRemoteNodes(rootdir_fileinfo, platform, pathtojson);
             return "";
         }
         else
@@ -186,15 +191,24 @@ public class MultiprocessOrchestration
 
     /**
      * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\win.json --type Unity::VM --image package-ci/win10:stable --flavor b1.small --name ngo-win
-    - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\linux.json --type Unity::VM --image package-ci/ubuntu:stable --flavor b1.small --name ngo-linux
-    - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\mac.json --type Unity::VM::osx --image unity-ci/macos-10.15-dotnetcore:latest --flavor b1.small --name ngo-mac
-    */
-    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform)
+     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\linux.json --type Unity::VM --image package-ci/ubuntu:stable --flavor b1.small --name ngo-linux
+     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\mac.json --type Unity::VM::osx --image unity-ci/macos-10.15-dotnetcore:latest --flavor b1.small --name ngo-mac
+    **/
+    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform, string pathtojson)
     {
         var bokkenMachine = BokkenMachine.Parse(launch_platform);
-        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, "machine1.json");
-        bokkenMachine.Provision();
-        bokkenMachine.Setup();
+        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, pathtojson);
+        var fi = new FileInfo(bokkenMachine.PathToJson);
+        if (!fi.Exists)
+        {
+            bokkenMachine.Provision();
+            bokkenMachine.Setup();
+        }
+        else
+        {
+            // Kill previous run
+        }
+        
         bokkenMachine.Launch();
     }
 
@@ -259,5 +273,70 @@ public class MultiprocessOrchestration
         }
 
         s_Processes.Clear();
+    }
+
+    private void WriteLocalIP(string localip)
+    {
+        using StreamWriter sw = File.CreateText(s_Localip_fileinfo.FullName);
+        sw.WriteLine(localip);
+    }
+
+    public string GetLocalIPAddress()
+    {
+        
+        string bOKKEN_HOST_IP = Environment.GetEnvironmentVariable("BOKKEN_HOST_IP");
+        if (!string.IsNullOrEmpty(bOKKEN_HOST_IP) && bOKKEN_HOST_IP.Contains("."))
+        {
+        
+            return bOKKEN_HOST_IP;
+        }
+
+        if (s_Localip_fileinfo.Exists)
+        {
+            // Read and return this value
+            string alllines = File.ReadAllText(s_Localip_fileinfo.FullName);
+            return alllines.Trim();
+        }
+
+        
+        string localhostname = Dns.GetHostName();
+        
+
+        try
+        {
+            var host = Dns.GetHostEntry(localhostname);
+        
+            foreach (var ip in host.AddressList)
+            {
+        
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    string localIPAddress = ip.ToString();
+        
+                    WriteLocalIP(localIPAddress);
+                    return localIPAddress;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        
+            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface ni in interfaces)
+            {
+                foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                {
+                 
+                    if (ip.Address.ToString().Contains(".") && !ip.Address.ToString().Equals("127.0.0.1"))
+                    {
+                        // TODO: Write this to a file so we don't have to keep getting this IP over and over
+                        WriteLocalIP(ip.Address.ToString());
+                        return ip.Address.ToString();
+                    }
+                }
+            }
+        }
+
+        throw new Exception("No network adapters with an IPv4 address in the system!");
     }
 }

@@ -157,7 +157,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         //TODO: Remove these two lines once this code path is complete 10-Nov-2021
                         MultiprocessLogger.Log($"{platformList}");
                         MultiprocessLogger.Log($"{platformList.Length}");
-                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1]);
+                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1], $"machine-{i}.json");
                     } else
                     {
                         logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
