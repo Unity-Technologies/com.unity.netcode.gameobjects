@@ -11,6 +11,6 @@ jobs:
     steps:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.NETCODE_BOT_KEY }}"
           PR_FILTER: "protected"
           PR_READY_STATE: "ready_for_review"
