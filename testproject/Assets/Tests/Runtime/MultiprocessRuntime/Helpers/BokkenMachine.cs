@@ -80,9 +80,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateSetupMachineCommand());
         }
 
-        public void Launch()
+        public void Launch(string ip)
         {
-            ExecuteCommand(GenerateLaunchCommand());
+            ExecuteCommand(GenerateLaunchCommand(ip));
         }
 
         public void ExecuteCommand(string command)
@@ -139,14 +139,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return s;
         }
 
-        private string GenerateLaunchCommand()
+        private string GenerateLaunchCommand(string ip)
         {
             if (string.IsNullOrEmpty(PathToJson))
             {
                 throw new Exception("PathToJson must not be null or empty");
             }
 
-            string s = $" --command exec --input-path {PathToJson} --remote-command testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip ";
+            string s = $" --command exec --input-path {PathToJson} --remote-command testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}";
             return s;
         }
     }

@@ -209,7 +209,7 @@ public class MultiprocessOrchestration
             // Kill previous run
         }
         
-        bokkenMachine.Launch();
+        bokkenMachine.Launch(GetLocalIPAddress());
     }
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
@@ -275,13 +275,13 @@ public class MultiprocessOrchestration
         s_Processes.Clear();
     }
 
-    private void WriteLocalIP(string localip)
+    private static void WriteLocalIP(string localip)
     {
         using StreamWriter sw = File.CreateText(s_Localip_fileinfo.FullName);
         sw.WriteLine(localip);
     }
 
-    public string GetLocalIPAddress()
+    public static string GetLocalIPAddress()
     {
         
         string bOKKEN_HOST_IP = Environment.GetEnvironmentVariable("BOKKEN_HOST_IP");
