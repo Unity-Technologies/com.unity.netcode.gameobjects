@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - develop
-      - 'releases/**'
+      - 'release/**'
 jobs:
   autoupdate:
     name: auto-update
