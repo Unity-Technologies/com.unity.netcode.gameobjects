@@ -56,8 +56,8 @@ namespace Unity.Netcode.RuntimeTests
             var networkManagers = MultiInstanceHelpers.NetworkManagerInstances.ToArray();
 
             var server = networkManagers.First(t => t.IsServer);
-            var firstClient = networkManagers.First(t => t.IsClient);
-            var secondClient = networkManagers.Last(t => t.IsClient);
+            var firstClient = networkManagers.First(t => !t.IsServer);
+            var secondClient = networkManagers.Last(t => !t.IsServer);
 
             Assert.AreNotEqual(firstClient, secondClient);
 
