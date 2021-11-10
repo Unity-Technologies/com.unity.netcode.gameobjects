@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
 - Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
+- Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
 
 ### Changed
 
