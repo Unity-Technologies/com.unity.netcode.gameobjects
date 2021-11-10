@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager.
+
 ### Changed
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
@@ -26,6 +28,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Overflow exception when syncing Animator state. (#1327)
 - Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
+- Fixed an issue where ServerClientId and LocalClientId could have the same value, causing potential confusion, and also fixed an issue with the UNet where the server could be identified with two different values, one of which might be the same as LocalClientId, and the other of which would not.(#1368)
+- IL2CPP would not properly compile (#1359)
 
 ## [1.0.0-pre.2] - 2021-10-19
 

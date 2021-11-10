@@ -798,7 +798,7 @@ namespace Unity.Netcode.Editor.CodeGen
             int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
-                var returnInstr = processor.Create(OpCodes.Ret);
+                var logInstruction = processor.Create(OpCodes.Ldstr, $"Attempting to invoke {methodDefinition.Name} with no active {nameof(NetworkManager)} listening");
                 var lastInstr = processor.Create(OpCodes.Nop);
 
                 // networkManager = this.NetworkManager;
@@ -808,12 +808,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // if (networkManager == null || !networkManager.IsListening) return;
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
+                instructions.Add(processor.Create(OpCodes.Brfalse, logInstruction));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsListening_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
 
-                instructions.Add(returnInstr);
+                // Debug.LogError(...);
+                instructions.Add(logInstruction);
+                instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
+
+                instructions.Add(processor.Create(OpCodes.Ret));
                 instructions.Add(lastInstr);
             }
 
@@ -1324,26 +1328,29 @@ namespace Unity.Netcode.Editor.CodeGen
             processor.Emit(OpCodes.Ldc_I4, (int)NetworkBehaviour.__RpcExecStage.None);
             processor.Emit(OpCodes.Stfld, m_NetworkBehaviour_rpc_exec_stage_FieldRef);
 
-            //try ends/catch begins
-            var catchEnds = processor.Create(OpCodes.Nop);
-            processor.Emit(OpCodes.Leave, catchEnds);
-
-            // Load the Exception onto the stack
-            var catchStarts = processor.Create(OpCodes.Stloc_0);
-            processor.Append(catchStarts);
-
             // pull in the Exception Module
             var exception = m_MainModule.ImportReference(typeof(Exception));
 
             // Get Exception.ToString()
             var exp = m_MainModule.ImportReference(typeof(Exception).GetMethod("ToString", new Type[] { }));
 
-            // Get String.Format (This is equivelent to an interpolated string)
+            // Get String.Format (This is equivalent to an interpolated string)
             var stringFormat = m_MainModule.ImportReference(typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }));
+
+            nhandler.Body.Variables.Add(new VariableDefinition(exception));
+            int exceptionVariableIndex = nhandler.Body.Variables.Count - 1;
+
+            //try ends/catch begins
+            var catchEnds = processor.Create(OpCodes.Nop);
+            processor.Emit(OpCodes.Leave, catchEnds);
+
+            // Load the Exception onto the stack
+            var catchStarts = processor.Create(OpCodes.Stloc, exceptionVariableIndex);
+            processor.Append(catchStarts);
 
             // Load string for the error log that will be shown
             processor.Emit(OpCodes.Ldstr, $"Unhandled RPC Exception:\n {{0}}");
-            processor.Emit(OpCodes.Ldloc_0);
+            processor.Emit(OpCodes.Ldloc, exceptionVariableIndex);
             processor.Emit(OpCodes.Callvirt, exp);
             processor.Emit(OpCodes.Call, stringFormat);
 

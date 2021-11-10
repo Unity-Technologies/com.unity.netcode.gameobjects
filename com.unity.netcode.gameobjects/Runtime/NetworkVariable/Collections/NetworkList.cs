@@ -368,7 +368,7 @@ namespace Unity.Netcode
         public bool Contains(T item)
         {
             int index = NativeArrayExtensions.IndexOf(m_List, item);
-            return index == -1;
+            return index != -1;
         }
 
         /// <inheritdoc />
