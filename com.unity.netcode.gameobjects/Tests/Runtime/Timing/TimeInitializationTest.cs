@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return new WaitForSeconds(serverStartDelay);
 
-            MultiInstanceHelpers.Start(isHost, server, new NetworkManager[] { }, BaseMultiInstanceTest.SceneManagerValidationAndTestRunnerInitialization); // passing no clients on purpose to start them manually later
+            MultiInstanceHelpers.Start(isHost, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
             var serverTick = server.NetworkTickSystem.ServerTime.Tick;
