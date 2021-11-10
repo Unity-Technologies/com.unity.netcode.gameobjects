@@ -15,17 +15,19 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [ClientRpc]
-        public void SomeClientRpc()
+        public void NoParamsClientRpc()
         {
             ResponseServerRpc();
         }
+
         [ClientRpc]
-        public void SomeClientRpc(int value)
+        public void OneParamClientRpc(int value)
         {
             ResponseServerRpc();
         }
+
         [ClientRpc]
-        public void SomeClientRpc(int value1, int value2)
+        public void TwoParamsClientRpc(int value1, int value2)
         {
             ResponseServerRpc();
         }
@@ -73,21 +75,21 @@ namespace Unity.Netcode.RuntimeTests
             var rpcManyClientsObject = netSpawnedObject.GetComponent<RpcManyClientsObject>();
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(); // RPC with no params
+            rpcManyClientsObject.NoParamsClientRpc(); // RPC with no params
             int maxFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(0); // RPC with one param
+            rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
             maxFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(0, 0); // RPC with two params
+            rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
             maxFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
 
