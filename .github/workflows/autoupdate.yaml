@@ -1,0 +1,16 @@
+name: auto-update
+on:
+  push:
+    branches:
+      - develop
+      - 'release/**'
+jobs:
+  autoupdate:
+    name: auto-update
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://chinthakagodawita/autoupdate-action:v1
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          PR_FILTER: "protected"
+          PR_READY_STATE: "ready_for_review"
