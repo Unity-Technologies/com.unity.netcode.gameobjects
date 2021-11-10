@@ -4,6 +4,7 @@ using System.IO;
 using System.Diagnostics;
 using System.ComponentModel;
 
+
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class BokkenMachine
@@ -25,10 +26,40 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static BokkenMachine GetDefaultMac(string name)
         {
             var rv = new BokkenMachine();
+            rv.Type = "Unity::VM::osx";
+            rv.Image = "unity-ci/macos-10.15-dotnetcore:latest";
+            rv.Flavor = "b1.large";
             rv.Name = name;
             return rv;
         }
 
+        public static BokkenMachine GetDefaultWin(string name)
+        {
+            var rv = new BokkenMachine();
+            rv.Type = "Unity::VM";
+            rv.Image = "package-ci/win10:stable";
+            rv.Flavor = "b1.large";
+            rv.Name = name;
+            return rv;
+        }
+
+        public static BokkenMachine Parse(string shortcut)
+        {
+            BokkenMachine rv = null;
+            string[] parts = shortcut.Split(":");
+            string name = parts[1];
+            string type = parts[0];
+            if (type.Equals("default-mac"))
+            {
+                rv = GetDefaultMac(name);
+            }
+            else if (type.Equals("default-win"))
+            {
+                rv = GetDefaultWin(name);
+            }            
+            
+            return rv;
+        }
         public BokkenMachine()
         {
             m_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
@@ -41,13 +72,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateCreateCommand());
         }
 
+        // 1. Put built player file on remote machine
+        // 2. Unzip the file on the remote machine
+        // 3. Enable the firewall rules, etc. to allow to run
         public void Setup()
         {
-            // 1. Put built player file on remote machine
+            ExecuteCommand(GenerateSetupMachineCommand());
+        }
 
-            // 2. Unzip the file on the remote machine
-
-            // 3. Enable the firewall rules, etc. to allow to run
+        public void Launch()
+        {
+            ExecuteCommand(GenerateLaunchCommand());
         }
 
         public void ExecuteCommand(string command)
@@ -92,6 +127,46 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string s = $" --command create --output-path {PathToJson} --type {Type} --image {Image} --flavor {Flavor} --name {Name}";
             return s;
         }
+
+        private string GenerateSetupMachineCommand()
+        {
+            if (string.IsNullOrEmpty(PathToJson))
+            {
+                throw new Exception("PathToJson must not be null or empty");
+            }
+
+            string s = $" --command setupmachine --input-path {PathToJson}";
+            return s;
+        }
+
+        private string GenerateLaunchCommand()
+        {
+            if (string.IsNullOrEmpty(PathToJson))
+            {
+                throw new Exception("PathToJson must not be null or empty");
+            }
+
+            string s = $" --command exec --input-path {PathToJson}";
+            return s;
+        }
     }
+
+    public class BokkenMachineTestAttribute
+    {
+        public string Name { get; set; }
+        public string SemanticTypeInfo { get; set; }
+
+        public BokkenMachineTestAttribute(string name, string semanticinfo)
+        {
+            Name = name;
+            SemanticTypeInfo = semanticinfo;
+        }
+
+        public BokkenMachineTestAttribute()
+        {
+
+        }
+    }
+
 }
 

@@ -6,8 +6,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
-    [TestFixture(1, new string[] { "mac" })]
-    [TestFixture(2, new string[] { "mac", "win" })]
+    [TestFixture(1, new string[] { "default-win:test-win" })]
+    [TestFixture(2, new string[] { "default-mac:test-mac", "default-mac:test-mac-2" })]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
@@ -21,7 +21,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public TestCoordinatorTests(int workerCount, string[] platformList)
         {
             m_WorkerCount = workerCount;
-            m_Platforms = platformList;
+            m_Platforms = platformList;            
         }
 
         static private float s_ValueToValidateAgainst;

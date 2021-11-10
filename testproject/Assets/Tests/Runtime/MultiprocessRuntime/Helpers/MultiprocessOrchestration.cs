@@ -191,15 +191,10 @@ public class MultiprocessOrchestration
     */
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform)
     {
-        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
-        var fileName = Path.Combine(rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
-        var fileNameInfo = new FileInfo(fileName);
-        var workerProcess = new Process();
-    }
-
-    public static void ProvisionRemoteNode()
-    {
-
+        var bokkenMachine = BokkenMachine.Parse(launch_platform);
+        bokkenMachine.Provision();
+        bokkenMachine.Setup();
+        bokkenMachine.Launch();
     }
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)

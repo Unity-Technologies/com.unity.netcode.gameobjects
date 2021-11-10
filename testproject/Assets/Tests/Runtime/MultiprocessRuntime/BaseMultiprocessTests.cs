@@ -90,6 +90,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     unetTransport.ConnectPort = ushortport;
                     unetTransport.ServerListenPort = ushortport;
                     break;
+                default:
+                    MultiprocessLogger.Log($"OnSceneLoaded: Transport is {transport}");
+                    break;
             }
 
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
@@ -151,9 +154,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
                     if (platformList != null)
                     {
+                        //TODO: Remove these two lines once this code path is complete 10-Nov-2021
                         MultiprocessLogger.Log($"{platformList}");
                         MultiprocessLogger.Log($"{platformList.Length}");
-                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1]); // will automatically start built player as clients
+                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1]);
                     } else
                     {
                         logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
