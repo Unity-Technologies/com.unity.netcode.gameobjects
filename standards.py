@@ -1,22 +1,19 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.9
 
 import os
 import sys
-import stat
 import glob
 import argparse
 import datetime
+import subprocess
 
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--hook", action="store_true")
-parser.add_argument("--unhook", action="store_true")
 parser.add_argument("--check", action="store_true")
 parser.add_argument("--fix", action="store_true")
 
 parser.add_argument("--verbosity", default="minimal")
-parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
 parser.add_argument("--project-glob", default="*.sln")
 
@@ -27,48 +24,22 @@ if len(sys.argv) == 1:
 args = parser.parse_args()
 
 
-hook_path = "./.git/hooks/pre-push"
-hook_exec = f"python3 {os.path.basename(sys.argv[0])} --check"
+dotnet_min_ver = 6
+ver_run = subprocess.run(["dotnet", "format", "--version"], capture_output=True)
+if ver_run.returncode != 0:
+    print("> dotnet format --version`")
+    print("cannot execute version check command")
+    print(f"please make sure to have dotnet {dotnet_min_ver}+ installed")
+    print("https://dotnet.microsoft.com/download/dotnet")
+    exit(1)
 
-if args.hook:
-    print("hook: execute")
-
-    if os.path.exists(hook_path):
-        print(f"hook: git pre-push hook file already exists: `{hook_path}`")
-        print("hook: please make sure to backup and delete the existing pre-push hook file")
-        exit("hook: failed")
-
-    print("hook: write git pre-push hook file contents")
-    hook_file = open(hook_path, "w")
-    hook_file.write(f"#!/bin/sh\n\n{hook_exec}\n")
-    hook_file.close()
-
-    print("hook: make git pre-push hook file executable")
-    hook_stat = os.stat(hook_path)
-    os.chmod(hook_path, hook_stat.st_mode | stat.S_IEXEC)
-
-    print("hook: succeeded")
-
-
-if args.unhook:
-    print("unhook: execute")
-
-    hook_path = "./.git/hooks/pre-push"
-    if os.path.isfile(hook_path):
-        print(f"unhook: found file -> `{hook_path}`")
-        delete = False
-        hook_file = open(hook_path, "r")
-        if hook_exec in hook_file.read():
-            delete = True
-        else:
-            print("unhook: existing git pre-push hook file was not created by this script")
-            exit("unhook: failed")
-        hook_file.close()
-        if delete:
-            os.remove(hook_path)
-            print(f"unhook: delete file -> `{hook_path}`")
-
-    print("unhook: succeeded")
+ver_run_str = ver_run.stdout.decode("utf-8")[:-1]
+if int(ver_run_str[0]) < dotnet_min_ver:
+    print("> dotnet format --version`")
+    print(f"lower than minimum required version: {ver_run_str}")
+    print(f"please make sure to upgrade to dotnet {dotnet_min_ver}+")
+    print("https://dotnet.microsoft.com/download/dotnet")
+    exit(1)
 
 
 if args.check or args.fix:
@@ -102,12 +73,23 @@ if args.check:
     any_error = False
     for project_file in glob_files:
         print(f"check: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check --verbosity {args.verbosity}") or any_error
+
+        print("check: whitespace")
+        ws_run = subprocess.run(["dotnet", "format", project_file, "whitespace", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
+        if ws_run.returncode != 0:
+            print("check: whitespace failed")
+            any_error = True
+
+        print("check: code style")
+        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
+        if cs_run.returncode != 0:
+            print("check: code style failed")
+            any_error = True
 
     if any_error:
-        exit("check: failed")
-
-    print("check: succeeded")
+        exit("check: failed (see errors above)")
+    else:
+        print("check: succeeded")
 
 
 if args.fix:
@@ -116,9 +98,20 @@ if args.fix:
     any_error = False
     for project_file in glob_files:
         print(f"fix: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --verbosity {args.verbosity}") or any_error
+
+        print("fix: whitespace")
+        ws_run = subprocess.run(["dotnet", "format", project_file, "whitespace", "--no-restore", "--verbosity", args.verbosity])
+        if ws_run.returncode != 0:
+            print("fix: whitespace failed")
+            any_error = True
+
+        print("fix: code style")
+        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--verify-no-changes", "--verbosity", args.verbosity])
+        if cs_run.returncode != 0:
+            print("fix: code style failed")
+            any_error = True
 
     if any_error:
-        exit("fix: failed")
-
-    print("fix: succeeded")
+        exit("fix: failed (see errors above)")
+    else:
+        print("fix: succeeded")

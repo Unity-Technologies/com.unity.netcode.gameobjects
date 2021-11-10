@@ -1028,8 +1028,8 @@ namespace Unity.Netcode
                 // despawned that no longer exists
                 SendSceneEventData(sceneEventId, m_NetworkManager.ConnectedClientsIds.Where(c => c != m_NetworkManager.ServerClientId).ToArray());
 
-                //Second, server sets itself as having finished unloading
-                if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
+                //Only if we are a host do we want register having loaded for the associated SceneEventProgress
+                if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
                 {
                     SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(m_NetworkManager.ServerClientId);
                 }
@@ -1344,8 +1344,8 @@ namespace Unity.Netcode
 
             OnLoadComplete?.Invoke(m_NetworkManager.ServerClientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
-            //Second, set the server as having loaded for the associated SceneEventProgress
-            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
+            //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
+            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
             {
                 SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(m_NetworkManager.ServerClientId);
             }
@@ -1830,21 +1830,18 @@ namespace Unity.Netcode
         /// Moves all NetworkObjects that don't have the <see cref="NetworkObject.DestroyWithScene"/> set to
         /// the "Do not destroy on load" scene.
         /// </summary>
-        private void MoveObjectsToDontDestroyOnLoad()
+        internal void MoveObjectsToDontDestroyOnLoad()
         {
-            // Move ALL NetworkObjects to the temp scene
+            // Move ALL NetworkObjects marked to persist scene transitions into the DDOL scene
             var objectsToKeep = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
-
             foreach (var sobj in objectsToKeep)
             {
-                if (!sobj.DestroyWithScene || (sobj.IsSceneObject != null && sobj.IsSceneObject.Value && sobj.gameObject.scene == DontDestroyOnLoadScene))
+                if (!sobj.DestroyWithScene || sobj.gameObject.scene == DontDestroyOnLoadScene)
                 {
-                    // Only move objects with no parent as child objects will follow
-                    if (sobj.gameObject.transform.parent == null)
+                    // Only move dynamically spawned network objects with no parent as child objects will follow
+                    if (sobj.gameObject.transform.parent == null && sobj.IsSceneObject != null && !sobj.IsSceneObject.Value)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
-                        // Since we are doing a scene transition, disable the GameObject until the next scene is loaded
-                        sobj.gameObject.SetActive(false);
                     }
                 }
                 else if (m_NetworkManager.IsServer)
@@ -1907,24 +1904,22 @@ namespace Unity.Netcode
         /// Moves all spawned NetworkObjects (from do not destroy on load) to the scene specified
         /// </summary>
         /// <param name="scene">scene to move the NetworkObjects to</param>
-        private void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
+        internal void MoveObjectsFromDontDestroyOnLoadToScene(Scene scene)
         {
             // Move ALL NetworkObjects to the temp scene
             var objectsToKeep = m_NetworkManager.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
-                if (sobj.gameObject.scene == DontDestroyOnLoadScene && (sobj.IsSceneObject == null || sobj.IsSceneObject.Value))
+                // If it is in the DDOL then
+                if (sobj.gameObject.scene == DontDestroyOnLoadScene)
                 {
-                    continue;
-                }
-
-                // Only move objects with no parent as child objects will follow
-                if (sobj.gameObject.transform.parent == null)
-                {
-                    // set it back to active at this point
-                    sobj.gameObject.SetActive(true);
-                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                    // only move dynamically spawned network objects, with no parent as child objects will follow,
+                    // back into the currently active scene
+                    if (sobj.gameObject.transform.parent == null && sobj.IsSceneObject != null && !sobj.IsSceneObject.Value)
+                    {
+                        SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                    }
                 }
             }
         }

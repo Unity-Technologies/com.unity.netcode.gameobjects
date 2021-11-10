@@ -20,6 +20,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
             m_TestNetworkObjectPrefab = new GameObject("InstantiateDestroySpawnNotCalled_Object");
@@ -76,6 +77,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance

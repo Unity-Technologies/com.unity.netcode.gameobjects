@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
+using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
@@ -52,13 +53,49 @@ namespace TestProject.RuntimeTests
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
 
+        public enum ServerType
+        {
+            Host,
+            Server
+        }
+
         /// <summary>
         /// Tests the different types of NetworkSceneManager notifications (including exceptions) generated
         /// Also tests invalid loading scenarios (i.e. client trying to load a scene)
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
+        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(ServerType.Host, ServerType.Server)] ServerType serverType)
         {
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return Teardown();
+
+            // Give a little time for handling clean-up and the like
+            yield return new WaitForSeconds(0.01f);
+
+            // We set this to true in order to bypass the automatic starting of the host and clients
+            m_BypassStartAndWaitForClients = true;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return Setup();
+
+            // This provides both host and server coverage, when a server we should still get SceneEventType.LoadEventCompleted and SceneEventType.UnloadEventCompleted events
+            // but the client count as a server should be 1 less than when a host
+            var isHost = serverType == ServerType.Host ? true : false;
+
+            // Start the host and  clients
+            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            {
+                Debug.LogError("Failed to start instances");
+                Assert.Fail("Failed to start instances");
+            }
+
+            // Wait for connection on client side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+
+            var numberOfClients = isHost ? NbClients + 1 : NbClients;
+            // Wait for connection on server side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
+
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
 
@@ -327,8 +364,17 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+
+                        // If we are a server and this is being processed by the server, then add the server to the completed list
+                        // to validate that the event completed on all clients (and the server).
+                        if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
+                            !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
+                        {
+                            sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
+                        }
                         Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
                         SetClientWaitDone(sceneEvent.ClientsThatCompleted);
+
                         break;
                     }
             }
@@ -935,7 +981,129 @@ namespace TestProject.RuntimeTests
             nativeArray.Dispose();
             fastBufferWriter.Dispose();
             networkManager.Shutdown();
-            UnityEngine.Object.Destroy(networkManagerGameObject);
+            Object.Destroy(networkManagerGameObject);
         }
     }
+
+    public class NetworkSceneManagerDDOLTests
+    {
+        private NetworkManager m_ServerNetworkManager;
+        private GameObject m_NetworkManagerGameObject;
+        private GameObject m_DDOL_ObjectToSpawn;
+
+        protected float m_ConditionMetFrequency = 0.1f;
+
+        [UnitySetUp]
+        protected IEnumerator SetUp()
+        {
+            m_NetworkManagerGameObject = new GameObject("NetworkManager - Host");
+            m_ServerNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
+
+            m_DDOL_ObjectToSpawn = new GameObject();
+            m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
+            m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
+
+            m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
+            {
+                ConnectionApproval = false,
+                NetworkPrefabs = new List<NetworkPrefab>(),
+                NetworkTransport = m_NetworkManagerGameObject.AddComponent<SIPTransport>(),
+            };
+            m_ServerNetworkManager.StartHost();
+            yield break;
+        }
+
+        [UnityTearDown]
+        protected IEnumerator TearDown()
+        {
+            m_ServerNetworkManager.Shutdown();
+
+            Object.Destroy(m_NetworkManagerGameObject);
+            Object.Destroy(m_DDOL_ObjectToSpawn);
+
+            yield break;
+        }
+
+        public enum DefaultState
+        {
+            IsEnabled,
+            IsDisabled
+        }
+
+        public enum MovedIntoDDOLBy
+        {
+            User,
+            NetworkSceneManager
+        }
+
+        public enum NetworkObjectType
+        {
+            InScenePlaced,
+            DynamicallySpawned
+        }
+
+        /// <summary>
+        /// Tests to make sure NetworkObjects moved into the DDOL will
+        /// restore back to their currently active state when a full
+        /// scene transition is complete.
+        /// This tests both in-scene placed and dynamically spawned NetworkObjects
+        [UnityTest]
+        public IEnumerator InSceneNetworkObjectState([Values(DefaultState.IsEnabled, DefaultState.IsDisabled)] DefaultState activeState,
+            [Values(MovedIntoDDOLBy.User, MovedIntoDDOLBy.NetworkSceneManager)] MovedIntoDDOLBy movedIntoDDOLBy,
+            [Values(NetworkObjectType.InScenePlaced, NetworkObjectType.DynamicallySpawned)] NetworkObjectType networkObjectType)
+        {
+            var isActive = activeState == DefaultState.IsEnabled ? true : false;
+            var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
+            var networkObject = m_DDOL_ObjectToSpawn.GetComponent<NetworkObject>();
+            var ddolBehaviour = m_DDOL_ObjectToSpawn.GetComponent<DDOLBehaviour>();
+
+            // All tests require this to be false
+            networkObject.DestroyWithScene = false;
+
+            if (movedIntoDDOLBy == MovedIntoDDOLBy.User)
+            {
+                ddolBehaviour.MoveToDDOL();
+            }
+
+            // Sets whether we are in-scene or dynamically spawned NetworkObject
+            ddolBehaviour.SetInScene(isInScene);
+
+            Assert.That(networkObject.IsSpawned);
+
+            m_DDOL_ObjectToSpawn.SetActive(isActive);
+
+            m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
+
+            yield return new WaitForSeconds(0.03f);
+
+            // It should be isActive when MoveObjectsToDontDestroyOnLoad is called.
+            Assert.That(networkObject.isActiveAndEnabled == isActive);
+
+            m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
+
+            yield return new WaitForSeconds(0.03f);
+
+            // It should be isActive when MoveObjectsFromDontDestroyOnLoadToScene is called.
+            Assert.That(networkObject.isActiveAndEnabled == isActive);
+
+            //Done
+            networkObject.Despawn(false);
+        }
+
+        public class DDOLBehaviour : NetworkBehaviour
+        {
+            public void MoveToDDOL()
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+
+            public void SetInScene(bool isInScene)
+            {
+                var networkObject = GetComponent<NetworkObject>();
+                networkObject.IsSceneObject = isInScene;
+            }
+        }
+
+    }
+
 }
