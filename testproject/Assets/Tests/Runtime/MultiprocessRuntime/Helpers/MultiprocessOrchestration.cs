@@ -320,7 +320,7 @@ public class MultiprocessOrchestration
         }
         catch (Exception e)
         {
-        
+            MultiprocessLogger.LogError(e.Message);
             NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface ni in interfaces)
             {
