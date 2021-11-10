@@ -33,6 +33,7 @@ namespace Unity.Netcode
         /// <summary>
         /// A list of prefabs that can be dynamically spawned.
         /// </summary>
+        /// TODO: Move this into NetworkPrefabConfig
         [SerializeField]
         [Tooltip("The prefabs that can be spawned across the network")]
         internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
