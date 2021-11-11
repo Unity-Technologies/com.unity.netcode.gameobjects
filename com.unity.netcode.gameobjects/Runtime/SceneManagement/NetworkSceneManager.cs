@@ -1496,7 +1496,18 @@ namespace Unity.Netcode
                 // don't try to reload it.
                 shouldPassThrough = true;
             }
-
+            else
+            {
+                // Another check to see if the client already has loaded the scene to be loaded
+                Scene existingScene = SceneManager.GetSceneByName(sceneName);
+                if (existingScene.isLoaded)
+                {
+                    // If the scene is already loaded, then pass through and
+                    // don't try to reload it.
+                    shouldPassThrough = true;
+                }
+            }
+			
 #if UNITY_INCLUDE_TESTS
             if (m_IsRunningUnitTest)
             {
