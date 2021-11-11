@@ -42,6 +42,8 @@ namespace Unity.Netcode.RuntimeTests.Physics
         [UnityTest]
         public IEnumerator TestRigidbodyKinematicEnableDisable()
         {
+            Debug.Log("Running version with WaitForSeconds()");
+
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
@@ -55,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
             Assert.IsNotNull(serverPlayer, "serverPlayer is not null");
             Assert.IsNotNull(clientPlayer, "clientPlayer is not null");
 
-            yield return WaitForFrames(5);
+            yield return new WaitForSeconds(1.0f);
 
             // server rigidbody has authority and should have a kinematic mode of false
             Assert.True(serverPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic, "serverPlayer kinematic");
@@ -68,11 +70,11 @@ namespace Unity.Netcode.RuntimeTests.Physics
             // despawn the server player (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
-            yield return WaitForFrames(5);
+            yield return new WaitForSeconds(1.0f);
 
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic, "serverPlayer second kinematic");
 
-            yield return WaitForFrames(5);
+            yield return new WaitForSeconds(1.0f);
 
             Assert.IsTrue(clientPlayer == null, "clientPlayer being null"); // safety check that object is actually despawned.
         }
