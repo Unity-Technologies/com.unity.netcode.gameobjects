@@ -42,8 +42,6 @@ namespace Unity.Netcode.RuntimeTests.Physics
         [UnityTest]
         public IEnumerator TestRigidbodyKinematicEnableDisable()
         {
-            Debug.Log("Running version with WaitForSeconds()");
-
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
