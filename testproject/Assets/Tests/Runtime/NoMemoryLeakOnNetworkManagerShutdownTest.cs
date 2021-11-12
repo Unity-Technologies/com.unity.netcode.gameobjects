@@ -12,6 +12,15 @@ namespace TestProject.RuntimeTests
     {
         private GameObject m_Prefab;
 
+        [SetUp]
+        public void Setup()
+        {
+            ShutdownDuringOnNetworkSpawnBehaviour.SpawnCount = 0;
+            ShutdownDuringOnNetworkSpawnBehaviour.ClientRpcsCalled = 0;
+            ShutdownDuringOnNetworkSpawnBehaviour.ServerRpcsCalled = 0;
+            ShutdownDuringOnNetworkSpawnBehaviour.ShutdownImmediately = false;
+        }
+        
         [UnityTearDown]
         public IEnumerator Teardown()
         {
@@ -23,9 +32,8 @@ namespace TestProject.RuntimeTests
             }
             yield break;
         }
-
-        [UnityTest]
-        public IEnumerator WhenNetworkManagerShutsDownWhileTriggeredMessagesArePending_MemoryDoesNotLeak()
+        
+        public IEnumerator RunTest()
         {
             // Must be 1 for this test.
             const int numClients = 1;
@@ -86,9 +94,32 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(ShutdownDuringOnNetworkSpawnBehaviour.SpawnCount, clients.Length + 1);
             // Extra frames to catch Native Container memory leak log message
             var lastFrameNumber = Time.frameCount + 10;
-            Object.Destroy(serverObject);
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
+            Object.Destroy(serverObject);
+        }
+
+        [UnityTest]
+        public IEnumerator WhenNetworkManagerShutsDownWhileTriggeredMessagesArePending_MemoryDoesNotLeak()
+        {
+            yield return RunTest();
             LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator WhenNetworkManagerShutsDownWhileTriggeredMessagesArePending_MessagesAreStillProcessed()
+        {
+            yield return RunTest();
+            Assert.AreEqual(1, ShutdownDuringOnNetworkSpawnBehaviour.ClientRpcsCalled);
+            Assert.AreEqual(1, ShutdownDuringOnNetworkSpawnBehaviour.ServerRpcsCalled);
+        }
+
+        [UnityTest]
+        public IEnumerator WhenNetworkManagerShutsDownImmediatelyWhileTriggeredMessagesArePending_MessagesAreNotProcessed()
+        {
+            ShutdownDuringOnNetworkSpawnBehaviour.ShutdownImmediately = true;
+            yield return RunTest();
+            Assert.AreEqual(0, ShutdownDuringOnNetworkSpawnBehaviour.ClientRpcsCalled);
+            Assert.AreEqual(0, ShutdownDuringOnNetworkSpawnBehaviour.ServerRpcsCalled);
         }
     }
 }

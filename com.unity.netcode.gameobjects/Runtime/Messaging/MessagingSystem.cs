@@ -55,7 +55,6 @@ namespace Unity.Netcode
         private object m_Owner;
         private IMessageSender m_MessageSender;
         private bool m_Disposed;
-        private int m_CurrentIncomingMessageQueueIndex;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
@@ -115,15 +114,13 @@ namespace Unity.Netcode
                 CleanupDisconnectedClient(kvp.Key);
             }
 
-            // If there's a message currently being processed, it'll dispose itself, so we can't dispose here or that'll
-            // double-dispose.
-            ++m_CurrentIncomingMessageQueueIndex;
-            for (; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
+            for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(m_CurrentIncomingMessageQueueIndex);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(queueIndex);
                 item.Reader.Dispose();
             }
+            
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
         }
@@ -264,10 +261,10 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
-            for (m_CurrentIncomingMessageQueueIndex = 0; m_CurrentIncomingMessageQueueIndex < m_IncomingMessageQueue.Length; ++m_CurrentIncomingMessageQueueIndex)
+            for (var index = 0; index < m_IncomingMessageQueue.Length; ++index)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(m_CurrentIncomingMessageQueueIndex);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(index);
                 HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
                 if (m_Disposed)
                 {
