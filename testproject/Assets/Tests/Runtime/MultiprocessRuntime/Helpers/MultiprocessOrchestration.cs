@@ -235,6 +235,15 @@ public class MultiprocessOrchestration
         }
     }
 
+    public static void KillAllTestPlayersOnRemoteMachines()
+    {
+        
+        foreach (var f in MultiprocessDirInfo.GetFiles("*.json"))
+        {
+            BokkenMachine.KillMultiprocessTestPlayer(f.FullName);
+        }
+    }
+
     public static void ShutdownAllProcesses()
     {
         MultiprocessLogger.Log("Shutting down all processes..");

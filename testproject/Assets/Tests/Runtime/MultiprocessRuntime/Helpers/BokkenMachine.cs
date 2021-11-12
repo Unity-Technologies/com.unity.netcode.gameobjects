@@ -85,8 +85,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             foreach (var f in mpDir.GetFiles("*.json"))
             {
                 ExecuteCommand($"--command destroy --input-path {f.FullName}");
-            }
-            
+            }            
+        }
+
+        public static void KillMultiprocessTestPlayer(string pathToJson)
+        {
+            ExecuteCommand($" --command killmptplayer --input-file {pathToJson}");
         }
 
         // 1. Put built player file on remote machine

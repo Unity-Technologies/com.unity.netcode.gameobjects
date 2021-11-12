@@ -199,6 +199,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
+                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             }
         }
 
