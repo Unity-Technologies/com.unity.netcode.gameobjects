@@ -997,13 +997,13 @@ namespace Unity.Netcode
         /// Globally shuts down the library.
         /// Disconnects clients if connected and stops server if running.
         /// </summary>
-        /// <param name="immediate">
+        /// <param name="discardMessageQueue">
         /// If false, any messages that are currently in the incoming queue will be handled,
         /// and any messages in the outgoing queue will be sent, before the shutdown is processed.
         /// If true, NetworkManager will shut down immediately, and any unprocessed or unsent messages
         /// will be discarded.
         /// </param>
-        public void Shutdown(bool immediate = false)
+        public void Shutdown(bool discardMessageQueue = false)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -1011,20 +1011,10 @@ namespace Unity.Netcode
             }
 
             m_ShuttingDown = true;
-            m_StopProcessingMessages = immediate;
+            m_StopProcessingMessages = discardMessageQueue;
         }
 
-        /// <summary>
-        /// Globally shuts down the library.
-        /// Disconnects clients if connected and stops server if running.
-        /// Discards any unprocessed messages in the receive and send queues.
-        /// </summary>
-        public void ShutdownImmediately()
-        {
-            Shutdown(true);
-        }
-
-        private void ShutdownInternal()
+        internal void ShutdownInternal()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
