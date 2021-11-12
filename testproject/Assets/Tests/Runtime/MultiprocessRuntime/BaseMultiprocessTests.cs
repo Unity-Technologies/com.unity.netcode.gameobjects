@@ -149,15 +149,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 for (int i = 1; i <= numProcessesToCreate; i++)
                 {
+                    if (platformList != null)
+                    {
+                        MultiprocessOrchestration.ProvisionWorkerNode(platformList[i - 1], $"machine-{i}.json");
+                    }
+                }
+
+                for (int i = 1; i <= numProcessesToCreate; i++)
+                {
                     string logPath = "";
                     MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
                     if (platformList != null)
                     {
-                        //TODO: Remove these two lines once this code path is complete 10-Nov-2021
-                        MultiprocessLogger.Log($"{platformList}");
-                        MultiprocessLogger.Log($"{platformList.Length}");
                         logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1], $"machine-{i}.json");
-                    } else
+                    }
+                    else
                     {
                         logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                     }
