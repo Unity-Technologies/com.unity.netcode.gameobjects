@@ -72,6 +72,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateCreateCommand(), true, 5000);
         }
 
+        public void DisposeResources()
+        {
+            DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            foreach (var f in mpDir.GetFiles("*.json"))
+            {
+                ExecuteCommand($"--command destroy --input-path {f.FullName}");
+            }
+            
+        }
+
         // 1. Put built player file on remote machine
         // 2. Unzip the file on the remote machine
         // 3. Enable the firewall rules, etc. to allow to run
@@ -83,6 +93,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void Launch(string ip)
         {
             ExecuteCommand(GenerateLaunchCommand(ip));
+        }
+
+        public void Launch()
+        {
+            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));
         }
 
         public void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)

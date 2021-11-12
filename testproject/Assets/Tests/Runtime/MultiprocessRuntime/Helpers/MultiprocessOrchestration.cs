@@ -82,21 +82,21 @@ public class MultiprocessOrchestration
         return activeWorkerCount;
     }
 
-    public static BokkenMachine ProvisionWorkerNode(string platform = "default", string pathtojson = "")
+    public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
-        var bokkenMachine = BokkenMachine.Parse(platform);
-        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, pathtojson);
+        var bokkenMachine = BokkenMachine.Parse(platformString);
+        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, bokkenMachine.Name);
         var fi = new FileInfo(bokkenMachine.PathToJson);
         if (!fi.Exists)
         {
-            MultiprocessLogger.Log($"Need to provision and set up a new machine {pathtojson}");
+            MultiprocessLogger.Log($"Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
             bokkenMachine.Provision();
             bokkenMachine.Setup();
         }
         return bokkenMachine;
     }
 
-    public static string StartWorkerNode(string platform = "default", string pathtojson = "")
+    public static string StartWorkerNode()
     {
         if (s_Processes == null)
         {
@@ -112,13 +112,7 @@ public class MultiprocessOrchestration
             MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
             StartWorkersOnRemoteNodes(rootdir_fileinfo);
             return "";
-        }
-        else if (!platform.Equals("default"))
-        {
-            MultiprocessLogger.Log($"Start MultiprocessTestPlayer on remote {platform} ");
-            StartWorkersOnRemoteNodes(rootdir_fileinfo, platform, pathtojson);
-            return "";
-        }
+        }        
         else
         {
             MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
@@ -202,18 +196,7 @@ public class MultiprocessOrchestration
         }
         return logPath;
     }
-
-    /**
-     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\win.json --type Unity::VM --image package-ci/win10:stable --flavor b1.small --name ngo-win
-     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\linux.json --type Unity::VM --image package-ci/ubuntu:stable --flavor b1.small --name ngo-linux
-     * - dotnet BokkenForNetcode\ProvisionBokkenMachines\bin\Debug\netcoreapp3.1\ProvisionBokkenMachines.dll --command create --output-path %USERPROFILE%\.multiprocess\mac.json --type Unity::VM::osx --image unity-ci/macos-10.15-dotnetcore:latest --flavor b1.small --name ngo-mac
-    **/
-    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo, string launch_platform, string pathtojson)
-    {
-        var bokkenMachine = ProvisionWorkerNode(launch_platform, pathtojson);        
-        MultiprocessLogger.Log("Launching");
-        bokkenMachine.Launch(GetLocalIPAddress());
-    }
+    
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
     {

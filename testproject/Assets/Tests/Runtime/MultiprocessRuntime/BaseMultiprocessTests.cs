@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -147,29 +148,28 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
-                for (int i = 1; i <= numProcessesToCreate; i++)
+                if (platformList == null)
                 {
-                    if (platformList != null)
+                    for (int i = 1; i <= numProcessesToCreate; i++)
                     {
-                        MultiprocessOrchestration.ProvisionWorkerNode(platformList[i - 1], $"machine-{i}.json");
+                        string logPath = "";
+                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
+                        logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"logPath to new process is {logPath}");
+                        MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     }
                 }
-
-                for (int i = 1; i <= numProcessesToCreate; i++)
+                else
                 {
-                    string logPath = "";
-                    MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
-                    if (platformList != null)
+                    var machines = new List<BokkenMachine>();
+                    foreach (var platform in platformList)
                     {
-                        logPath = MultiprocessOrchestration.StartWorkerNode(platformList[i-1], $"machine-{i}.json");
+                        machines.Add(MultiprocessOrchestration.ProvisionWorkerNode(platform));
                     }
-                    else
+                    foreach (var machine in machines)
                     {
-                        logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        machine.Launch();
                     }
-                    
-                    MultiprocessLogger.Log($"logPath to new process is {logPath}");
-                    MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                 }
             }
             else
@@ -206,6 +206,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void TeardownSuite()
         {
             MultiprocessLogger.Log($"TeardownSuite");
+            BokkenMachine.DisposeResources();
             if (!IgnoreMultiprocessTests)
             {
                 MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
