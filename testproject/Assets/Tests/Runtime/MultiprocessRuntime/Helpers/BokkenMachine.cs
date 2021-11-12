@@ -20,9 +20,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public Dictionary<string, BokkenMachine> BokkenMachines;
 
-        private FileInfo m_FileInfo;
-        private string m_Rootdir;
-        private string m_PathToDll;
+        private static FileInfo s_FileInfo;
+        private static string s_Rootdir;
+        private static string s_PathToDll;
+
+        static BokkenMachine()
+        {
+            s_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
+            s_Rootdir = (File.ReadAllText(s_FileInfo.FullName)).Trim();
+            s_PathToDll = Path.Combine(s_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
+        }
+
         public static BokkenMachine GetDefaultMac(string name)
         {
             var rv = new BokkenMachine();
@@ -62,9 +70,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
         public BokkenMachine()
         {
-            m_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
-            m_Rootdir = (File.ReadAllText(m_FileInfo.FullName)).Trim();
-            m_PathToDll = Path.Combine(m_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
+            
+            
         }
 
         public void Provision()
@@ -72,7 +79,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateCreateCommand(), true, 5000);
         }
 
-        public void DisposeResources()
+        public static void DisposeResources()
         {
             DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
             foreach (var f in mpDir.GetFiles("*.json"))
@@ -100,7 +107,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));
         }
 
-        public void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
+        public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
         {
             
             MultiprocessLogger.Log($"Execute Command {command}");
@@ -111,7 +118,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.UseShellExecute = false;
             workerProcess.StartInfo.RedirectStandardError = true;
             workerProcess.StartInfo.RedirectStandardOutput = true;
-            workerProcess.StartInfo.Arguments = $"{m_PathToDll} {command} ";
+            workerProcess.StartInfo.Arguments = $"{s_PathToDll} {command} ";
             try
             {
                 MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
