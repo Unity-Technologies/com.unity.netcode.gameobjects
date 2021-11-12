@@ -417,7 +417,54 @@ namespace Unity.Netcode
             }
         }
 
-        internal void ReadSpawns(in SnapshotDataMessage message)
+        internal void SpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        {
+            if (m_NetworkManager)
+            {
+                NetworkObject networkObject;
+                if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+                else
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+
+                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
+                    true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
+            }
+            else
+            {
+                MockSpawnObject(spawnCommand);
+            }
+        }
+
+        internal void DespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
+        {
+            if (m_NetworkManager)
+            {
+                m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                    out NetworkObject networkObject);
+
+                m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
+            }
+            else
+            {
+                MockDespawnObject(despawnCommand);
+            }
+        }
+
+
+        internal void ReadSpawns(in SnapshotDataMessage message, ulong srcClientId)
         {
             SnapshotSpawnCommand spawnCommand;
             SnapshotDespawnCommand despawnCommand;
