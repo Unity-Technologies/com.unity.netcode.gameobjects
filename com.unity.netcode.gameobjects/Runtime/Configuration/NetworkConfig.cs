@@ -224,7 +224,7 @@ namespace Unity.Netcode
                 return m_ConfigHash.Value;
             }
 
-            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, int.MaxValue);
             using (writer)
             {
                 writer.WriteValueSafe(ProtocolVersion);
