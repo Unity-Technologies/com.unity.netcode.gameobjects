@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
             ShutdownDuringOnNetworkSpawnBehaviour.ServerRpcsCalled = 0;
             ShutdownDuringOnNetworkSpawnBehaviour.ShutdownImmediately = false;
         }
-        
+
         [UnityTearDown]
         public IEnumerator Teardown()
         {
@@ -32,7 +32,7 @@ namespace TestProject.RuntimeTests
             }
             yield break;
         }
-        
+
         public IEnumerator RunTest()
         {
             // Must be 1 for this test.

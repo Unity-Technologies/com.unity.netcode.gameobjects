@@ -504,7 +504,7 @@ namespace Unity.Netcode
                             spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
                             spawnCommand.ObjectRotation);
                 }
-                
+
                 m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
                     true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 //todo: discuss with tools how to report shared bytes

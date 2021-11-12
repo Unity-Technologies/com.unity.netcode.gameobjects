@@ -120,7 +120,7 @@ namespace Unity.Netcode
                 ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(queueIndex);
                 item.Reader.Dispose();
             }
-            
+
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
         }
