@@ -293,15 +293,16 @@ public class MultiprocessOrchestration
         string bOKKEN_HOST_IP = Environment.GetEnvironmentVariable("BOKKEN_HOST_IP");
         if (!string.IsNullOrEmpty(bOKKEN_HOST_IP) && bOKKEN_HOST_IP.Contains("."))
         {
-        
+
+            MultiprocessLogger.Log($"BOKKEN_HOST_IP was found as {bOKKEN_HOST_IP}");
             return bOKKEN_HOST_IP;
         }
 
         if (s_Localip_fileinfo.Exists)
-        {
-            // Read and return this value
-            string alllines = File.ReadAllText(s_Localip_fileinfo.FullName);
-            return alllines.Trim();
+        {            
+            string alllines = File.ReadAllText(s_Localip_fileinfo.FullName).Trim();
+            MultiprocessLogger.Log($"localIP file was found as {alllines}");
+            return alllines;
         }
 
         
