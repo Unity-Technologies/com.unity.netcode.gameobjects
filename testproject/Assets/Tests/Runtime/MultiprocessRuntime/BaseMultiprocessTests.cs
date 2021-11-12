@@ -57,7 +57,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-            MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+            
             var currentlyActiveScene = SceneManager.GetActiveScene();
 
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
@@ -78,20 +78,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            MultiprocessLogger.Log($"OnSceneLoaded {scene.name}");
+            
             SceneManager.sceneLoaded -= OnSceneLoaded;
             var ushortport = ushort.Parse(m_Port);
-            MultiprocessLogger.Log($"Parsing m_Port {m_Port} as {ushortport}");
+            
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
             switch (transport)
             {
-                case UNetTransport unetTransport:
-                    MultiprocessLogger.Log($"Setting connect port and server listen port to {ushortport}");
+                case UNetTransport unetTransport:                    
                     unetTransport.ConnectPort = ushortport;
                     unetTransport.ServerListenPort = ushortport;
                     break;
                 default:
-                    MultiprocessLogger.Log($"OnSceneLoaded: Transport is {transport}");
+                    MultiprocessLogger.LogError($"OnSceneLoaded: Transport is {transport} which is an unaccounted for transport case");
                     break;
             }
 
@@ -100,7 +99,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
-            MultiprocessLogger.Log("Starting Host");
+            
             NetworkManager.Singleton.StartHost();
 
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
@@ -127,13 +126,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiprocessLogger.Log("NetworkManager.Singleton != null");
+            
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
+            
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
+            
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiprocessLogger.Log("m_HasSceneLoaded");
+            
             var startTime = Time.time;
 
             MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
