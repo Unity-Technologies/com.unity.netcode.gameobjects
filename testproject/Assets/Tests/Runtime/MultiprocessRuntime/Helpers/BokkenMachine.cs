@@ -154,8 +154,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 throw new Exception("PathToJson must not be null or empty");
             }
-
-            string s = $" --command exec --input-path {PathToJson} --remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+            string logPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+            string s = $" --command exec " +
+                $"--input-path {PathToJson} "+
+                $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {logPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
             return s;
         }
     }
