@@ -154,6 +154,24 @@ namespace Unity.Netcode
                 m_Triggers.Remove(staleKeys[i]);
             }
         }
+        /// <summary>
+        /// Cleans up any trigger that's existed for more than a second.
+        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
+        /// </summary>
+        internal void CleanupAllTriggers()
+        {
+            foreach (var kvp in m_Triggers)
+            {
+                foreach (var data in kvp.Value.TriggerData)
+                {
+                    data.Reader.Dispose();
+                }
+
+                kvp.Value.TriggerData.Dispose();
+            }
+
+            m_Triggers.Clear();
+        }
 
         internal void RemoveOwnership(NetworkObject networkObject)
         {
