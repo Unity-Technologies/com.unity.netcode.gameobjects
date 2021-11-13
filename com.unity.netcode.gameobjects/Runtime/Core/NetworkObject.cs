@@ -17,7 +17,7 @@ namespace Unity.Netcode
     {
         [HideInInspector]
         [SerializeField]
-        public uint GlobalObjectIdHash;
+        internal uint GlobalObjectIdHash;
 
         private HashSet<IInterestNode<NetworkObject>> m_InterestNodes = new HashSet<IInterestNode<NetworkObject>>();
 

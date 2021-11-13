@@ -30,7 +30,7 @@ namespace Unity.Netcode
                         var client = networkManager.ConnectedClientsList[i];
 
                         m_InterestUpdateThisFrame.Clear();
-                        networkManager.InterestManager.QueryFor(client.PlayerObject, m_InterestUpdateThisFrame);
+                        networkManager.InterestManager.QueryFor(ref client.PlayerObject, ref m_InterestUpdateThisFrame);
                         foreach (var sobj in m_InterestUpdateThisFrame)
 
                         {

@@ -15,7 +15,7 @@ namespace Unity.Netcode.Interest
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
-        public void UpdateObject(TObject obj)
+        public void UpdateObject(ref TObject obj)
         {
             HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
             foreach (var node in nodes)
@@ -26,14 +26,12 @@ namespace Unity.Netcode.Interest
 
         public InterestManager()
         {
-            m_ChildNodes = new HashSet<IInterestNode<TObject>>();
-
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
-            m_ChildNodes.Add(m_DefaultInterestNode);
+            m_ChildNodes = new HashSet<IInterestNode<TObject>> {m_DefaultInterestNode};
         }
 
-        public void AddObject(TObject obj)
+        public void AddObject(ref TObject obj)
         {
             // If this new object has no associated Interest Nodes, then we put it in the
             //  default node, which all clients will then get.
@@ -65,7 +63,7 @@ namespace Unity.Netcode.Interest
             obj.AddInterestNode(m_DefaultInterestNode);
         }
 
-        public void RemoveObject(in TObject obj)
+        public void RemoveObject(ref TObject obj)
         {
             HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
             foreach (var node in nodes)
@@ -78,7 +76,7 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void QueryFor(TObject client, HashSet<TObject> results)
+        public void QueryFor(ref TObject client, ref HashSet<TObject> results)
         {
             foreach (var c in m_ChildNodes)
             {

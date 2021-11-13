@@ -475,7 +475,7 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 
-            NetworkManager.InterestManager.AddObject(networkObject);
+            NetworkManager.InterestManager.AddObject(ref networkObject);
 
             // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
             // processed before the object is fully spawned. This must be the last thing done in the spawn process.
@@ -753,7 +753,7 @@ namespace Unity.Netcode
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            NetworkManager.InterestManager.RemoveObject(networkObject);
+            NetworkManager.InterestManager.RemoveObject(ref networkObject);
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
