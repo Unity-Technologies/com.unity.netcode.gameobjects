@@ -1133,6 +1133,7 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
+            m_ShuttingDown = false;
         }
 
         // INetworkUpdateSystem
