@@ -229,6 +229,18 @@ namespace Unity.Netcode
                 Header = header,
                 SerializedHeaderSize = serializedHeaderSize,
             };
+            
+            var type = m_ReverseTypeMap[header.MessageType];
+            if (!CanReceive(senderId, type))
+            {
+                reader.Dispose();
+                return;
+            }
+
+            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+            {
+                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+            }
 
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
@@ -247,6 +259,10 @@ namespace Unity.Netcode
                     Debug.LogException(e);
                 }
             }
+            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+            {
+                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+            }
         }
 
         internal unsafe void ProcessIncomingMessageQueue()
@@ -255,24 +271,7 @@ namespace Unity.Netcode
             {
                 // Avoid copies...
                 ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                var type = m_ReverseTypeMap[item.Header.MessageType];
-                if (!CanReceive(item.SenderId, type))
-                {
-                    item.Reader.Dispose();
-                    return;
-                }
-
-                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                {
-                    m_Hooks[hookIdx].OnBeforeReceiveMessage(item.SenderId, type, item.Reader.Length + item.MessageHeaderSerializedSize);
-                }
-
                 HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, item.MessageHeaderSerializedSize);
-
-                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                {
-                    m_Hooks[hookIdx].OnAfterReceiveMessage(item.SenderId, type, item.Reader.Length + item.MessageHeaderSerializedSize);
-                }
             }
 
             m_IncomingMessageQueue.Clear();
