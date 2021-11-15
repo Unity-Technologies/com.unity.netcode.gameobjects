@@ -229,7 +229,7 @@ namespace Unity.Netcode
                 Header = header,
                 SerializedHeaderSize = serializedHeaderSize,
             };
-            
+
             var type = m_ReverseTypeMap[header.MessageType];
             if (!CanReceive(senderId, type))
             {
