@@ -12,6 +12,7 @@ namespace TestProject.RuntimeTests.Support
         public static int ServerUpdateCount;
         public static bool ClientNetworkSpawnRpcCalled;
         public static bool ExecuteClientRpc;
+        public static bool ShutdownInClientRpc;
         public static NetworkUpdateStage StageExecutedByReceiver;
 
         private bool m_Active = false;
@@ -58,6 +59,10 @@ namespace TestProject.RuntimeTests.Support
         private void TestClientRpc()
         {
             ClientNetworkSpawnRpcCalled = true;
+            if (ShutdownInClientRpc)
+            {
+                NetworkManager.Shutdown();
+            }
         }
 
         public void Awake()
