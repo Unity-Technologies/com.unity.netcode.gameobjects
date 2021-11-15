@@ -185,8 +185,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 yield return new WaitForSeconds(0.2f);
 
                 if (Time.realtimeSinceStartup > timeOutTime)
-                {
-                    MultiprocessLogger.LogError("Throwing exception since timeoutTime reached");
+                {                    
                     throw new Exception($"Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
