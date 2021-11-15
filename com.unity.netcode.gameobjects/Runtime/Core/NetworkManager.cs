@@ -73,6 +73,9 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_ShuttingDown;
+        private bool m_StopProcessingMessages;
+
         private class NetworkManagerHooks : INetworkHooks
         {
             private NetworkManager m_NetworkManager;
@@ -116,7 +119,7 @@ namespace Unity.Netcode
 
             public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
             {
-                return true;
+                return !m_NetworkManager.m_StopProcessingMessages;
             }
 
             public bool OnVerifyCanReceive(ulong senderId, Type messageType)
@@ -134,7 +137,7 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                return true;
+                return !m_NetworkManager.m_StopProcessingMessages;
             }
         }
 
@@ -977,7 +980,7 @@ namespace Unity.Netcode
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            Shutdown();
+            ShutdownInternal();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
@@ -997,12 +1000,29 @@ namespace Unity.Netcode
         /// Globally shuts down the library.
         /// Disconnects clients if connected and stops server if running.
         /// </summary>
-        public void Shutdown()
+        /// <param name="discardMessageQueue">
+        /// If false, any messages that are currently in the incoming queue will be handled,
+        /// and any messages in the outgoing queue will be sent, before the shutdown is processed.
+        /// If true, NetworkManager will shut down immediately, and any unprocessed or unsent messages
+        /// will be discarded.
+        /// </param>
+        public void Shutdown(bool discardMessageQueue = false)
         {
             ShutdownInProgress = true;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Shutdown));
+            }
+
+            m_ShuttingDown = true;
+            m_StopProcessingMessages = discardMessageQueue;
+        }
+
+        internal void ShutdownInternal()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
             if (IsServer)
@@ -1081,6 +1101,7 @@ namespace Unity.Netcode
 
             if (SpawnManager != null)
             {
+                SpawnManager.CleanupAllTriggers();
                 SpawnManager.DespawnAndDestroyNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
@@ -1170,6 +1191,11 @@ namespace Unity.Netcode
                 return;
             }
 
+            if (m_ShuttingDown && m_StopProcessingMessages)
+            {
+                return;
+            }
+
             // Only update RTT here, server time is updated by time sync messages
             var reset = NetworkTimeSystem.Advance(Time.deltaTime);
             if (reset)
@@ -1186,9 +1212,18 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            MessagingSystem.ProcessSendQueues();
-            NetworkMetrics.DispatchFrame();
+
+            if (!m_ShuttingDown || !m_StopProcessingMessages)
+            {
+                MessagingSystem.ProcessSendQueues();
+                NetworkMetrics.DispatchFrame();
+            }
             SpawnManager.CleanupStaleTriggers();
+
+            if (m_ShuttingDown)
+            {
+                ShutdownInternal();
+            }
         }
 
         /// <summary>
