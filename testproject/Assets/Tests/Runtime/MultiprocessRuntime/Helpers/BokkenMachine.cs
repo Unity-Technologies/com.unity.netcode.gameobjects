@@ -90,9 +90,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }            
         }
 
-        public static void KillMultiprocessTestPlayer(string pathToJson)
+        public static void KillMultiprocessTestPlayer(string pathToJson, bool waitForCompletion = true)
         {
-            ExecuteCommand($" --command killmptplayer --input-file {pathToJson}");
+            ExecuteCommand($" --command killmptplayer --input-file {pathToJson}", waitForCompletion);
         }
 
         // 1. Put built player file on remote machine
@@ -111,6 +111,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void Launch()
         {
             ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));
+        }
+
+        public void PrintTaskListForMultiprocessTestPlayer()
+        {
+            string s = $" --command exec " +
+                $"--input-path {PathToJson} " +
+                $"--remote-command tasklist /FI \"IMAGENAME eq MultiprocessTestPlayer.exe\"";
+            ExecuteCommand(s);
         }
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
