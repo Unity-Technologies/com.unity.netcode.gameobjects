@@ -119,6 +119,11 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown the NetworkManager instance we are testing.
             networkManager.Shutdown();
 
+            // Since shutdown is now delayed until the post frame update
+            // just wait 2 frames before checking to see if OnNetworkDespawnCalled is true
+            var currentFrame = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount <= currentFrame);
+
             // Confirm that OnNetworkDespawn is invoked after shutdown
             Assert.IsTrue(onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
         }
