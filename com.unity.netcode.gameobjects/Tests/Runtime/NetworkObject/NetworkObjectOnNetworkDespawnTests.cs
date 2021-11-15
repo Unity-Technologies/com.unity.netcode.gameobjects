@@ -55,7 +55,7 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
             }
 
-            yield break;
+            yield return null;
         }
 
         [UnityTearDown]
@@ -64,11 +64,11 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown and clean up both of our NetworkManager instances
             if (m_ObjectToSpawn)
             {
-                MultiInstanceHelpers.Destroy();
                 Object.Destroy(m_ObjectToSpawn);
                 m_ObjectToSpawn = null;
             }
-            yield break;
+            MultiInstanceHelpers.Destroy();
+            yield return null;
         }
 
         public enum InstanceType
