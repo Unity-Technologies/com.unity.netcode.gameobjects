@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -8,9 +9,12 @@ namespace Unity.Netcode.RuntimeTests
     public class RpcManyClientsObject : NetworkBehaviour
     {
         public int Count = 0;
+        public List<ulong> ReceivedFrom = new List<ulong>();
         [ServerRpc(RequireOwnership = false)]
-        public void ResponseServerRpc()
+        public void ResponseServerRpc(ServerRpcReceiveParams rpcReceiveParams = default)
         {
+            Debug.Log($"Response with SenderClientId {rpcReceiveParams.SenderClientId}");
+            ReceivedFrom.Add(rpcReceiveParams.SenderClientId);
             Count++;
         }
 
@@ -29,6 +33,13 @@ namespace Unity.Netcode.RuntimeTests
         [ClientRpc]
         public void TwoParamsClientRpc(int value1, int value2)
         {
+            ResponseServerRpc();
+        }
+
+        [ClientRpc]
+        public void WithParamsClientRpc(ClientRpcParams param)
+        {
+            Debug.Log($"Called on client {NetworkManager.LocalClientId}");
             ResponseServerRpc();
         }
     }
@@ -88,6 +99,9 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
+            ClientRpcParams param = new ClientRpcParams();
+            ClientRpcSendParams sendParam = new ClientRpcSendParams();
+
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
             maxFrameNumber = Time.frameCount + 5;
@@ -95,6 +109,24 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
+            rpcManyClientsObject.ReceivedFrom.Clear();
+            rpcManyClientsObject.Count = 0;
+            List<ulong> target = new List<ulong>{m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId};
+            sendParam.TargetClientIds = target;
+            param.Send = sendParam;
+            rpcManyClientsObject.WithParamsClientRpc(param);
+            maxFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount > maxFrameNumber);
+
+            // either of the 2 selected clients can reply to the server first, due to network timing
+            var possibility1 = new List<ulong>
+                {m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId};
+            var possibility2 = new List<ulong>
+                {m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId};
+
+            Debug.Assert(rpcManyClientsObject.Count == 2);
+            Debug.Assert(rpcManyClientsObject.ReceivedFrom == possibility1 ||
+                         rpcManyClientsObject.ReceivedFrom == possibility2);
         }
     }
 }
