@@ -81,9 +81,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void DisposeResources()
         {
+            MultiprocessLogger.Log("Disposing of resources");
             DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
             foreach (var f in mpDir.GetFiles("*.json"))
             {
+                MultiprocessLogger.Log($"Disposing of resource {f.FullName}");
                 ExecuteCommand($"--command destroy --input-path {f.FullName}");
             }            
         }

@@ -153,7 +153,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
                         string logPath = "";
-                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
+                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} and platformList is null");
                         logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                         MultiprocessLogger.Log($"logPath to new process is {logPath}");
                         MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
@@ -164,10 +164,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = new List<BokkenMachine>();
                     foreach (var platform in platformList)
                     {
+                        MultiprocessLogger.Log($"Provisioning platform {platform}");
                         machines.Add(MultiprocessOrchestration.ProvisionWorkerNode(platform));
                     }
                     foreach (var machine in machines)
                     {
+                        MultiprocessLogger.Log($"Lauching process on machine {machine.Image} {machine.Type}");
                         machine.Launch();
                     }
                 }
@@ -184,7 +186,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} but was expecting {WorkerCount}, failing");
+                    MultiprocessLogger.LogError("Throwing exception since timeoutTime reached");
+                    throw new Exception($"Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
@@ -208,6 +211,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log($"TeardownSuite");
             BokkenMachine.DisposeResources();
+            MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
             if (!IgnoreMultiprocessTests)
             {
                 MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
