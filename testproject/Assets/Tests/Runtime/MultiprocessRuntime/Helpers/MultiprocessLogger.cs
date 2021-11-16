@@ -50,8 +50,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 testName = "unknown";
             }
 
-            // Debug.unityLogger.logHandler.LogFormat(logType, null, $"MPLOG({DateTime.Now:T}) : {testName} : {format}", args);
-            Debug.Log($"MPLOG({DateTime.Now:T}) : {testName} : {format}");
+            Debug.unityLogger.logHandler.LogFormat(logType, null, $"MPLOG({DateTime.Now:T}) : {testName} : {format}", args);
+            
         }
     }
 }
