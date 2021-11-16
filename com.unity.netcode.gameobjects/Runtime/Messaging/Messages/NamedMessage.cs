@@ -16,7 +16,7 @@ namespace Unity.Netcode
             var message = new NamedMessage();
             reader.ReadValueSafe(out message.Hash);
 
-            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(message.Hash, context.SenderId, reader);
+            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(message.Hash, context.SenderId, reader, context.SerializedHeaderSize);
         }
     }
 }

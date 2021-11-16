@@ -28,7 +28,7 @@ namespace Unity.Netcode
         /// </summary>
         public event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal void InvokeUnnamedMessage(ulong clientId, FastBufferReader reader)
+        internal void InvokeUnnamedMessage(ulong clientId, FastBufferReader reader, int serializedHeaderSize)
         {
             if (OnUnnamedMessage != null)
             {
@@ -40,7 +40,7 @@ namespace Unity.Netcode
                     ((UnnamedMessageDelegate)handler).Invoke(clientId, reader);
                 }
             }
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, reader.Length + serializedHeaderSize);
         }
 
         /// <summary>
@@ -115,9 +115,9 @@ namespace Unity.Netcode
         private Dictionary<ulong, string> m_MessageHandlerNameLookup32 = new Dictionary<ulong, string>();
         private Dictionary<ulong, string> m_MessageHandlerNameLookup64 = new Dictionary<ulong, string>();
 
-        internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader)
+        internal void InvokeNamedMessage(ulong hash, ulong sender, FastBufferReader reader, int serializedHeaderSize)
         {
-            var bytesCount = reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>();
+            var bytesCount = reader.Length + serializedHeaderSize;
 
             if (m_NetworkManager == null)
             {

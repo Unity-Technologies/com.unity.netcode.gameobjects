@@ -30,6 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
+- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 
 ## [1.0.0-pre.3] - 2021-10-22
 

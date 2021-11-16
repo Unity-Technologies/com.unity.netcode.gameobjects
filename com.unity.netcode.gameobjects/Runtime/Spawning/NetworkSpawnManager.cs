@@ -27,6 +27,7 @@ namespace Unity.Netcode
             public MessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
+            public int SerializedHeaderSize;
         }
         private struct TriggerInfo
         {
@@ -117,7 +118,8 @@ namespace Unity.Netcode
                 Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
                 Header = context.Header,
                 Timestamp = context.Timestamp,
-                SenderId = context.SenderId
+                SenderId = context.SenderId,
+                SerializedHeaderSize = context.SerializedHeaderSize
             });
         }
 
@@ -501,7 +503,7 @@ namespace Unity.Netcode
                 foreach (var trigger in triggerInfo.TriggerData)
                 {
                     // Reader will be disposed within HandleMessage
-                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp);
+                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp, trigger.SerializedHeaderSize);
                 }
 
                 triggerInfo.TriggerData.Dispose();
