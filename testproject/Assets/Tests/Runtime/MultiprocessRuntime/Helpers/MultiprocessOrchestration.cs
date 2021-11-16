@@ -93,6 +93,11 @@ public class MultiprocessOrchestration
             bokkenMachine.Provision();
             bokkenMachine.Setup();
         }
+        else
+        {
+            MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists, just kill any old processes");
+            bokkenMachine.KillMptPlayer();
+        }    
         return bokkenMachine;
     }
 

@@ -115,11 +115,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));
         }
 
+        public void KillMptPlayer()
+        {
+            ExecuteCommand($" --command killmptplayer --input-path {PathToJson}", true);
+        }
+
         public void PrintTaskListForMultiprocessTestPlayer()
         {
-            string s = $" --command exec " +
-                $"--input-path {PathToJson} " +
-                $"--remote-command \"tasklist /FI \"IMAGENAME eq MultiprocessTestPlayer.exe\"\"";
+            string s = $" --command mpinfo " +
+                $"--input-path {PathToJson} ";
             ExecuteCommand(s, true);
         }
 
