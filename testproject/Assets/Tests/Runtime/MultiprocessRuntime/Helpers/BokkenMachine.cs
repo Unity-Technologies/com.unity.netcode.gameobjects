@@ -17,12 +17,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string JobID { get; set; }
         public FileInfo JobFile { get; private set; }
         public string PathToJson { get; set; }
+        public string LogPath { get; set; }
 
         public Dictionary<string, BokkenMachine> BokkenMachines;
 
         private static FileInfo s_FileInfo;
         private static string s_Rootdir;
         private static string s_PathToDll;
+        
 
         private static List<Process> s_ProcessList = new List<Process>();
 
@@ -112,7 +114,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Launch()
         {
-            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));
+            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));            
         }
 
         public void KillMptPlayer()
@@ -125,6 +127,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string s = $" --command mpinfo " +
                 $"--input-path {PathToJson} ";
             ExecuteCommand(s, true);
+        }
+
+        public void GetMPLog()
+        {
+            ExecuteCommand($"");
         }
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
@@ -196,10 +203,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 throw new Exception("PathToJson must not be null or empty");
             }
-            string logPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+            LogPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
             string s = $" --command exec " +
                 $"--input-path {PathToJson} "+
-                $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {logPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
             return s;
         }
     }

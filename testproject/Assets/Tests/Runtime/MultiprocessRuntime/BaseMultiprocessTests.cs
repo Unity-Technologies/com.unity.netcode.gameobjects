@@ -19,6 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        private string m_logPath;
         private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
@@ -151,11 +152,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if (platformList == null)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
-                    {
-                        string logPath = "";
+                    {                        
                         MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} and platformList is null");
-                        logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                        MultiprocessLogger.Log($"logPath to new process is {logPath}");
+                        m_logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"logPath to new process is {m_logPath}");
                         MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     }
                 }
@@ -203,6 +203,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
+                
                 TestCoordinator.Instance.TestRunTeardown();
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             }
