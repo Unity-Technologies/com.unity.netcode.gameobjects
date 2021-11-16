@@ -70,6 +70,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
             yield return WaitForTicks(m_ServerNetworkManager, 5);
 
+            // This should equal Kinematic
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 
             yield return WaitForTicks(m_ServerNetworkManager, 5);
