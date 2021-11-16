@@ -24,6 +24,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static string s_Rootdir;
         private static string s_PathToDll;
 
+        private static List<Process> s_ProcessList = new List<Process>();
+
         static BokkenMachine()
         {
             s_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
@@ -92,7 +94,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void KillMultiprocessTestPlayer(string pathToJson, bool waitForCompletion = true)
         {
-            ExecuteCommand($" --command killmptplayer --input-file {pathToJson}", waitForCompletion);
+            ExecuteCommand($" --command killmptplayer --input-path {pathToJson}", waitForCompletion);
         }
 
         // 1. Put built player file on remote machine
@@ -117,14 +119,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             string s = $" --command exec " +
                 $"--input-path {PathToJson} " +
-                $"--remote-command tasklist /FI \"IMAGENAME eq MultiprocessTestPlayer.exe\"";
+                $"--remote-command \"tasklist /FI \"IMAGENAME eq MultiprocessTestPlayer.exe\"\"";
             ExecuteCommand(s, true);
         }
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
-        {
-            
-            MultiprocessLogger.Log($"Execute Command {command}");
+        {            
             
             var workerProcess = new Process();
 
@@ -135,7 +135,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.Arguments = $"{s_PathToDll} {command} ";
             try
             {
-                MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
+                MultiprocessLogger.Log($"{command} {workerProcess.StartInfo.Arguments}");
                 var newProcessStarted = workerProcess.Start();
                 if (!newProcessStarted)
                 {
@@ -143,7 +143,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
                 else
                 {
-                    MultiprocessLogger.Log($" {workerProcess.HasExited} ");
+                    // MultiprocessLogger.Log($" {workerProcess.HasExited} ");
                 }
             }
             catch (Win32Exception e)
@@ -158,6 +158,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 string so = workerProcess.StandardOutput.ReadToEnd();
                 MultiprocessLogger.Log(so);
             }
+            else
+            {
+                s_ProcessList.Add(workerProcess);
+            }    
         }
 
         private string GenerateCreateCommand()
