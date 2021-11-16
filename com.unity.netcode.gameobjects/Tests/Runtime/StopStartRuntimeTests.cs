@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -56,11 +54,11 @@ namespace Unity.Netcode.RuntimeTests
                 // Verify the server started
                 Assert.IsTrue(server.IsServer);
                 Assert.IsTrue(server.IsListening);
-                
+
                 // Wait several frames
                 nextFrameNumber = Time.frameCount + 10;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-                
+
                 // Verify the server is still running
                 Assert.IsTrue(server.IsServer);
                 Assert.IsTrue(server.IsListening);
