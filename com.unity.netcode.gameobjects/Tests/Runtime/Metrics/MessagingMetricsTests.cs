@@ -15,8 +15,10 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     public class MessagingMetricsTests : DualClientMetricTestBase
     {
         private const uint k_MessageNameHashSize = 8;
-        private static readonly int k_NamedMessageOverhead = (int)k_MessageNameHashSize + FastBufferWriter.GetWriteSize<MessageHeader>();
-        private static readonly int k_UnnamedMessageOverhead = FastBufferWriter.GetWriteSize<MessageHeader>();
+        // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
+        private const int k_MessageHeaderSize = 2;
+        private static readonly int k_NamedMessageOverhead = (int)k_MessageNameHashSize + k_MessageHeaderSize;
+        private static readonly int k_UnnamedMessageOverhead = k_MessageHeaderSize;
 
         protected override int NbClients => 2;
 

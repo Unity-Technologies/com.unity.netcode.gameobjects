@@ -25,5 +25,10 @@ namespace Unity.Netcode
         /// The header data that was sent with the message
         /// </summary>
         public MessageHeader Header;
+
+        /// <summary>
+        /// The actual serialized size of the header when packed into the buffer
+        /// </summary>
+        public int SerializedHeaderSize;
     }
 }
