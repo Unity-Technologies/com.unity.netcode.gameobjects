@@ -12,8 +12,7 @@ namespace Unity.Netcode.UTP.EditorTests
             UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
-            var tasks = transport.StartServer();
-            Assert.False(tasks.IsDone && !tasks.Success);
+            Assert.True(transport.StartServer());
 
             transport.Shutdown();
         }
@@ -25,8 +24,7 @@ namespace Unity.Netcode.UTP.EditorTests
             UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
-            var tasks = transport.StartClient();
-            Assert.False(tasks.IsDone && !tasks.Success);
+            Assert.True(transport.StartClient());
 
             transport.Shutdown();
         }
@@ -39,8 +37,7 @@ namespace Unity.Netcode.UTP.EditorTests
             transport.Initialize();
 
             transport.StartServer();
-            var tasks = transport.StartServer();
-            Assert.True(tasks.IsDone && !tasks.AnySuccess);
+            Assert.False(transport.StartServer());
 
             transport.Shutdown();
         }
@@ -53,8 +50,7 @@ namespace Unity.Netcode.UTP.EditorTests
             transport.Initialize();
 
             transport.StartClient();
-            var tasks = transport.StartClient();
-            Assert.True(tasks.IsDone && !tasks.AnySuccess);
+            Assert.False(transport.StartClient());
 
             transport.Shutdown();
         }
@@ -64,15 +60,13 @@ namespace Unity.Netcode.UTP.EditorTests
         public void NotBothServerAndClient()
         {
             UnityTransport transport;
-            SocketTasks tasks;
 
             // Start server then client.
             transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
             transport.StartServer();
-            tasks = transport.StartClient();
-            Assert.True(tasks.IsDone && !tasks.AnySuccess);
+            Assert.False(transport.StartClient());
 
             transport.Shutdown();
 
@@ -81,12 +75,9 @@ namespace Unity.Netcode.UTP.EditorTests
             transport.Initialize();
 
             transport.StartClient();
-            tasks = transport.StartServer();
-            Assert.True(tasks.IsDone && !tasks.AnySuccess);
+            Assert.False(transport.StartServer());
 
             transport.Shutdown();
         }
     }
 }
-
-

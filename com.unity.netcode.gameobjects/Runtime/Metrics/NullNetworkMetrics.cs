@@ -4,6 +4,10 @@ namespace Unity.Netcode
 {
     internal class NullNetworkMetrics : INetworkMetrics
     {
+        public void SetConnectionId(ulong connectionId)
+        {
+        }
+
         public void TrackTransportBytesSent(long bytesCount)
         {
         }
@@ -17,10 +21,6 @@ namespace Unity.Netcode
         }
 
         public void TrackNetworkMessageReceived(ulong senderClientId, string messageType, long bytesCount)
-        {
-        }
-
-        public void TrackNetworkObject(NetworkObject networkObject)
         {
         }
 
@@ -50,8 +50,7 @@ namespace Unity.Netcode
 
         public void TrackNetworkVariableDeltaSent(
             ulong receiverClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
@@ -60,45 +59,40 @@ namespace Unity.Netcode
 
         public void TrackNetworkVariableDeltaReceived(
             ulong senderClientId,
-            ulong networkObjectId,
-            string gameObjectName,
+            NetworkObject networkObject,
             string variableName,
             string networkBehaviourName,
             long bytesCount)
         {
         }
 
-        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
-        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackOwnershipChangeReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
-        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnSent(ulong receiverClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
-        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectSpawnReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
-        public void TrackObjectDestroySent(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroySent(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
-        {
-        }
-
-        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
+        public void TrackObjectDestroyReceived(ulong senderClientId, NetworkObject networkObject, long bytesCount)
         {
         }
 
         public void TrackRpcSent(
             ulong receiverClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
@@ -107,7 +101,7 @@ namespace Unity.Netcode
 
         public void TrackRpcSent(
             ulong[] receiverClientIds,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)
@@ -116,7 +110,7 @@ namespace Unity.Netcode
 
         public void TrackRpcReceived(
             ulong senderClientId,
-            ulong networkObjectId,
+            NetworkObject networkObject,
             string rpcName,
             string networkBehaviourName,
             long bytesCount)

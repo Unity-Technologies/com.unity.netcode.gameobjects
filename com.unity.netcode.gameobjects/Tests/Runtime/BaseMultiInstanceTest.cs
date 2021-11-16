@@ -19,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected abstract int NbClients { get; }
 
+        protected bool m_BypassStartAndWaitForClients = false;
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
@@ -33,7 +35,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 MultiInstanceHelpers.Destroy();
             }
-            catch (Exception e) { throw e; }
             finally
             {
                 if (m_PlayerPrefab != null)
@@ -43,8 +44,8 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
-            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            // Make sure we clean up after ourselves and destroy any remaining NetworkObjects
+            // before we exit our test
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
             foreach (var networkObject in networkObjects)
             {
@@ -60,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
         /// </summary>
-        private bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
             if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
@@ -75,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
         /// scene and its handle for both client(s) and server-host.
         /// </summary>
-        private void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        public static void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
         {
             // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
             // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
@@ -110,10 +111,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
         {
-            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
-            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            // Make sure there are no remaining NetworkObjects from a previous test
+            // before we start our new test
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
-            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
             foreach (var netObject in networkObjects)
             {
                 Object.DestroyImmediate(netObject);
@@ -155,19 +155,22 @@ namespace Unity.Netcode.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
-            // is started and after each client is started.
-            if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+            if (!m_BypassStartAndWaitForClients)
             {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                // Wait for connection on client side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+
+                // Wait for connection on server side
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
             }
-
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
     }
 }

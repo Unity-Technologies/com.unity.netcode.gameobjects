@@ -8,7 +8,6 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageSendingTests
     {
-        [IgnoreMessageIfSystemOwnerIsNotOfType(typeof(MessageSendingTests))]
         private struct TestMessage : INetworkMessage
         {
             public int A;
@@ -37,6 +36,21 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private class TestMessageProvider : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessage),
+                        Handler = TestMessage.Receive
+                    }
+                };
+            }
+        }
+
         private TestMessageSender m_MessageSender;
         private MessagingSystem m_MessagingSystem;
         private ulong[] m_Clients = { 0 };
@@ -47,7 +61,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Serialized = false;
 
             m_MessageSender = new TestMessageSender();
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this);
+            m_MessagingSystem = new MessagingSystem(m_MessageSender, this, new TestMessageProvider());
             m_MessagingSystem.ClientConnected(0);
         }
 
@@ -110,7 +124,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenNotExceedingBatchSize_NewBatchesAreNotCreated()
         {
             var message = GetMessage();
-            var size = UnsafeUtility.SizeOf<TestMessage>() + UnsafeUtility.SizeOf<MessageHeader>();
+            var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < 1300 / size; ++i)
             {
                 m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
@@ -124,7 +138,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenExceedingBatchSize_NewBatchesAreCreated()
         {
             var message = GetMessage();
-            var size = UnsafeUtility.SizeOf<TestMessage>() + UnsafeUtility.SizeOf<MessageHeader>();
+            var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < (1300 / size) + 1; ++i)
             {
                 m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
@@ -138,7 +152,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated()
         {
             var message = GetMessage();
-            var size = UnsafeUtility.SizeOf<TestMessage>() + UnsafeUtility.SizeOf<MessageHeader>();
+            var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < (1300 / size) + 1; ++i)
             {
                 m_MessagingSystem.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
@@ -184,24 +198,25 @@ namespace Unity.Netcode.EditorTests
             var reader = new FastBufferReader(m_MessageSender.MessageQueue[0], Allocator.Temp);
             using (reader)
             {
-                reader.TryBeginRead(
-                    FastBufferWriter.GetWriteSize<BatchHeader>() +
-                    FastBufferWriter.GetWriteSize<MessageHeader>() * 2 +
-                    FastBufferWriter.GetWriteSize<TestMessage>() * 2
-                );
-                reader.ReadValue(out BatchHeader header);
+                reader.ReadValueSafe(out BatchHeader header);
                 Assert.AreEqual(2, header.BatchSize);
 
-                reader.ReadValue(out MessageHeader messageHeader);
+                MessageHeader messageHeader;
+
+                ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageType);
+                ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageSize);
+
                 Assert.AreEqual(m_MessagingSystem.GetMessageType(typeof(TestMessage)), messageHeader.MessageType);
                 Assert.AreEqual(UnsafeUtility.SizeOf<TestMessage>(), messageHeader.MessageSize);
-                reader.ReadValue(out TestMessage receivedMessage);
+                reader.ReadValueSafe(out TestMessage receivedMessage);
                 Assert.AreEqual(message, receivedMessage);
 
-                reader.ReadValue(out MessageHeader messageHeader2);
-                Assert.AreEqual(m_MessagingSystem.GetMessageType(typeof(TestMessage)), messageHeader2.MessageType);
-                Assert.AreEqual(UnsafeUtility.SizeOf<TestMessage>(), messageHeader2.MessageSize);
-                reader.ReadValue(out TestMessage receivedMessage2);
+                ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageType);
+                ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageSize);
+
+                Assert.AreEqual(m_MessagingSystem.GetMessageType(typeof(TestMessage)), messageHeader.MessageType);
+                Assert.AreEqual(UnsafeUtility.SizeOf<TestMessage>(), messageHeader.MessageSize);
+                reader.ReadValueSafe(out TestMessage receivedMessage2);
                 Assert.AreEqual(message2, receivedMessage2);
             }
         }

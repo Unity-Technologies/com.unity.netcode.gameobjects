@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -19,6 +20,22 @@ namespace Unity.Netcode
         /// A list of the spawned objects
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
+
+        private struct TriggerData
+        {
+            public FastBufferReader Reader;
+            public MessageHeader Header;
+            public ulong SenderId;
+            public float Timestamp;
+            public int SerializedHeaderSize;
+        }
+        private struct TriggerInfo
+        {
+            public float Expiry;
+            public NativeList<TriggerData> TriggerData;
+        }
+
+        private readonly Dictionary<ulong, TriggerInfo> m_Triggers = new Dictionary<ulong, TriggerInfo>();
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -76,6 +93,88 @@ namespace Unity.Netcode
             return null;
         }
 
+        /// <summary>
+        /// Defers processing of a message until the moment a specific networkObjectId is spawned.
+        /// This is to handle situations where an RPC or other object-specific message arrives before the spawn does,
+        /// either due to it being requested in OnNetworkSpawn before the spawn call has been executed, or with
+        /// snapshot spawns enabled where the spawn is sent unreliably and not until the end of the frame.
+        ///
+        /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
+        /// without the requested object ID being spawned, the triggers for it are automatically deleted.
+        /// </summary>
+        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
+        {
+            if (!m_Triggers.ContainsKey(networkObjectId))
+            {
+                m_Triggers[networkObjectId] = new TriggerInfo
+                {
+                    Expiry = Time.realtimeSinceStartup + 1,
+                    TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
+                };
+            }
+
+            m_Triggers[networkObjectId].TriggerData.Add(new TriggerData
+            {
+                Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
+                Header = context.Header,
+                Timestamp = context.Timestamp,
+                SenderId = context.SenderId,
+                SerializedHeaderSize = context.SerializedHeaderSize
+            });
+        }
+
+        /// <summary>
+        /// Cleans up any trigger that's existed for more than a second.
+        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
+        /// </summary>
+        internal unsafe void CleanupStaleTriggers()
+        {
+            ulong* staleKeys = stackalloc ulong[m_Triggers.Count()];
+            int index = 0;
+            foreach (var kvp in m_Triggers)
+            {
+                if (kvp.Value.Expiry < Time.realtimeSinceStartup)
+                {
+
+                    staleKeys[index++] = kvp.Key;
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Deferred messages were received for {nameof(NetworkObject)} #{kvp.Key}, but it did not spawn within 1 second.");
+                    }
+
+                    foreach (var data in kvp.Value.TriggerData)
+                    {
+                        data.Reader.Dispose();
+                    }
+
+                    kvp.Value.TriggerData.Dispose();
+                }
+            }
+
+            for (var i = 0; i < index; ++i)
+            {
+                m_Triggers.Remove(staleKeys[i]);
+            }
+        }
+        /// <summary>
+        /// Cleans up any trigger that's existed for more than a second.
+        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
+        /// </summary>
+        internal void CleanupAllTriggers()
+        {
+            foreach (var kvp in m_Triggers)
+            {
+                foreach (var data in kvp.Value.TriggerData)
+                {
+                    data.Reader.Dispose();
+                }
+
+                kvp.Value.TriggerData.Dispose();
+            }
+
+            m_Triggers.Clear();
+        }
+
         internal void RemoveOwnership(NetworkObject networkObject)
         {
             if (!NetworkManager.IsServer)
@@ -109,10 +208,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                      ? 0
-                      : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -131,7 +227,7 @@ namespace Unity.Netcode
                 return NetworkManager.ConnectedClients.TryGetValue(clientId, out networkClient);
             }
 
-            if (clientId == NetworkManager.LocalClient.ClientId)
+            if (NetworkManager.LocalClient != null && clientId == NetworkManager.LocalClient.ClientId)
             {
                 networkClient = NetworkManager.LocalClient;
                 return true;
@@ -178,10 +274,7 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
-                var bytesReported = NetworkManager.LocalClientId == client.Key
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -366,9 +459,6 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(NetworkManager.LocalClientId, networkObject.NetworkObjectId, networkObject.name, 0);
-
             if (ownerClientId != null)
             {
                 if (NetworkManager.IsServer)
@@ -402,7 +492,23 @@ namespace Unity.Netcode
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
+
             networkObject.InvokeBehaviourNetworkSpawn();
+
+            // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
+            // processed before the object is fully spawned. This must be the last thing done in the spawn process.
+            if (m_Triggers.ContainsKey(networkId))
+            {
+                var triggerInfo = m_Triggers[networkId];
+                foreach (var trigger in triggerInfo.TriggerData)
+                {
+                    // Reader will be disposed within HandleMessage
+                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp, trigger.SerializedHeaderSize);
+                }
+
+                triggerInfo.TriggerData.Dispose();
+                m_Triggers.Remove(networkId);
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -419,13 +525,10 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId, false)
+                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
                 var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-                var bytesReported = NetworkManager.LocalClientId == clientId
-                    ? 0
-                    : size;
-                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
 
                 networkObject.MarkVariablesDirty();
             }
@@ -497,7 +600,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void DestroyNonSceneObjects()
+        internal void DespawnAndDestroyNetworkObjects()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
@@ -505,17 +608,25 @@ namespace Unity.Netcode
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
+                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                     {
-                        if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
-                        {
-                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                            OnDespawnObject(networkObjects[i], false);
-                        }
-                        else
-                        {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                        }
+                        OnDespawnObject(networkObjects[i], false);
+                        // Leave destruction up to the handler
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+                    }
+                    else if (networkObjects[i].IsSpawned)
+                    {
+                        // If it is an in-scene placed NetworkObject then just despawn
+                        // and let it be destroyed when the scene is unloaded.  Otherwise,
+                        // despawn and destroy it.
+                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null
+                                    && networkObjects[i].IsSceneObject.Value);
+
+                        OnDespawnObject(networkObjects[i], shouldDestroy);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
             }
@@ -585,17 +696,21 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Move child NetworkObjects to the root when parent NetworkObject is destroyed
-            foreach (var spawnedNetObj in SpawnedObjectsList)
+            // If we are shutting down the NetworkManager, then ignore resetting the parent
+            if (!NetworkManager.ShutdownInProgress)
             {
-                var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
-                if (isReparented && latestParent == networkObject.NetworkObjectId)
+                // Move child NetworkObjects to the root when parent NetworkObject is destroyed
+                foreach (var spawnedNetObj in SpawnedObjectsList)
                 {
-                    spawnedNetObj.gameObject.transform.parent = null;
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
+                    if (isReparented && latestParent == networkObject.NetworkObjectId)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        spawnedNetObj.gameObject.transform.parent = null;
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        }
                     }
                 }
             }
@@ -655,10 +770,7 @@ namespace Unity.Netcode
                             var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                             foreach (var targetClientId in m_TargetClientIds)
                             {
-                                var bytesReported = NetworkManager.LocalClientId == targetClientId
-                                    ? 0
-                                    : size;
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject.NetworkObjectId, networkObject.name, bytesReported);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
                             }
                         }
                     }

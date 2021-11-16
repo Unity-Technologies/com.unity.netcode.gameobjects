@@ -10,20 +10,76 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Removed
+
+- Removed `FixedQueue` (#1398)
+- Removed `StreamExtensions` (#1398)
+- Removed `TypeExtensions` (#1398)
+
+### Fixed
+
+- Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
+- Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
+- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
+- Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
+- NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
+- Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
+
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
+
+### Changed
+
+- ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
+- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
+
+## [1.0.0-pre.3] - 2021-10-22
+
+### Added
+
+- ResetTrigger function to NetworkAnimator (#1327)
+
+### Fixed 
+
+- Overflow exception when syncing Animator state. (#1327)
+- Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
+- Fixed an issue where ServerClientId and LocalClientId could have the same value, causing potential confusion, and also fixed an issue with the UNet where the server could be identified with two different values, one of which might be the same as LocalClientId, and the other of which would not.(#1368)
+- IL2CPP would not properly compile (#1359)
+
+## [1.0.0-pre.2] - 2021-10-19
+
+### Added
+
+- Associated Known Issues for the 1.0.0-pre.1 release in the changelog
+
+### Changed
+
+- Updated label for `1.0.0-pre.1` changelog section
+
+## [1.0.0-pre.1] - 2021-10-19
+
+### Added
+
+- Added `ClientNetworkTransform` sample to the SDK package (#1168)
+- Added `Bootstrap` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
   - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
+- Added a jitter-resistent `BufferedLinearInterpolator<T>` for `NetworkTransform` (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
 - Implemented auto `NetworkObject` transform parent synchronization at runtime over the network (#855)
 - Adopted Unity C# Coding Standards in the codebase with `.editorconfig` ruleset (#666, #670)
 - When a client tries to spawn a `NetworkObject` an exception is thrown to indicate unsupported behavior. (#981)
 - Added a `NetworkTime` and `NetworkTickSystem` which allows for improved control over time and ticks. (#845)
 - Added a `OnNetworkDespawn` function to `NetworkObject` which gets called when a `NetworkObject` gets despawned and can be overriden. (#865)
-- Added `SnapshotSystem` that would allow variables and spawn/despawn messages to be sent in blocks (#805, #852, #862, #963, #1012, #1013, #1021, #1040, #1062, #1064, #1083, #1111, #1129, #1166, #1192)
+- Added `SnapshotSystem` that would allow variables and spawn/despawn messages to be sent in blocks (#805, #852, #862, #963, #1012, #1013, #1021, #1040, #1062, #1064, #1083, #1091, #1111, #1129, #1166, #1192)
   - Disabled by default for now, except spawn/despawn messages
   - Will leverage unreliable messages with eventual consistency
 - `NetworkBehaviour` and `NetworkObject`'s `NetworkManager` instances can now be overriden (#762)
 - Added metrics reporting for the new network profiler if the Multiplayer Tools package is present (#1104, #1089, #1096, #1086, #1072, #1058, #960, #897, #891, #878)
+- `NetworkBehaviour.IsSpawned` a quick (and stable) way to determine if the associated NetworkObject is spawned (#1190)
+- Added `NetworkRigidbody` and `NetworkRigidbody2D` components to support networking `Rigidbody` and `Rigidbody2D` components (#1202, #1175)
+- Added `NetworkObjectReference` and `NetworkBehaviourReference` structs which allow to sending `NetworkObject/Behaviours` over RPCs/`NetworkVariable`s (#1173)
+- Added `NetworkAnimator` component to support networking `Animator` component (#1281, #872)
 
 ### Changed
 
@@ -44,30 +100,43 @@ Additional documentation and release notes are available at [Multiplayer Documen
     - `Unity.Multiplayer.MLAPI.Runtime` → `Unity.Netcode.Runtime`
     - `Unity.Multiplayer.MLAPI.Editor` → `Unity.Netcode.Editor`
     - and other `Unity.Multiplayer.MLAPI.x` variants to `Unity.Netcode.x` variants
+- Renamed `Prototyping` namespace and assembly definition to `Components` (#1145)
+- Changed `NetworkObject.Despawn(bool destroy)` API to default to `destroy = true` for better usability (#1217)
 - Scene registration in `NetworkManager` is now replaced by Build Setttings → Scenes in Build List (#1080)
 - `NetworkSceneManager.SwitchScene` has been replaced by `NetworkSceneManager.LoadScene` (#955)
+- `NetworkManager, NetworkConfig, and NetworkSceneManager` scene registration replaced with scenes in build list (#1080)
 - `GlobalObjectIdHash` replaced `PrefabHash` and `PrefabHashGenerator` for stability and consistency (#698)
 - `NetworkStart` has been renamed to `OnNetworkSpawn`. (#865)
 - Network variable cleanup - eliminated shared mode, variables are server-authoritative (#1059, #1074)
 - `NetworkManager` and other systems are no longer singletons/statics (#696, #705, #706, #737, #738, #739, #746, #747, #763, #765, #766, #783, #784, #785, #786, #787, #788)
-
-### Deprecated
-
-- something
+- Changed `INetworkSerializable.NetworkSerialize` method signature to use `BufferSerializer<T>` instead of `NetworkSerializer` (#1187)
+- Changed `CustomMessagingManager`'s methods to use `FastBufferWriter` and `FastBufferReader` instead of `Stream` (#1187)
+- Reduced internal runtime allocations by removing LINQ calls and replacing managed lists/arrays with native collections (#1196)
 
 ### Removed
 
+- Removed `NetworkNavMeshAgent` (#1150)
+- Removed `NetworkDictionary`, `NetworkSet` (#1149)
+- Removed `NetworkVariableSettings` (#1097)
+- Removed predefined `NetworkVariable<T>` types (#1093)
+    - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
+- Removed `NetworkChannel` and `MultiplexTransportAdapter` (#1133)
 - Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 - `NetworkManager.NetworkConfig` had the following properties removed: (#1080)
   - Scene Registrations no longer exists
   - Allow Runtime Scene Changes was no longer needed and was removed
 - Removed the NetworkObject.Spawn payload parameter (#1005)
 - Removed `ProfilerCounter`, the original MLAPI network profiler, and the built-in network profiler module (2020.3). A replacement can now be found in the Multiplayer Tools package. (#1048)
-- Removed NetworkSet, NetworkDictionary (#1149)
 - Removed UNet RelayTransport and related relay functionality in UNetTransport (#1081)
+- Removed `UpdateStage` parameter from `ServerRpcSendParams` and `ClientRpcSendParams` (#1187)
+- Removed `NetworkBuffer`, `NetworkWriter`, `NetworkReader`, `NetworkSerializer`, `PooledNetworkBuffer`, `PooledNetworkWriter`, and `PooledNetworkReader` (#1187)
+- Removed `EnableNetworkVariable` in `NetworkConfig`, it is always enabled now (#1179)
+- Removed `NetworkTransform`'s FixedSendsPerSecond, AssumeSyncedSends, InterpolateServer, ExtrapolatePosition, MaxSendsToExtrapolate, Channel, EnableNonProvokedResendChecks, DistanceSendrate (#1060) (#826) (#1042, #1055, #1061, #1084, #1101)
+- Removed `NetworkManager`'s `StopServer()`, `StopClient()` and `StopHost()` methods and replaced with single `NetworkManager.Shutdown()` method for all (#1108)
 
 ### Fixed
 
+- Fixed ServerRpc ownership check to `Debug.LogError` instead of `Debug.LogWarning` (#1126)
 - Fixed `NetworkObject.OwnerClientId` property changing before `NetworkBehaviour.OnGainedOwnership()` callback (#1092)
 - Fixed `NetworkBehaviourILPP` to iterate over all types in an assembly (#803)
 - Fixed cross-asmdef RPC ILPP by importing types into external assemblies (#678)
@@ -75,133 +144,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
   - Now `NetworkManager` shutdowns correctly and despawns existing `NetworkObject`s
 - Fixed Only one `PlayerPrefab` can be selected on `NetworkManager` inspector UI in the editor (#676)
 - Fixed connection approval not being triggered for host (#675)
+- Fixed various situations where messages could be processed in an invalid order, resulting in errors (#948, #1187, #1218)
+- Fixed `NetworkVariable`s being default-initialized on the client instead of being initialized with the desired value (#1266)
+- Improved runtime performance and reduced GC pressure (#1187)
+- Fixed #915 - clients are receiving data from objects not visible to them (#1099)
+- Fixed `NetworkTransform`'s "late join" issues, `NetworkTransform` now uses `NetworkVariable`s instead of RPCs (#826)
+- Throw an exception for silent failure when a client tries to get another player's `PlayerObject`, it is now only allowed on the server-side (#844)
 
-### Security
+### Known Issues
 
-- something
-
-### TODO
-
-Jaedyn:
-
-- [6181e7e0] (2021-09-17) Jaedyn Draper / feat: INetworkMessage (#1187)
-- [dc708a56] (2021-09-15) Jaedyn Draper / feat: Fast buffer reader and fast buffer writer (#1082)
-- [5deae108] (2021-08-12) Jaedyn Draper / fix: Disabling fixedupdate portion of SpawnRpcDespawn test because it's failing for known reasons that will be fixed in the IMessage refactor. (#1049)
-- [40a6aec0] (2021-08-09) Jaedyn Draper / fix: corrected NetworkVariable WriteField/WriteDelta/ReadField/ReadDelta dropping the last byte if unaligned. (#1008)
-- [c25821d2] (2021-07-27) Jaedyn Draper / fix: Fixes for a few things discovered from the message ordering refactor: (#985)
-- [b9ffc1f1] (2021-07-23) Jaedyn Draper / feat: Message Ordering (#948)
-
-Samuel:
-
-- [5513c906] (2021-09-16) Sam Bellomo / feat: interpolation for network transform (#1060)
-- [cc7a7d5c] (2021-08-19) Sam Bellomo / test: adding more details to multiprocess readme (#1050)
-- [13e2b7f1] (2021-07-13) Sam Bellomo / test: multiprocess tests part 6: fixing issues runnings all tests together (#957)
-- [bf296660] (2021-07-13) Sam Bellomo / docs: Perf tests part 5. Adding documentation and instructions (#952)
-- [6c8efd66] (2021-07-12) Sam Bellomo / test: Perf tests part 4. Adding example of performance test with spawning x network objects at once (#925)
-- [725a77a9] (2021-07-12) Sam Bellomo / test: Perf tests part 3. Adding ExecuteStepInContext for better test readability (#924)
-- [833f1faf] (2021-07-09) Sam Bellomo / test: Perf tests part 2. Adding Test Coordinator and base test class (#923)
-- [d08b84ac] (2021-07-08) Sam Bellomo / test: Perf tests part 1. Basis for multiprocess tests process orchestration.  (#922)
-- [7ed627c6] (2021-06-30) Sam Bellomo / fix: reducing log level for noisy log and adding details for developer log (#926)
-- [4679474b] (2021-06-30) Sam Bellomo / feat: users can set authority on network transform programmatically (#868)
-- [e122376f] (2021-06-29) Sam Bellomo / refactor: move NetworkBehaviour update to a separate non-static class (#917)
-- [0855557e] (2021-06-29) Sam Bellomo / test: add utils for multi instance tests (#914)
-- [9a47c661] (2021-06-29) Sam Bellomo / test: downgrading testproject to 2020.3.12f1 (#927)
-- [b4a3f663] (2021-06-08) Sam Bellomo / docs: adding more info to help debug on network transform error message (#892)
-- [4b15869f] (2021-05-21) Sam Bellomo / fix: Adding exception for silent failure for clients getting other player's object #844Merge pull request #844 from Unity-Technologies/feature/adding-exception-for-client-side-player-object-get
-- [63436440] (2021-05-21) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [7561c341] (2021-05-21) Samuel Bellomo / adding null check and spacing fix
-- [e2b17b10] (2021-05-21) Samuel Bellomo / some cleanup
-- [3566ea04] (2021-05-20) Samuel Bellomo / fixing a few issues when connecting and disconnecting additional clients Adding separate tests in SpawnManagerTests. Added Teardown
-- [b3c155b5] (2021-05-20) Samuel Bellomo / Merge branch 'develop' into feature/adding-exception-for-client-side-player-object-get
-- [d783a4e0] (2021-05-20) Samuel Bellomo / adding more tests
-- [e2fd839c] (2021-05-19) Samuel Bellomo / Adding tests for that exception Adding the possibility to have multiple clients in MultiInstanceHelpers Updating exception check to make sure to use local networkmanager (so it works with tests)
-- [d11e22be] (2021-05-19) Sam Bellomo / feat: NetworkTransform now uses NetworkVariables instead of RPCs (#826)
-- [ad8ae404] (2021-05-18) Samuel Bellomo / Adding proper exception for invalid case. This is so users don't have silent failures calling this client side expecting to see other player objects. This solves issue https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/issues/581
-
-Philipp:
-
-- [e47b73fa] (2021-09-17) Philipp Deschain / feat: NetworkAnimator and ClientNetworkAnimator (#1191)
-- [0ea502b0] (2021-08-03) Philipp Deschain / Replacing community NetworkManagerHUD with a simpler implementation (#993)
-- [4fad5915] (2021-07-27) Phil Deschain / fix: Network animator server authority fixes (#972)
-- [be0ca068] (2021-07-06) Phil Deschain / feat: network animator Trigger parameter support (#872)
-- [e864e8eb] (2021-05-03) Phil Deschain / feat: OnAllClientsReady (#755)
-
-Others (2nd iteration):
-
-- [268c7ec3] (2021-09-17) Simon Lemay / fix: Increase timeout for UTP adapter tests (#1199)
-- [d2db3940] (2021-09-17) Jesse Olmer / docs: Update repo and both package readme files (#1180)
-- [3d5b29a0] (2021-09-17) Andrew Spiering / chore: updating UTP package to pull in DTLS fixes (#1197)
-- [7b361c64] (2021-09-17) Luke Stampfli / fix: network time arguments (#1194)
-- [4fe7a30c] (2021-09-17) Luke Stampfli / feat: network physics (#1175)
-- [2091e2ae] (2021-09-16) zain-mecklai / test: build multiprocesstestplayer and add it to project tests job (#1174)
-- [16d98507] (2021-09-16) kvassall-unity / fix: Report messages properly that are locally executed as 0 bytes (#1162)
-- [0654eaf8] (2021-09-16) Luke Stampfli / feat: add `NetworkObject` and `NetworkBehaviour` reference types (#1173)
-- [80913c10] (2021-09-16) Jeffrey Rainy / feat: snapshot spawn pre-requisite 2 (#1192)
-- [5114ca80] (2021-09-15) Noel Stephens / feat: NetworkBehaviour.IsSpawned  (#1190)
-- [d04560fa] (2021-09-15) becksebenius-unity / feat: added tip to the network manager inspector that directs to install tools (MTT-1211) (#1182)
-- [db6de508] (2021-09-14) Matt Walsh / refactor!: remove network dictionary & set, use native container in List, add tests (#1149)
-- [4e3880f0] (2021-09-14) Albin Corén / fix: Fixed remote disconnects not properly cleaning up (#1184)
-- [0941fd7f] (2021-09-14) Noel Stephens / test: base changes to PR-1114 (#1165)
-- [d2669aec] (2021-09-14) Noel Stephens / test: verify do not destroy networkobjects on networkmanager shutdown (#1183)
-- [eaa2f196] (2021-09-14) Jeffrey Rainy / chore: removal of EnableNetworkVariable in NetworkConfig. It's always True now (#1179)
-- [22810067] (2021-09-14) Albin Corén / fix: Fix DontDestroyWithOwner not returning ownership (#1181)
-- [9590a056] (2021-09-14) Andrew Spiering / test: Giving Android some more room as the connection tests are timing sensitive (#1178)
-- [5ef9f418] (2021-09-14) Noel Stephens / fix: unitytransport connectionmode buttons (#1176)
-- [46dfe4a2] (2021-09-13) Matt Walsh / test: added min frames to multi-instance helper (#1170)
-- [b7c5d803] (2021-09-13) zain-mecklai / chore: Add mobile tests to nightly trigger (#1161)
-- [fbd893dc] (2021-09-13) Jeffrey Rainy / feat: snapshot spawn pre-requisite (#1166)
-- [a02dfee5] (2021-09-13) Cristian Mazo / feat: Unity Transport + Relay (#887)
-- [9d0f50e9] (2021-09-13) Noel Stephens / feat: client scene synchronization mode (#1171)
-- [6a032b19] (2021-09-13) M. Fatih MAR / fix: add `link.xml` to prevent IL2CPP stripping `Unity.PerformanceTesting` (#1172)
-- [03264b05] (2021-09-11) M. Fatih MAR / chore: add boilerplate for `ClientNetworkTransform` sample (#1168)
-- [1fe6a0f2] (2021-09-10) M. Fatih MAR / chore: remove `ClientNetworkVariable` (#1167)
-- [a38029a3] (2021-09-10) kvassall-unity / chore: Disable test while we reevaluate the assumption that INetworkM… (#1163)
-- [8d2dcf99] (2021-09-10) Briancoughlin / docs: rename Manual.md to Index.md
-- [ae16e8c6] (2021-09-10) Josie Messa / Only track one metric for scene sync and do not report scene name (#1159)
-- [97abc439] (2021-09-09) zain-mecklai / test: create job definitions for mobile build and test (#1152)
-- [599ed687] (2021-09-09) Noel Stephens / test: make test runner scene ignored by default for BaseMultiInstanceTest (#1154)
-- [52293db0] (2021-09-08) Jeffrey Rainy / fix: remove left-over reference to SyncTransform (#1155)
-- [ace9d895] (2021-09-08) Jeffrey Rainy / chore: remove unused SyncTransform.cs (#1153)
-- [d76d2815] (2021-09-07) Matt Walsh / chore!: remove NetworkNavMeshAgent (#1150)
-- [b6937e8b] (2021-09-07) Noel Stephens / fix: NetworkObject parenting support in scene transitioning (#1148)
-- [825bf192] (2021-09-07) M. Fatih MAR / chore!: rename Prototyping asmdef to Components (#1145)
-- [b55baa19] (2021-09-07) M. Fatih MAR / feat: add bootstrap sample to package (#1140)
-- [be05d1aa] (2021-09-07) M. Fatih MAR / chore: remove `--yamato` param from `standards.py` (#1144)
-- [847068bf] (2021-09-03) Noel Stephens / fix: MTT-504 connection approval messages and comparing networkconfig (#1138)
-- [92e53618] (2021-09-03) M. Fatih MAR / refactor!: remove NetworkChannel and MultiplexTransportAdapter (#1133)
-- [8a74421f] (2021-09-02) Noel Stephens / fix: networkscenemanager not releasing buffers from pool (#1132)
-- [f1a07069] (2021-09-02) Matt Walsh / test: fixed-length strings in netvars (#1119)
-- [b5b40dec] (2021-09-02) Jeffrey Rainy / fix: snapshot system. last fixes for release (#1129)
-- [1bbe95f8] (2021-09-02) Albin Corén / refactor!: Unified Shutdown (#1108)
-- [5ed41b95] (2021-09-02) Josie Messa / chore: Fill out unity project for integration test project (#1128)
-- [5338ca2b] (2021-09-01) M. Fatih MAR / feat: make ServerRpc ownership check an error log instead of warning log (#1126)
-- [f703ba57] (2021-09-01) Noel Stephens / fix: client connected InvokeOnClientConnectedCallback with scene management disabled (#1123)
-- [370d9ef1] (2021-09-01) becksebenius-unity / fix: removed `public` class `NetcodeObserver` (MTT-1157) (#1122)
-- [ed110d05] (2021-08-31) becksebenius-unity / feat: add NetworkMessageSent/Received metrics (#1112)
-- [9c759d6f] (2021-08-31) Jeffrey Rainy / feat: snapshot. MTU sizing option for Snapshot. MTT-1087 (#1111)
-- [96309fb7] (2021-08-31) Benoit Doyon / Add metrics for transport bytes sent and received (#1104)
-- [49997da9] (2021-08-31) Valere Plantevin / fix: Missing end profiling sample (#1118)
-- [af1ce68d] (2021-08-31) Jesse Olmer / chore: support standalone mode for netcode runtimetests (#1115)
-- [75609cd1] (2021-08-31) Benoit Doyon / feat: Change MetricNames for a more complex value type (#1109)
-- [7fbc65cb] (2021-08-31) Josie Messa / feat: Track scene event metrics (#1089)
-- [ff185d6a] (2021-08-31) Jeffrey Rainy / style: whitespace fixes (#1117)
-- [c1ee3b62] (2021-08-30) Noel Stephens / feat: replace scene registration with scenes in build list (#1080)
-- [b5f761cf] (2021-08-27) Jeffrey Rainy / fix: mtt-857 GitHub issue 915 (#1099)
-- [ced41388] (2021-08-27) Noel Stephens / fix: NetworkSceneManager exception when DontDestroyOnLoad NetworkObjects are being synchronized (#1090)
-- [f3851d6a] (2021-08-27) M. Fatih MAR / feat: NetworkTransform Custom Editor Inspector UI (#1101)
-- [f8f53f3e] (2021-08-27) M. Fatih MAR / refactor: remove TempGlobalObjectIdHashOverride (#1105)
-- [bef00ff6] (2021-08-27) JS Fauteux / fix: MTT-1124 Counters are now reported in sync with other metrics (#1096)
-- [00164832] (2021-08-27) M. Fatih MAR / refactor: convert using var statements to using var declarations (#1100)
-- [4dfc7601] (2021-08-27) becksebenius-unity / chore: updated all of the namespaces to match the tools package change (#1095)
-- [15d5bef0] (2021-08-26) Matt Walsh / refactor!: remove network variable settings, network behaviour cleanup (#1097)
-- [3796565a] (2021-08-26) Jeffrey Rainy / fix: mtt-1088 review. Safer handling of out-of-order or old messages (#1091)
-- [90e4bbe9] (2021-08-26) M. Fatih MAR / refactor: assign auto-incremented `GlobalObjectIdHash` as a fallback in `MultiInstanceHelpers.MakeNetworkObjectTestPrefab()` + fix flaky tests exposed by this fix (#1094)
-- [f733bec4] (2021-08-25) becksebenius-unity / feat: fulfilling interface for tools to find network objects from an id (#1086)
-- [2017e0fd] (2021-08-25) Matt Walsh / chore!: remove netvar predefined types (#1093)
-- [a7ffde6a] (2021-08-25) M. Fatih MAR / fix: change OwnerClientId before firing OnGainedOwnership() callback (#1092)
-- [611678a2] (2021-08-25) Matt Walsh / feat!: network variables - client auth, permission cleanup, containers (#1074)
-- [fbfcc94e] (2021-08-25) M. Fatih MAR / chore: expose `--verbosity` through `standards.py` (#1085)
-- [4c166a64] (2021-08-24) M. Fatih MAR / test: NetworkTransformStateTests no longer uses ReplNetworkState (#1084)
+- `NetworkVariable` does not serialize `INetworkSerializable` types through their `NetworkSerialize` implementation
+- `NetworkObjects` marked as `DontDestroyOnLoad` are disabled during some network scene transitions
+- `NetworkTransform` interpolates from the origin when switching Local Space synchronization
+- Exceptions thrown in `OnNetworkSpawn` user code for an object will prevent the callback in other objects
+- Cannot send an array of `INetworkSerializable` in RPCs
+- ILPP generation fails with special characters in project path
 
 ## [0.2.0] - 2021-06-03
 

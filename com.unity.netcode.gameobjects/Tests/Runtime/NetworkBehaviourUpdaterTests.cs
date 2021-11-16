@@ -103,6 +103,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverNetVarCount = serverNetVarsToUpdate.Count;
 
             yield return new WaitForSeconds(0); // wait a frame to make sure spawn is done
+            // todo: with Snapshot spawns enabled and the current race condition, the following line is needed:
+            // yield return new WaitForSeconds(0.2f); // wait a bit to fix the spawn/update race condition
 
             foreach (var netVar in serverNetVarsToUpdate)
             {

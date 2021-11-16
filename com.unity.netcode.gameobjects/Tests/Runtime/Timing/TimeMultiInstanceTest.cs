@@ -56,8 +56,8 @@ namespace Unity.Netcode.RuntimeTests
             var networkManagers = MultiInstanceHelpers.NetworkManagerInstances.ToArray();
 
             var server = networkManagers.First(t => t.IsServer);
-            var firstClient = networkManagers.First(t => t.IsClient);
-            var secondClient = networkManagers.Last(t => t.IsClient);
+            var firstClient = networkManagers.First(t => !t.IsServer);
+            var secondClient = networkManagers.Last(t => !t.IsServer);
 
             Assert.AreNotEqual(firstClient, secondClient);
 
@@ -141,12 +141,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
-        }
-
-        private IEnumerator WaitForFrames(int count)
-        {
-            int nextFrameNumber = Time.frameCount + count;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
         }
 
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>

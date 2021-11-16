@@ -75,7 +75,17 @@ namespace Unity.Netcode
             if (IsHost || IsServer)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
@@ -89,7 +99,7 @@ namespace Unity.Netcode
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
                     NetworkManager.ServerClientId,
-                    NetworkObjectId,
+                    NetworkObject,
                     rpcMethodName,
                     __getTypeName(),
                     rpcMessageSize);
@@ -133,7 +143,7 @@ namespace Unity.Netcode
             int messageSize;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
-            // to ourself. Sadly we have to figure that out from the list of clientIds :( 
+            // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
 
             if (rpcParams.Send.TargetClientIds != null)
@@ -172,7 +182,17 @@ namespace Unity.Netcode
             if (shouldSendToHost)
             {
                 using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
-                message.Handle(tempBuffer, NetworkManager, NetworkManager.ServerClientId);
+                var context = new NetworkContext
+                {
+                    SenderId = NetworkManager.ServerClientId,
+                    Timestamp = Time.realtimeSinceStartup,
+                    SystemOwner = NetworkManager,
+                    // header information isn't valid since it's not a real message.
+                    // Passing false to canDefer prevents it being accessed.
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
+                };
+                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 messageSize = tempBuffer.Length;
             }
 
@@ -181,15 +201,12 @@ namespace Unity.Netcode
             {
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    var bytesReported = NetworkManager.LocalClientId == client.Key
-                        ? 0
-                        : messageSize;
                     NetworkManager.NetworkMetrics.TrackRpcSent(
                         client.Key,
-                        NetworkObjectId,
+                        NetworkObject,
                         rpcMethodName,
                         __getTypeName(),
-                        bytesReported);
+                        messageSize);
                 }
             }
 #endif
@@ -197,6 +214,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
+        ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
@@ -225,7 +243,7 @@ namespace Unity.Netcode
         /// </summary>
         protected bool IsHost => IsRunning && NetworkManager.IsHost;
 
-        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
+        private bool IsRunning => NetworkManager && NetworkManager.IsListening;
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -238,8 +256,24 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
 
+        internal bool IsBehaviourEditable()
+        {
+            // Only server can MODIFY. So allow modification if network is either not running or we are server
+            return !m_NetworkObject ||
+                   (m_NetworkObject.NetworkManager == null ||
+                    !m_NetworkObject.NetworkManager.IsListening ||
+                    m_NetworkObject.NetworkManager.IsServer);
+        }
+
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
+        ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
+        ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
+        ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
+        ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
+        ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
+        ///   how NetworkObject works but it was close to the release and too risky to change
+        ///
         /// </summary>
         public NetworkObject NetworkObject
         {
@@ -250,9 +284,13 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (m_NetworkObject == null || NetworkManager.Singleton == null ||
+                    (NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress))
                 {
-                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    }
                 }
 
                 return m_NetworkObject;
@@ -390,8 +428,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);

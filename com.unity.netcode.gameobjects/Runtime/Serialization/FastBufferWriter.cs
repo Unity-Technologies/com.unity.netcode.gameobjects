@@ -24,6 +24,8 @@ namespace Unity.Netcode
 
         internal readonly unsafe WriterHandle* Handle;
 
+        private static byte[] s_ByteArrayCache = new byte[65535];
+
         /// <summary>
         /// The current write position
         /// </summary>
@@ -78,6 +80,10 @@ namespace Unity.Netcode
         /// <param name="maxSize">Maximum size the buffer can grow to. If less than size, buffer cannot grow.</param>
         public unsafe FastBufferWriter(int size, Allocator allocator, int maxSize = -1)
         {
+            // Allocating both the Handle struct and the buffer in a single allocation - sizeof(WriterHandle) + size
+            // The buffer for the initial allocation is the next block of memory after the handle itself.
+            // If the buffer grows, a new buffer will be allocated and the handle pointer pointed at the new location...
+            // The original buffer won't be deallocated until the writer is destroyed since it's part of the handle allocation.
             Handle = (WriterHandle*)UnsafeUtility.Malloc(sizeof(WriterHandle) + size, UnsafeUtility.AlignOf<WriterHandle>(), allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             UnsafeUtility.MemSet(Handle, 0, sizeof(WriterHandle) + size);
@@ -350,6 +356,29 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Uses a static cached array to create an array segment with no allocations.
+        /// This array can only be used until the next time ToTempByteArray() is called on ANY FastBufferWriter,
+        /// as the cached buffer is shared by all of them and will be overwritten.
+        /// As such, this should be used with care.
+        /// </summary>
+        /// <returns></returns>
+        internal unsafe ArraySegment<byte> ToTempByteArray()
+        {
+            var length = Length;
+            if (length > s_ByteArrayCache.Length)
+            {
+                return new ArraySegment<byte>(ToArray(), 0, length);
+            }
+
+            fixed (byte* b = s_ByteArrayCache)
+            {
+                UnsafeUtility.MemCpy(b, Handle->BufferPointer, length);
+            }
+
+            return new ArraySegment<byte>(s_ByteArrayCache, 0, length);
+        }
+
+        /// <summary>
         /// Gets a direct pointer to the underlying buffer
         /// </summary>
         /// <returns></returns>
@@ -399,7 +428,7 @@ namespace Unity.Netcode
         /// <param name="count"></param>
         /// <param name="offset"></param>
         /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
+        public void WriteNetworkSerializable<T>(T[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             WriteValueSafe(sizeInTs);

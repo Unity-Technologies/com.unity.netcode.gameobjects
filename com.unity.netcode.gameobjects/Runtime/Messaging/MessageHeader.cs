@@ -11,11 +11,12 @@ namespace Unity.Netcode
         /// unchanged - if new messages are added or messages are removed, MessageType assignments may be
         /// calculated differently.
         /// </summary>
-        public byte MessageType;
+        public uint MessageType;
 
         /// <summary>
         /// The total size of the message, NOT including the header.
+        /// Stored as a uint to avoid zig-zag encoding, but capped at int.MaxValue.
         /// </summary>
-        public short MessageSize;
+        public uint MessageSize;
     }
 }
