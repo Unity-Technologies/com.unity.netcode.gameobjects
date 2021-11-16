@@ -11,7 +11,7 @@ namespace Unity.Netcode
 
         public static void Receive(FastBufferReader reader, in NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeUnnamedMessage(context.SenderId, reader);
+            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeUnnamedMessage(context.SenderId, reader, context.SerializedHeaderSize);
         }
     }
 }
