@@ -73,6 +73,10 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_ShuttingDown;
+
+        private bool m_StopProcessingMessages;
+
         private class NetworkManagerHooks : INetworkHooks
         {
             private NetworkManager m_NetworkManager;
@@ -332,6 +336,9 @@ namespace Unity.Netcode
         /// Gets if we are connected as a client
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+
+        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
@@ -1079,7 +1086,8 @@ namespace Unity.Netcode
 
             if (SpawnManager != null)
             {
-                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.CleanupAllTriggers();
+                SpawnManager.DespawnAndDestroyNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
@@ -1114,6 +1122,7 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
+            m_ShuttingDown = false;
         }
 
         // INetworkUpdateSystem

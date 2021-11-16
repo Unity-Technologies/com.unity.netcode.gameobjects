@@ -807,7 +807,7 @@ namespace Unity.Netcode.Components
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
         {
-            if (!NetworkObject.IsSpawned)
+            if (!IsSpawned)
             {
                 return;
             }
