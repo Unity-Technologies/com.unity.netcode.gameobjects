@@ -170,7 +170,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var machine in machines)
                     {
                         BokkenMachine.KillMultiprocessTestPlayer(machine.PathToJson);
-                        MultiprocessLogger.Log($"Lauching process on machine {machine.Image} {machine.Type}");
+                        MultiprocessLogger.Log($"Lauching process on machine {machine.Image} {machine.Type} {machine.Name}");
                         machine.Launch();
                         // Quick check to see if the process started on the remote machine
                         machine.PrintTaskListForMultiprocessTestPlayer();

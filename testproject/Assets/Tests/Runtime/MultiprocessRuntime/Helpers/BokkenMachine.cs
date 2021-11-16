@@ -118,7 +118,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string s = $" --command exec " +
                 $"--input-path {PathToJson} " +
                 $"--remote-command tasklist /FI \"IMAGENAME eq MultiprocessTestPlayer.exe\"";
-            ExecuteCommand(s);
+            ExecuteCommand(s, true);
         }
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
@@ -153,10 +153,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             if (waitForResult)
-            {
-                MultiprocessLogger.Log("Starting to wait");
-                workerProcess.WaitForExit(timeToWait);
-                MultiprocessLogger.Log("Done waiting");
+            {                
+                workerProcess.WaitForExit(timeToWait);                
                 string so = workerProcess.StandardOutput.ReadToEnd();
                 MultiprocessLogger.Log(so);
             }
