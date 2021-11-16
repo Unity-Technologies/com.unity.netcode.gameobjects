@@ -284,9 +284,13 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (m_NetworkObject == null || NetworkManager.Singleton == null ||
+                    (NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress))
                 {
-                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    }
                 }
 
                 return m_NetworkObject;
@@ -424,8 +428,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);

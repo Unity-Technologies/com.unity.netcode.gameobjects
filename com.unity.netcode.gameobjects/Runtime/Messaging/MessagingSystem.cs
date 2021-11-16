@@ -101,7 +101,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void Dispose()
+        public unsafe void Dispose()
         {
             if (m_Disposed)
             {
@@ -114,6 +114,14 @@ namespace Unity.Netcode
             {
                 CleanupDisconnectedClient(kvp.Key);
             }
+
+            for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
+            {
+                // Avoid copies...
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(queueIndex);
+                item.Reader.Dispose();
+            }
+
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
         }
@@ -267,11 +275,15 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
-            for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
+            for (var index = 0; index < m_IncomingMessageQueue.Length; ++index)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(index);
                 HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, item.MessageHeaderSerializedSize);
+                if (m_Disposed)
+                {
+                    return;
+                }
             }
 
             m_IncomingMessageQueue.Clear();
@@ -479,15 +491,15 @@ namespace Unity.Netcode
                     try
                     {
                         m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
+
+                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                        {
+                            m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                        }
                     }
                     finally
                     {
                         queueItem.Writer.Dispose();
-                    }
-
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                    {
-                        m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
                 }
                 sendQueueItem.Clear();
