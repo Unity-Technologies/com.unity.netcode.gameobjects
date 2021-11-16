@@ -80,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public class DummyNetBehaviour : NetworkBehaviour
         {
-            public DummyNetVar NetVar;
+            public DummyNetVar NetVar = new DummyNetVar();
         }
         protected override int NbClients => 1;
 
