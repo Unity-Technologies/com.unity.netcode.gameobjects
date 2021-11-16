@@ -11,7 +11,7 @@ namespace Unity.Netcode.Interest
     // interest *system* instead of interest node ?
     internal class InterestManager<TObject> where TObject : IInterestObject<TObject>
     {
-        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
+        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new();
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
@@ -29,6 +29,7 @@ namespace Unity.Netcode.Interest
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
             m_ChildNodes = new HashSet<IInterestNode<TObject>> {m_DefaultInterestNode};
+            m_ObjectSettings = new Dictionary<IInterestObject<TObject>, InterestSettings>();
         }
 
         public void AddObject(ref TObject obj)
@@ -63,6 +64,11 @@ namespace Unity.Netcode.Interest
             obj.AddInterestNode(m_DefaultInterestNode);
         }
 
+        public void SetInterestSettings(TObject obj, InterestSettings settings)
+        {
+            m_ObjectSettings[obj] = settings;
+        }
+
         public void RemoveObject(ref TObject obj)
         {
             HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
@@ -85,5 +91,9 @@ namespace Unity.Netcode.Interest
         }
 
         private HashSet<IInterestNode<TObject>> m_ChildNodes;
+
+        // eventually, we may want to save space and have 'classes' of things that have
+        //  interest settings
+        private Dictionary<IInterestObject<TObject>, InterestSettings> m_ObjectSettings;
     }
 }
