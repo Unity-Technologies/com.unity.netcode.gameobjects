@@ -19,7 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-        private string m_logPath;
+        private string m_LogPath;
         private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
@@ -154,8 +154,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {                        
                         MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} and platformList is null");
-                        m_logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                        MultiprocessLogger.Log($"logPath to new process is {m_logPath}");
+                        m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
                         MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     }
                 }
@@ -166,13 +166,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     {
                         MultiprocessLogger.Log($"Provisioning platform {platform}");
                         machines.Add(MultiprocessOrchestration.ProvisionWorkerNode(platform));
+                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");
+                        foreach (var machine in machines)
+                        {
+                            MultiprocessLogger.Log($"Machines list is now : {machine.Name}");
+                        }
                     }
                     foreach (var machine in machines)
                     {
                         BokkenMachine.KillMultiprocessTestPlayer(machine.PathToJson);
-                        MultiprocessLogger.Log($"Lauching process on machine {machine.Image} {machine.Type} {machine.Name}");
-                        machine.Launch();
-                        // Quick check to see if the process started on the remote machine
+                        MultiprocessLogger.Log($"Lauching process on remot machine {machine.Name} {machine.Image} {machine.Type}");
+                        machine.Launch();                        
                         machine.PrintTaskListForMultiprocessTestPlayer();
                     }
                 }
