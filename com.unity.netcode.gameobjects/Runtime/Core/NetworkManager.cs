@@ -940,11 +940,23 @@ namespace Unity.Netcode
             OnSingletonReady?.Invoke();
         }
 
+        /// <summary>
+        /// Returns the root GameObject of the NetworkManager's GameObject
+        /// </summary>
+        private GameObject GetParent(GameObject gameObject)
+        {
+            if (gameObject.transform.parent != null)
+            {
+                return GetParent(gameObject.transform.parent.gameObject);
+            }
+            return gameObject;
+        }
+
         private void OnEnable()
         {
             if (DontDestroy)
             {
-                DontDestroyOnLoad(gameObject);
+                DontDestroyOnLoad(GetParent(gameObject));
             }
 
             if (RunInBackground)
