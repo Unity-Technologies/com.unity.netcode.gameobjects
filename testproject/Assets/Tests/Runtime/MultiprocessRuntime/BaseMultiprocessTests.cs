@@ -213,7 +213,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void TeardownSuite()
         {
             MultiprocessLogger.Log($"TeardownSuite");
-            BokkenMachine.DisposeResources();
+            
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
             if (!IgnoreMultiprocessTests)
             {
