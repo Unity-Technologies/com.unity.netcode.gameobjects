@@ -1489,6 +1489,7 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
+                        // As long as we can destroy the PlayerObject with the owner
                         if (!playerObject.DontDestroyWithOwner)
                         {
                             if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
@@ -1500,7 +1501,7 @@ namespace Unity.Netcode
                                 Destroy(playerObject.gameObject);
                             }
                         }
-                        else
+                        else // Otherwise, just remove the ownership
                         {
                             playerObject.RemoveOwnership();
                         }
