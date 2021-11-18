@@ -164,19 +164,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = new List<BokkenMachine>();
                     foreach (var platform in platformList)
                     {
-                        MultiprocessLogger.Log($"Provisioning platform {platform}");
-                        machines.Add(MultiprocessOrchestration.ProvisionWorkerNode(platform));
-                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");
-                        foreach (var machine in machines)
-                        {
-                            MultiprocessLogger.Log($"Machines list is now : {machine.Name}");
-                        }
+                        MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
+                        var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
+                        machines.Add(machine);
+                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");                        
+                        BokkenMachine.KillMultiprocessTestPlayer(machine.PathToJson);
                     }
                     foreach (var machine in machines)
-                    {
-                        BokkenMachine.KillMultiprocessTestPlayer(machine.PathToJson);
+                    {                        
                         MultiprocessLogger.Log($"Lauching process on remot machine {machine.Name} {machine.Image} {machine.Type}");
-                        machine.Launch();                        
+                        machine.Launch();
                         machine.PrintTaskListForMultiprocessTestPlayer();
                     }
                 }
