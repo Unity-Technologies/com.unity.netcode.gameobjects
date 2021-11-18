@@ -26,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
 
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
+- Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwnerSet. (1433)
 
 ### Changed
 
