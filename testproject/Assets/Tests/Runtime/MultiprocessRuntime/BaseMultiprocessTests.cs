@@ -167,8 +167,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
                         var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
                         machines.Add(machine);
-                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");                        
-                        BokkenMachine.KillMultiprocessTestPlayer(machine.PathToJson);
+                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");                                                
                     }
                     foreach (var machine in machines)
                     {                        

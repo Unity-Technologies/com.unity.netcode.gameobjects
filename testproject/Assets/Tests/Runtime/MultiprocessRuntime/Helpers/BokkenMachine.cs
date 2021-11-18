@@ -89,8 +89,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
             foreach (var f in mpDir.GetFiles("*.json"))
             {
-                MultiprocessLogger.Log($"Disposing of resource {f.FullName}");
+                MultiprocessLogger.Log($"Disposing of resource {f.FullName} and deleting file");
                 ExecuteCommand($"--command destroy --input-path {f.FullName}");
+                f.Delete();                
             }            
         }
 
