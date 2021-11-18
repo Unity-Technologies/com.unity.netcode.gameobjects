@@ -53,7 +53,7 @@ namespace TestProject.RuntimeTests
                     Debug.Break();
                 }
                 m_NetworkManager.DontDestroy = false;
-                SceneManager.MoveGameObjectToScene(m_NetworkManager.gameObject, m_MasterScene);
+                SceneManager.MoveGameObjectToScene(m_NetworkManager.GetRootParent(), m_MasterScene);
 
                 // Connect as Host
                 Assert.That(m_NetworkManager.StartHost() == true);

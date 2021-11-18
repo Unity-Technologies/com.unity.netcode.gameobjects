@@ -9,59 +9,17 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    /// <summary>
-    /// Provides helpers for running multi instance tests.
-    /// </summary>
-    public static class MultiInstanceHelpers
+    public interface IMultiInstanceHelperOverrides
     {
-        public const int DefaultMinFrames = 1;
-        public const int DefaultMaxFrames = 64;
-        private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
-        private static bool s_IsStarted;
-        private static int s_ClientCount;
-        private static int s_OriginalTargetFrameRate = -1;
+        bool OnCreateNewClients(int clientCount, out NetworkManager[] clients);
 
-        public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
+        bool OnCreateHostServer(out NetworkManager server);
+    }
 
-        /// <summary>
-        /// Creates NetworkingManagers and configures them for use in a multi instance setting.
-        /// </summary>
-        /// <param name="clientCount">The amount of clients</param>
-        /// <param name="server">The server NetworkManager</param>
-        /// <param name="clients">The clients NetworkManagers</param>
-        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
-        {
-            s_NetworkManagerInstances = new List<NetworkManager>();
-            CreateNewClients(clientCount, out clients);
 
-            // Create gameObject
-            var go = new GameObject("NetworkManager - Server");
-
-            // Create networkManager component
-            server = go.AddComponent<NetworkManager>();
-            NetworkManagerInstances.Insert(0, server);
-
-            // Set the NetworkConfig
-            server.NetworkConfig = new NetworkConfig()
-            {
-                // Set transport
-                NetworkTransport = go.AddComponent<SIPTransport>()
-            };
-
-            s_OriginalTargetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = targetFrameRate;
-
-            return true;
-        }
-
-        /// <summary>
-        /// Used to add a client to the already existing list of clients
-        /// </summary>
-        /// <param name="clientCount">The amount of clients</param>
-        /// <param name="clients"></param>
-        /// <returns></returns>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
+    internal class DefaultMultiInstanceHelperOverrides : IMultiInstanceHelperOverrides
+    {
+        public bool OnCreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
             var activeSceneName = SceneManager.GetActiveScene().name;
@@ -79,9 +37,93 @@ namespace Unity.Netcode.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
             }
-
-            NetworkManagerInstances.AddRange(clients);
             return true;
+        }
+
+        public bool OnCreateHostServer(out NetworkManager server)
+        {
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            server = go.AddComponent<NetworkManager>();
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
+            {
+                // Set transport
+                NetworkTransport = go.AddComponent<SIPTransport>()
+            };
+
+            return true;
+        }
+
+    }
+
+
+    /// <summary>
+    /// Provides helpers for running multi instance tests.
+    /// </summary>
+    public static class MultiInstanceHelpers
+    {
+        public const int DefaultMinFrames = 1;
+        public const int DefaultMaxFrames = 64;
+        private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
+        private static bool s_IsStarted;
+        private static int s_ClientCount;
+        private static int s_OriginalTargetFrameRate = -1;
+
+        public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
+
+        static public IMultiInstanceHelperOverrides MultiInstanceHelperOverrides = new DefaultMultiInstanceHelperOverrides();
+
+
+
+        /// <summary>
+        /// Creates NetworkingManagers and configures them for use in a multi instance setting.
+        /// </summary>
+        /// <param name="clientCount">The amount of clients</param>
+        /// <param name="server">The server NetworkManager</param>
+        /// <param name="clients">The clients NetworkManagers</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
+        {
+            s_NetworkManagerInstances = new List<NetworkManager>();
+
+            if (!CreateNewClients(clientCount, out clients))
+            {
+                throw new Exception("Failed to create clients!\n");
+            }
+
+            if (!MultiInstanceHelperOverrides.OnCreateHostServer(out server))
+            {
+                throw new Exception("Failed to create server-host!\n");
+            }
+            else
+            {
+                NetworkManagerInstances.Insert(0, server);
+            }
+
+            s_OriginalTargetFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = targetFrameRate;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Used to add a client to the already existing list of clients
+        /// </summary>
+        /// <param name="clientCount">The amount of clients</param>
+        /// <param name="clients"></param>
+        /// <returns></returns>
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
+        {
+            if (MultiInstanceHelperOverrides.OnCreateNewClients(clientCount, out clients))
+            {
+                NetworkManagerInstances.AddRange(clients);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -117,7 +159,8 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.DestroyImmediate(networkManager.gameObject);
+                // Always destroy the root parent
+                Object.DestroyImmediate(networkManager.GetRootParent());
             }
 
             NetworkManagerInstances.Clear();
@@ -130,6 +173,9 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
+
+            // Assure we always reset back to the default
+            MultiInstanceHelperOverrides = new DefaultMultiInstanceHelperOverrides();
         }
 
         /// <summary>

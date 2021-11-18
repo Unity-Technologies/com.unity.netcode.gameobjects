@@ -943,13 +943,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Returns the root GameObject of the NetworkManager's GameObject
         /// </summary>
-        private GameObject GetParent(GameObject gameObject)
+        internal GameObject GetRootParent(GameObject currentGameObject = null)
         {
-            if (gameObject.transform.parent != null)
+            currentGameObject = currentGameObject == null ? gameObject : currentGameObject;
+            if (currentGameObject.transform.parent != null)
             {
-                return GetParent(gameObject.transform.parent.gameObject);
+                return GetRootParent(currentGameObject.transform.parent.gameObject);
             }
-            return gameObject;
+            return currentGameObject;
         }
 
         private void OnEnable()
@@ -957,7 +958,7 @@ namespace Unity.Netcode
             if (DontDestroy)
             {
                 // We must always move the root GameObject into the DDOL
-                DontDestroyOnLoad(GetParent(gameObject));
+                DontDestroyOnLoad(GetRootParent());
             }
 
             if (RunInBackground)

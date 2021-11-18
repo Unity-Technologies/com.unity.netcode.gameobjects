@@ -12,6 +12,67 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+    internal class SceneTestsMultiInstanceHelperOverrides : IMultiInstanceHelperOverrides
+    {
+        public bool NestServerNetworkManager = false;
+        public bool NestClientNetworkManager = false;
+
+        public bool OnCreateNewClients(int clientCount, out NetworkManager[] clients)
+        {
+            clients = new NetworkManager[clientCount];
+            var activeSceneName = SceneManager.GetActiveScene().name;
+            for (int i = 0; i < clientCount; i++)
+            {
+                // Create gameObject
+                var go = new GameObject("NetworkManager - Client - " + i);
+
+                // Nest the client NetworkManager if this is true
+                if (NestClientNetworkManager)
+                {
+                    var parentGameObject = new GameObject("NetworkManager - Client - Parent " + i);
+                    go.transform.parent = parentGameObject.transform;
+                }
+
+                // Create networkManager component
+                clients[i] = go.AddComponent<NetworkManager>();
+
+                // Set the NetworkConfig
+                clients[i].NetworkConfig = new NetworkConfig()
+                {
+                    // Set transport
+                    NetworkTransport = go.AddComponent<SIPTransport>()
+                };
+            }
+            return true;
+        }
+
+        public bool OnCreateHostServer(out NetworkManager server)
+        {
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Nest the server NetworkManager if this is true
+            if (NestServerNetworkManager)
+            {
+                var parentGameObject = new GameObject("NetworkManager - Server - Parent");
+                go.transform.parent = parentGameObject.transform;
+            }
+
+            // Create networkManager component
+            server = go.AddComponent<NetworkManager>();
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
+            {
+                // Set transport
+                NetworkTransport = go.AddComponent<SIPTransport>()
+            };
+
+            return true;
+        }
+    }
+
+
     public class NetworkSceneManagerTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 9;
@@ -61,10 +122,12 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// Tests the different types of NetworkSceneManager notifications (including exceptions) generated
-        /// Also tests invalid loading scenarios (i.e. client trying to load a scene)
+        /// Also tests invalid loading scenarios (i.e. client trying to load a scene), and finally it tests all
+        /// of this with and without nesting the NetworkManager's GameObject.
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(ServerType.Host, ServerType.Server)] ServerType serverType)
+        public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode,
+            [Values(ServerType.Host, ServerType.Server)] ServerType serverType, [Values(true, false)] bool isNetworkManagerNested)
         {
             // First we disconnect and shutdown because we want to verify the synchronize events
             yield return Teardown();
@@ -75,12 +138,19 @@ namespace TestProject.RuntimeTests
             // We set this to true in order to bypass the automatic starting of the host and clients
             m_BypassStartAndWaitForClients = true;
 
+            // Use our own server and client creation in order to apply whether we want to nest the NetworkManager's GameObject or not.
+            var sceneTestsMultiInstanceHelperOverrides = new SceneTestsMultiInstanceHelperOverrides();
+            sceneTestsMultiInstanceHelperOverrides.NestClientNetworkManager = isNetworkManagerNested;
+            sceneTestsMultiInstanceHelperOverrides.NestServerNetworkManager = isNetworkManagerNested;
+            MultiInstanceHelpers.MultiInstanceHelperOverrides = sceneTestsMultiInstanceHelperOverrides;
+
             // Now just create the instances (server and client) without starting anything
             yield return Setup();
 
             // This provides both host and server coverage, when a server we should still get SceneEventType.LoadEventCompleted and SceneEventType.UnloadEventCompleted events
             // but the client count as a server should be 1 less than when a host
             var isHost = serverType == ServerType.Host ? true : false;
+
 
             // Start the host and  clients
             if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
