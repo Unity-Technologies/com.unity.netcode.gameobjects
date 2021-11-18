@@ -956,6 +956,7 @@ namespace Unity.Netcode
         {
             if (DontDestroy)
             {
+                // We must always move the root GameObject into the DDOL
                 DontDestroyOnLoad(GetParent(gameObject));
             }
 
