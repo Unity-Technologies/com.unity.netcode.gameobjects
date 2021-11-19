@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
+- Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
 
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
 
