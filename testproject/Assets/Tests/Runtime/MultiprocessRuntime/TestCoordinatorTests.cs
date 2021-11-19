@@ -55,7 +55,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 string s = p.StandardOutput.ReadToEnd();
                 Assert.IsNotNull(s, "The help output should not be null");
                 string e = p.StandardError.ReadToEnd();
-                Assert.IsNull(e, $"The help command error stream should be null nut was {e}");
+                Assert.True(string.IsNullOrEmpty(e), $"The help command error stream should be null but was {e}");
             }
             yield return new WaitForSeconds(0.1f);
 
