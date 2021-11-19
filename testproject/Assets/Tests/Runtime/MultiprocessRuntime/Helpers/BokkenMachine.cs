@@ -178,8 +178,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 workerProcess.WaitForExit(timeToWait);                
                 string so = workerProcess.StandardOutput.ReadToEnd();
                 MultiprocessLogger.Log(so);
-                string se = workerProcess.StandardError.ReadToEnd();
-                MultiprocessLogger.LogError(se);
+                // string se = workerProcess.StandardError.ReadToEnd();
+                // MultiprocessLogger.LogError(se);
             }
             else
             {
