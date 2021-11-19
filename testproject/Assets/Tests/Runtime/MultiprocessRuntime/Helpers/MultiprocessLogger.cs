@@ -17,12 +17,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void LogError(string msg)
         {
-            s_Logger.LogError("", msg);
+            s_Logger.LogError("ERROR", msg);
         }
 
         public static void LogWarning(string msg)
         {
-            s_Logger.LogWarning("", msg);
+            s_Logger.LogWarning("WARN", msg);
         }
     }
 

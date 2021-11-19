@@ -125,9 +125,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void PrintTaskListForMultiprocessTestPlayer()
         {
-            string s = $" --command mpinfo " +
-                $"--input-path {PathToJson} ";
-            ExecuteCommand(s, true);
+            try
+            {
+                string s = $" --command mpinfo " +
+                    $"--input-path {PathToJson} ";
+                ExecuteCommand(s, true, 20000);
+            }
+            catch (Exception e)
+            {
+                MultiprocessLogger.LogError("Error in PrintTaskList " + e.Message);
+                MultiprocessLogger.LogError("Error in PrintTaskList " + e.StackTrace);
+            }
         }
 
         public void GetMPLog()

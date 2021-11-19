@@ -321,7 +321,8 @@ public class MultiprocessOrchestration
         }
         catch (Exception e)
         {
-            MultiprocessLogger.LogError(e.Message);
+            MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);
             NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface ni in interfaces)
             {
