@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -40,6 +41,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             s_ValueToValidateAgainst = args[0];
             TestCoordinator.Instance.WriteTestResultsServerRpc(s_ValueToValidateAgainst);
+        }
+
+        [UnityTest]
+        public void CheckPreconditions()
+        {
+            if (platformList != null)
+            {
+                var dll = new FileInfo(BokkenMachine.PathToDll);
+                Assert.True(dll.Exists, "The Bokken API Dll exists");
+                var p = BokkenMachine.ExecuteCommand("--help", true);
+                Assert.True(p.HasExited, "The process should have exited");
+                string s = p.StandardOutput.ReadToEnd();
+                Assert.IsNotNull(s, "The help output should not be null");
+                string e = p.StandardError.ReadToEnd();
+                Assert.IsNull(e, $"The help command error stream should be null nut was {e}");
+
+            }
+
         }
 
         [UnityTest]

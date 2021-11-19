@@ -23,7 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private static FileInfo s_FileInfo;
         private static string s_Rootdir;
-        private static string s_PathToDll;
+        public static string PathToDll { get; private set; }
         
 
         private static List<Process> s_ProcessList = new List<Process>();
@@ -32,7 +32,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             s_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
             s_Rootdir = (File.ReadAllText(s_FileInfo.FullName)).Trim();
-            s_PathToDll = Path.Combine(s_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
+            PathToDll = Path.Combine(s_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
         }
 
         public static BokkenMachine GetDefaultMac(string name)
@@ -143,9 +143,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand($"");
         }
 
-        public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
+        public static Process ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
         {
-            MultiprocessLogger.Log($"\"dotnet {s_PathToDll} {command}\"");
+            MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");
             
             var workerProcess = new Process();
 
@@ -153,7 +153,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.UseShellExecute = false;
             workerProcess.StartInfo.RedirectStandardError = true;
             workerProcess.StartInfo.RedirectStandardOutput = true;
-            workerProcess.StartInfo.Arguments = $"{s_PathToDll} {command} ";
+            workerProcess.StartInfo.Arguments = $"{PathToDll} {command} ";
             try
             {
                 MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
@@ -186,6 +186,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 s_ProcessList.Add(workerProcess);
             }
             MultiprocessLogger.Log($"Execute Command End {command}");
+            return workerProcess;
         }
 
         private string GenerateCreateCommand()
