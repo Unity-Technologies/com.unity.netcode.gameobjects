@@ -144,8 +144,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
-        {            
-            
+        {
+            MultiprocessLogger.Log($"Execute Command {command}");
             var workerProcess = new Process();
 
             workerProcess.StartInfo.FileName = Path.Combine("dotnet");
@@ -177,11 +177,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 workerProcess.WaitForExit(timeToWait);                
                 string so = workerProcess.StandardOutput.ReadToEnd();
                 MultiprocessLogger.Log(so);
+                string se = workerProcess.StandardError.ReadToEnd();
+                MultiprocessLogger.LogError(se);
             }
             else
             {
                 s_ProcessList.Add(workerProcess);
-            }    
+            }
+            MultiprocessLogger.Log($"Execute Command End {command}");
         }
 
         private string GenerateCreateCommand()
