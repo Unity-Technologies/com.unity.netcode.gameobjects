@@ -44,7 +44,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         [UnityTest]
-        public void CheckPreconditions()
+        public IEnumerator CheckPreconditions()
         {
             if (platformList != null)
             {
@@ -56,8 +56,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.IsNotNull(s, "The help output should not be null");
                 string e = p.StandardError.ReadToEnd();
                 Assert.IsNull(e, $"The help command error stream should be null nut was {e}");
-
             }
+            yield return new WaitForSeconds(0.1f);
 
         }
 

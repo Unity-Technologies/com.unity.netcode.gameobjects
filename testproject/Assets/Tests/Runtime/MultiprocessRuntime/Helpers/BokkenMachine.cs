@@ -33,7 +33,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             s_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
             s_Rootdir = (File.ReadAllText(s_FileInfo.FullName)).Trim();
             PathToDll = Path.Combine(s_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
-            MultiprocessLogger.Log($"Bokken Machine vars are: \n\ts_FileInfo {s_FileInfo.FullName} \n\ts_Rootdir {s_Rootdir}\n\tPathToDll {PathToDll}");
+            MultiprocessLogger.Log($"Bokken Machine vars are: \n\ts_FileInfo {s_FileInfo.FullName}, {s_FileInfo.Exists} \n\ts_Rootdir {s_Rootdir}\n\tPathToDll {PathToDll}");
         }
 
         public static BokkenMachine GetDefaultMac(string name)
