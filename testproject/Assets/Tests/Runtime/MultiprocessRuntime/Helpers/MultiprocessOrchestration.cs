@@ -305,40 +305,58 @@ public class MultiprocessOrchestration
 
         try
         {
-            var host = Dns.GetHostEntry(localhostname);
-        
-            foreach (var ip in host.AddressList)
+            if (!localhostname.Equals("Mac-mini.local"))
             {
-        
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                var host = Dns.GetHostEntry(localhostname);
+
+                foreach (var ip in host.AddressList)
                 {
-                    string localIPAddress = ip.ToString();
-        
-                    WriteLocalIP(localIPAddress);
-                    return localIPAddress;
+
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        string localIPAddress = ip.ToString();
+
+                        WriteLocalIP(localIPAddress);
+                        return localIPAddress;
+                    }
                 }
             }
         }
         catch (Exception e)
         {
             MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);            
+        }
+
+        try
+        {
+            return GetLocalIPAddressFromNetworkInterface();
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.LogError("Error: " + e.Message);
             MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);
-            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (NetworkInterface ni in interfaces)
-            {
-                foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
-                {
-                 
-                    if (ip.Address.ToString().Contains(".") && !ip.Address.ToString().Equals("127.0.0.1"))
-                    {
-                        // TODO: Write this to a file so we don't have to keep getting this IP over and over
-                        WriteLocalIP(ip.Address.ToString());
-                        return ip.Address.ToString();
-                    }
-                }
-            }
         }
 
         throw new Exception("No network adapters with an IPv4 address in the system!");
+    }
+
+    private static string GetLocalIPAddressFromNetworkInterface()
+    {
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        foreach (NetworkInterface ni in interfaces)
+        {
+            foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+            {
+
+                if (ip.Address.ToString().Contains(".") && !ip.Address.ToString().Equals("127.0.0.1"))
+                {
+                    // TODO: Write this to a file so we don't have to keep getting this IP over and over
+                    WriteLocalIP(ip.Address.ToString());
+                    return ip.Address.ToString();
+                }
+            }
+        }
+        return "";
     }
 }
