@@ -112,6 +112,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             s_Server = null;
             m_Peers.Remove(ServerClientId);
+            m_LocalConnection = null;
         }
 
         public override void Shutdown()
