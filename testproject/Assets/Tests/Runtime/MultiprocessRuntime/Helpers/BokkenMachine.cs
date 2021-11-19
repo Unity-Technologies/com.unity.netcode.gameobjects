@@ -145,7 +145,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
         {
-            MultiprocessLogger.Log($"Execute Command {command}");
+            MultiprocessLogger.Log($"\"dotnet {s_PathToDll} {command}\"");
+            
             var workerProcess = new Process();
 
             workerProcess.StartInfo.FileName = Path.Combine("dotnet");
@@ -155,7 +156,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.Arguments = $"{s_PathToDll} {command} ";
             try
             {
-                MultiprocessLogger.Log($"{command} {workerProcess.StartInfo.Arguments}");
+                MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
                 var newProcessStarted = workerProcess.Start();
                 if (!newProcessStarted)
                 {
