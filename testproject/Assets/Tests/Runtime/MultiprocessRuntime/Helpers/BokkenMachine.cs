@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.ComponentModel;
-
+using System.Runtime.InteropServices;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -218,11 +218,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 throw new Exception("PathToJson must not be null or empty");
             }
-            LogPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
-            string s = $" --command exec " +
-                $"--input-path {PathToJson} "+
-                $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
-            return s;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+
+                LogPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+                string s = $" --command exec " +
+                    $"--input-path {PathToJson} " +
+                    $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                return s;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                LogPath = Path.Combine(@"/Users/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+                string s = $" --command exec " +
+                    $"--input-path {PathToJson} " +
+                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                return s;
+            }
+            return "";
         }
     }
 
