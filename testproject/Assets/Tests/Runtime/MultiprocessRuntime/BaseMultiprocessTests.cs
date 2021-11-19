@@ -173,7 +173,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     {                        
                         MultiprocessLogger.Log($"Lauching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
-                        machine.PrintTaskListForMultiprocessTestPlayer();
+                        // machine.PrintTaskListForMultiprocessTestPlayer();
                     }
                 }
             }
