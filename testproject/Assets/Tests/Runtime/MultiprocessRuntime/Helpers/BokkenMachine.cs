@@ -99,10 +99,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static void FetchAllLogFiles()
         {
             DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            MultiprocessLogger.Log($"FetchAllLogFiles: {mpDir.FullName}");
+            MultiprocessLogger.Log($"FetchAllLogFiles: {mpDir.GetFiles("*.json").Length}");
             foreach (var f in mpDir.GetFiles("*.json"))
             {
                 MultiprocessLogger.Log($"Getting log files from {f.FullName}");
-                ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}");                
+                ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
             }
         }
 
