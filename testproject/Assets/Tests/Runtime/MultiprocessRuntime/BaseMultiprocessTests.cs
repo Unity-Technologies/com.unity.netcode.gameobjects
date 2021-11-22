@@ -172,8 +172,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var machine in machines)
                     {                        
                         MultiprocessLogger.Log($"Lauching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
-                        machine.Launch();
-                        // machine.PrintTaskListForMultiprocessTestPlayer();
+                        machine.Launch();                        
                     }
                 }
             }
@@ -203,7 +202,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
-                
+                MultiprocessLogger.Log($"Fetching log files");
+                BokkenMachine.FetchAllLogFiles();
                 TestCoordinator.Instance.TestRunTeardown();
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             }

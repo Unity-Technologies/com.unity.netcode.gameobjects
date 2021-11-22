@@ -58,7 +58,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.True(string.IsNullOrEmpty(e), $"The help command error stream should be null but was {e}");
             }
             yield return new WaitForSeconds(0.1f);
-
         }
 
         [UnityTest]

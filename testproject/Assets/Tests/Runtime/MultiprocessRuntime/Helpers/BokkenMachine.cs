@@ -96,6 +96,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }            
         }
 
+        public static void FetchAllLogFiles()
+        {
+            DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            foreach (var f in mpDir.GetFiles("*.json"))
+            {
+                MultiprocessLogger.Log($"Getting log files from {f.FullName}");
+                ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}");                
+            }
+        }
+
         public static void KillMultiprocessTestPlayer(string pathToJson, bool waitForCompletion = true)
         {
             ExecuteCommand($" --command killmptplayer --input-path {pathToJson}", waitForCompletion);
