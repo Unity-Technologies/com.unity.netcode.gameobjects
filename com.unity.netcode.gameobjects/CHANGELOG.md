@@ -27,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
+- Fixed null reference on client when server disconnects. (#1438)
 
 ### Changed
 
