@@ -6,7 +6,11 @@
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Netcode.Runtime",
-        "Unity.Networking.Transport"
+        "Unity.Networking.Transport",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.NetStatsReporting",
+        "Unity.Multiplayer.NetworkSolutionInterface"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -15,6 +19,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        }
+    ],
     "noEngineReferences": false
 }
