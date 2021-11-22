@@ -102,70 +102,71 @@ namespace Unity.Netcode
             Despawns.Dispose();
         }
 
-        public static unsafe void Receive(FastBufferReader reader, in NetworkContext context)
+        public unsafe bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
-            var message = new SnapshotDataMessage();
             if (!reader.TryBeginRead(
-                FastBufferWriter.GetWriteSize(message.CurrentTick) +
-                FastBufferWriter.GetWriteSize(message.Sequence) +
-                FastBufferWriter.GetWriteSize(message.Range)
+                FastBufferWriter.GetWriteSize(CurrentTick) +
+                FastBufferWriter.GetWriteSize(Sequence) +
+                FastBufferWriter.GetWriteSize(Range)
             ))
             {
                 throw new OverflowException($"Not enough space to deserialize {nameof(SnapshotDataMessage)}");
             }
-            reader.ReadValue(out message.CurrentTick);
-            reader.ReadValue(out message.Sequence);
+            reader.ReadValue(out CurrentTick);
+            reader.ReadValue(out Sequence);
 
-            reader.ReadValue(out message.Range);
-            message.ReceiveMainBuffer = new NativeArray<byte>(message.Range, Allocator.Temp);
-            reader.ReadBytesSafe((byte*)message.ReceiveMainBuffer.GetUnsafePtr(), message.Range);
-            reader.ReadValueSafe(out message.Ack);
+            reader.ReadValue(out Range);
+            ReceiveMainBuffer = new NativeArray<byte>(Range, Allocator.Temp);
+            reader.ReadBytesSafe((byte*)ReceiveMainBuffer.GetUnsafePtr(), Range);
+            reader.ReadValueSafe(out Ack);
 
             reader.ReadValueSafe(out ushort length);
-            message.Entries = new NativeList<EntryData>(length, Allocator.Temp);
-            message.Entries.Length = length;
-            reader.ReadBytesSafe((byte*)message.Entries.GetUnsafePtr(), message.Entries.Length * sizeof(EntryData));
+            Entries = new NativeList<EntryData>(length, Allocator.Temp);
+            Entries.Length = length;
+            reader.ReadBytesSafe((byte*)Entries.GetUnsafePtr(), Entries.Length * sizeof(EntryData));
 
             reader.ReadValueSafe(out length);
-            message.Spawns = new NativeList<SpawnData>(length, Allocator.Temp);
-            message.Spawns.Length = length;
-            reader.ReadBytesSafe((byte*)message.Spawns.GetUnsafePtr(), message.Spawns.Length * sizeof(SpawnData));
+            Spawns = new NativeList<SpawnData>(length, Allocator.Temp);
+            Spawns.Length = length;
+            reader.ReadBytesSafe((byte*)Spawns.GetUnsafePtr(), Spawns.Length * sizeof(SpawnData));
 
             reader.ReadValueSafe(out length);
-            message.Despawns = new NativeList<DespawnData>(length, Allocator.Temp);
-            message.Despawns.Length = length;
-            reader.ReadBytesSafe((byte*)message.Despawns.GetUnsafePtr(), message.Despawns.Length * sizeof(DespawnData));
+            Despawns = new NativeList<DespawnData>(length, Allocator.Temp);
+            Despawns.Length = length;
+            reader.ReadBytesSafe((byte*)Despawns.GetUnsafePtr(), Despawns.Length * sizeof(DespawnData));
 
-            using (message.ReceiveMainBuffer)
-            using (message.Entries)
-            using (message.Spawns)
-            using (message.Despawns)
-            {
-                message.Handle(context.SenderId, context.SystemOwner);
-            }
+            return true;
         }
 
-        public void Handle(ulong senderId, object systemOwner)
+        public void Handle(in NetworkContext context)
         {
-            if (systemOwner is NetworkManager)
-            {
-                var networkManager = (NetworkManager)systemOwner;
 
-                // todo: temporary hack around bug
-                if (!networkManager.IsServer)
+            using (ReceiveMainBuffer)
+            using (Entries)
+            using (Spawns)
+            using (Despawns)
+            {
+                var systemOwner = context.SystemOwner;
+                var senderId = context.SenderId;
+                if (systemOwner is NetworkManager)
                 {
-                    senderId = networkManager.ServerClientId;
-                }
+                    var networkManager = (NetworkManager)systemOwner;
 
-                var snapshotSystem = networkManager.SnapshotSystem;
-                snapshotSystem.HandleSnapshot(senderId, this);
-            }
-            else
-            {
-                var ownerData = (Tuple<SnapshotSystem, ulong>)systemOwner;
-                var snapshotSystem = ownerData.Item1;
-                snapshotSystem.HandleSnapshot(ownerData.Item2, this);
-                return;
+                    // todo: temporary hack around bug
+                    if (!networkManager.IsServer)
+                    {
+                        senderId = networkManager.ServerClientId;
+                    }
+
+                    var snapshotSystem = networkManager.SnapshotSystem;
+                    snapshotSystem.HandleSnapshot(senderId, this);
+                }
+                else
+                {
+                    var ownerData = (Tuple<SnapshotSystem, ulong>)systemOwner;
+                    var snapshotSystem = ownerData.Item1;
+                    snapshotSystem.HandleSnapshot(ownerData.Item2, this);
+                }
             }
         }
     }

@@ -3,28 +3,30 @@ namespace Unity.Netcode
     internal struct CreateObjectMessage : INetworkMessage
     {
         public NetworkObject.SceneObject ObjectInfo;
+        private FastBufferReader m_ReceivedNetworkVariableData;
 
         public void Serialize(FastBufferWriter writer)
         {
             ObjectInfo.Serialize(writer);
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
-                return;
+                return false;
             }
-            var message = new CreateObjectMessage();
-            message.ObjectInfo.Deserialize(reader);
-            message.Handle(context.SenderId, reader, networkManager);
+            ObjectInfo.Deserialize(reader);
+            m_ReceivedNetworkVariableData = reader;
+            return true;
         }
 
-        public void Handle(ulong senderId, FastBufferReader reader, NetworkManager networkManager)
+        public void Handle(in NetworkContext context)
         {
-            var networkObject = NetworkObject.AddSceneObject(ObjectInfo, reader, networkManager);
-            networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject, reader.Length);
+            var networkManager = (NetworkManager)context.SystemOwner;
+            var networkObject = NetworkObject.AddSceneObject(ObjectInfo, m_ReceivedNetworkVariableData, networkManager);
+            networkManager.NetworkMetrics.TrackObjectSpawnReceived(context.SenderId, networkObject, context.MessageSize);
         }
     }
 }

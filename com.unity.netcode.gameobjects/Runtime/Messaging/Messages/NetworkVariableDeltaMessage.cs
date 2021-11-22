@@ -19,6 +19,8 @@ namespace Unity.Netcode
         public ulong ClientId;
         public NetworkBehaviour NetworkBehaviour;
 
+        private FastBufferReader m_ReceivedNetworkVariableData;
+
         public void Serialize(FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) +
@@ -93,24 +95,24 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
-            var networkManager = (NetworkManager)context.SystemOwner;
-
-            var message = new NetworkVariableDeltaMessage();
-            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.NetworkObjectId) +
-                                      FastBufferWriter.GetWriteSize(message.NetworkBehaviourIndex)))
+            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(NetworkObjectId) +
+                                      FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
             {
                 throw new OverflowException(
                     $"Not enough data in the buffer to read {nameof(NetworkVariableDeltaMessage)}");
             }
-            reader.ReadValue(out message.NetworkObjectId);
-            reader.ReadValue(out message.NetworkBehaviourIndex);
-            message.Handle(context.SenderId, reader, context, networkManager);
+            reader.ReadValue(out NetworkObjectId);
+            reader.ReadValue(out NetworkBehaviourIndex);
+            m_ReceivedNetworkVariableData = reader;
+            return true;
         }
 
-        public void Handle(ulong senderId, FastBufferReader reader, in NetworkContext context, NetworkManager networkManager)
+        public void Handle(in NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+
             if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
             {
                 NetworkBehaviour behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
@@ -130,7 +132,7 @@ namespace Unity.Netcode
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            reader.ReadValueSafe(out varSize);
+                            m_ReceivedNetworkVariableData.ReadValueSafe(out varSize);
 
                             if (varSize == 0)
                             {
@@ -139,7 +141,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            reader.ReadValueSafe(out bool deltaExists);
+                            m_ReceivedNetworkVariableData.ReadValueSafe(out bool deltaExists);
                             if (!deltaExists)
                             {
                                 continue;
@@ -157,7 +159,7 @@ namespace Unity.Netcode
                                     NetworkLog.LogError($"[{behaviour.NetworkVariableFields[i].GetType().Name}]");
                                 }
 
-                                reader.Seek(reader.Position + varSize);
+                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + varSize);
                                 continue;
                             }
 
@@ -176,39 +178,39 @@ namespace Unity.Netcode
 
                             return;
                         }
-                        int readStartPos = reader.Position;
+                        int readStartPos = m_ReceivedNetworkVariableData.Position;
 
-                        behaviour.NetworkVariableFields[i].ReadDelta(reader, networkManager.IsServer);
+                        behaviour.NetworkVariableFields[i].ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
-                            senderId,
+                            context.SenderId,
                             networkObject,
                             behaviour.NetworkVariableFields[i].Name,
                             behaviour.__getTypeName(),
-                            reader.Length);
+                            context.MessageSize);
 
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            if (reader.Position > (readStartPos + varSize))
+                            if (m_ReceivedNetworkVariableData.Position > (readStartPos + varSize))
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
                                     NetworkLog.LogWarning(
-                                        $"Var delta read too far. {reader.Position - (readStartPos + varSize)} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
+                                        $"Var delta read too far. {m_ReceivedNetworkVariableData.Position - (readStartPos + varSize)} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
                                 }
 
-                                reader.Seek(readStartPos + varSize);
+                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
                             }
-                            else if (reader.Position < (readStartPos + varSize))
+                            else if (m_ReceivedNetworkVariableData.Position < (readStartPos + varSize))
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
                                     NetworkLog.LogWarning(
-                                        $"Var delta read too little. {(readStartPos + varSize) - reader.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
+                                        $"Var delta read too little. {(readStartPos + varSize) - m_ReceivedNetworkVariableData.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
                                 }
 
-                                reader.Seek(readStartPos + varSize);
+                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
                             }
                         }
                     }
@@ -216,7 +218,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, reader, context);
+                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, m_ReceivedNetworkVariableData, context);
             }
         }
     }

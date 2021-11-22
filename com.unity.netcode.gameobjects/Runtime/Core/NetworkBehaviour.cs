@@ -66,7 +66,7 @@ namespace Unity.Netcode
                     NetworkBehaviourId = NetworkBehaviourId,
                     NetworkMethodId = rpcMethodId
                 },
-                RpcData = writer
+                RpcWriteData = writer
             };
 
             var rpcMessageSize = 0;
@@ -81,16 +81,20 @@ namespace Unity.Netcode
                     Timestamp = Time.realtimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
-                    // Passing false to canDefer prevents it being accessed.
+                    // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new MessageHeader(),
                     SerializedHeaderSize = 0,
+                    MessageSize = 0
                 };
-                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
+                message.RpcReadData = tempBuffer;
+                message.ReceivingNetworkObject = NetworkObject;
+                message.ReceivingNetworkBehaviour = this;
+                message.Handle(context);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
             {
-                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
+                rpcMessageSize = NetworkManager.SendMessage(ref message, networkDelivery, NetworkManager.ServerClientId);
             }
 
 
@@ -138,7 +142,7 @@ namespace Unity.Netcode
                     NetworkBehaviourId = NetworkBehaviourId,
                     NetworkMethodId = rpcMethodId
                 },
-                RpcData = writer
+                RpcWriteData = writer
             };
             int messageSize;
 
@@ -157,7 +161,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
+                messageSize = NetworkManager.SendMessage(ref message, networkDelivery, in rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -170,12 +174,12 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
+                messageSize = NetworkManager.SendMessage(ref message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
                 shouldSendToHost = IsHost;
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+                messageSize = NetworkManager.SendMessage(ref message, networkDelivery, NetworkManager.ConnectedClientsIds);
             }
 
             // If we are a server/host then we just no op and send to ourself
@@ -188,11 +192,15 @@ namespace Unity.Netcode
                     Timestamp = Time.realtimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
-                    // Passing false to canDefer prevents it being accessed.
+                    // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new MessageHeader(),
                     SerializedHeaderSize = 0,
+                    MessageSize = 0
                 };
-                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
+                message.RpcReadData = tempBuffer;
+                message.ReceivingNetworkObject = NetworkObject;
+                message.ReceivingNetworkBehaviour = this;
+                message.Handle(context);
                 messageSize = tempBuffer.Length;
             }
 
@@ -549,7 +557,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            NetworkManager.SendMessage(message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
+                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
                         }
                     }
                 }

@@ -93,7 +93,7 @@ namespace Unity.Netcode
         internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
-    internal delegate int MockSendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
+    internal delegate int MockSendMessage(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
     internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
     internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
 
@@ -837,11 +837,11 @@ namespace Unity.Netcode
 
             if (m_NetworkManager)
             {
-                m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+                m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
             }
             else
             {
-                MockSendMessage(message, NetworkDelivery.Unreliable, clientId);
+                MockSendMessage(ref message, NetworkDelivery.Unreliable, clientId);
             }
 
             m_ClientData[clientId].LastReceivedSequence = 0;

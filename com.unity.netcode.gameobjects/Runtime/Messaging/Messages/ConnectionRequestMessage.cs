@@ -21,18 +21,17 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsServer)
             {
-                return;
+                return false;
             }
 
-            var message = new ConnectionRequestMessage();
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
-                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.ConfigHash) +
+                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(ConfigHash) +
                                          FastBufferWriter.GetWriteSize<int>()))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -41,11 +40,11 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
-                reader.ReadValue(out message.ConfigHash);
+                reader.ReadValue(out ConfigHash);
 
-                if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
+                if (!networkManager.NetworkConfig.CompareConfig(ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -53,26 +52,26 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
 
-                reader.ReadValueSafe(out message.ConnectionData);
+                reader.ReadValueSafe(out ConnectionData);
             }
             else
             {
-                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.ConfigHash)))
+                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(ConfigHash)))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"Incomplete connection request message.");
+                        NetworkLog.LogWarning($"Incomplete connection request ");
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
-                reader.ReadValue(out message.ConfigHash);
+                reader.ReadValue(out ConfigHash);
 
-                if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
+                if (!networkManager.NetworkConfig.CompareConfig(ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -80,14 +79,17 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
             }
-            message.Handle(networkManager, context.SenderId);
+            return true;
         }
 
-        public void Handle(NetworkManager networkManager, ulong senderId)
+        public void Handle(in NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+            var senderId = context.SenderId;
+
             if (networkManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved

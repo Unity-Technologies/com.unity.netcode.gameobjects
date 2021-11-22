@@ -86,5 +86,15 @@ namespace Unity.Netcode
         {
             return true;
         }
+
+        public void OnBeforeHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        {
+            // nop
+        }
+
+        public void OnAfterHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        {
+            // nop
+        }
     }
 }

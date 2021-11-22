@@ -67,7 +67,7 @@ namespace Unity.Netcode.EditorTests
             return 0;
         }
 
-        internal int SendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
         {
             if (!m_PassBackResponses)
             {
@@ -106,7 +106,8 @@ namespace Unity.Netcode.EditorTests
                 message.Serialize(writer);
                 using var reader = new FastBufferReader(writer, Allocator.Temp);
                 var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0) };
-                SnapshotDataMessage.Receive(reader, context);
+                message.Deserialize(reader, context);
+                message.Handle(context);
             }
             else
             {
@@ -118,7 +119,7 @@ namespace Unity.Netcode.EditorTests
             return 0;
         }
 
-        internal int SendMessageRecvSide(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessageRecvSide(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
         {
             if (m_PassBackResponses)
             {
@@ -126,7 +127,8 @@ namespace Unity.Netcode.EditorTests
                 message.Serialize(writer);
                 using var reader = new FastBufferReader(writer, Allocator.Temp);
                 var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1) };
-                SnapshotDataMessage.Receive(reader, context);
+                message.Deserialize(reader, context);
+                message.Handle(context);
             }
             else
             {

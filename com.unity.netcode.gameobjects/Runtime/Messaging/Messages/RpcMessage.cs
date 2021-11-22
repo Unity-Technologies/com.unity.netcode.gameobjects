@@ -19,54 +19,54 @@ namespace Unity.Netcode
         }
 
         public HeaderData Header;
-        public FastBufferWriter RpcData;
+        public FastBufferWriter RpcWriteData;
+        internal FastBufferReader RpcReadData;
+        internal NetworkObject ReceivingNetworkObject;
+        internal NetworkBehaviour ReceivingNetworkBehaviour;
 
 
         public unsafe void Serialize(FastBufferWriter writer)
         {
-            if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(Header) + RpcData.Length))
+            if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(Header) + RpcWriteData.Length))
             {
                 throw new OverflowException("Not enough space in the buffer to store RPC data.");
             }
             writer.WriteValue(Header);
-            writer.WriteBytes(RpcData.GetUnsafePtr(), RpcData.Length);
+            writer.WriteBytes(RpcWriteData.GetUnsafePtr(), RpcWriteData.Length);
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
-            var message = new RpcMessage();
-            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.Header)))
+            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Header)))
             {
                 throw new OverflowException("Not enough space in the buffer to read RPC data.");
             }
-            reader.ReadValue(out message.Header);
-            message.Handle(reader, context, (NetworkManager)context.SystemOwner, context.SenderId, true);
+            reader.ReadValue(out Header);
+
+            var networkManager = (NetworkManager)context.SystemOwner;
+            if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(Header.NetworkObjectId))
+            {
+                networkManager.SpawnManager.TriggerOnSpawn(Header.NetworkObjectId, reader, context);
+                return false;
+            }
+
+            ReceivingNetworkObject = networkManager.SpawnManager.SpawnedObjects[Header.NetworkObjectId];
+            ReceivingNetworkBehaviour = ReceivingNetworkObject.GetNetworkBehaviourAtOrderIndex(Header.NetworkBehaviourId);
+            if (ReceivingNetworkBehaviour == null)
+            {
+                return false;
+            }
+
+            RpcReadData = reader;
+            return true;
         }
 
-        public void Handle(FastBufferReader reader, in NetworkContext context, NetworkManager networkManager, ulong senderId, bool canDefer)
+        public void Handle(in NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+            var senderId = context.SenderId;
             if (NetworkManager.__rpc_func_table.ContainsKey(Header.NetworkMethodId))
             {
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(Header.NetworkObjectId))
-                {
-                    if (canDefer)
-                    {
-                        networkManager.SpawnManager.TriggerOnSpawn(Header.NetworkObjectId, reader, context);
-                    }
-                    else
-                    {
-                        NetworkLog.LogError($"Tried to invoke an RPC on a non-existent {nameof(NetworkObject)} with {nameof(canDefer)}=false");
-                    }
-                    return;
-                }
-
-                var networkObject = networkManager.SpawnManager.SpawnedObjects[Header.NetworkObjectId];
-
-                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(Header.NetworkBehaviourId);
-                if (networkBehaviour == null)
-                {
-                    return;
-                }
 
                 var rpcParams = new __RpcParams();
                 switch (Header.Type)
@@ -90,17 +90,17 @@ namespace Unity.Netcode
                         break;
                 }
 
-                NetworkManager.__rpc_func_table[Header.NetworkMethodId](networkBehaviour, reader, rpcParams);
+                NetworkManager.__rpc_func_table[Header.NetworkMethodId](ReceivingNetworkBehaviour, RpcReadData, rpcParams);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 if (NetworkManager.__rpc_name_table.TryGetValue(Header.NetworkMethodId, out var rpcMethodName))
                 {
                     networkManager.NetworkMetrics.TrackRpcReceived(
                         senderId,
-                        networkObject,
+                        ReceivingNetworkObject,
                         rpcMethodName,
-                        networkBehaviour.__getTypeName(),
-                        reader.Length);
+                        ReceivingNetworkBehaviour.__getTypeName(),
+                        RpcReadData.Length);
                 }
 #endif
             }

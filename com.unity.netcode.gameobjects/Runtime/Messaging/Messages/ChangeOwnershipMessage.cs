@@ -9,25 +9,28 @@ namespace Unity.Netcode
         {
             writer.WriteValueSafe(this);
         }
-
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
-                return;
+                return false;
             }
-            reader.ReadValueSafe(out ChangeOwnershipMessage message);
-            message.Handle(reader, context, context.SenderId, networkManager, reader.Length);
-        }
-
-        public void Handle(FastBufferReader reader, in NetworkContext context, ulong senderId, NetworkManager networkManager, int messageSize)
-        {
-            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            reader.ReadValueSafe(out this);
+            if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, reader, context);
-                return;
+                return false;
             }
+
+            return true;
+        }
+
+        public void Handle(in NetworkContext context)
+        {
+
+            var networkManager = (NetworkManager)context.SystemOwner;
+            var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
 
             if (networkObject.OwnerClientId == networkManager.LocalClientId)
             {
@@ -43,7 +46,7 @@ namespace Unity.Netcode
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
-            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(senderId, networkObject, messageSize);
+            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);
         }
     }
 }

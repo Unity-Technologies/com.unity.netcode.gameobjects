@@ -93,5 +93,9 @@ namespace Unity.Netcode
         /// <param name="messageType">The type of the message</param>
         /// <returns></returns>
         bool OnVerifyCanReceive(ulong senderId, Type messageType);
+
+        void OnBeforeHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage;
+
+        void OnAfterHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage;
     }
 }

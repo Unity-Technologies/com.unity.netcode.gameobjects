@@ -3,20 +3,26 @@ namespace Unity.Netcode
     internal struct NamedMessage : INetworkMessage
     {
         public ulong Hash;
-        public FastBufferWriter Data;
+        public FastBufferWriter SendData;
+
+        private FastBufferReader m_ReceiveData;
 
         public unsafe void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(Hash);
-            writer.WriteBytesSafe(Data.GetUnsafePtr(), Data.Length);
+            writer.WriteBytesSafe(SendData.GetUnsafePtr(), SendData.Length);
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
         {
-            var message = new NamedMessage();
-            reader.ReadValueSafe(out message.Hash);
+            reader.ReadValueSafe(out Hash);
+            m_ReceiveData = reader;
+            return true;
+        }
 
-            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(message.Hash, context.SenderId, reader, context.SerializedHeaderSize);
+        public void Handle(in NetworkContext context)
+        {
+            ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(Hash, context.SenderId, m_ReceiveData, context.SerializedHeaderSize);
         }
     }
 }

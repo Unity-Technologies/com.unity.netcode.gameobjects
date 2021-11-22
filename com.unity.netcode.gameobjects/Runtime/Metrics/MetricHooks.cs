@@ -57,5 +57,15 @@ namespace Unity.Netcode
         {
             return true;
         }
+
+        public void OnBeforeHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        {
+            // TODO: Per-message metrics recording moved here
+        }
+
+        public void OnAfterHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        {
+            // TODO: Per-message metrics recording moved here
+        }
     }
 }

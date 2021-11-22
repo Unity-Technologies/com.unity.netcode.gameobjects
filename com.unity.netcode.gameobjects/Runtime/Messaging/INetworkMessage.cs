@@ -45,5 +45,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer"></param>
         void Serialize(FastBufferWriter writer);
+        bool Deserialize(FastBufferReader reader, in NetworkContext context);
+        void Handle(in NetworkContext context);
     }
 }
