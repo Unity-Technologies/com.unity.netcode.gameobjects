@@ -86,11 +86,11 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
             {
             }
 
-            public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
             {
             }
 

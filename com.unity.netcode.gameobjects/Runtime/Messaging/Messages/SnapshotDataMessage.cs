@@ -76,9 +76,6 @@ namespace Unity.Netcode
                 Despawns.Length * sizeof(DespawnData)
             ))
             {
-                Entries.Dispose();
-                Spawns.Dispose();
-                Despawns.Dispose();
                 throw new OverflowException($"Not enough space to serialize {nameof(SnapshotDataMessage)}");
             }
             writer.WriteValue(CurrentTick);
@@ -96,10 +93,6 @@ namespace Unity.Netcode
 
             writer.WriteValue((ushort)Despawns.Length);
             writer.WriteBytes((byte*)Despawns.GetUnsafePtr(), Despawns.Length * sizeof(DespawnData));
-
-            Entries.Dispose();
-            Spawns.Dispose();
-            Despawns.Dispose();
         }
 
         public unsafe bool Deserialize(FastBufferReader reader, in NetworkContext context)

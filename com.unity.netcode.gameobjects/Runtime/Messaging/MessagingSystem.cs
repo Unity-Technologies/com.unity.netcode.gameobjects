@@ -388,7 +388,7 @@ namespace Unity.Netcode
 
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(TMessageType), delivery);
+                    m_Hooks[hookIdx].OnBeforeSendMessage(clientId, ref message, delivery);
                 }
 
                 var sendQueueItem = m_SendQueues[clientId];
@@ -419,7 +419,7 @@ namespace Unity.Netcode
                 writeQueueItem.BatchHeader.BatchSize++;
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + headerSerializer.Length);
+                    m_Hooks[hookIdx].OnAfterSendMessage(clientId, ref message, delivery, tmpSerializer.Length + headerSerializer.Length);
                 }
             }
 

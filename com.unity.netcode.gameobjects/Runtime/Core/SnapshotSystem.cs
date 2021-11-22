@@ -835,13 +835,22 @@ namespace Unity.Netcode
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
 
-            if (m_NetworkManager)
+            try
             {
-                m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                if (m_NetworkManager)
+                {
+                    m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                }
+                else
+                {
+                    MockSendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                }
             }
-            else
+            finally
             {
-                MockSendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                message.Entries.Dispose();
+                message.Spawns.Dispose();
+                message.Despawns.Dispose();
             }
 
             m_ClientData[clientId].LastReceivedSequence = 0;

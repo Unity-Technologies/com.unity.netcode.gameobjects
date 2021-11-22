@@ -13,18 +13,18 @@ namespace Unity.Netcode
         /// Called before an individual message is sent.
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
-        /// <param name="messageType">The type of the message being sent</param>
+        /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
-        void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery);
+        void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage;
 
         /// <summary>
         /// Called after an individual message is sent.
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
-        /// <param name="messageType">The type of the message being sent</param>
+        /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
         /// <param name="messageSizeBytes">Number of bytes in the message, not including the message header</param>
-        void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes);
+        void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage;
 
         /// <summary>
         /// Called before an individual message is received.
