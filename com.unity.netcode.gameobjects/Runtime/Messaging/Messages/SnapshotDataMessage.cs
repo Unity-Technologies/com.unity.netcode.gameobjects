@@ -95,7 +95,7 @@ namespace Unity.Netcode
             writer.WriteBytes((byte*)Despawns.GetUnsafePtr(), Despawns.Length * sizeof(DespawnData));
         }
 
-        public unsafe bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             if (!reader.TryBeginRead(
                 FastBufferWriter.GetWriteSize(CurrentTick) +
@@ -131,7 +131,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
 
             using (ReceiveMainBuffer)

@@ -17,7 +17,7 @@ namespace Unity.Netcode
             BytePacker.WriteValuePacked(writer, Message);
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (networkManager.IsServer && networkManager.NetworkConfig.EnableNetworkLogs)
@@ -30,7 +30,7 @@ namespace Unity.Netcode
             return false;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;

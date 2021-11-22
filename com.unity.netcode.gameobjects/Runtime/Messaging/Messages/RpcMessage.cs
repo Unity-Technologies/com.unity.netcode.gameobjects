@@ -35,7 +35,7 @@ namespace Unity.Netcode
             writer.WriteBytes(RpcWriteData.GetUnsafePtr(), RpcWriteData.Length);
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Header)))
             {
@@ -46,7 +46,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(Header.NetworkObjectId))
             {
-                networkManager.SpawnManager.TriggerOnSpawn(Header.NetworkObjectId, reader, context);
+                networkManager.SpawnManager.TriggerOnSpawn(Header.NetworkObjectId, reader, ref context);
                 return false;
             }
 
@@ -61,7 +61,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;

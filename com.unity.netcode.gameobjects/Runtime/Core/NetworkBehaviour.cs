@@ -89,7 +89,7 @@ namespace Unity.Netcode
                 message.RpcReadData = tempBuffer;
                 message.ReceivingNetworkObject = NetworkObject;
                 message.ReceivingNetworkBehaviour = this;
-                message.Handle(context);
+                message.Handle(ref context);
                 rpcMessageSize = tempBuffer.Length;
             }
             else
@@ -200,7 +200,7 @@ namespace Unity.Netcode
                 message.RpcReadData = tempBuffer;
                 message.ReceivingNetworkObject = NetworkObject;
                 message.ReceivingNetworkBehaviour = this;
-                message.Handle(context);
+                message.Handle(ref context);
                 messageSize = tempBuffer.Length;
             }
 

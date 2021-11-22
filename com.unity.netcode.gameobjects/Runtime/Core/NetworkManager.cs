@@ -141,11 +141,11 @@ namespace Unity.Netcode
                 return !m_NetworkManager.m_StopProcessingMessages;
             }
 
-            public void OnBeforeHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
             {
             }
 
-            public void OnAfterHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
             {
             }
         }

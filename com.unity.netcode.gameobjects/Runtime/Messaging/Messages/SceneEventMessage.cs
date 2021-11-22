@@ -13,13 +13,13 @@ namespace Unity.Netcode
             EventData.Serialize(writer);
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             m_ReceivedData = reader;
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             ((NetworkManager)context.SystemOwner).SceneManager.HandleSceneEvent(context.SenderId, m_ReceivedData);
         }

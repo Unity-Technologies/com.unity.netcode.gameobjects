@@ -18,7 +18,7 @@ namespace Unity.Netcode
 
         public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
         {
-            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, nameof(T), messageSizeBytes);
+            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, typeof(T).Name, messageSizeBytes);
         }
 
         public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
@@ -58,12 +58,12 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void OnBeforeHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
             // TODO: Per-message metrics recording moved here
         }
 
-        public void OnAfterHandleMessage<T>(ref T message, in NetworkContext context) where T : INetworkMessage
+        public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
             // TODO: Per-message metrics recording moved here
         }

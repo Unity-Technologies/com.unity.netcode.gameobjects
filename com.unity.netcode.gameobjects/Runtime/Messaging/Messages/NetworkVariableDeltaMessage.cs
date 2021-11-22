@@ -95,7 +95,7 @@ namespace Unity.Netcode
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(NetworkObjectId) +
                                       FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
@@ -109,7 +109,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
@@ -218,7 +218,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, m_ReceivedNetworkVariableData, context);
+                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
             }
         }
     }

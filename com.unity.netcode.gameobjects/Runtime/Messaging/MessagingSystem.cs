@@ -40,7 +40,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(FastBufferReader reader, in NetworkContext context, MessagingSystem system);
+        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, MessagingSystem system);
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
@@ -261,7 +261,7 @@ namespace Unity.Netcode
                 // for some dynamic-length value.
                 try
                 {
-                    handler.Invoke(reader, context, this);
+                    handler.Invoke(reader, ref context, this);
                 }
                 catch (Exception e)
                 {
@@ -320,21 +320,21 @@ namespace Unity.Netcode
             queue.Dispose();
         }
 
-        public static void ReceiveMessage<T>(FastBufferReader reader, in NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
         {
             var message = new T();
-            if (message.Deserialize(reader, context))
+            if (message.Deserialize(reader, ref context))
             {
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
                 {
-                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, context);
+                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
                 }
 
-                message.Handle(context);
+                message.Handle(ref context);
 
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
                 {
-                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, context);
+                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
                 }
             }
         }

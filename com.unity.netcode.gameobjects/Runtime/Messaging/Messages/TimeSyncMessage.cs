@@ -9,7 +9,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(this);
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
@@ -20,7 +20,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, Tick);

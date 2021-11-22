@@ -106,8 +106,8 @@ namespace Unity.Netcode.EditorTests
                 message.Serialize(writer);
                 using var reader = new FastBufferReader(writer, Allocator.Temp);
                 var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0) };
-                message.Deserialize(reader, context);
-                message.Handle(context);
+                message.Deserialize(reader, ref context);
+                message.Handle(ref context);
             }
             else
             {
@@ -127,8 +127,8 @@ namespace Unity.Netcode.EditorTests
                 message.Serialize(writer);
                 using var reader = new FastBufferReader(writer, Allocator.Temp);
                 var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1) };
-                message.Deserialize(reader, context);
-                message.Handle(context);
+                message.Deserialize(reader, ref context);
+                message.Handle(ref context);
             }
             else
             {

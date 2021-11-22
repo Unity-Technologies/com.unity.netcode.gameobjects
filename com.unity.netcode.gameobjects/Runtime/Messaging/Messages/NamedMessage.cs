@@ -13,14 +13,14 @@ namespace Unity.Netcode
             writer.WriteBytesSafe(SendData.GetUnsafePtr(), SendData.Length);
         }
 
-        public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             reader.ReadValueSafe(out Hash);
             m_ReceiveData = reader;
             return true;
         }
 
-        public void Handle(in NetworkContext context)
+        public void Handle(ref NetworkContext context)
         {
             ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(Hash, context.SenderId, m_ReceiveData, context.SerializedHeaderSize);
         }

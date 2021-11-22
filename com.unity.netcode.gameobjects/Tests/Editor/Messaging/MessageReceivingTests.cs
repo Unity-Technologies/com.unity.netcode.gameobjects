@@ -23,14 +23,14 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValueSafe(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
             {
                 Deserialized = true;
                 reader.ReadValueSafe(out this);
                 return true;
             }
 
-            public void Handle(in NetworkContext context)
+            public void Handle(ref NetworkContext context)
             {
                 Handled = true;
                 DeserializedValues.Add(this);

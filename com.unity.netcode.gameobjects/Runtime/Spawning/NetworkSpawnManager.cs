@@ -102,7 +102,7 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
+        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, ref NetworkContext context)
         {
             if (!m_Triggers.ContainsKey(networkObjectId))
             {
