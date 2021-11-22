@@ -202,10 +202,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Running teardown");
             if (!IgnoreMultiprocessTests)
             {
+                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                 MultiprocessLogger.Log($"Fetching log files");
                 BokkenMachine.FetchAllLogFiles();
                 TestCoordinator.Instance.TestRunTeardown();
-                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
+                
             }
         }
 
