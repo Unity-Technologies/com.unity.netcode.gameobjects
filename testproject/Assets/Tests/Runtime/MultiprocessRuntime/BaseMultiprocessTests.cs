@@ -133,9 +133,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             
-            yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            
-            var startTime = Time.time;
+            yield return new WaitUntil(() => m_HasSceneLoaded == true);            
 
             MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
             if (MultiprocessOrchestration.ActiveWorkerCount() + 1 < NetworkManager.Singleton.ConnectedClients.Count)
@@ -168,7 +166,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
                         machines.Add(machine);
                         MultiprocessLogger.Log($"Machines list is now : {machines.Count}");                                                
-                    }
+                    }                    
+
                     foreach (var machine in machines)
                     {                        
                         MultiprocessLogger.Log($"Lauching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
@@ -199,7 +198,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("Running teardown");
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
             if (!IgnoreMultiprocessTests)
             {
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
@@ -213,7 +212,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiprocessLogger.Log($"TeardownSuite");
+            MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
             
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
             if (!IgnoreMultiprocessTests)
