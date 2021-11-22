@@ -1,16 +1,68 @@
 using System;
 using System.Collections.Generic;
+using Unity.Burst;
 using UnityEngine;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using Unity.Multiplayer.Tools;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Multiplayer.Tools.NetStats;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
 namespace Unity.Netcode
 {
+    internal interface ITransportNetworkMetrics
+    {
+        void TrackPacketSent(int packetCount);
+        void TrackPacketReceived(int packetCount);
+    }
+
+    [BurstCompile]
+    internal class TransportNetworkMetrics
+    {
+        internal IMetricDispatcher Dispatcher { get; }
+
+        private readonly EventMetric<PacketEvent> m_PacketEventSent = new EventMetric<PacketEvent>(NetworkMetricTypes.PacketEventSent.Id);
+        private readonly EventMetric<PacketEvent> m_PacketEventReceived = new EventMetric<PacketEvent>(NetworkMetricTypes.PacketEventReceived.Id);
+
+        public TransportNetworkMetrics()
+        {
+            Dispatcher = new MetricDispatcherBuilder()
+                .WithMetricEvents(m_PacketEventSent, m_PacketEventReceived)
+                .Build();
+
+            Dispatcher.RegisterObserver(NetcodeObserver.Observer);
+        }
+
+        [BurstCompile]
+        public void TrackPacketSent(int packetCount)
+        {
+            m_PacketEventSent.Mark(new PacketEvent(new ConnectionInfo(100), 1));
+
+        }
+
+        [BurstCompile]
+        public void TrackPacketReceived(int packetCount)
+        {
+            m_PacketEventReceived.Mark(new PacketEvent(new ConnectionInfo(200), 1));
+        }
+
+        public void DispatchFrame()
+        {
+            Dispatcher.Dispatch();
+        }
+
+        internal class NetcodeObserver
+        {
+            public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
+        }
+    }
+
+
     /// <summary>
     /// Provides an interface that overrides the ability to create your own drivers and pipelines
     /// </summary>
@@ -196,6 +248,8 @@ namespace Unity.Netcode
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
         /// </summary>
         private readonly Dictionary<SendTarget, SendQueue> m_SendQueue = new Dictionary<SendTarget, SendQueue>();
+
+        internal static TransportNetworkMetrics Metrics = new TransportNetworkMetrics();
 
         private void InitDriver()
         {
@@ -528,6 +582,8 @@ namespace Unity.Netcode
                 {
                     ;
                 }
+
+                Metrics.DispatchFrame();
             }
         }
 
@@ -807,6 +863,7 @@ namespace Unity.Netcode
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
+            NetworkPipelineStageCollection.RegisterPipelineStage(new MetricsPipelineStage());
             var netParams = new NetworkConfigParameter
             {
                 maxConnectAttempts = transport.m_MaxConnectAttempts,
@@ -838,24 +895,27 @@ namespace Unity.Netcode
                 unreliableSequencedPipeline = driver.CreatePipeline(
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend),
+                    typeof(MetricsPipelineStage));
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend),
+                    typeof(MetricsPipelineStage));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend),
+                    typeof(MetricsPipelineStage));
             }
             else
 #endif
             {
-                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
-                reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage), typeof(MetricsPipelineStage));
+                reliableSequencedPipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage), typeof(MetricsPipelineStage));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+                    typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage), typeof(MetricsPipelineStage)
                 );
             }
         }
