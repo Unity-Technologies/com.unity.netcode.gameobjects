@@ -1176,7 +1176,7 @@ namespace Unity.Netcode
                 // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
-            MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem?.ProcessIncomingMessageQueue();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
