@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -93,6 +94,12 @@ namespace Unity.Netcode
         internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
+    internal class RpcData
+    {
+        internal RpcMessage Message;
+        internal List<ulong> TargetClientIds;
+    }
+
     internal delegate int MockSendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
     internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
     internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
@@ -107,9 +114,6 @@ namespace Unity.Netcode
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
-        internal int SpawnsBufferCount { get; private set; } = 100;
-        internal int DespawnsBufferCount { get; private set; } = 100;
-
         private const int k_BufferSize = 30000;
 
         private NetworkManager m_NetworkManager = default;
@@ -135,9 +139,15 @@ namespace Unity.Netcode
 
         internal SnapshotSpawnCommand[] Spawns;
         internal int NumSpawns = 0;
+        internal int SpawnsBufferCount { get; private set; } = 100;
 
         internal SnapshotDespawnCommand[] Despawns;
         internal int NumDespawns = 0;
+        internal int DespawnsBufferCount { get; private set; } = 100;
+
+        internal RpcData[] Rpcs;
+        internal int NumRpcs = 0;
+        internal int RpcsBufferCount { get; private set; } = 100;
 
         // indexed by ObjectId
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
@@ -215,6 +225,26 @@ namespace Unity.Netcode
             }
 
             return clientList;
+        }
+
+        internal void AddRpc(RpcMessage message, IReadOnlyList<ulong> targetClientIds)
+        {
+            if (NumRpcs >= RpcsBufferCount)
+            {
+                Array.Resize(ref Rpcs, 2 * RpcsBufferCount);
+                RpcsBufferCount = RpcsBufferCount * 2;
+            }
+
+            Rpcs[NumRpcs] = new RpcData();
+            Rpcs[NumRpcs].Message = message;
+            Rpcs[NumRpcs].TargetClientIds = targetClientIds.ToList();
+
+            NumRpcs++;
+            // message.Header.Type; // Server or Client
+            // message.Header.NetworkBehaviourId;
+            // message.Header.NetworkMethodId;
+            // message.Header.NetworkObjectId;
+            // message.RpcData; // FastBufferWriter
         }
 
         internal void AddSpawn(SnapshotSpawnCommand command)
@@ -533,6 +563,13 @@ namespace Unity.Netcode
             }
         }
 
+        internal void ReadRpcs(in SnapshotDataMessage message, ulong srcClientId)
+        {
+            for (var i = 0; i < message.Rpcs.Length; i++)
+            {
+//                message.Rpcs[i].Receive( // where do I get my reader from? );
+            }
+        }
 
         internal void ReadSpawns(in SnapshotDataMessage message, ulong srcClientId)
         {
@@ -707,6 +744,7 @@ namespace Unity.Netcode
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
+            Rpcs = new RpcData[RpcsBufferCount];
         }
 
         // since we don't want to access the NetworkManager directly, we refresh those values on Update
@@ -834,6 +872,7 @@ namespace Unity.Netcode
             // write the snapshot: buffer, index, spawns, despawns
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
+            WriteRpcs(ref message, clientId);
 
             if (m_NetworkManager)
             {
@@ -973,6 +1012,19 @@ namespace Unity.Netcode
                     despawnWritten++;
                 }
                 clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % NumDespawns;
+            }
+        }
+
+        private void WriteRpcs(ref SnapshotDataMessage message, ulong clientId)
+        {
+            message.Rpcs = new NativeList<RpcMessage>(NumRpcs, Collections.Allocator.TempJob);
+
+            for (var j = 0; j < NumRpcs; j++)
+            {
+                if (Rpcs[j].TargetClientIds.Contains(clientId))
+                {
+                    message.Rpcs.Add(Rpcs[j].Message);
+                }
             }
         }
 
@@ -1118,6 +1170,7 @@ namespace Unity.Netcode
             ReadIndex(message);
             ReadAcks(clientId, m_ClientData[clientId], message, GetConnectionRtt(clientId));
             ReadSpawns(message, clientId);
+            ReadRpcs(message, clientId);
         }
 
         // todo --M1--

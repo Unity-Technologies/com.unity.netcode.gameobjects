@@ -61,6 +61,8 @@ namespace Unity.Netcode
 
         public NativeList<DespawnData> Despawns;
 
+        public NativeList<RpcMessage> Rpcs;
+
         public unsafe void Serialize(FastBufferWriter writer)
         {
             if (!writer.TryBeginWrite(
@@ -79,6 +81,7 @@ namespace Unity.Netcode
                 Entries.Dispose();
                 Spawns.Dispose();
                 Despawns.Dispose();
+                Rpcs.Dispose();
                 throw new OverflowException($"Not enough space to serialize {nameof(SnapshotDataMessage)}");
             }
             writer.WriteValue(CurrentTick);
@@ -100,6 +103,7 @@ namespace Unity.Netcode
             Entries.Dispose();
             Spawns.Dispose();
             Despawns.Dispose();
+            Rpcs.Dispose();
         }
 
         public static unsafe void Receive(FastBufferReader reader, in NetworkContext context)
@@ -135,6 +139,9 @@ namespace Unity.Netcode
             message.Despawns = new NativeList<DespawnData>(length, Allocator.Temp);
             message.Despawns.Length = length;
             reader.ReadBytesSafe((byte*)message.Despawns.GetUnsafePtr(), message.Despawns.Length * sizeof(DespawnData));
+
+            message.Rpcs = new NativeList<RpcMessage>(0, Allocator.Temp);
+            message.Rpcs.Length = 0;
 
             using (message.ReceiveMainBuffer)
             using (message.Entries)

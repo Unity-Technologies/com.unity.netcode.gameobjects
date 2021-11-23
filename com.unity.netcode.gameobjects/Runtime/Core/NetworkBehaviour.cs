@@ -107,6 +107,18 @@ namespace Unity.Netcode
 #endif
         }
 
+        List<T> MakeList<T>(NativeArray<T> nativeArray) where T: struct
+        {
+            List<T> ret = new List<T>();
+            // todo: this is very inefficient for now.
+            for (var i = 0; i < nativeArray.Length; i++)
+            {
+                ret.Add(nativeArray[i]);
+            }
+            return ret;
+        }
+
+
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -140,7 +152,7 @@ namespace Unity.Netcode
                 },
                 RpcData = writer
             };
-            int messageSize;
+            int messageSize = 0;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
@@ -157,7 +169,10 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
+                Debug.Log($"networkDelivery is {networkDelivery}");
+//                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
+
+                NetworkManager.SnapshotSystem.AddRpc(message, rpcParams.Send.TargetClientIds);
             }
             else if (rpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -170,12 +185,14 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
+//                messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
+                NetworkManager.SnapshotSystem.AddRpc(message, MakeList(rpcParams.Send.TargetClientIdsNativeArray.Value));
             }
             else
             {
                 shouldSendToHost = IsHost;
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+//                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+                NetworkManager.SnapshotSystem.AddRpc(message, NetworkManager.ConnectedClientsIds);
             }
 
             // If we are a server/host then we just no op and send to ourself
