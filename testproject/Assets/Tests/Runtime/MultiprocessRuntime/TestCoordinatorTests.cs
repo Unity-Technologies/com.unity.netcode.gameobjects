@@ -43,7 +43,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.WriteTestResultsServerRpc(s_ValueToValidateAgainst);
         }
 
-        [UnityTest]
+        
         public IEnumerator CheckPreconditions()
         {
             if (platformList != null)

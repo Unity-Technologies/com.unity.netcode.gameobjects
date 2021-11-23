@@ -199,11 +199,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (!IgnoreMultiprocessTests)
             {
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-                MultiprocessLogger.Log($"Fetching log files");
+                MultiprocessLogger.Log("Fetching log files");
                 BokkenMachine.FetchAllLogFiles();
+                MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
                 TestCoordinator.Instance.TestRunTeardown();
-                
+                MultiprocessLogger.Log("TestRunTearDown ... Done");
             }
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
         [OneTimeTearDown]
