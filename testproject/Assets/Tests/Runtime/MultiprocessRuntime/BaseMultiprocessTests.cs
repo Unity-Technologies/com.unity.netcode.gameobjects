@@ -198,10 +198,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
             if (!IgnoreMultiprocessTests)
             {
-                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-                MultiprocessLogger.Log("Fetching log files");
-                BokkenMachine.FetchAllLogFiles();
-                MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
+                if (platformList != null && platformList.Length > 0)
+                {
+                    MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
+                    MultiprocessLogger.Log("Fetching log files");
+                    BokkenMachine.FetchAllLogFiles();
+                    MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
+                }                
+                
                 TestCoordinator.Instance.TestRunTeardown();
                 MultiprocessLogger.Log("TestRunTearDown ... Done");
             }
