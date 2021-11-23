@@ -128,7 +128,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Launch()
         {
-            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()));            
+            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
         }
 
         public void KillMptPlayer()
