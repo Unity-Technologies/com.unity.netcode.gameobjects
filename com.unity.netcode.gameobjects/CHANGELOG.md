@@ -26,7 +26,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
 - Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
 
-- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
+- Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 
 ### Changed
 
