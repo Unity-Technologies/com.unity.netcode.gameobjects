@@ -150,7 +150,9 @@ public class TestCoordinator : NetworkBehaviour
 
     public void TestRunTeardown()
     {
+        MultiprocessLogger.Log("TestCoordinator - TestRunTearDown");
         m_TestResultsLocal.Clear();
+        MultiprocessLogger.Log($"TestCoordinator - TestRunTearDown... Done clearing m_TestResultsLocal, count: {m_TestResultsLocal.Count}");
     }
 
     public void OnEnable()
