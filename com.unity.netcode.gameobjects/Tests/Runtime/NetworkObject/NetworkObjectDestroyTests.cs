@@ -19,10 +19,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                // playerPrefab.AddComponent<TestDestroy>();
-            });
+            return base.Setup();
         }
 
         /// <summary>
@@ -64,24 +61,39 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(go == null);
         }
 
+        public enum ClientDestroyWithOwner
+        {
+            DestroyWithOwner,
+            DontDestroyWithOwner
+        }
+
         /// <summary>
         /// Tests that a client cannot destroy a spawned networkobject.
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator TestNetworkObjectClientDestroy()
+        public IEnumerator TestNetworkObjectClientDestroy([Values(ClientDestroyWithOwner.DestroyWithOwner, ClientDestroyWithOwner.DontDestroyWithOwner)] ClientDestroyWithOwner destroyWithOwner)
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var clientNetworkManager = m_ClientNetworkManagers[0];
+            clientNetworkManager.LocalClient.PlayerObject.DontDestroyWithOwner = destroyWithOwner != ClientDestroyWithOwner.DestroyWithOwner;
 
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            if (!clientNetworkManager.LocalClient.PlayerObject.DontDestroyWithOwner)
+            {
+                // destroy the client player, this is not allowed
+                LogAssert.Expect(LogType.Exception, "NotServerException: Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
+                Object.DestroyImmediate(clientNetworkManager.LocalClient.PlayerObject);
+            }
+            else
+            {
+                Assert.True(m_ServerNetworkManager.ConnectedClients.ContainsKey(clientNetworkManager.LocalClientId));
+                var serverRelativeClientPlayerObject = m_ServerNetworkManager.ConnectedClients[clientNetworkManager.LocalClientId].PlayerObject;
+                serverRelativeClientPlayerObject.DontDestroyWithOwner = true;
+                clientNetworkManager.Shutdown();
+                var waitForFrameCount = Time.frameCount + 2;
+                yield return new WaitUntil(() => Time.frameCount >= waitForFrameCount);
 
-            // destroy the client player, this is not allowed
-            LogAssert.Expect(LogType.Exception, "NotServerException: Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
-            Object.DestroyImmediate(clientClientPlayerResult.Result.gameObject);
+                Assert.True(serverRelativeClientPlayerObject.gameObject.activeInHierarchy);
+            }
         }
     }
 }

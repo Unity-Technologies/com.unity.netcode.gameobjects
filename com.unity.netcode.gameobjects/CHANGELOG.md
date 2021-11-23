@@ -25,7 +25,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
 
-- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances.
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
+- Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 
 ### Changed
 
