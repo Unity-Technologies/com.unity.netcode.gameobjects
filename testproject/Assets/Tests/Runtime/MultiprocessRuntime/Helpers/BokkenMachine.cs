@@ -120,12 +120,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             ExecuteCommand(GenerateSetupMachineCommand(), true);
         }
-
-        public void Launch(string ip)
-        {
-            ExecuteCommand(GenerateLaunchCommand(ip));
-        }
-
+        
         public void Launch()
         {
             ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
@@ -169,15 +164,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.Arguments = $"{PathToDll} {command} ";
             try
             {
-                MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
+                MultiprocessLogger.Log($"Starting process : waitForResult is {waitForResult}");
                 var newProcessStarted = workerProcess.Start();
+                
                 if (!newProcessStarted)
                 {
                     throw new Exception("Failed to start worker process!");
                 }
                 else
                 {
-                    // MultiprocessLogger.Log($" {workerProcess.HasExited} ");
+                    MultiprocessLogger.Log($"Started process : waitForResult is {waitForResult}");
                 }
             }
             catch (Win32Exception e)
@@ -198,7 +194,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 s_ProcessList.Add(workerProcess);
             }
-            MultiprocessLogger.Log($"Execute Command End {command}");
+            MultiprocessLogger.Log($"Execute Command End");
             return workerProcess;
         }
 
@@ -230,16 +226,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 throw new Exception("PathToJson must not be null or empty");
             }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+
+            
+            
+            if (Image.Contains("win10"))
             {
 
-                LogPath = Path.Combine(@"C:\users\bokken\.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+                LogPath = @"C:\users\bokken\.multiprocess\" +$"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
                     $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
                 return s;
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            else if (Type.Contains("osx"))
             {
                 LogPath = Path.Combine(@"/Users/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
                 string s = $" --command exec " +
