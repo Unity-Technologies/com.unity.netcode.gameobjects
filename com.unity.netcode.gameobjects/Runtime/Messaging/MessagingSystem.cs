@@ -334,7 +334,7 @@ namespace Unity.Netcode
 
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
                 {
-                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
+                    system.m_Hooks[hookIdx].OnAfterHandleMessage(ref message, ref context);
                 }
             }
         }

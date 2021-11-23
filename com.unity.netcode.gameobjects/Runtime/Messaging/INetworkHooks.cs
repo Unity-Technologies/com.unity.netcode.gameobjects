@@ -94,8 +94,22 @@ namespace Unity.Netcode
         /// <returns></returns>
         bool OnVerifyCanReceive(ulong senderId, Type messageType);
 
+        /// <summary>
+        /// Called after a message is serialized, but before it's handled.
+        /// Differs from OnBeforeReceiveMessage in that the actual message object is passed and can be inspected.
+        /// </summary>
+        /// <param name="message">The message object</param>
+        /// <param name="context">The network context the message is being ahandled in</param>
+        /// <typeparam name="T"></typeparam>
         void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
 
+        /// <summary>
+        /// Called after a message is serialized and handled.
+        /// Differs from OnAfterReceiveMessage in that the actual message object is passed and can be inspected.
+        /// </summary>
+        /// <param name="message">The message object</param>
+        /// <param name="context">The network context the message is being ahandled in</param>
+        /// <typeparam name="T"></typeparam>
         void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
     }
 }
