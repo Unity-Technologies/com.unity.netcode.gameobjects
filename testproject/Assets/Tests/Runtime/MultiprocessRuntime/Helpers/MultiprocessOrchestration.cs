@@ -42,7 +42,7 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
-        s_Localip_fileinfo = new FileInfo(Path.Join(s_MultiprocessDirInfo.FullName, "localip"));
+        s_Localip_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "localip"));
         return s_MultiprocessDirInfo;
     }
 

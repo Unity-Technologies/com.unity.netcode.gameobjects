@@ -59,7 +59,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static BokkenMachine Parse(string shortcut)
         {
             BokkenMachine rv = null;
-            string[] parts = shortcut.Split(":");
+            string[] parts = shortcut.Split(':');
             string name = parts[1];
             string type = parts[0];
             if (type.Equals("default-mac"))
