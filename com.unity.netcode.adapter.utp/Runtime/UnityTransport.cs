@@ -435,21 +435,19 @@ namespace Unity.Netcode
                     }
                 case TransportNetworkEvent.Type.Disconnect:
                     {
-                        if (m_ServerConnection.IsCreated)
-                        {
-                            m_ServerConnection = default;
-
-                            var reason = reader.ReadByte();
-                            if (reason == (byte)Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts)
-                            {
-                                Debug.LogError("Client failed to connect to server");
-                            }
-                        }
-
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             ParseClientId(networkConnection),
                             default(ArraySegment<byte>),
                             Time.realtimeSinceStartup);
+
+                        if (m_ServerConnection.IsCreated)
+                        {
+                            m_ServerConnection = default;
+                            if (m_Driver.GetConnectionState(m_ServerConnection) == NetworkConnection.State.Connecting)
+                            {
+                                Debug.LogError("Client failed to connect to server");
+                            }
+                        }
 
                         m_State = State.Disconnected;
                         return true;

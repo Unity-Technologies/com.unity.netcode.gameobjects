@@ -312,11 +312,7 @@ namespace Unity.Netcode.Editor.CodeGen
             assemblies.Add(m_MainModule.Assembly);
             foreach (var reference in m_MainModule.AssemblyReferences)
             {
-                var assembly = m_AssemblyResolver.Resolve(reference);
-                if (assembly != null)
-                {
-                    assemblies.Add(assembly);
-                }
+                assemblies.Add(m_AssemblyResolver.Resolve(reference));
             }
 
             var extensionConstructor =
