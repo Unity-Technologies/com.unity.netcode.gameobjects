@@ -11,9 +11,19 @@ namespace Unity.Netcode.RuntimeTests
     {
         public uint SomeInt;
         public bool SomeBool;
+        public static bool NetworkSerializeCalledOnWrite;
+        public static bool NetworkSerializeCalledOnRead;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
+            if (serializer.IsReader)
+            {
+                NetworkSerializeCalledOnRead = true;
+            }
+            else
+            {
+                NetworkSerializeCalledOnWrite = true;
+            }
             serializer.SerializeValue(ref SomeInt);
             serializer.SerializeValue(ref SomeBool);
         }
@@ -405,6 +415,28 @@ namespace Unity.Netcode.RuntimeTests
                     return
                         m_Player1OnClient1.TheStruct.Value.SomeBool == false &&
                         m_Player1OnClient1.TheStruct.Value.SomeInt == k_TestUInt;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator TestINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    TestStruct.NetworkSerializeCalledOnWrite = false;
+                    TestStruct.NetworkSerializeCalledOnRead = false;
+                    m_Player1OnServer.TheStruct.Value =
+                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
+                    m_Player1OnServer.TheStruct.SetDirty(true);
+                },
+                () =>
+                {
+                    return
+                        TestStruct.NetworkSerializeCalledOnWrite &&
+                        TestStruct.NetworkSerializeCalledOnRead;
                 }
             );
         }
