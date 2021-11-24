@@ -9,7 +9,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBasicRtt()
         {
-            var snapshot = new SnapshotSystem(default);
+            var snapshot = new SnapshotSystem(null, new NetworkConfig(), null);
             var client1 = snapshot.GetConnectionRtt(0);
 
             client1.NotifySend(0, 0.0);
@@ -40,7 +40,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestEdgeCasesRtt()
         {
-            var snapshot = new SnapshotSystem(NetworkManager.Singleton);
+            var snapshot = new SnapshotSystem(null, new NetworkConfig(), null);
             var client1 = snapshot.GetConnectionRtt(0);
             var iterationCount = NetworkConfig.RttWindowSize * 3;
             var extraCount = NetworkConfig.RttWindowSize * 2;
