@@ -10,6 +10,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Fixed
 
 - Fixed packet overflow errors when sending payloads too close to the MTU (was mostly visible when using Relay).
+- Don't throw an exception when the host disconnects (issue 1439 on GitHub).
 
 ## [1.0.0-pre.3] - 2021-10-22
 
