@@ -1028,8 +1028,8 @@ namespace Unity.Netcode
                 // despawned that no longer exists
                 SendSceneEventData(sceneEventId, m_NetworkManager.ConnectedClientsIds.Where(c => c != m_NetworkManager.ServerClientId).ToArray());
 
-                //Second, server sets itself as having finished unloading
-                if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
+                //Only if we are a host do we want register having loaded for the associated SceneEventProgress
+                if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
                 {
                     SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(m_NetworkManager.ServerClientId);
                 }
@@ -1344,8 +1344,8 @@ namespace Unity.Netcode
 
             OnLoadComplete?.Invoke(m_NetworkManager.ServerClientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
-            //Second, set the server as having loaded for the associated SceneEventProgress
-            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
+            //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
+            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
             {
                 SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(m_NetworkManager.ServerClientId);
             }
