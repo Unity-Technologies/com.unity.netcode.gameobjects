@@ -10,13 +10,13 @@ namespace Unity.Netcode.RuntimeTests
     {
         public class RpcTestNB : NetworkBehaviour
         {
-            public event Action OnServer_Rpc;
+            public event Action<ulong, ServerRpcParams> OnServer_Rpc;
             public event Action OnClient_Rpc;
 
             [ServerRpc]
-            public void MyServerRpc()
+            public void MyServerRpc(ulong clientId, ServerRpcParams param = default)
             {
-                OnServer_Rpc();
+                OnServer_Rpc(clientId, param);
             }
 
             [ClientRpc]
@@ -42,11 +42,12 @@ namespace Unity.Netcode.RuntimeTests
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clientId), m_ServerNetworkManager, serverClientPlayerResult));
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
 
             // Setup state
             bool hasReceivedServerRpc = false;
@@ -59,15 +60,16 @@ namespace Unity.Netcode.RuntimeTests
                 hasReceivedClientRpcRemotely = true;
             };
 
-            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += () =>
+            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += (clientId, param) =>
             {
                 // The RPC invoked locally. (Weaver failure?)
                 Assert.Fail("ServerRpc invoked locally. Weaver failure?");
             };
 
-            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += () =>
+            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += (clientId, param) =>
             {
                 Debug.Log("ServerRpc received on server object");
+                Assert.True(param.Receive.SenderClientId == clientId);
                 hasReceivedServerRpc = true;
             };
 
@@ -79,7 +81,7 @@ namespace Unity.Netcode.RuntimeTests
             };
 
             // Send ServerRpc
-            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().MyServerRpc();
+            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().MyServerRpc(clientId);
 
             // Send ClientRpc
             serverClientPlayerResult.Result.GetComponent<RpcTestNB>().MyClientRpc();
