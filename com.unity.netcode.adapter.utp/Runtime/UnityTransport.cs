@@ -772,7 +772,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            
+
 
             // Flush the driver's internal send queue. If we're shutting down because the
             // NetworkManager is shutting down, it probably has disconnected some peer(s)
@@ -780,7 +780,7 @@ namespace Unity.Netcode
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeDriver();
-            
+
             m_NetworkSettings.Dispose();
 
             foreach (var queue in m_SendQueue.Values)
@@ -803,7 +803,7 @@ namespace Unity.Netcode
             maxFrameTimeMS = 100;
 
             var simulatorParams = ClientSimulatorParameters;
-            
+
             m_NetworkSettings.AddRawParameterStruct(ref simulatorParams);
 #endif
             m_NetworkSettings.WithNetworkConfigParameters(
@@ -812,7 +812,7 @@ namespace Unity.Netcode
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
                 maxFrameTimeMS: maxFrameTimeMS);
-            
+
             driver = NetworkDriver.Create(m_NetworkSettings);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)

@@ -37,10 +37,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
         {
 
             var maxCap = UnityTransport.InitialBatchQueueSize + 128;
-            
+
             var settings = new NetworkSettings();
             settings.WithFragmentationStageParameters(payloadCapacity: maxCap);
-            
+
             var fragParams = new FragmentationUtility.Parameters() { PayloadCapacity = maxCap };
 
             m_Driver = NetworkDriver.Create(settings);
