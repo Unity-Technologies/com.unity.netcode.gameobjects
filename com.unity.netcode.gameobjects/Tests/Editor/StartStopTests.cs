@@ -45,7 +45,7 @@ namespace Unity.Netcode.EditorTests
         public void TestFlagShutdown()
         {
             m_NetworkManager.StartServer();
-            m_NetworkManager.Shutdown();
+            m_NetworkManager.ShutdownInternal();
 
             Assert.False(m_NetworkManager.IsServer);
             Assert.False(m_NetworkManager.IsClient);
