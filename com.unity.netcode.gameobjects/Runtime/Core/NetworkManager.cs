@@ -345,8 +345,6 @@ namespace Unity.Netcode
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
 
-        internal void InvokeOnClientDisconnectCallback(ulong clientId) => OnClientDisconnectCallback?.Invoke(clientId);
-
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
@@ -1312,6 +1310,8 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
+                    OnClientDisconnectCallback?.Invoke(clientId);
+
                     clientId = TransportIdToClientId(clientId);
 
                     m_TransportIdToClientIdMap.Remove(transportId);
@@ -1330,9 +1330,6 @@ namespace Unity.Netcode
                     {
                         Shutdown();
                     }
-
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.End();
 #endif
