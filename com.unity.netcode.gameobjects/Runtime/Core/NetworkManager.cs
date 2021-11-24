@@ -91,6 +91,7 @@ namespace Unity.Netcode
         }
 
         private bool m_ShuttingDown;
+
         private bool m_StopProcessingMessages;
 
         private class NetworkManagerHooks : INetworkHooks
@@ -352,6 +353,9 @@ namespace Unity.Netcode
         /// Gets if we are connected as a client
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+
+        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
@@ -1124,7 +1128,7 @@ namespace Unity.Netcode
             if (SpawnManager != null)
             {
                 SpawnManager.CleanupAllTriggers();
-                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.DespawnAndDestroyNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
@@ -1159,6 +1163,8 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
+            m_ShuttingDown = false;
+            m_StopProcessingMessages = false;
         }
 
         // INetworkUpdateSystem
@@ -1509,13 +1515,21 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
-                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        // As long as we can destroy the PlayerObject with the owner
+                        if (!playerObject.DontDestroyWithOwner)
                         {
-                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                            {
+                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            }
+                            else
+                            {
+                                Destroy(playerObject.gameObject);
+                            }
                         }
-                        else
+                        else // Otherwise, just remove the ownership
                         {
-                            Destroy(playerObject.gameObject);
+                            playerObject.RemoveOwnership();
                         }
                     }
 

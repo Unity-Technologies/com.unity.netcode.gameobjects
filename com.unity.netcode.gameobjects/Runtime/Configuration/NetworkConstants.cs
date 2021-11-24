@@ -5,6 +5,6 @@ namespace Unity.Netcode
     /// </summary>
     internal static class NetworkConstants
     {
-        internal const string PROTOCOL_VERSION = "14.0.0";
+        internal const string PROTOCOL_VERSION = "15.0.0";
     }
 }

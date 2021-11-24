@@ -14,6 +14,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         private const string k_NewNetworkObjectName = "TestNetworkObjectToSpawn";
         private NetworkObject m_NewNetworkPrefab;
+        // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
+        private const int k_MessageHeaderSize = 2;
 
         protected override Action<GameObject> UpdatePlayerPrefab => _ =>
         {
@@ -59,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + FastBufferWriter.GetWriteSize<MessageHeader>(), ownershipChangeSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + k_MessageHeaderSize, ownershipChangeSent.BytesCount);
         }
 
         [UnityTest]

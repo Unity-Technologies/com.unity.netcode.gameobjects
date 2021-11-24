@@ -13,7 +13,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class TransportBytesMetricsTests : SingleClientMetricTestBase
     {
-        static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + FastBufferWriter.GetWriteSize<MessageHeader>();
+        // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
+        private const int k_MessageHeaderSize = 2;
+        static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + k_MessageHeaderSize;
 
         [UnityTest]
         [Ignore("Snapshot transition")]

@@ -82,7 +82,8 @@ namespace Unity.Netcode
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // Passing false to canDefer prevents it being accessed.
-                    Header = new MessageHeader()
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
                 };
                 message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 rpcMessageSize = tempBuffer.Length;
@@ -188,7 +189,8 @@ namespace Unity.Netcode
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // Passing false to canDefer prevents it being accessed.
-                    Header = new MessageHeader()
+                    Header = new MessageHeader(),
+                    SerializedHeaderSize = 0,
                 };
                 message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
                 messageSize = tempBuffer.Length;
@@ -282,9 +284,13 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (m_NetworkObject == null || NetworkManager.Singleton == null ||
+                    (NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress))
                 {
-                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    }
                 }
 
                 return m_NetworkObject;
@@ -422,8 +428,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);
