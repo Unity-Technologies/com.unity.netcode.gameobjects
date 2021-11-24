@@ -15,7 +15,7 @@ namespace Unity.Netcode
     /// static message handler for receiving messages of the following name and signature:
     ///
     /// <code>
-    /// public static void Receive(FastBufferReader reader, in NetworkContext context)
+    /// public static void Receive(FastBufferReader reader, ref NetworkContext context)
     /// </code>
     ///
     /// It is the responsibility of the Serialize and Receive methods to ensure there is enough buffer space
@@ -45,5 +45,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer"></param>
         void Serialize(FastBufferWriter writer);
+        bool Deserialize(FastBufferReader reader, ref NetworkContext context);
+        void Handle(ref NetworkContext context);
     }
 }
