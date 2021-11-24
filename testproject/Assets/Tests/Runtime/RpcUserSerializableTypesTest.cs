@@ -133,43 +133,63 @@ namespace TestProject.RuntimeTests
 
             var obj = new MyObject(256);
             var obj2 = new MySharedObjectReferencedById(256);
+            var obj3 = new MyObjectPassedWithThisRef(256);
             bool clientMyObjCalled = false;
+            bool clientMyObjPassedWithThisRefCalled = false;
             bool clientMySharedObjCalled = true;
             bool serverMyObjCalled = false;
+            bool serverMyObjPassedWithThisRefCalled = false;
             bool serverMySharedObjCalled = true;
             clientSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObj) =>
             {
                 Assert.AreEqual(obj.I, receivedObj.I);
                 Assert.AreNotSame(obj, receivedObj);
                 clientMyObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             serverSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObj) =>
             {
                 Assert.AreEqual(obj.I, receivedObj.I);
                 Assert.AreNotSame(obj, receivedObj);
                 serverMyObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
+            };
+            clientSideNetworkBehaviourClass.OnMyObjectPassedWithThisRefUpdated = (receivedObj) =>
+            {
+                Assert.AreEqual(obj.I, receivedObj.I);
+                Assert.AreNotSame(obj, receivedObj);
+                clientMyObjPassedWithThisRefCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMyObjectPassedWithThisRefUpdated = (receivedObj) =>
+            {
+                Assert.AreEqual(obj.I, receivedObj.I);
+                Assert.AreNotSame(obj, receivedObj);
+                serverMyObjPassedWithThisRefCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             clientSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObj) =>
             {
                 Assert.AreSame(obj2, receivedObj);
                 clientMySharedObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             serverSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObj) =>
             {
                 Assert.AreSame(obj2, receivedObj);
                 serverMySharedObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
 
             clientSideNetworkBehaviourClass.SendMyObjectServerRpc(obj);
             clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(obj2);
+            clientSideNetworkBehaviourClass.SendMyObjectPassedWithThisRefServerRpc(obj3);
 
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
@@ -219,9 +239,12 @@ namespace TestProject.RuntimeTests
 
             var objs = new[] { new MyObject(256), new MyObject(512) };
             var objs2 = new[] { new MySharedObjectReferencedById(256), new MySharedObjectReferencedById(512) };
+            var objs3 = new[] { new MyObjectPassedWithThisRef(256), new MyObjectPassedWithThisRef(512) };
             bool clientMyObjCalled = false;
+            bool clientMyObjPassedWithThisRefCalled = false;
             bool clientMySharedObjCalled = true;
             bool serverMyObjCalled = false;
+            bool serverMyObjPassedWithThisRefCalled = false;
             bool serverMySharedObjCalled = true;
             clientSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObjs) =>
             {
@@ -232,8 +255,8 @@ namespace TestProject.RuntimeTests
                     Assert.AreNotSame(objs[i], receivedObjs[i]);
                 }
                 clientMyObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             serverSideNetworkBehaviourClass.OnMyObjectUpdated = (receivedObjs) =>
             {
@@ -244,8 +267,32 @@ namespace TestProject.RuntimeTests
                     Assert.AreNotSame(objs[i], receivedObjs[i]);
                 }
                 serverMyObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
+            };
+            clientSideNetworkBehaviourClass.OnMyObjectPassedWithThisRefUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreEqual(objs[i].I, receivedObjs[i].I);
+                    Assert.AreNotSame(objs[i], receivedObjs[i]);
+                }
+                clientMyObjPassedWithThisRefCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
+            };
+            serverSideNetworkBehaviourClass.OnMyObjectPassedWithThisRefUpdated = (receivedObjs) =>
+            {
+                Assert.AreEqual(receivedObjs.Length, objs2.Length);
+                for (var i = 0; i < receivedObjs.Length; ++i)
+                {
+                    Assert.AreEqual(objs[i].I, receivedObjs[i].I);
+                    Assert.AreNotSame(objs[i], receivedObjs[i]);
+                }
+                serverMyObjPassedWithThisRefCalled = true;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             clientSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObjs) =>
             {
@@ -255,8 +302,8 @@ namespace TestProject.RuntimeTests
                     Assert.AreSame(objs2[i], receivedObjs[i]);
                 }
                 clientMySharedObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
             serverSideNetworkBehaviourClass.OnMySharedObjectReferencedByIdUpdated = (receivedObjs) =>
             {
@@ -266,12 +313,13 @@ namespace TestProject.RuntimeTests
                     Assert.AreSame(objs2[i], receivedObjs[i]);
                 }
                 serverMySharedObjCalled = true;
-                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && serverMyObjCalled &&
-                                 serverMySharedObjCalled;
+                m_FinishedTest = clientMyObjCalled && clientMySharedObjCalled && clientMyObjPassedWithThisRefCalled &&
+                                 serverMyObjCalled && serverMySharedObjCalled && serverMyObjPassedWithThisRefCalled;
             };
 
             clientSideNetworkBehaviourClass.SendMyObjectServerRpc(objs);
             clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(objs2);
+            clientSideNetworkBehaviourClass.SendMyObjectPassedWithThisRefServerRpc(objs3);
 
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
@@ -558,6 +606,9 @@ namespace TestProject.RuntimeTests
         public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
         public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
 
+        public delegate void OnMyObjectPassedWithThisRefUpdatedDelgateHandler(MyObjectPassedWithThisRef obj);
+        public OnMyObjectPassedWithThisRefUpdatedDelgateHandler OnMyObjectPassedWithThisRefUpdated;
+
         /// <summary>
         /// Starts the unit test and passes the UserSerializableClass from the client to the server
         /// </summary>
@@ -645,6 +696,14 @@ namespace TestProject.RuntimeTests
                 OnMyObjectUpdated.Invoke(obj);
             }
         }
+        [ClientRpc]
+        public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef obj)
+        {
+            if (OnMyObjectPassedWithThisRefUpdated != null)
+            {
+                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
+            }
+        }
 
         [ClientRpc]
         public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById obj)
@@ -663,6 +722,16 @@ namespace TestProject.RuntimeTests
                 OnMyObjectUpdated.Invoke(obj);
             }
             SendMyObjectClientRpc(obj);
+        }
+
+        [ServerRpc]
+        public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef obj)
+        {
+            if (OnMyObjectPassedWithThisRefUpdated != null)
+            {
+                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
+            }
+            SendMyObjectPassedWithThisRefClientRpc(obj);
         }
 
         [ServerRpc]
@@ -692,6 +761,8 @@ namespace TestProject.RuntimeTests
 
         public delegate void OnMyObjectUpdatedDelgateHandler(MyObject[] obj);
         public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
+        public delegate void OnMyObjectPassedWithThisRefUpdatedDelgateHandler(MyObjectPassedWithThisRef[] obj);
+        public OnMyObjectPassedWithThisRefUpdatedDelgateHandler OnMyObjectPassedWithThisRefUpdated;
 
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedServerRpc;
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
@@ -786,6 +857,15 @@ namespace TestProject.RuntimeTests
         }
 
         [ClientRpc]
+        public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef[] objs)
+        {
+            if (OnMyObjectPassedWithThisRefUpdated != null)
+            {
+                OnMyObjectPassedWithThisRefUpdated.Invoke(objs);
+            }
+        }
+
+        [ClientRpc]
         public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById[] objs)
         {
             if (OnMySharedObjectReferencedByIdUpdated != null)
@@ -802,6 +882,16 @@ namespace TestProject.RuntimeTests
                 OnMyObjectUpdated.Invoke(objs);
             }
             SendMyObjectClientRpc(objs);
+        }
+
+        [ServerRpc]
+        public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef[] objs)
+        {
+            if (OnMyObjectPassedWithThisRefUpdated != null)
+            {
+                OnMyObjectPassedWithThisRefUpdated.Invoke(objs);
+            }
+            SendMyObjectPassedWithThisRefClientRpc(objs);
         }
 
 
@@ -888,30 +978,51 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    public class MyObjectPassedWithThisRef
+    {
+        public int I;
+
+        public MyObjectPassedWithThisRef(int i)
+        {
+            I = i;
+        }
+    }
+
     public static class TestSerializationExtensions
     {
-        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObject value)
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObjectPassedWithThisRef value)
+        {
+            reader.ReadValueSafe(out int i);
+            value = new MyObjectPassedWithThisRef(i);
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObjectPassedWithThisRef value)
+        {
+            writer.WriteValueSafe(value.I);
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out MyObject value)
         {
             reader.ReadValueSafe(out int i);
             value = new MyObject(i);
         }
 
-        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObject value)
+        public static void WriteValueSafe(this FastBufferWriter writer, in MyObject value)
         {
             writer.WriteValueSafe(value.I);
         }
 
-        public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById value)
+        public static void ReadValueSafe(this FastBufferReader reader, out MySharedObjectReferencedById value)
         {
             reader.ReadValueSafe(out int i);
             value = MySharedObjectReferencedById.Values[i];
         }
 
-        public static void WriteValueSafe(this ref FastBufferWriter writer, MySharedObjectReferencedById value)
+        public static void WriteValueSafe(this FastBufferWriter writer, MySharedObjectReferencedById value)
         {
             writer.WriteValueSafe(value.I);
         }
-        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObject[] values)
+        public static void ReadValueSafe(this FastBufferReader reader, out MyObject[] values)
         {
             reader.ReadValueSafe(out int length);
             values = new MyObject[length];
@@ -921,7 +1032,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObject[] values)
+        public static void WriteValueSafe(this FastBufferWriter writer, in MyObject[] values)
         {
             writer.WriteValueSafe(values.Length);
             for (var i = 0; i < values.Length; ++i)
@@ -930,7 +1041,26 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public static void ReadValueSafe(this ref FastBufferReader reader, out MySharedObjectReferencedById[] values)
+        public static void ReadValueSafe(this ref FastBufferReader reader, out MyObjectPassedWithThisRef[] values)
+        {
+            reader.ReadValueSafe(out int length);
+            values = new MyObjectPassedWithThisRef[length];
+            for (var i = 0; i < length; ++i)
+            {
+                reader.ReadValueSafe(out values[i]);
+            }
+        }
+
+        public static void WriteValueSafe(this ref FastBufferWriter writer, in MyObjectPassedWithThisRef[] values)
+        {
+            writer.WriteValueSafe(values.Length);
+            for (var i = 0; i < values.Length; ++i)
+            {
+                writer.WriteValueSafe(values[i]);
+            }
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out MySharedObjectReferencedById[] values)
         {
             reader.ReadValueSafe(out int length);
             values = new MySharedObjectReferencedById[length];
@@ -940,7 +1070,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public static void WriteValueSafe(this ref FastBufferWriter writer, MySharedObjectReferencedById[] values)
+        public static void WriteValueSafe(this FastBufferWriter writer, MySharedObjectReferencedById[] values)
         {
             writer.WriteValueSafe(values.Length);
             for (var i = 0; i < values.Length; ++i)
