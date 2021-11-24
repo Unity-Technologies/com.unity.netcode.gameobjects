@@ -52,7 +52,11 @@ namespace Unity.Netcode
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        private NetworkManager m_NetworkManager = default;
+        private NetworkManager m_NetworkManager;
+        private NetworkTickSystem m_NetworkTickSystem;
+
+        // The tick we're currently processing (or last we processed, outside NetworkUpdate())
+        private int m_CurrentTick = NetworkTickSystem.NoTick;
 
         // Settings
         internal bool IsServer { get; set; }
@@ -70,6 +74,10 @@ namespace Unity.Netcode
         internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
         {
             m_NetworkManager = networkManager;
+            m_NetworkTickSystem = networkTickSystem;
+
+            // register for updates in EarlyUpdate
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         internal void UpdateClientServerData()
@@ -88,6 +96,34 @@ namespace Unity.Netcode
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            if (updateStage == NetworkUpdateStage.EarlyUpdate)
+            {
+                UpdateClientServerData();
+
+                var tick = m_NetworkTickSystem.LocalTime.Tick;
+
+                if (tick != m_CurrentTick)
+                {
+                    m_CurrentTick = tick;
+                    if (IsServer)
+                    {
+                        for (int i = 0; i < ConnectedClientsId.Count; i++)
+                        {
+                            var clientId = ConnectedClientsId[i];
+
+                            // don't send to ourselves
+                            if (clientId != ServerClientId)
+                            {
+                                SendSnapshot(clientId);
+                            }
+                        }
+                    }
+                    else if (IsConnectedClient)
+                    {
+                        SendSnapshot(ServerClientId);
+                    }
+                }
+            }
         }
 
         internal void Spawn(SnapshotSpawnCommand command)
@@ -108,6 +144,12 @@ namespace Unity.Netcode
 
         // internal API to reduce buffer usage, where possible
         internal void ReduceBufferUsage()
+        {
+
+        }
+
+        // where we build and send a snapshot to a given client
+        private void SendSnapshot(ulong clientId)
         {
 
         }
