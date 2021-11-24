@@ -407,10 +407,6 @@ namespace Unity.Netcode
 
         internal static event Action OnSingletonReady;
 
-        // the interest settings objects receive unless they have a pre-prefab override
-        public InterestSettings InterestSettings;
-
-
 #if UNITY_EDITOR
         private void OnValidate()
         {

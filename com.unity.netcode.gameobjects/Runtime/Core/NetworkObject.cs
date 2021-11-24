@@ -193,27 +193,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
-        public InterestSettings InterestSettingsOverride;
-        public InterestSettings InterestSettings
-        {
-            get
-            {
-                InterestSettings result = null;
-                if (InterestSettingsOverride != null)
-                {
-                    result = InterestSettingsOverride;
-                }
-                else if (NetworkManager.InterestSettings != null)
-                {
-                    result = NetworkManager.InterestSettings;
-                }
-
-                return result;
-            }
-            set => InterestSettingsOverride = value;
-        }
-
-        internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
+        internal readonly HashSet<ulong> Observers = new();
 
 #if MULTIPLAYER_TOOLS
         private string m_CachedNameForMetrics;

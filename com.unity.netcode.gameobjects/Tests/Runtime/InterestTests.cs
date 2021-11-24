@@ -9,11 +9,6 @@ using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class TestInterestSettings : InterestSettings
-    {
-        public int SomeSetting;
-    }
-
     public class AliveOrDeadBehaviour : NetworkBehaviour
     {
         public bool IsAlive;
@@ -456,28 +451,6 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
-        }
-
-        [Test]
-        public void TestInterestSettings()
-        {
-            var rootSettings = new TestInterestSettings();
-            rootSettings.SomeSetting = 1;
-            m_NetworkManager.InterestSettings = rootSettings;
-
-            var objSettings = new TestInterestSettings();
-            objSettings.SomeSetting = 2;
-            var (object1Obj, object1Guid) = MakeInterestGameObjectHelper();
-            object1Obj.InterestSettings = objSettings;
-
-            // no override settings, should receive from NetworkManager
-            var (object2Obj, object2Guid) = MakeInterestGameObjectHelper();
-
-            var checkObj1 = (TestInterestSettings)object1Obj.InterestSettings;
-            var checkObj2 = (TestInterestSettings)object2Obj.InterestSettings;
-
-            Assert.True(checkObj1.SomeSetting == 2);
-            Assert.True(checkObj2.SomeSetting == 1);
         }
     }
 }
