@@ -428,7 +428,7 @@ namespace Unity.Netcode
         /// <param name="count"></param>
         /// <param name="offset"></param>
         /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
+        public void WriteNetworkSerializable<T>(T[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             WriteValueSafe(sizeInTs);
