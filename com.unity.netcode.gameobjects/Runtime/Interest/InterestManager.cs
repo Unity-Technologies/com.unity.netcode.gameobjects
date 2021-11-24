@@ -5,7 +5,7 @@ namespace Unity.Netcode.Interest
     {
         public void AddInterestNode(IInterestNode<TObject> obj);
         public void RemoveInterestNode(IInterestNode<TObject> obj);
-        public HashSet<IInterestNode<TObject>> GetInterestNodes();
+        public List<IInterestNode<TObject>> GetInterestNodes();
     }
 
     // interest *system* instead of interest node ?
@@ -17,7 +17,7 @@ namespace Unity.Netcode.Interest
         //  I am associated with
         public void UpdateObject(ref TObject obj)
         {
-            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
             foreach (var node in nodes)
             {
                 node.UpdateObject(obj);
@@ -39,7 +39,7 @@ namespace Unity.Netcode.Interest
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
 
-            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
 
             if (nodes.Count > 0)
             {
@@ -65,7 +65,7 @@ namespace Unity.Netcode.Interest
 
         public void RemoveObject(ref TObject obj)
         {
-            HashSet<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
+            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
             foreach (var node in nodes)
             {
                 if (node == null)

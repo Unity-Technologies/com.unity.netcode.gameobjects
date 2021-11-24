@@ -19,7 +19,7 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-        private HashSet<IInterestNode<NetworkObject>> m_InterestNodes = new HashSet<IInterestNode<NetworkObject>>();
+        private List<IInterestNode<NetworkObject>> m_InterestNodes = new();
 
         public void AddInterestNode(IInterestNode<NetworkObject> node)
         {
@@ -39,7 +39,7 @@ namespace Unity.Netcode
             }
         }
 
-        public HashSet<IInterestNode<NetworkObject>> GetInterestNodes()
+        public List<IInterestNode<NetworkObject>> GetInterestNodes()
         {
             return m_InterestNodes;
         }

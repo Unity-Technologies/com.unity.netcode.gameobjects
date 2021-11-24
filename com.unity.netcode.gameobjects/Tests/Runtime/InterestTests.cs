@@ -123,6 +123,12 @@ namespace Unity.Netcode.RuntimeTests
                 AddObject(obj);
             }
 
+            public void AddKernel(IInterestKernel<NetworkObject> kernel)
+            {
+                m_Odds.AddKernel(kernel);
+                m_Evens.AddKernel(kernel);
+            }
+
             private InterestNodeStatic<NetworkObject> m_Odds;
             private InterestNodeStatic<NetworkObject> m_Evens;
         }
@@ -158,7 +164,7 @@ namespace Unity.Netcode.RuntimeTests
             var objectsBeforeAdd = results.Count;
 
             var nodeA = new InterestNodeStatic<NetworkObject>();
-            nodeA.InterestKernels.Add(new AliveOrDeadKernel());
+            nodeA.AddKernel(new AliveOrDeadKernel());
 
             var (objA, objAGuid) = MakeInterestGameObjectHelper();
             objA.gameObject.AddComponent<AliveOrDeadBehaviour>();
@@ -266,7 +272,7 @@ namespace Unity.Netcode.RuntimeTests
             var naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
             var naiveRadiusKernel = new RadiusInterestKernel();
             naiveRadiusKernel.Radius = 1.5f;
-            naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
+            naiveRadiusNode.AddKernel(naiveRadiusKernel);
 
             var results = new HashSet<NetworkObject>();
 
@@ -332,8 +338,8 @@ namespace Unity.Netcode.RuntimeTests
             var evenKernel = new OddEvenInterestKernel();
             evenKernel.IsOdd = false;
 
-            dualNode.InterestKernels.Add(oddKernel);
-            dualNode.InterestKernels.Add(evenKernel);
+            dualNode.AddKernel(oddKernel);
+            dualNode.AddKernel(evenKernel);
 
             var (object1, object1Guid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(object1Guid);

@@ -10,7 +10,7 @@ namespace Unity.Netcode.Interest
     //  those object in more strategic ways - see the Odds / Evens scheme in the InterestTests
     public class InterestNodeStatic<TObject> : IInterestNode<TObject>
     {
-        public List<IInterestKernel<TObject>> InterestKernels = new();
+        private List<IInterestKernel<TObject>> m_InterestKernels = new();
 
         // these are the objects under my purview
         protected HashSet<TObject> m_ManagedObjects;
@@ -32,11 +32,11 @@ namespace Unity.Netcode.Interest
 
         public void QueryFor(TObject client, HashSet<TObject> results)
         {
-            if (InterestKernels.Count > 0)
+            if (m_InterestKernels.Count > 0)
             {
                 foreach (var obj in m_ManagedObjects)
                 {
-                    foreach (var ik in InterestKernels)
+                    foreach (var ik in m_InterestKernels)
                     {
                         ik.QueryFor(client, obj, results);
                     }
@@ -46,6 +46,11 @@ namespace Unity.Netcode.Interest
             {
                 results.UnionWith(m_ManagedObjects);
             }
+        }
+
+        public void AddKernel(IInterestKernel<TObject> kernel)
+        {
+            m_InterestKernels.Add(kernel);
         }
 
         public void UpdateObject(TObject obj)
