@@ -531,7 +531,7 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
-                SpawnObject(spawnCommand);
+                SpawnObject(spawnCommand, srcClientId);
             }
             for (var i = 0; i < message.Despawns.Length; i++)
             {
@@ -547,7 +547,7 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
-                DespawnObject(despawnCommand);
+                DespawnObject(despawnCommand, srcClientId);
             }
         }
 
@@ -1092,7 +1092,7 @@ namespace Unity.Netcode
             ReadBuffer(message);
             ReadIndex(message);
             ReadAcks(clientId, m_ClientData[clientId], message, GetConnectionRtt(clientId));
-            ReadSpawns(message);
+            ReadSpawns(message, clientId);
         }
 
         // todo --M1--
