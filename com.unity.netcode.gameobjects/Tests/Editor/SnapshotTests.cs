@@ -67,64 +67,27 @@ namespace Unity.Netcode.EditorTests
             return 0;
         }
 
-        internal int SendMessage(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage(ArraySegment<byte> message, ulong clientId)
         {
-            if (!m_PassBackResponses)
-            {
-                // we're not ack'ing anything, so those should stay 0
-                Debug.Assert(message.Ack.LastReceivedSequence == 0);
-            }
-
-            Debug.Assert(message.Ack.ReceivedSequenceMask == 0);
-            Debug.Assert(message.Sequence == m_NextSequence); // sequence has to be the expected one
-
-            if (m_ExpectSpawns)
-            {
-                Debug.Assert(message.Spawns.Length >= m_MinSpawns); // there has to be multiple spawns per SnapshotMessage
-            }
-            else
-            {
-                Debug.Assert(message.Spawns.Length == 0); // Spawns were not expected
-            }
-
-            if (m_ExpectDespawns)
-            {
-                Debug.Assert(message.Despawns.Length >= m_MinDespawns); // there has to be multiple despawns per SnapshotMessage
-            }
-            else
-            {
-                Debug.Assert(message.Despawns.IsEmpty); // this test should not have despawns
-            }
-
-            Debug.Assert(message.Entries.Length == 0);
-
             m_NextSequence++;
+
+            Debug.Log($"{m_MinSpawns} {m_MinDespawns} {m_ExpectSpawns} {m_ExpectDespawns}");
 
             if (!m_LoseNextMessage)
             {
-                using var writer = new FastBufferWriter(1024, Allocator.Temp);
-                message.Serialize(writer);
-                using var reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0) };
-                var newMessage = new SnapshotDataMessage();
-                newMessage.Deserialize(reader, ref context);
-                newMessage.Handle(ref context);
+                // todo: pass to receiving Snapshot
+
+
             }
 
             return 0;
         }
 
-        internal int SendMessageRecvSide(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessageRecvSide(ArraySegment<byte> message, ulong clientId)
         {
             if (m_PassBackResponses)
             {
-                using var writer = new FastBufferWriter(1024, Allocator.Temp);
-                message.Serialize(writer);
-                using var reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1) };
-                var newMessage = new SnapshotDataMessage();
-                newMessage.Deserialize(reader, ref context);
-                newMessage.Handle(ref context);
+                // todo: pass back to sending Snapshot
             }
 
             return 0;
@@ -149,7 +112,7 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Clear();
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
-            m_SendSnapshot.MockSendMessage = SendMessage;
+            m_SendSnapshot.SendMessage = SendMessage;
             m_SendSnapshot.MockSpawnObject = SpawnObject;
             m_SendSnapshot.MockDespawnObject = DespawnObject;
         }
@@ -172,7 +135,7 @@ namespace Unity.Netcode.EditorTests
             m_RecvSnapshot.ConnectedClientsId.Clear();
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
-            m_RecvSnapshot.MockSendMessage = SendMessageRecvSide;
+            m_RecvSnapshot.SendMessage = SendMessageRecvSide;
             m_RecvSnapshot.MockSpawnObject = SpawnObject;
             m_RecvSnapshot.MockDespawnObject = DespawnObject;
         }

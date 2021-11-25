@@ -46,7 +46,7 @@ namespace Unity.Netcode
         internal NetworkObject NetworkObject;
     }
 
-    internal delegate int MockSendMessage(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
+    internal delegate int SendMessageDelegate(ArraySegment<byte> message, ulong clientId);
     internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
     internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
 
@@ -63,7 +63,7 @@ namespace Unity.Netcode
         internal bool IsConnectedClient { get; set; }
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
-        internal MockSendMessage MockSendMessage { get; set; }
+        internal SendMessageDelegate SendMessage { get; set; }
         internal MockSpawnObject MockSpawnObject { get; set; }
         internal MockDespawnObject MockDespawnObject { get; set; }
 
@@ -129,7 +129,13 @@ namespace Unity.Netcode
         // where we build and send a snapshot to a given client
         private void SendSnapshot(ulong clientId)
         {
+            byte[] message = new byte[3];
+            message[0] = 42;
+            message[1] = 42;
+            message[2] = 42;
 
+            var segment = new ArraySegment<byte>(message);
+            m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ClientIdToTransportId(clientId), segment, NetworkDelivery.Unreliable);
         }
 
         internal void Spawn(SnapshotSpawnCommand command)

@@ -1291,7 +1291,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        private ulong ClientIdToTransportId(ulong clientId)
+        internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
