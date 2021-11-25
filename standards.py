@@ -106,7 +106,7 @@ if args.fix:
             any_error = True
 
         print("fix: code style")
-        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--verify-no-changes", "--verbosity", args.verbosity])
+        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--no-restore", "--verbosity", args.verbosity])
         if cs_run.returncode != 0:
             print("fix: code style failed")
             any_error = True
