@@ -336,6 +336,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
 
+
+        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
@@ -1098,7 +1101,7 @@ namespace Unity.Netcode
             if (SpawnManager != null)
             {
                 SpawnManager.CleanupAllTriggers();
-                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.DespawnAndDestroyNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
