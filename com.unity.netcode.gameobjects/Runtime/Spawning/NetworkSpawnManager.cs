@@ -227,7 +227,7 @@ namespace Unity.Netcode
                 return NetworkManager.ConnectedClients.TryGetValue(clientId, out networkClient);
             }
 
-            if (clientId == NetworkManager.LocalClient.ClientId)
+            if (NetworkManager.LocalClient != null && clientId == NetworkManager.LocalClient.ClientId)
             {
                 networkClient = NetworkManager.LocalClient;
                 return true;
@@ -600,7 +600,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void DestroyNonSceneObjects()
+        internal void DespawnAndDestroyNetworkObjects()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
@@ -608,17 +608,25 @@ namespace Unity.Netcode
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
+                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                     {
-                        if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
-                        {
-                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                            OnDespawnObject(networkObjects[i], false);
-                        }
-                        else
-                        {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                        }
+                        OnDespawnObject(networkObjects[i], false);
+                        // Leave destruction up to the handler
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+                    }
+                    else if (networkObjects[i].IsSpawned)
+                    {
+                        // If it is an in-scene placed NetworkObject then just despawn
+                        // and let it be destroyed when the scene is unloaded.  Otherwise,
+                        // despawn and destroy it.
+                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null
+                                    && networkObjects[i].IsSceneObject.Value);
+
+                        OnDespawnObject(networkObjects[i], shouldDestroy);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
             }
@@ -688,17 +696,21 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Move child NetworkObjects to the root when parent NetworkObject is destroyed
-            foreach (var spawnedNetObj in SpawnedObjectsList)
+            // If we are shutting down the NetworkManager, then ignore resetting the parent
+            if (!NetworkManager.ShutdownInProgress)
             {
-                var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
-                if (isReparented && latestParent == networkObject.NetworkObjectId)
+                // Move child NetworkObjects to the root when parent NetworkObject is destroyed
+                foreach (var spawnedNetObj in SpawnedObjectsList)
                 {
-                    spawnedNetObj.gameObject.transform.parent = null;
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    var (isReparented, latestParent) = spawnedNetObj.GetNetworkParenting();
+                    if (isReparented && latestParent == networkObject.NetworkObjectId)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        spawnedNetObj.gameObject.transform.parent = null;
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        }
                     }
                 }
             }
