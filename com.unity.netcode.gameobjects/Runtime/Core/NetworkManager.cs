@@ -1343,12 +1343,12 @@ namespace Unity.Netcode
                     break;
                 case NetworkEvent.Data:
                     {
+                        clientId = TransportIdToClientId(clientId);
+
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                         {
                             NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
                         }
-
-                        clientId = TransportIdToClientId(clientId);
 
                         HandleIncomingData(clientId, payload, receiveTime);
                         break;
@@ -1357,9 +1357,9 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
                     clientId = TransportIdToClientId(clientId);
+
+                    OnClientDisconnectCallback?.Invoke(clientId);
 
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);
