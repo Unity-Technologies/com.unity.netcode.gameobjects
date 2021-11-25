@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -45,7 +46,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            payload = new FastBufferReader(reader.GetUnsafePtr(), Allocator.None, reader.Length - metadataSize, metadataSize);
+            payload = new FastBufferReader(reader.GetUnsafePtr() + metadataSize, Allocator.None, reader.Length - metadataSize);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
@@ -68,7 +69,14 @@ namespace Unity.Netcode
             var networkObject = networkManager.SpawnManager.SpawnedObjects[metadata.NetworkObjectId];
             var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
 
-            NetworkManager.__rpc_func_table[metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
+            try
+            {
+                NetworkManager.__rpc_func_table[metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(new Exception("Unhandled RPC exception!", ex));
+            }
         }
     }
 
