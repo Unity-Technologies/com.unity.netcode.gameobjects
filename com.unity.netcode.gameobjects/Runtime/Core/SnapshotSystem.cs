@@ -465,15 +465,28 @@ namespace Unity.Netcode
             }
         }
 
-        internal void SpawnObject(SnapshotSpawnCommand spawnCommand)
+        internal void SpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
         {
             if (m_NetworkManager)
             {
-                var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
-                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId) ? spawnCommand.NetworkObjectId : spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
-                    spawnCommand.ObjectRotation);
+                NetworkObject networkObject;
+                if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+                else
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+
                 m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
                     true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
             }
             else
             {
@@ -481,7 +494,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void DespawnObject(SnapshotDespawnCommand despawnCommand)
+        internal void DespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
         {
             if (m_NetworkManager)
             {
@@ -489,6 +502,8 @@ namespace Unity.Netcode
                     out NetworkObject networkObject);
 
                 m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
             }
             else
             {
@@ -497,7 +512,7 @@ namespace Unity.Netcode
         }
 
 
-        internal void ReadSpawns(in SnapshotDataMessage message)
+        internal void ReadSpawns(in SnapshotDataMessage message, ulong srcClientId)
         {
             SnapshotSpawnCommand spawnCommand;
             SnapshotDespawnCommand despawnCommand;
@@ -516,7 +531,7 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
-                SpawnObject(spawnCommand);
+                SpawnObject(spawnCommand, srcClientId);
             }
             for (var i = 0; i < message.Despawns.Length; i++)
             {
@@ -532,7 +547,7 @@ namespace Unity.Netcode
 
                 // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
-                DespawnObject(despawnCommand);
+                DespawnObject(despawnCommand, srcClientId);
             }
         }
 
@@ -1077,7 +1092,7 @@ namespace Unity.Netcode
             ReadBuffer(message);
             ReadIndex(message);
             ReadAcks(clientId, m_ClientData[clientId], message, GetConnectionRtt(clientId));
-            ReadSpawns(message);
+            ReadSpawns(message, clientId);
         }
 
         // todo --M1--
