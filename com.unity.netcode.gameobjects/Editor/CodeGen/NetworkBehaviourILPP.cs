@@ -789,9 +789,9 @@ namespace Unity.Netcode.Editor.CodeGen
             // NetworkManager networkManager;
             methodDefinition.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
             int netManLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // FastBufferWriter writer;
+            // FastBufferWriter bufferWriter;
             methodDefinition.Body.Variables.Add(new VariableDefinition(m_FastBufferWriter_TypeRef));
-            int writerLocIdx = methodDefinition.Body.Variables.Count - 1;
+            int bufWriterLocIdx = methodDefinition.Body.Variables.Count - 1;
 
             // XXXRpcParams
             if (!hasRpcParams)
@@ -850,8 +850,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var writer = __beginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
-                // var writer = __beginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
+                // var bufferWriter = __beginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // var bufferWriter = __beginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
@@ -892,7 +892,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(roLastInstr);
                     }
 
-                    // var writer = __beginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery);
+                    // var bufferWriter = __beginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // rpcMethodId
@@ -906,13 +906,13 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     // __beginSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_beginSendServerRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, bufWriterLocIdx));
                 }
                 else
                 {
                     // ClientRpc
 
-                    // var writer = __beginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery);
+                    // var bufferWriter = __beginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // rpcMethodId
@@ -926,7 +926,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     // __beginSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_beginSendClientRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, bufWriterLocIdx));
                 }
 
                 // write method parameters into stream
@@ -980,8 +980,8 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Cgt_Un));
                         instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
 
-                        // writer.WriteValueSafe(isSet);
-                        instructions.Add(processor.Create(OpCodes.Ldloca, writerLocIdx));
+                        // bufferWriter.WriteValueSafe(isSet);
+                        instructions.Add(processor.Create(OpCodes.Ldloca, bufWriterLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
                         instructions.Add(processor.Create(OpCodes.Call, boolMethodRef));
 
@@ -994,11 +994,11 @@ namespace Unity.Netcode.Editor.CodeGen
                     var foundMethodRef = GetWriteMethodForParameter(paramType, out var methodRef);
                     if (foundMethodRef)
                     {
-                        // writer.WriteNetworkSerializable(param) for INetworkSerializable, OR
-                        // writer.WriteNetworkSerializable(param, -1, 0) for INetworkSerializable arrays, OR
-                        // writer.WriteValueSafe(param) for value types, OR
-                        // writer.WriteValueSafe(param, -1, 0) for arrays of value types, OR
-                        // writer.WriteValueSafe(param, false) for strings
+                        // bufferWriter.WriteNetworkSerializable(param) for INetworkSerializable, OR
+                        // bufferWriter.WriteNetworkSerializable(param, -1, 0) for INetworkSerializable arrays, OR
+                        // bufferWriter.WriteValueSafe(param) for value types, OR
+                        // bufferWriter.WriteValueSafe(param, -1, 0) for arrays of value types, OR
+                        // bufferWriter.WriteValueSafe(param, false) for strings
                         var method = methodRef.Resolve();
                         var checkParameter = method.Parameters[0];
                         var isExtensionMethod = false;
@@ -1009,11 +1009,11 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                         if (!isExtensionMethod || method.Parameters[0].ParameterType.IsByReference)
                         {
-                            instructions.Add(processor.Create(OpCodes.Ldloca, writerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldloca, bufWriterLocIdx));
                         }
                         else
                         {
-                            instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldloc, bufWriterLocIdx));
                         }
                         if (checkParameter.IsIn || checkParameter.IsOut || checkParameter.ParameterType.IsByReference)
                         {
@@ -1051,17 +1051,17 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // __endSendServerRpc(ref writer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
-                // __endSendClientRpc(ref writer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
+                // __endSendServerRpc(ref bufferWriter, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // __endSendClientRpc(ref bufferWriter, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
 
-                    // __endSendServerRpc(ref writer, rpcMethodId, serverRpcParams, rpcDelivery);
+                    // __endSendServerRpc(ref bufferWriter, rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloca, writerLocIdx));
+                    // bufferWriter
+                    instructions.Add(processor.Create(OpCodes.Ldloca, bufWriterLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
@@ -1087,11 +1087,11 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     // ClientRpc
 
-                    // __endSendClientRpc(ref writer, rpcMethodId, clientRpcParams, rpcDelivery);
+                    // __endSendClientRpc(ref bufferWriter, rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloca, writerLocIdx));
+                    // bufferWriter
+                    instructions.Add(processor.Create(OpCodes.Ldloca, bufWriterLocIdx));
 
                     // rpcMethodId
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
