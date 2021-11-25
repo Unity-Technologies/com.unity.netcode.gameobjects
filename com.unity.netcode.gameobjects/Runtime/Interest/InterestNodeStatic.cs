@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Unity.Netcode.Interest
@@ -10,14 +11,21 @@ namespace Unity.Netcode.Interest
     //  those object in more strategic ways - see the Odds / Evens scheme in the InterestTests
     public class InterestNodeStatic<TObject> : IInterestNode<TObject>
     {
-        private List<IInterestKernel<TObject>> m_InterestKernels = new();
-
         // these are the objects under my purview
-        protected HashSet<TObject> m_ManagedObjects;
+        private HashSet<TObject> m_ManagedObjects;
+
+        // these are the interest kernels that we will run on the objects under my purview
+        private List<Tuple<bool, IInterestKernel<TObject>>> m_InterestKernels;
+
+        // these are the result sets that correspond to each of the kernels I'll run.
+        //  they are then reduced
+        private List<HashSet<TObject>> m_ResultSets;
 
         public InterestNodeStatic()
         {
-            m_ManagedObjects = new HashSet<TObject>();
+            m_InterestKernels = new();
+            m_ManagedObjects = new();
+            m_ResultSets = new();
         }
 
         public void AddObject(TObject obj)
@@ -34,11 +42,26 @@ namespace Unity.Netcode.Interest
         {
             if (m_InterestKernels.Count > 0)
             {
-                foreach (var obj in m_ManagedObjects)
+                for (var i = 0; i < m_InterestKernels.Count; i++)
                 {
-                    foreach (var ik in m_InterestKernels)
+                    var thisKernel = m_InterestKernels[i].Item2;
+                    var theseResults = m_ResultSets[i];
+                    theseResults.Clear();
+                    foreach (var obj in m_ManagedObjects)
                     {
-                        ik.QueryFor(client, obj, results);
+                        thisKernel.QueryFor(client, obj, theseResults);
+                    }
+                }
+                // reduce
+                for (var i = 0; i < m_InterestKernels.Count; i++)
+                {
+                    if (m_InterestKernels[i].Item1)
+                    {
+                        results.UnionWith(m_ResultSets[i]);
+                    }
+                    else
+                    {
+                        results.ExceptWith(m_ResultSets[i]);
                     }
                 }
             }
@@ -48,9 +71,16 @@ namespace Unity.Netcode.Interest
             }
         }
 
-        public void AddKernel(IInterestKernel<TObject> kernel)
+        public void AddAdditiveKernel(IInterestKernel<TObject> kernel)
         {
-            m_InterestKernels.Add(kernel);
+            m_ResultSets.Add(new HashSet<TObject>());
+            m_InterestKernels.Add(new Tuple<bool, IInterestKernel<TObject>>(true, kernel));
+        }
+
+        public void AddSubtractiveKernel(IInterestKernel<TObject> kernel)
+        {
+            m_ResultSets.Add(new HashSet<TObject>());
+            m_InterestKernels.Add(new Tuple<bool, IInterestKernel<TObject>>(false, kernel));
         }
 
         public void UpdateObject(TObject obj)

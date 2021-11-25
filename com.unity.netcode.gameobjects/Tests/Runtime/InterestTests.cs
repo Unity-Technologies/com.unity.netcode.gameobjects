@@ -9,14 +9,19 @@ using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class AliveOrDeadBehaviour : NetworkBehaviour
+    public class CloakedBehaviour : NetworkBehaviour
     {
-        public bool IsAlive;
+        public bool IsCloaked;
 
         public void Awake()
         {
-            IsAlive = true;
+            IsCloaked = false;
         }
+    }
+
+    public class TeamBehaviour : NetworkBehaviour
+    {
+        public int TeamNumber;
     }
 
     public class InterestTests
@@ -46,12 +51,28 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        public class AliveOrDeadKernel : IInterestKernel<NetworkObject>
+        public class TeamKernel : IInterestKernel<NetworkObject>
         {
             public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
             {
-                var aliveOrDead = obj.GetComponent<AliveOrDeadBehaviour>();
-                if (aliveOrDead.IsAlive)
+                var teamBehaviourMine = client.GetComponent<TeamBehaviour>();
+                var teamBehaviourOther = obj.GetComponent<TeamBehaviour>();
+
+                // if the object has a team (and it might; could just be a non-player object) and
+                //  is the same team as me, add it
+                if (teamBehaviourOther && teamBehaviourOther.TeamNumber == teamBehaviourMine.TeamNumber)
+                {
+                    results.Add(obj);
+                }
+            }
+        }
+
+        public class CloakedKernel : IInterestKernel<NetworkObject>
+        {
+            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            {
+                var cloakedBehaviour = obj.GetComponent<CloakedBehaviour>();
+                if (cloakedBehaviour.IsCloaked)
                 {
                     results.Add(obj);
                 }
@@ -123,10 +144,15 @@ namespace Unity.Netcode.RuntimeTests
                 AddObject(obj);
             }
 
-            public void AddKernel(IInterestKernel<NetworkObject> kernel)
+            public void AddAdditiveKernel(IInterestKernel<NetworkObject> kernel)
             {
-                m_Odds.AddKernel(kernel);
-                m_Evens.AddKernel(kernel);
+                m_Odds.AddAdditiveKernel(kernel);
+                m_Evens.AddAdditiveKernel(kernel);
+            }
+
+            public void AddSubtractiveKernel(IInterestKernel<NetworkObject> kernel)
+            {
+                // HRM?
             }
 
             private InterestNodeStatic<NetworkObject> m_Odds;
@@ -154,6 +180,95 @@ namespace Unity.Netcode.RuntimeTests
             return (no, objGuid);
         }
 
+        [Test]
+        public void SubtractiveTestBasic()
+        {
+            var results = new HashSet<NetworkObject>();
+
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            int objectsBeforeAdd = results.Count;
+
+            var theNode = new InterestNodeStatic<NetworkObject>();
+            var radiusKernel = new RadiusInterestKernel();
+            radiusKernel.Radius = 1.5f;
+            theNode.AddAdditiveKernel(radiusKernel);
+            var cloakKernel = new CloakedKernel();
+            theNode.AddSubtractiveKernel(cloakKernel);
+
+            m_PlayerNetworkObject.gameObject.AddComponent<CloakedBehaviour>();
+            m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
+            m_PlayerNetworkObject.AddInterestNode(theNode);
+
+            var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
+            ok1Obj.gameObject.AddComponent<CloakedBehaviour>();
+            ok1Obj.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
+
+            var (closeButCloaked, closeButCloakedGuid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
+            closeButCloaked.gameObject.AddComponent<CloakedBehaviour>();
+            closeButCloaked.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
+            closeButCloaked.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(closeButCloakedGuid);
+
+            var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
+            tooFarObj.gameObject.AddComponent<CloakedBehaviour>();
+            tooFarObj.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
+
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            var hits = results.Count - objectsBeforeAdd;
+            Assert.True(results.Contains(m_PlayerNetworkObject));
+            Assert.True(results.Contains(ok1Obj));
+            Assert.False(results.Contains(closeButCloaked));
+            Assert.False(results.Contains(tooFarObj));
+        }
+
+        [Test]
+        public void SubtractiveTestOrderMatters()
+        {
+            var results = new HashSet<NetworkObject>();
+
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            int objectsBeforeAdd = results.Count;
+
+            // Rule:
+            //  add all objects that are in range
+            //  but which are not cloaked
+            //  except those on my team
+            var theNode = new InterestNodeStatic<NetworkObject>();
+            var radiusKernel = new RadiusInterestKernel();
+            radiusKernel.Radius = 1.5f;
+            theNode.AddAdditiveKernel(radiusKernel);
+            theNode.AddSubtractiveKernel(new CloakedKernel());
+            theNode.AddAdditiveKernel(new TeamKernel());
+
+            m_PlayerNetworkObject.gameObject.AddComponent<CloakedBehaviour>();
+            m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
+            m_PlayerNetworkObject.AddInterestNode(theNode);
+
+            var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
+            ok1Obj.gameObject.AddComponent<CloakedBehaviour>();
+            ok1Obj.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
+
+            var (closeButCloaked, closeButCloakedGuid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
+            closeButCloaked.gameObject.AddComponent<CloakedBehaviour>();
+            closeButCloaked.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
+            closeButCloaked.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(closeButCloakedGuid);
+
+            var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
+            tooFarObj.gameObject.AddComponent<CloakedBehaviour>();
+            tooFarObj.AddInterestNode(theNode);
+            NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
+
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            var hits = results.Count - objectsBeforeAdd;
+            Assert.True(results.Contains(m_PlayerNetworkObject));
+            Assert.True(results.Contains(ok1Obj));
+            Assert.False(results.Contains(closeButCloaked));
+            Assert.False(results.Contains(tooFarObj));
+        }
 
         [Test]
         public void ChangeInterestNodesTest()
@@ -164,10 +279,11 @@ namespace Unity.Netcode.RuntimeTests
             var objectsBeforeAdd = results.Count;
 
             var nodeA = new InterestNodeStatic<NetworkObject>();
-            nodeA.AddKernel(new AliveOrDeadKernel());
+            nodeA.AddAdditiveKernel(new AddAllInterestKernel());
+            nodeA.AddSubtractiveKernel(new CloakedKernel());
 
             var (objA, objAGuid) = MakeInterestGameObjectHelper();
-            objA.gameObject.AddComponent<AliveOrDeadBehaviour>();
+            objA.gameObject.AddComponent<CloakedBehaviour>();
             objA.AddInterestNode(nodeA);
             NetworkManagerHelper.SpawnNetworkObject(objAGuid);
 
@@ -175,14 +291,14 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == 1);
 
-            // 'kill' nodeA.  It should not show up now
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = false;
+            // cloak nodeA.  It should not show up now
+            objA.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == 0);
 
-            // 'resurrect' nodeA.  It should be back
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = true;
+            // uncloak nodeA.  It should be back
+            objA.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = false;
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == 1);
@@ -193,8 +309,8 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == 0);
 
-            // put objA back in the catch-all node.  It should show up unconditionally
-            objA.gameObject.GetComponent<AliveOrDeadBehaviour>().IsAlive = false;
+            // put objA back in the catch-all node.  It should show up unconditionally, even though it's cloaked
+            objA.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
             m_InterestManager.AddDefaultInterestNode(objA);
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
@@ -272,15 +388,14 @@ namespace Unity.Netcode.RuntimeTests
             var naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
             var naiveRadiusKernel = new RadiusInterestKernel();
             naiveRadiusKernel.Radius = 1.5f;
-            naiveRadiusNode.AddKernel(naiveRadiusKernel);
+            naiveRadiusNode.AddAdditiveKernel(naiveRadiusKernel);
 
             var results = new HashSet<NetworkObject>();
-
-            var (playerObj, playerGuid) = MakeInterestGameObjectHelper(new Vector3(0.0f, 0.0f, 0.0f));
-            playerObj.AddInterestNode(naiveRadiusNode);
-
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
-            int objectsBeforeAdd = results.Count;
+            int objectsBeforeAdd = results.Count - 1; // -1 because we want to count m_PlayerNetworkObject
+
+            m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
+            m_PlayerNetworkObject.AddInterestNode(naiveRadiusNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
             ok1Obj.AddInterestNode(naiveRadiusNode);
@@ -296,8 +411,6 @@ namespace Unity.Netcode.RuntimeTests
 
             var (alwaysObj, alwaysGuid) = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
             NetworkManagerHelper.SpawnNetworkObject(alwaysGuid);
-
-            NetworkManagerHelper.SpawnNetworkObject(playerGuid);
 
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
@@ -338,8 +451,8 @@ namespace Unity.Netcode.RuntimeTests
             var evenKernel = new OddEvenInterestKernel();
             evenKernel.IsOdd = false;
 
-            dualNode.AddKernel(oddKernel);
-            dualNode.AddKernel(evenKernel);
+            dualNode.AddAdditiveKernel(oddKernel);
+            dualNode.AddAdditiveKernel(evenKernel);
 
             var (object1, object1Guid) = MakeInterestGameObjectHelper();
             NetworkManagerHelper.SpawnNetworkObject(object1Guid);

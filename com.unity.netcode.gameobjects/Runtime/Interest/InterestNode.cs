@@ -8,7 +8,8 @@ namespace Unity.Netcode.Interest
         public void AddObject(TObject obj);
         public void RemoveObject(TObject obj);
         public void UpdateObject(TObject obj);
-        public void AddKernel(IInterestKernel<TObject> kernel);
+        public void AddAdditiveKernel(IInterestKernel<TObject> kernel);
+        public void AddSubtractiveKernel(IInterestKernel<TObject> kernel);
     };
 
     public interface IInterestKernel<TObject>
