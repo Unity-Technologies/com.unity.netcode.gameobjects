@@ -33,12 +33,15 @@ namespace Unity.Netcode
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+        private const int k_RpcMessageDefaultSize = 1024; // 1k
+        private const int k_RpcMessageMaximumSize = 1024 * 64; // 64k
+
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal FastBufferWriter __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            return new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+            return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -119,7 +122,7 @@ namespace Unity.Netcode
         internal FastBufferWriter __beginSendClientRpc(uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            return new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+            return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
