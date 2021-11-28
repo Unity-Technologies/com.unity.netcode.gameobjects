@@ -75,9 +75,8 @@ namespace Unity.Netcode.EditorTests
 
             if (!m_LoseNextMessage)
             {
-                // todo: pass to receiving Snapshot
-
-
+                // pass to receiving Snapshot
+                m_RecvSnapshot.HandleSnapshot(clientId, message);
             }
 
             return 0;
@@ -155,8 +154,8 @@ namespace Unity.Netcode.EditorTests
             command.ObjectPosition = default;
             command.ObjectRotation = default;
             command.ObjectScale = new Vector3(1.0f, 1.0f, 1.0f);
-            command.TargetClientIds = new List<ulong> { 1 };
-            m_SendSnapshot.Spawn(command);
+            var targetClientIds = new List<ulong> { 1 };
+            m_SendSnapshot.Spawn(command, null, targetClientIds);
         }
 
         private void SendDespawnToSnapshot(ulong objectId)

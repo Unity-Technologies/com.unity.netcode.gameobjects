@@ -431,23 +431,22 @@ namespace Unity.Netcode
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
         private void SnapshotSpawn()
         {
             var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command);
+            NetworkManager.SnapshotSystem.Spawn(command, this, new List<ulong>());
         }
 
         private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Spawn(command);
+            var TargetClientIds = new List<ulong>();
+            TargetClientIds.Add(clientId);
+
+            NetworkManager.SnapshotSystem.Spawn(command, this, TargetClientIds);
         }
 
         internal void SnapshotDespawn()
