@@ -169,6 +169,26 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void TestSnapshotSequence()
+        {
+            int ticksToRun = 5;
+            Prepare();
+
+            m_SpawnedObjectCount = 0;
+            m_NextSequence = 0;
+            m_ExpectSpawns = false;
+            m_ExpectDespawns = false;
+            m_MinSpawns = 0;
+            m_LoseNextMessage = true;
+            m_PassBackResponses = false;
+
+            for (int i = 0; i < ticksToRun; i++)
+            {
+                AdvanceOneTick();
+            }
+        }
+
+        [Test]
         public void TestSnapshotSpawn()
         {
             Prepare();
