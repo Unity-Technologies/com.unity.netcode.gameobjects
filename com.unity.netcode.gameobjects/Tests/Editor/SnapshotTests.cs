@@ -87,6 +87,7 @@ namespace Unity.Netcode.EditorTests
             if (m_PassBackResponses)
             {
                 // todo: pass back to sending Snapshot
+                m_SendSnapshot.HandleSnapshot(clientId, message);
             }
 
             return 0;
@@ -131,7 +132,7 @@ namespace Unity.Netcode.EditorTests
             m_RecvSnapshot.IsServer = false;
             m_RecvSnapshot.IsConnectedClient = true;
             m_RecvSnapshot.ServerClientId = 0;
-            m_RecvSnapshot.ConnectedClientsId.Clear();
+            m_SendSnapshot.ConnectedClientsId.Clear();
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_RecvSnapshot.SendMessage = SendMessageRecvSide;
@@ -304,6 +305,7 @@ namespace Unity.Netcode.EditorTests
             {
                 SendSpawnToSnapshot((ulong)i);
             }
+            AdvanceOneTickSendSide(); // let's tick the send multiple time, to check it still tries to send
             AdvanceOneTickSendSide(); // let's tick the send multiple time, to check it still tries to send
             AdvanceOneTick();
 

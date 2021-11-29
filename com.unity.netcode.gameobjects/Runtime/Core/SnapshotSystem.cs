@@ -85,6 +85,9 @@ namespace Unity.Netcode
         internal SnapshotDespawnCommand[] Despawns;
         internal int NumDespawns = 0;
 
+        private static int DebugNextId = 0;
+        private int DebugMyId = 0;
+
         // Settings
         internal bool IsServer { get; set; }
         internal bool IsConnectedClient { get; set; }
@@ -112,6 +115,9 @@ namespace Unity.Netcode
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
             SpawnsMeta = new SnapshotSpawnCommandMeta[SpawnsBufferCount];
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
+
+            DebugMyId = DebugNextId;
+            DebugNextId++;
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server
@@ -193,6 +199,7 @@ namespace Unity.Netcode
         private void SendSnapshot(ulong clientId)
         {
             var header = new SnapshotHeader();
+            Debug.Log($"[{DebugMyId}] Sending snapshot {m_CurrentTick} to client {clientId}");
 
             header.CurrentTick = m_CurrentTick;
             using var snapshotSerializer = new FastBufferWriter(UpperBoundSnapshotSize(), Allocator.Temp);
@@ -265,7 +272,7 @@ namespace Unity.Netcode
             {
                 snapshotDeserializer.ReadValue(out header);
             }
-            Debug.Log($"Got snapshot with CurrentTick {header.CurrentTick}");
+            Debug.Log($"[{DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
 
         }
 
