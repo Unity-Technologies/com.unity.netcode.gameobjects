@@ -349,7 +349,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenCreatingAReaderFromAnEmptyArraySegment_LengthIsZero()
         {
-            var bytes = new byte[] {};
+            var bytes = new byte[] { };
             var input = new ArraySegment<byte>(bytes, 0, 0);
             using var reader = new FastBufferReader(input, Allocator.Temp);
             Assert.AreEqual(0, reader.Length);
@@ -358,7 +358,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenCreatingAReaderFromAnEmptyArray_LengthIsZero()
         {
-            var input = new byte[] {};
+            var input = new byte[] { };
             using var reader = new FastBufferReader(input, Allocator.Temp);
             Assert.AreEqual(0, reader.Length);
         }
@@ -382,7 +382,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenCreatingAReaderFromAnEmptyBuffer_LengthIsZero()
         {
-            var input = new byte[] {};
+            var input = new byte[] { };
             unsafe
             {
                 fixed (byte* ptr = input)
