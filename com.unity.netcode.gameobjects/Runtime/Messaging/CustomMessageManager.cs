@@ -73,9 +73,9 @@ namespace Unity.Netcode
 
             var message = new UnnamedMessage
             {
-                Data = messageBuffer
+                SendData = messageBuffer
             };
-            var size = m_NetworkManager.SendMessage(message, networkDelivery, clientIds);
+            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientIds);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
@@ -94,9 +94,9 @@ namespace Unity.Netcode
         {
             var message = new UnnamedMessage
             {
-                Data = messageBuffer
+                SendData = messageBuffer
             };
-            var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
+            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientId);
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
@@ -223,9 +223,9 @@ namespace Unity.Netcode
             var message = new NamedMessage
             {
                 Hash = hash,
-                Data = messageStream
+                SendData = messageStream
             };
-            var size = m_NetworkManager.SendMessage(message, networkDelivery, clientId);
+            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientId);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
@@ -266,9 +266,9 @@ namespace Unity.Netcode
             var message = new NamedMessage
             {
                 Hash = hash,
-                Data = messageStream
+                SendData = messageStream
             };
-            var size = m_NetworkManager.SendMessage(message, networkDelivery, clientIds);
+            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientIds);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
