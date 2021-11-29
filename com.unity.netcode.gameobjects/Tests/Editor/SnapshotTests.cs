@@ -100,6 +100,7 @@ namespace Unity.Netcode.EditorTests
 
             m_SendTickSystem = new NetworkTickSystem(m_TicksPerSec, 0.0, 0.0);
             m_SendTimeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
+            m_SendTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
             config.UseSnapshotSpawn = true;
@@ -123,6 +124,7 @@ namespace Unity.Netcode.EditorTests
 
             m_RecvTickSystem = new NetworkTickSystem(m_TicksPerSec, 0.0, 0.0);
             m_RecvTimeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
+            m_RecvTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
             config.UseSnapshotSpawn = true;
