@@ -209,6 +209,28 @@ namespace Unity.Netcode
                 snapshotSerializer.WriteValue(header);
             }
 
+            // Find which spawns must be included
+            List<int> spawnsToInclude = new List<int>();
+            for(var index=0; index < NumSpawns; index++)
+            {
+                if (SpawnsMeta[index].TargetClientIds.Contains(clientId))
+                {
+                    spawnsToInclude.Add(index);
+                }
+            }
+
+            // Write the Spawns. Count first, then each spawn
+            if (snapshotSerializer.TryBeginWrite(FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
+                                                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0])))
+            {
+                snapshotSerializer.WriteValue(spawnsToInclude.Count);
+                foreach (var index in spawnsToInclude)
+                {
+                    snapshotSerializer.WriteValue(Spawns[index]);
+                }
+            }
+
+
             SendMessage(snapshotSerializer.ToTempByteArray(), clientId);
         }
 
@@ -274,6 +296,21 @@ namespace Unity.Netcode
             }
             Debug.Log($"[{DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
 
+            // Read the Spawns. Count first, then each spawn
+            SnapshotSpawnCommand spawn = new SnapshotSpawnCommand();
+            var spawnCount = 0;
+            if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
+            {
+                snapshotDeserializer.ReadValue(out spawnCount);
+                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawn) * spawnCount))
+                {
+                    // todo: deal with error
+                }
+                for (int index = 0; index < spawnCount; index++)
+                {
+                    snapshotDeserializer.ReadValue(out spawn);
+                }
+            }
         }
 
         // internal API to reduce buffer usage, where possible
