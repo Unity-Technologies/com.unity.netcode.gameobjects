@@ -20,7 +20,7 @@ namespace Unity.Netcode.EditorTests
         private int m_SpawnedObjectCount;
         private int m_DespawnedObjectCount;
         private int m_NextSequence;
-        private uint m_TicksPerSec = 15;
+        private uint m_TicksPerSec = 60;
         private int m_MinSpawns;
         private int m_MinDespawns;
 
@@ -204,6 +204,28 @@ namespace Unity.Netcode.EditorTests
             command.TargetClientIds = new List<ulong> { 1 };
             m_SendSnapshot.Despawn(command);
         }
+
+
+        [Test]
+        public void TestSnapshotSequence()
+        {
+            int ticksToRun = 5;
+            Prepare();
+
+            m_SpawnedObjectCount = 0;
+            m_NextSequence = 0;
+            m_ExpectSpawns = false;
+            m_ExpectDespawns = false;
+            m_MinSpawns = 0;
+            m_LoseNextMessage = true;
+            m_PassBackResponses = false;
+
+            for (int i = 0; i < ticksToRun; i++)
+            {
+                AdvanceOneTick();
+            }
+        }
+
 
         [Test]
         public void TestSnapshotSpawn()

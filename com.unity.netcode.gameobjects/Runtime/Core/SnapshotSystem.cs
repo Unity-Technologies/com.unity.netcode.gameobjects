@@ -764,6 +764,7 @@ namespace Unity.Netcode
 
                 if (tick != m_CurrentTick)
                 {
+                    Debug.Log(m_CurrentTick);
                     m_CurrentTick = tick;
                     if (IsServer)
                     {
