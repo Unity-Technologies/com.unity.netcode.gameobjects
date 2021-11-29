@@ -954,9 +954,9 @@ namespace Unity.Netcode
         internal GameObject GetRootParent(GameObject currentGameObject = null)
         {
             currentGameObject = currentGameObject == null ? gameObject : currentGameObject;
-            if (currentGameObject.transform.parent != null)
+            if (currentGameObject.transform.root != null)
             {
-                return GetRootParent(currentGameObject.transform.parent.gameObject);
+                return currentGameObject.transform.root.gameObject;
             }
             return currentGameObject;
         }
