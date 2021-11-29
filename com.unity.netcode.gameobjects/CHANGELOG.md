@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
+- Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
 
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
@@ -32,6 +33,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
+- Updated com.unity.collections to 1.1.0
+
 
 ## [1.0.0-pre.3] - 2021-10-22
 
