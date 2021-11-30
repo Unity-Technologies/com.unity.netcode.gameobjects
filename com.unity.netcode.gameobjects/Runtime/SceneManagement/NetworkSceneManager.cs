@@ -735,7 +735,7 @@ namespace Unity.Netcode
             {
                 EventData = SceneEventDataStore[sceneEventId]
             };
-            var size = m_NetworkManager.SendMessage(message, k_DeliveryType, targetClientIds);
+            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, targetClientIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), size);
@@ -857,7 +857,7 @@ namespace Unity.Netcode
             {
                 EventData = sceneEventData
             };
-            var size = m_NetworkManager.SendMessage(message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
+            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 m_NetworkManager.ConnectedClientsIds,
@@ -1326,7 +1326,7 @@ namespace Unity.Netcode
                     {
                         EventData = sceneEventData
                     };
-                    var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
+                    var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, clientId);
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, size);
                 }
             }
@@ -1433,7 +1433,7 @@ namespace Unity.Netcode
             {
                 EventData = sceneEventData
             };
-            var size = m_NetworkManager.SendMessage(message, k_DeliveryType, clientId);
+            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, clientId);
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 clientId, (uint)sceneEventData.SceneEventType, "", size);
 
@@ -1580,7 +1580,7 @@ namespace Unity.Netcode
             {
                 EventData = responseSceneEventData
             };
-            var size = m_NetworkManager.SendMessage(message, k_DeliveryType, m_NetworkManager.ServerClientId);
+            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, m_NetworkManager.ServerClientId);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)responseSceneEventData.SceneEventType, sceneName, size);
 
