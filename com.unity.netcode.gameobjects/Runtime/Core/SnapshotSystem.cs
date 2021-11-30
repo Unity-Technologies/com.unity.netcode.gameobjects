@@ -42,6 +42,9 @@ namespace Unity.Netcode
         internal Vector3 ObjectPosition;
         internal Quaternion ObjectRotation;
         internal Vector3 ObjectScale;
+
+        // internal
+        internal int TickWritten;
     }
 
     internal struct SnapshotSpawnCommandMeta
@@ -60,7 +63,7 @@ namespace Unity.Netcode
     */
 
     internal delegate int SendMessageDelegate(ArraySegment<byte> message, ulong clientId);
-    internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
+    internal delegate void SpawnObjectDelegate(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
     internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
 
     internal struct SnapshotHeader
@@ -88,13 +91,18 @@ namespace Unity.Netcode
         private static int DebugNextId = 0;
         private int DebugMyId = 0;
 
+        // Local state. Stores which spawns and despawns were applied locally
+        // indexed by ObjectId
+        internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
+        internal Dictionary<ulong, int> TickAppliedDespawn = new Dictionary<ulong, int>();
+
         // Settings
         internal bool IsServer { get; set; }
         internal bool IsConnectedClient { get; set; }
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
         internal SendMessageDelegate SendMessage { get; set; }
-        internal MockSpawnObject MockSpawnObject { get; set; }
+        internal SpawnObjectDelegate SpawnObject { get; set; }
         internal MockDespawnObject MockDespawnObject { get; set; }
 
         // Property showing visibility into inner workings, for testing
@@ -108,6 +116,8 @@ namespace Unity.Netcode
 
             // by default, let's send on the network. This can be overriden for tests
             SendMessage = NetworkSendMessage;
+            // by default, let's spawn with the rest of our package. This can be overriden for tests
+            SpawnObject = NetworkSpawnObject;
 
             // register for updates in EarlyUpdate
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -142,6 +152,28 @@ namespace Unity.Netcode
             }
 
             return clientList;
+        }
+
+        internal void NetworkSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        {
+            NetworkObject networkObject;
+            if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
+            {
+                networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
+                    spawnCommand.ObjectRotation);
+            }
+            else
+            {
+                networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
+                    spawnCommand.ObjectRotation);
+            }
+
+            m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
+                true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+            //todo: discuss with tools how to report shared bytes
+            m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
         }
 
         internal void UpdateClientServerData()
@@ -236,6 +268,8 @@ namespace Unity.Netcode
 
         internal void Spawn(SnapshotSpawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
         {
+            command.TickWritten = m_CurrentTick;
+
             if (NumSpawns >= SpawnsBufferCount)
             {
                 Array.Resize(ref Spawns, 2 * SpawnsBufferCount);
@@ -297,18 +331,27 @@ namespace Unity.Netcode
             Debug.Log($"[{DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
 
             // Read the Spawns. Count first, then each spawn
-            SnapshotSpawnCommand spawn = new SnapshotSpawnCommand();
+            SnapshotSpawnCommand spawnCommand = new SnapshotSpawnCommand();
             var spawnCount = 0;
             if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
             {
                 snapshotDeserializer.ReadValue(out spawnCount);
-                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawn) * spawnCount))
+                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * spawnCount))
                 {
                     // todo: deal with error
                 }
                 for (int index = 0; index < spawnCount; index++)
                 {
-                    snapshotDeserializer.ReadValue(out spawn);
+                    snapshotDeserializer.ReadValue(out spawnCommand);
+
+                    if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                        spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
+                    {
+                        continue;
+                    }
+
+                    TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+                    SpawnObject(spawnCommand, clientId);
                 }
             }
         }
