@@ -401,8 +401,6 @@ namespace Unity.Netcode
             var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
@@ -443,24 +441,24 @@ namespace Unity.Netcode
         private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
-            var TargetClientIds = new List<ulong>();
-            TargetClientIds.Add(clientId);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
 
-            NetworkManager.SnapshotSystem.Spawn(command, this, TargetClientIds);
+            NetworkManager.SnapshotSystem.Spawn(command, this, targetClientIds);
         }
 
         internal void SnapshotDespawn()
         {
             var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command);
+            NetworkManager.SnapshotSystem.Despawn(command, this, new List<ulong>());
         }
 
         internal void SnapshotDespawn(ulong clientId)
         {
             var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Despawn(command);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Despawn(command, this, targetClientIds);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -19,12 +19,12 @@ namespace Unity.Netcode
 
         // snapshot internal
         internal int TickWritten;
-        internal List<ulong> TargetClientIds;
-        internal int TimesWritten;
-
-        // for Metrics
-        internal NetworkObject NetworkObject;
     }
+
+    internal struct SnapshotDespawnCommandMeta
+    {
+        internal List<ulong> TargetClientIds;
+    };
 
     internal struct SnapshotSpawnCommand
     {
@@ -64,7 +64,7 @@ namespace Unity.Netcode
 
     internal delegate int SendMessageDelegate(ArraySegment<byte> message, ulong clientId);
     internal delegate void SpawnObjectDelegate(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
-    internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
+    internal delegate int DespawnObjectDelegate(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
 
     internal struct SnapshotHeader
     {
@@ -85,7 +85,10 @@ namespace Unity.Netcode
         internal SnapshotSpawnCommandMeta[] SpawnsMeta;
         internal int NumSpawns = 0;
 
+        // The container for the despawn commands received by the user. This part can be written as-is to the message
         internal SnapshotDespawnCommand[] Despawns;
+        // Information about Despawns. Entries are matched by index
+        internal SnapshotDespawnCommandMeta[] DespawnsMeta;
         internal int NumDespawns = 0;
 
         private static int DebugNextId = 0;
@@ -103,7 +106,7 @@ namespace Unity.Netcode
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
         internal SendMessageDelegate SendMessage { get; set; }
         internal SpawnObjectDelegate SpawnObject { get; set; }
-        internal MockDespawnObject MockDespawnObject { get; set; }
+        internal DespawnObjectDelegate DespawnObject { get; set; }
 
         // Property showing visibility into inner workings, for testing
         internal int SpawnsBufferCount { get; private set; } = 100;
@@ -125,6 +128,7 @@ namespace Unity.Netcode
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
             SpawnsMeta = new SnapshotSpawnCommandMeta[SpawnsBufferCount];
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
+            DespawnsMeta = new SnapshotDespawnCommandMeta[DespawnsBufferCount];
 
             DebugMyId = DebugNextId;
             DebugNextId++;
@@ -152,6 +156,18 @@ namespace Unity.Netcode
             }
 
             return clientList;
+        }
+
+        // internal API to reduce buffer usage, where possible
+        internal void ReduceBufferUsage()
+        {
+            var count = Math.Max(1, NumDespawns);
+            Array.Resize(ref Despawns, count);
+            DespawnsBufferCount = count;
+
+            count = Math.Max(1, NumSpawns);
+            Array.Resize(ref Spawns, count);
+            SpawnsBufferCount = count;
         }
 
         internal void NetworkSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
@@ -224,7 +240,7 @@ namespace Unity.Netcode
 
         private int UpperBoundSnapshotSize()
         {
-            return 2000;
+            return 10000;
         }
 
         // where we build and send a snapshot to a given client
@@ -262,6 +278,27 @@ namespace Unity.Netcode
                 }
             }
 
+            // Find which despawns must be included
+            List<int> despawnsToInclude = new List<int>();
+            for(var index=0; index < NumDespawns; index++)
+            {
+                if (DespawnsMeta[index].TargetClientIds.Contains(clientId))
+                {
+                    despawnsToInclude.Add(index);
+                }
+            }
+
+            // Write the Despawns. Count first, then each despawn
+            if (snapshotSerializer.TryBeginWrite(FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
+                                                 despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
+            {
+                snapshotSerializer.WriteValue(despawnsToInclude.Count);
+                foreach (var index in despawnsToInclude)
+                {
+                    snapshotSerializer.WriteValue(Despawns[index]);
+                }
+            }
+
 
             SendMessage(snapshotSerializer.ToTempByteArray(), clientId);
         }
@@ -272,47 +309,68 @@ namespace Unity.Netcode
 
             if (NumSpawns >= SpawnsBufferCount)
             {
-                Array.Resize(ref Spawns, 2 * SpawnsBufferCount);
-                Array.Resize(ref SpawnsMeta, 2 * SpawnsBufferCount);
-
                 SpawnsBufferCount = SpawnsBufferCount * 2;
-                // Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
+                Array.Resize(ref Spawns, SpawnsBufferCount);
+                Array.Resize(ref SpawnsMeta, SpawnsBufferCount);
             }
 
-            if (NumSpawns < SpawnsBufferCount)
+            if (targetClientIds == default)
             {
-                if (targetClientIds == default)
-                {
-                    targetClientIds = GetClientList();
-                }
+                targetClientIds = GetClientList();
+            }
 
-                // todo: store, for each client, the spawn not ack'ed yet,
-                // to prevent sending despawns to them.
-                // for clientData in client list
-                // clientData.SpawnSet.Add(command.NetworkObjectId);
+            // todo:
+            // this 'if' might be temporary, but is needed to help in debugging
+            // or maybe it stays
+            if (targetClientIds.Count > 0)
+            {
+                Spawns[NumSpawns] = command;
+                SpawnsMeta[NumSpawns].TargetClientIds = targetClientIds;
+                NumSpawns++;
+            }
 
-                // todo:
-                // this 'if' might be temporary, but is needed to help in debugging
-                // or maybe it stays
-                if (targetClientIds.Count > 0)
+            if (m_NetworkManager)
+            {
+                foreach (var dstClientId in targetClientIds)
                 {
-                    Spawns[NumSpawns] = command;
-                    SpawnsMeta[NumSpawns].TargetClientIds = targetClientIds;
-                    NumSpawns++;
-                }
-
-                if (m_NetworkManager)
-                {
-                    foreach (var dstClientId in targetClientIds)
-                    {
-                        m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, networkObject, 8);
-                    }
+                    m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, networkObject, 8);
                 }
             }
         }
 
-        internal void Despawn(SnapshotDespawnCommand command)
+        internal void Despawn(SnapshotDespawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
         {
+            command.TickWritten = m_CurrentTick;
+
+            if (NumDespawns >= DespawnsBufferCount)
+            {
+                DespawnsBufferCount = DespawnsBufferCount * 2;
+                Array.Resize(ref Despawns, DespawnsBufferCount);
+                Array.Resize(ref DespawnsMeta, DespawnsBufferCount);
+            }
+
+            if (targetClientIds == default)
+            {
+                targetClientIds = GetClientList();
+            }
+
+            // todo:
+            // this 'if' might be temporary, but is needed to help in debugging
+            // or maybe it stays
+            if (targetClientIds.Count > 0)
+            {
+                Despawns[NumDespawns] = command;
+                DespawnsMeta[NumDespawns].TargetClientIds = targetClientIds;
+                NumDespawns++;
+            }
+
+            if (m_NetworkManager)
+            {
+                foreach (var dstClientId in targetClientIds)
+                {
+                    m_NetworkManager.NetworkMetrics.TrackObjectDestroySent(dstClientId, networkObject, 8);
+                }
+            }
         }
 
         internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
@@ -332,6 +390,8 @@ namespace Unity.Netcode
 
             // Read the Spawns. Count first, then each spawn
             SnapshotSpawnCommand spawnCommand = new SnapshotSpawnCommand();
+            SnapshotDespawnCommand despawnCommand = new SnapshotDespawnCommand();
+
             var spawnCount = 0;
             if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
             {
@@ -340,6 +400,7 @@ namespace Unity.Netcode
                 {
                     // todo: deal with error
                 }
+
                 for (int index = 0; index < spawnCount; index++)
                 {
                     snapshotDeserializer.ReadValue(out spawnCommand);
@@ -354,12 +415,29 @@ namespace Unity.Netcode
                     SpawnObject(spawnCommand, clientId);
                 }
             }
-        }
 
-        // internal API to reduce buffer usage, where possible
-        internal void ReduceBufferUsage()
-        {
+            var despawnCount = 0;
+            if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCount)))
+            {
+                snapshotDeserializer.ReadValue(out despawnCount);
+                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * despawnCount))
+                {
+                    // todo: deal with error
+                }
+                for (int index = 0; index < despawnCount; index++)
+                {
+                    snapshotDeserializer.ReadValue(out despawnCommand);
 
+                    if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                        despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                    {
+                        continue;
+                    }
+
+                    TickAppliedSpawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+                    DespawnObject(despawnCommand, clientId);
+                }
+            }
         }
 
         internal int NetworkSendMessage(ArraySegment<byte> message, ulong clientId)

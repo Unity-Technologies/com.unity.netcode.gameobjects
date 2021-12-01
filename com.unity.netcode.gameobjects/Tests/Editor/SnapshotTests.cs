@@ -60,7 +60,7 @@ namespace Unity.Netcode.EditorTests
             m_SpawnedObjectCount++;
         }
 
-        internal int DespawnObject(SnapshotDespawnCommand command)
+        internal int DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
         {
             m_DespawnedObjectCount++;
             return 0;
@@ -114,7 +114,7 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_SendSnapshot.SendMessage = SendMessage;
             m_SendSnapshot.SpawnObject = SpawnObject;
-            m_SendSnapshot.MockDespawnObject = DespawnObject;
+            m_SendSnapshot.DespawnObject = DespawnObject;
         }
 
         private void PrepareRecvSideSnapshot()
@@ -138,7 +138,7 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_RecvSnapshot.SendMessage = SendMessageRecvSide;
             m_RecvSnapshot.SpawnObject = SpawnObject;
-            m_RecvSnapshot.MockDespawnObject = DespawnObject;
+            m_RecvSnapshot.DespawnObject = DespawnObject;
         }
 
         private void SendSpawnToSnapshot(ulong objectId)
@@ -165,8 +165,8 @@ namespace Unity.Netcode.EditorTests
             SnapshotDespawnCommand command = default;
             // identity
             command.NetworkObjectId = objectId;
-            command.TargetClientIds = new List<ulong> { 1 };
-            m_SendSnapshot.Despawn(command);
+            var targetClientIds = new List<ulong> { 1 };
+            m_SendSnapshot.Despawn(command, null, targetClientIds);
         }
 
         [Test]
