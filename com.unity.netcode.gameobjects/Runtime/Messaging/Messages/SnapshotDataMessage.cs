@@ -15,12 +15,12 @@ namespace Unity.Netcode
         public byte[] SendMainBuffer;
         public NativeArray<byte> ReceiveMainBuffer;
 
-/*        public struct AckData
-        {
-            public ushort LastReceivedSequence;
-            public ushort ReceivedSequenceMask;
-        }
-*/
+        /*        public struct AckData
+                {
+                    public ushort LastReceivedSequence;
+                    public ushort ReceivedSequenceMask;
+                }
+        */
         public AckData Ack;
 
         public struct EntryData
@@ -152,13 +152,13 @@ namespace Unity.Netcode
                     }
 
                     var snapshotSystem = networkManager.SnapshotSystem;
-//                    snapshotSystem.HandleSnapshot(senderId, this);
+                    //                    snapshotSystem.HandleSnapshot(senderId, this);
                 }
                 else
                 {
                     var ownerData = (Tuple<SnapshotSystem, ulong>)systemOwner;
                     var snapshotSystem = ownerData.Item1;
-//                    snapshotSystem.HandleSnapshot(ownerData.Item2, this);
+                    //                    snapshotSystem.HandleSnapshot(ownerData.Item2, this);
                 }
             }
         }

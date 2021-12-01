@@ -91,8 +91,8 @@ namespace Unity.Netcode
         internal SnapshotDespawnCommandMeta[] DespawnsMeta;
         internal int NumDespawns = 0;
 
-        private static int DebugNextId = 0;
-        private int DebugMyId = 0;
+        private static int m_DebugNextId = 0;
+        private int m_DebugMyId = 0;
 
         // Local state. Stores which spawns and despawns were applied locally
         // indexed by ObjectId
@@ -130,8 +130,8 @@ namespace Unity.Netcode
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
             DespawnsMeta = new SnapshotDespawnCommandMeta[DespawnsBufferCount];
 
-            DebugMyId = DebugNextId;
-            DebugNextId++;
+            m_DebugMyId = m_DebugNextId;
+            m_DebugNextId++;
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server
@@ -247,7 +247,7 @@ namespace Unity.Netcode
         private void SendSnapshot(ulong clientId)
         {
             var header = new SnapshotHeader();
-            Debug.Log($"[{DebugMyId}] Sending snapshot {m_CurrentTick} to client {clientId}");
+            Debug.Log($"[{m_DebugMyId}] Sending snapshot {m_CurrentTick} to client {clientId}");
 
             header.CurrentTick = m_CurrentTick;
             using var snapshotSerializer = new FastBufferWriter(UpperBoundSnapshotSize(), Allocator.Temp);
@@ -258,8 +258,8 @@ namespace Unity.Netcode
             }
 
             // Find which spawns must be included
-            List<int> spawnsToInclude = new List<int>();
-            for(var index=0; index < NumSpawns; index++)
+            var spawnsToInclude = new List<int>();
+            for (var index = 0; index < NumSpawns; index++)
             {
                 if (SpawnsMeta[index].TargetClientIds.Contains(clientId))
                 {
@@ -279,8 +279,8 @@ namespace Unity.Netcode
             }
 
             // Find which despawns must be included
-            List<int> despawnsToInclude = new List<int>();
-            for(var index=0; index < NumDespawns; index++)
+            var despawnsToInclude = new List<int>();
+            for (var index = 0; index < NumDespawns; index++)
             {
                 if (DespawnsMeta[index].TargetClientIds.Contains(clientId))
                 {
@@ -386,11 +386,11 @@ namespace Unity.Netcode
             {
                 snapshotDeserializer.ReadValue(out header);
             }
-            Debug.Log($"[{DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
+            Debug.Log($"[{m_DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
 
             // Read the Spawns. Count first, then each spawn
-            SnapshotSpawnCommand spawnCommand = new SnapshotSpawnCommand();
-            SnapshotDespawnCommand despawnCommand = new SnapshotDespawnCommand();
+            var spawnCommand = new SnapshotSpawnCommand();
+            var despawnCommand = new SnapshotDespawnCommand();
 
             var spawnCount = 0;
             if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
