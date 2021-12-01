@@ -1357,9 +1357,9 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
                     clientId = TransportIdToClientId(clientId);
+
+                    OnClientDisconnectCallback?.Invoke(clientId);
 
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);
