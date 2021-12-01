@@ -28,6 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
+- Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
 
 ### Changed
 
