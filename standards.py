@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -7,6 +7,7 @@ import argparse
 import datetime
 import subprocess
 
+assert sys.version_info >= (3, 7)
 
 parser = argparse.ArgumentParser()
 
