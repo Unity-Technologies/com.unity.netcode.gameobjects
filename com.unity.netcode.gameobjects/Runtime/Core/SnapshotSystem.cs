@@ -194,6 +194,22 @@ namespace Unity.Netcode
 
         internal void UpdateClientServerData()
         {
+            if (m_NetworkManager)
+            {
+                IsServer = m_NetworkManager.IsServer;
+                IsConnectedClient = m_NetworkManager.IsConnectedClient;
+                ServerClientId = m_NetworkManager.ServerClientId;
+
+                // todo: This is extremely inefficient. What is the efficient and idiomatic way ?
+                ConnectedClientsId.Clear();
+                if (IsServer)
+                {
+                    foreach (var id in m_NetworkManager.ConnectedClientsIds)
+                    {
+                        ConnectedClientsId.Add(id);
+                    }
+                }
+            }
         }
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
