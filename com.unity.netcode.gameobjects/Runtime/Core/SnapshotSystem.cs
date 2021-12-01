@@ -434,7 +434,7 @@ namespace Unity.Netcode
                         continue;
                     }
 
-                    TickAppliedSpawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+                    TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
                     DespawnObject(despawnCommand, clientId);
                 }
             }
