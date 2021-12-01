@@ -1711,46 +1711,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Register for the hierarchy changed notification so we can notify the user
-        /// when they place a NetworkManager under another GameObject while in edit mode
-        /// </summary>
-#if UNITY_EDITOR
-        // This is primarily to handle multiInstance scenarios where more than 1 NetworkManager could exist
-        private static Dictionary<NetworkManager, Transform> s_LastKnownNetworkManagerParents = new Dictionary<NetworkManager, Transform>();
-
-        [InitializeOnLoadMethod]
-        private static void InitializeOnload()
-        {
-            EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
-            EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
-
-            EditorApplication.playModeStateChanged += EditorApplication_playModeStateChanged;
-            EditorApplication.hierarchyChanged += EditorApplication_hierarchyChanged;
-        }
-
-        private static void EditorApplication_playModeStateChanged(PlayModeStateChange playModeStateChange)
-        {
-            switch (playModeStateChange)
-            {
-                case PlayModeStateChange.ExitingEditMode:
-                    {
-                        s_LastKnownNetworkManagerParents.Clear();
-                        break;
-                    }
-            }
-        }
-
-        private static void EditorApplication_hierarchyChanged()
-        {
-            var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
-            foreach (var networkManager in allNetworkManagers)
-            {
-                networkManager.NetworkManagerCheckForParent();
-            }
-        }
-#endif
-
-        /// <summary>
         /// Release mode only warning message to let the user know that they cannot continue
         /// until the NetworkManager's GameObject is the root/top-most GameObject
         /// </summary>
@@ -1764,7 +1724,7 @@ namespace Unity.Netcode
 
         private void DisplayError()
         {
-            GUI.TextArea(new Rect(5, 10, 0.5f * Screen.width, 20), GenerateNestedNetworkManagerMessage());
+            GUI.TextArea(new Rect(5, 10, 0.5f * Screen.width, 20), GenerateNestedNetworkManagerMessage(transform));
         }
 
         /// <summary>
@@ -1787,45 +1747,10 @@ namespace Unity.Netcode
         /// </summary>
         internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
         {
-            var isParented = transform.root != transform;
-            var message = GenerateNestedNetworkManagerMessage();
 #if UNITY_EDITOR
-            if (s_LastKnownNetworkManagerParents.ContainsKey(this) && !ignoreNetworkManagerCache)
-            {
-                // If we have already notified the user, then don't notify them again
-                if (s_LastKnownNetworkManagerParents[this] == gameObject.transform.root)
-                {
-                    return isParented;
-                }
-                else // If we are no longer a child, then we can remove ourself from this list
-                if (transform.root == gameObject.transform)
-                {
-                    s_LastKnownNetworkManagerParents.Remove(this);
-                }
-            }
-
-            if (!EditorApplication.isUpdating && isParented)
-            {
-                if (!EditorApplication.isPlaying)
-                {
-                    message += $"Click 'Auto-Fix' to automatically remove it from {transform.root.gameObject.name} or 'Manual-Fix' to fix it yourself in the hierarchy view.";
-                    if (EditorUtility.DisplayDialog("Invalid Nested NetworkManager", message, "Auto-Fix", "Manual-Fix"))
-                    {
-                        transform.parent = null;
-                        isParented = false;
-                    }
-                }
-                else
-                {
-                    EditorUtility.DisplayDialog("Invalid Nested NetworkManager", message, "OK");
-                }
-
-                if (!s_LastKnownNetworkManagerParents.ContainsKey(this) && isParented)
-                {
-                    s_LastKnownNetworkManagerParents.Add(this, transform.root);
-                }
-            }
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
 #else
+            var isParented = transform.root != transform;
             if (isParented)
             {
 #if !DEVELOPMENT_BUILD
@@ -1836,16 +1761,28 @@ namespace Unity.Netcode
                 }
 #else
                 // For debug stand alone builds we let the console log display the error by throwing an exception
-                throw new Exception(message);
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
 #endif
             }
 #endif
             return isParented;
         }
 
-        private string GenerateNestedNetworkManagerMessage()
+        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
         {
-            return $"{gameObject.name} is nested under {transform.root.gameObject.name}. NetworkManager cannot be nested.\n";
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
         }
+
+#if UNITY_EDITOR
+        static internal INetworkManagerHelper NetworkManagerHelper;
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false);
+        }
+#endif
     }
+
 }
