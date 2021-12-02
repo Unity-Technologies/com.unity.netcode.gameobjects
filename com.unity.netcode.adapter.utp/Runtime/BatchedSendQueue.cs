@@ -38,8 +38,8 @@ namespace Unity.Netcode.UTP.Utilities
         /// <summary>Index one past the last byte of the most recent data in the queue.</summary>
         private int TailIndex
         {
-            get => m_HeadTailIndices[k_TailInternalIndex];
-            set => m_HeadTailIndices[k_TailInternalIndex] = value;
+            get { return m_HeadTailIndices[k_TailInternalIndex]; }
+            set { m_HeadTailIndices[k_TailInternalIndex] = value; }
         }
 
         public int Length => TailIndex - HeadIndex;
