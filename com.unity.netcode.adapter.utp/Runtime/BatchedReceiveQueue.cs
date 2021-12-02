@@ -38,7 +38,7 @@ namespace Unity.Netcode.UTP.Utilities
         /// <returns>The message, or the default value if no more messages.</returns>
         public ArraySegment<byte> PopMessage()
         {
-            if (m_ReaderOffset >= m_Reader.Length)
+            if (IsEmpty)
             {
                 return default;
             }
