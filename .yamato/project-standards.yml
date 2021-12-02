@@ -9,12 +9,10 @@ standards_{{ projects.first.name }}:
   commands:
     - dotnet --version
     - dotnet format --version
-    - curl https://pyenv.run | bash
-    - exec "$SHELL"
-    - pyenv install 3.7.12 -f
-    - pyenv global 3.7.12
-    - export PATH=$(pyenv root)/shims:$PATH
+    - sudo apt-get install python3.7 -y
     - python --version
+    - python3 --version
+    - python3.7 --version
     - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -u {{ projects.first.test_editors.first }} -c editor --wait --fast
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ projects.first.path }} -quit
