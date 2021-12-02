@@ -7,8 +7,8 @@ import argparse
 import datetime
 import subprocess
 
-print(sys.version_info)
-assert sys.version_info >= (3, 9)
+assert sys.version_info >= (3, 6)
+
 
 parser = argparse.ArgumentParser()
 
@@ -83,7 +83,9 @@ if args.check:
             any_error = True
 
         print("check: code style")
-        cs_run = subprocess.run(["dotnet", "format", project_file, "style", "--severity", "error", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity])
+        cs_run = subprocess.run(
+            ["dotnet", "format", project_file, "style", "--severity", "error", "--no-restore", "--verify-no-changes", "--verbosity", args.verbosity]
+        )
         if cs_run.returncode != 0:
             print("check: code style failed")
             any_error = True
