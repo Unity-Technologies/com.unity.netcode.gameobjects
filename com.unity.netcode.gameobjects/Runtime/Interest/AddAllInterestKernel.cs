@@ -7,9 +7,9 @@ namespace Unity.Netcode
     public class AddAllInterestKernel : IInterestKernel<NetworkObject>
     {
 
-        public void QueryFor(NetworkObject clientNetworkObject, NetworkObject obj, HashSet<NetworkObject> results)
+        public bool QueryFor(NetworkObject clientNetworkObject, NetworkObject obj)
         {
-            results.Add(obj.GetComponent<NetworkObject>());
+            return true;
         }
     }
 }

@@ -14,6 +14,6 @@ namespace Unity.Netcode.Interest
 
     public interface IInterestKernel<TObject>
     {
-        public void QueryFor(TObject client, TObject obj, HashSet<TObject> results);
+        public bool QueryFor(TObject client, TObject obj);
     }
 }

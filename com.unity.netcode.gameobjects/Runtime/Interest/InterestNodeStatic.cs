@@ -49,7 +49,10 @@ namespace Unity.Netcode.Interest
                     theseResults.Clear();
                     foreach (var obj in m_ManagedObjects)
                     {
-                        thisKernel.QueryFor(client, obj, theseResults);
+                        if (thisKernel.QueryFor(client, obj))
+                        {
+                            theseResults.Add(obj);
+                        }
                     }
                 }
                 // reduce

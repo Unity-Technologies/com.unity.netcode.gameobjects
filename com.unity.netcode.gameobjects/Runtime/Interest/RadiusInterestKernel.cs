@@ -8,12 +8,9 @@ namespace Unity.Netcode
     {
         public float Radius = 0.0f;
 
-        public void QueryFor(NetworkObject clientNetworkObject, NetworkObject obj, HashSet<NetworkObject> results)
+        public bool QueryFor(NetworkObject clientNetworkObject, NetworkObject obj)
         {
-            if (Vector3.Distance(obj.transform.position, clientNetworkObject.gameObject.transform.position) <= Radius)
-            {
-                results.Add(obj.GetComponent<NetworkObject>());
-            }
+            return Vector3.Distance(obj.transform.position, clientNetworkObject.gameObject.transform.position) <= Radius;
         }
     }
 }

@@ -53,41 +53,32 @@ namespace Unity.Netcode.RuntimeTests
 
         public class TeamKernel : IInterestKernel<NetworkObject>
         {
-            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            public bool QueryFor(NetworkObject client, NetworkObject obj)
             {
                 var teamBehaviourMine = client.GetComponent<TeamBehaviour>();
                 var teamBehaviourOther = obj.GetComponent<TeamBehaviour>();
 
                 // if the object has a team (and it might; could just be a non-player object) and
                 //  is the same team as me, add it
-                if (teamBehaviourOther && teamBehaviourOther.TeamNumber == teamBehaviourMine.TeamNumber)
-                {
-                    results.Add(obj);
-                }
+                return teamBehaviourOther && teamBehaviourOther.TeamNumber == teamBehaviourMine.TeamNumber;
             }
         }
 
         public class CloakedKernel : IInterestKernel<NetworkObject>
         {
-            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            public bool QueryFor(NetworkObject client, NetworkObject obj)
             {
                 var cloakedBehaviour = obj.GetComponent<CloakedBehaviour>();
-                if (cloakedBehaviour.IsCloaked)
-                {
-                    results.Add(obj);
-                }
+                return cloakedBehaviour.IsCloaked;
             }
         }
 
         public class OddEvenInterestKernel : IInterestKernel<NetworkObject>
         {
             public bool IsOdd = true;
-            public void QueryFor(NetworkObject client, NetworkObject obj, HashSet<NetworkObject> results)
+            public bool QueryFor(NetworkObject client, NetworkObject obj)
             {
-                if (obj.NetworkObjectId % 2 == 0 ^ IsOdd)
-                {
-                    results.Add(obj);
-                }
+                return obj.NetworkObjectId % 2 == 0 ^ IsOdd;
             }
         }
 
@@ -356,14 +347,19 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
-            Assert.True(results.Count - objectsBeforeAdd == numObjs / 2); // should be unchanged
 
+            // should be unchanged.  Even though now all the objects are odd, because this particular node
+            //  just returns pre-sorted objects stored as odd / even, we get the same results before we
+            //  re-numbered them
+            Assert.True(results.Count - objectsBeforeAdd == numObjs / 2);
+
+            // also should be unchanged for the same reason...we still get the pre-computed even results
             m_PlayerNetworkObject.NetworkObjectId = 2; // force player to be even
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == numObjs / 2); // should be unchanged
 
-            // now update the objs
+            // now update the objs.  We will re-compute which odd / even bucket the objects go into
             for (var i = 0; i < numObjs; i++)
             {
                 m_InterestManager.UpdateObject(ref objs[i]);
@@ -372,13 +368,16 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerNetworkObject.NetworkObjectId = 1; // force player to be odd
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
-            Assert.True(results.Count - objectsBeforeAdd == objs.Length); // now 4, all are odd
+
+            // now that we've re-computed our buckets, a query of 'odd' will return all the elements
+            Assert.True(results.Count - objectsBeforeAdd == objs.Length);
 
             m_PlayerNetworkObject.NetworkObjectId = 2; // force player to be even
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
-            Assert.True(results.Count - objectsBeforeAdd == 0); // now zero, all are odd
 
+            // now that we've re-computed our buckets, a query of 'even ' will return none of the elements
+            Assert.True(results.Count - objectsBeforeAdd == 0);
         }
 
         [Test]
