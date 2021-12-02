@@ -11,7 +11,7 @@ namespace Unity.Netcode.Interest
     // interest *system* instead of interest node ?
     internal class InterestManager<TObject> where TObject : IInterestObject<TObject>
     {
-        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new();
+        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
