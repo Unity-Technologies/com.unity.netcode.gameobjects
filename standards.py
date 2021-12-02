@@ -7,7 +7,7 @@ import argparse
 import datetime
 import subprocess
 
-assert sys.version_info >= (3, 6)
+assert sys.version_info >= (3, 7)
 
 
 parser = argparse.ArgumentParser()
