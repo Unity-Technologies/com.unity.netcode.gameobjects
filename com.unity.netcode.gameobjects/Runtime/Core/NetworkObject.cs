@@ -357,7 +357,7 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -747,7 +747,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
