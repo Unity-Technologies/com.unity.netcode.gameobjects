@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,12 +54,28 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
+        private InterestManager<NetworkObject> m_InterestManager;
+
+        // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
+        //  to use the InterestManager
+        internal InterestManager<NetworkObject> InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager<NetworkObject>();
+                }
+                return m_InterestManager;
+            }
+        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
 
         public NetworkPrefabHandler PrefabHandler
         {
@@ -1097,6 +1114,11 @@ namespace Unity.Netcode
             {
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
+            }
+
+            if (m_InterestManager != null)
+            {
+                m_InterestManager = null;
             }
 
             if (MessagingSystem != null)
