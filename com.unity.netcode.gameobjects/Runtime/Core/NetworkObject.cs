@@ -19,7 +19,7 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-        private List<IInterestNode<NetworkObject>> m_InterestNodes = new();
+        private List<IInterestNode<NetworkObject>> m_InterestNodes = new List<IInterestNode<NetworkObject>>();
 
         public void AddInterestNode(IInterestNode<NetworkObject> node)
         {
@@ -193,7 +193,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
-        internal readonly HashSet<ulong> Observers = new();
+        internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
         private string m_CachedNameForMetrics;

@@ -23,9 +23,9 @@ namespace Unity.Netcode.Interest
 
         public InterestNodeStatic()
         {
-            m_InterestKernels = new();
-            m_ManagedObjects = new();
-            m_ResultSets = new();
+            m_InterestKernels = new List<Tuple<bool, IInterestKernel<TObject>>>();
+            m_ManagedObjects = new HashSet<TObject>();
+            m_ResultSets = new List<HashSet<TObject>>();
         }
 
         public void AddObject(TObject obj)
