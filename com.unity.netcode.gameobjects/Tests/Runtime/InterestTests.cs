@@ -143,7 +143,8 @@ namespace Unity.Netcode.RuntimeTests
 
             public void AddSubtractiveKernel(IInterestKernel<NetworkObject> kernel)
             {
-                // HRM?
+                m_Odds.AddSubtractiveKernel(kernel);
+                m_Evens.AddSubtractiveKernel(kernel);
             }
 
             private InterestNodeStatic<NetworkObject> m_Odds;

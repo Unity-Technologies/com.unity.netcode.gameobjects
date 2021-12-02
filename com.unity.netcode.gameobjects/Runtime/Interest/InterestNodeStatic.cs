@@ -42,6 +42,8 @@ namespace Unity.Netcode.Interest
         {
             if (m_InterestKernels.Count > 0)
             {
+                // run all the kernels.  We don't care whether they are additive or
+                //  subtractive...yet
                 for (var i = 0; i < m_InterestKernels.Count; i++)
                 {
                     var thisKernel = m_InterestKernels[i].Item2;
@@ -55,13 +57,15 @@ namespace Unity.Netcode.Interest
                         }
                     }
                 }
-                // reduce
+                // reduce.  Note, order is important to support subtractive results
                 for (var i = 0; i < m_InterestKernels.Count; i++)
                 {
+                    // additive
                     if (m_InterestKernels[i].Item1)
                     {
                         results.UnionWith(m_ResultSets[i]);
                     }
+                    // subtractive
                     else
                     {
                         results.ExceptWith(m_ResultSets[i]);
