@@ -150,7 +150,7 @@ namespace Unity.Netcode
                 fixed (byte* nativeData = data.Array)
                 {
                     var batchReader =
-                        new FastBufferReader(nativeData, Allocator.None, data.Count, data.Offset);
+                        new FastBufferReader(nativeData + data.Offset, Allocator.None, data.Count);
                     if (!batchReader.TryBeginRead(sizeof(BatchHeader)))
                     {
                         NetworkLog.LogWarning("Received a packet too small to contain a BatchHeader. Ignoring it.");
