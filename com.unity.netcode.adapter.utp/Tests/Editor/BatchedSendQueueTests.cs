@@ -49,7 +49,7 @@ namespace Unity.Netcode.UTP.EditorTests
         {
             var q = new BatchedSendQueue(k_TestQueueCapacity);
             q.Dispose();
-            Assert.False(q.IsCreated);            
+            Assert.False(q.IsCreated);
         }
 
         [Test]
