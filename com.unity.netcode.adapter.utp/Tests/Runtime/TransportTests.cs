@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.UTP.Utilities;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
@@ -112,7 +113,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueSingleSend()
+        public IEnumerator SendMaximumPayloadSize()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -122,7 +123,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
+            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialMaxPayloadSize]);
             m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -131,6 +132,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
+        //[Ignore("Triggers a bug in UTP that will be fixed in 1.0.0-pre.10.")]
         public IEnumerator FilledSendQueueMultipleSends()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
@@ -148,14 +150,22 @@ namespace Unity.Netcode.UTP.RuntimeTests
                 // We remove 4 bytes because each send carries a 4 bytes overhead in the send queue.
                 // Without that we wouldn't fill the send queue; it would get flushed right when we
                 // try to send the last message.
-                var payload = new ArraySegment<byte>(new byte[1024 - 4]);
+                var payload = new ArraySegment<byte>(new byte[1024 - BatchedSendQueue.PerMessageOverhead]);
                 m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+            // Manually wait. This ends up generating quite a bit of packets and it might take a
+            // while for everything to make it to the server.
+            yield return new WaitForSeconds(numSends * 0.02f);
 
-            // Extra event is for the Connect event.
-            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
+            // Extra event is the connect event.
+            Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
+
+            for (int i = 1; i <= numSends; i++)
+            {
+                Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[i].Type);
+                Assert.AreEqual(1024 - BatchedSendQueue.PerMessageOverhead, m_ServerEvents[i].Data.Count);
+            }
 
             yield return null;
         }
