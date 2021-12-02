@@ -28,7 +28,7 @@ namespace Unity.Netcode.Interest
         {
             // This is the node objects will be added to if no replication group is
             //  specified, which means they always get replicated
-            m_ChildNodes = new HashSet<IInterestNode<TObject>> {m_DefaultInterestNode};
+            m_ChildNodes = new HashSet<IInterestNode<TObject>> { m_DefaultInterestNode };
         }
 
         public void AddObject(ref TObject obj)
