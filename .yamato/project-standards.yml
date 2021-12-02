@@ -10,7 +10,7 @@ standards_{{ projects.first.name }}:
     - dotnet --version
     - dotnet format --version
     - curl https://pyenv.run | bash
-    - exec $SHELL
+    - exec "$SHELL"
     - pyenv install 3.7.12 -f
     - pyenv global 3.7.12
     - export PATH=$(pyenv root)/shims:$PATH
