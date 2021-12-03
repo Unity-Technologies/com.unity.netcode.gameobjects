@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 foreach (var netVar in serverNetVarsToUpdate)
                 {
-                    Assert.That(netVar.Value, Is.EqualTo(0), "Setup: Variables should start with 0 value"); // sanity check
+                    Assert.That(netVar.Value, Is.EqualTo(0), "Setup: Inspected netvars should all be initialized at 0 value"); // sanity check
                 }
 
                 setupSucceeded = true;
