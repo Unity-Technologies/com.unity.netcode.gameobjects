@@ -53,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 m_ClientNetworkManagers = clients;
                 m_ServerNetworkManager = server;
-                Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(nbClients), "Setup: Did not create the expected number of network managers.");
+                Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(nbClients), "Setup: Did not create the expected number of client network managers.");
                 Assert.That(m_ServerNetworkManager, Is.Not.Null, "Setup: Did not create server network manager");
 
                 // setup prefab to spawn
