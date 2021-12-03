@@ -79,8 +79,8 @@ namespace Unity.Netcode
         }
 
         public const int InitialMaxPacketQueueSize = 128;
-        public const int InitialMaxPayloadSize = 6 * 1024;
-        public const int InitialBatchQueueSize = 16 * InitialMaxPayloadSize;
+        public const int InitialBatchQueueSize = 6 * 1024;
+        public const int InitialMaxSendQueueSize = 16 * InitialBatchQueueSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
         { Address = "127.0.0.1", Port = 7777 };
@@ -97,16 +97,14 @@ namespace Unity.Netcode
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
 
-        [Tooltip("The maximum size in bytes of a message payload. Trying to send anything larger than that will " +
-            "result in an error. Note that if this is set higher than the MTU, an individual payload may still " +
-            "be fragmented into multiple packets.")]
-        [SerializeField] private int m_MaxPayloadSize = InitialMaxPayloadSize;
-
-        [Tooltip("The maximum size in bytes of the batched send queue. The batched send queue accumulates small " +
-            "sends together to improve bandwidth and also serves as an overflow queue when there are too many " +
-            "reliable packets in flight. If you routinely observe an error about too many in-flight packets, " +
-            "try increasing this.")]
+        [Tooltip("The maximum size of a batched send. The send queue accumulates messages and batches them together " +
+            "up to this size. This is effectively the maximum payload size that can be handled by the transport.")]
         [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
+
+        [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for " +
+            "batching and stores messages when other internal send queues are full. If you routinely observe an " +
+            "error about too many in-flight packets, try increasing this.")]
+        [SerializeField] private int m_MaxSendQueueSize = InitialMaxSendQueueSize;
 
         [Tooltip("A timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
         [SerializeField] private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
@@ -629,9 +627,9 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
-            // If the user sends a message of exactly m_MaxPayloadSize in length, we need to account
-            // for the overhead of its length when we store it in the send queue.
-            var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
+            // If the user sends a message of exactly m_SendQueueBatchSize in length, we need to
+            // account for the overhead of its length when we store it in the send queue.
+            var fragmentationCapacity = m_SendQueueBatchSize + BatchedSendQueue.PerMessageOverhead;
 
             m_NetworkSettings
                 .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
@@ -650,9 +648,9 @@ namespace Unity.Netcode
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            if (payload.Count > m_MaxPayloadSize)
+            if (payload.Count > m_SendQueueBatchSize)
             {
-                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
+                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Send Queue Batch Size' ({m_SendQueueBatchSize}).");
                 return;
             }
 
@@ -661,14 +659,14 @@ namespace Unity.Netcode
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
-                queue = new BatchedSendQueue(m_SendQueueBatchSize);
+                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_SendQueueBatchSize));
                 m_SendQueue.Add(sendTarget, queue);
             }
 
             if (!queue.PushMessage(payload))
             {
                 Debug.LogError($"Couldn't add payload of size {payload.Count} to batched send queue. " +
-                    $"Perhaps configured 'Send Queue Batch Size' ({m_SendQueueBatchSize}) is too small for workload.");
+                    $"Perhaps configured 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
                 return;
             }
         }

@@ -5,20 +5,24 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
-- Added new 'Max Payload Size' configuration field in the inspector. This controls the maximum payload size that can be handled by the transport. Currently only applies to reliable network delivery.
+- Added new 'Max Send Queue Size' configuration field in the inspector. This controls the size of the send queue that is used to accumulate small sends together and also acts as an overflow queue when there are too many in-flight packets or when other internal queues are full.
 
 ### Changed
 
 - Removed 'Maximum Packet Size' configuration field in the inspector. This would cause confusion since the maximum packet size is in effect always the MTU (1400 bytes on most platforms).
+<<<<<<< HEAD
 - Updated com.unity.transport to 1.0.0-pre.8
 - The 'Send Queue Batch Size' configuration field now controls the size of the send queue, rather than the size of a single batch of messages. Consequently, it should be set much higher than it was previously.
 
+=======
+- Updated com.unity.transport to 1.0.0-pre.9
+>>>>>>> aced7409 (Don't change how existing settings behave)
 
 ### Fixed
 
 - Fixed packet overflow errors when sending payloads too close to the MTU (was mostly visible when using Relay).
 - Don't throw an exception when the host disconnects (issue 1439 on GitHub).
-- Avoid "too many inflight packets" errors by queueing packets in a queue when the limit of inflight packets is reached in UTP. The size of this queue can be controlled with the 'Send Queue Batch Size' configuration field.
+- Avoid "too many inflight packets" errors by queueing packets in a queue when the limit of inflight packets is reached in UTP. The size of this queue can be controlled with the 'Max Send Queue Size' configuration field.
 
 ## [1.0.0-pre.3] - 2021-10-22
 
