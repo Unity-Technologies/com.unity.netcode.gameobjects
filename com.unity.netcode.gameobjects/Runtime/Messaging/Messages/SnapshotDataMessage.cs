@@ -18,6 +18,10 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
+            if (!writer.TryBeginWrite(WriteBuffer.Length))
+            {
+                // todo error handling
+            }
             writer.CopyFrom(WriteBuffer);
         }
 

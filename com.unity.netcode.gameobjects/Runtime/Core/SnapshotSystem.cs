@@ -54,24 +54,36 @@ namespace Unity.Netcode
         internal List<ulong> TargetClientIds;
     };
 
-    /*
-    // snapshot internal
-        internal int TickWritten;
-        internal List<ulong> TargetClientIds;
-        internal int TimesWritten;
+    internal struct SentSpawnDespawn
+    {
+        internal ulong ObjectId;
+        internal int Tick;
+    }
 
-        // for Metrics
-        internal NetworkObject NetworkObject;
-    */
+    internal struct ClientData
+    {
+        internal ushort LastReceivedTick; // the last tick received by this client
+
+        // by objectId
+        // which spawns and despawns did this connection ack'ed ?
+        internal Dictionary<ulong, int> SpawnDespawnAck;// = new Dictionary<ulong, int>();
+
+        // list of spawn and despawns commands we sent, with sequence number
+        // need to manage acknowledgements
+        internal List<SentSpawnDespawn> SentSpawns;// = new List<SentSpawnDespawn>();
+    }
 
     internal delegate int SendMessageDelegate(SnapshotDataMessage message, ulong clientId);
     internal delegate void SpawnObjectDelegate(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
-    internal delegate int DespawnObjectDelegate(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
+    internal delegate void DespawnObjectDelegate(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         private NetworkManager m_NetworkManager;
         private NetworkTickSystem m_NetworkTickSystem;
+
+        private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
+        private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
         // The tick we're currently processing (or last we processed, outside NetworkUpdate())
         private int m_CurrentTick = NetworkTickSystem.NoTick;
@@ -118,6 +130,7 @@ namespace Unity.Netcode
             SendMessage = NetworkSendMessage;
             // by default, let's spawn with the rest of our package. This can be overriden for tests
             SpawnObject = NetworkSpawnObject;
+            DespawnObject = NetworkDespawnObject;
 
             // register for updates in EarlyUpdate
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -187,6 +200,15 @@ namespace Unity.Netcode
                 true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
             //todo: discuss with tools how to report shared bytes
             m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
+        }
+
+        internal void NetworkDespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
+        {
+            m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId, out NetworkObject networkObject);
+
+            m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+            //todo: discuss with tools how to report shared bytes
+            m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
         }
 
         internal void UpdateClientServerData()
@@ -263,7 +285,6 @@ namespace Unity.Netcode
             var message = new SnapshotDataMessage(0);
 
             header.CurrentTick = m_CurrentTick;
-            Debug.Log($"[{m_DebugMyId}] Sending snapshot {header.CurrentTick} to client {clientId}");
 
             if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(header)))
             {
@@ -401,8 +422,6 @@ namespace Unity.Netcode
             {
                 message.ReadBuffer.ReadValue(out header);
             }
-
-            Debug.Log($"[{m_DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
 
             var spawnCount = 0;
             if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))

@@ -60,10 +60,9 @@ namespace Unity.Netcode.EditorTests
             m_SpawnedObjectCount++;
         }
 
-        internal int DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
+        internal void DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
         {
             m_DespawnedObjectCount++;
-            return 0;
         }
 
         internal void SimulateTransport(ref SnapshotDataMessage message)

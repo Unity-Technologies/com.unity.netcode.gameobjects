@@ -435,7 +435,7 @@ namespace Unity.Netcode
         private void SnapshotSpawn()
         {
             var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command, this, new List<ulong>());
+            NetworkManager.SnapshotSystem.Spawn(command, this, null);
         }
 
         private void SnapshotSpawn(ulong clientId)
@@ -450,7 +450,7 @@ namespace Unity.Netcode
         internal void SnapshotDespawn()
         {
             var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command, this, new List<ulong>());
+            NetworkManager.SnapshotSystem.Despawn(command, this, null);
         }
 
         internal void SnapshotDespawn(ulong clientId)
