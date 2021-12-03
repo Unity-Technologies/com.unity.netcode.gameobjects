@@ -123,7 +123,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialMaxPayloadSize]);
+            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
             m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -143,7 +143,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var numSends = UnityTransport.InitialBatchQueueSize / 1024;
+            var numSends = UnityTransport.InitialMaxSendQueueSize / 1024;
 
             for (int i = 0; i < numSends; i++)
             {
