@@ -579,6 +579,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
