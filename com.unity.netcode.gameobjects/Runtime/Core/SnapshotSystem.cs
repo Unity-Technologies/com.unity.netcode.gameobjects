@@ -6,10 +6,12 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal struct AckData
+    internal struct SnapshotHeader
     {
-        public ushort LastReceivedSequence;
-        public ushort ReceivedSequenceMask;
+        internal int CurrentTick;
+        internal ushort LastReceivedSequence;
+        internal ushort ReceivedSequenceMask;
+
     }
 
     internal struct SnapshotDespawnCommand
@@ -62,14 +64,9 @@ namespace Unity.Netcode
         internal NetworkObject NetworkObject;
     */
 
-    internal delegate int SendMessageDelegate(ArraySegment<byte> message, ulong clientId);
+    internal delegate int SendMessageDelegate(SnapshotDataMessage message, ulong clientId);
     internal delegate void SpawnObjectDelegate(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
     internal delegate int DespawnObjectDelegate(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
-
-    internal struct SnapshotHeader
-    {
-        internal int CurrentTick;
-    }
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
@@ -263,14 +260,14 @@ namespace Unity.Netcode
         private void SendSnapshot(ulong clientId)
         {
             var header = new SnapshotHeader();
-            Debug.Log($"[{m_DebugMyId}] Sending snapshot {m_CurrentTick} to client {clientId}");
+            var message = new SnapshotDataMessage(0);
 
             header.CurrentTick = m_CurrentTick;
-            using var snapshotSerializer = new FastBufferWriter(UpperBoundSnapshotSize(), Allocator.Temp);
+            Debug.Log($"[{m_DebugMyId}] Sending snapshot {header.CurrentTick} to client {clientId}");
 
-            if (snapshotSerializer.TryBeginWrite(FastBufferWriter.GetWriteSize(header)))
+            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(header)))
             {
-                snapshotSerializer.WriteValue(header);
+                message.WriteBuffer.WriteValue(header);
             }
 
             // Find which spawns must be included
@@ -284,13 +281,13 @@ namespace Unity.Netcode
             }
 
             // Write the Spawns. Count first, then each spawn
-            if (snapshotSerializer.TryBeginWrite(FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
+            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
                                                  spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0])))
             {
-                snapshotSerializer.WriteValue(spawnsToInclude.Count);
+                message.WriteBuffer.WriteValue(spawnsToInclude.Count);
                 foreach (var index in spawnsToInclude)
                 {
-                    snapshotSerializer.WriteValue(Spawns[index]);
+                    message.WriteBuffer.WriteValue(Spawns[index]);
                 }
             }
 
@@ -305,18 +302,17 @@ namespace Unity.Netcode
             }
 
             // Write the Despawns. Count first, then each despawn
-            if (snapshotSerializer.TryBeginWrite(FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
-                                                 despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
+            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
+                                                  despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
             {
-                snapshotSerializer.WriteValue(despawnsToInclude.Count);
+                message.WriteBuffer.WriteValue(despawnsToInclude.Count);
                 foreach (var index in despawnsToInclude)
                 {
-                    snapshotSerializer.WriteValue(Despawns[index]);
+                    message.WriteBuffer.WriteValue(Despawns[index]);
                 }
             }
 
-
-            SendMessage(snapshotSerializer.ToTempByteArray(), clientId);
+            SendMessage(message, clientId);
         }
 
         internal void Spawn(SnapshotSpawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
@@ -393,33 +389,33 @@ namespace Unity.Netcode
         {
         }
 
-        internal void HandleSnapshot(ulong clientId, ArraySegment<byte> message)
+        internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
         {
-            var header = new SnapshotHeader();
-
-            var snapshotDeserializer = new FastBufferReader(message, Allocator.Temp, message.Count, message.Offset);
-            if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(header)))
-            {
-                snapshotDeserializer.ReadValue(out header);
-            }
-            Debug.Log($"[{m_DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
-
             // Read the Spawns. Count first, then each spawn
             var spawnCommand = new SnapshotSpawnCommand();
             var despawnCommand = new SnapshotDespawnCommand();
 
-            var spawnCount = 0;
-            if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
+            var header = new SnapshotHeader();
+
+            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(header)))
             {
-                snapshotDeserializer.ReadValue(out spawnCount);
-                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * spawnCount))
+                message.ReadBuffer.ReadValue(out header);
+            }
+
+            Debug.Log($"[{m_DebugMyId}] Got snapshot with CurrentTick {header.CurrentTick}");
+
+            var spawnCount = 0;
+            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
+            {
+                message.ReadBuffer.ReadValue(out spawnCount);
+                if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * spawnCount))
                 {
                     // todo: deal with error
                 }
 
                 for (int index = 0; index < spawnCount; index++)
                 {
-                    snapshotDeserializer.ReadValue(out spawnCommand);
+                    message.ReadBuffer.ReadValue(out spawnCommand);
 
                     if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
                         spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
@@ -433,16 +429,16 @@ namespace Unity.Netcode
             }
 
             var despawnCount = 0;
-            if (snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCount)))
+            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCount)))
             {
-                snapshotDeserializer.ReadValue(out despawnCount);
-                if (!snapshotDeserializer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * despawnCount))
+                message.ReadBuffer.ReadValue(out despawnCount);
+                if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * despawnCount))
                 {
                     // todo: deal with error
                 }
                 for (int index = 0; index < despawnCount; index++)
                 {
-                    snapshotDeserializer.ReadValue(out despawnCommand);
+                    message.ReadBuffer.ReadValue(out despawnCommand);
 
                     if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
                         despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
@@ -456,9 +452,9 @@ namespace Unity.Netcode
             }
         }
 
-        internal int NetworkSendMessage(ArraySegment<byte> message, ulong clientId)
+        internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
-            m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ClientIdToTransportId(clientId), message, NetworkDelivery.Unreliable);
+            m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
 
             return 0;
         }

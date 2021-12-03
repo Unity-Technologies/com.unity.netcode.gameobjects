@@ -66,11 +66,17 @@ namespace Unity.Netcode.EditorTests
             return 0;
         }
 
-        internal int SendMessage(ArraySegment<byte> message, ulong clientId)
+        internal void SimulateTransport(ref SnapshotDataMessage message)
+        {
+            message.ReadBuffer = new FastBufferReader(message.WriteBuffer, Allocator.Temp);
+        }
+
+        internal int SendMessage(SnapshotDataMessage message, ulong clientId)
         {
             m_NextSequence++;
-
             Debug.Log($"{m_MinSpawns} {m_MinDespawns} {m_ExpectSpawns} {m_ExpectDespawns}");
+
+            SimulateTransport(ref message);
 
             if (!m_LoseNextMessage)
             {
@@ -81,7 +87,7 @@ namespace Unity.Netcode.EditorTests
             return 0;
         }
 
-        internal int SendMessageRecvSide(ArraySegment<byte> message, ulong clientId)
+        internal int SendMessageRecvSide(SnapshotDataMessage message, ulong clientId)
         {
             if (m_PassBackResponses)
             {
