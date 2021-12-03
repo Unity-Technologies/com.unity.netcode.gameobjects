@@ -495,6 +495,8 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 
+            NetworkManager.InterestManager.AddObject(ref networkObject);
+
             // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
             // processed before the object is fully spawned. This must be the last thing done in the spawn process.
             if (m_Triggers.ContainsKey(networkId))
@@ -778,11 +780,12 @@ namespace Unity.Netcode
             }
 
             networkObject.IsSpawned = false;
-
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
+
+            NetworkManager.InterestManager.RemoveObject(ref networkObject);
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
