@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.Components
 {
@@ -664,7 +663,7 @@ namespace Unity.Netcode.Components
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
-                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
+                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * UnityEngine.Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
             }
 #endif // NGO_TRANSFORM_DEBUG
         }
