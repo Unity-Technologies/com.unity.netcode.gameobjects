@@ -13,7 +13,7 @@ internal static class Program
     /// <param name="pattern">Search pattern string</param>
     /// <param name="verbosity">Logs verbosity level</param>
     private static int Main(
-        bool check = true, bool fix = false,
+        bool check = false, bool fix = false,
         string project = "testproject",
         string pattern = "*.sln",
         string verbosity = "normal")
@@ -35,8 +35,7 @@ internal static class Program
             var procInfo = new ProcessStartInfo("dotnet")
             {
                 CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
+                UseShellExecute = true,
             };
 
             procInfo.Arguments = check
@@ -44,7 +43,6 @@ internal static class Program
                 : $"format {file} whitespace --no-restore --verbosity {verbosity}";
             var whitespace = Process.Start(procInfo);
             whitespace.WaitForExit();
-            Console.WriteLine(whitespace.StandardOutput.ReadToEnd());
             if (whitespace.ExitCode != 0)
             {
                 Console.WriteLine($"FAILED: {nameof(whitespace)} (see details above)");
@@ -56,7 +54,6 @@ internal static class Program
                 : $"format {file} style --severity error --no-restore --verbosity {verbosity}";
             var style = Process.Start(procInfo);
             style.WaitForExit();
-            Console.WriteLine(style.StandardOutput.ReadToEnd());
             if (style.ExitCode != 0)
             {
                 Console.WriteLine($"FAILED: {nameof(style)} (see details above)");
