@@ -12,13 +12,13 @@ namespace Unity.Netcode
         }
 
 
-        public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+        public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
         {
         }
 
-        public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
+        public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
         {
-            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, messageType.Name, messageSizeBytes);
+            m_NetworkManager.NetworkMetrics.TrackNetworkMessageSent(clientId, typeof(T).Name, messageSizeBytes);
         }
 
         public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
@@ -56,6 +56,16 @@ namespace Unity.Netcode
         public bool OnVerifyCanReceive(ulong senderId, Type messageType)
         {
             return true;
+        }
+
+        public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+        {
+            // TODO: Per-message metrics recording moved here
+        }
+
+        public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+        {
+            // TODO: Per-message metrics recording moved here
         }
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.Netcode.Interest;
+
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -10,11 +12,37 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
-    public sealed class NetworkObject : MonoBehaviour
+
+    public sealed class NetworkObject : MonoBehaviour, IInterestObject<NetworkObject>
     {
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
+
+        private List<IInterestNode<NetworkObject>> m_InterestNodes = new List<IInterestNode<NetworkObject>>();
+
+        public void AddInterestNode(IInterestNode<NetworkObject> node)
+        {
+            if (!m_InterestNodes.Contains(node))
+            {
+                node.AddObject(this);
+                m_InterestNodes.Add(node);
+            }
+        }
+
+        public void RemoveInterestNode(IInterestNode<NetworkObject> node)
+        {
+            if (m_InterestNodes.Contains(node))
+            {
+                node.RemoveObject(this);
+                m_InterestNodes.Remove(node);
+            }
+        }
+
+        public List<IInterestNode<NetworkObject>> GetInterestNodes()
+        {
+            return m_InterestNodes;
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -193,6 +221,7 @@ namespace Unity.Netcode
             return Observers.GetEnumerator();
         }
 
+
         /// <summary>
         /// Whether or not this object is visible to a specific client
         /// </summary>
@@ -328,7 +357,7 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -718,7 +747,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
@@ -1155,5 +1184,6 @@ namespace Unity.Netcode
 
             return GlobalObjectIdHash;
         }
+
     }
 }

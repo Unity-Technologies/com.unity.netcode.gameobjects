@@ -93,7 +93,7 @@ namespace Unity.Netcode
         internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
-    internal delegate int MockSendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
+    internal delegate int MockSendMessage(ref SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
     internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
     internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
 
@@ -491,9 +491,20 @@ namespace Unity.Netcode
         {
             if (m_NetworkManager)
             {
-                var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
-                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId) ? spawnCommand.NetworkObjectId : spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
-                    spawnCommand.ObjectRotation);
+                NetworkObject networkObject;
+                if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+                else
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+
                 m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
                     true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 //todo: discuss with tools how to report shared bytes
@@ -824,13 +835,22 @@ namespace Unity.Netcode
             WriteIndex(ref message);
             WriteSpawns(ref message, clientId);
 
-            if (m_NetworkManager)
+            try
             {
-                m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+                if (m_NetworkManager)
+                {
+                    m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                }
+                else
+                {
+                    MockSendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+                }
             }
-            else
+            finally
             {
-                MockSendMessage(message, NetworkDelivery.Unreliable, clientId);
+                message.Entries.Dispose();
+                message.Spawns.Dispose();
+                message.Despawns.Dispose();
             }
 
             m_ClientData[clientId].LastReceivedSequence = 0;

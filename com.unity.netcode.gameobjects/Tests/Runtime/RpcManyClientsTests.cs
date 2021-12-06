@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -8,9 +10,11 @@ namespace Unity.Netcode.RuntimeTests
     public class RpcManyClientsObject : NetworkBehaviour
     {
         public int Count = 0;
+        public List<ulong> ReceivedFrom = new List<ulong>();
         [ServerRpc(RequireOwnership = false)]
-        public void ResponseServerRpc()
+        public void ResponseServerRpc(ServerRpcParams rpcParams = default)
         {
+            ReceivedFrom.Add(rpcParams.Receive.SenderClientId);
             Count++;
         }
 
@@ -28,6 +32,12 @@ namespace Unity.Netcode.RuntimeTests
 
         [ClientRpc]
         public void TwoParamsClientRpc(int value1, int value2)
+        {
+            ResponseServerRpc();
+        }
+
+        [ClientRpc]
+        public void WithParamsClientRpc(ClientRpcParams param)
         {
             ResponseServerRpc();
         }
@@ -88,6 +98,8 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
+            var param = new ClientRpcParams();
+
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
             maxFrameNumber = Time.frameCount + 5;
@@ -95,6 +107,23 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
 
+            rpcManyClientsObject.ReceivedFrom.Clear();
+            rpcManyClientsObject.Count = 0;
+            var target = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            param.Send.TargetClientIds = target;
+            rpcManyClientsObject.WithParamsClientRpc(param);
+            maxFrameNumber = Time.frameCount + 5;
+            yield return new WaitUntil(() => Time.frameCount > maxFrameNumber);
+
+            // either of the 2 selected clients can reply to the server first, due to network timing
+            var possibility1 = new List<ulong>
+                {m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId};
+            var possibility2 = new List<ulong>
+                {m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId};
+
+            Debug.Assert(rpcManyClientsObject.Count == 2);
+            Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) ||
+                         Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
         }
     }
 }
