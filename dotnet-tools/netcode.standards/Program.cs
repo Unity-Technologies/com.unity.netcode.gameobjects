@@ -37,27 +37,30 @@ internal static class Program
             procInfo.Arguments = check
                 ? $"format {file} whitespace --no-restore --verify-no-changes --verbosity {verbosity}"
                 : $"format {file} whitespace --no-restore --verbosity {verbosity}";
+            Console.WriteLine($"######## START -> {(check ? "check" : "fix")} whitespace issues");
             var whitespace = Process.Start(procInfo);
             whitespace.WaitForExit();
             if (whitespace.ExitCode != 0)
             {
-                Console.WriteLine($"FAILED: {nameof(whitespace)} (see details above)");
+                Console.WriteLine("######## FAILED -> found whitespace issues (see details above)");
                 return whitespace.ExitCode;
             }
+            Console.WriteLine("######## SUCCEEDED -> no whitespace issues");
 
             procInfo.Arguments = check
                 ? $"format {file} style --severity error --no-restore --verify-no-changes --verbosity {verbosity}"
                 : $"format {file} style --severity error --no-restore --verbosity {verbosity}";
+            Console.WriteLine($"######## START -> {(check ? "check" : "fix")} style/naming issues");
             var style = Process.Start(procInfo);
             style.WaitForExit();
             if (style.ExitCode != 0)
             {
-                Console.WriteLine($"FAILED: {nameof(style)} (see details above)");
+                Console.WriteLine("######## FAILED -> found style/naming issues (see details above)");
                 return style.ExitCode;
             }
+            Console.WriteLine("######## SUCCEEDED -> no style/naming issues");
         }
 
-        Console.WriteLine("SUCCEEDED");
         return 0;
     }
 }
