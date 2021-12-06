@@ -4,7 +4,6 @@ using System.Linq;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
 
-
 namespace Unity.Netcode
 {
     /// <summary>
@@ -99,6 +98,10 @@ namespace Unity.Netcode
 
         internal uint SceneHash;
         internal int SceneHandle;
+
+        // Used by the client during synchronization
+        internal uint ClientSceneHash;
+        internal int ClientSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
         /// NetworkVariable information.  If that process changes, then we need to update this
