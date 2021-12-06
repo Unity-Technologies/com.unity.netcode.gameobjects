@@ -714,9 +714,8 @@ namespace Unity.Netcode.Components
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
 
-            // crucial we do this to reset the interpolators so that recycled objects when using a pool will
-            // not have leftover interpolator state from the previous object
-            // initialize prior to assigning the current NetworkState -- helps prevent pooled objects from interpolating from the last state
+            // We do this to reset the interpolators so that pooled NetworkObjects will initialize prior
+            // to assigning the current NetworkState -- helps prevent pooled objects from interpolating from the last state
             Initialize();
 
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
