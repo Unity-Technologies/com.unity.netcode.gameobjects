@@ -38,6 +38,15 @@ namespace Unity.Netcode.Components
             // 11-15: <unused>
             private ushort m_Bitset;
 
+            public void Reset()
+            {
+                m_Bitset = 0;
+                PositionX = PositionY = PositionZ = 0.0f;
+                RotAngleX = RotAngleY = RotAngleZ = 0.0f;
+                ScaleX = ScaleY = ScaleZ = 0.0f;
+                SentTime = 0.0f;
+            }
+
             public bool InLocalSpace
             {
                 get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
@@ -704,16 +713,21 @@ namespace Unity.Netcode.Components
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
-            //  not have leftover interpolator state from the previous object
+            // not have leftover interpolator state from the previous object
+            // initialize prior to assigning the current NetworkState -- helps prevent pooled objects from interpolating from the last state
             Initialize();
+
+            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
         }
 
         public override void OnNetworkDespawn()
         {
+            // Reset the network state once despawned -- helps prevent pooled objects from interpolating from the last state
+            m_LocalAuthoritativeNetworkState.Reset();
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+
         }
 
         public override void OnGainedOwnership()
