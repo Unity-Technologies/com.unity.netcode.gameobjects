@@ -100,7 +100,7 @@ namespace Unity.Netcode
         internal SnapshotDespawnCommandMeta[] DespawnsMeta;
         internal int NumDespawns = 0;
 
-        private static int m_DebugNextId = 0;
+        private static int s_DebugNextId = 0;
         private int m_DebugMyId = 0;
 
         // Local state. Stores which spawns and despawns were applied locally
@@ -140,8 +140,8 @@ namespace Unity.Netcode
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
             DespawnsMeta = new SnapshotDespawnCommandMeta[DespawnsBufferCount];
 
-            m_DebugMyId = m_DebugNextId;
-            m_DebugNextId++;
+            m_DebugMyId = s_DebugNextId;
+            s_DebugNextId++;
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server

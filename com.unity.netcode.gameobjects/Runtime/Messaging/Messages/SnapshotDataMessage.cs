@@ -7,21 +7,30 @@ namespace Unity.Netcode
 {
     internal struct SnapshotDataMessage : INetworkMessage
     {
-        public FastBufferWriter WriteBuffer;
-        public FastBufferReader ReadBuffer;
+        internal FastBufferWriter WriteBuffer;
+        internal FastBufferReader ReadBuffer;
+        private int m_BufferSize;
 
-        public SnapshotDataMessage(int x)
+        // a constructor with an unused parameter is used because C# doesn't allow parameter-less constructors
+        public SnapshotDataMessage(int unused)
         {
-            WriteBuffer = new FastBufferWriter(10000, Allocator.Temp);
+            m_BufferSize = 10000;
+            WriteBuffer = new FastBufferWriter(m_BufferSize, Allocator.Temp);
             ReadBuffer = new FastBufferReader(WriteBuffer, Allocator.Temp);
         }
 
         public void Serialize(FastBufferWriter writer)
         {
-            if (!writer.TryBeginWrite(WriteBuffer.Length))
+            // grow WriteBuffer in an amortized linear fashion
+            if (WriteBuffer.Length > m_BufferSize)
             {
-                // todo error handling
+                m_BufferSize = Math.Max(2 * m_BufferSize, WriteBuffer.Length);
+                WriteBuffer = new FastBufferWriter(m_BufferSize, Allocator.Temp);
+                ReadBuffer = new FastBufferReader(WriteBuffer, Allocator.Temp);
             }
+
+            // this will succeed because the above grows the buffer
+            writer.TryBeginWrite(WriteBuffer.Length);
             writer.CopyFrom(WriteBuffer);
         }
 
@@ -37,7 +46,7 @@ namespace Unity.Netcode
             var senderId = context.SenderId;
             if (systemOwner is NetworkManager)
             {
-                var networkManager = (NetworkManager) systemOwner;
+                var networkManager = (NetworkManager)systemOwner;
 
                 // todo: temporary hack around bug
                 if (!networkManager.IsServer)
