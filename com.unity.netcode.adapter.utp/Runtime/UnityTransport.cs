@@ -27,7 +27,8 @@ namespace Unity.Netcode
         private const string k_NetworkVersionMismatch = "NetworkVersion is invalid, likely caused by stale connection {0}.";
         private const string k_NetworkStateMismatch = "Sending data while connecting on connection {0} is not allowed.";
         private const string k_NetworkPacketOverflow = "Unable to allocate packet due to buffer overflow.";
-        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many inflight packets.";
+        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many in-flight " +
+            " packets. This could be because the send queue size ('Max Send Queue Size') is too small.";
         private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
         private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
         private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
