@@ -7,6 +7,10 @@ namespace Unity.Netcode
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();
 
+        // reused each call to NetworkBehaviourUpdate to avoid GC.
+        //  should investigate using a native container
+        private HashSet<NetworkObject> m_InterestUpdateThisFrame = new HashSet<NetworkObject>();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
@@ -24,12 +28,15 @@ namespace Unity.Netcode
                     for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                     {
                         var client = networkManager.ConnectedClientsList[i];
-                        var spawnedObjs = networkManager.SpawnManager.SpawnedObjectsList;
-                        m_Touched.UnionWith(spawnedObjs);
-                        foreach (var sobj in spawnedObjs)
+
+                        m_InterestUpdateThisFrame.Clear();
+                        networkManager.InterestManager.QueryFor(ref client.PlayerObject, ref m_InterestUpdateThisFrame);
+                        foreach (var sobj in m_InterestUpdateThisFrame)
+
                         {
                             if (sobj.IsNetworkVisibleTo(client.ClientId))
                             {
+                                m_Touched.Add(sobj);
                                 // Sync just the variables for just the objects this client sees
                                 for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                                 {
