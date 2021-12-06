@@ -32,7 +32,7 @@ internal static class Program
 
         foreach (var file in Directory.GetFiles(project, pattern))
         {
-            var procInfo = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true };
+            var procInfo = new ProcessStartInfo("dotnet");
 
             procInfo.Arguments = check
                 ? $"format {file} whitespace --no-restore --verify-no-changes --verbosity {verbosity}"
