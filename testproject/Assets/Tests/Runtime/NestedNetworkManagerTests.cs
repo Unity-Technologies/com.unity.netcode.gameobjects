@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
             var messageToCheck = NetworkManager.GenerateNestedNetworkManagerMessage(networkManagerObject.transform);
             var transport = networkManagerObject.AddComponent<SIPTransport>();
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig(){ NetworkTransport = transport };
+            networkManager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
             // Trap for the nested NetworkManager exception
             LogAssert.Expect(LogType.Error, messageToCheck);
 
