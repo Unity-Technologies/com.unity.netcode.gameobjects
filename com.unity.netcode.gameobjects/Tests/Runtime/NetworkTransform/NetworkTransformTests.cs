@@ -331,7 +331,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_ObjectToSpawn != null);
             Assert.True(m_DefaultNetworkObject != null);
             m_DefaultNetworkObject.Spawn();
-            yield return new WaitUntil(()=>m_ClientSideSpawned);
+            yield return new WaitUntil(() => m_ClientSideSpawned);
 
             // Let the object move a bit
             yield return new WaitForSeconds(0.5f);
