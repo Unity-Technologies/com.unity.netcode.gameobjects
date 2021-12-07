@@ -21,16 +21,10 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
-            // grow WriteBuffer in an amortized linear fashion
-            if (WriteBuffer.Length > m_BufferSize)
+            if (!writer.TryBeginWrite(WriteBuffer.Length))
             {
-                m_BufferSize = Math.Max(2 * m_BufferSize, WriteBuffer.Length);
-                WriteBuffer = new FastBufferWriter(m_BufferSize, Allocator.Temp);
-                ReadBuffer = new FastBufferReader(WriteBuffer, Allocator.Temp);
+                Debug.Log("Serialize. Not enough buffer");
             }
-
-            // this will succeed because the above grows the buffer
-            writer.TryBeginWrite(WriteBuffer.Length);
             writer.CopyFrom(WriteBuffer);
         }
 

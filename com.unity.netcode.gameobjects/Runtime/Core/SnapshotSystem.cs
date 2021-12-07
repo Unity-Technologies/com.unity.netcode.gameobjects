@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -286,11 +284,6 @@ namespace Unity.Netcode
 
             header.CurrentTick = m_CurrentTick;
 
-            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(header)))
-            {
-                message.WriteBuffer.WriteValue(header);
-            }
-
             // Find which spawns must be included
             var spawnsToInclude = new List<int>();
             for (var index = 0; index < NumSpawns; index++)
@@ -298,17 +291,6 @@ namespace Unity.Netcode
                 if (SpawnsMeta[index].TargetClientIds.Contains(clientId))
                 {
                     spawnsToInclude.Add(index);
-                }
-            }
-
-            // Write the Spawns. Count first, then each spawn
-            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
-                                                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0])))
-            {
-                message.WriteBuffer.WriteValue(spawnsToInclude.Count);
-                foreach (var index in spawnsToInclude)
-                {
-                    message.WriteBuffer.WriteValue(Spawns[index]);
                 }
             }
 
@@ -322,16 +304,32 @@ namespace Unity.Netcode
                 }
             }
 
-            // Write the Despawns. Count first, then each despawn
-            if (message.WriteBuffer.TryBeginWrite(FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
-                                                  despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
+            if (!message.WriteBuffer.TryBeginWrite(
+                FastBufferWriter.GetWriteSize(header) +
+                FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
+                spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
+                FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
+                despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
             {
-                message.WriteBuffer.WriteValue(despawnsToInclude.Count);
-                foreach (var index in despawnsToInclude)
-                {
-                    message.WriteBuffer.WriteValue(Despawns[index]);
-                }
+                Debug.Assert(false, "Unable to secure buffer for sending");
             }
+
+            message.WriteBuffer.WriteValue(header);
+
+            // Write the Spawns. Count first, then each spawn
+            message.WriteBuffer.WriteValue(spawnsToInclude.Count);
+            foreach (var index in spawnsToInclude)
+            {
+                message.WriteBuffer.WriteValue(Spawns[index]);
+            }
+
+            // Write the Despawns. Count first, then each despawn
+            message.WriteBuffer.WriteValue(despawnsToInclude.Count);
+            foreach (var index in despawnsToInclude)
+            {
+                message.WriteBuffer.WriteValue(Despawns[index]);
+            }
+
 
             SendMessage(message, clientId);
         }
@@ -473,7 +471,7 @@ namespace Unity.Netcode
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
-            m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
+            m_NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
 
             return 0;
         }
