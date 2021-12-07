@@ -1,26 +1,22 @@
 using System.Collections.Generic;
+
 namespace Unity.Netcode.Interest
 {
-    internal interface IInterestObject<TObject>
-    {
-        public void AddInterestNode(IInterestNode<TObject> obj);
-        public void RemoveInterestNode(IInterestNode<TObject> obj);
-        public List<IInterestNode<TObject>> GetInterestNodes();
-    }
-
     // interest *system* instead of interest node ?
-    internal class InterestManager<TObject> where TObject : IInterestObject<TObject>
+    internal class InterestManager<TObject>
     {
-        private readonly InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
+        private InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
         public void UpdateObject(ref TObject obj)
         {
-            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
-            foreach (var node in nodes)
+            if (m_InterestNodesMap.TryGetValue(obj, out var nodes))
             {
-                node.UpdateObject(obj);
+                foreach (var node in nodes)
+                {
+                    node.UpdateObject(obj);
+                }
             }
         }
 
@@ -39,9 +35,7 @@ namespace Unity.Netcode.Interest
             // That is, if you don't opt into the system behavior is the same as before
             //  the Interest system was added
 
-            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
-
-            if (nodes.Count > 0)
+            if (m_InterestNodesMap.TryGetValue(obj, out var nodes))
             {
                 // I am walking through each of the interest nodes that this object has
                 foreach (var node in nodes)
@@ -60,19 +54,24 @@ namespace Unity.Netcode.Interest
 
         public void AddDefaultInterestNode(TObject obj)
         {
-            obj.AddInterestNode(m_DefaultInterestNode);
+            AddInterestNode(ref obj, m_DefaultInterestNode);
         }
 
         public void RemoveObject(ref TObject obj)
         {
-            List<IInterestNode<TObject>> nodes = obj.GetInterestNodes();
-            foreach (var node in nodes)
+            if (m_InterestNodesMap.TryGetValue(obj, out var nodes))
             {
-                if (node == null)
+                foreach (var node in nodes)
                 {
-                    continue;
+                    if (node == null)
+                    {
+                        continue;
+                    }
+
+                    node.RemoveObject(obj);
                 }
-                node.RemoveObject(obj);
+
+                m_InterestNodesMap.Remove(obj);
             }
         }
 
@@ -84,6 +83,39 @@ namespace Unity.Netcode.Interest
             }
         }
 
+        public void AddInterestNode(ref TObject obj, IInterestNode<TObject> node)
+        {
+            node.AddObject(obj);
+
+            if (!m_InterestNodesMap.TryGetValue(obj, out var nodes))
+            {
+                m_InterestNodesMap[obj] = new List<IInterestNode<TObject>>();
+                m_InterestNodesMap[obj].Add(node);
+            }
+            else
+            {
+                if (!nodes.Contains(node))
+                {
+                    nodes.Add(node);
+                }
+            }
+        }
+
+        public void RemoveInterestNode(ref TObject obj, IInterestNode<TObject> node)
+        {
+            node.RemoveObject(obj);
+            if (m_InterestNodesMap.TryGetValue(obj, out var nodes))
+            {
+                if (nodes.Contains(node))
+                {
+                    nodes.Remove(node);
+                }
+            }
+        }
+
         private HashSet<IInterestNode<TObject>> m_ChildNodes;
+
+        private Dictionary<TObject, List<IInterestNode<TObject>>> m_InterestNodesMap =
+            new Dictionary<TObject, List<IInterestNode<TObject>>>();
     }
 }
