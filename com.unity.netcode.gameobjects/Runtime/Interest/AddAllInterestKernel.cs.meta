@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:com.unity.netcode.adapter.utp/Runtime/AssemblyInfo.cs.meta
-guid: 6076344efcf62c54fa65e7affb2eb008
-========
-guid: db502da6c2e9d4106af70128a2b1e75e
->>>>>>>> develop:com.unity.netcode.gameobjects/Runtime/Interest/AddAllInterestKernel.cs.meta
+guid: 4c944593bae4d7d43872bee45013792f
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
