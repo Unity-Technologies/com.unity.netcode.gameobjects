@@ -199,15 +199,13 @@ namespace Unity.Netcode
             }
 
             // Make sure the connected client entry exists before trying to remove ownership.
-            if (NetworkManager.ConnectedClients.ContainsKey(networkObject.OwnerClientId))
+            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
-                for (int i = NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects.Count - 1;
-                    i > -1;
-                    i--)
+                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
                 {
-                    if (NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects[i] == networkObject)
+                    if (networkClient.OwnedObjects[i] == networkObject)
                     {
-                        NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                        networkClient.OwnedObjects.RemoveAt(i);
                     }
                 }
 
