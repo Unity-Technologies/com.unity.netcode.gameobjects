@@ -29,6 +29,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 - Fixed: NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
+- Fixed: Fixed: Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 
 ### Changed
 
