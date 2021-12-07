@@ -52,6 +52,8 @@ namespace Unity.Netcode.RuntimeTests
         public bool ListDelegateTriggered;
     }
 
+    [TestFixture(true)]
+    [TestFixture(false)]
     public class NetworkVariableTests : BaseMultiInstanceTest
     {
         private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
@@ -73,6 +75,13 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_TestWithHost;
 
+        private bool m_EnsureLengthSafety;
+
+        public NetworkVariableTests(bool ensureLengthSafety)
+        {
+            m_EnsureLengthSafety = ensureLengthSafety;
+        }
+
         [UnitySetUp]
         public override IEnumerator Setup()
         {
@@ -81,6 +90,12 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     playerPrefab.AddComponent<NetworkVariableTest>();
                 });
+
+            m_ServerNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
+            }
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
             var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
