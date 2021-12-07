@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
             MultiInstanceHelpers.Destroy();
             if (m_TestNetworkPrefab)
             {
-                GameObject.Destroy(m_TestNetworkPrefab);
+                Object.Destroy(m_TestNetworkPrefab);
                 m_TestNetworkPrefab = null;
             }
         }
@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(
                 MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
-            Assert.AreEqual(2, GameObject.FindObjectsOfType<NetworkVisibilityComponent>().Length);
+            Assert.AreEqual(2, Object.FindObjectsOfType<NetworkVisibilityComponent>().Length);
         }
     }
 }
