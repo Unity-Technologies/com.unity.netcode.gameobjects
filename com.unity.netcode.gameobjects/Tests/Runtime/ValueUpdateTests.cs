@@ -73,7 +73,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             Debug.Log("Running test");
 
-            var spawnedObject = UnityEngine.Object.Instantiate(m_TestNetworkPrefab);
+            var spawnedObject = Object.Instantiate(m_TestNetworkPrefab);
             m_NetSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
             m_NetSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
             yield return WaitForConnectedCount(NbClients);
