@@ -1735,37 +1735,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Release mode only warning message to let the user know that they cannot continue
-        /// until the NetworkManager's GameObject is the root/top-most GameObject
-        /// </summary>
-#if !DEVELOPMENT_BUILD
-        private Action m_DisplayErrorMessage;
-
-        private void OnGUI()
-        {
-            m_DisplayErrorMessage?.Invoke();
-        }
-
-        private void DisplayError()
-        {
-            GUI.TextArea(new Rect(5, 10, 0.5f * Screen.width, 20), GenerateNestedNetworkManagerMessage(transform));
-        }
-
-        /// <summary>
-        /// This is for displaying a message while running as a stand alone release build.
-        /// </summary>
-        private IEnumerator OnCriticalErrorMessageDisplay(float messageFadeTime)
-        {
-            // Assign the display error callback that is invoked during OnGUI.
-            m_DisplayErrorMessage = DisplayError;
-            // Wait time for message to display
-            yield return new WaitForSeconds(messageFadeTime);
-            // Clear the callback assignment to stop displaying the message
-            m_DisplayErrorMessage = null;
-        }
-#endif
-
-        /// <summary>
         /// Determines if the NetworkManager's GameObject is parented under another GameObject and
         /// notifies the user that this is not allowed for the NetworkManager.
         /// </summary>
@@ -1777,16 +1746,7 @@ namespace Unity.Netcode
             var isParented = transform.root != transform;
             if (isParented)
             {
-#if !DEVELOPMENT_BUILD
-                if (m_DisplayErrorMessage == null)
-                {
-                    // For release we spin up a coroutine that displays the issue
-                    StartCoroutine(OnCriticalErrorMessageDisplay(10.0f));
-                }
-#else
-                // For debug stand alone builds we let the console log display the error by throwing an exception
                 throw new Exception(GenerateNestedNetworkManagerMessage(transform));
-#endif
             }
 #endif
             return isParented;
@@ -1804,7 +1764,7 @@ namespace Unity.Netcode
         /// </summary>
         internal interface INetworkManagerHelper
         {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false);
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
         }
 #endif
     }
