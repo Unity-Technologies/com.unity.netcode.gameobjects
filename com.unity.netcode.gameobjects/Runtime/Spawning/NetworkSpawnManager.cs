@@ -191,10 +191,6 @@ namespace Unity.Netcode
             // then ignore the RemoveOwnership invocation.
             if (networkObject.OwnerClientId == NetworkManager.ServerClientId)
             {
-                if (NetworkLog.CurrentLogLevel >= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Remove ownership ignored:  {networkObject.name} is already set to the default server ownership!");
-                }
                 return;
             }
 
