@@ -59,6 +59,8 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            MultiInstanceHelpers.CleanUpHandlers();
+
             m_ServerNetworkManager.Shutdown();
             foreach (var networkManager in m_ClientNetworkManagers)
             {
@@ -91,6 +93,7 @@ namespace TestProject.RuntimeTests
         {
             m_ServerNetworkManager.DontDestroy = enableNetworkManagerDontDestroy;
             m_ServerNetworkManager.StartHost();
+            MultiInstanceHelpers.RegisterHandlers(m_ServerNetworkManager);
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
             instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
@@ -106,6 +109,7 @@ namespace TestProject.RuntimeTests
             {
                 networkManager.DontDestroy = enableNetworkManagerDontDestroy;
                 networkManager.StartClient();
+                MultiInstanceHelpers.RegisterHandlers(networkManager);
             }
 
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));

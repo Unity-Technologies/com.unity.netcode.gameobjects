@@ -18,6 +18,8 @@ namespace Unity.Netcode
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
+        internal INetworkMetrics NetworkMetrics;
+
         /// <summary>
         /// Delegate for transport network events
         /// </summary>

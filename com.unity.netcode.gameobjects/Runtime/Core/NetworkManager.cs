@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,12 +54,28 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
+        private InterestManager<NetworkObject> m_InterestManager;
+
+        // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
+        //  to use the InterestManager
+        internal InterestManager<NetworkObject> InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager<NetworkObject>();
+                }
+                return m_InterestManager;
+            }
+        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
 
         public NetworkPrefabHandler PrefabHandler
         {
@@ -561,6 +578,8 @@ namespace Unity.Netcode
 
                 return;
             }
+
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
 
             //This 'if' should never enter
             if (SnapshotSystem != null)
@@ -1099,6 +1118,11 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
+            if (m_InterestManager != null)
+            {
+                m_InterestManager = null;
+            }
+
             if (MessagingSystem != null)
             {
                 MessagingSystem.Dispose();
@@ -1357,9 +1381,9 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
                     clientId = TransportIdToClientId(clientId);
+
+                    OnClientDisconnectCallback?.Invoke(clientId);
 
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);

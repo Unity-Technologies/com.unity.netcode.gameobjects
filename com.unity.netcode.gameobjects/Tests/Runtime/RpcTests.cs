@@ -91,8 +91,8 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for RPCs to be received - client and server should each receive one.
             yield return MultiInstanceHelpers.RunMultiple(new[]
             {
-                MultiInstanceHelpers.WaitForMessageOfType<RpcMessage>(m_ClientNetworkManagers[0], clientMessageResult),
-                MultiInstanceHelpers.WaitForMessageOfType<RpcMessage>(m_ServerNetworkManager, serverMessageResult),
+                MultiInstanceHelpers.WaitForMessageOfType<ClientRpcMessage>(m_ClientNetworkManagers[0], clientMessageResult),
+                MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager, serverMessageResult),
             });
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
