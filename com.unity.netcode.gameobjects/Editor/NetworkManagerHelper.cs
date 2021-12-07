@@ -10,7 +10,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     public class NetworkManagerHelper : NetworkManager.INetworkManagerHelper
     {
-        private static NetworkManagerHelper s_Singleton;
+        internal static NetworkManagerHelper Singleton;
 
         // This is primarily to handle multiInstance scenarios where more than 1 NetworkManager could exist
         private static Dictionary<NetworkManager, Transform> s_LastKnownNetworkManagerParents = new Dictionary<NetworkManager, Transform>();
@@ -23,8 +23,8 @@ namespace Unity.Netcode.Editor
         [InitializeOnLoadMethod]
         private static void InitializeOnload()
         {
-            s_Singleton = new NetworkManagerHelper();
-            NetworkManager.NetworkManagerHelper = s_Singleton;
+            Singleton = new NetworkManagerHelper();
+            NetworkManager.NetworkManagerHelper = Singleton;
 
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
@@ -60,7 +60,7 @@ namespace Unity.Netcode.Editor
         /// When in play mode it just notifies the user when entering play mode as well as when the user
         /// tries to start a network session while a NetworkManager is still nested.
         /// </summary>
-        public bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false)
+        public bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false)
         {
             var gameObject = networkManager.gameObject;
             var transform = networkManager.transform;
@@ -82,7 +82,7 @@ namespace Unity.Netcode.Editor
             }
             if (!EditorApplication.isUpdating && isParented)
             {
-                if (!EditorApplication.isPlaying)
+                if (!EditorApplication.isPlaying && !editorTest)
                 {
                     message += $"Click 'Auto-Fix' to automatically remove it from {transform.root.gameObject.name} or 'Manual-Fix' to fix it yourself in the hierarchy view.";
                     if (EditorUtility.DisplayDialog("Invalid Nested NetworkManager", message, "Auto-Fix", "Manual-Fix"))
@@ -93,7 +93,7 @@ namespace Unity.Netcode.Editor
                 }
                 else
                 {
-                    EditorUtility.DisplayDialog("Invalid Nested NetworkManager", message, "OK");
+                    Debug.LogError(message);
                 }
 
                 if (!s_LastKnownNetworkManagerParents.ContainsKey(networkManager) && isParented)
