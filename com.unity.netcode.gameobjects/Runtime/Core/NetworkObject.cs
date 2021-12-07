@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -10,6 +11,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
+
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
@@ -192,6 +194,7 @@ namespace Unity.Netcode
 
             return Observers.GetEnumerator();
         }
+
 
         /// <summary>
         /// Whether or not this object is visible to a specific client
@@ -1155,5 +1158,6 @@ namespace Unity.Netcode
 
             return GlobalObjectIdHash;
         }
+
     }
 }

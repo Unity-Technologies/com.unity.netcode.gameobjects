@@ -33,6 +33,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
+        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
 
         public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
 
@@ -222,6 +223,26 @@ namespace Unity.Netcode.RuntimeTests
                         m_Player1OnClient1.TheList[0] == k_TestVal1 &&
                         m_Player1OnServer.TheList[1] == k_TestVal2 &&
                         m_Player1OnClient1.TheList[1] == k_TestVal2;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    for (var i = 0; i < 20; ++i)
+                    {
+                        m_Player1OnServer.TheLargeList.Add(new FixedString128Bytes());
+                    }
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheLargeList.Count == 20 &&
+                           m_Player1OnClient1.TheLargeList.Count == 20;
                 }
             );
         }
