@@ -344,7 +344,8 @@ namespace Unity.Netcode.RuntimeTests
             // Re-spawn the same NetworkObject
             m_DefaultNetworkObject.Spawn();
             yield return new WaitUntil(() => m_ClientSideSpawned);
-
+            // Wait one frame
+            yield return null;
             // !!! This is the primary element for this particular test !!!
             // If NetworkTransform.OnNetworkDespawn did not have m_LocalAuthoritativeNetworkState.Reset();
             // then this will always fail.  To verify this will fail you can comment out that line of code
