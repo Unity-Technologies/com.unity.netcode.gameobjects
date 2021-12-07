@@ -607,8 +607,9 @@ namespace Unity.Netcode
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
 
-            // Always clear our prefab override links before building
+            // Always clear our prefab override links before initializing
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+            // Always clear our override to NetworkPrefab links before initializing
             NetworkConfig.OverrideToNetworkPrefab.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
