@@ -221,7 +221,7 @@ namespace Unity.Netcode
             }
             else
             {
-                if (NetworkLog.CurrentLogLevel >= LogLevel.Normal)
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"No connected clients prior to removing ownership for {networkObject.name}.  Make sure you are not initializing or shutting down when removing ownership.");
                 }
