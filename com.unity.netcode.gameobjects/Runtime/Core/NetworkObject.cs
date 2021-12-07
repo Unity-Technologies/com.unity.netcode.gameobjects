@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Netcode.Interest;
 
 using UnityEngine;
 
@@ -13,36 +12,11 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
 
-    public sealed class NetworkObject : MonoBehaviour, IInterestObject<NetworkObject>
+    public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
-
-        private List<IInterestNode<NetworkObject>> m_InterestNodes = new List<IInterestNode<NetworkObject>>();
-
-        public void AddInterestNode(IInterestNode<NetworkObject> node)
-        {
-            if (!m_InterestNodes.Contains(node))
-            {
-                node.AddObject(this);
-                m_InterestNodes.Add(node);
-            }
-        }
-
-        public void RemoveInterestNode(IInterestNode<NetworkObject> node)
-        {
-            if (m_InterestNodes.Contains(node))
-            {
-                node.RemoveObject(this);
-                m_InterestNodes.Remove(node);
-            }
-        }
-
-        public List<IInterestNode<NetworkObject>> GetInterestNodes()
-        {
-            return m_InterestNodes;
-        }
 
 #if UNITY_EDITOR
         private void OnValidate()
