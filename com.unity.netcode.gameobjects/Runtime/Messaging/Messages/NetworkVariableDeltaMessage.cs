@@ -73,8 +73,7 @@ namespace Unity.Netcode
 
                         if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
                         {
-                            throw new OverflowException(
-                                $"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
+                            throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
                         }
                         writer.WriteValue((ushort)tmpWriter.Length);
                         tmpWriter.CopyTo(writer);
