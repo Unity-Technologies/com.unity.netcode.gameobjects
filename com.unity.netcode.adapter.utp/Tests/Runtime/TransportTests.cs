@@ -15,7 +15,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
     public class TransportTests
     {
         // No need to test all reliable delivery methods since they all map to the same pipeline.
-        private static readonly NetworkDelivery[] s_DeliveryParameters =
+        private static readonly NetworkDelivery[] k_DeliveryParameters =
         {
             NetworkDelivery.Unreliable,
             NetworkDelivery.UnreliableSequenced,
@@ -62,7 +62,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check if can make a simple data exchange.
         [UnityTest]
-        public IEnumerator PingPong([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator PingPong([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -91,7 +91,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check if can make a simple data exchange (both ways at a time).
         [UnityTest]
-        public IEnumerator PingPongSimultaneous([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator PingPongSimultaneous([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -125,7 +125,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueSingleSend([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator FilledSendQueueSingleSend([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -144,7 +144,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueMultipleSends([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator FilledSendQueueMultipleSends([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -175,7 +175,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check making multiple sends to a client in a single frame.
         [UnityTest]
-        public IEnumerator MultipleSendsSingleFrame([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator MultipleSendsSingleFrame([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -204,7 +204,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check sending data to multiple clients.
         [UnityTest]
-        public IEnumerator SendMultipleClients([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator SendMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -245,7 +245,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check receiving data from multiple clients.
         [UnityTest]
-        public IEnumerator ReceiveMultipleClients([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator ReceiveMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
