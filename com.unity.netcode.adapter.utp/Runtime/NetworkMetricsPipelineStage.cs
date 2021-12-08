@@ -19,9 +19,9 @@ namespace Unity.Netcode
             return new NetworkPipelineStage(ReceiveFunction,
                                             SendFunction,
                                             InitializeConnectionFunction,
-                                            ReceiveCapacity: UnsafeUtility.SizeOf<int>(),
-                                            SendCapacity: UnsafeUtility.SizeOf<int>(),
-                                            HeaderCapacity: UnsafeUtility.SizeOf<ushort>(),
+                                            ReceiveCapacity: 0,
+                                            SendCapacity: 0,
+                                            HeaderCapacity: 0,
                                             0);
         }
 
