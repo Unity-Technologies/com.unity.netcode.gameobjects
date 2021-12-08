@@ -2,6 +2,26 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// SnapshotSystem stores:
+//
+// - Spawn, Despwan commands (done)
+// - NetworkVariable value updates (todo)
+// - RPC commands (todo)
+//
+// and sends a SnapshotDataMessage every tick containing all the un-acknowledged commands.
+//
+// SnapshotSystem can function even if some messages are lost. It provides eventual consistency.
+// The client receiving a message will get a consistent state for a given tick, but possibly not every ticks
+// Reliable RPCs will be guaranteed, unreliable ones not
+//
+// SnapshotSystem relies on the Transport adapter to fragment an arbitrary-sized message into packets
+// This comes with a tradeoff. The Transport-level fragmentation is specialized for networking
+// but lacks the context that SnapshotSystem has of the meaning of the RPC, Spawns, etc...
+// This could be revisited in the future
+//
+// It also relies on the INetworkMessage interface and MessagingSystem, but deals directly
+// with the FastBufferReader and FastBufferWriter to read/write the messages
+
 namespace Unity.Netcode
 {
     internal struct SnapshotHeader
@@ -9,6 +29,8 @@ namespace Unity.Netcode
         internal int CurrentTick;
         internal ushort LastReceivedSequence;
         internal ushort ReceivedSequenceMask;
+        internal int SpawnCount;
+        internal int DespawnCount;
 
     }
 
@@ -64,11 +86,18 @@ namespace Unity.Netcode
 
         // by objectId
         // which spawns and despawns did this connection ack'ed ?
-        internal Dictionary<ulong, int> SpawnDespawnAck;// = new Dictionary<ulong, int>();
+        internal Dictionary<ulong, int> SpawnDespawnAck;
 
         // list of spawn and despawns commands we sent, with sequence number
         // need to manage acknowledgements
-        internal List<SentSpawnDespawn> SentSpawns;// = new List<SentSpawnDespawn>();
+        internal List<SentSpawnDespawn> SentSpawnDespawns;
+
+        internal ClientData(int unused)
+        {
+            LastReceivedTick = default;
+            SpawnDespawnAck = new Dictionary<ulong, int>();
+            SentSpawnDespawns = new List<SentSpawnDespawn>();
+        }
     }
 
     internal delegate int SendMessageDelegate(SnapshotDataMessage message, ulong clientId);
@@ -282,7 +311,10 @@ namespace Unity.Netcode
             var header = new SnapshotHeader();
             var message = new SnapshotDataMessage(0);
 
-            header.CurrentTick = m_CurrentTick;
+            if (!m_ClientData.ContainsKey(clientId))
+            {
+                m_ClientData.Add(clientId, new ClientData(0));
+            }
 
             // Find which spawns must be included
             var spawnsToInclude = new List<int>();
@@ -304,11 +336,13 @@ namespace Unity.Netcode
                 }
             }
 
+            header.CurrentTick = m_CurrentTick;
+            header.SpawnCount = spawnsToInclude.Count;
+            header.DespawnCount = despawnsToInclude.Count;
+
             if (!message.WriteBuffer.TryBeginWrite(
                 FastBufferWriter.GetWriteSize(header) +
-                FastBufferWriter.GetWriteSize(spawnsToInclude.Count) +
                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
-                FastBufferWriter.GetWriteSize(despawnsToInclude.Count) +
                 despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
             {
                 Debug.Assert(false, "Unable to secure buffer for sending");
@@ -316,17 +350,25 @@ namespace Unity.Netcode
 
             message.WriteBuffer.WriteValue(header);
 
-            // Write the Spawns. Count first, then each spawn
-            message.WriteBuffer.WriteValue(spawnsToInclude.Count);
+            // Write the Spawns.
             foreach (var index in spawnsToInclude)
             {
+                SentSpawnDespawn item = new SentSpawnDespawn();
+                item.Tick = Spawns[index].TickWritten;
+                item.ObjectId = Spawns[index].NetworkObjectId;
+                m_ClientData[clientId].SentSpawnDespawns.Add(item);
+
                 message.WriteBuffer.WriteValue(Spawns[index]);
             }
 
-            // Write the Despawns. Count first, then each despawn
-            message.WriteBuffer.WriteValue(despawnsToInclude.Count);
+            // Write the Despawns.
             foreach (var index in despawnsToInclude)
             {
+                SentSpawnDespawn item = new SentSpawnDespawn();
+                item.Tick = Despawns[index].TickWritten;
+                item.ObjectId = Despawns[index].NetworkObjectId;
+                m_ClientData[clientId].SentSpawnDespawns.Add(item);
+
                 message.WriteBuffer.WriteValue(Despawns[index]);
             }
 
@@ -421,51 +463,41 @@ namespace Unity.Netcode
                 message.ReadBuffer.ReadValue(out header);
             }
 
-            var spawnCount = 0;
-            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCount)))
+            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount))
             {
-                message.ReadBuffer.ReadValue(out spawnCount);
-                if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * spawnCount))
-                {
-                    // todo: deal with error
-                }
-
-                for (int index = 0; index < spawnCount; index++)
-                {
-                    message.ReadBuffer.ReadValue(out spawnCommand);
-
-                    if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
-                        spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
-                    {
-                        continue;
-                    }
-
-                    TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
-                    SpawnObject(spawnCommand, clientId);
-                }
+                // todo: deal with error
             }
 
-            var despawnCount = 0;
-            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCount)))
+            for (int index = 0; index < header.SpawnCount; index++)
             {
-                message.ReadBuffer.ReadValue(out despawnCount);
-                if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * despawnCount))
-                {
-                    // todo: deal with error
-                }
-                for (int index = 0; index < despawnCount; index++)
-                {
-                    message.ReadBuffer.ReadValue(out despawnCommand);
+                message.ReadBuffer.ReadValue(out spawnCommand);
 
-                    if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
-                        despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
-                    {
-                        continue;
-                    }
-
-                    TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
-                    DespawnObject(despawnCommand, clientId);
+                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
+                {
+                    continue;
                 }
+
+                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+                SpawnObject(spawnCommand, clientId);
+            }
+
+            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
+            {
+                // todo: deal with error
+            }
+            for (int index = 0; index < header.DespawnCount; index++)
+            {
+                message.ReadBuffer.ReadValue(out despawnCommand);
+
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+                DespawnObject(despawnCommand, clientId);
             }
         }
 
