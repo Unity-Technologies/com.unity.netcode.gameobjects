@@ -12,6 +12,14 @@ namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class TransportTests
     {
+        // No need to test all reliable delivery methods since they all map to the same pipeline.
+        private static readonly NetworkDelivery[] s_DeliveryParameters =
+        {
+            NetworkDelivery.Unreliable,
+            NetworkDelivery.UnreliableSequenced,
+            NetworkDelivery.Reliable
+        };
+
         private UnityTransport m_Server, m_Client1, m_Client2;
         private List<TransportEvent> m_ServerEvents, m_Client1Events, m_Client2Events;
 
@@ -46,7 +54,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check if can make a simple data exchange.
         [UnityTest]
-        public IEnumerator PingPong()
+        public IEnumerator PingPong([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -57,28 +65,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            m_Client1.Send(m_Client1.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, ping, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
             Assert.That(m_ServerEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            m_Server.Send(m_ServerEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, pong, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
 
             Assert.That(m_Client1Events[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("pong")));
-
-            // server.Shutdown();
-            // client.Shutdown();
 
             yield return null;
         }
 
         // Check if can make a simple data exchange (both ways at a time).
         [UnityTest]
-        public IEnumerator PingPongSimultaneous()
+        public IEnumerator PingPongSimultaneous([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -89,8 +94,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            m_Server.Send(m_ServerEvents[0].ClientID, ping, NetworkDelivery.ReliableSequenced);
-            m_Client1.Send(m_Client1.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, ping, delivery);
+            m_Client1.Send(m_Client1.ServerClientId, ping, delivery);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -99,8 +104,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.That(m_Client1Events[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            m_Server.Send(m_ServerEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
-            m_Client1.Send(m_Client1.ServerClientId, pong, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, pong, delivery);
+            m_Client1.Send(m_Client1.ServerClientId, pong, delivery);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -112,7 +117,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueSingleSend()
+        public IEnumerator FilledSendQueueSingleSend([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -123,7 +128,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
 
             var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
-            m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
@@ -131,7 +136,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueMultipleSends()
+        public IEnumerator FilledSendQueueMultipleSends([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -149,7 +154,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
                 // Without that we wouldn't fill the send queue; it would get flushed right when we
                 // try to send the last message.
                 var payload = new ArraySegment<byte>(new byte[1024 - 4]);
-                m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+                m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
             }
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -162,7 +167,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check making multiple sends to a client in a single frame.
         [UnityTest]
-        public IEnumerator MultipleSendsSingleFrame()
+        public IEnumerator MultipleSendsSingleFrame([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -173,10 +178,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Client1.Send(m_Client1.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Client1.Send(m_Client1.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data2, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
@@ -191,7 +196,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check sending data to multiple clients.
         [UnityTest]
-        public IEnumerator SendMultipleClients()
+        public IEnumerator SendMultipleClients([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -207,10 +212,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.AreEqual(2, m_ServerEvents.Count);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Server.Send(m_ServerEvents[0].ClientID, data1, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Server.Send(m_ServerEvents[1].ClientID, data2, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[1].ClientID, data2, delivery);
 
             // Once one has received its data, the other should have too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
@@ -228,7 +233,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check receiving data from multiple clients.
         [UnityTest]
-        public IEnumerator ReceiveMultipleClients()
+        public IEnumerator ReceiveMultipleClients([ValueSource("s_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -244,10 +249,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.AreEqual(1, m_Client2Events.Count);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Client1.Send(m_Client1.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Client2.Send(m_Client2.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
+            m_Client2.Send(m_Client2.ServerClientId, data2, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
