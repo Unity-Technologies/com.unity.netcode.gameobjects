@@ -249,6 +249,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
+            m_ClientSideObject.transform.position = position;
+            m_ClientSideObject.transform.rotation = rotation;
             m_ClientSideSpawned = true;
             m_ClientSideObject.SetActive(true);
             return m_ClientSideObject.GetComponent<NetworkObject>();
@@ -313,13 +315,15 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitUntil(() => m_ClientSideSpawned);
 
             // Let the object move a bit
-            yield return new WaitForSeconds(0.5f);
+            yield return WaitForFrames(100);
 
             // Make sure it moved on the client side
             Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
 
             m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
             yield return new WaitUntil(() => !m_ClientSideSpawned);
+
+            yield return WaitForFrames(30);
 
             // Re-spawn the same NetworkObject
             m_DefaultNetworkObject.Spawn();
@@ -337,6 +341,13 @@ namespace Unity.Netcode.RuntimeTests
 
             // Done
             m_DefaultNetworkObject.Despawn();
+        }
+
+
+        private IEnumerator WaitForFrames(int framesToWait)
+        {
+            var frameCountToWaitFor = Time.frameCount + framesToWait;
+            yield return new WaitUntil(() => frameCountToWaitFor <= Time.frameCount);
         }
 
         public override IEnumerator Teardown()
