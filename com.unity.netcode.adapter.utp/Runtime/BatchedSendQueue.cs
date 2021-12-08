@@ -146,7 +146,7 @@ namespace Unity.Netcode.UTP.Utilities
 
             unsafe
             {
-                DataStreamReader reader = new DataStreamReader((byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
+                var reader = new DataStreamReader((byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
 
                 var writerAvailable = writer.Capacity;
                 var readerOffset = 0;
