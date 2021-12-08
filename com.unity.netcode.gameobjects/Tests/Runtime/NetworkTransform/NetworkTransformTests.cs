@@ -8,6 +8,7 @@ using NUnit.Framework;
 // using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -185,17 +186,174 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /*
-         * ownership change
-         * test teleport with interpolation
-         * test teleport without interpolation
-         * test dynamic spawning
-         */
+        * ownership change
+        * test teleport with interpolation
+        * test teleport without interpolation
+        * test dynamic spawning -- done with NetworkTransformRespawnTests
+        */
 
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
+            Object.DestroyImmediate(m_PlayerPrefab);
+        }
+    }
+
+    /// <summary>
+    /// This test simulates a pooled NetworkObject being re-used over time with a NetworkTransform
+    /// This test validates that pooled NetworkObjects' NetworkTransforms are completely reset in
+    /// order to properly start interpolating from the new spawn position and not the previous position
+    /// when the registered Network Prefab was despawned.  This specifically tests the client side.
+    /// </summary>
+    public class NetworkTransformRespawnTests : BaseMultiInstanceTest, INetworkPrefabInstanceHandler
+    {
+        /// <summary>
+        /// Our test object mover NetworkBehaviour
+        /// </summary>
+        public class DynamicObjectMover : NetworkBehaviour
+        {
+            public Vector3 SpawnedPosition;
+            private Rigidbody m_Rigidbody;
+            private Vector3 m_MoveTowardsPosition = new Vector3(20, 0, 20);
+
+            private void OnEnable()
+            {
+                SpawnedPosition = transform.position;
+            }
+
+            private void Update()
+            {
+                if (!IsSpawned || !IsServer)
+                {
+                    return;
+                }
+
+                if (m_Rigidbody == null)
+                {
+                    m_Rigidbody = GetComponent<Rigidbody>();
+                }
+                if (m_Rigidbody != null)
+                {
+                    m_Rigidbody.MovePosition(transform.position + (m_MoveTowardsPosition * Time.fixedDeltaTime));
+                }
+            }
+        }
+
+        protected override int NbClients => 1;
+        private GameObject m_ObjectToSpawn;
+        private GameObject m_ClientSideObject;
+        private NetworkObject m_DefaultNetworkObject;
+        private Vector3 m_LastClientSidePosition;
+        private bool m_ClientSideSpawned;
+
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            m_ClientSideSpawned = true;
+            m_ClientSideObject.SetActive(true);
+            return m_ClientSideObject.GetComponent<NetworkObject>();
+        }
+
+        public void Destroy(NetworkObject networkObject)
+        {
+            m_ClientSideSpawned = false;
+            networkObject.gameObject.SetActive(false);
+            m_LastClientSidePosition = networkObject.transform.position;
+        }
+
+        public override IEnumerator Setup()
+        {
+            m_BypassStartAndWaitForClients = true;
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
+
+            m_ObjectToSpawn = new GameObject("NetworkTransformDynamicObject");
+            m_DefaultNetworkObject = m_ObjectToSpawn.AddComponent<NetworkObject>();
+            m_ObjectToSpawn.AddComponent<NetworkTransform>();
+            var rigidBody = m_ObjectToSpawn.AddComponent<Rigidbody>();
+            rigidBody.useGravity = false;
+            m_ObjectToSpawn.AddComponent<NetworkRigidbody>();
+            m_ObjectToSpawn.AddComponent<DynamicObjectMover>();
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_DefaultNetworkObject);
+
+            var networkPrefab = new NetworkPrefab();
+            networkPrefab.Prefab = m_ObjectToSpawn;
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                client.NetworkConfig.EnableSceneManagement = false;
+                // Add a client side prefab handler for this NetworkObject
+                client.PrefabHandler.AddHandler(m_ObjectToSpawn, this);
+            }
+            m_DefaultNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_ClientSideObject = Object.Instantiate(m_ObjectToSpawn);
+            m_ClientSideObject.SetActive(false);
+        }
+
+        [UnityTest]
+        public IEnumerator RespawnedPositionTest()
+        {
+            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
+            {
+                Debug.LogError("Failed to start instances");
+                Assert.Fail("Failed to start instances");
+            }
+
+            // Wait for connection on client side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+
+            // Wait for connection on server side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+
+            Assert.True(m_ObjectToSpawn != null);
+            Assert.True(m_DefaultNetworkObject != null);
+            m_DefaultNetworkObject.Spawn();
+            yield return new WaitUntil(() => m_ClientSideSpawned);
+
+            // Let the object move a bit
+            yield return new WaitForSeconds(0.5f);
+
+            // Make sure it moved on the client side
+            Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
+
+            m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
+            yield return new WaitUntil(() => !m_ClientSideSpawned);
+
+            // Re-spawn the same NetworkObject
+            m_DefaultNetworkObject.Spawn();
+            yield return new WaitUntil(() => m_ClientSideSpawned);
+
+            // !!! This is the primary element for this particular test !!!
+            // If NetworkTransform.OnNetworkDespawn did not have m_LocalAuthoritativeNetworkState.Reset();
+            // then this will always fail.  To verify this will fail you can comment out that line of code
+            // in NetworkTransform.OnNetworkDespawn and run this test again.
+            Assert.IsTrue(m_ClientSideObject.transform.position == Vector3.zero);
+
+            // Next we make sure the last spawn instance position was anything but zero
+            // (i.e. it moved prior to despawning and respawning the object)
+            Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
+
+            // Done
+            m_DefaultNetworkObject.Despawn();
+        }
+
+        public override IEnumerator Teardown()
+        {
+            if (m_ClientSideObject != null)
+            {
+                Object.Destroy(m_ClientSideObject);
+                m_ClientSideObject = null;
+            }
+
+            if (m_ObjectToSpawn != null)
+            {
+                Object.Destroy(m_ObjectToSpawn);
+                m_ObjectToSpawn = null;
+            }
+
+            return base.Teardown();
         }
     }
 }
