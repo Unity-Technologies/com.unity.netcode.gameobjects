@@ -819,6 +819,7 @@ namespace Unity.Netcode
             {
                 unreliableSequencedPipeline = driver.CreatePipeline(
                     typeof(UnreliableSequencedPipelineStage),
+                    typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
@@ -830,7 +831,8 @@ namespace Unity.Netcode
             else
 #endif
             {
-                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+                unreliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(UnreliableSequencedPipelineStage), typeof(FragmentationPipelineStage));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
                 );
