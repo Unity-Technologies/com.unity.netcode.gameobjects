@@ -31,6 +31,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0. (#1480)
 - Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
 - Fixed: NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
+
+- Fixed: Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
 
