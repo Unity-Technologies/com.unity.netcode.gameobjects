@@ -1674,6 +1674,7 @@ namespace Unity.Netcode
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
+                    LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
