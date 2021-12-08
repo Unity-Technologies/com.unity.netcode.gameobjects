@@ -213,9 +213,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         public class DynamicObjectMover : NetworkBehaviour
         {
-            public static Action<NetworkObject> OnClientSpawned;
-            public static Action<NetworkObject> OnClientDespawn;
-
             public Vector3 SpawnedPosition;
             private Rigidbody m_Rigidbody;
             private Vector3 m_MoveTowardsPosition = new Vector3(20, 0, 20);
@@ -223,23 +220,6 @@ namespace Unity.Netcode.RuntimeTests
             private void OnEnable()
             {
                 SpawnedPosition = transform.position;
-            }
-
-            public override void OnNetworkSpawn()
-            {
-                if (!IsServer)
-                {
-                    OnClientSpawned?.Invoke(NetworkObject);
-                }
-            }
-
-            public override void OnNetworkDespawn()
-            {
-                if (!IsServer)
-                {
-                    OnClientDespawn?.Invoke(NetworkObject);
-                }
-                base.OnNetworkDespawn();
             }
 
             private void Update()
@@ -269,13 +249,16 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
+            m_ClientSideSpawned = true;
             m_ClientSideObject.SetActive(true);
             return m_ClientSideObject.GetComponent<NetworkObject>();
         }
 
         public void Destroy(NetworkObject networkObject)
         {
+            m_ClientSideSpawned = false;
             networkObject.gameObject.SetActive(false);
+            m_LastClientSidePosition = networkObject.transform.position;
         }
 
         public override IEnumerator Setup()
@@ -291,9 +274,6 @@ namespace Unity.Netcode.RuntimeTests
             m_ObjectToSpawn.AddComponent<NetworkRigidbody>();
             m_ObjectToSpawn.AddComponent<DynamicObjectMover>();
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_DefaultNetworkObject);
-
-            DynamicObjectMover.OnClientSpawned += OnClientNetworkObjectSpawned;
-            DynamicObjectMover.OnClientDespawn += OnClientNetworkObjectDespawned;
 
             var networkPrefab = new NetworkPrefab();
             networkPrefab.Prefab = m_ObjectToSpawn;
@@ -344,8 +324,7 @@ namespace Unity.Netcode.RuntimeTests
             // Re-spawn the same NetworkObject
             m_DefaultNetworkObject.Spawn();
             yield return new WaitUntil(() => m_ClientSideSpawned);
-            // Wait one frame
-            yield return null;
+
             // !!! This is the primary element for this particular test !!!
             // If NetworkTransform.OnNetworkDespawn did not have m_LocalAuthoritativeNetworkState.Reset();
             // then this will always fail.  To verify this will fail you can comment out that line of code
@@ -360,30 +339,8 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.Despawn();
         }
 
-        /// <summary>
-        /// Signals that the client side has spawned the Network Prefab
-        /// </summary>
-        /// <param name="networkObject"></param>
-        private void OnClientNetworkObjectSpawned(NetworkObject networkObject)
-        {
-            m_ClientSideSpawned = true;
-        }
-
-        /// <summary>
-        /// Signals that the client side has despawned the Network Prefab
-        /// </summary>
-        /// <param name="networkObject"></param>
-        private void OnClientNetworkObjectDespawned(NetworkObject networkObject)
-        {
-            m_LastClientSidePosition = networkObject.transform.position;
-            m_ClientSideSpawned = false;
-        }
-
         public override IEnumerator Teardown()
         {
-            DynamicObjectMover.OnClientSpawned -= OnClientNetworkObjectSpawned;
-            DynamicObjectMover.OnClientDespawn -= OnClientNetworkObjectDespawned;
-
             if (m_ClientSideObject != null)
             {
                 Object.Destroy(m_ClientSideObject);
