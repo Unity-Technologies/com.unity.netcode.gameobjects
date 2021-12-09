@@ -1655,7 +1655,6 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
@@ -1674,6 +1673,7 @@ namespace Unity.Netcode
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
+                    LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
