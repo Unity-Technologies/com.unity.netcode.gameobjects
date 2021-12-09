@@ -292,6 +292,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientSideObject.SetActive(false);
         }
 
+        [Ignore("Snapshot transition")]
         [UnityTest]
         public IEnumerator RespawnedPositionTest()
         {
