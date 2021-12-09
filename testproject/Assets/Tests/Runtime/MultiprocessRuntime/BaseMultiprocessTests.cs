@@ -189,6 +189,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
             MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log("Setup completed");
         }
 
 

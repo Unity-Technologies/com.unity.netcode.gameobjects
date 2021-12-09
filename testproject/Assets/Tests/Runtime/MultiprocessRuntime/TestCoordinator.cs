@@ -21,7 +21,7 @@ using Unity.Netcode.MultiprocessRuntimeTests;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const int PerTestTimeoutSec = 5 * 60; // seconds
+    public const int PerTestTimeoutSec = 1 * 60; // seconds
 
     public const float MaxWaitTimeoutSec = 30;
     private const char k_MethodFullNameSplitChar = '@';
