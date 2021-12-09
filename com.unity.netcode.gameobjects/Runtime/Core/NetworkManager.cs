@@ -1129,7 +1129,10 @@ namespace Unity.Netcode
                 MessagingSystem = null;
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            if (NetworkConfig?.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            }
 
             if (SpawnManager != null)
             {
