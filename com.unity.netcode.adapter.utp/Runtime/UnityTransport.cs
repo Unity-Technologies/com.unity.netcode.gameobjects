@@ -806,6 +806,9 @@ namespace Unity.Netcode
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
+#if MULTIPLAYER_TOOLS
+            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
             var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -823,6 +826,7 @@ namespace Unity.Netcode
                 maxFrameTimeMS: maxFrameTimeMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
             {
@@ -834,22 +838,44 @@ namespace Unity.Netcode
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                    );
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                    );
             }
             else
 #endif
             {
+
                 unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage));
+                    typeof(FragmentationPipelineStage)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage), typeof(UnreliableSequencedPipelineStage));
+                    typeof(FragmentationPipelineStage),
+                    typeof(UnreliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+                    typeof(FragmentationPipelineStage),
+                    typeof(ReliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
                 );
             }
         }
