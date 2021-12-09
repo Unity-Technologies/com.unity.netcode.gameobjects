@@ -206,23 +206,44 @@ namespace Unity.Netcode.RuntimeTests
     /// order to properly start interpolating from the new spawn position and not the previous position
     /// when the registered Network Prefab was despawned.  This specifically tests the client side.
     /// </summary>
-    public class NetworkTransformRespawnTests : BaseMultiInstanceTest, INetworkPrefabInstanceHandler
+    public class NetworkTransformRespawnTests : BaseMultiInstanceTest
     {
         /// <summary>
         /// Our test object mover NetworkBehaviour
         /// </summary>
-        public class DynamicObjectMover : NetworkBehaviour
+        public class DynamicObjectMover : NetworkBehaviour, INetworkPrefabInstanceHandler
         {
-            public Vector3 SpawnedPosition;
             private Rigidbody m_Rigidbody;
             private Vector3 m_MoveTowardsPosition = new Vector3(20, 0, 20);
 
-            private void OnEnable()
+            public Action<NetworkObject> OnInstantiate;
+            public Action<NetworkObject> OnDestroyDespawn;
+
+
+
+            public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
-                SpawnedPosition = transform.position;
+                transform.position = position;
+                transform.rotation = rotation;
+                gameObject.SetActive(true);
+                OnInstantiate?.Invoke(NetworkObject);
+                return NetworkObject;
             }
 
-            private void Update()
+            public Vector3 GetFirstInterpolatedPosition()
+            {
+                return GetComponent<NetworkTransform>().GetInterpolatedPosition();
+            }
+
+            public void Destroy(NetworkObject networkObject)
+            {
+                Assert.AreEqual(networkObject, NetworkObject);
+                OnDestroyDespawn?.Invoke(NetworkObject);
+                gameObject.SetActive(false);
+            }
+
+
+            private void FixedUpdate()
             {
                 if (!IsSpawned || !IsServer)
                 {
@@ -247,19 +268,14 @@ namespace Unity.Netcode.RuntimeTests
         private Vector3 m_LastClientSidePosition;
         private bool m_ClientSideSpawned;
 
-        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        private void OnClientInstantiate(NetworkObject networkObject)
         {
-            m_ClientSideObject.transform.position = position;
-            m_ClientSideObject.transform.rotation = rotation;
             m_ClientSideSpawned = true;
-            m_ClientSideObject.SetActive(true);
-            return m_ClientSideObject.GetComponent<NetworkObject>();
         }
 
-        public void Destroy(NetworkObject networkObject)
+        private void OnClientDestroy(NetworkObject networkObject)
         {
             m_ClientSideSpawned = false;
-            networkObject.gameObject.SetActive(false);
             m_LastClientSidePosition = networkObject.transform.position;
         }
 
@@ -274,25 +290,30 @@ namespace Unity.Netcode.RuntimeTests
             var rigidBody = m_ObjectToSpawn.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
             m_ObjectToSpawn.AddComponent<NetworkRigidbody>();
-            m_ObjectToSpawn.AddComponent<DynamicObjectMover>();
+            var serverDynamicObjectMover = m_ObjectToSpawn.AddComponent<DynamicObjectMover>();
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_DefaultNetworkObject);
 
             var networkPrefab = new NetworkPrefab();
             networkPrefab.Prefab = m_ObjectToSpawn;
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
             m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-                client.NetworkConfig.EnableSceneManagement = false;
-                // Add a client side prefab handler for this NetworkObject
-                client.PrefabHandler.AddHandler(m_ObjectToSpawn, this);
-            }
             m_DefaultNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_ServerNetworkManager.PrefabHandler.AddHandler(m_ObjectToSpawn, serverDynamicObjectMover);
+
             m_ClientSideObject = Object.Instantiate(m_ObjectToSpawn);
+            var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
+            clientDynamicObjectMover.OnInstantiate += OnClientInstantiate;
+            clientDynamicObjectMover.OnDestroyDespawn += OnClientDestroy;
+
+            var client = m_ClientNetworkManagers[0];
+            client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            client.NetworkConfig.EnableSceneManagement = false;
+            // Add a client side prefab handler for this NetworkObject
+            client.PrefabHandler.AddHandler(m_ClientSideObject, clientDynamicObjectMover);
             m_ClientSideObject.SetActive(false);
+            m_DefaultNetworkObject.gameObject.SetActive(false);
         }
+
 
         [UnityTest]
         public IEnumerator RespawnedPositionTest()
@@ -308,45 +329,87 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+#if RESPAWNPOSITION_STRESS_TEST
+            for (int i = 0; i < 100; i++)
+            {
+#endif
+                Assert.True(m_ObjectToSpawn != null);
+                Assert.True(m_DefaultNetworkObject != null);
+                m_DefaultNetworkObject.gameObject.SetActive(true);
+                m_DefaultNetworkObject.transform.position = Vector3.zero;
+                m_DefaultNetworkObject.Spawn();
+                yield return new WaitUntil(() => m_ClientSideSpawned);
+                // Let the object move a bit
+                yield return WaitForFrames(20);
 
-            Assert.True(m_ObjectToSpawn != null);
-            Assert.True(m_DefaultNetworkObject != null);
-            m_DefaultNetworkObject.Spawn();
-            yield return new WaitUntil(() => m_ClientSideSpawned);
+                // Make sure it moved on the client side
+                Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
 
-            // Let the object move a bit
-            yield return WaitForFrames(100);
+                // Spawn Test #1: Despawn
+                m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
+                yield return new WaitUntil(() => !m_ClientSideSpawned);
+                yield return new WaitForEndOfFrame();
 
-            // Make sure it moved on the client side
-            Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
+                // Spawn Test #1: Verify the fix works
+                m_DefaultNetworkObject.transform.position = Vector3.zero;
+                m_DefaultNetworkObject.gameObject.SetActive(true);
+                m_DefaultNetworkObject.Spawn();
+                var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
 
-            m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
-            yield return new WaitUntil(() => !m_ClientSideSpawned);
+                yield return new WaitUntil(() => m_ClientSideSpawned);
 
-            yield return WaitForFrames(30);
+                var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
+                Assert.IsFalse(firstClientInterpolatedPosition.magnitude > 2.0f);
+                Debug.Log($"[Verify With Fix] First client interpolated position: {firstClientInterpolatedPosition}");
 
-            // Re-spawn the same NetworkObject
-            m_DefaultNetworkObject.Spawn();
-            yield return new WaitUntil(() => m_ClientSideSpawned);
+                yield return WaitForFrames(20);
+                Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
 
-            // !!! This is the primary element for this particular test !!!
-            // If NetworkTransform.OnNetworkDespawn did not have m_LocalAuthoritativeNetworkState.Reset();
-            // then this will always fail.  To verify this will fail you can comment out that line of code
-            // in NetworkTransform.OnNetworkDespawn and run this test again.
-            Assert.IsTrue(m_ClientSideObject.transform.position == Vector3.zero);
+                // Spawn Test #2: Despawn
+                m_DefaultNetworkObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
+                m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
+                var serverSidePositionAfterDespawn = m_DefaultNetworkObject.transform.position;
 
-            // Next we make sure the last spawn instance position was anything but zero
-            // (i.e. it moved prior to despawning and respawning the object)
-            Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
+                yield return new WaitUntil(() => !m_ClientSideSpawned);
 
-            // Done
-            m_DefaultNetworkObject.Despawn();
+                // Spawn Test #2: Verify that this breaks without the fix
+                m_ClientSideObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
+
+                m_DefaultNetworkObject.transform.position = Vector3.zero;
+                m_DefaultNetworkObject.gameObject.SetActive(true);
+                m_DefaultNetworkObject.Spawn();
+
+                yield return new WaitUntil(() => m_ClientSideSpawned);
+                firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
+                Debug.Log($"[Without Fix] First client interpolated position: {firstClientInterpolatedPosition}");
+                // At this point (*** the bug ***) the client should have close to the previous frame's position plus any delta sent from the server.
+                // This should be a non-zero value on the client side
+                Assert.IsTrue(firstClientInterpolatedPosition.magnitude > 2.0f);
+                yield return new WaitForEndOfFrame();
+
+                // The client side position magnitude should be greater than the current server-side position magnitude
+                // This means the client-side would be interpolating from the last despawn position to the new server-side position
+                Assert.IsTrue(firstClientInterpolatedPosition.magnitude > m_DefaultNetworkObject.transform.position.magnitude);
+
+                // Done
+                m_DefaultNetworkObject.Despawn();
+
+#if RESPAWNPOSITION_STRESS_TEST
+                yield return new WaitUntil(() => !m_ClientSideSpawned);
+                m_ClientSideObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = true;
+                m_DefaultNetworkObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = true;
+            }
+#endif
         }
 
-
+        /// <summary>
+        /// Waits for number of frames to pass
+        /// </summary>
+        /// <param name="framesToWait"></param>
         private IEnumerator WaitForFrames(int framesToWait)
         {
             var frameCountToWaitFor = Time.frameCount + framesToWait;
+            var timeStarted = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => frameCountToWaitFor <= Time.frameCount);
         }
 

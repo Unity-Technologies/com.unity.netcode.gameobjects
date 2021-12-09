@@ -303,6 +303,12 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator; // = new BufferedLinearInterpolatorFloat();
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
+        internal Vector3 GetInterpolatedPosition()
+        {
+            return new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
+        }
+
+
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
@@ -651,7 +657,7 @@ namespace Unity.Netcode.Components
 
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
-            if (!NetworkObject.IsSpawned)
+            if (!NetworkObject.IsSpawned || !gameObject.activeInHierarchy)
             {
                 // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
@@ -661,6 +667,16 @@ namespace Unity.Netcode.Components
             {
                 // we're the authority, we ignore incoming changes
                 return;
+            }
+
+            // This assures that we will initialize any client once we have our first update from
+            // the server.
+            if (ShouldInitializeClient())
+            {
+                // Assign
+                m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+                Initialize();
+                m_InitializeClient = false;
             }
 
             Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
@@ -697,6 +713,14 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private bool m_InitializeClient = true;
+        internal bool EnableDeferredClientInit = true;  // Enables/disables the applied fix, used for validating this fix
+
+        private bool ShouldInitializeClient()
+        {
+            return m_InitializeClient && EnableDeferredClientInit;
+        }
+
         public override void OnNetworkSpawn()
         {
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
@@ -714,19 +738,30 @@ namespace Unity.Netcode.Components
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
 
-            // We do this to reset the interpolators so that pooled NetworkObjects will initialize prior
-            // to assigning the current NetworkState -- helps prevent pooled objects from interpolating from the last state
-            Initialize();
-
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+            // This assures that the client doesn't attempt to initialize off of the previous m_ReplicatedNetworkState value
+            // before it gets assigned the new value from the server.
+            if (!IsServer && EnableDeferredClientInit)
+            {
+                m_InitializeClient = true;
+                Initialize();
+            }
+            else // Server always initializes during NetworkSpawn
+            {
+                m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+                Initialize();
+            }
         }
 
         public override void OnNetworkDespawn()
         {
-            // Reset the network state once despawned -- helps prevent pooled objects from interpolating from the last state
-            m_LocalAuthoritativeNetworkState.Reset();
+            // Server resets both its m_LocalAuthoritativeNetworkState and the m_ReplicatedNetworkState upon despawn
+            if (IsServer && EnableDeferredClientInit)
+            {
+                // Reset the network state once despawned -- helps prevent pooled objects from interpolating from the last state
+                m_LocalAuthoritativeNetworkState.Reset();
+                m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+            }
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
         }
 
         public override void OnGainedOwnership()
