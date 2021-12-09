@@ -24,10 +24,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
 - Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
+- Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
+
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
+- Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
+- Fixed FastBufferReader being created with a length of 1 if provided an input of length 0. (#1480)
+- Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
+- Fixed: NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
+
+- Fixed: Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
+- Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
+- Fixed issue where pooled NetworkObjects using NetworkTransform would interpolate from their last de-spawned position to the newly spawned position (#1505)
+- Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
 
 ### Changed
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
+- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
+- Updated com.unity.collections to 1.1.0
+
 
 ## [1.0.0-pre.3] - 2021-10-22
 

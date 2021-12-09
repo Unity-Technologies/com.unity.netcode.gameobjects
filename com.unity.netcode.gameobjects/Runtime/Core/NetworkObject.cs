@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -10,6 +11,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
+
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
@@ -193,6 +195,7 @@ namespace Unity.Netcode
             return Observers.GetEnumerator();
         }
 
+
         /// <summary>
         /// Whether or not this object is visible to a specific client
         /// </summary>
@@ -328,7 +331,7 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -718,7 +721,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
@@ -1155,5 +1158,6 @@ namespace Unity.Netcode
 
             return GlobalObjectIdHash;
         }
+
     }
 }

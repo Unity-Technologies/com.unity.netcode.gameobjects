@@ -23,6 +23,7 @@ namespace Unity.Netcode
             public MessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
+            public int MessageHeaderSerializedSize;
         }
 
         private struct SendQueueItem
@@ -39,34 +40,34 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(FastBufferReader reader, in NetworkContext context);
+        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, MessagingSystem system);
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
         private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
         private Type[] m_ReverseTypeMap = new Type[255];
 
-        private Dictionary<Type, byte> m_MessageTypes = new Dictionary<Type, byte>();
+        private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
 
         private List<INetworkHooks> m_Hooks = new List<INetworkHooks>();
 
-        private byte m_HighMessageType;
+        private uint m_HighMessageType;
         private object m_Owner;
         private IMessageSender m_MessageSender;
         private bool m_Disposed;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
-        internal int MessageHandlerCount => m_HighMessageType;
+        internal uint MessageHandlerCount => m_HighMessageType;
 
-        internal byte GetMessageType(Type t)
+        internal uint GetMessageType(Type t)
         {
             return m_MessageTypes[t];
         }
 
         public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
-        public const int FRAGMENTED_MESSAGE_MAX_SIZE = 64000;
+        public const int FRAGMENTED_MESSAGE_MAX_SIZE = int.MaxValue;
 
         internal struct MessageWithHandler
         {
@@ -100,7 +101,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void Dispose()
+        public unsafe void Dispose()
         {
             if (m_Disposed)
             {
@@ -113,6 +114,14 @@ namespace Unity.Netcode
             {
                 CleanupDisconnectedClient(kvp.Key);
             }
+
+            for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
+            {
+                // Avoid copies...
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(queueIndex);
+                item.Reader.Dispose();
+            }
+
             m_IncomingMessageQueue.Dispose();
             m_Disposed = true;
         }
@@ -157,14 +166,23 @@ namespace Unity.Netcode
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
                     {
-                        if (!batchReader.TryBeginRead(sizeof(MessageHeader)))
+
+                        var messageHeader = new MessageHeader();
+                        var position = batchReader.Position;
+                        try
+                        {
+                            ByteUnpacker.ReadValueBitPacked(batchReader, out messageHeader.MessageType);
+                            ByteUnpacker.ReadValueBitPacked(batchReader, out messageHeader.MessageSize);
+                        }
+                        catch (OverflowException)
                         {
                             NetworkLog.LogWarning("Received a batch that didn't have enough data for all of its batches, ending early!");
-                            return;
+                            throw;
                         }
-                        batchReader.ReadValue(out MessageHeader messageHeader);
 
-                        if (!batchReader.TryBeginRead(messageHeader.MessageSize))
+                        var receivedHeaderSize = batchReader.Position - position;
+
+                        if (!batchReader.TryBeginRead((int)messageHeader.MessageSize))
                         {
                             NetworkLog.LogWarning("Received a message that claimed a size larger than the packet, ending early!");
                             return;
@@ -177,9 +195,10 @@ namespace Unity.Netcode
                             // Copy the data for this message into a new FastBufferReader that owns that memory.
                             // We can't guarantee the memory in the ArraySegment stays valid because we don't own it,
                             // so we must move it to memory we do own.
-                            Reader = new FastBufferReader(batchReader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, messageHeader.MessageSize)
+                            Reader = new FastBufferReader(batchReader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, (int)messageHeader.MessageSize),
+                            MessageHeaderSerializedSize = receivedHeaderSize,
                         });
-                        batchReader.Seek(batchReader.Position + messageHeader.MessageSize);
+                        batchReader.Seek(batchReader.Position + (int)messageHeader.MessageSize);
                     }
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
@@ -202,7 +221,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp)
+        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
         {
             if (header.MessageType >= m_HighMessageType)
             {
@@ -215,8 +234,11 @@ namespace Unity.Netcode
                 SystemOwner = m_Owner,
                 SenderId = senderId,
                 Timestamp = timestamp,
-                Header = header
+                Header = header,
+                SerializedHeaderSize = serializedHeaderSize,
+                MessageSize = header.MessageSize
             };
+
             var type = m_ReverseTypeMap[header.MessageType];
             if (!CanReceive(senderId, type))
             {
@@ -228,6 +250,7 @@ namespace Unity.Netcode
             {
                 m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
             }
+
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
@@ -238,7 +261,7 @@ namespace Unity.Netcode
                 // for some dynamic-length value.
                 try
                 {
-                    handler.Invoke(reader, context);
+                    handler.Invoke(reader, ref context, this);
                 }
                 catch (Exception e)
                 {
@@ -253,11 +276,15 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessIncomingMessageQueue()
         {
-            for (var i = 0; i < m_IncomingMessageQueue.Length; ++i)
+            for (var index = 0; index < m_IncomingMessageQueue.Length; ++index)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(i);
-                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp);
+                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(index);
+                HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, item.MessageHeaderSerializedSize);
+                if (m_Disposed)
+                {
+                    return;
+                }
             }
 
             m_IncomingMessageQueue.Clear();
@@ -293,6 +320,25 @@ namespace Unity.Netcode
             queue.Dispose();
         }
 
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
+        {
+            var message = new T();
+            if (message.Deserialize(reader, ref context))
+            {
+                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                {
+                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
+                }
+
+                message.Handle(ref context);
+
+                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                {
+                    system.m_Hooks[hookIdx].OnAfterHandleMessage(ref message, ref context);
+                }
+            }
+        }
+
         private bool CanSend(ulong clientId, Type messageType, NetworkDelivery delivery)
         {
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
@@ -306,7 +352,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -316,64 +362,68 @@ namespace Unity.Netcode
             }
 
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
-            var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
-            using (tmpSerializer)
+
+            using var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
+
+            message.Serialize(tmpSerializer);
+
+            using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp);
+
+            var header = new MessageHeader
             {
-                message.Serialize(tmpSerializer);
+                MessageSize = (ushort)tmpSerializer.Length,
+                MessageType = m_MessageTypes[typeof(TMessageType)],
+            };
+            BytePacker.WriteValueBitPacked(headerSerializer, header.MessageType);
+            BytePacker.WriteValueBitPacked(headerSerializer, header.MessageSize);
 
-                for (var i = 0; i < clientIds.Count; ++i)
+            for (var i = 0; i < clientIds.Count; ++i)
+            {
+                var clientId = clientIds[i];
+
+                if (!CanSend(clientId, typeof(TMessageType), delivery))
                 {
-                    var clientId = clientIds[i];
+                    continue;
+                }
 
-                    if (!CanSend(clientId, typeof(TMessageType), delivery))
-                    {
-                        continue;
-                    }
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnBeforeSendMessage(clientId, ref message, delivery);
+                }
 
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                    {
-                        m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(TMessageType), delivery);
-                    }
-
-                    var sendQueueItem = m_SendQueues[clientId];
-                    if (sendQueueItem.Length == 0)
+                var sendQueueItem = m_SendQueues[clientId];
+                if (sendQueueItem.Length == 0)
+                {
+                    sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
+                        maxSize));
+                    sendQueueItem.GetUnsafeList()->ElementAt(0).Writer.Seek(sizeof(BatchHeader));
+                }
+                else
+                {
+                    ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
+                    if (lastQueueItem.NetworkDelivery != delivery ||
+                        lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
+                        < tmpSerializer.Length + headerSerializer.Length)
                     {
                         sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                             maxSize));
-                        sendQueueItem.GetUnsafeList()->ElementAt(0).Writer.Seek(sizeof(BatchHeader));
-                    }
-                    else
-                    {
-                        ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
-                        if (lastQueueItem.NetworkDelivery != delivery ||
-                            lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
-                            < tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>())
-                        {
-                            sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
-                                maxSize));
-                            sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
-                        }
-                    }
-
-                    ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
-                    writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
-                    var header = new MessageHeader
-                    {
-                        MessageSize = (ushort)tmpSerializer.Length,
-                        MessageType = m_MessageTypes[typeof(TMessageType)],
-                    };
-
-                    writeQueueItem.Writer.WriteValue(header);
-                    writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
-                    writeQueueItem.BatchHeader.BatchSize++;
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                    {
-                        m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                        sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
                     }
                 }
 
-                return tmpSerializer.Length + FastBufferWriter.GetWriteSize<MessageHeader>();
+                ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
+                writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length);
+
+                writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
+                writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
+                writeQueueItem.BatchHeader.BatchSize++;
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnAfterSendMessage(clientId, ref message, delivery, tmpSerializer.Length + headerSerializer.Length);
+                }
             }
+
+            return tmpSerializer.Length + headerSerializer.Length;
         }
 
         private struct PointerListWrapper<T> : IReadOnlyList<T>
@@ -411,24 +461,24 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             ulong* clientIds = stackalloc ulong[] { clientId };
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
         }
 
         internal unsafe void ProcessSendQueues()
@@ -461,15 +511,15 @@ namespace Unity.Netcode
                     try
                     {
                         m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
+
+                        for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                        {
+                            m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
+                        }
                     }
                     finally
                     {
                         queueItem.Writer.Dispose();
-                    }
-
-                    for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-                    {
-                        m_Hooks[hookIdx].OnAfterSendBatch(clientId, queueItem.BatchHeader.BatchSize, queueItem.Writer.Length, queueItem.NetworkDelivery);
                     }
                 }
                 sendQueueItem.Clear();

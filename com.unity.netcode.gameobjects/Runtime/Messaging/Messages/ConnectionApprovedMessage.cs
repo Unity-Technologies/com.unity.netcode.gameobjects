@@ -7,10 +7,11 @@ namespace Unity.Netcode
     {
         public ulong OwnerClientId;
         public int NetworkTick;
-        public int SceneObjectCount;
 
         // Not serialized, held as references to serialize NetworkVariable data
         public HashSet<NetworkObject> SpawnedObjectsList;
+
+        private FastBufferReader m_ReceivedSceneObjectData;
 
         public void Serialize(FastBufferWriter writer)
         {
@@ -21,10 +22,13 @@ namespace Unity.Netcode
             }
             writer.WriteValue(OwnerClientId);
             writer.WriteValue(NetworkTick);
-            writer.WriteValue(SceneObjectCount);
 
-            if (SceneObjectCount != 0)
+            uint sceneObjectCount = 0;
+            if (SpawnedObjectsList != null)
             {
+                var pos = writer.Position;
+                writer.Seek(writer.Position + FastBufferWriter.GetWriteSize(sceneObjectCount));
+
                 // Serialize NetworkVariable data
                 foreach (var sobj in SpawnedObjectsList)
                 {
@@ -33,17 +37,25 @@ namespace Unity.Netcode
                         sobj.Observers.Add(OwnerClientId);
                         var sceneObject = sobj.GetMessageSceneObject(OwnerClientId);
                         sceneObject.Serialize(writer);
+                        ++sceneObjectCount;
                     }
                 }
+                writer.Seek(pos);
+                writer.WriteValue(sceneObjectCount);
+                writer.Seek(writer.Length);
+            }
+            else
+            {
+                writer.WriteValue(sceneObjectCount);
             }
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
-                return;
+                return false;
             }
 
             if (!reader.TryBeginRead(sizeof(ulong) + sizeof(int) + sizeof(int)))
@@ -52,15 +64,15 @@ namespace Unity.Netcode
                     $"Not enough space in the buffer to read {nameof(ConnectionApprovedMessage)}");
             }
 
-            var message = new ConnectionApprovedMessage();
-            reader.ReadValue(out message.OwnerClientId);
-            reader.ReadValue(out message.NetworkTick);
-            reader.ReadValue(out message.SceneObjectCount);
-            message.Handle(reader, context.SenderId, networkManager);
+            reader.ReadValue(out OwnerClientId);
+            reader.ReadValue(out NetworkTick);
+            m_ReceivedSceneObjectData = reader;
+            return true;
         }
 
-        public void Handle(FastBufferReader reader, ulong clientId, NetworkManager networkManager)
+        public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
             networkManager.LocalClientId = OwnerClientId;
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
@@ -74,20 +86,21 @@ namespace Unity.Netcode
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
                 networkManager.SpawnManager.DestroySceneObjects();
+                m_ReceivedSceneObjectData.ReadValue(out uint sceneObjectCount);
 
                 // Deserializing NetworkVariable data is deferred from Receive() to Handle to avoid needing
                 // to create a list to hold the data. This is a breach of convention for performance reasons.
-                for (ushort i = 0; i < SceneObjectCount; i++)
+                for (ushort i = 0; i < sceneObjectCount; i++)
                 {
                     var sceneObject = new NetworkObject.SceneObject();
-                    sceneObject.Deserialize(reader);
-                    NetworkObject.AddSceneObject(sceneObject, reader, networkManager);
+                    sceneObject.Deserialize(m_ReceivedSceneObjectData);
+                    NetworkObject.AddSceneObject(sceneObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
                 // Mark the client being connected
                 networkManager.IsConnectedClient = true;
                 // When scene management is disabled we notify after everything is synchronized
-                networkManager.InvokeOnClientConnectedCallback(clientId);
+                networkManager.InvokeOnClientConnectedCallback(context.SenderId);
             }
         }
     }

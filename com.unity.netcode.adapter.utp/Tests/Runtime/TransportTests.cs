@@ -1,3 +1,5 @@
+// todo @simon-lemay-unity: un-guard/re-enable after validating UTP on consoles
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -22,19 +24,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
             if (m_Server)
             {
                 m_Server.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Server);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
             }
 
             if (m_Client1)
             {
                 m_Client1.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client1);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
             }
 
             if (m_Client2)
             {
                 m_Client2.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client2);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
             }
 
             m_ServerEvents?.Clear();
@@ -268,3 +276,4 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
     }
 }
+#endif

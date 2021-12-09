@@ -136,7 +136,7 @@ namespace Unity.Netcode
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
-        private List<INetworkParameter> m_NetworkParameters;
+        private NetworkSettings m_NetworkSettings;
         private byte[] m_MessageBuffer;
         private NetworkConnection m_ServerConnection;
         private ulong m_ServerClientId;
@@ -240,7 +240,7 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
             }
             else
             {
@@ -394,7 +394,7 @@ namespace Unity.Netcode
             }
             else
             {
-                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
                 return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
             }
         }
@@ -435,19 +435,21 @@ namespace Unity.Netcode
                     }
                 case TransportNetworkEvent.Type.Disconnect:
                     {
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
-                            ParseClientId(networkConnection),
-                            default(ArraySegment<byte>),
-                            Time.realtimeSinceStartup);
-
                         if (m_ServerConnection.IsCreated)
                         {
                             m_ServerConnection = default;
-                            if (m_Driver.GetConnectionState(m_ServerConnection) == NetworkConnection.State.Connecting)
+
+                            var reason = reader.ReadByte();
+                            if (reason == (byte)Networking.Transport.Error.DisconnectReason.MaxConnectionAttempts)
                             {
                                 Debug.LogError("Client failed to connect to server");
                             }
                         }
+
+                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                            ParseClientId(networkConnection),
+                            default(ArraySegment<byte>),
+                            Time.realtimeSinceStartup);
 
                         m_State = State.Disconnected;
                         return true;
@@ -595,21 +597,20 @@ namespace Unity.Netcode
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
                 "Netcode connection id size does not match UTP connection id size");
 
-            m_NetworkParameters = new List<INetworkParameter>();
+            m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
             // If the user sends a message of exactly m_SendQueueBatchSize length, we'll need an
             // extra byte to mark it as non-batched and 4 bytes for its length. If the user fills
             // up the send queue to its capacity (batched messages total m_SendQueueBatchSize), we
             // still need one extra byte to mark the payload as batched.
             var fragmentationCapacity = m_SendQueueBatchSize + 1 + 4;
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters() { PayloadCapacity = fragmentationCapacity });
 
-            m_NetworkParameters.Add(new BaselibNetworkParameter()
-            {
-                maximumPayloadSize = 2000, // Default value in UTP.
-                receiveQueueCapacity = m_MaxPacketQueueSize,
-                sendQueueCapacity = m_MaxPacketQueueSize
-            });
+            m_NetworkSettings
+                .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
+                .WithBaselibNetworkInterfaceParameters(
+                    maximumPayloadSize: 2000,
+                    receiveQueueCapacity: m_MaxPacketQueueSize,
+                    sendQueueCapacity: m_MaxPacketQueueSize);
         }
 
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -772,12 +773,15 @@ namespace Unity.Netcode
                 return;
             }
 
+
             // Flush the driver's internal send queue. If we're shutting down because the
             // NetworkManager is shutting down, it probably has disconnected some peer(s)
             // in the process and we want to get these disconnect messages on the wire.
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeDriver();
+
+            m_NetworkSettings.Dispose();
 
             foreach (var queue in m_SendQueue.Values)
             {
@@ -793,50 +797,61 @@ namespace Unity.Netcode
 
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
-            var netParams = new NetworkConfigParameter
-            {
-                maxConnectAttempts = transport.m_MaxConnectAttempts,
-                connectTimeoutMS = transport.m_ConnectTimeoutMS,
-                disconnectTimeoutMS = transport.m_DisconnectTimeoutMS,
-                heartbeatTimeoutMS = transport.m_HeartbeatTimeoutMS,
-                maxFrameTimeMS = 0
-            };
+#if MULTIPLAYER_TOOLS
+            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
+            var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            netParams.maxFrameTimeMS = 100;
+            maxFrameTimeMS = 100;
 
             var simulatorParams = ClientSimulatorParameters;
-            transport.m_NetworkParameters.Insert(0, simulatorParams);
-#endif
-            transport.m_NetworkParameters.Insert(0, netParams);
 
-            if (transport.m_NetworkParameters.Count > 0)
-            {
-                driver = NetworkDriver.Create(transport.m_NetworkParameters.ToArray());
-            }
-            else
-            {
-                driver = NetworkDriver.Create();
-            }
+            m_NetworkSettings.AddRawParameterStruct(ref simulatorParams);
+#endif
+            m_NetworkSettings.WithNetworkConfigParameters(
+                maxConnectAttempts: transport.m_MaxConnectAttempts,
+                connectTimeoutMS: transport.m_ConnectTimeoutMS,
+                disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
+                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
+                maxFrameTimeMS: maxFrameTimeMS);
+
+            driver = NetworkDriver.Create(m_NetworkSettings);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
             {
                 unreliableSequencedPipeline = driver.CreatePipeline(
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                    );
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                    );
             }
             else
 #endif
             {
-                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
                 );
             }
         }
