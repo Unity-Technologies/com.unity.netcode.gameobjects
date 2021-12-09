@@ -584,20 +584,8 @@ namespace Unity.Netcode
 
             GenerateScenesInBuild();
 
-            // If NetworkManager has this set to true, then we can get the DDOL (DontDestroyOnLoad) from its GaemObject
-            if (networkManager.DontDestroy)
-            {
-                DontDestroyOnLoadScene = networkManager.gameObject.scene;
-            }
-            else
-            {
-                // Otherwise, we have to create a GameObject and move it into the DDOL in order to
-                // register the DDOL scene handle with NetworkSceneManager
-                var myDDOLObject = new GameObject("DDOL-NWSM");
-                UnityEngine.Object.DontDestroyOnLoad(myDDOLObject);
-                DontDestroyOnLoadScene = myDDOLObject.scene;
-                UnityEngine.Object.Destroy(myDDOLObject);
-            }
+            // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
+            DontDestroyOnLoadScene = networkManager.gameObject.scene;
 
             ServerSceneHandleToClientSceneHandle.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle);
             ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);

@@ -42,6 +42,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 - Updated com.unity.collections to 1.1.0
+- NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
+- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
 
 
 ## [1.0.0-pre.3] - 2021-10-22
