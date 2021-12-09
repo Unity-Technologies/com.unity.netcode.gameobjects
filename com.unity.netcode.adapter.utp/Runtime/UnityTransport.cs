@@ -16,7 +16,12 @@ namespace Unity.Netcode
     /// </summary>
     public interface INetworkStreamDriverConstructor
     {
-        void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline);
+        void CreateDriver(
+            UnityTransport transport,
+            out NetworkDriver driver,
+            out NetworkPipeline unreliableFragmentedPipeline,
+            out NetworkPipeline unreliableSequencedFragmentedPipeline,
+            out NetworkPipeline reliableSequencedFragmentedPipeline);
     }
 
     public static class ErrorUtilities
@@ -141,7 +146,8 @@ namespace Unity.Netcode
         private NetworkConnection m_ServerConnection;
         private ulong m_ServerClientId;
 
-        private NetworkPipeline m_UnreliableSequencedPipeline;
+        private NetworkPipeline m_UnreliableFragmentedPipeline;
+        private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
@@ -194,7 +200,12 @@ namespace Unity.Netcode
 
         private void InitDriver()
         {
-            DriverConstructor.CreateDriver(this, out m_Driver, out m_UnreliableSequencedPipeline, out m_ReliableSequencedFragmentedPipeline);
+            DriverConstructor.CreateDriver(
+                this,
+                out m_Driver,
+                out m_UnreliableFragmentedPipeline,
+                out m_UnreliableSequencedFragmentedPipeline,
+                out m_ReliableSequencedFragmentedPipeline);
         }
 
         private void DisposeDriver()
@@ -210,10 +221,10 @@ namespace Unity.Netcode
             switch (delivery)
             {
                 case NetworkDelivery.Unreliable:
-                    return NetworkPipeline.Null;
+                    return m_UnreliableFragmentedPipeline;
 
                 case NetworkDelivery.UnreliableSequenced:
-                    return m_UnreliableSequencedPipeline;
+                    return m_UnreliableSequencedFragmentedPipeline;
 
                 case NetworkDelivery.Reliable:
                 case NetworkDelivery.ReliableSequenced:
@@ -647,7 +658,6 @@ namespace Unity.Netcode
                 {
                     // If data is too large to be batched, flush it out immediately. This happens with large initial spawn packets from Netcode for Gameobjects.
                     Debug.LogWarning($"Event of size {payload.Count} too large to fit in send queue (of size {m_SendQueueBatchSize}). Trying to send directly. This could be the initial payload!");
-                    Debug.Assert(networkDelivery == NetworkDelivery.ReliableFragmentedSequenced); // Messages like this, should always be sent via the fragmented pipeline.
                     SendMessageInstantly(sendTarget.ClientId, payload, pipeline);
                 }
             }
@@ -728,10 +738,6 @@ namespace Unity.Netcode
         {
             NetworkPipeline pipeline = sendTarget.NetworkPipeline;
             var payloadSize = sendQueue.Count + 1; // 1 extra byte to tell whether the message is batched or not
-            if (payloadSize > NetworkParameterConstants.MTU) // If this is bigger than MTU then force it to be sent via the FragmentedReliableSequencedPipeline
-            {
-                pipeline = m_ReliableSequencedFragmentedPipeline;
-            }
 
             var sendBuffer = sendQueue.GetData();
             SendBatchedMessage(sendTarget.ClientId, ref sendBuffer, pipeline);
@@ -795,7 +801,10 @@ namespace Unity.Netcode
             m_ServerClientId = 0;
         }
 
-        public void CreateDriver(UnityTransport transport, out NetworkDriver driver, out NetworkPipeline unreliableSequencedPipeline, out NetworkPipeline reliableSequencedFragmentedPipeline)
+        public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
+            out NetworkPipeline unreliableFragmentedPipeline,
+            out NetworkPipeline unreliableSequencedFragmentedPipeline,
+            out NetworkPipeline reliableSequencedFragmentedPipeline)
         {
             var maxFrameTimeMS = 0;
 
@@ -817,7 +826,12 @@ namespace Unity.Netcode
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
             {
-                unreliableSequencedPipeline = driver.CreatePipeline(
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend));
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend));
@@ -830,7 +844,10 @@ namespace Unity.Netcode
             else
 #endif
             {
-                unreliableSequencedPipeline = driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage));
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage), typeof(UnreliableSequencedPipelineStage));
                 reliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
                 );
