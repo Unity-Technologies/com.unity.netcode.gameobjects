@@ -325,8 +325,6 @@ namespace Unity.Netcode.RuntimeTests
         private int m_MovementFrames = 20;
         //private int m_SpawnWaitTime = 1;
         private float m_Speed => 100.0f / m_MovementFrames;
-        private float m_FirstInterpMag => 2.0f;
-
 
         [UnityTest]
         public IEnumerator RespawnedPositionTest()
@@ -376,12 +374,12 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.gameObject.SetActive(true);
             m_DefaultNetworkObject.Spawn();
 
-
             yield return new WaitUntil(() => m_ClientSideSpawned);
             yield return new WaitForEndOfFrame();
 
             var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
-            Assert.IsFalse(firstClientInterpolatedPosition.magnitude > m_FirstInterpMag);
+            Debug.Log($"Pre-[Verify With Fix] Magnitude: {firstClientInterpolatedPosition} vs m_Speed: {m_Speed}");
+            Assert.IsFalse(firstClientInterpolatedPosition.magnitude > m_Speed);
             Debug.Log($"[Verify With Fix] First client interpolated position: {firstClientInterpolatedPosition}");
 
             yield return WaitForFrames(m_MovementFrames);
