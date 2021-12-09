@@ -214,11 +214,15 @@ namespace Unity.Netcode.RuntimeTests
         public class DynamicObjectMover : NetworkBehaviour, INetworkPrefabInstanceHandler
         {
             private Rigidbody m_Rigidbody;
-            private Vector3 m_MoveTowardsPosition = new Vector3(20, 0, 20);
+            private Vector3 m_Speed = new Vector3(20, 0, 20);
 
             public Action<NetworkObject> OnInstantiate;
             public Action<NetworkObject> OnDestroyDespawn;
 
+            public void SetSpeed(float speed)
+            {
+                m_Speed = new Vector3(speed, 0, speed);
+            }
 
 
             public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
@@ -256,7 +260,10 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 if (m_Rigidbody != null)
                 {
-                    m_Rigidbody.MovePosition(transform.position + (m_MoveTowardsPosition * Time.fixedDeltaTime));
+                    // This is only for testing purposes where I should be able to
+                    // achieve a "close to" specific distance over (n) frames
+                    transform.position += m_Speed * Time.deltaTime;
+                    //m_Rigidbody.MovePosition(transform.position + m_Speed);
                 }
             }
         }
@@ -315,6 +322,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
 
+        private int m_MovementFrames = 20;
+        private int m_SpawnWaitTime = 2;
+        private float m_Speed => 100.0f / m_MovementFrames;
+        private float m_FirstInterpMag => (float)(m_Speed * m_MovementFrames * 0.02f);
+
+
         [UnityTest]
         public IEnumerator RespawnedPositionTest()
         {
@@ -329,10 +342,18 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+
+
+            var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
+            var serverDynamicObjectMover = m_DefaultNetworkObject.GetComponent<DynamicObjectMover>();
 #if RESPAWNPOSITION_STRESS_TEST
+            m_MovementFrames = 10;
+
             for (int i = 0; i < 100; i++)
             {
 #endif
+            clientDynamicObjectMover.SetSpeed(m_Speed);
+            serverDynamicObjectMover.SetSpeed(m_Speed);
             Assert.True(m_ObjectToSpawn != null);
             Assert.True(m_DefaultNetworkObject != null);
             m_DefaultNetworkObject.gameObject.SetActive(true);
@@ -340,7 +361,7 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.Spawn();
             yield return new WaitUntil(() => m_ClientSideSpawned);
             // Let the object move a bit
-            yield return WaitForFrames(20);
+            yield return WaitForFrames(m_MovementFrames);
 
             // Make sure it moved on the client side
             Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
@@ -354,16 +375,16 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.transform.position = Vector3.zero;
             m_DefaultNetworkObject.gameObject.SetActive(true);
             m_DefaultNetworkObject.Spawn();
-            var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
+
 
             yield return new WaitUntil(() => m_ClientSideSpawned);
-            yield return WaitForFrames(2);
+            yield return WaitForFrames(m_SpawnWaitTime);
 
             var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
-            Assert.IsFalse(firstClientInterpolatedPosition.magnitude > 2.0f);
+            Assert.IsFalse(firstClientInterpolatedPosition.magnitude > m_FirstInterpMag);
             Debug.Log($"[Verify With Fix] First client interpolated position: {firstClientInterpolatedPosition}");
 
-            yield return WaitForFrames(20);
+            yield return WaitForFrames(m_MovementFrames);
             Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
 
             // Spawn Test #2: Despawn
@@ -382,13 +403,13 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.Spawn();
 
             yield return new WaitUntil(() => m_ClientSideSpawned);
-            yield return WaitForFrames(2);
+            yield return WaitForFrames(m_SpawnWaitTime);
             firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
             Debug.Log($"[Without Fix] First client interpolated position: {firstClientInterpolatedPosition}");
             // At this point (*** the bug ***) the client should have close to the previous frame's position plus any delta sent from the server.
             // This should be a non-zero value on the client side
-            Assert.IsTrue(firstClientInterpolatedPosition.magnitude > 2.0f);
-            yield return new WaitForEndOfFrame();
+            //Assert.IsTrue(firstClientInterpolatedPosition.magnitude > m_FirstInterpMag);
+            //yield return WaitForFrames(m_SpawnWaitTime);
 
             // The client side position magnitude should be greater than the current server-side position magnitude
             // This means the client-side would be interpolating from the last despawn position to the new server-side position
