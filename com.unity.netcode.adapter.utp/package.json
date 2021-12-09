@@ -5,7 +5,8 @@
   "version": "1.0.0-pre.3",
   "unity": "2020.3",
   "dependencies": {
+    "com.unity.burst": "1.6.2",
     "com.unity.netcode.gameobjects": "1.0.0-pre.3",
-    "com.unity.transport": "1.0.0-pre.9"
+    "com.unity.transport": "1.0.0-pre.10"
   }
 }

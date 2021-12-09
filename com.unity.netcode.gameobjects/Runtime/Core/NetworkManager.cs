@@ -609,6 +609,7 @@ namespace Unity.Netcode
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+            NetworkConfig.OverrideToNetworkPrefab.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -1129,7 +1130,10 @@ namespace Unity.Netcode
                 MessagingSystem = null;
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            if (NetworkConfig?.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            }
 
             if (SpawnManager != null)
             {
@@ -1655,7 +1659,6 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
@@ -1674,6 +1677,7 @@ namespace Unity.Netcode
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
+                    LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
