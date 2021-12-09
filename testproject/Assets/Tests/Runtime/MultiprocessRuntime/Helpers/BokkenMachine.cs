@@ -81,7 +81,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Provision()
         {
-            ExecuteCommand(GenerateCreateCommand(), true, 5000);
+            ExecuteCommand(GenerateCreateCommand(), true, false, 5000);
         }
 
         public static void DisposeResources()
@@ -137,7 +137,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 string s = $" --command mpinfo " +
                     $"--input-path {PathToJson} ";
-                ExecuteCommand(s, true, 20000);
+                ExecuteCommand(s, true, true, 20000);
             }
             catch (Exception e)
             {
@@ -151,7 +151,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand($"");
         }
 
-        public static Process ExecuteCommand(string command, bool waitForResult = false, int timeToWait = 300000)
+        public static Process ExecuteCommand(string command, bool waitForResult = false, bool logStdOut = false, int timeToWait = 300000)
         {
             MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");
             
