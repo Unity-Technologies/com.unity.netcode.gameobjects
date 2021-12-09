@@ -1,5 +1,7 @@
-using Unity.Netcode;
 using UnityEngine;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+
 
 namespace TestProject.ManualTests
 {
@@ -21,6 +23,32 @@ namespace TestProject.ManualTests
         {
             m_RigidBody = GetComponent<Rigidbody>();
             m_MeshRenderer = GetComponent<MeshRenderer>();
+
+            GetComponent<NetworkTransform>().NetworkTransformInitialized += NetworkTransformInitialized;
+        }
+
+        protected virtual void OnTransformInitialized()
+        {
+            if (m_MeshRenderer == null)
+            {
+                m_MeshRenderer = GetComponent<MeshRenderer>();
+            }
+
+            // This is here to handle any short term latency between the time
+            // an object becomes spawned to the time it takes to update its first
+            // position.
+            if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
+            {
+                m_MeshRenderer.enabled = true;
+            }
+        }
+
+        private void NetworkTransformInitialized()
+        {
+            if (isActiveAndEnabled && IsSpawned && !IsServer)
+            {
+                OnTransformInitialized();
+            }
         }
 
         /// <summary>
@@ -55,9 +83,8 @@ namespace TestProject.ManualTests
             m_MeshRenderer.enabled = true;
         }
 
-        private float m_VisibilitySpawn;
         /// <summary>
-        /// Handles setting a delay before the newly spawned object is visible
+        /// Handles remote client flicker issue <see cref="NetworkTransform.NetworkTransformInitialized "/>, <see cref="NetworkTransform.OnNetworkSpawn"/>, and <see cref="NetworkTransform.OnNetworkStateChanged"/>
         /// Note: this might get removed once the snapshot system is synchronizing
         /// NetworkObjects' spawn and despawn.
         /// </summary>
@@ -70,11 +97,6 @@ namespace TestProject.ManualTests
                     m_MeshRenderer = GetComponent<MeshRenderer>();
                 }
                 m_MeshRenderer.enabled = false;
-                m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
-                if (NetworkObject.NetworkObjectId == 0)
-                {
-                    Debug.Log("Spawning NetworkObjectId 0!");
-                }
             }
             base.OnNetworkSpawn();
         }
@@ -148,19 +170,6 @@ namespace TestProject.ManualTests
                     if (NetworkObject.NetworkManager != null)
                     {
                         NetworkObject.Despawn();
-                    }
-                }
-                else if (!IsServer)
-                {
-                    // This is here to handle any short term latency between the time
-                    // an object becomes spawned to the time it takes to update its first
-                    // position.
-                    if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
-                    {
-                        if (m_VisibilitySpawn < Time.realtimeSinceStartup)
-                        {
-                            m_MeshRenderer.enabled = true;
-                        }
                     }
                 }
             }

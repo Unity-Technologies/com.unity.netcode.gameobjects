@@ -37,15 +37,6 @@ namespace Unity.Netcode.Components
             // 11-15: <unused>
             private ushort m_Bitset;
 
-            public void Reset()
-            {
-                m_Bitset = 0;
-                PositionX = PositionY = PositionZ = 0.0f;
-                RotAngleX = RotAngleY = RotAngleZ = 0.0f;
-                ScaleX = ScaleY = ScaleZ = 0.0f;
-                SentTime = 0.0f;
-            }
-
             public bool InLocalSpace
             {
                 get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
@@ -650,6 +641,22 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private bool m_InitializeClient;
+
+        /// <summary>
+        /// TODO: Remove this once snapshot synchronizes the first NetworkVariable update
+        /// with spawning.
+        /// REASON: This provides users with a notification that the NetworkTransform has
+        /// been initialized and the newly spawned NetworkObject can be visualized
+        /// at this time. This can help avoid certain edge case visual anomalies
+        /// like remote client side only momentary flickering that is dependent upon
+        /// the time delta between respawning a previously despawned NetworkObject and
+        /// when the first m_ReplicatedNetworkState is received by the remote client.
+        /// <see cref="OnNetworkSpawn"/> and <see cref="OnNetworkStateChanged"/>
+        /// </summary>
+        public Action NetworkTransformInitialized;
+
+
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -662,6 +669,19 @@ namespace Unity.Netcode.Components
             {
                 // we're the authority, we ignore incoming changes
                 return;
+            }
+
+            /// TODO: Remove this once snapshot synchronizes the first NetworkVariable update
+            /// with spawning.  Until then, we wait for the first m_ReplicatedNetworkState update
+            /// before remote clients initialize.
+            /// REASON: When re-using/recycling NetworkObjects (pooled or otherwise), upon the
+            /// 2nd spawn and all subsequent spawns the remote-clients will interpolate from
+            /// their last despawned position as m_ReplicatedNetworkState has not been updated
+            /// with its new state being respawned. <see cref="OnNetworkSpawn"/>
+            if (!IsServer && m_InitializeClient)
+            {
+                Initialize(true);
+                m_InitializeClient = false;
             }
 
             AddInterpolatedState(newState);
@@ -702,12 +722,12 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
             m_Transform = transform;
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
-
             CanCommitToTransform = IsServer;
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
@@ -717,19 +737,26 @@ namespace Unity.Netcode.Components
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
 
-            // We do this to reset the interpolators so that pooled NetworkObjects will initialize prior
-            // to assigning the current NetworkState -- helps prevent pooled objects from interpolating from the last state
-            Initialize();
-
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+            /// TODO: Once snapshot synchronizes the first NetworkVariable update with spawning
+            /// then we can remove this for remote clients (i.e. not Host).  Until then, we wait
+            /// for the first m_ReplicatedNetworkState update before remote clients initialize.
+            /// REASON: When re-using/recycling NetworkObjects (pooled or otherwise), upon the
+            /// 2nd spawn and all subsequent spawns the remote-clients will interpolate from
+            /// their last despawned position as m_ReplicatedNetworkState has not been updated
+            /// with its new state being respawned. <see cref="OnNetworkStateChanged"/>
+            if (!IsServer)
+            {
+                m_InitializeClient = true;
+            }
+            else
+            {
+                Initialize(true);
+            }
         }
 
         public override void OnNetworkDespawn()
         {
-            // Reset the network state once despawned -- helps prevent pooled objects from interpolating from the last state
-            m_LocalAuthoritativeNetworkState.Reset();
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
         }
 
         public override void OnGainedOwnership()
@@ -742,8 +769,14 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
-        private void Initialize()
+        private void Initialize(bool applyState=false)
         {
+            if (applyState)
+            {
+                m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+                NetworkTransformInitialized?.Invoke();
+            }
+
             ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
 
             if (CanCommitToTransform)
@@ -824,6 +857,11 @@ namespace Unity.Netcode.Components
         protected virtual void Update()
         {
             if (!IsSpawned)
+            {
+                return;
+            }
+
+            if (!IsServer && m_InitializeClient)
             {
                 return;
             }
