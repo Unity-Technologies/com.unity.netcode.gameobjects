@@ -8,13 +8,15 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     [BurstCompile]
-    public unsafe struct NetworkMetricsPipelineStage : INetworkPipelineStage
+    internal unsafe struct NetworkMetricsPipelineStage : INetworkPipelineStage
     {
         static TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate> ReceiveFunction = new TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate>(Receive);
         static TransportFunctionPointer<NetworkPipelineStage.SendDelegate> SendFunction = new TransportFunctionPointer<NetworkPipelineStage.SendDelegate>(Send);
         static TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate> InitializeConnectionFunction = new TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate>(InitializeConnection);
 
-        public NetworkPipelineStage StaticInitialize(byte* staticInstanceBuffer, int staticInstanceBufferLength, NetworkSettings settings)
+        public NetworkPipelineStage StaticInitialize(byte* staticInstanceBuffer,
+            int staticInstanceBufferLength,
+            NetworkSettings settings)
         {
             return new NetworkPipelineStage(ReceiveFunction,
                                             SendFunction,
@@ -29,14 +31,20 @@ namespace Unity.Netcode
 
         [BurstCompile(DisableDirectCall = true)]
         [MonoPInvokeCallback(typeof(NetworkPipelineStage.ReceiveDelegate))]
-        private static void Receive(ref NetworkPipelineContext networkPipelineContext, ref InboundRecvBuffer inboundReceiveBuffer, ref NetworkPipelineStage.Requests requests, int systemHeaderSize)
+        private static void Receive(ref NetworkPipelineContext networkPipelineContext,
+            ref InboundRecvBuffer inboundReceiveBuffer,
+            ref NetworkPipelineStage.Requests requests,
+            int systemHeaderSize)
         {
             
         }
 
         [BurstCompile(DisableDirectCall = true)]
         [MonoPInvokeCallback(typeof(NetworkPipelineStage.SendDelegate))]
-        private static int Send(ref NetworkPipelineContext networkPipelineContext, ref InboundSendBuffer inboundSendBuffer, ref NetworkPipelineStage.Requests requests, int systemHeaderSize)
+        private static int Send(ref NetworkPipelineContext networkPipelineContext,
+            ref InboundSendBuffer inboundSendBuffer,
+            ref NetworkPipelineStage.Requests requests,
+            int systemHeaderSize)
         {
             return 0;
         }
