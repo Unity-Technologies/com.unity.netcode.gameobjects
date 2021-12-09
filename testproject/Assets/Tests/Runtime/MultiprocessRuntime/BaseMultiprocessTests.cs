@@ -167,8 +167,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                     foreach (var machine in machines)
                     {                        
-                        MultiprocessLogger.Log($"Lauching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
-                        machine.Launch();                        
+                        MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
+                        machine.Launch();
+                        MultiprocessLogger.Log($"Launching process complete");
                     }
                 }
             }
@@ -176,12 +177,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
-
+            MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
-
+                MultiprocessLogger.Log($"{Time.realtimeSinceStartup} > {timeOutTime} {NetworkManager.Singleton.ConnectedClients.Count}");
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {                    
                     throw new Exception($"Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
