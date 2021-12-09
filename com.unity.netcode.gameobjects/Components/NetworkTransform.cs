@@ -756,13 +756,17 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkDespawn()
         {
-            // Server resets both its m_LocalAuthoritativeNetworkState and the m_ReplicatedNetworkState upon despawn
-            if (IsServer && EnableDeferredClientInit)
+            if (EnableDeferredClientInit)
             {
                 // Reset the network state once despawned -- helps prevent pooled objects from interpolating from the last state
                 m_LocalAuthoritativeNetworkState.Reset();
-                m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                // Server resets both its m_LocalAuthoritativeNetworkState and the m_ReplicatedNetworkState upon despawn
+                if (IsServer)
+                {
+                    m_ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                }
             }
+
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 

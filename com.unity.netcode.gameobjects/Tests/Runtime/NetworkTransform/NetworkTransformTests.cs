@@ -333,66 +333,69 @@ namespace Unity.Netcode.RuntimeTests
             for (int i = 0; i < 100; i++)
             {
 #endif
-                Assert.True(m_ObjectToSpawn != null);
-                Assert.True(m_DefaultNetworkObject != null);
-                m_DefaultNetworkObject.gameObject.SetActive(true);
-                m_DefaultNetworkObject.transform.position = Vector3.zero;
-                m_DefaultNetworkObject.Spawn();
-                yield return new WaitUntil(() => m_ClientSideSpawned);
-                // Let the object move a bit
-                yield return WaitForFrames(20);
+            Assert.True(m_ObjectToSpawn != null);
+            Assert.True(m_DefaultNetworkObject != null);
+            m_DefaultNetworkObject.gameObject.SetActive(true);
+            m_DefaultNetworkObject.transform.position = Vector3.zero;
+            m_DefaultNetworkObject.Spawn();
+            yield return new WaitUntil(() => m_ClientSideSpawned);
+            // Let the object move a bit
+            yield return WaitForFrames(20);
 
-                // Make sure it moved on the client side
-                Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
+            // Make sure it moved on the client side
+            Assert.IsTrue(m_ClientSideObject.transform.position != Vector3.zero);
 
-                // Spawn Test #1: Despawn
-                m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
-                yield return new WaitUntil(() => !m_ClientSideSpawned);
-                yield return new WaitForEndOfFrame();
+            // Spawn Test #1: Despawn
+            m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
+            yield return new WaitUntil(() => !m_ClientSideSpawned);
+            yield return new WaitForEndOfFrame();
 
-                // Spawn Test #1: Verify the fix works
-                m_DefaultNetworkObject.transform.position = Vector3.zero;
-                m_DefaultNetworkObject.gameObject.SetActive(true);
-                m_DefaultNetworkObject.Spawn();
-                var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
+            // Spawn Test #1: Verify the fix works
+            m_DefaultNetworkObject.transform.position = Vector3.zero;
+            m_DefaultNetworkObject.gameObject.SetActive(true);
+            m_DefaultNetworkObject.Spawn();
+            var clientDynamicObjectMover = m_ClientSideObject.GetComponent<DynamicObjectMover>();
 
-                yield return new WaitUntil(() => m_ClientSideSpawned);
+            yield return new WaitUntil(() => m_ClientSideSpawned);
+            yield return WaitForFrames(2);
 
-                var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
-                Assert.IsFalse(firstClientInterpolatedPosition.magnitude > 2.0f);
-                Debug.Log($"[Verify With Fix] First client interpolated position: {firstClientInterpolatedPosition}");
+            var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
+            Assert.IsFalse(firstClientInterpolatedPosition.magnitude > 2.0f);
+            Debug.Log($"[Verify With Fix] First client interpolated position: {firstClientInterpolatedPosition}");
 
-                yield return WaitForFrames(20);
-                Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
+            yield return WaitForFrames(20);
+            Assert.IsTrue(m_LastClientSidePosition != Vector3.zero);
 
-                // Spawn Test #2: Despawn
-                m_DefaultNetworkObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
-                m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
-                var serverSidePositionAfterDespawn = m_DefaultNetworkObject.transform.position;
+            // Spawn Test #2: Despawn
+            m_DefaultNetworkObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
+            m_ServerNetworkManager.SpawnManager.DespawnObject(m_DefaultNetworkObject);
+            var serverSidePositionAfterDespawn = m_DefaultNetworkObject.transform.position;
 
-                yield return new WaitUntil(() => !m_ClientSideSpawned);
+            yield return new WaitUntil(() => !m_ClientSideSpawned);
+            yield return new WaitForEndOfFrame();
 
-                // Spawn Test #2: Verify that this breaks without the fix
-                m_ClientSideObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
+            // Spawn Test #2: Verify that this breaks without the fix
+            m_ClientSideObject.GetComponent<NetworkTransform>().EnableDeferredClientInit = false;
 
-                m_DefaultNetworkObject.transform.position = Vector3.zero;
-                m_DefaultNetworkObject.gameObject.SetActive(true);
-                m_DefaultNetworkObject.Spawn();
+            m_DefaultNetworkObject.transform.position = Vector3.zero;
+            m_DefaultNetworkObject.gameObject.SetActive(true);
+            m_DefaultNetworkObject.Spawn();
 
-                yield return new WaitUntil(() => m_ClientSideSpawned);
-                firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
-                Debug.Log($"[Without Fix] First client interpolated position: {firstClientInterpolatedPosition}");
-                // At this point (*** the bug ***) the client should have close to the previous frame's position plus any delta sent from the server.
-                // This should be a non-zero value on the client side
-                Assert.IsTrue(firstClientInterpolatedPosition.magnitude > 2.0f);
-                yield return new WaitForEndOfFrame();
+            yield return new WaitUntil(() => m_ClientSideSpawned);
+            yield return WaitForFrames(2);
+            firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
+            Debug.Log($"[Without Fix] First client interpolated position: {firstClientInterpolatedPosition}");
+            // At this point (*** the bug ***) the client should have close to the previous frame's position plus any delta sent from the server.
+            // This should be a non-zero value on the client side
+            Assert.IsTrue(firstClientInterpolatedPosition.magnitude > 2.0f);
+            yield return new WaitForEndOfFrame();
 
-                // The client side position magnitude should be greater than the current server-side position magnitude
-                // This means the client-side would be interpolating from the last despawn position to the new server-side position
-                Assert.IsTrue(firstClientInterpolatedPosition.magnitude > m_DefaultNetworkObject.transform.position.magnitude);
+            // The client side position magnitude should be greater than the current server-side position magnitude
+            // This means the client-side would be interpolating from the last despawn position to the new server-side position
+            Assert.IsTrue(firstClientInterpolatedPosition.magnitude > m_DefaultNetworkObject.transform.position.magnitude);
 
-                // Done
-                m_DefaultNetworkObject.Despawn();
+            // Done
+            m_DefaultNetworkObject.Despawn();
 
 #if RESPAWNPOSITION_STRESS_TEST
                 yield return new WaitUntil(() => !m_ClientSideSpawned);
