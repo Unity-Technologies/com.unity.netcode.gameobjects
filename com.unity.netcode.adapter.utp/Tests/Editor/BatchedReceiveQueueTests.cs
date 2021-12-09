@@ -11,13 +11,12 @@ namespace Unity.Netcode.UTP.EditorTests
         [Test]
         public void BatchedReceiveQueue_EmptyReader()
         {
-            using (var data = new NativeArray<byte>(0, Allocator.Temp))
-            {
-                var reader = new DataStreamReader(data);
-                var q = new BatchedReceiveQueue(reader);
-                Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
-                Assert.True(q.IsEmpty);
-            }
+            var data = new NativeArray<byte>(0, Allocator.Temp);
+
+            var reader = new DataStreamReader(data);
+            var q = new BatchedReceiveQueue(reader);
+            Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
+            Assert.True(q.IsEmpty);
         }
 
         [Test]
@@ -25,24 +24,23 @@ namespace Unity.Netcode.UTP.EditorTests
         {
             var dataLength = sizeof(int) + 1;
 
-            using (var data = new NativeArray<byte>(dataLength, Allocator.Temp))
-            {
-                var writer = new DataStreamWriter(data);
-                writer.WriteInt(1);
-                writer.WriteByte((byte)42);
+            var data = new NativeArray<byte>(dataLength, Allocator.Temp);
 
-                var reader = new DataStreamReader(data);
-                var q = new BatchedReceiveQueue(reader);
+            var writer = new DataStreamWriter(data);
+            writer.WriteInt(1);
+            writer.WriteByte((byte)42);
 
-                Assert.False(q.IsEmpty);
+            var reader = new DataStreamReader(data);
+            var q = new BatchedReceiveQueue(reader);
 
-                var message = q.PopMessage();
-                Assert.AreEqual(1, message.Count);
-                Assert.AreEqual((byte)42, message.Array[message.Offset]);
+            Assert.False(q.IsEmpty);
 
-                Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
-                Assert.True(q.IsEmpty);
-            }
+            var message = q.PopMessage();
+            Assert.AreEqual(1, message.Count);
+            Assert.AreEqual((byte)42, message.Array[message.Offset]);
+
+            Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
+            Assert.True(q.IsEmpty);
         }
 
         [Test]
@@ -50,30 +48,29 @@ namespace Unity.Netcode.UTP.EditorTests
         {
             var dataLength = (sizeof(int) + 1) * 2;
 
-            using (var data = new NativeArray<byte>(dataLength, Allocator.Temp))
-            {
-                var writer = new DataStreamWriter(data);
-                writer.WriteInt(1);
-                writer.WriteByte((byte)42);
-                writer.WriteInt(1);
-                writer.WriteByte((byte)142);
+            var data = new NativeArray<byte>(dataLength, Allocator.Temp);
 
-                var reader = new DataStreamReader(data);
-                var q = new BatchedReceiveQueue(reader);
+            var writer = new DataStreamWriter(data);
+            writer.WriteInt(1);
+            writer.WriteByte((byte)42);
+            writer.WriteInt(1);
+            writer.WriteByte((byte)142);
 
-                Assert.False(q.IsEmpty);
+            var reader = new DataStreamReader(data);
+            var q = new BatchedReceiveQueue(reader);
 
-                var message1 = q.PopMessage();
-                Assert.AreEqual(1, message1.Count);
-                Assert.AreEqual((byte)42, message1.Array[message1.Offset]);
+            Assert.False(q.IsEmpty);
 
-                var message2 = q.PopMessage();
-                Assert.AreEqual(1, message2.Count);
-                Assert.AreEqual((byte)142, message2.Array[message2.Offset]);
+            var message1 = q.PopMessage();
+            Assert.AreEqual(1, message1.Count);
+            Assert.AreEqual((byte)42, message1.Array[message1.Offset]);
 
-                Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
-                Assert.True(q.IsEmpty);
-            }
+            var message2 = q.PopMessage();
+            Assert.AreEqual(1, message2.Count);
+            Assert.AreEqual((byte)142, message2.Array[message2.Offset]);
+
+            Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
+            Assert.True(q.IsEmpty);
         }
     }
 }
