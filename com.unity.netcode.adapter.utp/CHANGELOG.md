@@ -10,7 +10,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Changed
 
 - Removed 'Maximum Packet Size' configuration field in the inspector. This would cause confusion since the maximum packet size is in effect always the MTU (1400 bytes on most platforms).
-- Updated com.unity.transport to 1.0.0-pre.9
+- Updated com.unity.transport to 1.0.0-pre.10
 
 ### Fixed
 
