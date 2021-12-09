@@ -14,6 +14,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
+        private string[] m_Platforms;
+        protected override string[] platformList => m_Platforms;
         protected override int WorkerCount { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
         private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();

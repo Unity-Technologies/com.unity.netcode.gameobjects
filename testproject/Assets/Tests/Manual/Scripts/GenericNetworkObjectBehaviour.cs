@@ -102,7 +102,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void FixedUpdate()
         {
-            if (NetworkManager != null && NetworkManager.IsListening)
+            if (IsSpawned)
             {
                 if (IsOwner)
                 {
@@ -140,25 +140,36 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if (IsOwner && m_ShouldDespawn && NetworkObject != null)
+            if (IsSpawned)
             {
-                m_ShouldDespawn = false;
-                if (NetworkObject.NetworkManager != null)
+                if (IsOwner && m_ShouldDespawn && NetworkObject != null)
                 {
-                    NetworkObject.Despawn();
+                    m_ShouldDespawn = false;
+                    if (NetworkObject.NetworkManager != null)
+                    {
+                        NetworkObject.Despawn();
+                    }
+                }
+                else if (!IsServer)
+                {
+                    // This is here to handle any short term latency between the time
+                    // an object becomes spawned to the time it takes to update its first
+                    // position.
+                    if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
+                    {
+                        if (m_VisibilitySpawn < Time.realtimeSinceStartup)
+                        {
+                            m_MeshRenderer.enabled = true;
+                        }
+                    }
                 }
             }
-            else if (!IsServer)
+            else if (IsRegisteredPoolObject)
             {
-                // This is here to handle any short term latency between the time
-                // an object becomes spawned to the time it takes to update its first
-                // position.
-                if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
+                if (m_MeshRenderer != null && m_MeshRenderer.enabled)
                 {
-                    if (m_VisibilitySpawn < Time.realtimeSinceStartup)
-                    {
-                        m_MeshRenderer.enabled = true;
-                    }
+                    m_MeshRenderer.enabled = false;
+                    gameObject.SetActive(false);
                 }
             }
         }

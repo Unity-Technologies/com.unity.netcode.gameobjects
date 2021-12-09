@@ -41,6 +41,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackOwnershipChangeSentMetric()
         {
             var networkObject = SpawnNetworkObject();
@@ -58,10 +59,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>(), ownershipChangeSent.BytesCount);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + FastBufferWriter.GetWriteSize<MessageHeader>(), ownershipChangeSent.BytesCount);
         }
 
         [UnityTest]
+        [Ignore("Snapshot transition")]
         public IEnumerator TrackOwnershipChangeReceivedMetric()
         {
             var networkObject = SpawnNetworkObject();

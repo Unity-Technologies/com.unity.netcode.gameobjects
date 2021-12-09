@@ -1,5 +1,8 @@
 using System;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,6 +14,7 @@ using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
+    private static FileInfo s_Localip_fileinfo;
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static DirectoryInfo MultiprocessDirInfo
@@ -38,6 +42,7 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
+        s_Localip_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "localip"));
         return s_MultiprocessDirInfo;
     }
 
@@ -54,27 +59,24 @@ public class MultiprocessOrchestration
     {
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
     }
-
-    public static int ActiveWorkerCount()
+    
+    public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
-        int activeWorkerCount = 0;
-        if (s_Processes == null)
+        var bokkenMachine = BokkenMachine.Parse(platformString);
+        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, $"{bokkenMachine.Name}.json");
+        var fi = new FileInfo(bokkenMachine.PathToJson);
+        if (!fi.Exists)
         {
-            return activeWorkerCount;
+            MultiprocessLogger.Log($"Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
+            bokkenMachine.Provision();
+            bokkenMachine.Setup();
         }
-
-        if (s_Processes.Count > 0)
+        else
         {
-            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
-            foreach (var p in s_Processes)
-            {
-                if ((p != null) && (!p.HasExited))
-                {
-                    activeWorkerCount++;
-                }
-            }
-        }
-        return activeWorkerCount;
+            MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists, just kill any old processes");
+            bokkenMachine.KillMptPlayer();
+        }    
+        return bokkenMachine;
     }
 
     public static string StartWorkerNode()
@@ -90,10 +92,10 @@ public class MultiprocessOrchestration
 
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
         {
-            MultiprocessLogger.Log("Run on remote nodes");
+            MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
             StartWorkersOnRemoteNodes(rootdir_fileinfo);
             return "";
-        }
+        }        
         else
         {
             MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
@@ -177,6 +179,7 @@ public class MultiprocessOrchestration
         }
         return logPath;
     }
+    
 
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
     {
@@ -215,6 +218,15 @@ public class MultiprocessOrchestration
         }
     }
 
+    public static void KillAllTestPlayersOnRemoteMachines()
+    {
+        
+        foreach (var f in MultiprocessDirInfo.GetFiles("*.json"))
+        {
+            BokkenMachine.KillMultiprocessTestPlayer(f.FullName);
+        }
+    }
+
     public static void ShutdownAllProcesses()
     {
         MultiprocessLogger.Log("Shutting down all processes..");
@@ -239,5 +251,90 @@ public class MultiprocessOrchestration
         }
 
         s_Processes.Clear();
+    }
+
+    private static void WriteLocalIP(string localip)
+    {
+        using StreamWriter sw = File.CreateText(s_Localip_fileinfo.FullName);
+        sw.WriteLine(localip);
+    }
+
+    public static string GetLocalIPAddress()
+    {
+        
+        string bOKKEN_HOST_IP = Environment.GetEnvironmentVariable("BOKKEN_HOST_IP");
+        if (!string.IsNullOrEmpty(bOKKEN_HOST_IP) && bOKKEN_HOST_IP.Contains("."))
+        {
+
+            MultiprocessLogger.Log($"BOKKEN_HOST_IP was found as {bOKKEN_HOST_IP}");
+            return bOKKEN_HOST_IP;
+        }
+
+        if (s_Localip_fileinfo.Exists)
+        {            
+            string alllines = File.ReadAllText(s_Localip_fileinfo.FullName).Trim();
+            MultiprocessLogger.Log($"localIP file was found as {alllines}");
+            return alllines;
+        }
+
+        
+        string localhostname = Dns.GetHostName();
+        
+
+        try
+        {
+            if (!localhostname.Equals("Mac-mini.local"))
+            {
+                var host = Dns.GetHostEntry(localhostname);
+
+                foreach (var ip in host.AddressList)
+                {
+
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        string localIPAddress = ip.ToString();
+
+                        WriteLocalIP(localIPAddress);
+                        return localIPAddress;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);            
+        }
+
+        try
+        {
+            return GetLocalIPAddressFromNetworkInterface();
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);
+        }
+
+        throw new Exception("No network adapters with an IPv4 address in the system!");
+    }
+
+    private static string GetLocalIPAddressFromNetworkInterface()
+    {
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        foreach (NetworkInterface ni in interfaces)
+        {
+            foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+            {
+
+                if (ip.Address.ToString().Contains(".") && !ip.Address.ToString().Equals("127.0.0.1"))
+                {
+                    // TODO: Write this to a file so we don't have to keep getting this IP over and over
+                    WriteLocalIP(ip.Address.ToString());
+                    return ip.Address.ToString();
+                }
+            }
+        }
+        return "";
     }
 }

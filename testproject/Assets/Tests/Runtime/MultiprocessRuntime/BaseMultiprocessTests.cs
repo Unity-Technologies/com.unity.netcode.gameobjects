@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,6 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        private string m_LogPath;
         private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
@@ -36,6 +38,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
         /// </summary>
         protected abstract int WorkerCount { get; }
+        protected abstract string[] platformList { get; }
 
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -56,7 +59,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-            MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+            
             var currentlyActiveScene = SceneManager.GetActiveScene();
 
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
@@ -77,17 +80,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            MultiprocessLogger.Log($"OnSceneLoaded {scene.name}");
+            
             SceneManager.sceneLoaded -= OnSceneLoaded;
             var ushortport = ushort.Parse(m_Port);
-            MultiprocessLogger.Log($"Parsing m_Port {m_Port} as {ushortport}");
+            
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
             switch (transport)
             {
-                case UNetTransport unetTransport:
-                    MultiprocessLogger.Log($"Setting connect port and server listen port to {ushortport}");
+                case UNetTransport unetTransport:                    
                     unetTransport.ConnectPort = ushortport;
                     unetTransport.ServerListenPort = ushortport;
+                    break;
+                default:
+                    MultiprocessLogger.LogError($"OnSceneLoaded: Transport is {transport} which is an unaccounted for transport case");
                     break;
             }
 
@@ -96,7 +101,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
-            MultiprocessLogger.Log("Starting Host");
+            
             NetworkManager.Singleton.StartHost();
 
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
@@ -123,20 +128,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiprocessLogger.Log("NetworkManager.Singleton != null");
+            
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
+            
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
+            
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiprocessLogger.Log("m_HasSceneLoaded");
-            var startTime = Time.time;
+            
 
-            MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
-            if (MultiprocessOrchestration.ActiveWorkerCount() + 1 < NetworkManager.Singleton.ConnectedClients.Count)
-            {
-                MultiprocessLogger.Log("Is this a bad state?");
-            }
+            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -144,17 +144,37 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
-                for (int i = 1; i <= numProcessesToCreate; i++)
+                if (platformList == null)
                 {
-                    MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
-                    string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    MultiprocessLogger.Log($"logPath to new process is {logPath}");
-                    MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    for (int i = 1; i <= numProcessesToCreate; i++)
+                    {                        
+                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is null");
+                        m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
+                        MultiprocessLogger.Log($"connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    }
+                }
+                else
+                {
+                    var machines = new List<BokkenMachine>();
+                    foreach (var platform in platformList)
+                    {
+                        MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
+                        var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
+                        machines.Add(machine);
+                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");                                                
+                    }                    
+
+                    foreach (var machine in machines)
+                    {                        
+                        MultiprocessLogger.Log($"Lauching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
+                        machine.Launch();                        
+                    }
                 }
             }
             else
             {
-                MultiprocessLogger.Log($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()} and connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
+                MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
@@ -163,29 +183,41 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 yield return new WaitForSeconds(0.2f);
 
                 if (Time.realtimeSinceStartup > timeOutTime)
-                {
-                    throw new Exception($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, and ActiveWorkerCount: {MultiprocessOrchestration.ActiveWorkerCount()} but was expecting {WorkerCount}, failing");
+                {                    
+                    throw new Exception($"Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
-            MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
 
         [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("Running teardown");
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
             if (!IgnoreMultiprocessTests)
             {
+                if (platformList != null && platformList.Length > 0)
+                {
+                    MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
+                    MultiprocessLogger.Log("Fetching log files");
+                    BokkenMachine.FetchAllLogFiles();
+                    MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
+                }                
+                
                 TestCoordinator.Instance.TestRunTeardown();
+                MultiprocessLogger.Log("TestRunTearDown ... Done");
             }
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiprocessLogger.Log($"TeardownSuite");
+            MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
+            
+            MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
             if (!IgnoreMultiprocessTests)
             {
                 MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
