@@ -43,17 +43,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             // Sanity check for TestCoordinator
             // Call the method
+            MultiprocessLogger.Log("CheckTestCoordinator test in TestCoordinatorTests about to call InvokeFromMethodActionRpc");
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
             var nbResults = 0;
+            MultiprocessLogger.Log($"WorkerCount is {WorkerCount}");
             for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
             {
+                MultiprocessLogger.Log("Waiting for result to be set on TestCoordinator");
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
-
+                MultiprocessLogger.Log("Returning from wait");
                 var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                MultiprocessLogger.Log($"Check if {result} is greater than 0");
                 Assert.Greater(result, 0f);
                 nbResults++;
             }
+            MultiprocessLogger.Log($"Check that {nbResults} is equal to {WorkerCount}");
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
         }
 
