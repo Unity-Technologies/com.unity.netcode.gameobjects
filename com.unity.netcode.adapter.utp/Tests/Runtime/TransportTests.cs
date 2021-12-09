@@ -140,7 +140,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        [Ignore("Triggers a bug in UTP that will be fixed in 1.0.0-pre.10.")]
         public IEnumerator FilledSendQueueMultipleSends()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
