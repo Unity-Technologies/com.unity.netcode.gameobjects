@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.Components
 {
@@ -289,7 +288,9 @@ namespace Unity.Netcode.Components
 
         private NetworkTransformState m_PrevNetworkState;
 
+#if NGO_TRANSFORM_DEBUG
         private const int k_DebugDrawLineTime = 10;
+#endif // NGO_TRANSFORM_DEBUG
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
@@ -678,16 +679,17 @@ namespace Unity.Netcode.Components
                 Initialize();
                 m_InitializeClient = false;
             }
-
-            Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
-
             AddInterpolatedState(newState);
+
+#if NGO_TRANSFORM_DEBUG
+            Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
 
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
-                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
+                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * UnityEngine.Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
             }
+#endif // NGO_TRANSFORM_DEBUG
         }
 
         private void Awake()
@@ -911,7 +913,7 @@ namespace Unity.Netcode.Components
                             Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                         }
                     }
-#endif
+#endif // NGO_TRANSFORM_DEBUG
 
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
