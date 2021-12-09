@@ -27,8 +27,8 @@ namespace Unity.Netcode
     internal struct SnapshotHeader
     {
         internal int CurrentTick;
-        internal ushort LastReceivedSequence;
-        internal ushort ReceivedSequenceMask;
+        internal int LastReceivedSequence;
+        internal int ReceivedSequenceMask;
         internal int SpawnCount;
         internal int DespawnCount;
 
@@ -74,29 +74,18 @@ namespace Unity.Netcode
         internal List<ulong> TargetClientIds;
     };
 
-    internal struct SentSpawnDespawn
-    {
-        internal ulong ObjectId;
-        internal int Tick;
-    }
-
     internal struct ClientData
     {
-        internal ushort LastReceivedTick; // the last tick received by this client
+        internal int LastReceivedTick; // the last tick received by this client
 
         // by objectId
         // which spawns and despawns did this connection ack'ed ?
         internal Dictionary<ulong, int> SpawnDespawnAck;
 
-        // list of spawn and despawns commands we sent, with sequence number
-        // need to manage acknowledgements
-        internal List<SentSpawnDespawn> SentSpawnDespawns;
-
         internal ClientData(int unused)
         {
-            LastReceivedTick = default;
+            LastReceivedTick = -1;
             SpawnDespawnAck = new Dictionary<ulong, int>();
-            SentSpawnDespawns = new List<SentSpawnDespawn>();
         }
     }
 
@@ -316,6 +305,7 @@ namespace Unity.Netcode
                 m_ClientData.Add(clientId, new ClientData(0));
             }
 
+
             // Find which spawns must be included
             var spawnsToInclude = new List<int>();
             for (var index = 0; index < NumSpawns; index++)
@@ -339,6 +329,7 @@ namespace Unity.Netcode
             header.CurrentTick = m_CurrentTick;
             header.SpawnCount = spawnsToInclude.Count;
             header.DespawnCount = despawnsToInclude.Count;
+            header.LastReceivedSequence = m_ClientData[clientId].LastReceivedTick;
 
             if (!message.WriteBuffer.TryBeginWrite(
                 FastBufferWriter.GetWriteSize(header) +
@@ -353,25 +344,14 @@ namespace Unity.Netcode
             // Write the Spawns.
             foreach (var index in spawnsToInclude)
             {
-                SentSpawnDespawn item = new SentSpawnDespawn();
-                item.Tick = Spawns[index].TickWritten;
-                item.ObjectId = Spawns[index].NetworkObjectId;
-                m_ClientData[clientId].SentSpawnDespawns.Add(item);
-
                 message.WriteBuffer.WriteValue(Spawns[index]);
             }
 
             // Write the Despawns.
             foreach (var index in despawnsToInclude)
             {
-                SentSpawnDespawn item = new SentSpawnDespawn();
-                item.Tick = Despawns[index].TickWritten;
-                item.ObjectId = Despawns[index].NetworkObjectId;
-                m_ClientData[clientId].SentSpawnDespawns.Add(item);
-
                 message.WriteBuffer.WriteValue(Despawns[index]);
             }
-
 
             SendMessage(message, clientId);
         }
@@ -458,12 +438,22 @@ namespace Unity.Netcode
 
             var header = new SnapshotHeader();
 
+            if (!m_ClientData.ContainsKey(clientId))
+            {
+                m_ClientData.Add(clientId, new ClientData(0));
+            }
+
             if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(header)))
             {
                 message.ReadBuffer.ReadValue(out header);
             }
 
-            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount))
+            var clientData = m_ClientData[clientId];
+            clientData.LastReceivedTick = header.CurrentTick;
+            m_ClientData[clientId] = clientData;
+
+            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount +
+                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
             {
                 // todo: deal with error
             }
@@ -482,10 +472,6 @@ namespace Unity.Netcode
                 SpawnObject(spawnCommand, clientId);
             }
 
-            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
-            {
-                // todo: deal with error
-            }
             for (int index = 0; index < header.DespawnCount; index++)
             {
                 message.ReadBuffer.ReadValue(out despawnCommand);
@@ -499,6 +485,45 @@ namespace Unity.Netcode
                 TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
                 DespawnObject(despawnCommand, clientId);
             }
+
+            for (int i = 0; i < NumSpawns;)
+            {
+                if (Spawns[i].TickWritten < header.LastReceivedSequence &&
+                    SpawnsMeta[i].TargetClientIds.Contains(clientId))
+                {
+                    SpawnsMeta[i].TargetClientIds.Remove(clientId);
+
+                    if (SpawnsMeta[i].TargetClientIds.Count == 0)
+                    {
+                        SpawnsMeta[i] = SpawnsMeta[NumSpawns - 1];
+                        Spawns[i] = Spawns[NumSpawns - 1];
+                        NumSpawns--;
+
+                        continue; // skip the i++ below
+                    }
+                }
+                i++;
+            }
+            for (int i = 0; i < NumDespawns;)
+            {
+                if (Despawns[i].TickWritten < header.LastReceivedSequence &&
+                    DespawnsMeta[i].TargetClientIds.Contains(clientId))
+                {
+                    DespawnsMeta[i].TargetClientIds.Remove(clientId);
+
+                    if (DespawnsMeta[i].TargetClientIds.Count == 0)
+                    {
+                        DespawnsMeta[i] = DespawnsMeta[NumDespawns - 1];
+                        Despawns[i] = Despawns[NumDespawns - 1];
+                        NumDespawns--;
+
+                        continue; // skip the i++ below
+                    }
+                }
+                i++;
+            }
+
+
         }
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
