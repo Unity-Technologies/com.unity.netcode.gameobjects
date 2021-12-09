@@ -713,6 +713,7 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
+            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
         private bool m_InitializeClient = true;
@@ -729,7 +730,7 @@ namespace Unity.Netcode.Components
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
             m_Transform = transform;
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+            //m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
 
             CanCommitToTransform = IsServer;
             m_CachedIsServer = IsServer;
@@ -767,7 +768,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            //m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         public override void OnGainedOwnership()

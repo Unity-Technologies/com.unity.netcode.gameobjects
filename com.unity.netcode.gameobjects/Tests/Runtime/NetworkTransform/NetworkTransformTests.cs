@@ -247,7 +247,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
 
-            private void FixedUpdate()
+            private void Update()
             {
                 if (!IsSpawned || !IsServer)
                 {
@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     // This is only for testing purposes where I should be able to
                     // achieve a "close to" specific distance over (n) frames
-                    transform.position += m_Speed * Time.deltaTime;
+                    transform.position += m_Speed;
                     //m_Rigidbody.MovePosition(transform.position + m_Speed);
                 }
             }
@@ -323,9 +323,9 @@ namespace Unity.Netcode.RuntimeTests
 
 
         private int m_MovementFrames = 20;
-        private int m_SpawnWaitTime = 2;
+        //private int m_SpawnWaitTime = 1;
         private float m_Speed => 100.0f / m_MovementFrames;
-        private float m_FirstInterpMag => (float)(m_Speed * m_MovementFrames * 0.02f);
+        private float m_FirstInterpMag => 2.0f;
 
 
         [UnityTest]
@@ -349,7 +349,7 @@ namespace Unity.Netcode.RuntimeTests
 #if RESPAWNPOSITION_STRESS_TEST
             m_MovementFrames = 10;
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10; i++)
             {
 #endif
             clientDynamicObjectMover.SetSpeed(m_Speed);
@@ -378,7 +378,7 @@ namespace Unity.Netcode.RuntimeTests
 
 
             yield return new WaitUntil(() => m_ClientSideSpawned);
-            yield return WaitForFrames(m_SpawnWaitTime);
+            yield return new WaitForEndOfFrame();
 
             var firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
             Assert.IsFalse(firstClientInterpolatedPosition.magnitude > m_FirstInterpMag);
@@ -403,7 +403,7 @@ namespace Unity.Netcode.RuntimeTests
             m_DefaultNetworkObject.Spawn();
 
             yield return new WaitUntil(() => m_ClientSideSpawned);
-            yield return WaitForFrames(m_SpawnWaitTime);
+            yield return new WaitForEndOfFrame();
             firstClientInterpolatedPosition = clientDynamicObjectMover.GetFirstInterpolatedPosition();
             Debug.Log($"[Without Fix] First client interpolated position: {firstClientInterpolatedPosition}");
             // At this point (*** the bug ***) the client should have close to the previous frame's position plus any delta sent from the server.
