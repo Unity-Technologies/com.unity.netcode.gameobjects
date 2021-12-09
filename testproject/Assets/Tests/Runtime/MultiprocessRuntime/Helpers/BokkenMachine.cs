@@ -184,9 +184,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (waitForResult)
             {                
-                workerProcess.WaitForExit(timeToWait);                
-                string so = workerProcess.StandardOutput.ReadToEnd();
-                MultiprocessLogger.Log(so);
+                workerProcess.WaitForExit(timeToWait);
+                if (logStdOut)
+                {
+                    string so = workerProcess.StandardOutput.ReadToEnd();
+                    MultiprocessLogger.Log(so);
+                }
                 // string se = workerProcess.StandardError.ReadToEnd();
                 // MultiprocessLogger.LogError(se);
             }
