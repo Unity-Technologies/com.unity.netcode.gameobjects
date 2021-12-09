@@ -189,22 +189,22 @@ namespace Unity.Netcode.RuntimeTests
 
             m_PlayerNetworkObject.gameObject.AddComponent<CloakedBehaviour>();
             m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
-            m_PlayerNetworkObject.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref m_PlayerNetworkObject, theNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
             ok1Obj.gameObject.AddComponent<CloakedBehaviour>();
-            ok1Obj.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref ok1Obj, theNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
             var (closeButCloaked, closeButCloakedGuid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
             closeButCloaked.gameObject.AddComponent<CloakedBehaviour>();
             closeButCloaked.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
-            closeButCloaked.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref closeButCloaked, theNode);
             NetworkManagerHelper.SpawnNetworkObject(closeButCloakedGuid);
 
             var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
             tooFarObj.gameObject.AddComponent<CloakedBehaviour>();
-            tooFarObj.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref tooFarObj, theNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
@@ -236,22 +236,22 @@ namespace Unity.Netcode.RuntimeTests
 
             m_PlayerNetworkObject.gameObject.AddComponent<CloakedBehaviour>();
             m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
-            m_PlayerNetworkObject.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref m_PlayerNetworkObject, theNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
             ok1Obj.gameObject.AddComponent<CloakedBehaviour>();
-            ok1Obj.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref ok1Obj, theNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
             var (closeButCloaked, closeButCloakedGuid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
             closeButCloaked.gameObject.AddComponent<CloakedBehaviour>();
             closeButCloaked.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
-            closeButCloaked.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref closeButCloaked, theNode);
             NetworkManagerHelper.SpawnNetworkObject(closeButCloakedGuid);
 
             var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
             tooFarObj.gameObject.AddComponent<CloakedBehaviour>();
-            tooFarObj.AddInterestNode(theNode);
+            m_InterestManager.AddInterestNode(ref tooFarObj, theNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
@@ -276,7 +276,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var (objA, objAGuid) = MakeInterestGameObjectHelper();
             objA.gameObject.AddComponent<CloakedBehaviour>();
-            objA.AddInterestNode(nodeA);
+            m_InterestManager.AddInterestNode(ref objA, nodeA);
             NetworkManagerHelper.SpawnNetworkObject(objAGuid);
 
             results.Clear();
@@ -296,7 +296,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(results.Count - objectsBeforeAdd == 1);
 
             // remove nodeA from objA. now it shouldn't show up; it's orphaned
-            objA.RemoveInterestNode(nodeA);
+            m_InterestManager.RemoveInterestNode(ref objA, nodeA);
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             Assert.True(results.Count - objectsBeforeAdd == 0);
@@ -324,7 +324,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var (thisObj, thisGuid) = MakeInterestGameObjectHelper();
                 thisObj.NetworkObjectId = (ulong)(i + 100);
-                thisObj.AddInterestNode(oddsEvensNode);
+                m_InterestManager.AddInterestNode(ref thisObj, oddsEvensNode);
                 objs[i] = thisObj;
                 NetworkManagerHelper.SpawnNetworkObject(thisGuid);
             }
@@ -395,18 +395,18 @@ namespace Unity.Netcode.RuntimeTests
             int objectsBeforeAdd = results.Count - 1; // -1 because we want to count m_PlayerNetworkObject
 
             m_PlayerNetworkObject.gameObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
-            m_PlayerNetworkObject.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ref m_PlayerNetworkObject, naiveRadiusNode);
 
             var (ok1Obj, ok1Guid) = MakeInterestGameObjectHelper(new Vector3(0.5f, 0.0f, 0.0f));
-            ok1Obj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ref ok1Obj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
             var (ok2Obj, ok2Guid) = MakeInterestGameObjectHelper(new Vector3(1.0f, 0.0f, 0.0f));
-            ok2Obj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ref ok2Obj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(ok2Guid);
 
             var (tooFarObj, tooFarGuid) = MakeInterestGameObjectHelper(new Vector3(3.0f, 0.0f, 0.0f));
-            tooFarObj.AddInterestNode(naiveRadiusNode);
+            m_InterestManager.AddInterestNode(ref tooFarObj, naiveRadiusNode);
             NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
             var (alwaysObj, alwaysGuid) = MakeInterestGameObjectHelper(new Vector3(99.0f, 99.0f, 99.0f));
@@ -506,7 +506,7 @@ namespace Unity.Netcode.RuntimeTests
                 for (var j = 0; j < objsToMakePerNode; j++)
                 {
                     var (obj, guid) = MakeInterestGameObjectHelper();
-                    obj.AddInterestNode(thisNode);
+                    m_InterestManager.AddInterestNode(ref obj, thisNode);
                     NetworkManagerHelper.SpawnNetworkObject(guid);
                 }
             }
