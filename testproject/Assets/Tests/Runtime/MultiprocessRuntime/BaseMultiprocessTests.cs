@@ -201,6 +201,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 if (platformList != null && platformList.Length > 0)
                 {
+                    MultiprocessLogger.Log("Kill multi process test player");
                     MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                     MultiprocessLogger.Log("Fetching log files");
                     BokkenMachine.FetchAllLogFiles();

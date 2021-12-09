@@ -146,11 +146,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        public void GetMPLog()
-        {
-            ExecuteCommand($"");
-        }
-
         public static Process ExecuteCommand(string command, bool waitForResult = false, bool logStdOut = false, int timeToWait = 300000)
         {
             MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");
