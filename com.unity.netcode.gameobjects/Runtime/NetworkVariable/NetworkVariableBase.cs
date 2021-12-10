@@ -72,6 +72,16 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
         /// <returns>Whether or not the client can read to the variable</returns>
+        public virtual bool CanClientWrite(ulong clientId)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Gets Whether or not a specific client can read to the varaible
+        /// </summary>
+        /// <param name="clientId">The clientId of the remote client</param>
+        /// <returns>Whether or not the client can read to the variable</returns>
         public bool CanClientRead(ulong clientId)
         {
             switch (ReadPerm)
