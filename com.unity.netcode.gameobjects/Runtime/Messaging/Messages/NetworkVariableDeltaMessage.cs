@@ -128,6 +128,7 @@ namespace Unity.Netcode
                 {
                     for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                     {
+                        var field = behaviour.NetworkVariableFields[i];
                         ushort varSize = 0;
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -148,7 +149,7 @@ namespace Unity.Netcode
                             }
                         }
 
-                        if (networkManager.IsServer)
+                        if (networkManager.IsServer && !field.CanClientWrite(context.SenderId))
                         {
                             // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                             if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -156,7 +157,7 @@ namespace Unity.Netcode
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
                                     NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
-                                    NetworkLog.LogError($"[{behaviour.NetworkVariableFields[i].GetType().Name}]");
+                                    NetworkLog.LogError($"[{field.GetType().Name}]");
                                 }
 
                                 m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + varSize);
@@ -173,19 +174,19 @@ namespace Unity.Netcode
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                             {
                                 NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(behaviour)} - VariableIndex: {i}");
-                                NetworkLog.LogError($"[{behaviour.NetworkVariableFields[i].GetType().Name}]");
+                                NetworkLog.LogError($"[{field.GetType().Name}]");
                             }
 
                             return;
                         }
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
-                        behaviour.NetworkVariableFields[i].ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
+                        field.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             context.SenderId,
                             networkObject,
-                            behaviour.NetworkVariableFields[i].Name,
+                            field.Name,
                             behaviour.__getTypeName(),
                             context.MessageSize);
 

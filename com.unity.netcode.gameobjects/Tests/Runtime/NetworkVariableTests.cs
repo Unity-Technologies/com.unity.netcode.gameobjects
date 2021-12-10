@@ -31,6 +31,11 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkVariableTest : NetworkBehaviour
     {
+        public readonly ClientNetworkVariable<int> ClientVar = new ClientNetworkVariable<int>();
+
+        public readonly ClientNetworkVariable<int> ClientVarPrivate =
+            new ClientNetworkVariable<int>(NetworkVariableReadPermission.OwnerOnly);
+
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
         public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
@@ -68,8 +73,17 @@ namespace Unity.Netcode.RuntimeTests
         // Player1 component on the server
         private NetworkVariableTest m_Player1OnServer;
 
+        // Player2 component on the server
+        private NetworkVariableTest m_Player2OnServer;
+
         // Player1 component on client1
         private NetworkVariableTest m_Player1OnClient1;
+
+        // Player2 component on client1
+        private NetworkVariableTest m_Player1OnClient2;
+
+        // client2's version of client1's player object
+        private NetworkVariableTest m_Player1FromClient2;
 
         private bool m_TestWithHost;
 
@@ -90,12 +104,32 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager, result));
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
+                m_ServerNetworkManager, result));
+            m_Player2OnServer = result.Result.GetComponent<NetworkVariableTest>();
+
             // This is client1's view of itself
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], result));
 
             m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
+
+            // This is client2's view of itself
+            result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
+                m_ClientNetworkManagers[1], result));
+
+            m_Player1OnClient2 = result.Result.GetComponent<NetworkVariableTest>();
+
+            // This is client2's view of client 1's object
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
+                m_ClientNetworkManagers[1], result));
+
+            m_Player1FromClient2 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();
 
@@ -164,6 +198,65 @@ namespace Unity.Netcode.RuntimeTests
 
             // client must not be allowed to write to a server auth variable
             Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
+        }
+
+        [Test]
+        public void ServerWritePermissionTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            // server must not be allowed to write to a client auth variable
+            Assert.Throws<InvalidOperationException>(() => m_Player1OnServer.ClientVar.Value = k_TestVal1);
+        }
+
+        [UnityTest]
+        public IEnumerator ClientTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
+                    m_Player1OnClient2.ClientVar.Value = k_TestVal3;
+                },
+                () =>
+                {
+                    // the client's values should win on the objects it owns
+                    return
+                        m_Player1OnServer.ClientVar.Value == k_TestVal2 &&
+                        m_Player2OnServer.ClientVar.Value == k_TestVal3 &&
+                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
+                        m_Player1OnClient2.ClientVar.Value == k_TestVal3;
+                }
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator PrivateClientTest([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    // we are writing to the private and public variables on player 1's object...
+                    m_Player1OnClient1.ClientVarPrivate.Value = k_TestVal1;
+                    m_Player1OnClient1.ClientVar.Value = k_TestVal2;
+                },
+                () =>
+                {
+                    // ...and we should see the writes to the private var only on the server & the owner,
+                    //  but the public variable everywhere
+                    return
+                        m_Player1FromClient2.ClientVarPrivate.Value != k_TestVal1 &&
+                        m_Player1OnClient1.ClientVarPrivate.Value == k_TestVal1 &&
+                        m_Player1FromClient2.ClientVar.Value != k_TestVal2 &&
+                        m_Player1OnClient1.ClientVar.Value == k_TestVal2 &&
+                        m_Player1OnServer.ClientVarPrivate.Value == k_TestVal1 &&
+                        m_Player1OnServer.ClientVar.Value == k_TestVal2;
+                }
+            );
         }
 
         [UnityTest]
