@@ -212,7 +212,6 @@ namespace Unity.Netcode
                 };
                 clientRpcMessage.ReadBuffer = tempBuffer;
                 clientRpcMessage.Handle(ref context);
-                rpcWriteSize = tempBuffer.Length;
             }
 
             bufferWriter.Dispose();
@@ -562,7 +561,7 @@ namespace Unity.Netcode
                         // so we don't have to do this serialization work if we're not going to use the result.
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
-                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                             using (tmpWriter)
                             {
                                 message.Serialize(tmpWriter);

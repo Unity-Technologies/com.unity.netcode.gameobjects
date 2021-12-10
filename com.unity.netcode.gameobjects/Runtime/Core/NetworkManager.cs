@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,12 +54,28 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
+        private InterestManager<NetworkObject> m_InterestManager;
+
+        // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
+        //  to use the InterestManager
+        internal InterestManager<NetworkObject> InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager<NetworkObject>();
+                }
+                return m_InterestManager;
+            }
+        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
 
         public NetworkPrefabHandler PrefabHandler
         {
@@ -205,11 +222,6 @@ namespace Unity.Netcode
         public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
 
         public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
-
-        /// <summary>
-        /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
-        /// </summary>
-        [HideInInspector] public bool DontDestroy = true;
 
         /// <summary>
         /// Gets or sets if the application should be set to run in background
@@ -499,6 +511,13 @@ namespace Unity.Netcode
 
         private void Initialize(bool server)
         {
+            // Don't allow the user to start a network session if the NetworkManager is
+            // still parented under another GameObject
+            if (NetworkManagerCheckForParent(true))
+            {
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Initialize));
@@ -562,6 +581,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
@@ -590,6 +611,7 @@ namespace Unity.Netcode
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+            NetworkConfig.OverrideToNetworkPrefab.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -950,11 +972,6 @@ namespace Unity.Netcode
 
         private void OnEnable()
         {
-            if (DontDestroy)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-
             if (RunInBackground)
             {
                 Application.runInBackground = true;
@@ -963,6 +980,11 @@ namespace Unity.Netcode
             if (Singleton == null)
             {
                 SetSingleton();
+            }
+
+            if (!NetworkManagerCheckForParent())
+            {
+                DontDestroyOnLoad(gameObject);
             }
         }
 
@@ -1099,13 +1121,21 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
+            if (m_InterestManager != null)
+            {
+                m_InterestManager = null;
+            }
+
             if (MessagingSystem != null)
             {
                 MessagingSystem.Dispose();
                 MessagingSystem = null;
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            if (NetworkConfig?.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            }
 
             if (SpawnManager != null)
             {
@@ -1631,7 +1661,6 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
@@ -1650,6 +1679,7 @@ namespace Unity.Netcode
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
+                    LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
@@ -1699,5 +1729,48 @@ namespace Unity.Netcode
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
+
+        /// <summary>
+        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            NetworkManagerCheckForParent();
+        }
+
+        /// <summary>
+        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
+        /// notifies the user that this is not allowed for the NetworkManager.
+        /// </summary>
+        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
+        {
+#if UNITY_EDITOR
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+#else
+            var isParented = transform.root != transform;
+            if (isParented)
+            {
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+            }
+#endif
+            return isParented;
+        }
+
+        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
+#if UNITY_EDITOR
+        static internal INetworkManagerHelper NetworkManagerHelper;
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+        }
+#endif
     }
+
 }

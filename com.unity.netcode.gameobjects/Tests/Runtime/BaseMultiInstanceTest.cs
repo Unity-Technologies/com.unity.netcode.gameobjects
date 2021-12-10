@@ -3,7 +3,6 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -11,8 +10,6 @@ namespace Unity.Netcode.RuntimeTests
 {
     public abstract class BaseMultiInstanceTest
     {
-        private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
-
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
@@ -33,6 +30,11 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
+                if (MultiInstanceHelpers.ClientSceneHandler != null)
+                {
+                    MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+                    MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+                }
                 MultiInstanceHelpers.Destroy();
             }
             finally
@@ -58,48 +60,41 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
-        /// synchronize to this scene when they connect
+        /// Override this method to control when clients
+        /// fake-load a scene.
         /// </summary>
-        private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        protected virtual bool CanClientsLoad()
         {
-            // exclude test runner scene
-            if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
-            {
-                return false;
-            }
             return true;
         }
 
         /// <summary>
-        /// This registers scene validation callback for the server to prevent it from telling connecting
-        /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
-        /// scene and its handle for both client(s) and server-host.
+        /// Override this method to control when clients
+        /// fake-unload a scene.
         /// </summary>
-        public static void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        protected virtual bool CanClientsUnload()
         {
-            // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
-            // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
-            if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
-            {
-                networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
-                // If a unit/integration test does not handle this on their own, then Ignore the validation warning
-                networkManager.SceneManager.DisableValidationWarnings(true);
-            }
+            return true;
+        }
 
-            // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
-            // warning about using the currently active scene
-            var scene = SceneManager.GetActiveScene();
-            // As long as this is a test runner scene (or most likely a test runner scene)
-            if (scene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
-            {
-                // Register the test runner scene just so we avoid another warning about not being able to find the
-                // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
-                // loaded and register the server to client scene handle since host-server shares the test runner scene
-                // with the clients.
-                networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
-                networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
-            }
+        /// <summary>
+        /// Registers the CanClientsLoad and CanClientsUnload events of the
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// </summary>
+        protected void RegisterSceneManagerHandler()
+        {
+            MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+            MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+        }
+
+        private bool ClientSceneHandler_CanClientsUnload()
+        {
+            return CanClientsUnload();
+        }
+
+        private bool ClientSceneHandler_CanClientsLoad()
+        {
+            return CanClientsLoad();
         }
 
         /// <summary>
@@ -159,11 +154,13 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+                if (!MultiInstanceHelpers.Start(useHost, server, clients))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
+
+                RegisterSceneManagerHandler();
 
                 // Wait for connection on client side
                 yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));

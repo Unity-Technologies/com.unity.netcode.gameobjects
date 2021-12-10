@@ -1,3 +1,5 @@
+// todo @simon-lemay-unity: un-guard/re-enable after validating UTP on consoles
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -6,12 +8,21 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.UTP.Utilities;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class TransportTests
     {
+        // No need to test all reliable delivery methods since they all map to the same pipeline.
+        private static readonly NetworkDelivery[] k_DeliveryParameters =
+        {
+            NetworkDelivery.Unreliable,
+            NetworkDelivery.UnreliableSequenced,
+            NetworkDelivery.Reliable
+        };
+
         private UnityTransport m_Server, m_Client1, m_Client2;
         private List<TransportEvent> m_ServerEvents, m_Client1Events, m_Client2Events;
 
@@ -22,19 +33,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
             if (m_Server)
             {
                 m_Server.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Server);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
             }
 
             if (m_Client1)
             {
                 m_Client1.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client1);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
             }
 
             if (m_Client2)
             {
                 m_Client2.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client2);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
             }
 
             m_ServerEvents?.Clear();
@@ -46,7 +63,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check if can make a simple data exchange.
         [UnityTest]
-        public IEnumerator PingPong()
+        public IEnumerator PingPong([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -57,28 +74,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            m_Client1.Send(m_Client1.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, ping, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
             Assert.That(m_ServerEvents[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            m_Server.Send(m_ServerEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, pong, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
 
             Assert.That(m_Client1Events[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("pong")));
-
-            // server.Shutdown();
-            // client.Shutdown();
 
             yield return null;
         }
 
         // Check if can make a simple data exchange (both ways at a time).
         [UnityTest]
-        public IEnumerator PingPongSimultaneous()
+        public IEnumerator PingPongSimultaneous([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -89,8 +103,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
-            m_Server.Send(m_ServerEvents[0].ClientID, ping, NetworkDelivery.ReliableSequenced);
-            m_Client1.Send(m_Client1.ServerClientId, ping, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, ping, delivery);
+            m_Client1.Send(m_Client1.ServerClientId, ping, delivery);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -99,8 +113,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.That(m_Client1Events[1].Data, Is.EquivalentTo(Encoding.ASCII.GetBytes("ping")));
 
             var pong = new ArraySegment<byte>(Encoding.ASCII.GetBytes("pong"));
-            m_Server.Send(m_ServerEvents[0].ClientID, pong, NetworkDelivery.ReliableSequenced);
-            m_Client1.Send(m_Client1.ServerClientId, pong, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, pong, delivery);
+            m_Client1.Send(m_Client1.ServerClientId, pong, delivery);
 
             // Once one event is in the other should be too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -112,7 +126,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueSingleSend()
+        public IEnumerator SendMaximumPayloadSize([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -123,7 +137,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
-            m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
@@ -131,7 +145,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator FilledSendQueueMultipleSends()
+        public IEnumerator FilledSendQueueMultipleSends([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -141,28 +155,36 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var numSends = UnityTransport.InitialBatchQueueSize / 1024;
+            var numSends = UnityTransport.InitialMaxSendQueueSize / 1024;
 
             for (int i = 0; i < numSends; i++)
             {
                 // We remove 4 bytes because each send carries a 4 bytes overhead in the send queue.
                 // Without that we wouldn't fill the send queue; it would get flushed right when we
                 // try to send the last message.
-                var payload = new ArraySegment<byte>(new byte[1024 - 4]);
-                m_Client1.Send(m_Client1.ServerClientId, payload, NetworkDelivery.ReliableFragmentedSequenced);
+                var payload = new ArraySegment<byte>(new byte[1024 - BatchedSendQueue.PerMessageOverhead]);
+                m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+            // Manually wait. This ends up generating quite a bit of packets and it might take a
+            // while for everything to make it to the server.
+            yield return new WaitForSeconds(numSends * 0.02f);
 
-            // Extra event is for the Connect event.
-            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
+            // Extra event is the connect event.
+            Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
+
+            for (int i = 1; i <= numSends; i++)
+            {
+                Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[i].Type);
+                Assert.AreEqual(1024 - BatchedSendQueue.PerMessageOverhead, m_ServerEvents[i].Data.Count);
+            }
 
             yield return null;
         }
 
         // Check making multiple sends to a client in a single frame.
         [UnityTest]
-        public IEnumerator MultipleSendsSingleFrame()
+        public IEnumerator MultipleSendsSingleFrame([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -173,10 +195,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Client1.Send(m_Client1.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Client1.Send(m_Client1.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data2, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
@@ -191,7 +213,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check sending data to multiple clients.
         [UnityTest]
-        public IEnumerator SendMultipleClients()
+        public IEnumerator SendMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -211,10 +233,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             Assert.AreEqual(2, m_ServerEvents.Count);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Server.Send(m_ServerEvents[0].ClientID, data1, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[0].ClientID, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Server.Send(m_ServerEvents[1].ClientID, data2, NetworkDelivery.ReliableSequenced);
+            m_Server.Send(m_ServerEvents[1].ClientID, data2, delivery);
 
             // Once one has received its data, the other should have too.
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
@@ -232,7 +254,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Check receiving data from multiple clients.
         [UnityTest]
-        public IEnumerator ReceiveMultipleClients()
+        public IEnumerator ReceiveMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
@@ -249,10 +271,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             }
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Client1.Send(m_Client1.ServerClientId, data1, NetworkDelivery.ReliableSequenced);
+            m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
 
             var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Client2.Send(m_Client2.ServerClientId, data2, NetworkDelivery.ReliableSequenced);
+            m_Client2.Send(m_Client2.ServerClientId, data2, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
@@ -268,3 +290,4 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
     }
 }
+#endif
