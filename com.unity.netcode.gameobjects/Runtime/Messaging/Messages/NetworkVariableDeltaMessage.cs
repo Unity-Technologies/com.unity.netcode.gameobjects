@@ -38,7 +38,7 @@ namespace Unity.Netcode
                     // This var does not belong to the currently iterating delivery group.
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        writer.WriteValueSafe((short)0);
+                        writer.WriteValueSafe((ushort)0);
                     }
                     else
                     {
@@ -71,7 +71,11 @@ namespace Unity.Netcode
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
 
-                        writer.WriteValueSafe((ushort)tmpWriter.Length);
+                        if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
+                        {
+                            throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
+                        }
+                        writer.WriteValue((ushort)tmpWriter.Length);
                         tmpWriter.CopyTo(writer);
                     }
                     else
