@@ -66,11 +66,9 @@ namespace Unity.Netcode
         public static void Handle(ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload, ref __RpcParams rpcParams)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-
-            var objectExists = networkManager.SpawnManager.SpawnedObjects.TryGetValue(metadata.NetworkObjectId, out var networkObject);
-            if (!objectExists)
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(metadata.NetworkObjectId, out var networkObject))
             {
-                throw new Exception("RPC called on an object that isn't in the spawned objects list - please make sure an object is spawned before calling RPCs.");
+                throw new Exception($"RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list - please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
             }
             var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
 
