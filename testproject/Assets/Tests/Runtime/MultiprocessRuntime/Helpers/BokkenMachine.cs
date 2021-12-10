@@ -123,7 +123,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         
         public void Launch()
         {
-            ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
+            Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
+            MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
         }
 
         public void KillMptPlayer()
