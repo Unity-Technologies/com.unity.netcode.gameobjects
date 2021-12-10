@@ -7,15 +7,44 @@ namespace Unity.Netcode
     ///  - only the owner of the variable can write to it
     ///  - not even the server can write to it
     ///  - it is not snapshotted
+    ///  - it must be sent reliably
     ///
     /// (This class may be removed in the future when integrated into NetworkVariable natively)
     /// </summary>
     [Serializable]
     public class ClientNetworkVariable<T> : NetworkVariable<T> where T : unmanaged
     {
-        public ClientNetworkVariable() { }
+        /// <summary>
+        /// Creates a ClientNetworkVariable with the default read permission
+        /// </summary>
+        public ClientNetworkVariable()
+        {
+        }
 
-        public ClientNetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm) { }
+        /// <summary>
+        /// Creates a ClientNetworkVariable with a initial value
+        /// </summary>
+        /// <param name="value">The initial value to use for the ClientNetworkVariable</param>
+        public ClientNetworkVariable(T value) : base(value)
+        {
+        }
+
+        /// <summary>
+        /// Creates a ClientNetworkVariable with a specified read permission
+        /// </summary>
+        /// <param name="readPerm">The readPermission to use</param>
+        public ClientNetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm)
+        {
+        }
+
+        /// <summary>
+        /// Creates a ClientNetworkVariable with a initial value and the specified read permission
+        /// </summary>
+        /// <param name="readPerm">The initial read permission to use for the ClientNetworkVariable</param>
+        /// <param name="value">The initial value to use for the ClientNetworkVariable</param>
+        public ClientNetworkVariable(NetworkVariableReadPermission readPerm, T value) : base(readPerm, value)
+        {
+        }
 
         public override bool CanClientWrite(ulong clientId)
         {
@@ -28,7 +57,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// The value of the NetworkVariable container
+        /// The value of the ClientNetworkVariable container
         /// </summary>
         public override T Value
         {
