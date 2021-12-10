@@ -40,11 +40,10 @@ namespace Unity.Netcode
 
                 // Also, note this is not really very water-tight, if you are running as a host
                 //  we cannot tell if a ClientNetworkVariable write is happening inside server-ish code
-                if (m_NetworkBehaviour.NetworkManager.IsServer)
+                if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkManager.IsServer)
                 {
                     throw new InvalidOperationException("Server not allowed to write to ClientNetworkVariables");
                 }
-
                 Set(value);
             }
         }
