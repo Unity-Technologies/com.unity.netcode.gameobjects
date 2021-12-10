@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Diagnostics;
 using NUnit.Framework;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
@@ -30,7 +31,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public void LogException(Exception exception, UnityEngine.Object context)
         {
-            Debug.unityLogger.LogException(exception, context);
+            UnityEngine.Debug.unityLogger.LogException(exception, context);
         }
 
         public void LogFormat(LogType logType, UnityEngine.Object context, string format, params object[] args)
@@ -50,7 +51,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 testName = "unknown";
             }
 
-            Debug.LogFormat(logType, LogOption.NoStacktrace, context,$"MPLOG ({DateTime.Now:T}) : {testName} : {format}", args);
+            var st = new StackTrace(true);
+            string method = st.GetFrame(1).GetMethod().Name;
+
+            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context,$"MPLOG ({DateTime.Now:T}) : {method} : {testName} : {format}", args);
             
         }
     }
