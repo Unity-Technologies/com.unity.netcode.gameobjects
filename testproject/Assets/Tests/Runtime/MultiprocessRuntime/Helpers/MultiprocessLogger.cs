@@ -53,10 +53,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var st = new StackTrace(true);
             string method1 = st.GetFrame(1).GetMethod().Name;
-            string method3 = st.GetFrame(3).GetMethod().Name;
-            string method5 = st.GetFrame(5).GetMethod().Name;
+            string method2 = "2";
+            string method3 = "3";
+            if (st.FrameCount > 3)
+            {
+                method2 = st.GetFrame(2).GetMethod().Name;
+                method3 = st.GetFrame(3).GetMethod().Name;
+            }
+            
 
-            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context,$"MPLOG ({DateTime.Now:T}) : {method5} : {method3} : {method1} : {testName} : {format}", args);
+            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context,$"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             
         }
     }
