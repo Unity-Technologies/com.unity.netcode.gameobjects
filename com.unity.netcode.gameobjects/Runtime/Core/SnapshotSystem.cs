@@ -24,16 +24,21 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Header information for a SnapshotDataMessage
+    /// </summary>
     internal struct SnapshotHeader
     {
-        internal int CurrentTick;
-        internal int LastReceivedSequence;
-        internal int ReceivedSequenceMask;
-        internal int SpawnCount;
-        internal int DespawnCount;
-
+        internal int CurrentTick; // the tick this captures information for
+        internal int LastReceivedSequence; // what we are ack'ing
+        internal int SpawnCount; // number of spawn commands included
+        internal int DespawnCount; // number of despawn commands included
     }
 
+    /// <summary>
+    /// A command to despawn an object
+    /// Which object it is, and the tick at which it was despawned
+    /// </summary>
     internal struct SnapshotDespawnCommand
     {
         // identity
@@ -43,11 +48,10 @@ namespace Unity.Netcode
         internal int TickWritten;
     }
 
-    internal struct SnapshotDespawnCommandMeta
-    {
-        internal List<ulong> TargetClientIds;
-    };
-
+    /// <summary>
+    /// A command to spawn an object
+    /// Which object it is, what type it has, the spawn parameters and the tick at which it was spawned
+    /// </summary>
     internal struct SnapshotSpawnCommand
     {
         // identity
@@ -55,7 +59,7 @@ namespace Unity.Netcode
 
         // archetype
         internal uint GlobalObjectIdHash;
-        internal bool IsSceneObject;
+        internal bool IsSceneObject; //todo: how is this unused ?
 
         // parameters
         internal bool IsPlayerObject;
@@ -63,29 +67,33 @@ namespace Unity.Netcode
         internal ulong ParentNetworkId;
         internal Vector3 ObjectPosition;
         internal Quaternion ObjectRotation;
-        internal Vector3 ObjectScale;
+        internal Vector3 ObjectScale; //todo: how is this unused ?
 
         // internal
         internal int TickWritten;
     }
 
-    internal struct SnapshotSpawnCommandMeta
+    /// <summary>
+    /// Stores supplemental meta-information about a Spawn or Despawn command.
+    /// This part doesn't get sent, so is stored elsewhere in order to allow writing just the SnapshotSpawnCommand
+    /// </summary>
+    internal struct SnapshotSpawnDespawnCommandMeta
     {
+        // The remaining clients a command still has to be sent to
         internal List<ulong> TargetClientIds;
     };
 
+    /// <summary>
+    /// Stores information about a specific client.
+    /// What tick they ack'ed, for now.
+    /// </summary>
     internal struct ClientData
     {
         internal int LastReceivedTick; // the last tick received by this client
 
-        // by objectId
-        // which spawns and despawns did this connection ack'ed ?
-        internal Dictionary<ulong, int> SpawnDespawnAck;
-
         internal ClientData(int unused)
         {
             LastReceivedTick = -1;
-            SpawnDespawnAck = new Dictionary<ulong, int>();
         }
     }
 
@@ -99,25 +107,29 @@ namespace Unity.Netcode
         private NetworkTickSystem m_NetworkTickSystem;
 
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
+        // todo: how is this unused and does it belong here ?
         private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
         // The tick we're currently processing (or last we processed, outside NetworkUpdate())
         private int m_CurrentTick = NetworkTickSystem.NoTick;
 
-        // The container for the spawn commands received by the user. This part can be written as-is to the message
+        // This arrays contains all the spawn commands received by the game code.
+        // This part can be written as-is to the message.
+        // Those are cleaned-up once the spawns are ack'ed by all target clients
         internal SnapshotSpawnCommand[] Spawns;
-        // Information about Spawns. Entries are matched by index
-        internal SnapshotSpawnCommandMeta[] SpawnsMeta;
+        // Meta-information about Spawns. Entries are matched by index
+        internal SnapshotSpawnDespawnCommandMeta[] SpawnsMeta;
+        // Number of spawns used in the array. The array might actually be bigger, as it reserves space for performance reasons
         internal int NumSpawns = 0;
 
-        // The container for the despawn commands received by the user. This part can be written as-is to the message
+        // This arrays contains all the despawn commands received by the game code.
+        // This part can be written as-is to the message.
+        // Those are cleaned-up once the despawns are ack'ed by all target clients
         internal SnapshotDespawnCommand[] Despawns;
-        // Information about Despawns. Entries are matched by index
-        internal SnapshotDespawnCommandMeta[] DespawnsMeta;
+        // Meta-information about Despawns. Entries are matched by index
+        internal SnapshotSpawnDespawnCommandMeta[] DespawnsMeta;
+        // Number of spawns used in the array. The array might actually be bigger, as it reserves space for performance reasons
         internal int NumDespawns = 0;
-
-        private static int s_DebugNextId = 0;
-        private int m_DebugMyId = 0;
 
         // Local state. Stores which spawns and despawns were applied locally
         // indexed by ObjectId
@@ -129,6 +141,9 @@ namespace Unity.Netcode
         internal bool IsConnectedClient { get; set; }
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
+
+        // todo: consider events for the below 3
+        // todo: rename. Doc says: DO NOT add the suffix "Delegate" to a delegate.
         internal SendMessageDelegate SendMessage { get; set; }
         internal SpawnObjectDelegate SpawnObject { get; set; }
         internal DespawnObjectDelegate DespawnObject { get; set; }
@@ -152,12 +167,9 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
-            SpawnsMeta = new SnapshotSpawnCommandMeta[SpawnsBufferCount];
+            SpawnsMeta = new SnapshotSpawnDespawnCommandMeta[SpawnsBufferCount];
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
-            DespawnsMeta = new SnapshotDespawnCommandMeta[DespawnsBufferCount];
-
-            m_DebugMyId = s_DebugNextId;
-            s_DebugNextId++;
+            DespawnsMeta = new SnapshotSpawnDespawnCommandMeta[DespawnsBufferCount];
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server
@@ -184,7 +196,10 @@ namespace Unity.Netcode
             return clientList;
         }
 
-        // internal API to reduce buffer usage, where possible
+        /// <summary>
+        /// Shrink the buffer to the minimum needed. Frees the reserved space.
+        /// Mostly for testing at the moment, but could be useful for game code to reclaim memory
+        /// </summary>
         internal void ReduceBufferUsage()
         {
             var count = Math.Max(1, NumDespawns);
@@ -196,6 +211,10 @@ namespace Unity.Netcode
             SpawnsBufferCount = count;
         }
 
+        /// <summary>
+        /// Called by SnapshotSystem, to spawn an object locally
+        /// todo: consider observer pattern
+        /// </summary>
         internal void NetworkSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
         {
             NetworkObject networkObject;
@@ -218,6 +237,9 @@ namespace Unity.Netcode
             m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
         }
 
+        /// <summary>
+        /// Called by SnapshotSystem, to despawn an object locally
+        /// </summary>
         internal void NetworkDespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
         {
             m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId, out NetworkObject networkObject);
@@ -227,6 +249,12 @@ namespace Unity.Netcode
             m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
         }
 
+        /// <summary>
+        /// Updates the internal state of SnapshotSystem to refresh its knowledge of:
+        /// - am I a server
+        /// - what are the client Ids
+        /// todo: consider optimizing
+        /// </summary>
         internal void UpdateClientServerData()
         {
             if (m_NetworkManager)
@@ -289,22 +317,17 @@ namespace Unity.Netcode
             }
         }
 
-        private int UpperBoundSnapshotSize()
-        {
-            return 10000;
-        }
-
         // where we build and send a snapshot to a given client
         private void SendSnapshot(ulong clientId)
         {
             var header = new SnapshotHeader();
             var message = new SnapshotDataMessage(0);
 
+            // Verify we allocated client Data for this clientId
             if (!m_ClientData.ContainsKey(clientId))
             {
                 m_ClientData.Add(clientId, new ClientData(0));
             }
-
 
             // Find which spawns must be included
             var spawnsToInclude = new List<int>();
@@ -336,6 +359,7 @@ namespace Unity.Netcode
                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
                 despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
             {
+                // todo: error handling
                 Debug.Assert(false, "Unable to secure buffer for sending");
             }
 
@@ -356,6 +380,10 @@ namespace Unity.Netcode
             SendMessage(message, clientId);
         }
 
+        /// <summary>
+        /// Entry-point into SnapshotSystem to spawn an object
+        /// called with a SnapshotSpawnCommand, the NetworkObject and a list of target clientIds, where null means all clients
+        /// </summary>
         internal void Spawn(SnapshotSpawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
         {
             command.TickWritten = m_CurrentTick;
@@ -391,6 +419,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Entry-point into SnapshotSystem to despawn an object
+        /// called with a SnapshotDespawnCommand, the NetworkObject and a list of target clientIds, where null means all clients
+        /// </summary>
         internal void Despawn(SnapshotDespawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
         {
             command.TickWritten = m_CurrentTick;
@@ -426,6 +458,7 @@ namespace Unity.Netcode
             }
         }
 
+        // todo: entry-point for value updates
         internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
         {
         }
@@ -438,6 +471,7 @@ namespace Unity.Netcode
 
             var header = new SnapshotHeader();
 
+            // Verify we allocated client Data for this clientId
             if (!m_ClientData.ContainsKey(clientId))
             {
                 m_ClientData.Add(clientId, new ClientData(0));
@@ -445,6 +479,7 @@ namespace Unity.Netcode
 
             if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(header)))
             {
+                // todo: error handling
                 message.ReadBuffer.ReadValue(out header);
             }
 
@@ -476,6 +511,7 @@ namespace Unity.Netcode
             {
                 message.ReadBuffer.ReadValue(out despawnCommand);
 
+                // todo: can we keep a single value of which tick we applied instead of per object ?
                 if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
                     despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
                 {
