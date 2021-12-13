@@ -364,6 +364,58 @@ namespace Unity.Netcode.RuntimeTests
             );
         }
 
+
+        [UnityTest]
+        public IEnumerator NetworkListValueUpdate([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_Player1OnServer.TheList.Add(k_TestVal1);
+                },
+                () =>
+                {
+                    return m_Player1OnServer.TheList.Count == 1 &&
+                           m_Player1OnClient1.TheList.Count == 1 &&
+                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
+                           m_Player1OnClient1.TheList[0] == k_TestVal1;
+                }
+            );
+
+            var testSucceeded = false;
+
+            void TestValueUpdatedCallback(NetworkListEvent<int> changedEvent)
+            {
+                testSucceeded = changedEvent.PreviousValue == k_TestVal1 &&
+                                changedEvent.Value == k_TestVal3;
+            }
+
+            try
+            {
+                yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                    () =>
+                    {
+                        m_Player1OnServer.TheList[0] = k_TestVal3;
+                        m_Player1OnClient1.TheList.OnListChanged += TestValueUpdatedCallback;
+                    },
+                    () =>
+                    {
+                        return m_Player1OnServer.TheList.Count == 1 &&
+                               m_Player1OnClient1.TheList.Count == 1 &&
+                               m_Player1OnServer.TheList[0] == k_TestVal3 &&
+                               m_Player1OnClient1.TheList[0] == k_TestVal3;
+                    }
+                );
+            }
+            finally
+            {
+                m_Player1OnClient1.TheList.OnListChanged -= TestValueUpdatedCallback;
+            }
+
+            Assert.That(testSucceeded);
+        }
+
         [Test]
         public void NetworkListIEnumerator([Values(true, false)] bool useHost)
         {
