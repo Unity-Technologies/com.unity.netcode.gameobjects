@@ -97,9 +97,9 @@ namespace Unity.Netcode
         }
     }
 
-    internal delegate int SendMessageDelegate(SnapshotDataMessage message, ulong clientId);
-    internal delegate void SpawnObjectDelegate(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
-    internal delegate void DespawnObjectDelegate(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
+    internal delegate int SendMessageHandler(SnapshotDataMessage message, ulong clientId);
+    internal delegate void SpawnObjectHandler(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
+    internal delegate void DespawnObjectHandler(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
@@ -142,11 +142,9 @@ namespace Unity.Netcode
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
 
-        // todo: consider events for the below 3
-        // todo: rename. Doc says: DO NOT add the suffix "Delegate" to a delegate.
-        internal SendMessageDelegate SendMessage { get; set; }
-        internal SpawnObjectDelegate SpawnObject { get; set; }
-        internal DespawnObjectDelegate DespawnObject { get; set; }
+        internal SendMessageHandler SendMessage;
+        internal SpawnObjectHandler SpawnObject;
+        internal DespawnObjectHandler DespawnObject;
 
         // Property showing visibility into inner workings, for testing
         internal int SpawnsBufferCount { get; private set; } = 100;
@@ -157,11 +155,14 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             m_NetworkTickSystem = networkTickSystem;
 
-            // by default, let's send on the network. This can be overriden for tests
-            SendMessage = NetworkSendMessage;
-            // by default, let's spawn with the rest of our package. This can be overriden for tests
-            SpawnObject = NetworkSpawnObject;
-            DespawnObject = NetworkDespawnObject;
+            if (networkManager != null)
+            {
+                // If we have a NetworkManager, let's send on the network. This can be overriden for tests
+                SendMessage = NetworkSendMessage;
+                // If we have a NetworkManager, let's (de)spawn with the rest of our package. This can be overriden for tests
+                SpawnObject = NetworkSpawnObject;
+                DespawnObject = NetworkDespawnObject;
+            }
 
             // register for updates in EarlyUpdate
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
