@@ -527,7 +527,12 @@ namespace Unity.Netcode
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                    UpdateCommand update = new UpdateCommand();
+                    update.networkObjectId = NetworkObjectId;
+                    update.behaviourIndex = behaviourIndex;
+                    update.variableIndex = k;
+
+                    NetworkManager.SnapshotSystem.Store(update, NetworkVariableFields[k]);
                 }
             }
 

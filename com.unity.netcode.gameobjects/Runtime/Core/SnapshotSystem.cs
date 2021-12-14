@@ -33,6 +33,22 @@ namespace Unity.Netcode
         internal int LastReceivedSequence; // what we are ack'ing
         internal int SpawnCount; // number of spawn commands included
         internal int DespawnCount; // number of despawn commands included
+        internal int UpdateCount; // number of update commands included
+    }
+
+    internal struct UpdateCommand
+    {
+        internal ulong networkObjectId;
+        internal int behaviourIndex;
+        internal int variableIndex;
+
+        // snapshot internal
+        internal int TickWritten;
+    }
+
+    internal struct UpdateCommandMeta
+    {
+        internal List<ulong> TargetClientIds;
     }
 
     /// <summary>
@@ -113,6 +129,10 @@ namespace Unity.Netcode
         // The tick we're currently processing (or last we processed, outside NetworkUpdate())
         private int m_CurrentTick = NetworkTickSystem.NoTick;
 
+        internal UpdateCommand[] Updates;
+        internal UpdateCommandMeta[] UpdatesMeta;
+        internal int NumUpdates = 0;
+
         // This arrays contains all the spawn commands received by the game code.
         // This part can be written as-is to the message.
         // Those are cleaned-up once the spawns are ack'ed by all target clients
@@ -150,6 +170,8 @@ namespace Unity.Netcode
         internal int SpawnsBufferCount { get; private set; } = 100;
         internal int DespawnsBufferCount { get; private set; } = 100;
 
+        internal int UpdatesBufferCount { get; private set; } = 100;
+
         internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
         {
             m_NetworkManager = networkManager;
@@ -171,6 +193,8 @@ namespace Unity.Netcode
             SpawnsMeta = new SnapshotSpawnDespawnCommandMeta[SpawnsBufferCount];
             Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
             DespawnsMeta = new SnapshotSpawnDespawnCommandMeta[DespawnsBufferCount];
+            Updates = new UpdateCommand[UpdatesBufferCount];
+            UpdatesMeta = new UpdateCommandMeta[UpdatesBufferCount];
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server
@@ -340,6 +364,16 @@ namespace Unity.Netcode
                 }
             }
 
+            // Find which value updates must be included
+            var updatesToInclude = new List<int>();
+            for (var index = 0; index < NumUpdates; index++)
+            {
+                if (UpdatesMeta[index].TargetClientIds.Contains(clientId))
+                {
+                    updatesToInclude.Add(index);
+                }
+            }
+
             // Find which despawns must be included
             var despawnsToInclude = new List<int>();
             for (var index = 0; index < NumDespawns; index++)
@@ -353,12 +387,14 @@ namespace Unity.Netcode
             header.CurrentTick = m_CurrentTick;
             header.SpawnCount = spawnsToInclude.Count;
             header.DespawnCount = despawnsToInclude.Count;
+            header.UpdateCount = updatesToInclude.Count;
             header.LastReceivedSequence = m_ClientData[clientId].LastReceivedTick;
 
             if (!message.WriteBuffer.TryBeginWrite(
                 FastBufferWriter.GetWriteSize(header) +
                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
-                despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0])))
+                despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0]) +
+                updatesToInclude.Count * FastBufferWriter.GetWriteSize(Updates[0])))
             {
                 // todo: error handling
                 Debug.Assert(false, "Unable to secure buffer for sending");
@@ -376,6 +412,12 @@ namespace Unity.Netcode
             foreach (var index in despawnsToInclude)
             {
                 message.WriteBuffer.WriteValue(Despawns[index]);
+            }
+
+            // Write the Updates.
+            foreach (var index in updatesToInclude)
+            {
+                message.WriteBuffer.WriteValue(Updates[index]);
             }
 
             SendMessage(message, clientId);
@@ -460,8 +502,26 @@ namespace Unity.Netcode
         }
 
         // todo: entry-point for value updates
-        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
+        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable)
         {
+            command.TickWritten = m_CurrentTick;
+
+            if (NumUpdates >= UpdatesBufferCount)
+            {
+                UpdatesBufferCount = UpdatesBufferCount * 2;
+                Array.Resize(ref Updates, UpdatesBufferCount);
+                Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
+            }
+
+            List<ulong> targetClientIds = GetClientList();
+
+            // todo: instead of writing a new one, we should replace existing update for this variable, if present
+            if (targetClientIds.Count > 0)
+            {
+                Updates[NumUpdates] = command;
+                UpdatesMeta[NumUpdates].TargetClientIds = targetClientIds;
+                NumUpdates++;
+            }
         }
 
         internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
@@ -469,6 +529,7 @@ namespace Unity.Netcode
             // Read the Spawns. Count first, then each spawn
             var spawnCommand = new SnapshotSpawnCommand();
             var despawnCommand = new SnapshotDespawnCommand();
+            var updateCommand = new UpdateCommand();
 
             var header = new SnapshotHeader();
 
@@ -489,7 +550,8 @@ namespace Unity.Netcode
             m_ClientData[clientId] = clientData;
 
             if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount +
-                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
+                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount +
+                                                 FastBufferWriter.GetWriteSize(updateCommand) * header.UpdateCount))
             {
                 // todo: deal with error
             }
@@ -521,6 +583,14 @@ namespace Unity.Netcode
 
                 TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
                 DespawnObject(despawnCommand, clientId);
+            }
+
+            for (int index = 0; index < header.UpdateCount; index++)
+            {
+                message.ReadBuffer.ReadValue(out updateCommand);
+
+                // todo: can we keep a single value of which tick we applied instead of per object ?
+                // todo: apply update
             }
 
             for (int i = 0; i < NumSpawns;)
@@ -559,8 +629,24 @@ namespace Unity.Netcode
                 }
                 i++;
             }
+            for (int i = 0; i < NumUpdates;)
+            {
+                if (Updates[i].TickWritten < header.LastReceivedSequence &&
+                    UpdatesMeta[i].TargetClientIds.Contains(clientId))
+                {
+                    UpdatesMeta[i].TargetClientIds.Remove(clientId);
 
+                    if (UpdatesMeta[i].TargetClientIds.Count == 0)
+                    {
+                        UpdatesMeta[i] = UpdatesMeta[NumUpdates - 1];
+                        Updates[i] = Updates[NumUpdates - 1];
+                        NumUpdates--;
 
+                        continue; // skip the i++ below
+                    }
+                }
+                i++;
+            }
         }
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
