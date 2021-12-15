@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -27,6 +28,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void WriteDelta(FastBufferWriter writer)
             {
+                Debug.Log("Write Delta");
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
@@ -39,6 +41,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void WriteField(FastBufferWriter writer)
             {
+                Debug.Log("Write Field");
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
@@ -51,6 +54,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void ReadField(FastBufferReader reader)
             {
+                Debug.Log("Read Field");
                 reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitReader = reader.EnterBitwiseContext())
                 {
@@ -65,6 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
             {
+                Debug.Log("Read Delta");
                 reader.TryBeginRead(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitReader = reader.EnterBitwiseContext())
                 {
@@ -97,17 +102,20 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
+            Debug.Log("1");
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, serverClientPlayerResult));
 
+            Debug.Log("2");
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], clientClientPlayerResult));
+            Debug.Log("3");
 
             var serverSideClientPlayer = serverClientPlayerResult.Result;
             var clientSideClientPlayer = clientClientPlayerResult.Result;
@@ -116,11 +124,12 @@ namespace Unity.Netcode.RuntimeTests
             var clientComponent = (clientSideClientPlayer).GetComponent<DummyNetBehaviour>();
 
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            Debug.Log("4");
 
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(
                 () => clientComponent.NetVar.DeltaRead == true,
                 waitResult,
-                maxFrames: 120));
+                maxFrames: 240));
 
             if (!waitResult.Result)
             {

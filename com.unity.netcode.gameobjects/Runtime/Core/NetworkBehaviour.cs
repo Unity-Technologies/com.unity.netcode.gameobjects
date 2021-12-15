@@ -518,13 +518,16 @@ namespace Unity.Netcode
 
         private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
         {
+            Debug.Log("NVU 1");
             if (!CouldHaveDirtyNetworkVariables())
             {
+                Debug.Log("NVU 2");
                 return;
             }
 
             if (NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
+                Debug.Log("NVU 3");
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
                     NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
@@ -533,19 +536,23 @@ namespace Unity.Netcode
 
             if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
+                Debug.Log("NVU 4");
                 for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
                 {
                     var shouldSend = false;
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
+                        Debug.Log("NVU 5");
                         if (NetworkVariableFields[k].ShouldWrite(clientId, IsServer))
                         {
+                            Debug.Log("NVU 6");
                             shouldSend = true;
                         }
                     }
 
                     if (shouldSend)
                     {
+                        Debug.Log("NVU 7");
                         var message = new NetworkVariableDeltaMessage
                         {
                             NetworkObjectId = NetworkObjectId,
@@ -554,6 +561,7 @@ namespace Unity.Netcode
                             ClientId = clientId,
                             DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
                         };
+                        Debug.Log("NVU 8");
                         // TODO: Serialization is where the IsDirty flag gets changed.
                         // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
                         // we still have to actually serialize the message even though we're not sending it, otherwise
@@ -561,6 +569,7 @@ namespace Unity.Netcode
                         // so we don't have to do this serialization work if we're not going to use the result.
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
+                            Debug.Log("NVU 9");
                             var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                             using (tmpWriter)
                             {
@@ -569,6 +578,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
+                            Debug.Log("NVU 10");
                             NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
                         }
                     }
