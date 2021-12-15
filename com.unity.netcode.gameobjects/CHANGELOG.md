@@ -9,6 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
 
 ### Removed
 
