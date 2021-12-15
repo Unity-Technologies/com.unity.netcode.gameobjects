@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -10,6 +11,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
+
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
@@ -193,6 +195,7 @@ namespace Unity.Netcode
             return Observers.GetEnumerator();
         }
 
+
         /// <summary>
         /// Whether or not this object is visible to a specific client
         /// </summary>
@@ -328,7 +331,7 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -401,8 +404,6 @@ namespace Unity.Netcode
             var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
@@ -431,37 +432,36 @@ namespace Unity.Netcode
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
         private void SnapshotSpawn()
         {
             var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command);
+            NetworkManager.SnapshotSystem.Spawn(command, this, null);
         }
 
         private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Spawn(command);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
+
+            NetworkManager.SnapshotSystem.Spawn(command, this, targetClientIds);
         }
 
         internal void SnapshotDespawn()
         {
             var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command);
+            NetworkManager.SnapshotSystem.Despawn(command, this, null);
         }
 
         internal void SnapshotDespawn(ulong clientId)
         {
             var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Despawn(command);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Despawn(command, this, targetClientIds);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -718,7 +718,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
@@ -1155,5 +1155,6 @@ namespace Unity.Netcode
 
             return GlobalObjectIdHash;
         }
+
     }
 }

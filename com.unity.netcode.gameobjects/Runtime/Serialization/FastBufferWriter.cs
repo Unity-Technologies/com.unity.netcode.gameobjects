@@ -189,7 +189,7 @@ namespace Unity.Netcode
             var newSize = Math.Min(desiredSize, Handle->MaxCapacity);
             byte* newBuffer = (byte*)UnsafeUtility.Malloc(newSize, UnsafeUtility.AlignOf<byte>(), Handle->Allocator);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            UnsafeUtility.MemSet(newBuffer, 0, sizeof(WriterHandle) + newSize);
+            UnsafeUtility.MemSet(newBuffer, 0, newSize);
 #endif
             UnsafeUtility.MemCpy(newBuffer, Handle->BufferPointer, Length);
             if (Handle->BufferGrew)
@@ -428,7 +428,7 @@ namespace Unity.Netcode
         /// <param name="count"></param>
         /// <param name="offset"></param>
         /// <typeparam name="T"></typeparam>
-        public void WriteNetworkSerializable<T>(INetworkSerializable[] array, int count = -1, int offset = 0) where T : INetworkSerializable
+        public void WriteNetworkSerializable<T>(T[] array, int count = -1, int offset = 0) where T : INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
             WriteValueSafe(sizeInTs);

@@ -52,6 +52,9 @@ namespace Unity.Netcode.Editor.CodeGen
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
+                        case nameof(NetworkVariableHelper):
+                            ProcessNetworkVariableHelper(typeDefinition);
+                            break;
                         case nameof(__RpcParams):
                             typeDefinition.IsPublic = true;
                             break;
@@ -100,6 +103,17 @@ namespace Unity.Netcode.Editor.CodeGen
             }
         }
 
+        private void ProcessNetworkVariableHelper(TypeDefinition typeDefinition)
+        {
+            foreach (var methodDefinition in typeDefinition.Methods)
+            {
+                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegates))
+                {
+                    methodDefinition.IsPublic = true;
+                }
+            }
+        }
+
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
@@ -120,8 +134,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                if (methodDefinition.Name == nameof(NetworkBehaviour.__sendServerRpc)
-                    || methodDefinition.Name == nameof(NetworkBehaviour.__sendClientRpc))
+                if (methodDefinition.Name == nameof(NetworkBehaviour.__beginSendServerRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendServerRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc))
                 {
                     methodDefinition.IsFamily = true;
                 }

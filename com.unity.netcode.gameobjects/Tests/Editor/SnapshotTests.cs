@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
@@ -55,84 +54,43 @@ namespace Unity.Netcode.EditorTests
             AdvanceOneTickRecvSide();
         }
 
-        internal int SpawnObject(SnapshotSpawnCommand command)
+        internal void SpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
         {
             m_SpawnedObjectCount++;
-            return 0;
         }
 
-        internal int DespawnObject(SnapshotDespawnCommand command)
+        internal void DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
         {
             m_DespawnedObjectCount++;
-            return 0;
         }
 
-        internal int SendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal void SimulateTransport(ref SnapshotDataMessage message)
         {
-            if (!m_PassBackResponses)
-            {
-                // we're not ack'ing anything, so those should stay 0
-                Debug.Assert(message.Ack.LastReceivedSequence == 0);
-            }
+            message.ReadBuffer = new FastBufferReader(message.WriteBuffer, Allocator.Temp);
+        }
 
-            Debug.Assert(message.Ack.ReceivedSequenceMask == 0);
-            Debug.Assert(message.Sequence == m_NextSequence); // sequence has to be the expected one
-
-            if (m_ExpectSpawns)
-            {
-                Debug.Assert(message.Spawns.Length >= m_MinSpawns); // there has to be multiple spawns per SnapshotMessage
-            }
-            else
-            {
-                Debug.Assert(message.Spawns.Length == 0); // Spawns were not expected
-            }
-
-            if (m_ExpectDespawns)
-            {
-                Debug.Assert(message.Despawns.Length >= m_MinDespawns); // there has to be multiple despawns per SnapshotMessage
-            }
-            else
-            {
-                Debug.Assert(message.Despawns.IsEmpty); // this test should not have despawns
-            }
-
-            Debug.Assert(message.Entries.Length == 0);
-
+        internal int SendMessage(SnapshotDataMessage message, ulong clientId)
+        {
             m_NextSequence++;
+            Debug.Log($"{m_MinSpawns} {m_MinDespawns} {m_ExpectSpawns} {m_ExpectDespawns}");
+
+            SimulateTransport(ref message);
 
             if (!m_LoseNextMessage)
             {
-                using var writer = new FastBufferWriter(1024, Allocator.Temp);
-                message.Serialize(writer);
-                using var reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_RecvSnapshot, 0) };
-                SnapshotDataMessage.Receive(reader, context);
-            }
-            else
-            {
-                message.Spawns.Dispose();
-                message.Despawns.Dispose();
-                message.Entries.Dispose();
+                // pass to receiving Snapshot
+                m_RecvSnapshot.HandleSnapshot(clientId, message);
             }
 
             return 0;
         }
 
-        internal int SendMessageRecvSide(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessageRecvSide(SnapshotDataMessage message, ulong clientId)
         {
             if (m_PassBackResponses)
             {
-                using var writer = new FastBufferWriter(1024, Allocator.Temp);
-                message.Serialize(writer);
-                using var reader = new FastBufferReader(writer, Allocator.Temp);
-                var context = new NetworkContext { SenderId = 0, Timestamp = 0.0f, SystemOwner = new Tuple<SnapshotSystem, ulong>(m_SendSnapshot, 1) };
-                SnapshotDataMessage.Receive(reader, context);
-            }
-            else
-            {
-                message.Spawns.Dispose();
-                message.Despawns.Dispose();
-                message.Entries.Dispose();
+                // todo: pass back to sending Snapshot
+                m_SendSnapshot.HandleSnapshot(clientId, message);
             }
 
             return 0;
@@ -145,6 +103,7 @@ namespace Unity.Netcode.EditorTests
 
             m_SendTickSystem = new NetworkTickSystem(m_TicksPerSec, 0.0, 0.0);
             m_SendTimeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
+            m_SendTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
             config.UseSnapshotSpawn = true;
@@ -157,9 +116,9 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Clear();
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
-            m_SendSnapshot.MockSendMessage = SendMessage;
-            m_SendSnapshot.MockSpawnObject = SpawnObject;
-            m_SendSnapshot.MockDespawnObject = DespawnObject;
+            m_SendSnapshot.SendMessage = SendMessage;
+            m_SendSnapshot.SpawnObject = SpawnObject;
+            m_SendSnapshot.DespawnObject = DespawnObject;
         }
 
         private void PrepareRecvSideSnapshot()
@@ -168,6 +127,7 @@ namespace Unity.Netcode.EditorTests
 
             m_RecvTickSystem = new NetworkTickSystem(m_TicksPerSec, 0.0, 0.0);
             m_RecvTimeSystem = new NetworkTimeSystem(0.2, 0.2, 1.0);
+            m_RecvTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
             config.UseSnapshotSpawn = true;
@@ -177,12 +137,12 @@ namespace Unity.Netcode.EditorTests
             m_RecvSnapshot.IsServer = false;
             m_RecvSnapshot.IsConnectedClient = true;
             m_RecvSnapshot.ServerClientId = 0;
-            m_RecvSnapshot.ConnectedClientsId.Clear();
+            m_SendSnapshot.ConnectedClientsId.Clear();
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
-            m_RecvSnapshot.MockSendMessage = SendMessageRecvSide;
-            m_RecvSnapshot.MockSpawnObject = SpawnObject;
-            m_RecvSnapshot.MockDespawnObject = DespawnObject;
+            m_RecvSnapshot.SendMessage = SendMessageRecvSide;
+            m_RecvSnapshot.SpawnObject = SpawnObject;
+            m_RecvSnapshot.DespawnObject = DespawnObject;
         }
 
         private void SendSpawnToSnapshot(ulong objectId)
@@ -200,8 +160,8 @@ namespace Unity.Netcode.EditorTests
             command.ObjectPosition = default;
             command.ObjectRotation = default;
             command.ObjectScale = new Vector3(1.0f, 1.0f, 1.0f);
-            command.TargetClientIds = new List<ulong> { 1 };
-            m_SendSnapshot.Spawn(command);
+            var targetClientIds = new List<ulong> { 1 };
+            m_SendSnapshot.Spawn(command, null, targetClientIds);
         }
 
         private void SendDespawnToSnapshot(ulong objectId)
@@ -209,8 +169,28 @@ namespace Unity.Netcode.EditorTests
             SnapshotDespawnCommand command = default;
             // identity
             command.NetworkObjectId = objectId;
-            command.TargetClientIds = new List<ulong> { 1 };
-            m_SendSnapshot.Despawn(command);
+            var targetClientIds = new List<ulong> { 1 };
+            m_SendSnapshot.Despawn(command, null, targetClientIds);
+        }
+
+        [Test]
+        public void TestSnapshotSequence()
+        {
+            int ticksToRun = 5;
+            Prepare();
+
+            m_SpawnedObjectCount = 0;
+            m_NextSequence = 0;
+            m_ExpectSpawns = false;
+            m_ExpectDespawns = false;
+            m_MinSpawns = 0;
+            m_LoseNextMessage = true;
+            m_PassBackResponses = false;
+
+            for (int i = 0; i < ticksToRun; i++)
+            {
+                AdvanceOneTick();
+            }
         }
 
         [Test]
@@ -350,6 +330,7 @@ namespace Unity.Netcode.EditorTests
             {
                 SendSpawnToSnapshot((ulong)i);
             }
+            AdvanceOneTickSendSide(); // let's tick the send multiple time, to check it still tries to send
             AdvanceOneTickSendSide(); // let's tick the send multiple time, to check it still tries to send
             AdvanceOneTick();
 

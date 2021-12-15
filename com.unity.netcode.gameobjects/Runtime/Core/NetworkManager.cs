@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,12 +54,28 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
+        private InterestManager<NetworkObject> m_InterestManager;
+
+        // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
+        //  to use the InterestManager
+        internal InterestManager<NetworkObject> InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager<NetworkObject>();
+                }
+                return m_InterestManager;
+            }
+        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
 
         public NetworkPrefabHandler PrefabHandler
         {
@@ -73,6 +90,10 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_ShuttingDown;
+
+        private bool m_StopProcessingMessages;
+
         private class NetworkManagerHooks : INetworkHooks
         {
             private NetworkManager m_NetworkManager;
@@ -82,11 +103,11 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
             {
             }
 
-            public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
             {
             }
 
@@ -116,7 +137,7 @@ namespace Unity.Netcode
 
             public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
             {
-                return true;
+                return !m_NetworkManager.m_StopProcessingMessages;
             }
 
             public bool OnVerifyCanReceive(ulong senderId, Type messageType)
@@ -134,7 +155,15 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                return true;
+                return !m_NetworkManager.m_StopProcessingMessages;
+            }
+
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
             }
         }
 
@@ -193,11 +222,6 @@ namespace Unity.Netcode
         public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
 
         public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
-
-        /// <summary>
-        /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
-        /// </summary>
-        [HideInInspector] public bool DontDestroy = true;
 
         /// <summary>
         /// Gets or sets if the application should be set to run in background
@@ -333,6 +357,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
 
+
+        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
@@ -344,8 +371,6 @@ namespace Unity.Netcode
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
-
-        internal void InvokeOnClientDisconnectCallback(ulong clientId) => OnClientDisconnectCallback?.Invoke(clientId);
 
         /// <summary>
         /// The callback to invoke once the server is ready
@@ -486,6 +511,13 @@ namespace Unity.Netcode
 
         private void Initialize(bool server)
         {
+            // Don't allow the user to start a network session if the NetworkManager is
+            // still parented under another GameObject
+            if (NetworkManagerCheckForParent(true))
+            {
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Initialize));
@@ -549,6 +581,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
@@ -577,6 +611,7 @@ namespace Unity.Netcode
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+            NetworkConfig.OverrideToNetworkPrefab.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -937,11 +972,6 @@ namespace Unity.Netcode
 
         private void OnEnable()
         {
-            if (DontDestroy)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-
             if (RunInBackground)
             {
                 Application.runInBackground = true;
@@ -950,6 +980,11 @@ namespace Unity.Netcode
             if (Singleton == null)
             {
                 SetSingleton();
+            }
+
+            if (!NetworkManagerCheckForParent())
+            {
+                DontDestroyOnLoad(gameObject);
             }
         }
 
@@ -976,7 +1011,7 @@ namespace Unity.Netcode
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            Shutdown();
+            ShutdownInternal();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
@@ -996,11 +1031,28 @@ namespace Unity.Netcode
         /// Globally shuts down the library.
         /// Disconnects clients if connected and stops server if running.
         /// </summary>
-        public void Shutdown()
+        /// <param name="discardMessageQueue">
+        /// If false, any messages that are currently in the incoming queue will be handled,
+        /// and any messages in the outgoing queue will be sent, before the shutdown is processed.
+        /// If true, NetworkManager will shut down immediately, and any unprocessed or unsent messages
+        /// will be discarded.
+        /// </param>
+        public void Shutdown(bool discardMessageQueue = false)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Shutdown));
+            }
+
+            m_ShuttingDown = true;
+            m_StopProcessingMessages = discardMessageQueue;
+        }
+
+        internal void ShutdownInternal()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
             if (IsServer)
@@ -1069,17 +1121,26 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
+            if (m_InterestManager != null)
+            {
+                m_InterestManager = null;
+            }
+
             if (MessagingSystem != null)
             {
                 MessagingSystem.Dispose();
                 MessagingSystem = null;
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            if (NetworkConfig?.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            }
 
             if (SpawnManager != null)
             {
-                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.CleanupAllTriggers();
+                SpawnManager.DespawnAndDestroyNetworkObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
@@ -1114,6 +1175,8 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
+            m_ShuttingDown = false;
+            m_StopProcessingMessages = false;
         }
 
         // INetworkUpdateSystem
@@ -1167,6 +1230,11 @@ namespace Unity.Netcode
                 return;
             }
 
+            if (m_ShuttingDown && m_StopProcessingMessages)
+            {
+                return;
+            }
+
             // Only update RTT here, server time is updated by time sync messages
             var reset = NetworkTimeSystem.Advance(Time.deltaTime);
             if (reset)
@@ -1183,9 +1251,18 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-            MessagingSystem.ProcessSendQueues();
-            NetworkMetrics.DispatchFrame();
+
+            if (!m_ShuttingDown || !m_StopProcessingMessages)
+            {
+                MessagingSystem.ProcessSendQueues();
+                NetworkMetrics.DispatchFrame();
+            }
             SpawnManager.CleanupStaleTriggers();
+
+            if (m_ShuttingDown)
+            {
+                ShutdownInternal();
+            }
         }
 
         /// <summary>
@@ -1214,7 +1291,7 @@ namespace Unity.Netcode
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
-            SendMessage(message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1312,6 +1389,8 @@ namespace Unity.Netcode
 #endif
                     clientId = TransportIdToClientId(clientId);
 
+                    OnClientDisconnectCallback?.Invoke(clientId);
+
                     m_TransportIdToClientIdMap.Remove(transportId);
                     m_ClientIdToTransportIdMap.Remove(clientId);
 
@@ -1328,9 +1407,6 @@ namespace Unity.Netcode
                     {
                         Shutdown();
                     }
-
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.End();
 #endif
@@ -1338,7 +1414,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1361,12 +1437,12 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
-            return MessagingSystem.SendMessage(message, delivery, clientIds);
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds);
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1389,19 +1465,19 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
 
-            return MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
@@ -1409,7 +1485,7 @@ namespace Unity.Netcode
             {
                 return 0;
             }
-            return MessagingSystem.SendMessage(message, delivery, clientId);
+            return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1451,13 +1527,21 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
-                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        // As long as we can destroy the PlayerObject with the owner
+                        if (!playerObject.DontDestroyWithOwner)
                         {
-                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                            {
+                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            }
+                            else
+                            {
+                                Destroy(playerObject.gameObject);
+                            }
                         }
-                        else
+                        else // Otherwise, just remove the ownership
                         {
-                            Destroy(playerObject.gameObject);
+                            playerObject.RemoveOwnership();
                         }
                     }
 
@@ -1530,7 +1614,7 @@ namespace Unity.Netcode
             {
                 Tick = NetworkTickSystem.ServerTime.Tick
             };
-            SendMessage(message, NetworkDelivery.Unreliable, ConnectedClientsIds);
+            SendMessage(ref message, NetworkDelivery.Unreliable, ConnectedClientsIds);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
 #endif
@@ -1577,12 +1661,11 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
 
-                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
@@ -1596,6 +1679,7 @@ namespace Unity.Netcode
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
+                    LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
@@ -1641,9 +1725,52 @@ namespace Unity.Netcode
                 message.ObjectInfo.Header.HasParent = false;
                 message.ObjectInfo.Header.IsPlayerObject = true;
                 message.ObjectInfo.Header.OwnerClientId = clientId;
-                var size = SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
+
+        /// <summary>
+        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            NetworkManagerCheckForParent();
+        }
+
+        /// <summary>
+        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
+        /// notifies the user that this is not allowed for the NetworkManager.
+        /// </summary>
+        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
+        {
+#if UNITY_EDITOR
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+#else
+            var isParented = transform.root != transform;
+            if (isParented)
+            {
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+            }
+#endif
+            return isParented;
+        }
+
+        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
+#if UNITY_EDITOR
+        static internal INetworkManagerHelper NetworkManagerHelper;
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+        }
+#endif
     }
+
 }
