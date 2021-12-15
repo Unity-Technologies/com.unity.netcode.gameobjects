@@ -52,6 +52,19 @@ namespace Unity.Netcode.EditorTests
             Assert.False(m_NetworkManager.IsHost);
         }
 
+        [Test]
+        public void TestShutdownWithoutStartForExceptions()
+        {
+            m_NetworkManager.ShutdownInternal();
+        }
+
+        [Test]
+        public void TestShutdownWithoutConfigForExceptions()
+        {
+            m_NetworkManager.NetworkConfig = null;
+            m_NetworkManager.ShutdownInternal();
+        }
+
         [TearDown]
         public void Teardown()
         {
