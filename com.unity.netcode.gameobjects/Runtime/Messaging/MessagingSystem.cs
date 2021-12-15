@@ -240,6 +240,8 @@ namespace Unity.Netcode
             };
 
             var type = m_ReverseTypeMap[header.MessageType];
+
+            Debug.Log($"Receive {type.Name}");
             if (!CanReceive(senderId, type))
             {
                 reader.Dispose();
@@ -323,12 +325,14 @@ namespace Unity.Netcode
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
         {
             var message = new T();
+            Debug.Log($"Deserialize {typeof(T).Name}");
             if (message.Deserialize(reader, ref context))
             {
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
                 {
                     system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
                 }
+                Debug.Log($"Handle {typeof(T).Name}");
 
                 message.Handle(ref context);
 
@@ -360,6 +364,8 @@ namespace Unity.Netcode
             {
                 return 0;
             }
+
+            Debug.Log($"Send {typeof(TMessageType).Name}");
 
             var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
 
