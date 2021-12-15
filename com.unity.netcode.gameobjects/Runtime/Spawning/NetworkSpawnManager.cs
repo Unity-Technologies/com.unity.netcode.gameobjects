@@ -187,28 +187,44 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            for (int i = NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects.Count - 1;
-                i > -1;
-                i--)
+            // If we made it here then we are the server and if the server is determined to already be the owner
+            // then ignore the RemoveOwnership invocation.
+            if (networkObject.OwnerClientId == NetworkManager.ServerClientId)
             {
-                if (NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects[i] == networkObject)
-                {
-                    NetworkManager.ConnectedClients[networkObject.OwnerClientId].OwnedObjects.RemoveAt(i);
-                }
+                return;
             }
 
-            networkObject.OwnerClientIdInternal = null;
-
-            var message = new ChangeOwnershipMessage
+            // Make sure the connected client entry exists before trying to remove ownership.
+            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
             {
-                NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = networkObject.OwnerClientId
-            };
-            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
+                {
+                    if (networkClient.OwnedObjects[i] == networkObject)
+                    {
+                        networkClient.OwnedObjects.RemoveAt(i);
+                    }
+                }
 
-            foreach (var client in NetworkManager.ConnectedClients)
+                networkObject.OwnerClientIdInternal = null;
+
+                var message = new ChangeOwnershipMessage
+                {
+                    NetworkObjectId = networkObject.NetworkObjectId,
+                    OwnerClientId = networkObject.OwnerClientId
+                };
+                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+
+                foreach (var client in NetworkManager.ConnectedClients)
+                {
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
+                }
+            }
+            else
             {
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"No connected clients prior to removing ownership for {networkObject.name}.  Make sure you are not initializing or shutting down when removing ownership.");
+                }
             }
         }
 
