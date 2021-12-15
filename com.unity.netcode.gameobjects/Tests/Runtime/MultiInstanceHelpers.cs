@@ -5,6 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.XR;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -22,17 +23,19 @@ namespace Unity.Netcode.RuntimeTests
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
-        public delegate bool MessageReceiptCheck(object receivedMessage);
+        public delegate bool MessageReceiptCheck(Type receivedMessage);
+        public delegate bool MessageHandleCheck(object receivedMessage);
 
         private class MultiInstanceHooks : INetworkHooks
         {
             public bool IsWaiting;
 
             public MessageReceiptCheck ReceiptCheck;
+            public MessageHandleCheck HandleCheck;
 
-            public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+            public static bool CheckForMessageOfType<T>(Type receivedMessageType) where T : INetworkMessage
             {
-                return receivedMessage is T;
+                return receivedMessageType == typeof(T);
             }
 
 
@@ -50,6 +53,11 @@ namespace Unity.Netcode.RuntimeTests
 
             public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
             {
+                Debug.Log($"{IsWaiting} {HandleCheck} {ReceiptCheck} {messageType.Name}");
+                if (IsWaiting && HandleCheck == null && (ReceiptCheck == null || ReceiptCheck.Invoke(messageType)))
+                {
+                    IsWaiting = false;
+                }
             }
 
             public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
@@ -84,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
             {
-                if (IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
+                if (IsWaiting && ReceiptCheck == null && (HandleCheck == null || HandleCheck.Invoke(message)))
                 {
                     IsWaiting = false;
                 }
@@ -705,10 +713,10 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageReceiptCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
+        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
         {
             var hooks = s_Hooks[toBeReceivedBy];
-            hooks.ReceiptCheck = requirement;
+            hooks.HandleCheck = requirement;
             if (result == null)
             {
                 result = new CoroutineResultWrapper<bool>();
