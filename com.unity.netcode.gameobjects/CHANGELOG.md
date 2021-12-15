@@ -9,6 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [1.0.0-pre.4] - 2021-01-04
 
 ### Added
+- Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
 
 - Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
 
