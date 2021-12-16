@@ -22,7 +22,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public TestCoordinatorTests(int workerCount, string[] platformList)
         {
             m_WorkerCount = workerCount;
-            m_Platforms = platformList;            
+            m_Platforms = platformList;
         }
 
         static private float s_ValueToValidateAgainst;
