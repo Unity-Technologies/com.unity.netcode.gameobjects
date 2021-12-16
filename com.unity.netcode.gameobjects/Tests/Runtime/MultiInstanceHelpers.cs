@@ -53,7 +53,6 @@ namespace Unity.Netcode.RuntimeTests
 
             public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
             {
-                Debug.Log($"{IsWaiting} {HandleCheck} {ReceiptCheck} {messageType.Name}");
                 if (IsWaiting && HandleCheck == null && (ReceiptCheck == null || ReceiptCheck.Invoke(messageType)))
                 {
                     IsWaiting = false;
