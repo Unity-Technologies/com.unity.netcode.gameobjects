@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     public static class MultiInstanceHelpers
     {
         public const int DefaultMinFrames = 1;
-        public const int DefaultMaxFrames = 64;
+        public const float DefaultTimeout = 1f;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
@@ -447,9 +447,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
-            yield return WaitForClientsConnected(new NetworkManager[] { client }, result, maxFrames);
+            yield return WaitForClientsConnected(new NetworkManager[] { client }, result, timeout);
         }
 
         /// <summary>
@@ -459,7 +459,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="maxFrames">The max frames to wait for</param>
         /// <returns></returns>
-        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
             foreach (var client in clients)
@@ -470,9 +470,10 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            var startFrameNumber = Time.frameCount;
             var allConnected = true;
-            while (Time.frameCount - startFrameNumber <= maxFrames)
+            var startTime = Time.realtimeSinceStartup;
+
+            while (Time.realtimeSinceStartup - startTime < timeout)
             {
                 allConnected = true;
                 foreach (var client in clients)
@@ -513,9 +514,9 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
-            yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, maxFrames);
+            yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, timeout);
         }
 
         /// <summary>
@@ -524,16 +525,16 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             if (!server.IsServer)
             {
                 throw new InvalidOperationException("Cannot wait for connected as client");
             }
 
-            var startFrameNumber = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
 
-            while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
+            while (Time.realtimeSinceStartup - startTime < timeout && server.ConnectedClients.Count != clientCount)
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -559,16 +560,16 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
             {
                 throw new ArgumentNullException("Result cannot be null");
             }
 
-            var startFrameNumber = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
 
-            while (Time.frameCount - startFrameNumber <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
+            while (Time.realtimeSinceStartup - startTime < timeout && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -590,7 +591,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
             {
@@ -602,9 +603,9 @@ namespace Unity.Netcode.RuntimeTests
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            var startFrame = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
 
-            while (Time.frameCount - startFrame <= maxFrames && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
+            while (Time.realtimeSinceStartup - startTime < timeout && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -624,7 +625,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="workload">Action / code to run</param>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             var waitResult = new CoroutineResultWrapper<bool>();
             workload();
@@ -632,7 +633,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return Run(WaitForCondition(
                 predicate,
                 waitResult,
-                maxFrames: maxFrames,
+                timeout: timeout,
                 minFrames: minFrames));
 
             if (!waitResult.Result)
@@ -648,14 +649,14 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            var startFrameNumber = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
 
             if (minFrames > 0)
             {
@@ -665,8 +666,8 @@ namespace Unity.Netcode.RuntimeTests
                 });
             }
 
-            while (Time.frameCount - startFrameNumber <= maxFrames &&
-                !predicate())
+            while (Time.realtimeSinceStartup - startTime < timeout &&
+                   !predicate())
             {
                 // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
                 // see a value change (i.e. discovered in the NetworkTransformTests)
@@ -694,7 +695,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             hooks.ReceiptCheck = MultiInstanceHooks.CheckForMessageOfType<T>;
@@ -713,7 +714,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
+        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];
             hooks.HandleCheck = requirement;
