@@ -1,3 +1,6 @@
+using System;
+using UnityEngine;
+
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class CustomPrefabSpawnerForPerformanceTests<T> : INetworkPrefabInstanceHandler, IDisposable where T : NetworkBehaviour

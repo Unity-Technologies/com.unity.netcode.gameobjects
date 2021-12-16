@@ -1,3 +1,12 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using NUnit.Framework;
+using Unity.PerformanceTesting;
+using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 using Object = UnityEngine.Object;
 

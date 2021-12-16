@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests

@@ -1,5 +1,10 @@
+using System;
+using System.IO;
 #if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.Build.Reporting;
 #endif
+using UnityEngine;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {

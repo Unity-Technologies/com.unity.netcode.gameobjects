@@ -1,3 +1,8 @@
+using UnityEngine;
+using System;
+using System.Diagnostics;
+using NUnit.Framework;
+
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class MultiprocessLogger
@@ -55,10 +60,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 method2 = st.GetFrame(2).GetMethod().Name;
                 method3 = st.GetFrame(3).GetMethod().Name;
             }
+            
 
-
-            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
-
+            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context,$"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
+            
         }
     }
 }
