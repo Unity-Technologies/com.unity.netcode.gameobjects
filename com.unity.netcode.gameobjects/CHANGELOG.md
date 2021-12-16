@@ -27,7 +27,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
-- Fixed issue where pooled NetworkObjects using NetworkTransform would interpolate from their last de-spawned position to the newly spawned position (#1505)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
 
 ### Changed
