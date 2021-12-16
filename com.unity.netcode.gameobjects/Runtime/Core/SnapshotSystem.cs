@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 // SnapshotSystem stores:
@@ -44,10 +45,13 @@ namespace Unity.Netcode
 
         // snapshot internal
         internal int TickWritten;
+        internal int SerializedLength;
     }
 
     internal struct UpdateCommandMeta
     {
+        internal int Index; // the index for the index allocator
+        internal int BufferPos; // the allocated position in the buffer
         internal List<ulong> TargetClientIds;
     }
 
@@ -172,6 +176,13 @@ namespace Unity.Netcode
 
         internal int UpdatesBufferCount { get; private set; } = 100;
 
+        internal IndexAllocator MemoryStorage = new IndexAllocator(10000, 1000);
+        internal byte[] MemoryBuffer = new byte[10000];
+
+        private int[] m_AvailableIndices;
+        private int m_AvailableIndicesBufferCount = 1000;
+        private int m_NumAvailableIndices = 1000;
+
         internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
         {
             m_NetworkManager = networkManager;
@@ -195,6 +206,12 @@ namespace Unity.Netcode
             DespawnsMeta = new SnapshotSpawnDespawnCommandMeta[DespawnsBufferCount];
             Updates = new UpdateCommand[UpdatesBufferCount];
             UpdatesMeta = new UpdateCommandMeta[UpdatesBufferCount];
+
+            m_AvailableIndices = new int[m_AvailableIndicesBufferCount];
+            for (var i = 0; i < m_AvailableIndicesBufferCount; i++)
+            {
+                m_AvailableIndices[i] = i;
+            }
         }
 
         // returns the default client list: just the server, on clients, all clients, on the server
@@ -502,7 +519,7 @@ namespace Unity.Netcode
         }
 
         // todo: entry-point for value updates
-        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable)
+        internal unsafe void Store(UpdateCommand command, NetworkVariableBase networkVariable)
         {
             command.TickWritten = m_CurrentTick;
 
@@ -514,12 +531,39 @@ namespace Unity.Netcode
             }
 
             List<ulong> targetClientIds = GetClientList();
+            int bufferPos = 0;
 
             // todo: instead of writing a new one, we should replace existing update for this variable, if present
             if (targetClientIds.Count > 0)
             {
+                int index = m_AvailableIndices[0];
+                m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
+                m_NumAvailableIndices--;
+
+                var writer = new FastBufferWriter(1000, Allocator.Temp);
+                using (writer)
+                {
+                    if (m_NumAvailableIndices == 0)
+                    {
+                        // todo: error handling
+                        Debug.Assert(false);
+                    }
+
+                    networkVariable.WriteDelta(writer);
+                    command.SerializedLength = writer.Length;
+
+                    MemoryStorage.Allocate(index,writer.Length, out bufferPos);
+                    fixed(byte* buff = &MemoryBuffer[0])
+                    {
+                        Buffer.MemoryCopy(writer.GetUnsafePtr(), buff + bufferPos, writer.Length, writer.Length);
+                    }
+                }
+
                 Updates[NumUpdates] = command;
                 UpdatesMeta[NumUpdates].TargetClientIds = targetClientIds;
+                UpdatesMeta[NumUpdates].BufferPos = bufferPos;
+                UpdatesMeta[NumUpdates].Index = index;
+
                 NumUpdates++;
             }
         }
@@ -638,6 +682,9 @@ namespace Unity.Netcode
 
                     if (UpdatesMeta[i].TargetClientIds.Count == 0)
                     {
+                        MemoryStorage.Deallocate(UpdatesMeta[i].Index);
+                        m_AvailableIndices[m_NumAvailableIndices++] = UpdatesMeta[i].Index;
+
                         UpdatesMeta[i] = UpdatesMeta[NumUpdates - 1];
                         Updates[i] = Updates[NumUpdates - 1];
                         NumUpdates--;
@@ -647,6 +694,9 @@ namespace Unity.Netcode
                 }
                 i++;
             }
+
+            Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
+
         }
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
