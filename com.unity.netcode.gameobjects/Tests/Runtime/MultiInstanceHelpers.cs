@@ -23,19 +23,21 @@ namespace Unity.Netcode.RuntimeTests
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
-        public delegate bool MessageReceiptCheck(Type receivedMessage);
         public delegate bool MessageHandleCheck(object receivedMessage);
+
+        internal class MessageHandleCheckWithResult
+        {
+            public MessageHandleCheck Check;
+            public bool Result;
+        }
 
         private class MultiInstanceHooks : INetworkHooks
         {
-            public bool IsWaiting;
+            public Dictionary<Type, List<MessageHandleCheckWithResult>> HandleChecks = new Dictionary<Type, List<MessageHandleCheckWithResult>>();
 
-            public MessageReceiptCheck ReceiptCheck;
-            public MessageHandleCheck HandleCheck;
-
-            public static bool CheckForMessageOfType<T>(Type receivedMessageType) where T : INetworkMessage
+            public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
             {
-                return receivedMessageType == typeof(T);
+                return receivedMessage.GetType() == typeof(T);
             }
 
 
@@ -53,10 +55,6 @@ namespace Unity.Netcode.RuntimeTests
 
             public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
             {
-                if (IsWaiting && HandleCheck == null && (ReceiptCheck == null || ReceiptCheck.Invoke(messageType)))
-                {
-                    IsWaiting = false;
-                }
             }
 
             public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
@@ -91,9 +89,17 @@ namespace Unity.Netcode.RuntimeTests
 
             public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
             {
-                if (IsWaiting && ReceiptCheck == null && (HandleCheck == null || HandleCheck.Invoke(message)))
+                if (HandleChecks.ContainsKey(typeof(T)))
                 {
-                    IsWaiting = false;
+                    foreach (var check in HandleChecks[typeof(T)])
+                    {
+                        if (check.Check(message))
+                        {
+                            check.Result = true;
+                            HandleChecks[typeof(T)].Remove(check);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -697,12 +703,17 @@ namespace Unity.Netcode.RuntimeTests
         internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
-            hooks.ReceiptCheck = MultiInstanceHooks.CheckForMessageOfType<T>;
+            if (!hooks.HandleChecks.ContainsKey(typeof(T)))
+            {
+                hooks.HandleChecks.Add(typeof(T), new List<MessageHandleCheckWithResult>());
+            }
+            var check = new MessageHandleCheckWithResult {Check = MultiInstanceHooks.CheckForMessageOfType<T>};
+            hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
                 result = new CoroutineResultWrapper<bool>();
             }
-            yield return ExecuteWaitForHook(hooks, result, timeout);
+            yield return ExecuteWaitForHook(check, result, timeout);
 
             Assert.True(result.Result, $"Expected message {typeof(T).Name} was not received within {timeout}s.");
         }
@@ -713,33 +724,34 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        internal static IEnumerator WaitForMessageMeetingRequirement<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];
-            hooks.HandleCheck = requirement;
+            if (!hooks.HandleChecks.ContainsKey(typeof(T)))
+            {
+                hooks.HandleChecks.Add(typeof(T), new List<MessageHandleCheckWithResult>());
+            }
+            var check = new MessageHandleCheckWithResult {Check = requirement};
+            hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
                 result = new CoroutineResultWrapper<bool>();
             }
-            yield return ExecuteWaitForHook(hooks, result, timeout);
+            yield return ExecuteWaitForHook(check, result, timeout);
 
             Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
         }
 
-        private static IEnumerator ExecuteWaitForHook(MultiInstanceHooks hooks, CoroutineResultWrapper<bool> result, float timeout)
+        private static IEnumerator ExecuteWaitForHook(MessageHandleCheckWithResult check, CoroutineResultWrapper<bool> result, float timeout)
         {
-            hooks.IsWaiting = true;
-
             var startTime = Time.realtimeSinceStartup;
 
-            while (hooks.IsWaiting && Time.realtimeSinceStartup - startTime < timeout)
+            while (!check.Result && Time.realtimeSinceStartup - startTime < timeout)
             {
                 yield return null;
             }
 
-            var res = !hooks.IsWaiting;
-            hooks.IsWaiting = false;
-            hooks.ReceiptCheck = null;
+            var res = check.Result;
             result.Result = res;
         }
 
