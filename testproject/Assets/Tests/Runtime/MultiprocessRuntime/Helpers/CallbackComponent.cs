@@ -1,6 +1,3 @@
-using System;
-using UnityEngine;
-
 /// <summary>
 /// Component who's purpose is to expose callbacks to code tests
 /// </summary>

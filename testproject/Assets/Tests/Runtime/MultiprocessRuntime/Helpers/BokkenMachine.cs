@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class BokkenMachine
@@ -24,7 +17,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static FileInfo s_FileInfo;
         private static string s_Rootdir;
         public static string PathToDll { get; private set; }
-        
+
 
         private static List<Process> s_ProcessList = new List<Process>();
 
@@ -69,14 +62,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else if (type.Equals("default-win"))
             {
                 rv = GetDefaultWin(name);
-            }            
-            
+            }
+
             return rv;
         }
         public BokkenMachine()
         {
-            
-            
+
+
         }
 
         public void Provision()
@@ -92,8 +85,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"Disposing of resource {f.FullName} and deleting file");
                 ExecuteCommand($"--command destroy --input-path {f.FullName}");
-                f.Delete();                
-            }            
+                f.Delete();
+            }
         }
 
         public static void FetchAllLogFiles()
@@ -120,7 +113,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             ExecuteCommand(GenerateSetupMachineCommand(), true);
         }
-        
+
         public void Launch()
         {
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
@@ -150,7 +143,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static Process ExecuteCommand(string command, bool waitForResult = false, bool logStdOut = false, int timeToWait = 300000)
         {
             MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");
-            
+
             var workerProcess = new Process();
 
             workerProcess.StartInfo.FileName = Path.Combine("dotnet");
@@ -162,7 +155,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"Starting process : waitForResult is {waitForResult}");
                 var newProcessStarted = workerProcess.Start();
-                
+
                 if (!newProcessStarted)
                 {
                     throw new Exception("Failed to start worker process!");
@@ -179,7 +172,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             if (waitForResult)
-            {                
+            {
                 workerProcess.WaitForExit(timeToWait);
                 if (logStdOut)
                 {
@@ -226,12 +219,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception("PathToJson must not be null or empty");
             }
 
-            
-            
+
+
             if (Image.Contains("win10"))
             {
 
-                LogPath = @"C:\users\bokken\.multiprocess\" +$"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
+                LogPath = @"C:\users\bokken\.multiprocess\" + $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
                     $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
