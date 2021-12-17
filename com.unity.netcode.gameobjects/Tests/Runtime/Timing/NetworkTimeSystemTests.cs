@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -45,8 +47,8 @@ namespace Unity.Netcode.RuntimeTests
             while (tickSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt((tickSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
-                Assert.AreEqual(Mathf.FloorToInt((tickSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
+                Assert.AreEqual(Math.Floor((tickSystem.LocalTime.Time / delta)), NetworkManager.Singleton.LocalTime.Tick);
+                Assert.AreEqual(Math.Floor((tickSystem.ServerTime.Time / delta)), NetworkManager.Singleton.ServerTime.Tick);
                 Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
             }
         }
