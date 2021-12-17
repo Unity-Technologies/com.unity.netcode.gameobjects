@@ -433,12 +433,6 @@ namespace Unity.Netcode
                 message.WriteBuffer.WriteValue(Spawns[index]);
             }
 
-            // Write the Despawns.
-            foreach (var index in despawnsToInclude)
-            {
-                message.WriteBuffer.WriteValue(Despawns[index]);
-            }
-
             // Write the Updates, interleaved with the variable payload
             foreach (var index in updatesToInclude)
             {
@@ -446,7 +440,38 @@ namespace Unity.Netcode
                 message.WriteBuffer.WriteBytes(MemoryBuffer, Updates[index].SerializedLength, UpdatesMeta[index].BufferPos);
             }
 
+            // Write the Despawns.
+            foreach (var index in despawnsToInclude)
+            {
+                message.WriteBuffer.WriteValue(Despawns[index]);
+            }
+
             SendMessage(message, clientId);
+        }
+
+        internal void CleanUpdateFromSnapshot(SnapshotDespawnCommand despawnCommand)
+        {
+            for (int i = 0; i < NumUpdates; /*increment done below*/)
+            {
+                // if this is a despawn command for an object we have an update for, let's forget it
+                if (Updates[i].NetworkObjectId == despawnCommand.NetworkObjectId)
+                {
+                    // deallocate the memory
+                    MemoryStorage.Deallocate(UpdatesMeta[i].Index);
+                    // retrieve the index as available
+                    m_AvailableIndices[m_NumAvailableIndices++] = UpdatesMeta[i].Index;
+
+                    Updates[i] = Updates[NumUpdates - 1];
+                    UpdatesMeta[i] = UpdatesMeta[NumUpdates - 1];
+                    NumUpdates--;
+
+                    // skip incrementing i
+                }
+                else
+                {
+                    i++;
+                }
+            }
         }
 
         /// <summary>
@@ -517,6 +542,8 @@ namespace Unity.Netcode
                 DespawnsMeta[NumDespawns].TargetClientIds = targetClientIds;
                 NumDespawns++;
             }
+
+            CleanUpdateFromSnapshot(command);
 
             if (m_NetworkManager)
             {
@@ -628,8 +655,7 @@ namespace Unity.Netcode
             clientData.LastReceivedTick = header.CurrentTick;
             m_ClientData[clientId] = clientData;
 
-            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount +
-                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
+            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount))
             {
                 // todo: deal with error
             }
@@ -646,21 +672,6 @@ namespace Unity.Netcode
 
                 TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
                 SpawnObject(spawnCommand, clientId);
-            }
-
-            for (int index = 0; index < header.DespawnCount; index++)
-            {
-                message.ReadBuffer.ReadValue(out despawnCommand);
-
-                // todo: can we keep a single value of which tick we applied instead of per object ?
-                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
-                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
-                {
-                    continue;
-                }
-
-                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
-                DespawnObject(despawnCommand, clientId);
             }
 
             for (int index = 0; index < header.UpdateCount; index++)
@@ -681,6 +692,26 @@ namespace Unity.Netcode
                         variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
                     }
                 }
+            }
+
+            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
+            {
+                // todo: deal with error
+            }
+
+            for (int index = 0; index < header.DespawnCount; index++)
+            {
+                message.ReadBuffer.ReadValue(out despawnCommand);
+
+                // todo: can we keep a single value of which tick we applied instead of per object ?
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+                DespawnObject(despawnCommand, clientId);
             }
 
             // todo: can we keep a single value of which tick we applied instead of per object ?
