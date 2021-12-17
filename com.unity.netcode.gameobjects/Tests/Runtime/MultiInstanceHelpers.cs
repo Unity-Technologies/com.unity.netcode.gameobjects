@@ -5,7 +5,6 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.XR;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -707,7 +706,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 hooks.HandleChecks.Add(typeof(T), new List<MessageHandleCheckWithResult>());
             }
-            var check = new MessageHandleCheckWithResult {Check = MultiInstanceHooks.CheckForMessageOfType<T>};
+            var check = new MessageHandleCheckWithResult { Check = MultiInstanceHooks.CheckForMessageOfType<T> };
             hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
@@ -731,7 +730,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 hooks.HandleChecks.Add(typeof(T), new List<MessageHandleCheckWithResult>());
             }
-            var check = new MessageHandleCheckWithResult {Check = requirement};
+            var check = new MessageHandleCheckWithResult { Check = requirement };
             hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
