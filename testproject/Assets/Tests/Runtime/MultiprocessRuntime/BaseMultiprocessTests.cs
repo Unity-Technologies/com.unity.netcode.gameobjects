@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -154,12 +155,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else
                 {
                     var machines = new List<BokkenMachine>();
+                    var tasks = new List<Task>();
                     foreach (var platform in platformList)
                     {
                         MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
-                        var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
-                        machines.Add(machine);
+                        var t = Task.Factory.StartNew(() => {
+                            var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
+                            machines.Add(machine);
+                        });
+                        MultiprocessLogger.Log($"Task {t.Id} is for {platform}");
+                        tasks.Add(t);
                         MultiprocessLogger.Log($"Machines list is now : {machines.Count}");
+                    }
+
+                    foreach (var task in tasks)
+                    {
+                        MultiprocessLogger.Log($"Task id {task.Id}");
+                        task.Wait();
                     }
 
                     foreach (var machine in machines)
