@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 - Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
+- SnapshotSystem carries Spawns, Despawns and NetworkVariable value updates
 
 ### Removed
 
