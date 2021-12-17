@@ -527,27 +527,56 @@ namespace Unity.Netcode
             }
         }
 
-        // todo: entry-point for value updates
+        // entry-point for value updates
         internal unsafe void Store(UpdateCommand command, NetworkVariableBase networkVariable)
         {
             command.TickWritten = m_CurrentTick;
-
-            if (NumUpdates >= UpdatesBufferCount)
-            {
-                UpdatesBufferCount = UpdatesBufferCount * 2;
-                Array.Resize(ref Updates, UpdatesBufferCount);
-                Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
-            }
+            int commandPosition = -1;
 
             List<ulong> targetClientIds = GetClientList();
-            int bufferPos = 0;
 
-            // todo: instead of writing a new one, we should replace existing update for this variable, if present
             if (targetClientIds.Count > 0)
             {
-                int index = m_AvailableIndices[0];
-                m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
-                m_NumAvailableIndices--;
+                // Look for an existing variable's position to update before adding a new entry
+                for (var i = 0; i < NumUpdates; i++)
+                {
+                    if (Updates[i].BehaviourIndex == command.BehaviourIndex &&
+                        Updates[i].NetworkObjectId == command.NetworkObjectId &&
+                        Updates[i].VariableIndex == command.VariableIndex)
+                    {
+                        commandPosition = i;
+                        break;
+                    }
+                }
+
+                if (commandPosition == -1)
+                {
+                    int index = -1;
+
+                    if (NumUpdates >= UpdatesBufferCount)
+                    {
+                        UpdatesBufferCount = UpdatesBufferCount * 2;
+                        Array.Resize(ref Updates, UpdatesBufferCount);
+                        Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
+                    }
+
+                    commandPosition = NumUpdates;
+                    NumUpdates++;
+
+                    index = m_AvailableIndices[0];
+                    m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
+                    m_NumAvailableIndices--;
+
+                    UpdatesMeta[commandPosition].Index = index;
+                }
+                else
+                {
+                    // de-allocate previous buffer as a new one will be allocated
+                    MemoryStorage.Deallocate(UpdatesMeta[commandPosition].Index);
+                }
+
+                // the position we'll be serializing the network variable at, in our memory buffer
+                int bufferPos = 0;
 
                 var writer = new FastBufferWriter(1000, Allocator.Temp);
                 using (writer)
@@ -561,19 +590,16 @@ namespace Unity.Netcode
                     networkVariable.WriteDelta(writer);
                     command.SerializedLength = writer.Length;
 
-                    MemoryStorage.Allocate(index, writer.Length, out bufferPos);
+                    MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, writer.Length, out bufferPos);
                     fixed (byte* buff = &MemoryBuffer[0])
                     {
                         Buffer.MemoryCopy(writer.GetUnsafePtr(), buff + bufferPos, writer.Length, writer.Length);
                     }
                 }
 
-                Updates[NumUpdates] = command;
-                UpdatesMeta[NumUpdates].TargetClientIds = targetClientIds;
-                UpdatesMeta[NumUpdates].BufferPos = bufferPos;
-                UpdatesMeta[NumUpdates].Index = index;
-
-                NumUpdates++;
+                Updates[commandPosition] = command;
+                UpdatesMeta[commandPosition].TargetClientIds = targetClientIds;
+                UpdatesMeta[commandPosition].BufferPos = bufferPos;
             }
         }
 
@@ -649,7 +675,7 @@ namespace Unity.Netcode
                     message.ReadBuffer.TryBeginRead(updateCommand.SerializedLength);
                     message.ReadBuffer.ReadBytes(buff, updateCommand.SerializedLength, 0);
 
-                    using var reader = new FastBufferReader(buff, Allocator.None, updateCommand.SerializedLength, 0);
+                    using var reader = new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
                     {
                         NetworkVariableBase variable = GetVariable(updateCommand, clientId);
                         variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
