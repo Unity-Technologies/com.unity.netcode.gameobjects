@@ -1,5 +1,4 @@
 using System.Collections;
-using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -41,29 +40,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             s_ValueToValidateAgainst = args[0];
             TestCoordinator.Instance.WriteTestResultsServerRpc(s_ValueToValidateAgainst);
-        }
-
-        [UnityTest]
-        public IEnumerator CheckPreconditions()
-        {
-            if (platformList != null)
-            {
-                var dll = new FileInfo(BokkenMachine.PathToDll);
-                MultiprocessLogger.Log("The Bokken API Dll exists");
-                Assert.True(dll.Exists, "The Bokken API Dll exists");
-                var p = BokkenMachine.ExecuteCommand("--help", true);
-                MultiprocessLogger.Log("The help command process should have exited");
-                Assert.True(p.HasExited, "The process should have exited");
-                string s = p.StandardOutput.ReadToEnd();
-                MultiprocessLogger.Log("Help stdout");
-                Assert.IsNotNull(s, "The help output should not be null");
-                string e = p.StandardError.ReadToEnd();
-                MultiprocessLogger.Log("The help command stderr");
-                Assert.True(string.IsNullOrEmpty(e), $"The help command error stream should be null but was {e}");
-            }
-            MultiprocessLogger.Log("Before yield");
-            yield return new WaitForSeconds(0.1f);
-            MultiprocessLogger.Log("after yield");
         }
 
         [UnityTest]
