@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -24,7 +25,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
 
         protected virtual bool IsPerformanceTest => true;
-        
+        private string m_Port = "3076"; // TODO This port will need to be reconfigurable
         private const string k_GlobalEmptySceneName = "EmptyScene";
 
         private bool m_SceneHasLoaded;
@@ -77,12 +78,26 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            SceneManager.sceneLoaded -= OnSceneLoaded;                        
-            
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            var ushortport = ushort.Parse(m_Port);
+
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = ushortport;
+                    unetTransport.ServerListenPort = ushortport;
+                    break;
+                default:
+                    MultiprocessLogger.LogError($"OnSceneLoaded: Transport is {transport} which is an unaccounted for transport case");
+                    break;
+            }
+
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
                 SceneManager.SetActiveScene(scene);
             }
+
 
             NetworkManager.Singleton.StartHost();
 

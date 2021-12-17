@@ -206,7 +206,8 @@ public class CommandLineProcessor
         switch (transport)
         {
             case UNetTransport unetTransport:
-                throw new Exception("unetTransport is deprecated, please use UnityTransport");
+                unetTransport.ConnectAddress = address;
+                break;
             case UnityTransport unityTransport:
                 unityTransport.ConnectionData.Address = address;
                 break;
@@ -219,7 +220,9 @@ public class CommandLineProcessor
         switch (transport)
         {
             case UNetTransport unetTransport:
-                throw new Exception("unetTransport is deprecated, please use UnityTransport");
+                unetTransport.ConnectPort = port;
+                unetTransport.ServerListenPort = port;
+                break;
             case UnityTransport unityTransport:
                 unityTransport.ConnectionData.Port = port;
                 break;

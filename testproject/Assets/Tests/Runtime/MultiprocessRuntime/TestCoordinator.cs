@@ -81,7 +81,15 @@ public class TestCoordinator : NetworkBehaviour
         switch (transport)
         {
             case UNetTransport unetTransport:
-                throw new Exception("unetTransport is deprecated, please use UnityTransport");
+                MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}");
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                if (isClient)
+                {
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
+                }
+                break;
         }
 
         if (isClient)
