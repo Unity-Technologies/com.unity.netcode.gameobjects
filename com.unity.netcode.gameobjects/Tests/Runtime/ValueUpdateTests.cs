@@ -121,8 +121,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return RefreshGameObects();
 
             // set value to 6
-            m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 6;waiters = new[]
-            {
+            m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 6; waiters = new[]
+             {
                 MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]),
                 MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[1])
             };
