@@ -19,7 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string LogPath { get; set; }
 
         public Dictionary<string, BokkenMachine> BokkenMachines;
-
+        
         private static FileInfo s_FileInfo;
         private static string s_Rootdir;
         public static string PathToDll { get; private set; }
@@ -36,22 +36,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static BokkenMachine GetDefaultMac(string name)
         {
-            var rv = new BokkenMachine();
-            rv.Type = "Unity::VM::osx";
-            rv.Image = "unity-ci/macos-10.15-dotnetcore:latest";
-            rv.Flavor = "b1.large";
-            rv.Name = name;
-            return rv;
+            var defaultMac = new BokkenMachine();
+            defaultMac.Type = "Unity::VM::osx";
+            defaultMac.Image = "unity-ci/macos-10.15-dotnetcore:latest";
+            defaultMac.Flavor = "b1.large";
+            defaultMac.Name = name;
+            return defaultMac;
         }
 
         public static BokkenMachine GetDefaultWin(string name)
         {
-            var rv = new BokkenMachine();
-            rv.Type = "Unity::VM";
-            rv.Image = "package-ci/win10:stable";
-            rv.Flavor = "b1.large";
-            rv.Name = name;
-            return rv;
+            var defaultWindows = new BokkenMachine();
+            defaultWindows.Type = "Unity::VM";
+            defaultWindows.Image = "package-ci/win10:stable";
+            defaultWindows.Flavor = "b1.large";
+            defaultWindows.Name = name;
+            return defaultWindows;
         }
 
         public static BokkenMachine Parse(string shortcut)
@@ -77,14 +77,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Provision()
         {
-            ExecuteCommand(GenerateCreateCommand(), true, false, 5000);
+            ExecuteCommand(GenerateCreateCommand(), true, false);
         }
 
         public static void DisposeResources()
         {
             MultiprocessLogger.Log("Disposing of resources");
-            DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
-            foreach (var f in mpDir.GetFiles("*.json"))
+            DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
             {
                 MultiprocessLogger.Log($"Disposing of resource {f.FullName} and deleting file");
                 ExecuteCommand($"--command destroy --input-path {f.FullName}");
@@ -94,10 +94,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void FetchAllLogFiles()
         {
-            DirectoryInfo mpDir = MultiprocessOrchestration.MultiprocessDirInfo;
-            MultiprocessLogger.Log($"FetchAllLogFiles: {mpDir.FullName}");
-            MultiprocessLogger.Log($"FetchAllLogFiles: {mpDir.GetFiles("*.json").Length}");
-            foreach (var f in mpDir.GetFiles("*.json"))
+            DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.FullName}");
+            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.GetFiles("*.json").Length}");
+            foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
             {
                 MultiprocessLogger.Log($"Getting log files from {f.FullName}");
                 ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);

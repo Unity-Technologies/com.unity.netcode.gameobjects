@@ -159,12 +159,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var platform in platformList)
                     {
                         MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
-                        var t = Task.Factory.StartNew(() => {
+                        var provisionTask = Task.Factory.StartNew(() =>
+                        {
                             var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
                             machines.Add(machine);
                         });
-                        MultiprocessLogger.Log($"Task {t.Id} is for {platform}");
-                        tasks.Add(t);
+                        MultiprocessLogger.Log($"Task {provisionTask.Id} is for {platform}");
+                        tasks.Add(provisionTask);
                         MultiprocessLogger.Log($"Machines list is now : {machines.Count}");
                     }
 
@@ -173,6 +174,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"Task id {task.Id}");
                         task.Wait();
                     }
+
 
                     foreach (var machine in machines)
                     {
