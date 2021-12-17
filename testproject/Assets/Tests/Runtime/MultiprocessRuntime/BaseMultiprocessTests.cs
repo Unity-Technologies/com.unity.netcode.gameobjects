@@ -180,6 +180,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void Teardown()
         {
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
+            MultiprocessTearDown();
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
+        }
+
+        public void MultiprocessTearDown()
+        {
             if (!IgnoreMultiprocessTests)
             {
                 if (platformList != null && platformList.Length > 0)
@@ -194,7 +200,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 TestCoordinator.Instance.TestRunTeardown();
                 MultiprocessLogger.Log("TestRunTearDown ... Done");
             }
-            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
         [OneTimeTearDown]
@@ -205,6 +210,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
             if (!IgnoreMultiprocessTests)
             {
+                MultiprocessTearDown();
                 MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
                 MultiprocessOrchestration.ShutdownAllProcesses();
                 MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
