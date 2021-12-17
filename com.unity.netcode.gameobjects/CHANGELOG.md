@@ -9,6 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
 
 ### Removed
 
@@ -32,7 +33,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed KeyNotFoundException when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
-- Fixed issue where pooled NetworkObjects using NetworkTransform would interpolate from their last de-spawned position to the newly spawned position (#1505)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
 
