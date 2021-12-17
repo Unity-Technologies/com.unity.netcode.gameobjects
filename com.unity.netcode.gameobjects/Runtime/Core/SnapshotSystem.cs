@@ -39,9 +39,9 @@ namespace Unity.Netcode
 
     internal struct UpdateCommand
     {
-        internal ulong networkObjectId;
-        internal int behaviourIndex;
-        internal int variableIndex;
+        internal ulong NetworkObjectId;
+        internal ushort BehaviourIndex;
+        internal int VariableIndex;
 
         // snapshot internal
         internal int TickWritten;
@@ -120,6 +120,8 @@ namespace Unity.Netcode
     internal delegate int SendMessageHandler(SnapshotDataMessage message, ulong clientId);
     internal delegate void SpawnObjectHandler(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
     internal delegate void DespawnObjectHandler(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
+    internal delegate NetworkVariableBase GetVariableHandler(UpdateCommand updateCommand, ulong srcClientId);
+
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
@@ -169,6 +171,7 @@ namespace Unity.Netcode
         internal SendMessageHandler SendMessage;
         internal SpawnObjectHandler SpawnObject;
         internal DespawnObjectHandler DespawnObject;
+        internal GetVariableHandler GetVariable;
 
         // Property showing visibility into inner workings, for testing
         internal int SpawnsBufferCount { get; private set; } = 100;
@@ -195,6 +198,7 @@ namespace Unity.Netcode
                 // If we have a NetworkManager, let's (de)spawn with the rest of our package. This can be overriden for tests
                 SpawnObject = NetworkSpawnObject;
                 DespawnObject = NetworkDespawnObject;
+                GetVariable = NetworkGetVariable;
             }
 
             // register for updates in EarlyUpdate
@@ -381,16 +385,6 @@ namespace Unity.Netcode
                 }
             }
 
-            // Find which value updates must be included
-            var updatesToInclude = new List<int>();
-            for (var index = 0; index < NumUpdates; index++)
-            {
-                if (UpdatesMeta[index].TargetClientIds.Contains(clientId))
-                {
-                    updatesToInclude.Add(index);
-                }
-            }
-
             // Find which despawns must be included
             var despawnsToInclude = new List<int>();
             for (var index = 0; index < NumDespawns; index++)
@@ -400,6 +394,19 @@ namespace Unity.Netcode
                     despawnsToInclude.Add(index);
                 }
             }
+
+            // Find which value updates must be included
+            var updatesToInclude = new List<int>();
+            var updatesPayloadLength = 0;
+            for (var index = 0; index < NumUpdates; index++)
+            {
+                if (UpdatesMeta[index].TargetClientIds.Contains(clientId))
+                {
+                    updatesToInclude.Add(index);
+                    updatesPayloadLength += Updates[index].SerializedLength;
+                }
+            }
+
 
             header.CurrentTick = m_CurrentTick;
             header.SpawnCount = spawnsToInclude.Count;
@@ -411,7 +418,8 @@ namespace Unity.Netcode
                 FastBufferWriter.GetWriteSize(header) +
                 spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
                 despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0]) +
-                updatesToInclude.Count * FastBufferWriter.GetWriteSize(Updates[0])))
+                updatesToInclude.Count * FastBufferWriter.GetWriteSize(Updates[0]) +
+                updatesPayloadLength))
             {
                 // todo: error handling
                 Debug.Assert(false, "Unable to secure buffer for sending");
@@ -431,10 +439,11 @@ namespace Unity.Netcode
                 message.WriteBuffer.WriteValue(Despawns[index]);
             }
 
-            // Write the Updates.
+            // Write the Updates, interleaved with the variable payload
             foreach (var index in updatesToInclude)
             {
                 message.WriteBuffer.WriteValue(Updates[index]);
+                message.WriteBuffer.WriteBytes(MemoryBuffer, Updates[index].SerializedLength, UpdatesMeta[index].BufferPos);
             }
 
             SendMessage(message, clientId);
@@ -552,8 +561,8 @@ namespace Unity.Netcode
                     networkVariable.WriteDelta(writer);
                     command.SerializedLength = writer.Length;
 
-                    MemoryStorage.Allocate(index,writer.Length, out bufferPos);
-                    fixed(byte* buff = &MemoryBuffer[0])
+                    MemoryStorage.Allocate(index, writer.Length, out bufferPos);
+                    fixed (byte* buff = &MemoryBuffer[0])
                     {
                         Buffer.MemoryCopy(writer.GetUnsafePtr(), buff + bufferPos, writer.Length, writer.Length);
                     }
@@ -568,7 +577,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
+        unsafe internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
         {
             // Read the Spawns. Count first, then each spawn
             var spawnCommand = new SnapshotSpawnCommand();
@@ -594,8 +603,7 @@ namespace Unity.Netcode
             m_ClientData[clientId] = clientData;
 
             if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount +
-                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount +
-                                                 FastBufferWriter.GetWriteSize(updateCommand) * header.UpdateCount))
+                                                 FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
             {
                 // todo: deal with error
             }
@@ -631,11 +639,25 @@ namespace Unity.Netcode
 
             for (int index = 0; index < header.UpdateCount; index++)
             {
-                message.ReadBuffer.ReadValue(out updateCommand);
+                byte[] readBuffer = new byte[1000];
 
-                // todo: can we keep a single value of which tick we applied instead of per object ?
-                // todo: apply update
+                fixed (byte* buff = &readBuffer[0])
+                {
+                    message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
+                    message.ReadBuffer.ReadValue(out updateCommand);
+
+                    message.ReadBuffer.TryBeginRead(updateCommand.SerializedLength);
+                    message.ReadBuffer.ReadBytes(buff, updateCommand.SerializedLength, 0);
+
+                    using var reader = new FastBufferReader(buff, Allocator.None, updateCommand.SerializedLength, 0);
+                    {
+                        NetworkVariableBase variable = GetVariable(updateCommand, clientId);
+                        variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
+                    }
+                }
             }
+
+            // todo: can we keep a single value of which tick we applied instead of per object ?
 
             for (int i = 0; i < NumSpawns;)
             {
@@ -698,6 +720,21 @@ namespace Unity.Netcode
             Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
 
         }
+
+        internal NetworkVariableBase NetworkGetVariable(UpdateCommand updateCommand, ulong srcClientId)
+        {
+            if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(updateCommand.NetworkObjectId,
+                out NetworkObject networkObject))
+            {
+                NetworkBehaviour behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(updateCommand.BehaviourIndex);
+
+                Debug.Assert(networkObject != null);
+
+                return behaviour.NetworkVariableFields[updateCommand.VariableIndex];
+            }
+            return null;
+        }
+
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
