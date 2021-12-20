@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using Unity.Netcode.Transports.UNET;
+using System.IO;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -48,6 +49,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+
+            var dll = new FileInfo(BokkenMachine.PathToDll);
+            if (!dll.Exists)
+            {
+                Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since {dll.FullName} doesn't exist");
+            }
 
             if (IsPerformanceTest)
             {
