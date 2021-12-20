@@ -15,7 +15,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private string[] m_Platforms;
         protected override string[] platformList => m_Platforms;
-
+        protected override bool LaunchRemotely => true;
         protected override bool IsPerformanceTest => false;
 
         public TestCoordinatorTests(int workerCount, string[] platformList)

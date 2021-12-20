@@ -56,20 +56,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static BokkenMachine Parse(string shortcut)
         {
-            BokkenMachine rv = null;
+            BokkenMachine bokkenMachine = null;
             string[] parts = shortcut.Split(':');
             string name = parts[1];
             string type = parts[0];
             if (type.Equals("default-mac"))
             {
-                rv = GetDefaultMac(name);
+                bokkenMachine = GetDefaultMac(name);
             }
             else if (type.Equals("default-win"))
             {
-                rv = GetDefaultWin(name);
+                bokkenMachine = GetDefaultWin(name);
             }
 
-            return rv;
+            return bokkenMachine;
         }
         public BokkenMachine()
         {

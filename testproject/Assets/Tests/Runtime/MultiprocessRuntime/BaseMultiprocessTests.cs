@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,14 +23,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         private string m_LogPath;
         private bool m_HasSceneLoaded = false;
-        // TODO: Remove UTR check once we have Multiprocess tests fully working
-        protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
+        protected virtual bool LaunchRemotely => false;
 
         protected virtual bool IsPerformanceTest => true;
         private string m_Port = "3076"; // TODO This port will need to be reconfigurable
         private const string k_GlobalEmptySceneName = "EmptyScene";
-
-        private bool m_SceneHasLoaded;
 
         protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || !BuildMultiprocessTestPlayer.IsMultiprocessTestPlayerAvailable();
 
@@ -51,10 +49,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
-            if (IgnoreMultiprocessTests)
-            {
-                Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
-            }
 
             if (IsPerformanceTest)
             {
@@ -142,7 +136,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
-                if (platformList == null)
+                if (!LaunchRemotely)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
@@ -209,20 +203,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void Teardown()
         {
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
-            if (!IgnoreMultiprocessTests)
-            {
-                if (platformList != null && platformList.Length > 0)
-                {
-                    MultiprocessLogger.Log("Kill multi process test player");
-                    MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-                    MultiprocessLogger.Log("Fetching log files");
-                    BokkenMachine.FetchAllLogFiles();
-                    MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
-                }
 
-                TestCoordinator.Instance.TestRunTeardown();
-                MultiprocessLogger.Log("TestRunTearDown ... Done");
+            if (LaunchRemotely)
+            {
+                MultiprocessLogger.Log("Kill multi process test player");
+                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
+                MultiprocessLogger.Log("Fetching log files");
+                BokkenMachine.FetchAllLogFiles();
+                MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
             }
+
+            TestCoordinator.Instance.TestRunTeardown();
+            MultiprocessLogger.Log("TestRunTearDown ... Done");
+
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
@@ -230,24 +223,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void TeardownSuite()
         {
             MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
-
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
-            if (!IgnoreMultiprocessTests)
+            MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
+            MultiprocessOrchestration.ShutdownAllProcesses();
+            MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
+            NetworkManager.Singleton.Shutdown();
+            Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+            MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+            MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+            if (m_OriginalActiveScene.IsValid())
             {
-                MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
-                MultiprocessOrchestration.ShutdownAllProcesses();
-                MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
-                NetworkManager.Singleton.Shutdown();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
-                if (m_OriginalActiveScene.IsValid())
-                {
-                    SceneManager.SetActiveScene(m_OriginalActiveScene);
-                }
-                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
-                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                asyncOperation.completed += AsyncOperation_completed;
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
+            }
+            MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+            asyncOperation.completed += AsyncOperation_completed;
+            while (asyncOperation.progress != 1)
+            {
+                Thread.Sleep(550);
                 MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... progress {asyncOperation.progress}");
             }
         }
