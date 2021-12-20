@@ -19,7 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string LogPath { get; set; }
 
         public Dictionary<string, BokkenMachine> BokkenMachines;
-        
+
         private static FileInfo s_FileInfo;
         private static string s_Rootdir;
         public static string PathToDll { get; private set; }
