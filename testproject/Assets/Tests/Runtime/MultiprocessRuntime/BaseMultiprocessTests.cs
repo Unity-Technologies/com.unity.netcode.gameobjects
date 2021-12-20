@@ -245,10 +245,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
-                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
-                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                asyncOperation.completed += AsyncOperation_completed;
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... progress {asyncOperation.progress}");
             }
+        }
+
+        private void AsyncOperation_completed(AsyncOperation obj)
+        {
+            MultiprocessLogger.Log($" UnloadScene {obj.progress} ");
         }
     }
 }
