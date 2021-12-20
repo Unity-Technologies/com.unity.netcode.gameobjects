@@ -243,6 +243,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Thread.Sleep(550);
                 MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... progress {asyncOperation.progress}");
             }
+            MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... done ");
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)
