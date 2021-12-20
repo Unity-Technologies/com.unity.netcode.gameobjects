@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -235,11 +234,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
-            /*
             MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
             AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
             asyncOperation.completed += AsyncOperation_completed;
-            */
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)
