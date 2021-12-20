@@ -208,9 +208,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null; // todo move access to callbackcomponent to singleton
+                //todo move access to callbackcomponent to singleton
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null;
 
-                    void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
+                void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
                 {
                     if (OneNetVar.InstanceCount == 0)
                     {
