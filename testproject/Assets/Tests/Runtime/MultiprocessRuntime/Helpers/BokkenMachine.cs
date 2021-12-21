@@ -34,6 +34,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Bokken Machine vars are: \n\ts_FileInfo {s_FileInfo.FullName}, {s_FileInfo.Exists} \n\ts_Rootdir {s_Rootdir}\n\tPathToDll {PathToDll}");
         }
 
+        public static void DumpProcessList()
+        {
+            foreach (Process process in s_ProcessList)
+            {
+                MultiprocessLogger.Log($"Process info: id: {process.Id} HasExited: {process.HasExited} {process.StartInfo.Arguments}");
+            }
+        }
+
         public static BokkenMachine GetDefaultMac(string name)
         {
             var defaultMac = new BokkenMachine();

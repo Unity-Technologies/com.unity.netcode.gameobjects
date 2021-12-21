@@ -152,6 +152,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             public bool IsDebug;
         }
 
+        public static bool DoesBuildInfoExist()
+        {
+            var buildfileInfo = new FileInfo(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));
+            return buildfileInfo.Exists;
+        }
+
         public static BuildInfo ReadBuildInfo()
         {
             var jsonString = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));

@@ -59,6 +59,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
+
+            // Build the multiprocess test player
+            if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
+            {
+                BuildMultiprocessTestPlayer.BuildRelease();
+            }
+
             var currentlyActiveScene = SceneManager.GetActiveScene();
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
             // being invoked and the TestRunner scene has not been set to the active scene yet.
@@ -232,13 +239,18 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             try
             {
-                Process[] allProcesses = Process.GetProcesses();
-                foreach (Process process in allProcesses)
+                if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
-                    if (process.ProcessName.Contains("dotnet"))
+                    BokkenMachine.DumpProcessList();
+
+                    Process[] allProcesses = Process.GetProcesses();
+                    foreach (Process process in allProcesses)
                     {
-                        MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()} {process.Id}");
-                        process.Kill();
+                        if (process.ProcessName.Contains("dotnet"))
+                        {
+                            MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()} {process.Id}");
+                            process.Kill();
+                        }
                     }
                 }
             }
