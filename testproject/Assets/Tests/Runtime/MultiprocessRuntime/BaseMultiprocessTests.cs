@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
@@ -238,12 +237,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     if (process.ProcessName.Contains("dotnet"))
                     {
-                        MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()}");
-                        Collection<string> arguments = process.StartInfo.ArgumentList;
-                        foreach (var argument in arguments)
-                        {
-                            MultiprocessLogger.Log($"{argument}");
-                        }
+                        MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()} {process.Id}");
+                        process.Kill();
                     }
                 }
             }
