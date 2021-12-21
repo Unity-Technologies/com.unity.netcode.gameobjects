@@ -63,7 +63,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Build the multiprocess test player
             if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
             {
-                BuildMultiprocessTestPlayer.BuildRelease();
+                Assert.Ignore($"Ignoring tests that require a multiprocess testplayer build");
             }
 
             var currentlyActiveScene = SceneManager.GetActiveScene();
