@@ -77,7 +77,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 Debug.Log($"Build succeeded: {summary.totalSize} bytes at {summary.outputPath}");
             }
-            
+
             return report;
         }
 

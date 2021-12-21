@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using Unity.Netcode.Transports.UNET;
-using System.IO;
+using System.Diagnostics;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -229,6 +229,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
+
+            Process[] allProcesses = Process.GetProcesses();
+            foreach (Process process in allProcesses)
+            {
+                if (process.ProcessName.Contains("dotnet"))
+                {
+                    MultiprocessLogger.Log($"dotnet process found {process.StartInfo.Arguments} {process.StartTime.ToShortTimeString()}");
+                    var arguments = process.StartInfo.ArgumentList;
+                    foreach (var argument in arguments)
+                    {
+                        MultiprocessLogger.Log($"{argument}");
+                    }
+                }
+            }
+
             MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
             MultiprocessOrchestration.ShutdownAllProcesses();
             MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
@@ -247,7 +262,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void AsyncOperation_completed(AsyncOperation obj)
         {
-            MultiprocessLogger.Log($" UnloadScene {obj.progress} ");
+            MultiprocessLogger.Log($"TeardownSuite - Unload - UnloadScene {obj.progress} ");
         }
     }
 }
