@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
@@ -230,18 +231,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
 
-            Process[] allProcesses = Process.GetProcesses();
-            foreach (Process process in allProcesses)
+            try
             {
-                if (process.ProcessName.Contains("dotnet"))
+                Process[] allProcesses = Process.GetProcesses();
+                foreach (Process process in allProcesses)
                 {
-                    MultiprocessLogger.Log($"dotnet process found {process.StartInfo.Arguments} {process.StartTime.ToShortTimeString()}");
-                    var arguments = process.StartInfo.ArgumentList;
-                    foreach (var argument in arguments)
+                    if (process.ProcessName.Contains("dotnet"))
                     {
-                        MultiprocessLogger.Log($"{argument}");
+                        MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()}");
+                        Collection<string> arguments = process.StartInfo.ArgumentList;
+                        foreach (var argument in arguments)
+                        {
+                            MultiprocessLogger.Log($"{argument}");
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                MultiprocessLogger.LogError($"Error getting dotnet process info {e.Message}");
             }
 
             MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
