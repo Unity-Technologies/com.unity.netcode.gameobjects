@@ -56,18 +56,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        [MenuItem(MultiprocessBaseMenuName + "/Windows Standalone Player")]
-        public static void BuildWindowsStandalonePlayer()
+        private static BuildReport BuildPlayerUtility(BuildTarget buildTarget, string buildPathExtension)
         {
             SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
 
             var buildPathToUse = BuildPath;
-            buildPathToUse += ".exe";
+            buildPathToUse += buildPathExtension;
 
             var buildPlayerOptions = new BuildPlayerOptions();
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = buildPathToUse;
-            buildPlayerOptions.target = BuildTarget.StandaloneWindows64;
+            buildPlayerOptions.target = buildTarget;
             buildPlayerOptions.options = BuildOptions.StrictMode |
                 BuildOptions.IncludeTestAssemblies;
 
@@ -76,45 +75,31 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (summary.result == BuildResult.Succeeded)
             {
-                Debug.Log("Build succeeded: " + summary.totalSize + " bytes");
-                Debug.Log($"ZZZ LOCATION: {summary.outputPath}");
+                Debug.Log($"Build succeeded: {summary.totalSize} bytes at {summary.outputPath}");
             }
+            
+            return report;
+        }
 
-            if (summary.result == BuildResult.Failed)
+        [MenuItem(MultiprocessBaseMenuName + "/Windows Standalone Player")]
+        public static void BuildWindowsStandalonePlayer()
+        {
+            var report = BuildPlayerUtility(BuildTarget.StandaloneWindows64, ".exe");
+            if (report.summary.result != BuildResult.Succeeded)
             {
-                throw new Exception("Build failed");
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
 
         [MenuItem(MultiprocessBaseMenuName + "/Build OSX")]
         public static void BuildOSX()
         {
-            var buildPlayerOptions = new BuildPlayerOptions();
-            var buildPathToUse = BuildPath + ".app";
-            Debug.Log(buildPathToUse);
-            buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
-            buildPlayerOptions.locationPathName = buildPathToUse;
-            buildPlayerOptions.target = BuildTarget.StandaloneOSX;
-            buildPlayerOptions.options = BuildOptions.Development |
-                BuildOptions.AllowDebugging |
-                BuildOptions.StrictMode |
-                BuildOptions.IncludeTestAssemblies;
-
-            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
-            BuildSummary summary = report.summary;
-
-            if (summary.result == BuildResult.Succeeded)
+            var report = BuildPlayerUtility(BuildTarget.StandaloneOSX, ".app");
+            if (report.summary.result != BuildResult.Succeeded)
             {
-                Debug.Log("Build succeeded: " + summary.totalSize + " bytes");
-            }
-
-            if (summary.result == BuildResult.Failed)
-            {
-                Debug.Log("Build failed");
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
-
-
 
         /// <summary>
         /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test

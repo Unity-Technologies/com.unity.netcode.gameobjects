@@ -52,12 +52,14 @@ public class MultiprocessOrchestration
     }
 
     /// <summary>
-    /// This is to detect if we should ignore Multiprocess tests
-    /// For testing, include the -bypassIgnoreUTR command line parameter when running UTR.
+    /// Test to see if multimachine testing is enabled via command line switch.
+    /// The result of this setting is so that any tests that want to run multimachine tests can
+    /// decide if they are enabled or not.
     /// </summary>
-    public static bool ShouldIgnoreUTRTests()
+    /// <returns></returns>
+    public static bool ShouldRunMultiMachineTests()
     {
-        return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+        return Environment.GetCommandLineArgs().Contains("-enableMultiMachineTesting");
     }
 
     public static BokkenMachine ProvisionWorkerNode(string platformString)

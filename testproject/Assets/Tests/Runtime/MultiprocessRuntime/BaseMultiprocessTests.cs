@@ -51,7 +51,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
 
             var dll = new FileInfo(BokkenMachine.PathToDll);
-            if (!dll.Exists)
+            if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since {dll.FullName} doesn't exist");
             }
