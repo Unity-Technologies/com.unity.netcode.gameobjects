@@ -52,7 +52,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
-                Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since {dll.FullName} doesn't exist");
+                Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
             }
 
             if (IsPerformanceTest)
