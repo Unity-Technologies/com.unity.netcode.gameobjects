@@ -655,6 +655,16 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            //If InLocalSpace has changed, all interpolation buffers values are wrong, so we reset it
+            if (oldState.InLocalSpace != newState.InLocalSpace)
+            {
+                // NOTE: Maybe a better solution could be implemented where we cache the time which InLocalSpace changed (newState.ServerTime)
+                // and correctly choose the space to interpolate in based on the interpolation time
+                // this would also have to handle the "transition" scenario where A is in local space and B is in world space, and vice-versa
+                m_LocalAuthoritativeNetworkState = newState;
+                ResetInterpolatedStateToCurrentAuthoritativeState();
+            }
+
             AddInterpolatedState(newState);
 
 #if NGO_TRANSFORM_DEBUG
