@@ -43,13 +43,11 @@ namespace Unity.Netcode.RuntimeTests
             // destroy the server player
             Object.Destroy(serverClientPlayerResult.Result.gameObject);
 
-            var nextFrameNumber = Time.frameCount + 3;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // Wait for two snapshot messages, because there's likely one already in flight that doesn't have the spawn yet.
+            yield return MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]);
+            yield return MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]);
 
             Assert.IsTrue(serverClientPlayerResult.Result == null); // Assert.IsNull doesn't work here
-
-            yield return null; // wait one frame more until we receive on client
-
             Assert.IsTrue(clientClientPlayerResult.Result == null);
 
             // create an unspawned networkobject and destroy it
