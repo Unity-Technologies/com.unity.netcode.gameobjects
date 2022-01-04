@@ -10,14 +10,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-### Removed
-
-- Removed `FixedQueue` (#1398)
-- Removed `StreamExtensions` (#1398)
-- Removed `TypeExtensions` (#1398)
-
 ### Fixed
 
+### Changed
+
+## [1.0.0-pre.4] - 2021-01-04
+
+### Added
+
+### Removed
+- Removed FixedQueue (#1398)
+- Removed StreamExtensions (#1398)
+- Removed TypeExtensions (#1398)
+
+### Fixed
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
 - Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
@@ -28,12 +34,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
 
 ### Changed
-
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 - Updated com.unity.collections to 1.1.0 (#1451)
-
 
 ## [1.0.0-pre.3] - 2021-10-22
 
