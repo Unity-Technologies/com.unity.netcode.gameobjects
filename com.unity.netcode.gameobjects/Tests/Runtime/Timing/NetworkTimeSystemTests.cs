@@ -51,6 +51,30 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(Math.Floor((tickSystem.ServerTime.Time / delta)), NetworkManager.Singleton.ServerTime.Tick);
                 Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
             }
+
+            Assert.AreNotEqual(0, tickSystem.LocalTime.Tick);
+        }
+
+        /// <summary>
+        /// Tests whether the ticks invoked by the time system consistently increments it's tick value by 1 during each invocation of the tick event.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator CorrectTickIncrementationTest()
+        {
+            var tickSystem = NetworkManager.Singleton.NetworkTickSystem;
+
+            var ticks = tickSystem.LocalTime.Tick;
+            tickSystem.Tick += () =>
+            {
+                ticks++;
+                Assert.AreEqual(ticks, tickSystem.LocalTime.Tick);
+            };
+
+            while (tickSystem.LocalTime.Time < 3f)
+            {
+                yield return null;
+            }
         }
 
         [TearDown]

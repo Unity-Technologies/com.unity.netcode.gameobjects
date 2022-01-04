@@ -28,9 +28,9 @@ namespace Unity.Netcode.EditorTests
         [TestCase(-4301d, -4301f, 20u)]
         [TestCase(-4301d, -4301f, 30u)]
         [TestCase(-4301d, -4301f, 60u)]
-        [TestCase(float.MaxValue, float.MaxValue, 20u)]
-        [TestCase(float.MaxValue, float.MaxValue, 30u)]
-        [TestCase(float.MaxValue, float.MaxValue, 60u)]
+        [TestCase(int.MaxValue / 21d, int.MaxValue / 21f, 20u)]
+        [TestCase(int.MaxValue / 31d, int.MaxValue / 31f, 30u)]
+        [TestCase(int.MaxValue / 61d, int.MaxValue / 61f, 60u)]
         public void TestTimeAsFloat(double d, float f, uint tickRate)
         {
             var networkTime = new NetworkTime(tickRate, d);
@@ -139,6 +139,16 @@ namespace Unity.Netcode.EditorTests
             var timeA = new NetworkTime(60, a);
             NetworkTime timeB = timeA - new NetworkTime(60, time);
             Assert.IsTrue(Approximately(floatResultB, timeB.Time));
+        }
+
+        [Test]
+        public void NetworkTimeCorrectTick([Values(30u, 60u, 1u, 100u)]uint tickRate)
+        {
+            for (int i = 0; i < 10000; i++)
+            {
+                var time = new NetworkTime(tickRate, i);
+                Assert.AreEqual(i, time.Tick);
+            }
         }
 
         [Test]
