@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -115,7 +114,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Converts excess tick offset into ticks and recalculates the cached time value.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Recalculate()
         {
             if (m_TickOffset >= m_TickInterval || m_TickOffset <= m_TickInterval)
