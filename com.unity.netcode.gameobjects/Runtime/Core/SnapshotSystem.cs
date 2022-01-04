@@ -186,10 +186,14 @@ namespace Unity.Netcode
         private int m_AvailableIndicesBufferCount = 1000;
         private int m_NumAvailableIndices = 1000;
 
+        private FastBufferWriter m_Writer;
+
         internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
         {
             m_NetworkManager = networkManager;
             m_NetworkTickSystem = networkTickSystem;
+
+            m_Writer = new FastBufferWriter(10000, Allocator.Persistent);
 
             if (networkManager != null)
             {
@@ -605,8 +609,9 @@ namespace Unity.Netcode
                 // the position we'll be serializing the network variable at, in our memory buffer
                 int bufferPos = 0;
 
-                var writer = new FastBufferWriter(1000, Allocator.Temp);
-                using (writer)
+                m_Writer.Seek(0);
+                m_Writer.Truncate(0);
+
                 {
                     if (m_NumAvailableIndices == 0)
                     {
@@ -614,13 +619,13 @@ namespace Unity.Netcode
                         Debug.Assert(false);
                     }
 
-                    networkVariable.WriteDelta(writer);
-                    command.SerializedLength = writer.Length;
+                    networkVariable.WriteDelta(m_Writer);
+                    command.SerializedLength = m_Writer.Length;
 
-                    MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, writer.Length, out bufferPos);
+                    MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
                     fixed (byte* buff = &MemoryBuffer[0])
                     {
-                        Buffer.MemoryCopy(writer.GetUnsafePtr(), buff + bufferPos, writer.Length, writer.Length);
+                        Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, m_Writer.Length, m_Writer.Length);
                     }
                 }
 
