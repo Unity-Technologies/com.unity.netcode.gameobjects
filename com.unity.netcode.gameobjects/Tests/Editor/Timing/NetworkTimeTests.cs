@@ -142,7 +142,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void NetworkTimeCorrectTick([Values(30u, 60u, 1u, 100u)]uint tickRate)
+        public void NetworkTimeCorrectTick([Values(30u, 60u, 1u, 100u)] uint tickRate)
         {
             for (int i = 0; i < 10000; i++)
             {
