@@ -35,6 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed KeyNotFoundException when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed a bug where when constructing a NetworkTime from a tick the resulting instance sometimes had a different tick value due to floating point math imprecision.
 
 ### Changed
 
