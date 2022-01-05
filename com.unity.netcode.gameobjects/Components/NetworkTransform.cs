@@ -707,8 +707,11 @@ namespace Unity.Netcode.Components
 
         private void OnDisable()
         {
-            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
-            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] Transform Position: {transform.position}");
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+                Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] Transform Position: {transform.position}");
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -740,8 +743,11 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
-            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] Transform Position: {transform.position}");
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+                Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] Transform Position: {transform.position}");
+            }
             m_PositionLogCount = 0;
         }
 
