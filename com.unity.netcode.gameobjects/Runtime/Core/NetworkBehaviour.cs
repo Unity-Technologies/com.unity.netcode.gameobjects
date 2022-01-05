@@ -527,12 +527,16 @@ namespace Unity.Netcode
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    var update = new UpdateCommand();
-                    update.NetworkObjectId = NetworkObjectId;
-                    update.BehaviourIndex = behaviourIndex;
-                    update.VariableIndex = k;
+                    if (NetworkVariableFields[k].IsDirty())
+                    {
+                        var update = new UpdateCommand();
+                        update.NetworkObjectId = NetworkObjectId;
+                        update.BehaviourIndex = behaviourIndex;
+                        update.VariableIndex = k;
 
-                    NetworkManager.SnapshotSystem.Store(update, NetworkVariableFields[k]);
+                        NetworkManager.SnapshotSystem.Store(update, NetworkVariableFields[k]);
+                        NetworkVariableIndexesToReset.Add(k);
+                    }
                 }
             }
 

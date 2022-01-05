@@ -691,10 +691,15 @@ namespace Unity.Netcode
                     message.ReadBuffer.TryBeginRead(updateCommand.SerializedLength);
                     message.ReadBuffer.ReadBytes(buff, updateCommand.SerializedLength, 0);
 
-                    using var reader = new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
+                    NetworkVariableBase variable = GetVariable(updateCommand, clientId);
+                    if (updateCommand.TickWritten > variable.TickRead)
                     {
-                        NetworkVariableBase variable = GetVariable(updateCommand, clientId);
-                        variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
+                        using var reader =
+                            new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
+                        {
+                            variable.TickRead = updateCommand.TickWritten;
+                            variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
+                        }
                     }
                 }
             }
@@ -778,9 +783,6 @@ namespace Unity.Netcode
                 }
                 i++;
             }
-
-            Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
-
         }
 
         internal NetworkVariableBase NetworkGetVariable(UpdateCommand updateCommand, ulong srcClientId)
