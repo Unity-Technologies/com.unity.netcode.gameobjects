@@ -1430,7 +1430,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Prefab Pool Example
+  m_Text: Simple Pool Example
 --- !u!222 &1383741140
 CanvasRenderer:
   m_ObjectHideFlags: 0
