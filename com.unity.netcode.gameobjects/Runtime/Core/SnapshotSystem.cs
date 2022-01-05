@@ -779,7 +779,7 @@ namespace Unity.Netcode
                 i++;
             }
 
-            Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
+            //Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
 
         }
 
