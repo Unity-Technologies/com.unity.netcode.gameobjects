@@ -655,6 +655,12 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            if (m_PositionLogCount < 4)
+            {
+                Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkStateChanged] NetworkTransformState Position: {m_ReplicatedNetworkState.Value.Position}");
+            }
+            m_PositionLogCount++;
+
             AddInterpolatedState(newState);
 
 #if NGO_TRANSFORM_DEBUG
@@ -667,6 +673,7 @@ namespace Unity.Netcode.Components
             }
 #endif // NGO_TRANSFORM_DEBUG
         }
+
 
         private void Awake()
         {
@@ -691,6 +698,19 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private uint m_PositionLogCount;
+        private void OnEnable()
+        {
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnEnable] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnEnable] Transform Position: {transform.position}");
+        }
+
+        private void OnDisable()
+        {
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnDisable] Transform Position: {transform.position}");
+        }
+
         public override void OnNetworkSpawn()
         {
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
@@ -707,6 +727,9 @@ namespace Unity.Netcode.Components
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
+
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkSpawn] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkSpawn] Transform Position: {transform.position}");
             m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
@@ -717,6 +740,9 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] m_ReplicatedNetworkState Position: {m_ReplicatedNetworkState.Value.Position}");
+            Debug.Log($"[{NetworkManager.NetworkTickSystem.LocalTime.Tick}][OnNetworkDespawn] Transform Position: {transform.position}");
+            m_PositionLogCount = 0;
         }
 
         public override void OnGainedOwnership()
