@@ -9,6 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
+- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies (#1565)
 - Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
 
 ### Removed
