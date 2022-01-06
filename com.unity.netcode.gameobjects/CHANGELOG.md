@@ -6,22 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
-
-### Added
-
-### Fixed
-
-### Changed
-
 ## [1.0.0-pre.4] - 2021-01-04
 
 ### Added
 
+- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
+
 ### Removed
-- Removed FixedQueue (#1398)
-- Removed StreamExtensions (#1398)
-- Removed TypeExtensions (#1398)
+
+- Removed `com.unity.modules.ai` package dependency (#1565)
+- Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
 
 ### Fixed
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
