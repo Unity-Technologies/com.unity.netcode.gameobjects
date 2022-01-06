@@ -536,6 +536,13 @@ namespace Unity.Netcode
 
                         NetworkManager.SnapshotSystem.Store(update, NetworkVariableFields[k]);
                         NetworkVariableIndexesToReset.Add(k);
+
+                        NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                                clientId,
+                                GetNetworkObject(NetworkObjectId),
+                                NetworkVariableFields[k].Name,
+                                __getTypeName(),
+                                20); // todo: what length ?
                     }
                 }
             }
