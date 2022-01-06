@@ -10,11 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
+
 ### Removed
 
-- Removed `FixedQueue` (#1398)
-- Removed `StreamExtensions` (#1398)
-- Removed `TypeExtensions` (#1398)
+- Removed `com.unity.modules.ai` package dependency (#1565)
+- Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
 
 ### Fixed
 
