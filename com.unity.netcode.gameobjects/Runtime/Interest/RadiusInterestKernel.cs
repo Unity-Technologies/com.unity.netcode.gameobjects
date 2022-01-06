@@ -7,6 +7,10 @@ namespace Unity.Netcode
     {
         public float Radius = 0.0f;
 
+        public RadiusInterestKernel()
+        {
+        }
+
         public RadiusInterestKernel(float radius)
         {
             Radius = radius;

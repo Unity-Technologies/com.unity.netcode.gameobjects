@@ -181,8 +181,7 @@ namespace Unity.Netcode.RuntimeTests
             int objectsBeforeAdd = results.Count;
 
             var theNode = new InterestNodeStatic<NetworkObject>();
-            var radiusKernel = new RadiusInterestKernel();
-            radiusKernel.Radius = 1.5f;
+            var radiusKernel = new RadiusInterestKernel(1.5f);
             theNode.AddAdditiveKernel(radiusKernel);
             var cloakKernel = new CloakedKernel();
             theNode.AddSubtractiveKernel(cloakKernel);
@@ -228,8 +227,7 @@ namespace Unity.Netcode.RuntimeTests
             //  but which are not cloaked
             //  except those on my team
             var theNode = new InterestNodeStatic<NetworkObject>();
-            var radiusKernel = new RadiusInterestKernel();
-            radiusKernel.Radius = 1.5f;
+            var radiusKernel = new RadiusInterestKernel(1.5f);
             theNode.AddAdditiveKernel(radiusKernel);
             theNode.AddSubtractiveKernel(new CloakedKernel());
             theNode.AddAdditiveKernel(new TeamKernel());
@@ -386,8 +384,7 @@ namespace Unity.Netcode.RuntimeTests
         public void InterestRadiusCheck()
         {
             var naiveRadiusNode = new InterestNodeStatic<NetworkObject>();
-            var naiveRadiusKernel = new RadiusInterestKernel();
-            naiveRadiusKernel.Radius = 1.5f;
+            var naiveRadiusKernel = new RadiusInterestKernel(1.5f);
             naiveRadiusNode.AddAdditiveKernel(naiveRadiusKernel);
 
             var results = new HashSet<NetworkObject>();
@@ -570,6 +567,59 @@ namespace Unity.Netcode.RuntimeTests
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
+        }
+
+        [Test]
+        public void CheckDisable()
+        {
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
+            {
+                ClientId = 1,
+            };
+
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            var objectsBeforeAdd = results.Count;
+
+            var node = new InterestNodeStatic<NetworkObject>();
+            node.AddAdditiveKernel(new AddAllInterestKernel());
+            node.AddSubtractiveKernel(new CloakedKernel());
+
+            var (object1, object1Guid) = MakeInterestGameObjectHelper();
+            object1.gameObject.AddComponent<CloakedBehaviour>();
+            object1.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = false;
+            m_InterestManager.AddInterestNode(ref object1, node);
+            NetworkManagerHelper.SpawnNetworkObject(object1Guid);
+
+            var (object2, object2Guid) = MakeInterestGameObjectHelper();
+            object2.gameObject.AddComponent<CloakedBehaviour>();
+            object2.gameObject.GetComponent<CloakedBehaviour>().IsCloaked = true;
+            m_InterestManager.AddInterestNode(ref object2, node);
+            NetworkManagerHelper.SpawnNetworkObject(object2Guid);
+
+            var (playerObj, playerObjGuid) = MakeInterestGameObjectHelper();
+            nc.PlayerObject = playerObj;
+            NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
+
+            // in normal, "Enabled" node, we should not see node 1 (cloaked), but should see node 2 (uncloaked)
+            //  and the player (not in a custom interst node)
+            results.Clear();
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            var hits = results.Count;
+//??            Assert.True(hits == (2 + objectsBeforeAdd));
+            Assert.True(results.Contains(object1));
+            Assert.False(results.Contains(object2));
+            Assert.True(results.Contains(nc.PlayerObject));
+
+            // but in "Disabled" node, we should see all the objects
+            m_InterestManager.Disable = true;
+            results.Clear();
+            m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
+            hits = results.Count;
+//??            Assert.True(hits == (3 + objectsBeforeAdd));
+            Assert.True(results.Contains(object1));
+            Assert.True(results.Contains(object2));
+            Assert.True(results.Contains(nc.PlayerObject));
         }
     }
 }
