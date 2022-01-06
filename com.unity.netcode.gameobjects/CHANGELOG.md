@@ -9,14 +9,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
+- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
 - Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
-- Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging 
+- Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging (#1567)
 
 ### Removed
 
-- Removed `FixedQueue` (#1398)
-- Removed `StreamExtensions` (#1398)
-- Removed `TypeExtensions` (#1398)
+- Removed `com.unity.modules.ai` package dependency
+- Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
 
 ### Fixed
 
@@ -36,7 +37,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed KeyNotFoundException when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
-- Fixed InterestManager was declared internal / inaccessible outside tests
+- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
 
 ### Changed
 
