@@ -606,7 +606,7 @@ namespace Unity.Netcode.RuntimeTests
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             var hits = results.Count;
-//??            Assert.True(hits == (2 + objectsBeforeAdd));
+            Assert.True(hits == (2 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
             Assert.False(results.Contains(object2));
             Assert.True(results.Contains(nc.PlayerObject));
@@ -616,7 +616,7 @@ namespace Unity.Netcode.RuntimeTests
             results.Clear();
             m_InterestManager.QueryFor(ref m_PlayerNetworkObject, ref results);
             hits = results.Count;
-//??            Assert.True(hits == (3 + objectsBeforeAdd));
+            Assert.True(hits == (3 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
             Assert.True(results.Contains(object2));
             Assert.True(results.Contains(nc.PlayerObject));
