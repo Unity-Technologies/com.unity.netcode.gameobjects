@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 - Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
+- InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging 
 
 ### Removed
 
@@ -35,6 +36,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed KeyNotFoundException when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed InterestManager was declared internal / inaccessible outside tests
 
 ### Changed
 
