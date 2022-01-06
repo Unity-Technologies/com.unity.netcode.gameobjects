@@ -9,8 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
-- Adding `PreviousValue` in NetworkListEvent, when `Value` has changed
-- InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging 
+- Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
+- Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging 
 
 ### Removed
 
