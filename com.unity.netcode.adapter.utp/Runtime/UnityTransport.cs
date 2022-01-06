@@ -772,7 +772,11 @@ namespace Unity.Netcode
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                    );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
