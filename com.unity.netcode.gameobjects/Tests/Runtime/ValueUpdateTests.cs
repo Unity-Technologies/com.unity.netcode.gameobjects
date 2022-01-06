@@ -8,6 +8,16 @@ namespace Unity.Netcode.RuntimeTests
     public class ValueUpdateObject : NetworkBehaviour
     {
         public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
+
+        public ValueUpdateObject()
+        {
+            MyNetworkVariable.OnValueChanged = OnValueChanged;
+        }
+
+        public void OnValueChanged(int prevValue, int newValue)
+        {
+            Debug.Log($"OnValueChanged {prevValue} -> {newValue} at {MyNetworkVariable.TickRead}");
+        }
     }
 
     public class ValueUpdateTests : BaseMultiInstanceTest
@@ -86,47 +96,25 @@ namespace Unity.Netcode.RuntimeTests
 
             // set value to 4
             m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 4;
-            IEnumerator[] waiters = new[]
-            {
-                MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[1])
-            };
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
+            yield return new WaitForSeconds(1.0f);
+
             for (var i = 0; i < m_NetSpawnedObjectOnClient.Count; i++)
             {
                 Debug.Assert(m_NetSpawnedObjectOnClient[i].GetComponent<ValueUpdateObject>().MyNetworkVariable.Value == 4);
             }
 
-            // despawn and respawn
+            // despawn
             m_NetSpawnedObject.Despawn(false);
+            yield return new WaitForSeconds(1.0f);
 
-            waiters = new[]
-            {
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[1]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[1])
-            };
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
+            // respawn
             m_NetSpawnedObject.SpawnWithOwnership(client.ClientId);
-
-            waiters = new[]
-            {
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[1]),
-                MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[1])
-            };
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
             yield return RefreshGameObects();
 
             // set value to 6
-            m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 6; waiters = new[]
-             {
-                MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]),
-                MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[1])
-            };
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
+            m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 6;
+            yield return new WaitForSeconds(1.0f);
+
             for (var i = 0; i < m_NetSpawnedObjectOnClient.Count; i++)
             {
                 Debug.Assert(m_NetSpawnedObjectOnClient[i].GetComponent<ValueUpdateObject>().MyNetworkVariable.Value == 6);

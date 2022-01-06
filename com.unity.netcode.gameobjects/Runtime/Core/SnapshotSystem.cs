@@ -120,7 +120,7 @@ namespace Unity.Netcode
     internal delegate int SendMessageHandler(SnapshotDataMessage message, ulong clientId);
     internal delegate void SpawnObjectHandler(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
     internal delegate void DespawnObjectHandler(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
-    internal delegate NetworkVariableBase GetVariableHandler(UpdateCommand updateCommand, ulong srcClientId);
+    internal delegate void GetBehaviourVariableHandler(UpdateCommand updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, ulong srcClientId);
 
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
@@ -171,7 +171,7 @@ namespace Unity.Netcode
         internal SendMessageHandler SendMessage;
         internal SpawnObjectHandler SpawnObject;
         internal DespawnObjectHandler DespawnObject;
-        internal GetVariableHandler GetVariable;
+        internal GetBehaviourVariableHandler GetBehaviourVariable;
 
         // Property showing visibility into inner workings, for testing
         internal int SpawnsBufferCount { get; private set; } = 100;
@@ -202,7 +202,7 @@ namespace Unity.Netcode
                 // If we have a NetworkManager, let's (de)spawn with the rest of our package. This can be overriden for tests
                 SpawnObject = NetworkSpawnObject;
                 DespawnObject = NetworkDespawnObject;
-                GetVariable = NetworkGetVariable;
+                GetBehaviourVariable = NetworkGetBehaviourVariable;
             }
 
             // register for updates in EarlyUpdate
@@ -622,7 +622,10 @@ namespace Unity.Netcode
                     networkVariable.WriteDelta(m_Writer);
                     command.SerializedLength = m_Writer.Length;
 
-                    MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
+                    var allocated = MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
+
+                    Debug.Assert(allocated);
+
                     fixed (byte* buff = &MemoryBuffer[0])
                     {
                         Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, m_Writer.Length, m_Writer.Length);
@@ -681,7 +684,9 @@ namespace Unity.Netcode
 
             for (int index = 0; index < header.UpdateCount; index++)
             {
-                byte[] readBuffer = new byte[1000];
+                byte[] readBuffer = new byte[10000];
+                // todo: this large buffer is very inelegant. Add proper bounds check to the unsafe code below
+                // and also move into a member reader
 
                 fixed (byte* buff = &readBuffer[0])
                 {
@@ -691,10 +696,20 @@ namespace Unity.Netcode
                     message.ReadBuffer.TryBeginRead(updateCommand.SerializedLength);
                     message.ReadBuffer.ReadBytes(buff, updateCommand.SerializedLength, 0);
 
-                    using var reader = new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
+                    //NetworkVariableBase variable;
+                    GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
+
+                    if (updateCommand.TickWritten > variable.TickRead)
                     {
-                        NetworkVariableBase variable = GetVariable(updateCommand, clientId);
-                        variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
+                        using var reader =
+                            new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
+                        {
+                            variable.TickRead = updateCommand.TickWritten;
+                            variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
+                        }
+
+                        m_NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
+                            clientId, behaviour.NetworkObject, variable.Name, behaviour.__getTypeName(), 20); // todo: what length ?
                     }
                 }
             }
@@ -778,23 +793,24 @@ namespace Unity.Netcode
                 }
                 i++;
             }
-
-            //Debug.Log($"I have {NumSpawns} Spawns {NumDespawns} Despawns {NumUpdates} Value Updates");
-
         }
 
-        internal NetworkVariableBase NetworkGetVariable(UpdateCommand updateCommand, ulong srcClientId)
+        internal void NetworkGetBehaviourVariable(UpdateCommand updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, ulong srcClientId)
         {
             if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(updateCommand.NetworkObjectId,
                 out NetworkObject networkObject))
             {
-                NetworkBehaviour behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(updateCommand.BehaviourIndex);
+                behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(updateCommand.BehaviourIndex);
 
                 Debug.Assert(networkObject != null);
 
-                return behaviour.NetworkVariableFields[updateCommand.VariableIndex];
+                variable = behaviour.NetworkVariableFields[updateCommand.VariableIndex];
             }
-            return null;
+            else
+            {
+                variable = null;
+                behaviour = null;
+            }
         }
 
 
