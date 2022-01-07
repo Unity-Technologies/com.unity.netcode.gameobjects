@@ -244,6 +244,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             try
             {
+                MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
                     BokkenMachine.FetchAllLogFiles();
