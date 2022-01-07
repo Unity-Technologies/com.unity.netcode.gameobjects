@@ -194,7 +194,7 @@ public class MultiprocessOrchestration
         MultiprocessLogger.Log($"launching {fileName} does it exist {fileNameInfo.Exists} ");
 
         var workerProcess = new Process();
-        
+
         workerProcess.StartInfo.FileName = Path.Combine("dotnet");
         workerProcess.StartInfo.UseShellExecute = false;
         workerProcess.StartInfo.RedirectStandardError = true;

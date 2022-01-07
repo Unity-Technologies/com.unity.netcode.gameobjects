@@ -66,7 +66,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     buildPathExtension += ".exe";
                     buildTarget = BuildTarget.StandaloneWindows64;
-                } else if (Application.platform == RuntimePlatform.OSXPlayer ||
+                }
+                else if (Application.platform == RuntimePlatform.OSXPlayer ||
                     Application.platform == RuntimePlatform.OSXEditor)
                 {
                     buildPathExtension += ".app";
@@ -122,7 +123,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
-        
 #endif
 
         [Serializable]
