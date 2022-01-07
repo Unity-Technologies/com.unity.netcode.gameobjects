@@ -83,9 +83,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
         }
 
+        /// <summary>
+        /// Provision a new machine using the Bokken API, this command is async
+        /// so we don't really need to wait for completion or set a specific
+        /// timeout value
+        /// </summary>
         public void Provision()
         {
-            ExecuteCommand(GenerateCreateCommand(), true, false);
+            ExecuteCommand(GenerateCreateCommand(), false);
         }
 
         public static void DisposeResources()
@@ -151,6 +156,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        /// <summary>
+        /// Generalized for handling vast majority of uses cases for executing
+        /// external process commands
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="waitForResult"></param>
+        /// <param name="logStdOut"></param>
+        /// <param name="timeToWait">timeout for any command is 30 seconds</param>
+        /// <returns></returns>
         public static Process ExecuteCommand(string command, bool waitForResult = false, bool logStdOut = false, int timeToWait = 300000)
         {
             MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");

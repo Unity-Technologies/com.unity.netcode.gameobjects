@@ -60,6 +60,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
 
+            // deleting so we don't end up testing on outdated builds if there's a build failure
+            DeleteBuild();
+
             if (buildTarget == BuildTarget.NoTarget)
             {
                 if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
