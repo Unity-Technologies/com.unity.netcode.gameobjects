@@ -566,76 +566,76 @@ namespace Unity.Netcode
 
             List<ulong> targetClientIds = GetClientList();
 
-            if (targetClientIds.Count > 0)
+            if (targetClientIds.Count == 0)
             {
-                // Look for an existing variable's position to update before adding a new entry
-                for (var i = 0; i < NumUpdates; i++)
-                {
-                    if (Updates[i].BehaviourIndex == command.BehaviourIndex &&
-                        Updates[i].NetworkObjectId == command.NetworkObjectId &&
-                        Updates[i].VariableIndex == command.VariableIndex)
-                    {
-                        commandPosition = i;
-                        break;
-                    }
-                }
-
-                if (commandPosition == -1)
-                {
-                    int index = -1;
-
-                    if (NumUpdates >= UpdatesBufferCount)
-                    {
-                        UpdatesBufferCount = UpdatesBufferCount * 2;
-                        Array.Resize(ref Updates, UpdatesBufferCount);
-                        Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
-                    }
-
-                    commandPosition = NumUpdates;
-                    NumUpdates++;
-
-                    index = m_AvailableIndices[0];
-                    m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
-                    m_NumAvailableIndices--;
-
-                    UpdatesMeta[commandPosition].Index = index;
-                }
-                else
-                {
-                    // de-allocate previous buffer as a new one will be allocated
-                    MemoryStorage.Deallocate(UpdatesMeta[commandPosition].Index);
-                }
-
-                // the position we'll be serializing the network variable at, in our memory buffer
-                int bufferPos = 0;
-
-                m_Writer.Seek(0);
-                m_Writer.Truncate(0);
-
-                {
-                    if (m_NumAvailableIndices == 0)
-                    {
-                        // todo: error handling
-                        Debug.Assert(false);
-                    }
-
-                    networkVariable.WriteDelta(m_Writer);
-                    command.SerializedLength = m_Writer.Length;
-
-                    var allocated = MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
-
-                    Debug.Assert(allocated);
-
-                    fixed (byte* buff = &MemoryBuffer[0])
-                    {
-                        Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, m_Writer.Length, m_Writer.Length);
-                    }
-                }
-
-                Updates[commandPosition] = command;
-                UpdatesMeta[commandPosition].TargetClientIds = targetClientIds;
-                UpdatesMeta[commandPosition].BufferPos = bufferPos;
+                return;
             }
+
+            // Look for an existing variable's position to update before adding a new entry
+            for (var i = 0; i < NumUpdates; i++)
+            {
+                if (Updates[i].BehaviourIndex == command.BehaviourIndex &&
+                    Updates[i].NetworkObjectId == command.NetworkObjectId &&
+                    Updates[i].VariableIndex == command.VariableIndex)
+                {
+                    commandPosition = i;
+                    break;
+                }
+            }
+
+            if (commandPosition == -1)
+            {
+                int index = -1;
+
+                if (NumUpdates >= UpdatesBufferCount)
+                {
+                    UpdatesBufferCount = UpdatesBufferCount * 2;
+                    Array.Resize(ref Updates, UpdatesBufferCount);
+                    Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
+                }
+
+                commandPosition = NumUpdates;
+                NumUpdates++;
+
+                index = m_AvailableIndices[0];
+                m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
+                m_NumAvailableIndices--;
+
+                UpdatesMeta[commandPosition].Index = index;
+            }
+            else
+            {
+                // de-allocate previous buffer as a new one will be allocated
+                MemoryStorage.Deallocate(UpdatesMeta[commandPosition].Index);
+            }
+
+            // the position we'll be serializing the network variable at, in our memory buffer
+            int bufferPos = 0;
+
+            m_Writer.Seek(0);
+            m_Writer.Truncate(0);
+
+            if (m_NumAvailableIndices == 0)
+            {
+                // todo: error handling
+                Debug.Assert(false);
+            }
+
+            networkVariable.WriteDelta(m_Writer);
+            command.SerializedLength = m_Writer.Length;
+
+            var allocated = MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
+
+            Debug.Assert(allocated);
+
+            fixed (byte* buff = &MemoryBuffer[0])
+            {
+                Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, m_Writer.Length, m_Writer.Length);
+            }
+
+            Updates[commandPosition] = command;
+            UpdatesMeta[commandPosition].TargetClientIds = targetClientIds;
+            UpdatesMeta[commandPosition].BufferPos = bufferPos;
         }
 
         unsafe internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
@@ -684,33 +684,24 @@ namespace Unity.Netcode
 
             for (int index = 0; index < header.UpdateCount; index++)
             {
-                byte[] readBuffer = new byte[10000];
-                // todo: this large buffer is very inelegant. Add proper bounds check to the unsafe code below
-                // and also move into a member reader
+                message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
+                message.ReadBuffer.ReadValue(out updateCommand);
 
-                fixed (byte* buff = &readBuffer[0])
+                //NetworkVariableBase variable;
+                GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
+
+                if (updateCommand.TickWritten > variable.TickRead)
                 {
-                    message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
-                    message.ReadBuffer.ReadValue(out updateCommand);
+                    variable.TickRead = updateCommand.TickWritten;
+                    variable.ReadDelta(message.ReadBuffer, false); // todo: pass something for keep dirty delta
 
-                    message.ReadBuffer.TryBeginRead(updateCommand.SerializedLength);
-                    message.ReadBuffer.ReadBytes(buff, updateCommand.SerializedLength, 0);
-
-                    //NetworkVariableBase variable;
-                    GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
-
-                    if (updateCommand.TickWritten > variable.TickRead)
-                    {
-                        using var reader =
-                            new FastBufferReader(buff, Allocator.Temp, updateCommand.SerializedLength, 0);
-                        {
-                            variable.TickRead = updateCommand.TickWritten;
-                            variable.ReadDelta(reader, false); // todo: pass something for keep dirty delta
-                        }
-
-                        m_NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
-                            clientId, behaviour.NetworkObject, variable.Name, behaviour.__getTypeName(), 20); // todo: what length ?
-                    }
+                    m_NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
+                        clientId, behaviour.NetworkObject, variable.Name, behaviour.__getTypeName(), 20); // todo: what length ?
+                }
+                else
+                {
+                    // skip over the value update payload we don't need to read
+                    message.ReadBuffer.Handle->Position += updateCommand.SerializedLength;
                 }
             }
 
@@ -812,7 +803,6 @@ namespace Unity.Netcode
                 behaviour = null;
             }
         }
-
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
