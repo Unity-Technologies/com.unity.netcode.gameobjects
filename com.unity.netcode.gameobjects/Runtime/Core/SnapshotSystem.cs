@@ -179,12 +179,15 @@ namespace Unity.Netcode
 
         internal int UpdatesBufferCount { get; private set; } = 100;
 
-        internal IndexAllocator MemoryStorage = new IndexAllocator(10000, 1000);
-        internal byte[] MemoryBuffer = new byte[10000];
+        internal const int TotalMaxIndices = 1000;
+        internal const int TotalBufferMemory = 10000;
 
-        private int[] m_AvailableIndices;
-        private int m_AvailableIndicesBufferCount = 1000;
-        private int m_NumAvailableIndices = 1000;
+        internal IndexAllocator MemoryStorage = new IndexAllocator(TotalBufferMemory, TotalMaxIndices);
+        internal byte[] MemoryBuffer = new byte[TotalBufferMemory];
+
+        private int[] m_AvailableIndices; // The IndexAllocator indices for memory management
+        private int m_AvailableIndicesBufferCount = TotalMaxIndices; // Size of the buffer storing indices
+        private int m_NumAvailableIndices = TotalMaxIndices; // Current number of valid indices in m_AvailableIndices
 
         private FastBufferWriter m_Writer;
 
@@ -193,7 +196,7 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             m_NetworkTickSystem = networkTickSystem;
 
-            m_Writer = new FastBufferWriter(10000, Allocator.Persistent);
+            m_Writer = new FastBufferWriter(TotalBufferMemory, Allocator.Persistent);
 
             if (networkManager != null)
             {
@@ -559,10 +562,10 @@ namespace Unity.Netcode
         }
 
         // entry-point for value updates
-        internal unsafe void Store(UpdateCommand command, NetworkVariableBase networkVariable)
+        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable)
         {
             command.TickWritten = m_CurrentTick;
-            int commandPosition = -1;
+            var commandPosition = -1;
 
             List<ulong> targetClientIds = GetClientList();
 
@@ -628,9 +631,13 @@ namespace Unity.Netcode
 
             Debug.Assert(allocated);
 
-            fixed (byte* buff = &MemoryBuffer[0])
+            unsafe
             {
-                Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, m_Writer.Length, m_Writer.Length);
+                fixed (byte* buff = &MemoryBuffer[0])
+                {
+                    Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, TotalBufferMemory - bufferPos,
+                        m_Writer.Length);
+                }
             }
 
             Updates[commandPosition] = command;
@@ -638,7 +645,7 @@ namespace Unity.Netcode
             UpdatesMeta[commandPosition].BufferPos = bufferPos;
         }
 
-        unsafe internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
+        internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
         {
             // Read the Spawns. Count first, then each spawn
             var spawnCommand = new SnapshotSpawnCommand();
@@ -701,7 +708,7 @@ namespace Unity.Netcode
                 else
                 {
                     // skip over the value update payload we don't need to read
-                    message.ReadBuffer.Handle->Position += updateCommand.SerializedLength;
+                    message.ReadBuffer.Seek(message.ReadBuffer.Position + updateCommand.SerializedLength);
                 }
             }
 
