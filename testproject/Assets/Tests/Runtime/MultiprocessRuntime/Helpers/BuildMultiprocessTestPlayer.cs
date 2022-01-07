@@ -26,7 +26,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [MenuItem(BuildAndExecuteMenuName)]
         public static void BuildRelease()
         {
-            var report = BuildPlayer();
+            var report = BuildPlayerUtility();
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
@@ -36,7 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [MenuItem(MultiprocessBaseMenuName + "/Build Test Player (Debug)")]
         public static void BuildDebug()
         {
-            var report = BuildPlayer(true);
+            var report = BuildPlayerUtility(BuildTarget.NoTarget, null, true);
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
@@ -56,9 +56,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        private static BuildReport BuildPlayerUtility(BuildTarget buildTarget, string buildPathExtension)
+        private static BuildReport BuildPlayerUtility(BuildTarget buildTarget = BuildTarget.NoTarget, string buildPathExtension = null, bool buildDebug = false)
         {
             SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
+
+            if (buildTarget == BuildTarget.NoTarget)
+            {
+                if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+                {
+                    buildPathExtension += ".exe";
+                    buildTarget = BuildTarget.StandaloneWindows64;
+                } else if (Application.platform == RuntimePlatform.OSXPlayer ||
+                    Application.platform == RuntimePlatform.OSXEditor)
+                {
+                    buildPathExtension += ".app";
+                    buildTarget = BuildTarget.StandaloneOSX;
+                }
+            }
 
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
@@ -67,8 +81,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = buildPathToUse;
             buildPlayerOptions.target = buildTarget;
-            buildPlayerOptions.options = BuildOptions.StrictMode |
-                BuildOptions.IncludeTestAssemblies;
+            var buildOptions = BuildOptions.None;
+            if (buildDebug)
+            {
+                buildOptions |= BuildOptions.Development;
+                buildOptions |= BuildOptions.AllowDebugging;
+            }
+
+            buildOptions |= BuildOptions.StrictMode;
+            buildOptions |= BuildOptions.IncludeTestAssemblies;
+            buildPlayerOptions.options = buildOptions;
 
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
             BuildSummary summary = report.summary;
@@ -100,49 +122,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
-
-        /// <summary>
-        /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
-        /// reporting. We only want to main node to do that, worker nodes should be dumb
-        /// </summary>
-        /// <returns></returns>
-        private static BuildReport BuildPlayer(bool isDebug = false)
-        {
-            // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
-            SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath, IsDebug = isDebug });
-
-            // deleting so we don't end up testing on outdated builds if there's a build failure
-            DeleteBuild();
-
-            var buildOptions = BuildOptions.None;
-            buildOptions |= BuildOptions.IncludeTestAssemblies;
-            buildOptions |= BuildOptions.StrictMode;
-            if (isDebug)
-            {
-                buildOptions |= BuildOptions.Development;
-                buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
-
-                // will have more connection permission popups when launching though
-            }
-
-            var buildPathToUse = BuildPath;
-            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
-            {
-                buildPathToUse += ".exe";
-            }
-
-            Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
-            // Include all EditorBuildSettings.scenes with clients so they are in alignment with the server's scenes in build list indices
-            buildOptions &= ~BuildOptions.AutoRunPlayer;
-            var buildReport = BuildPipeline.BuildPlayer(
-                EditorBuildSettings.scenes,
-                buildPathToUse,
-                EditorUserBuildSettings.activeBuildTarget,
-                buildOptions);
-
-            Debug.Log("Build finished");
-            return buildReport;
-        }
+        
 #endif
 
         [Serializable]
