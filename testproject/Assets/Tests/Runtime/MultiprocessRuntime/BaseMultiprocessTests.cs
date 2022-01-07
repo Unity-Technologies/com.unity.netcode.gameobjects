@@ -246,6 +246,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
+                    BokkenMachine.FetchAllLogFiles();
                     BokkenMachine.DumpProcessList();
 
                     Process[] allProcesses = Process.GetProcesses();
