@@ -230,6 +230,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (Image.Contains("win10"))
             {
+                //TODO It is currently not possible to use environment variables in bokken commands and so explicit paths must be used for now
+                // Open request to bokken team to enhance this
+                // Possible workaround is to use a batch file or shell script, copy the script to the target, and then run the script
+                //     which would have environment variables in it
                 LogPath = @"C:\users\bokken\.multiprocess\" + $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
