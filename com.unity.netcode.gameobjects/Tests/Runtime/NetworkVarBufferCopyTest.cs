@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -118,7 +119,7 @@ namespace Unity.Netcode.RuntimeTests
             // Send an update
             serverComponent.NetVar.Dirty = true;
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForMessageOfType<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]));
+            yield return new WaitForSeconds(1.0f);
 
             Assert.True(serverComponent.NetVar.FieldWritten);
             Assert.True(serverComponent.NetVar.DeltaWritten);
