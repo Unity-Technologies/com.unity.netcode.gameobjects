@@ -26,7 +26,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [MenuItem(BuildAndExecuteMenuName)]
         public static void BuildRelease()
         {
-            var report = BuildPlayer();
+            var report = BuildPlayerUtility();
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
@@ -36,7 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [MenuItem(MultiprocessBaseMenuName + "/Build Test Player (Debug)")]
         public static void BuildDebug()
         {
-            var report = BuildPlayer(true);
+            var report = BuildPlayerUtility(BuildTarget.NoTarget, null, true);
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
@@ -56,47 +56,75 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        /// <summary>
-        /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
-        /// reporting. We only want to main node to do that, worker nodes should be dumb
-        /// </summary>
-        /// <returns></returns>
-        private static BuildReport BuildPlayer(bool isDebug = false)
+        private static BuildReport BuildPlayerUtility(BuildTarget buildTarget = BuildTarget.NoTarget, string buildPathExtension = null, bool buildDebug = false)
         {
-            // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
-            SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath, IsDebug = isDebug });
+            SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
 
             // deleting so we don't end up testing on outdated builds if there's a build failure
             DeleteBuild();
 
-            var buildOptions = BuildOptions.None;
-            buildOptions |= BuildOptions.IncludeTestAssemblies;
-            buildOptions |= BuildOptions.StrictMode;
-            if (isDebug)
+            if (buildTarget == BuildTarget.NoTarget)
             {
-                buildOptions |= BuildOptions.Development;
-                buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
-
-                // will have more connection permission popups when launching though
+                if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+                {
+                    buildPathExtension += ".exe";
+                    buildTarget = BuildTarget.StandaloneWindows64;
+                }
+                else if (Application.platform == RuntimePlatform.OSXPlayer ||
+                    Application.platform == RuntimePlatform.OSXEditor)
+                {
+                    buildPathExtension += ".app";
+                    buildTarget = BuildTarget.StandaloneOSX;
+                }
             }
 
             var buildPathToUse = BuildPath;
-            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            buildPathToUse += buildPathExtension;
+
+            var buildPlayerOptions = new BuildPlayerOptions();
+            buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
+            buildPlayerOptions.locationPathName = buildPathToUse;
+            buildPlayerOptions.target = buildTarget;
+            var buildOptions = BuildOptions.None;
+            if (buildDebug)
             {
-                buildPathToUse += ".exe";
+                buildOptions |= BuildOptions.Development;
+                buildOptions |= BuildOptions.AllowDebugging;
             }
 
-            Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
-            // Include all EditorBuildSettings.scenes with clients so they are in alignment with the server's scenes in build list indices
-            buildOptions &= ~BuildOptions.AutoRunPlayer;
-            var buildReport = BuildPipeline.BuildPlayer(
-                EditorBuildSettings.scenes,
-                buildPathToUse,
-                EditorUserBuildSettings.activeBuildTarget,
-                buildOptions);
+            buildOptions |= BuildOptions.StrictMode;
+            buildOptions |= BuildOptions.IncludeTestAssemblies;
+            buildPlayerOptions.options = buildOptions;
 
-            Debug.Log("Build finished");
-            return buildReport;
+            BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            BuildSummary summary = report.summary;
+
+            if (summary.result == BuildResult.Succeeded)
+            {
+                Debug.Log($"Build succeeded: {summary.totalSize} bytes at {summary.outputPath}");
+            }
+
+            return report;
+        }
+
+        [MenuItem(MultiprocessBaseMenuName + "/Windows Standalone Player")]
+        public static void BuildWindowsStandalonePlayer()
+        {
+            var report = BuildPlayerUtility(BuildTarget.StandaloneWindows64, ".exe");
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
+            }
+        }
+
+        [MenuItem(MultiprocessBaseMenuName + "/Build OSX")]
+        public static void BuildOSX()
+        {
+            var report = BuildPlayerUtility(BuildTarget.StandaloneOSX, ".app");
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
+            }
         }
 #endif
 
@@ -105,6 +133,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             public string BuildPath;
             public bool IsDebug;
+        }
+
+        public static bool DoesBuildInfoExist()
+        {
+            var buildfileInfo = new FileInfo(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));
+            return buildfileInfo.Exists;
         }
 
         public static BuildInfo ReadBuildInfo()
@@ -117,6 +151,52 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             var buildInfoJson = JsonUtility.ToJson(toSave);
             File.WriteAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName), buildInfoJson);
+        }
+
+        /// <summary>
+        /// Determine if the MultiprocessTestPlayer has been built so we can decide how to
+        /// let the test runner know
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsMultiprocessTestPlayerAvailable()
+        {
+            bool answer = false;
+            try
+            {
+                var buildInfoPath = Path.Combine(Application.streamingAssetsPath, BuildInfoFileName);
+                var buildInfoFileInfo = new FileInfo(buildInfoPath);
+                if (!buildInfoFileInfo.Exists)
+                {
+                    return false;
+                }
+                var buildPath = ReadBuildInfo().BuildPath;
+                FileInfo buildPathFileInfo = null;
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.OSXEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.app/Contents/MacOS/testproject");
+                        break;
+                    case RuntimePlatform.WindowsEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}.exe");
+                        break;
+                    case RuntimePlatform.LinuxEditor:
+                        buildPathFileInfo = new FileInfo($"{buildPath}");
+                        break;
+                }
+
+                if (buildPathFileInfo != null && buildPathFileInfo.Exists)
+                {
+                    answer = true;
+                }
+
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                answer = false;
+            }
+
+            return answer;
         }
     }
 }
