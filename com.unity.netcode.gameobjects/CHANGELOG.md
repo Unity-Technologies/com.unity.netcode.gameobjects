@@ -20,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
+- Fixed a bug where when constructing a NetworkTime from a tick the resulting instance sometimes had a different tick value due to floating point math imprecision.(#1561)
 
 ### Changed
 
@@ -50,7 +51,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
-- Fixed a bug where when constructing a NetworkTime from a tick the resulting instance sometimes had a different tick value due to floating point math imprecision.
 - Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
 
 ### Changed
