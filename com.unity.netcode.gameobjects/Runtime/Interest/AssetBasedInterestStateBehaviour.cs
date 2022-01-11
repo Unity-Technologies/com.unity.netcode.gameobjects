@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.Interest
 {
-    [RequireComponent(typeof(NetworkManager))]
+    [RequireComponent(typeof(NetworkManager)), AddComponentMenu("")]
     public class AssetBasedInterestStateBehaviour : MonoBehaviour
     {
         Dictionary<InterestRuleset, IInterestNode<NetworkObject>> m_NodesByAsset = new Dictionary<InterestRuleset, IInterestNode<NetworkObject>>();
