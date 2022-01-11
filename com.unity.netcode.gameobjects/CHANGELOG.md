@@ -21,7 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
-- Fixed: OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
+- Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
 
 ### Changed
 
