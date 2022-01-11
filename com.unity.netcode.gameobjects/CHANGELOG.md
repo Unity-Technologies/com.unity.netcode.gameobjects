@@ -10,42 +10,56 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
 - Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
 - Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging (#1567)
-
-### Removed
-
-- Removed `com.unity.modules.ai` package dependency
-- Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
+- SnapshotSystem carries Spawns, Despawns and NetworkVariable value updates (#1544)
 
 ### Fixed
 
-- Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
-- Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
-- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
-- Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
-- Fixed NetworkConfig to no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
-- Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
-- Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
-- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0. (#1480)
 - Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
 - Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
-- Fixed KeyNotFoundException when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
-- Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
-- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
+- Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
 
 ### Changed
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
-- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
-- Updated com.unity.collections to 1.1.0
 - NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
 - NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
+
+## [1.0.0-pre.4] - 2021-01-04
+
+### Added
+
+- Added `com.unity.modules.physics` and `com.unity.modules.physics2d` package dependencies (#1565)
+
+### Removed
+
+- Removed `com.unity.modules.ai` package dependency (#1565)
+- Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
+
+### Fixed
+
+- Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
+- Fixed invalid IL code being generated when using this instead of this ref for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
+- Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
+- Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
+- NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
+- Fixed NetworkVariable not calling NetworkSerialize on INetworkSerializable types (#1383)
+- Fixed NullReferenceException on ImportReferences call in NetworkBehaviourILPP (#1434)
+- Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
+- Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
+- Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
+- Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
+
+### Changed
+
+- The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
+- Updated com.unity.collections to 1.1.0 (#1451)
 
 ## [1.0.0-pre.3] - 2021-10-22
 
