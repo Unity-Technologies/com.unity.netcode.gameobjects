@@ -1,8 +1,10 @@
+using System;
 using Unity.Netcode.Interest;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
+    [Serializable]
     public class RadiusInterestKernel : IInterestKernel<NetworkObject>
     {
         public float Radius = 0.0f;
