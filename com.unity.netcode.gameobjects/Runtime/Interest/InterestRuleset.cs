@@ -1,37 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Unity.Netcode.Interest
 {
-    [CreateAssetMenu(menuName = "Netcode/Interest Node Asset")]
-    public class InterestNodeAsset : ScriptableObject
+    [CreateAssetMenu(menuName = "Netcode/Interest Ruleset")]
+    public class InterestRuleset : ScriptableObject
     {
         public static class PropertyNames
         {
             public const string Kernels = nameof(m_Kernels);
-            public const string KernelDataKernel = nameof(InterestKernelData.kernel);
-            public const string KernelDataMode = nameof(InterestKernelData.mode);
+            public const string KernelDataKernel = nameof(KernelData.kernel);
+            public const string KernelDataMode = nameof(KernelData.mode);
         }
 
-        public enum InterestKernelMode
+        enum KernelMode
         {
             Additive,
             Subtractive
         }
 
         [Serializable]
-        public class InterestKernelData
+        class KernelData
         {
             [SerializeField]
-            public InterestKernelMode mode;
+            public KernelMode mode;
 
-            [SerializeReference, AssetBasedKernelInstanceProperty]
+            [UsedImplicitly, SerializeReference, AssetBasedKernelInstanceProperty]
             public object kernel;
         }
 
         [SerializeField]
-        List<InterestKernelData> m_Kernels = new List<InterestKernelData>();
+        List<KernelData> m_Kernels = new List<KernelData>();
 
         public IInterestNode<NetworkObject> ConstructNode()
         {
@@ -39,11 +40,11 @@ namespace Unity.Netcode.Interest
 
             foreach (var kernel in m_Kernels)
             {
-                if (kernel.mode == InterestKernelMode.Additive)
+                if (kernel.mode == KernelMode.Additive)
                 {
                     node.AddAdditiveKernel((IInterestKernel<NetworkObject>)kernel.kernel);
                 }
-                else if(kernel.mode == InterestKernelMode.Subtractive)
+                else if(kernel.mode == KernelMode.Subtractive)
                 {
                     node.AddSubtractiveKernel((IInterestKernel<NetworkObject>)kernel.kernel);
                 }
