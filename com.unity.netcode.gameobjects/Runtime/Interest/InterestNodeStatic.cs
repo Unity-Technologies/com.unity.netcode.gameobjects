@@ -9,7 +9,7 @@ namespace Unity.Netcode.Interest
     // for example, if you'd like a Radius-based scheme, create one of these and then add a RadiusInterestKernel to it.
     //  On the other hand, a more sophisticated node would take the AddObject / RemoveObject calls and then store
     //  those object in more strategic ways - see the Odds / Evens scheme in the InterestTests
-    public class InterestNodeStatic<TObject> : IInterestNode<TObject>
+    public class InterestNodeStatic<TObject> : IInterestNode<TObject>, IStatefulInterestNode<TObject>
     {
         // these are the objects under my purview
         private HashSet<TObject> m_ManagedObjects;
@@ -92,6 +92,14 @@ namespace Unity.Netcode.Interest
 
         public void UpdateObject(TObject obj)
         {
+        }
+
+        public void GetManagedObjects(IList<TObject> buffer)
+        {
+            foreach (var obj in m_ManagedObjects)
+            {
+                buffer.Add(obj);
+            }
         }
     }
 }

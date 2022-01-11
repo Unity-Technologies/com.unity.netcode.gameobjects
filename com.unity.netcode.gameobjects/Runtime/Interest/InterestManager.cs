@@ -113,6 +113,8 @@ namespace Unity.Netcode.Interest
             }
         }
 
+        internal IEnumerable<IInterestNode<TObject>> GetChildNodes() => m_ChildNodes;
+
         private HashSet<IInterestNode<TObject>> m_ChildNodes;
 
         private Dictionary<TObject, List<IInterestNode<TObject>>> m_InterestNodesMap =
