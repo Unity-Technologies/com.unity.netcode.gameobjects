@@ -765,11 +765,17 @@ namespace Unity.Netcode
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn()
+        internal void InvokeBehaviourPreNetworkSpawn()
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+            }
+        }
+        internal void InvokeBehaviourPostNetworkSpawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
                 ChildNetworkBehaviours[i].OnNetworkSpawn();
             }
         }

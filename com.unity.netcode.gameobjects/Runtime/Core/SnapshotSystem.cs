@@ -701,7 +701,7 @@ namespace Unity.Netcode
             }
             else
             {
-                Debug.Log("Error reading header");
+                Debug.LogError("Error reading header");
                 return;
             }
 
@@ -857,13 +857,6 @@ namespace Unity.Netcode
                 behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(updateCommand.BehaviourIndex);
 
                 Debug.Assert(networkObject != null);
-
-                if (updateCommand.VariableIndex >= behaviour.NetworkVariableFields.Count)
-                {
-                    Debug.Log(updateCommand.VariableIndex);
-                    Debug.Log(behaviour.NetworkVariableFields.Count);
-                    //todo: fix this, next line with throw an exception
-                }
 
                 variable = behaviour.NetworkVariableFields[updateCommand.VariableIndex];
             }
