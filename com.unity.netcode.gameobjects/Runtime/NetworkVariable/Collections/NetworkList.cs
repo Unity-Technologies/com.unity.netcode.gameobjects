@@ -272,10 +272,13 @@ namespace Unity.Netcode
                         {
                             reader.ReadValueSafe(out int index);
                             reader.ReadValueSafe(out T value);
-                            if (index < m_List.Length)
+                            if (index >= m_List.Length)
                             {
-                                m_List[index] = value;
+                                throw new Exception("Shouldn't be here, index is higher than list length");
                             }
+
+                            var previousValue = m_List[index];
+                            m_List[index] = value;
 
                             if (OnListChanged != null)
                             {
@@ -283,7 +286,8 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = index,
-                                    Value = value
+                                    Value = value,
+                                    PreviousValue = previousValue
                                 });
                             }
 
@@ -293,7 +297,8 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType,
                                     Index = index,
-                                    Value = value
+                                    Value = value,
+                                    PreviousValue = previousValue
                                 });
                             }
                         }
@@ -527,6 +532,11 @@ namespace Unity.Netcode
         /// The value changed, added or removed if available.
         /// </summary>
         public T Value;
+
+        /// <summary>
+        /// The previous value when "Value" has changed, if available.
+        /// </summary>
+        public T PreviousValue;
 
         /// <summary>
         /// the index changed, added or removed if available

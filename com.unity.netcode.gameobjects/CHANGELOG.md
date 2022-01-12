@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+- Added `PreviousValue` in NetworkListEvent, when `Value` has changed (#1528)
+
 ## [1.0.0-pre.4] - 2021-01-04
 
 ### Added
