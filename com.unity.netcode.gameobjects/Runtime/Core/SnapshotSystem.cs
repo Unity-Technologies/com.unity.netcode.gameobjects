@@ -538,11 +538,11 @@ namespace Unity.Netcode
                 // When we spawn an object we need to include its initial value.
                 // This scans the NetworkVariable of the spawn object and store its NetworkVariables
 
-                UpdateCommand updateCommand = new UpdateCommand();
-                for(ushort childIndex = 0; childIndex < networkObject.ChildNetworkBehaviours.Count; childIndex++)
+                var updateCommand = new UpdateCommand();
+                for (ushort childIndex = 0; childIndex < networkObject.ChildNetworkBehaviours.Count; childIndex++)
                 {
                     var behaviour = networkObject.ChildNetworkBehaviours[childIndex];
-                    for(var variableIndex = 0; variableIndex < behaviour.NetworkVariableFields.Count; variableIndex++)
+                    for (var variableIndex = 0; variableIndex < behaviour.NetworkVariableFields.Count; variableIndex++)
                     {
                         updateCommand.NetworkObjectId = command.NetworkObjectId;
                         updateCommand.BehaviourIndex = childIndex;
