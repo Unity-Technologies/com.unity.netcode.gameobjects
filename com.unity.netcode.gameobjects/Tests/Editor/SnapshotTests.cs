@@ -54,9 +54,14 @@ namespace Unity.Netcode.EditorTests
             AdvanceOneTickRecvSide();
         }
 
-        internal void SpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
+        internal void PreSpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
         {
             m_SpawnedObjectCount++;
+        }
+
+        internal void PostSpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
+        {
+
         }
 
         internal void DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
@@ -116,7 +121,8 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_SendSnapshot.SendMessage = SendMessage;
-            m_SendSnapshot.SpawnObject = SpawnObject;
+            m_SendSnapshot.PreSpawnObject = PreSpawnObject;
+            m_SendSnapshot.PostSpawnObject = PostSpawnObject;
             m_SendSnapshot.DespawnObject = DespawnObject;
         }
 
@@ -139,7 +145,8 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_RecvSnapshot.SendMessage = SendMessageRecvSide;
-            m_RecvSnapshot.SpawnObject = SpawnObject;
+            m_RecvSnapshot.PreSpawnObject = PreSpawnObject;
+            m_RecvSnapshot.PostSpawnObject = PostSpawnObject;
             m_RecvSnapshot.DespawnObject = DespawnObject;
         }
 
