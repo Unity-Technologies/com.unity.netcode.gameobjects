@@ -9,3 +9,6 @@ contact_links:
   - name: Unity Multiplayer Forum
     url: https://forum.unity.com/forums/multiplayer.26/
     about: Create a thread in the Unity Multiplayer Forum.
+  - name: Bug Report
+    url: https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/tree/chore/update-bug-template/.github/ISSUE_TEMPLATE/using_unity_bug_reporter.md
+    about: Report a bug using Unity Bug Reporter.
