@@ -32,7 +32,6 @@ namespace Unity.Netcode
                         m_InterestUpdateThisFrame.Clear();
                         networkManager.InterestManager.QueryFor(ref client.PlayerObject, ref m_InterestUpdateThisFrame);
                         foreach (var sobj in m_InterestUpdateThisFrame)
-
                         {
                             if (sobj.IsNetworkVisibleTo(client.ClientId))
                             {

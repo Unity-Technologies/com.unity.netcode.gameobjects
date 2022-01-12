@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
+- Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging (#1567)
 - SnapshotSystem carries Spawns, Despawns and NetworkVariable value updates (#1544)
 
 ### Fixed
@@ -52,6 +53,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
 - Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
 
 ### Changed
