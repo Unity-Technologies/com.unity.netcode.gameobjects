@@ -516,7 +516,7 @@ namespace Unity.Netcode
         internal readonly List<int> NetworkVariableIndexesToReset = new List<int>();
         internal readonly HashSet<int> NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
+        private void NetworkVariableUpdate(ulong clientId, ushort behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
@@ -527,7 +527,23 @@ namespace Unity.Netcode
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                    if (NetworkVariableFields[k].IsDirty())
+                    {
+                        var update = new UpdateCommand();
+                        update.NetworkObjectId = NetworkObjectId;
+                        update.BehaviourIndex = behaviourIndex;
+                        update.VariableIndex = k;
+
+                        NetworkManager.SnapshotSystem.Store(update, NetworkVariableFields[k]);
+                        NetworkVariableIndexesToReset.Add(k);
+
+                        NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                                clientId,
+                                GetNetworkObject(NetworkObjectId),
+                                NetworkVariableFields[k].Name,
+                                __getTypeName(),
+                                20); // todo: what length ?
+                    }
                 }
             }
 

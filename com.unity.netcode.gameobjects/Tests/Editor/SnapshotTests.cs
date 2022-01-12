@@ -106,7 +106,6 @@ namespace Unity.Netcode.EditorTests
             m_SendTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
-            config.UseSnapshotSpawn = true;
 
             m_SendSnapshot = new SnapshotSystem(null, config, m_SendTickSystem);
 
@@ -130,7 +129,6 @@ namespace Unity.Netcode.EditorTests
             m_RecvTimeSystem.Reset(0, 0.0);
 
             config.UseSnapshotDelta = false;
-            config.UseSnapshotSpawn = true;
 
             m_RecvSnapshot = new SnapshotSystem(null, config, m_RecvTickSystem);
 

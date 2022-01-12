@@ -3,9 +3,18 @@ using System.Collections.Generic;
 namespace Unity.Netcode.Interest
 {
     // interest *system* instead of interest node ?
-    internal class InterestManager<TObject>
+    public class InterestManager<TObject>
     {
         private InterestNodeStatic<TObject> m_DefaultInterestNode = new InterestNodeStatic<TObject>();
+
+        public bool Disable;
+
+        public InterestManager()
+        {
+            // This is the node objects will be added to if no replication group is
+            //  specified, which means they always get replicated
+            m_ChildNodes = new HashSet<IInterestNode<TObject>> { m_DefaultInterestNode };
+        }
 
         // Trigger the Interest system to do an update sweep on any Interest nodes
         //  I am associated with
@@ -18,13 +27,6 @@ namespace Unity.Netcode.Interest
                     node.UpdateObject(obj);
                 }
             }
-        }
-
-        public InterestManager()
-        {
-            // This is the node objects will be added to if no replication group is
-            //  specified, which means they always get replicated
-            m_ChildNodes = new HashSet<IInterestNode<TObject>> { m_DefaultInterestNode };
         }
 
         public void AddObject(ref TObject obj)
@@ -77,9 +79,16 @@ namespace Unity.Netcode.Interest
 
         public void QueryFor(ref TObject client, ref HashSet<TObject> results)
         {
-            foreach (var c in m_ChildNodes)
+            if (!Disable)
             {
-                c.QueryFor(client, results);
+                foreach (var c in m_ChildNodes)
+                {
+                    c.QueryFor(client, results);
+                }
+            }
+            else
+            {
+                results.UnionWith(m_InterestNodesMap.Keys);
             }
         }
 

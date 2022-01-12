@@ -5,6 +5,7 @@ using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
 
 /// <summary>
@@ -20,9 +21,9 @@ using Unity.Netcode.MultiprocessRuntimeTests;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const int PerTestTimeoutSec = 5 * 60; // seconds
+    public const int PerTestTimeoutSec = 4 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 30;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -36,6 +37,8 @@ public class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    private string m_ConnectAddress = "127.0.0.1";
+    private string m_Port = "3076";
 
     private void Awake()
     {
@@ -54,6 +57,48 @@ public class TestCoordinator : NetworkBehaviour
     {
         MultiprocessLogger.Log("Start");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length; ++i)
+        {
+            string arg = args[i];
+            if (arg.Equals("-ip"))
+            {
+                m_ConnectAddress = args[i + 1];
+                MultiprocessLogger.Log($"command line ip was {m_ConnectAddress}");
+
+            }
+
+            if (arg.Equals("-p"))
+            {
+                m_Port = args[i + 1];
+                MultiprocessLogger.Log($"command line port was {m_Port}");
+            }
+        }
+        MultiprocessLogger.Log($"{m_Port}");
+        var ushortport = ushort.Parse(m_Port);
+        var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        MultiprocessLogger.Log($"Transport is {transport.ToString()}");
+        MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}, IsClient: {IsClient}, Address {m_ConnectAddress}");
+        switch (transport)
+        {
+            case UNetTransport unetTransport:
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                if (isClient)
+                {
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
+                }
+                break;
+            case UnityTransport unityTransport:
+                unityTransport.ConnectionData.Port = ushortport;
+                unityTransport.ConnectionData.Address = m_ConnectAddress;
+                break;
+            default:
+                MultiprocessLogger.LogError($"The transport {transport} has no case");
+                break;
+        }
+
         if (isClient)
         {
             MultiprocessLogger.Log("starting netcode client");
@@ -90,6 +135,10 @@ public class TestCoordinator : NetworkBehaviour
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
+        else
+        {
+            MultiprocessLogger.Log($"isClient {IsClient} IsConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
+        }
     }
 
     private static void QuitApplication()
@@ -103,7 +152,9 @@ public class TestCoordinator : NetworkBehaviour
 
     public void TestRunTeardown()
     {
+        MultiprocessLogger.Log("TestCoordinator - TestRunTearDown");
         m_TestResultsLocal.Clear();
+        MultiprocessLogger.Log($"TestCoordinator - TestRunTearDown... Done clearing m_TestResultsLocal, count: {m_TestResultsLocal.Count}");
     }
 
     public void OnEnable()
