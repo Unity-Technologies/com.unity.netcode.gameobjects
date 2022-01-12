@@ -237,14 +237,9 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn(clientId);
-            }
+            SnapshotSpawn(clientId);
 
             Observers.Add(clientId);
-
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
         /// <summary>
@@ -320,20 +315,7 @@ namespace Unity.Netcode
 
             Observers.Remove(clientId);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotDespawn(clientId);
-            }
-            else
-            {
-                var message = new DestroyObjectMessage
-                {
-                    NetworkObjectId = NetworkObjectId
-                };
-                // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
-            }
+            SnapshotDespawn(clientId);
         }
 
         /// <summary>
@@ -479,19 +461,7 @@ namespace Unity.Netcode
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn();
-            }
-
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
-            for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-            {
-                if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
-                {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
-                }
-            }
+            SnapshotSpawn();
         }
 
         /// <summary>

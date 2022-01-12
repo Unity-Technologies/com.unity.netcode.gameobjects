@@ -11,6 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
+- Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging (#1567)
+- SnapshotSystem carries Spawns, Despawns and NetworkVariable value updates (#1544)
 
 ### Fixed
 
@@ -20,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1481)
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
+- Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
 
 ### Changed
 
@@ -50,6 +53,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
 - Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
 
 ### Changed
