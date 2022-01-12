@@ -286,7 +286,7 @@ namespace Unity.Netcode
                     spawnCommand.ObjectRotation);
             }
 
-            m_NetworkManager.SpawnManager.SpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
+            m_NetworkManager.SpawnManager.PreSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
                 true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
 
             //todo: discuss with tools how to report shared bytes
@@ -298,7 +298,7 @@ namespace Unity.Netcode
             if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(spawnCommand.NetworkObjectId,
                 out NetworkObject networkObject))
             {
-                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocallyCommon2(networkObject, spawnCommand.NetworkObjectId,
+                m_NetworkManager.SpawnManager.PostSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
                     true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
             }
             else
