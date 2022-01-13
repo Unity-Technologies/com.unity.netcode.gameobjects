@@ -1,7 +1,12 @@
 using UnityEngine;
 using System;
 using System.Diagnostics;
+using System.Net.Http;
 using NUnit.Framework;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Text;
+using System.Collections.Generic;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -29,6 +34,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
     public class MultiprocessLogHandler : ILogHandler
     {
+        private static HttpClient s_HttpClient = new HttpClient();
+        public static List<Task> AllTasks;
+
+        static MultiprocessLogHandler()
+        {
+            AllTasks = new List<Task>();
+        }
+
         public void LogException(Exception exception, UnityEngine.Object context)
         {
             UnityEngine.Debug.unityLogger.LogException(exception, context);
@@ -61,6 +74,34 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 method3 = st.GetFrame(3).GetMethod().Name;
             }
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
+            var webLog = new WebLog();
+            webLog.Message = args.ToString();
+            webLog.ClientEventDate = DateTime.Now;
+            string json = JsonUtility.ToJson(webLog);
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
+            AllTasks.Add(t);
+
         }
+
+        private static async Task PostBasicAsync(object content, CancellationToken cancellationToken)
+        {
+            using var client = new HttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
+            var json = JsonUtility.ToJson(content);
+            using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+            request.Content = stringContent;
+
+            using var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    public class WebLog
+    {
+        public string Message { get; set; }
+        public DateTime ClientEventDate { get; set; }
     }
 }
