@@ -92,6 +92,8 @@ namespace Unity.Netcode.EditorTests
 
         internal int SendMessageRecvSide(SnapshotDataMessage message, ulong clientId)
         {
+            SimulateTransport(ref message);
+
             if (m_PassBackResponses)
             {
                 // todo: pass back to sending Snapshot
