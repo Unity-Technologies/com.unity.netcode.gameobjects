@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
@@ -85,8 +86,8 @@ namespace Unity.Netcode
         }
 
         public const int InitialMaxPacketQueueSize = 128;
-        public const int InitialBatchQueueSize = 6 * 1024;
-        public const int InitialMaxSendQueueSize = 16 * InitialBatchQueueSize;
+        public const int InitialMaxPayloadSize = 6 * 1024;
+        public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
         { Address = "127.0.0.1", Port = 7777 };
@@ -103,9 +104,9 @@ namespace Unity.Netcode
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
 
-        [Tooltip("The maximum size of a batched send. The send queue accumulates messages and batches them together " +
-            "up to this size. This is effectively the maximum payload size that can be handled by the transport.")]
-        [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
+        [Tooltip("The maximum size of a payload that can be handled by the transport.")]
+        [FormerlySerializedAs("m_SendQueueBatchSize")]
+        [SerializeField] private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
         [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for " +
             "batching and stores messages when other internal send queues are full. If you routinely observe an " +
@@ -639,9 +640,9 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
-            // If the user sends a message of exactly m_SendQueueBatchSize in length, we need to
+            // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
-            var fragmentationCapacity = m_SendQueueBatchSize + BatchedSendQueue.PerMessageOverhead;
+            var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
 
             m_NetworkSettings
                 .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
@@ -660,9 +661,9 @@ namespace Unity.Netcode
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            if (payload.Count > m_SendQueueBatchSize)
+            if (payload.Count > m_MaxPayloadSize)
             {
-                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Send Queue Batch Size' ({m_SendQueueBatchSize}).");
+                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
                 return;
             }
 
@@ -671,7 +672,7 @@ namespace Unity.Netcode
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
-                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_SendQueueBatchSize));
+                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
             }
 
