@@ -8,6 +8,8 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed
 
+- Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage.
+
 ### Fixed
 
 ## [1.0.0-pre.4] - 2022-01-04
