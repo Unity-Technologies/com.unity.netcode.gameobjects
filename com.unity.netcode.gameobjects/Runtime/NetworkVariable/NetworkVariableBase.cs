@@ -26,6 +26,8 @@ namespace Unity.Netcode
 
         private protected bool m_IsDirty;
 
+        internal int TickRead = 0;
+
         /// <summary>
         /// Gets or sets the name of the network variable's instance
         /// (MemberInfo) where it was declared.

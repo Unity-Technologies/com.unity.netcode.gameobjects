@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -13,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
-            public bool Dirty = true;
+            public bool Dirty = false;
 
             public override void ResetDirty()
             {
@@ -115,17 +116,11 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = (serverSideClientPlayer).GetComponent<DummyNetBehaviour>();
             var clientComponent = (clientSideClientPlayer).GetComponent<DummyNetBehaviour>();
 
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            // Send an update
+            serverComponent.NetVar.Dirty = true;
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(
-                () => clientComponent.NetVar.DeltaRead == true,
-                waitResult,
-                maxFrames: 120));
+            yield return new WaitForSeconds(1.0f);
 
-            if (!waitResult.Result)
-            {
-                Assert.Fail("Failed to send a delta within 120 frames");
-            }
             Assert.True(serverComponent.NetVar.FieldWritten);
             Assert.True(serverComponent.NetVar.DeltaWritten);
             Assert.True(clientComponent.NetVar.FieldRead);

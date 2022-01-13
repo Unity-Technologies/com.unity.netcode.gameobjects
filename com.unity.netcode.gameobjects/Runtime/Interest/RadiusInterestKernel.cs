@@ -7,6 +7,15 @@ namespace Unity.Netcode
     {
         public float Radius = 0.0f;
 
+        public RadiusInterestKernel()
+        {
+        }
+
+        public RadiusInterestKernel(float radius)
+        {
+            Radius = radius;
+        }
+
         public bool QueryFor(NetworkObject clientNetworkObject, NetworkObject obj)
         {
             return Vector3.Distance(obj.transform.position, clientNetworkObject.gameObject.transform.position) <= Radius;

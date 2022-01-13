@@ -58,7 +58,7 @@ namespace Unity.Netcode
 
         // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
         //  to use the InterestManager
-        internal InterestManager<NetworkObject> InterestManager
+        public InterestManager<NetworkObject> InterestManager
         {
             get
             {

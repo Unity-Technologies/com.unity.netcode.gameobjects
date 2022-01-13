@@ -8,6 +8,16 @@ namespace Unity.Netcode.RuntimeTests
     public class ValueUpdateObject : NetworkBehaviour
     {
         public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
+
+        public ValueUpdateObject()
+        {
+            MyNetworkVariable.OnValueChanged = OnValueChanged;
+        }
+
+        public void OnValueChanged(int prevValue, int newValue)
+        {
+            Debug.Log($"OnValueChanged {prevValue} -> {newValue} at {MyNetworkVariable.TickRead}");
+        }
     }
 
     public class ValueUpdateTests : BaseMultiInstanceTest
@@ -86,31 +96,29 @@ namespace Unity.Netcode.RuntimeTests
 
             // set value to 4
             m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 4;
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return new WaitForSeconds(1.0f);
+
             for (var i = 0; i < m_NetSpawnedObjectOnClient.Count; i++)
             {
                 Debug.Assert(m_NetSpawnedObjectOnClient[i].GetComponent<ValueUpdateObject>().MyNetworkVariable.Value == 4);
             }
 
-            // despawn and respawn
+            // despawn
             m_NetSpawnedObject.Despawn(false);
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return new WaitForSeconds(1.0f);
+
+            // respawn
             m_NetSpawnedObject.SpawnWithOwnership(client.ClientId);
             yield return RefreshGameObects();
 
             // set value to 6
             m_NetSpawnedObject.GetComponent<ValueUpdateObject>().MyNetworkVariable.Value = 6;
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return new WaitForSeconds(1.0f);
+
             for (var i = 0; i < m_NetSpawnedObjectOnClient.Count; i++)
             {
                 Debug.Assert(m_NetSpawnedObjectOnClient[i].GetComponent<ValueUpdateObject>().MyNetworkVariable.Value == 6);
             }
-        }
-
-        public IEnumerator WaitForTicks(NetworkManager networkManager, int count)
-        {
-            int nextTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= nextTick);
         }
     }
 
