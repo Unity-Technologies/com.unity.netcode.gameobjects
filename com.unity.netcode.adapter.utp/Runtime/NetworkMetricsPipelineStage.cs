@@ -24,7 +24,7 @@ namespace Unity.Netcode
                                             ReceiveCapacity: 0,
                                             SendCapacity: 0,
                                             HeaderCapacity: 0,
-                                            0);
+                                            SharedStateCapacity: UnsafeUtility.SizeOf<NetworkMetricsContext>());
         }
 
         public int StaticSize => 0;
@@ -36,7 +36,8 @@ namespace Unity.Netcode
             ref NetworkPipelineStage.Requests requests,
             int systemHeaderSize)
         {
-            
+            var networkMetricContext = (NetworkMetricsContext*)networkPipelineContext.internalSharedProcessBuffer;
+            networkMetricContext->PacketReceivedCount++;
         }
 
         [BurstCompile(DisableDirectCall = true)]
@@ -46,6 +47,8 @@ namespace Unity.Netcode
             ref NetworkPipelineStage.Requests requests,
             int systemHeaderSize)
         {
+            var networkMetricContext = (NetworkMetricsContext*)networkPipelineContext.internalSharedProcessBuffer;
+            networkMetricContext->PacketSentCount++;
             return 0;
         }
 

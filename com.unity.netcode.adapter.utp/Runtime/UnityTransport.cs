@@ -143,6 +143,7 @@ namespace Unity.Netcode
 
         private NetworkPipeline m_UnreliableSequencedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
+        private NetworkPipeline m_LastSendPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -517,6 +518,27 @@ namespace Unity.Netcode
                 {
                     ;
                 }
+
+                
+                //TODO: Get the correct connection instead of m_ServerConnection
+                m_Driver.GetPipelineBuffers(m_LastSendPipeline, NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                    m_ServerConnection, out var readProcessingBuffer, out var writeProcessingBuffer,
+                    out var sharedBuffer);
+                unsafe
+                {
+                    var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+                    
+                        
+                    Debug.Log($"Packet Sent count: ${networkMetricsContext->PacketSentCount}");
+                    Debug.Log($"Packet Received count: ${networkMetricsContext->PacketReceivedCount}");
+                    
+                    NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                    NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
+
+                    networkMetricsContext->PacketSentCount = 0;
+                    networkMetricsContext->PacketReceivedCount = 0;
+                }
+                
             }
         }
 
@@ -625,7 +647,8 @@ namespace Unity.Netcode
         {
             var size = payload.Count + 1 + 4; // 1 extra byte for the channel and another 4 for the count of the data
             var pipeline = SelectSendPipeline(networkDelivery, size);
-
+            m_LastSendPipeline = pipeline;
+            
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
