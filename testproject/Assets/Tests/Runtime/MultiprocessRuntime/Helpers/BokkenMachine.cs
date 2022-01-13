@@ -252,6 +252,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
                     $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                MultiprocessLogger.Log(s);
                 return s;
             }
             else if (Type.Contains("osx"))
@@ -260,6 +261,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
                     $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                MultiprocessLogger.Log(s);
                 return s;
             }
             return "";

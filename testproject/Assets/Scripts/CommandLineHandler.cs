@@ -1,5 +1,10 @@
 using System;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Text;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
@@ -83,6 +88,8 @@ public class CommandLineProcessor
     {
         if (m_CommandLineArguments.Count > 0)
         {
+            bool isClient = Environment.GetCommandLineArgs().Any(value => value == "-isWorker");
+
             if (m_CommandLineArguments.TryGetValue("-s", out string sceneToLoad))
             {
                 if (m_SceneToLoad != sceneToLoad)
@@ -228,7 +235,8 @@ public class CommandLineProcessor
                 break;
         }
     }
-}
+
+    }
 
 /// <summary>
 /// Command line handler component to attach to a GameObject in the
@@ -245,4 +253,48 @@ public class CommandLineHandler : MonoBehaviour
         }
 
     }
+}
+
+[Serializable]
+public struct WebLogMessage
+{
+    private static readonly List<Task> k_AllTasks;
+    public string Message;
+
+    static WebLogMessage()
+    {
+        k_AllTasks = new List<Task>();
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + " " + Message;
+    }
+
+    public static void Log(string msg)
+    {
+        var webLog = new WebLogMessage();
+        webLog.Message = $"CommandLineHandler - {msg}";
+        var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
+        k_AllTasks.Add(t);
+    }
+
+    private static async Task PostBasicAsync(WebLogMessage content, CancellationToken cancellationToken)
+    {
+        Debug.Log("Trying to post to endpoint");
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
+        var json = JsonUtility.ToJson(content);
+        Debug.Log($"JSON version of {content} is {json}");
+        using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+        request.Content = stringContent;
+
+        using var response = await client
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        Debug.Log(response.StatusCode);
+    }
+
 }

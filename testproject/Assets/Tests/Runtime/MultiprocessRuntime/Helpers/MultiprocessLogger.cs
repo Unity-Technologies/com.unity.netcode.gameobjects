@@ -83,7 +83,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
             AllTasks.Add(t);
-
         }
 
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
