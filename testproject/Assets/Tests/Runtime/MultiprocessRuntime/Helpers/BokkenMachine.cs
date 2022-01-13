@@ -132,7 +132,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void CheckDirectoryStructure()
         {
-            MultiprocessLogger.Log("Did the setup complete correctly?")
+            MultiprocessLogger.Log("Did the setup complete correctly?");
             Process p = null;
             if (Image.Contains("win10"))
             {
