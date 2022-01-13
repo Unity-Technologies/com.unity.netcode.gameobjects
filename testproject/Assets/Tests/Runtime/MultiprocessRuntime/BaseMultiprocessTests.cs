@@ -186,6 +186,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         task.Wait();
                     }
 
+                    foreach (var machine in machines)
+                    {
+                        machine.CheckDirectoryStructure();
+                    }
+
 
                     foreach (var machine in machines)
                     {

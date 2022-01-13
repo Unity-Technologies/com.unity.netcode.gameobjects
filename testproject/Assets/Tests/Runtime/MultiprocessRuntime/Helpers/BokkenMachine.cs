@@ -130,6 +130,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ExecuteCommand(GenerateSetupMachineCommand(), true);
         }
 
+        public void CheckDirectoryStructure()
+        {
+            MultiprocessLogger.Log("Did the setup complete correctly?")
+            Process p = null;
+            if (Image.Contains("win10"))
+            {
+                p = ExecuteCommand("dir", true, true);
+            }
+            else
+            {
+                p = ExecuteCommand("ls", true, true);
+            }
+            
+        }
+
         public void Launch()
         {
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
