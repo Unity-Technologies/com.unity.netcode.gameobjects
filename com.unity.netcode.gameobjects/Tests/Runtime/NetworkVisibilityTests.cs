@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator HiddenObjectsTest()
+        public IEnumerator HiddenObjectsTest([Values] bool enableSeneManagement)
         {
 
             const int numClients = 1;
@@ -37,11 +37,11 @@ namespace Unity.Netcode.RuntimeTests
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_TestNetworkPrefab;
             server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            server.NetworkConfig.EnableSceneManagement = false;
+            server.NetworkConfig.EnableSceneManagement = enableSeneManagement;
             foreach (var client in clients)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-                client.NetworkConfig.EnableSceneManagement = false;
+                client.NetworkConfig.EnableSceneManagement = enableSeneManagement;
             }
 
             // Start the instances
