@@ -78,9 +78,9 @@ public class TestCoordinator : NetworkBehaviour
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         MultiprocessLogger.Log($"Transport is {transport.ToString()}");
-        if (!IsClient)
+        if (!isClient)
         {
-            // m_ConnectAddress = "0.0.0.0";
+            m_ConnectAddress = "0.0.0.0";
         }
         
         switch (transport)
@@ -96,7 +96,7 @@ public class TestCoordinator : NetworkBehaviour
                 }
                 break;
             case UnityTransport unityTransport:
-                MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}, IsClient: {IsClient}, Address {m_ConnectAddress}");
+                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {isClient}, Address {m_ConnectAddress}");
                 unityTransport.ConnectionData.Port = ushortport;
                 unityTransport.ConnectionData.Address = m_ConnectAddress;
                 break;

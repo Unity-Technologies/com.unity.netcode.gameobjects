@@ -281,7 +281,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 LogPath = Path.Combine(@"/Users/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
-                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -m client -logFile {LogPath} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
                 MultiprocessLogger.Log(s);
                 return s;
             }

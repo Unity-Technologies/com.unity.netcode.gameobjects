@@ -86,6 +86,7 @@ public class CommandLineProcessor
 
     public void ProcessCommandLine()
     {
+        WebLogMessage.Log("CommandLineHandler parsing args");
         if (m_CommandLineArguments.Count > 0)
         {
             bool isClient = Environment.GetCommandLineArgs().Any(value => value == "-isWorker");
@@ -120,6 +121,7 @@ public class CommandLineProcessor
 
             if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
             {
+                WebLogMessage.Log($"CommandLineHandler parsing -m as {netcodeValue}");
                 switch (netcodeValue)
                 {
                     case "server":
@@ -166,7 +168,6 @@ public class CommandLineProcessor
                 }
             }
             ProcessCommandLine();
-
         }
     }
 
