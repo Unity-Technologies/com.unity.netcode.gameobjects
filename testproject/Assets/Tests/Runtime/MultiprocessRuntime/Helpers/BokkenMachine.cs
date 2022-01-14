@@ -154,6 +154,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
             MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
+            s_ProcessList.Add(p);
+            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {s_ProcessList.Count}");
+            foreach (var process in s_ProcessList)
+            {
+                MultiprocessLogger.Log($"{process.StartTime} {process.HasExited}");
+            }
         }
 
         public void KillMptPlayer()
