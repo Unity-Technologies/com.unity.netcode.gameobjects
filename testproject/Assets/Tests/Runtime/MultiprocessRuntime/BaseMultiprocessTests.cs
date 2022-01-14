@@ -106,11 +106,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
-                MultiprocessLogger.LogError($"OnSceneLoaded: setting active scene");
+                MultiprocessLogger.Log($"OnSceneLoaded: setting active scene");
                 SceneManager.SetActiveScene(scene);
             }
 
-            MultiprocessLogger.LogError($"OnSceneLoaded: Starting host {((UnityTransport)transport).ConnectionData.Address}");
+            MultiprocessLogger.Log($"OnSceneLoaded: Starting host {((UnityTransport)transport).ConnectionData.Address}");
             NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
@@ -191,11 +191,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                     foreach (var machine in machines)
                     {
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList}");
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete");
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList}");
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList.Count}");
                     }
                 }
             }
