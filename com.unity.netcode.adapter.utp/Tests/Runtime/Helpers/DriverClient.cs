@@ -36,7 +36,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         private void Awake()
         {
 
-            var maxCap = UnityTransport.InitialBatchQueueSize + 128;
+            var maxCap = UnityTransport.InitialMaxPayloadSize + 128;
 
             var settings = new NetworkSettings();
             settings.WithFragmentationStageParameters(payloadCapacity: maxCap);
