@@ -104,18 +104,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
             }
 
-
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
+                MultiprocessLogger.LogError($"OnSceneLoaded: setting active scene");
                 SceneManager.SetActiveScene(scene);
             }
 
-
+            MultiprocessLogger.LogError($"OnSceneLoaded: Starting host {((UnityTransport)transport).ConnectionData.Address}");
             NetworkManager.Singleton.StartHost();
-
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
-
             m_HasSceneLoaded = true;
         }
 
@@ -143,7 +141,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
 
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-
 
             MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
 
@@ -194,9 +191,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                     foreach (var machine in machines)
                     {
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList}");
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete");
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList}");
                     }
                 }
             }

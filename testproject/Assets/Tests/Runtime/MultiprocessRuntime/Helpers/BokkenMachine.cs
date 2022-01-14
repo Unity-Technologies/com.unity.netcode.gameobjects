@@ -24,7 +24,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static string s_Rootdir;
         public static string PathToDll { get; private set; }
 
-        private static List<Process> s_ProcessList = new List<Process>();
+        public static List<Process> ProcessList = new List<Process>();
 
         static BokkenMachine()
         {
@@ -36,7 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void DumpProcessList()
         {
-            foreach (Process process in s_ProcessList)
+            foreach (Process process in ProcessList)
             {
                 MultiprocessLogger.Log($"Process info: id: {process.Id} HasExited: {process.HasExited} {process.StartInfo.Arguments}");
             }
@@ -152,13 +152,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Launch()
         {
+            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
             MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
-            s_ProcessList.Add(p);
-            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {s_ProcessList.Count}");
-            foreach (var process in s_ProcessList)
+            ProcessList.Add(p);
+            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
+            foreach (var process in ProcessList)
             {
-                MultiprocessLogger.Log($"{process.StartTime} {process.HasExited}");
+                MultiprocessLogger.Log($"BokkenMachine process list item status: {process.StartTime} {process.HasExited}");
             }
         }
 
@@ -233,7 +234,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else
             {
-                s_ProcessList.Add(workerProcess);
+                ProcessList.Add(workerProcess);
             }
             MultiprocessLogger.Log($"Execute Command End");
             return workerProcess;
