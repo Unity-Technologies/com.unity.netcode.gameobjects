@@ -94,7 +94,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            UnityEngine.Debug.Log(response.StatusCode);
         }
     }
 
