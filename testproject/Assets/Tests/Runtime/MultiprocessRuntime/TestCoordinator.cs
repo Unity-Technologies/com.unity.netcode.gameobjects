@@ -37,7 +37,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
-    private string m_ConnectAddress = "0.0.0.0";
+    private string m_ConnectAddress = "127.0.0.1";
     private string m_Port = "3076";
 
     private void Awake()
