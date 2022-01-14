@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
+- Disallowed async keyword in RPCs (1587)
 
 ### Changed
 
