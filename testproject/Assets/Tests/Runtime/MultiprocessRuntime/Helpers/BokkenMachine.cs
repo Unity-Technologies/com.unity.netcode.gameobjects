@@ -134,13 +134,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log("Did the setup complete correctly?");
             Process p = null;
+            string cmd = $" --command exec --input-path {PathToJson} --remote-command ";
             if (Image.Contains("win10"))
             {
-                p = ExecuteCommand("dir", true, true);
+                p = ExecuteCommand(cmd + "dir", true, true);
             }
             else
             {
-                p = ExecuteCommand("ls", true, true);
+                p = ExecuteCommand(cmd + "ls", true, true);
             }
             
         }
@@ -247,6 +248,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             string s = $" --command setupmachine --input-path {PathToJson}";
+            MultiprocessLogger.Log(s);
             return s;
         }
 

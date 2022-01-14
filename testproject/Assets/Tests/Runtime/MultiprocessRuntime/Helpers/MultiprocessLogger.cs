@@ -74,12 +74,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 method3 = st.GetFrame(3).GetMethod().Name;
             }
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
-            var webLog = new WebLog();
-            UnityEngine.Debug.Log($"args is {args.Length} {args[0]}");
+            var webLog = new WebLog();            
             webLog.Message = args[0].ToString();
-            
             string json = JsonUtility.ToJson(webLog);
-            UnityEngine.Debug.Log($"JSON version of {webLog} is {json}");
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
             AllTasks.Add(t);
@@ -87,12 +84,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
         {
-            UnityEngine.Debug.Log("test");
-            UnityEngine.Debug.Log("Trying to post to endpoint");
             using var client = new HttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
             var json = JsonUtility.ToJson(content);
-            UnityEngine.Debug.Log($"JSON version of {content} is {json}");
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
             
