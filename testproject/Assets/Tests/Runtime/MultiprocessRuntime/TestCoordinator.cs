@@ -80,7 +80,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Transport is {transport.ToString()}");
         if (!IsClient)
         {
-            m_ConnectAddress = "0.0.0.0";
+            // m_ConnectAddress = "0.0.0.0";
         }
         
         switch (transport)
