@@ -382,7 +382,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                m_Diagnostics.AddWarning($"{methodDefinition.FullName} {methodDefinition.DebugInformation.SequencePoints.Count}");
                 var rpcAttribute = CheckAndGetRpcAttribute(methodDefinition);
                 if (rpcAttribute == null)
                 {
