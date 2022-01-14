@@ -382,6 +382,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
+                m_Diagnostics.AddWarning($"{methodDefinition.FullName} {methodDefinition.DebugInformation.SequencePoints.Count}");
                 var rpcAttribute = CheckAndGetRpcAttribute(methodDefinition);
                 if (rpcAttribute == null)
                 {
@@ -392,6 +393,17 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (rpcMethodId == 0)
                 {
                     continue;
+                }
+
+                if (methodDefinition.HasCustomAttributes)
+                {
+                    foreach (var attribute in methodDefinition.CustomAttributes)
+                    {
+                        if (attribute.AttributeType.Name == nameof(AsyncStateMachineAttribute))
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.FullName}: RPCs cannot be 'async'");
+                        }
+                    }
                 }
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, rpcMethodId);
@@ -937,14 +949,14 @@ namespace Unity.Netcode.Editor.CodeGen
                     if (paramType.FullName == CodeGenHelpers.ClientRpcSendParams_FullName ||
                         paramType.FullName == CodeGenHelpers.ClientRpcReceiveParams_FullName)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
+                        m_Diagnostics.AddError(methodDefinition, $"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.ServerRpcSendParams_FullName ||
                         paramType.FullName == CodeGenHelpers.ServerRpcReceiveParams_FullName)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
+                        m_Diagnostics.AddError(methodDefinition, $"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
                         continue;
                     }
                     // ServerRpcParams
@@ -956,7 +968,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                         if (!isServerRpc)
                         {
-                            m_Diagnostics.AddError($"ClientRpcs may not accept {nameof(ServerRpcParams)} as a parameter.");
+                            m_Diagnostics.AddError(methodDefinition, $"ClientRpcs may not accept {nameof(ServerRpcParams)} as a parameter.");
                         }
                         continue;
                     }
@@ -969,7 +981,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                         if (isServerRpc)
                         {
-                            m_Diagnostics.AddError($"ServerRpcs may not accept {nameof(ClientRpcParams)} as a parameter.");
+                            m_Diagnostics.AddError(methodDefinition, $"ServerRpcs may not accept {nameof(ClientRpcParams)} as a parameter.");
                         }
                         continue;
                     }
