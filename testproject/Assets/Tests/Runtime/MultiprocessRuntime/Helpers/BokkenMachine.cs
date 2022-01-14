@@ -90,7 +90,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// </summary>
         public void Provision()
         {
-            ExecuteCommand(GenerateCreateCommand(), false);
+            MultiprocessLogger.Log($"Provision start {Name}");
+            ExecuteCommand(GenerateCreateCommand(), true);
+            MultiprocessLogger.Log($"Provision end {Name}");
         }
 
         public static void DisposeResources()
@@ -127,7 +129,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // 3. Enable the firewall rules, etc. to allow to run
         public void Setup()
         {
+            MultiprocessLogger.Log($"Setup start {Name}");
             ExecuteCommand(GenerateSetupMachineCommand(), true);
+            MultiprocessLogger.Log($"Setup end {Name}");
         }
 
         public void CheckDirectoryStructure()
