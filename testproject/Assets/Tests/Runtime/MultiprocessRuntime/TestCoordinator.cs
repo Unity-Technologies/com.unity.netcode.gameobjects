@@ -78,10 +78,15 @@ public class TestCoordinator : NetworkBehaviour
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         MultiprocessLogger.Log($"Transport is {transport.ToString()}");
-        MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}, IsClient: {IsClient}, Address {m_ConnectAddress}");
+        if (!IsClient)
+        {
+            m_ConnectAddress = "0.0.0.0";
+        }
+        
         switch (transport)
         {
             case UNetTransport unetTransport:
+                MultiprocessLogger.Log("ERROR - UNetTransport should not be the transport in this case");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (isClient)
@@ -91,6 +96,7 @@ public class TestCoordinator : NetworkBehaviour
                 }
                 break;
             case UnityTransport unityTransport:
+                MultiprocessLogger.Log($"Setting ConnectPort and ServerListenPort {ushortport}, IsClient: {IsClient}, Address {m_ConnectAddress}");
                 unityTransport.ConnectionData.Port = ushortport;
                 unityTransport.ConnectionData.Address = m_ConnectAddress;
                 break;
