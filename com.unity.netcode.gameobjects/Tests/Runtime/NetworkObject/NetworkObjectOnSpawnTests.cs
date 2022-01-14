@@ -77,7 +77,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance

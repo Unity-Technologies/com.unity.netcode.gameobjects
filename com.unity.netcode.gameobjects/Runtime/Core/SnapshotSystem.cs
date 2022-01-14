@@ -168,10 +168,18 @@ namespace Unity.Netcode
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
 
+        // The following handlers decouple SnapshotSystem from its dependencies
+
+        // Handler that is called by SnapshotSystem to send a SnapshotMessage.
         internal SendMessageHandler SendMessage;
+        // Handlers that are called by SnapshotSystem to spawn an object locally.
+        // The pre- version is called first, to allow the SDK to create the object.
+        // The post- version is called later, after reading the initial values of the NetworkVariable an object contains
         internal SpawnObjectHandler PreSpawnObject;
         internal SpawnObjectHandler PostSpawnObject;
+        // Handler that is called by SnapshotSystem to despawn an object locally.
         internal DespawnObjectHandler DespawnObject;
+        // Handler that is called by SnapshotSystem to obtain a specific NetworkBehaviour and NetworkVariable.
         internal GetBehaviourVariableHandler GetBehaviourVariable;
 
         // Property showing visibility into inner workings, for testing
@@ -268,7 +276,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Called by SnapshotSystem, to spawn an object locally
-        /// todo: consider observer pattern
+        /// In the pre- phase, we trigger the object creation and call
+        /// PreSpawnNetworkObjectLocallyCommon which trigger internal things like creating the NetworkVariables
         /// </summary>
         internal void NetworkPreSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
         {
@@ -293,6 +302,12 @@ namespace Unity.Netcode
             m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
         }
 
+        /// <summary>
+        /// Called by SnapshotSystem, to spawn an object locally
+        /// In the post- phase, we call PostSpawnNetworkObjectLocallyCommon
+        /// which will notify the game code. This is done in two steps as it needs to happen after the object's
+        /// NetworkVariables have been read
+        /// </summary>
         internal void NetworkPostSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
         {
             if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(spawnCommand.NetworkObjectId,
@@ -733,8 +748,16 @@ namespace Unity.Netcode
                 message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
                 message.ReadBuffer.ReadValue(out updateCommand);
 
-                //NetworkVariableBase variable;
+                // Find the network variable;
                 GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
+
+                if (variable == null)
+                {
+                    Debug.LogError($"Could not find NetworkVariable for " +
+                                   $"Object {updateCommand.NetworkObjectId} " +
+                                   $"Behaviour {updateCommand.BehaviourIndex} " +
+                                   $"Variable {updateCommand.VariableIndex}");
+                }
 
                 if (updateCommand.TickWritten > variable.TickRead)
                 {
