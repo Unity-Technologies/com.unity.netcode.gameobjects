@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     [TestFixture(1, new string[] { "default-win:test-win" })]
-    [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac-2", "default-win:test-win-2" })]
+    [TestFixture(2, new string[] { "default-win:test-win", "default-win:test-win-2" })]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
