@@ -205,20 +205,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
+            int counter = 0;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
+                counter++;
                 yield return new WaitForSeconds(0.2f);
-                MultiprocessLogger.Log($"Timeout if {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {NetworkManager.Singleton.ConnectedClients.Count} > {WorkerCount}");
+                if (counter % 5 == 0)
+                {
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {NetworkManager.Singleton.ConnectedClients.Count} > {WorkerCount}");
+                }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    throw new Exception($"Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
-            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
-            MultiprocessLogger.Log("Setup completed");
+            MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} while waiting for WorkerCount {WorkerCount}");
         }
-
 
         [TearDown]
         public virtual void Teardown()
