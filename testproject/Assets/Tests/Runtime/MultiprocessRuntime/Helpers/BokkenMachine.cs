@@ -38,7 +38,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             foreach (Process process in ProcessList)
             {
-                MultiprocessLogger.Log($"Process info: id: {process.Id} HasExited: {process.HasExited} {process.StartInfo.Arguments}");
+                MultiprocessLogger.Log($"Process info: id: {process.Id} HasExited: {process.HasExited}");
+                if (!process.HasExited)
+                {
+                    MultiprocessLogger.Log($"Process arguments: {process.StartInfo.Arguments}");
+                }
             }
         }
 
