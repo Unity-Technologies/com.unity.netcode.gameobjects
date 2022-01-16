@@ -64,12 +64,13 @@ public class MultiprocessOrchestration
 
     public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
+        MultiprocessLogger.Log("ProvisionWorkerNode - Start");
         var bokkenMachine = BokkenMachine.Parse(platformString);
         bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, $"{bokkenMachine.Name}.json");
         var fi = new FileInfo(bokkenMachine.PathToJson);
         if (!fi.Exists)
         {
-            MultiprocessLogger.Log($"Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
+            MultiprocessLogger.Log($"WARNING: Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
             bokkenMachine.Provision();
             bokkenMachine.Setup();
         }
@@ -78,6 +79,7 @@ public class MultiprocessOrchestration
             MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists, just kill any old processes");
             bokkenMachine.KillMptPlayer();
         }
+        MultiprocessLogger.Log("ProvisionWorkerNode - Complete");
         return bokkenMachine;
     }
 
