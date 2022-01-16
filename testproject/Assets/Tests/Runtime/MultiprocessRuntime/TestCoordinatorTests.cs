@@ -70,14 +70,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckTestCoordinatorWithArgs()
         {
+            MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - Start");
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
             for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
             {
+                MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - WaitUntil ResultIsSet, or timeout {i} of {WorkerCount}");
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
                 var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - ConsumeCurrentResult {clientId} {result}");
                 Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }
