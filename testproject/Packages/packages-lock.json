@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.6.0",
+      "version": "1.6.2",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -17,12 +17,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "1.0.0-pre.5",
+      "version": "1.1.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
-        "com.unity.test-framework": "1.1.22"
+        "com.unity.test-framework": "1.1.29"
       },
       "url": "https://packages.unity.com"
     },
@@ -34,7 +34,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.7",
+      "version": "3.0.10",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -43,7 +43,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.11",
+      "version": "2.0.12",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -52,14 +52,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.vscode": {
-      "version": "1.2.3",
+      "version": "1.2.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.1",
+      "version": "1.2.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -70,8 +70,9 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.3",
-        "com.unity.transport": "1.0.0-pre.7"
+        "com.unity.burst": "1.6.2",
+        "com.unity.netcode.gameobjects": "1.0.0-pre.4",
+        "com.unity.transport": "1.0.0-pre.10"
       }
     },
     "com.unity.netcode.gameobjects": {
@@ -79,10 +80,11 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.modules.ai": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.0.0-pre.5",
+        "com.unity.collections": "1.1.0",
         "com.unity.test-framework.performance": "2.8.0-preview"
       }
     },
@@ -101,7 +103,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.package-validation-suite": {
-      "version": "0.21.0-preview",
+      "version": "0.23.4-preview",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -121,11 +123,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.services.core": {
-      "version": "1.1.0-pre.8",
+      "version": "1.1.0-pre.41",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.unitywebrequest": "1.0.0"
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "2.0.0"
       },
       "url": "https://packages.unity.com"
     },
@@ -146,7 +149,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.1.29",
+      "version": "1.1.30",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -188,11 +191,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.7",
-      "depth": 1,
+      "version": "1.0.0-pre.10",
+      "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.collections": "1.0.0-pre.5",
+        "com.unity.collections": "1.1.0",
         "com.unity.burst": "1.5.5",
         "com.unity.mathematics": "1.2.1"
       },
