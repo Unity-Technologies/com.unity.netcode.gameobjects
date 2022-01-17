@@ -124,6 +124,42 @@ namespace Unity.Netcode.UTP.EditorTests
         }
 
         [Test]
+        public void BatchedReceiveQueue_PushReader_ToPartiallyFilledQueue()
+        {
+            var dataLength = sizeof(int) + 1;
+
+            var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            var writer = new DataStreamWriter(data);
+            writer.WriteInt(1);
+            writer.WriteByte((byte)42);
+
+            var reader = new DataStreamReader(data);
+            var q = new BatchedReceiveQueue(reader);
+
+            reader = new DataStreamReader(data);
+            q.PushReader(reader);
+
+            var message = q.PopMessage();
+            Assert.AreEqual(1, message.Count);
+            Assert.AreEqual((byte)42, message.Array[message.Offset]);
+
+            reader = new DataStreamReader(data);
+            q.PushReader(reader);
+
+            message = q.PopMessage();
+            Assert.AreEqual(1, message.Count);
+            Assert.AreEqual((byte)42, message.Array[message.Offset]);
+
+            message = q.PopMessage();
+            Assert.AreEqual(1, message.Count);
+            Assert.AreEqual((byte)42, message.Array[message.Offset]);
+
+            Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
+            Assert.True(q.IsEmpty);
+        }
+
+        [Test]
         public void BatchedReceiveQueue_PushReader_ToEmptyQueue()
         {
             var dataLength = sizeof(int) + 1;
