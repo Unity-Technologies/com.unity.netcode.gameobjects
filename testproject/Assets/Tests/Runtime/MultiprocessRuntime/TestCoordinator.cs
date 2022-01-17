@@ -142,8 +142,8 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
         else
-        {
-            MultiprocessLogger.Log($"isClient {IsClient} IsConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
+        {            
+            MultiprocessLogger.Log($"{Environment.OSVersion.Platform} {Environment.OSVersion.VersionString} isClient {IsClient} IsConnectedClient  {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 

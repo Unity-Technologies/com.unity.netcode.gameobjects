@@ -9,6 +9,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [TestFixture(1, new string[] { "default-win:test-win" })]
     [TestFixture(1, new string[] { "default-mac:test-mac" })]
     [TestFixture(2, new string[] { "default-win:test-win", "default-win:test-mac" })]
+    [TestFixture(2, new string[] { "default-win:test-win", "default-win:test-win2" })]
+    [TestFixture(2, new string[] { "default-win:test-mac2", "default-win:test-mac" })]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
