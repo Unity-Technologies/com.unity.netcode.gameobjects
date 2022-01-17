@@ -216,7 +216,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 counter++;
                 yield return new WaitForSeconds(0.2f);
-                if (counter % 5 == 0)
+                if (counter % 7 == 0)
                 {
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {NetworkManager.Singleton.ConnectedClients.Count} > {WorkerCount}");
                 }

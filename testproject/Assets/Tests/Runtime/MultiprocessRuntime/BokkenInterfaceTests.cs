@@ -7,10 +7,10 @@ using UnityEngine.TestTools;
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     [TestFixture(1, new string[] { "default-win:test-win" })]
-    [TestFixture(1, new string[] { "default-mac:test-mac" })]
-    [TestFixture(2, new string[] { "default-win:test-win", "default-win:test-mac" })]
-    [TestFixture(2, new string[] { "default-win:test-win", "default-win:test-win2" })]
-    [TestFixture(2, new string[] { "default-win:test-mac2", "default-win:test-mac" })]
+    [TestFixture(2, new string[] { "default-mac:test-mac" })]
+    [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
+    [TestFixture(4, new string[] { "default-win:test-win", "default-win:test-win2" })]
+    [TestFixture(5, new string[] { "default-mac:test-mac2", "default-mac:test-mac" })]
     public class BokkenInterfaceTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
@@ -24,7 +24,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public BokkenInterfaceTests(int workerCount, string[] platformList)
         {
-            m_WorkerCount = workerCount;
+            m_WorkerCount = platformList.Length;
             m_Platforms = platformList;
         }
 
