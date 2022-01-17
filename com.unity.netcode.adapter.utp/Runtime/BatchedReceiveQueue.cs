@@ -33,6 +33,33 @@ namespace Unity.Netcode.UTP.Utilities
             m_Offset = 0;
         }
 
+        /// <summary>
+        /// Push the entire data from a <see cref="DataStreamReader"/> (as returned by popping an
+        /// event from a <see cref="NetworkDriver">) to the queue.
+        /// </summary>
+        /// <param name="reader">The <see cref="DataStreamReader"/> to push the data of.</param>
+        public void PushReader(DataStreamReader reader)
+        {
+            // Move data (if any) at the beginning of the array before resizing.
+            var currentLength = Length;
+            if (currentLength > 0)
+            {
+                Array.Copy(m_Data, m_Offset, m_Data, 0, currentLength);
+            }
+
+            Array.Resize<byte>(ref m_Data, currentLength + reader.Length);
+
+            unsafe
+            {
+                fixed (byte* dataPtr = m_Data)
+                {
+                    reader.ReadBytes(dataPtr + currentLength, reader.Length);
+                }
+            }
+
+            m_Offset = 0;
+        }
+
         /// <summary>Pop the next full message in the queue.</summary>
         /// <returns>The message, or the default value if no more full messages.</returns>
         public ArraySegment<byte> PopMessage()
