@@ -44,10 +44,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
             if (!long.TryParse(sJobId, out JobId))
             {
-                JobId = -1;
+                JobId = -2;
             }
-
-
         }
 
         public void LogException(Exception exception, UnityEngine.Object context)
@@ -84,7 +82,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             var webLog = new WebLog();            
             webLog.Message = $"{testName} {args[0].ToString()}";
-
+            webLog.ReferenceId = JobId;
             string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
@@ -110,7 +108,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public struct WebLog
     {
         public string Message;
-        public long referenceId;
+        public long ReferenceId;
 
         public override string ToString()
         {
