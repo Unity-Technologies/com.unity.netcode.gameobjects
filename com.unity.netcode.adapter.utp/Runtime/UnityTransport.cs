@@ -438,7 +438,7 @@ namespace Unity.Netcode
                     return;
                 }
 
-                var written = queue.FillWriter(ref writer);
+                var written = queue.FillWriterWithMessages(ref writer);
 
                 result = m_Driver.EndSend(writer);
                 if (result == written)

@@ -134,10 +134,13 @@ namespace Unity.Netcode.UTP.Utilities
         /// does not reduce the length of the queue. Callers are expected to call
         /// <see cref="Consume"/> with the value returned by this method afterwards if the data can
         /// be safely removed from the queue (e.g. if it was sent successfully).
+        ///
+        /// This method should not be used together with <see cref="FillWriterWithBytes"> since this
+        /// could lead to a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriter(ref DataStreamWriter writer)
+        public int FillWriterWithMessages(ref DataStreamWriter writer)
         {
             if (!IsCreated || Length == 0)
             {
@@ -174,6 +177,47 @@ namespace Unity.Netcode.UTP.Utilities
 
                 return writer.Capacity - writerAvailable;
             }
+        }
+
+        /// <summary>
+        /// Fill the given <see cref="DataStreamWriter"/> with the given number of bytes from the
+        /// queue (or less if the data in the queue or the capacity of the writer is less).
+        /// </summary>
+        ///<remarks>
+        /// This does NOT actually consume anything from the queue. That is, calling this method
+        /// does not reduce the length of the queue. Callers are expected to call
+        /// <see cref="Consume"/> with the value returned by this method afterwards if the data can
+        /// be safely removed from the queue (e.g. if it was sent successfully).
+        ///
+        /// This method should not be used together with <see cref="FillWriterWithMessages"/> since
+        /// this could lead to reading messages from a corrupted queue.
+        /// </remarks>
+        /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
+        /// <param name="amount">Number of bytes to copy to the writer.</param>
+        /// <returns>How many bytes were written to the writer.</returns>
+        public int FillWriterWithBytes(ref DataStreamWriter writer, int amount)
+        {
+            if (!IsCreated || Length == 0)
+            {
+                return 0;
+            }
+
+            if (amount > Length)
+            {
+                amount = Length;
+            }
+
+            if (amount > writer.Capacity)
+            {
+                amount = writer.Capacity;
+            }
+
+            unsafe
+            {
+                writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, amount);
+            }
+
+            return amount;
         }
 
         /// <summary>Consume a number of bytes from the head of the queue.</summary>
