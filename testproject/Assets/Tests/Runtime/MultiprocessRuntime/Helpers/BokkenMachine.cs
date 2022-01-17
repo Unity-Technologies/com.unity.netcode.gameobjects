@@ -161,9 +161,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
             ProcessList.Add(p);
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
+            int counter = 0;
             foreach (var process in ProcessList)
             {
-                MultiprocessLogger.Log($"BokkenMachine process list item status: {process.StartTime} {process.HasExited}");
+                counter++;
+                MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime} {process.HasExited}");
             }
         }
 

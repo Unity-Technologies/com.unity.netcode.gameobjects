@@ -189,14 +189,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         machine.CheckDirectoryStructure();
                     }
 
+                    MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {NetworkManager.Singleton.ConnectedClients.Count}"
+                        + $" by launching {machines.Count} new instances");
 
                     foreach (var machine in machines)
                     {
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList.Count}");
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete");
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count {BokkenMachine.ProcessList.Count}");
+                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
                 }
             }
@@ -206,10 +208,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
+            MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             int counter = 0;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 counter++;
+                MultiprocessLogger.Log($"Wait for 0.2f seconds");
                 yield return new WaitForSeconds(0.2f);
                 if (counter % 5 == 0)
                 {
