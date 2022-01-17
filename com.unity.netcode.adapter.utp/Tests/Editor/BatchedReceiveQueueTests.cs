@@ -72,5 +72,22 @@ namespace Unity.Netcode.UTP.EditorTests
             Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
             Assert.True(q.IsEmpty);
         }
+
+        [Test]
+        public void BatchedReceiveQueue_PartialMessage()
+        {
+            var dataLength = sizeof(int);
+
+            var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            var writer = new DataStreamWriter(data);
+            writer.WriteInt(42);
+
+            var reader = new DataStreamReader(data);
+            var q = new BatchedReceiveQueue(reader);
+
+            Assert.False(q.IsEmpty);
+            Assert.AreEqual(default(ArraySegment<byte>), q.PopMessage());
+        }
     }
 }

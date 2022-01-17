@@ -10,6 +10,8 @@ namespace Unity.Netcode.UTP.Utilities
         private byte[] m_Data;
         private int m_Offset;
 
+        private int Length => m_Data.Length - m_Offset;
+
         public bool IsEmpty => m_Offset >= m_Data.Length;
 
         /// <summary>
@@ -31,17 +33,23 @@ namespace Unity.Netcode.UTP.Utilities
             m_Offset = 0;
         }
 
-        /// <summary>Pop the next message in the queue.</summary>
-        /// <returns>The message, or the default value if no more messages.</returns>
+        /// <summary>Pop the next full message in the queue.</summary>
+        /// <returns>The message, or the default value if no more full messages.</returns>
         public ArraySegment<byte> PopMessage()
         {
-            if (IsEmpty)
+            if (Length < sizeof(int))
             {
                 return default;
             }
 
             var messageLength = BitConverter.ToInt32(m_Data, m_Offset);
             m_Offset += sizeof(int);
+
+            if (Length < messageLength)
+            {
+                m_Offset -= sizeof(int);
+                return default;
+            }
 
             var data = new ArraySegment<byte>(m_Data, m_Offset, messageLength);
             m_Offset += messageLength;
