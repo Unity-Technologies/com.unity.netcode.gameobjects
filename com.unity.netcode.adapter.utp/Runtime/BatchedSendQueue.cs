@@ -180,8 +180,8 @@ namespace Unity.Netcode.UTP.Utilities
         }
 
         /// <summary>
-        /// Fill the given <see cref="DataStreamWriter"/> with the given number of bytes from the
-        /// queue (or less if the data in the queue or the capacity of the writer is less).
+        /// Fill the given <see cref="DataStreamWriter"/> with as many bytes from the queue as
+        /// possible, disregarding message boundaries.
         /// </summary>
         ///<remarks>
         /// This does NOT actually consume anything from the queue. That is, calling this method
@@ -193,31 +193,22 @@ namespace Unity.Netcode.UTP.Utilities
         /// this could lead to reading messages from a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
-        /// <param name="amount">Number of bytes to copy to the writer.</param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriterWithBytes(ref DataStreamWriter writer, int amount)
+        public int FillWriterWithBytes(ref DataStreamWriter writer)
         {
             if (!IsCreated || Length == 0)
             {
                 return 0;
             }
 
-            if (amount > Length)
-            {
-                amount = Length;
-            }
-
-            if (amount > writer.Capacity)
-            {
-                amount = writer.Capacity;
-            }
+            var copyLength = Math.Min(writer.Capacity, Length);
 
             unsafe
             {
-                writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, amount);
+                writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
             }
 
-            return amount;
+            return copyLength;
         }
 
         /// <summary>Consume a number of bytes from the head of the queue.</summary>

@@ -177,11 +177,11 @@ namespace Unity.Netcode.UTP.EditorTests
             using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
 
             var writer = new DataStreamWriter(data);
-            Assert.AreEqual(0, q.FillWriterWithBytes(ref writer, k_TestQueueCapacity));
+            Assert.AreEqual(0, q.FillWriterWithBytes(ref writer));
         }
 
         [Test]
-        public void BatchedSendQueue_FillWriterWithBytes_AmountMoreThanLength()
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityMoreThanLength()
         {
             var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
 
@@ -191,43 +191,12 @@ namespace Unity.Netcode.UTP.EditorTests
             q.PushMessage(m_TestMessage);
 
             var writer = new DataStreamWriter(data);
-            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer, k_TestQueueCapacity));
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
             AssertIsTestMessage(data);
         }
 
         [Test]
-        public void BatchedSendQueue_FillWriterWithBytes_AmountLessThanLength()
-        {
-            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
-
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer, dataLength));
-            AssertIsTestMessage(data);
-        }
-
-        [Test]
-        public void BatchedSendQueue_FillWriterWithBytes_AmountEqualToLength()
-        {
-            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
-
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer, dataLength));
-            AssertIsTestMessage(data);
-        }
-
-        [Test]
-        public void BatchedSendQueue_FillWriterWithBytes_AmountMoreThanWriterCapacity()
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityLessThanLength()
         {
             var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
 
@@ -238,7 +207,22 @@ namespace Unity.Netcode.UTP.EditorTests
             q.PushMessage(m_TestMessage);
 
             var writer = new DataStreamWriter(data);
-            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer, k_TestQueueCapacity));
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
+            AssertIsTestMessage(data);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityEqualToLength()
+        {
+            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
             AssertIsTestMessage(data);
         }
 
