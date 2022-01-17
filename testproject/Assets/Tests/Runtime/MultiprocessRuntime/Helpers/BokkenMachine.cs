@@ -159,7 +159,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
             MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
-            ProcessList.Add(p);
+            if (!ProcessList.Contains(p))
+            {
+                ProcessList.Add(p);
+            }
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             int counter = 0;
             var deletionList = new List<Process>();
