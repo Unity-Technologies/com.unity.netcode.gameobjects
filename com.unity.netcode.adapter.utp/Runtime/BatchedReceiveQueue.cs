@@ -8,10 +8,9 @@ namespace Unity.Netcode.UTP.Utilities
     internal class BatchedReceiveQueue
     {
         private byte[] m_Data;
-        private DataStreamReader m_Reader;
-        private int m_ReaderOffset;
+        private int m_Offset;
 
-        public bool IsEmpty => m_ReaderOffset >= m_Reader.Length;
+        public bool IsEmpty => m_Offset >= m_Data.Length;
 
         /// <summary>
         /// Construct a new receive queue from a <see cref="DataStreamReader"/> returned by
@@ -29,8 +28,7 @@ namespace Unity.Netcode.UTP.Utilities
                 }
             }
 
-            m_Reader = reader;
-            m_ReaderOffset = 0;
+            m_Offset = 0;
         }
 
         /// <summary>Pop the next message in the queue.</summary>
@@ -42,13 +40,11 @@ namespace Unity.Netcode.UTP.Utilities
                 return default;
             }
 
-            m_Reader.SeekSet(m_ReaderOffset);
+            var messageLength = BitConverter.ToInt32(m_Data, m_Offset);
+            m_Offset += sizeof(int);
 
-            var messageLength = m_Reader.ReadInt();
-            m_ReaderOffset += sizeof(int);
-
-            var data = new ArraySegment<byte>(m_Data, m_ReaderOffset, messageLength);
-            m_ReaderOffset += messageLength;
+            var data = new ArraySegment<byte>(m_Data, m_Offset, messageLength);
+            m_Offset += messageLength;
 
             return data;
         }
