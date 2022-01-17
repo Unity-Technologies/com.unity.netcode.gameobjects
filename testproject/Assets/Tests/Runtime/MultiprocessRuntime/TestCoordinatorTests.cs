@@ -84,7 +84,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }
+            MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End for loop");
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
+            MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End of test");
         }
     }
 }

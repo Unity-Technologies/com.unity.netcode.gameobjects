@@ -36,10 +36,18 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         private static HttpClient s_HttpClient = new HttpClient();
         public static List<Task> AllTasks;
+        public static long JobId;
 
         static MultiprocessLogHandler()
         {
             AllTasks = new List<Task>();
+            string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
+            if (!long.TryParse(sJobId, out JobId))
+            {
+                JobId = -1;
+            }
+
+
         }
 
         public void LogException(Exception exception, UnityEngine.Object context)
@@ -76,6 +84,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             var webLog = new WebLog();            
             webLog.Message = $"{testName} {args[0].ToString()}";
+
             string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
@@ -100,7 +109,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [Serializable]
     public struct WebLog
     {
-        public string Message;        
+        public string Message;
+        public long referenceId;
 
         public override string ToString()
         {
