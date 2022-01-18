@@ -10,6 +10,8 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Fixed
 
+- Lifted the limit of ~44KB for reliable payloads. Attempting to send a payload larger than that with reliable delivery would silently fail. Note that it is still not recommended to send such large reliable payloads, since their delivery could take a few network round-trips.
+
 ## [1.0.0-pre.4] - 2022-01-04
 
 ### Added
