@@ -54,7 +54,7 @@ namespace Unity.Netcode.UTP.Utilities
 
                 while (m_Data.Length - m_Length < reader.Length)
                 {
-                    Array.Resize<byte>(ref m_Data, m_Data.Length * 2);
+                    Array.Resize(ref m_Data, m_Data.Length * 2);
                 }
             }
 
