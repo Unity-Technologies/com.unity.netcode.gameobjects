@@ -136,7 +136,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
+            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialMaxPayloadSize]);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
@@ -171,7 +171,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return new WaitForSeconds(numSends * 0.02f);
 
             // Extra event is the connect event.
-            Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
+            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
 
             for (int i = 1; i <= numSends; i++)
             {
