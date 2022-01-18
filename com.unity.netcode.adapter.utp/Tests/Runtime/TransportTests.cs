@@ -128,7 +128,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
 
-            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialBatchQueueSize]);
+            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialMaxPayloadSize]);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
