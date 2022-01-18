@@ -175,7 +175,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return new WaitForSeconds(numSends * 0.02f);
 
             // Extra event is the connect event.
-            Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
+            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
 
             for (int i = 1; i <= numSends; i++)
             {
