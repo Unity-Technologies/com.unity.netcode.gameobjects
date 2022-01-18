@@ -1453,7 +1453,7 @@ namespace Unity.Netcode
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
             // else
-            if(clientIds.Count != 1 || clientIds[0] != ServerClientId)
+            if (clientIds.Count != 1 || clientIds[0] != ServerClientId)
             {
                 throw new ArgumentException($"Clients may only send messages to {nameof(ServerClientId)}");
             }
@@ -1487,7 +1487,7 @@ namespace Unity.Netcode
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
             // else
-            if(numClientIds != 1 || clientIds[0] != ServerClientId)
+            if (numClientIds != 1 || clientIds[0] != ServerClientId)
             {
                 throw new ArgumentException($"Clients may only send messages to {nameof(ServerClientId)}");
             }
