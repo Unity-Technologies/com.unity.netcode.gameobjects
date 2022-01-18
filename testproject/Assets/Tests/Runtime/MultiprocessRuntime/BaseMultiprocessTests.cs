@@ -250,6 +250,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log("Fetching log files");
                 BokkenMachine.FetchAllLogFiles();
                 MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
+                MultiprocessLogger.Flush();
             }
 
             TestCoordinator.Instance.TestRunTeardown();            

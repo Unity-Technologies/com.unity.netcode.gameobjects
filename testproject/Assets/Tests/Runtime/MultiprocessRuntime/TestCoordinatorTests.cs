@@ -70,6 +70,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator CheckTestCoordinatorWithArgs()
         {
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - Start");
+            MultiprocessLogger.Flush();
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
