@@ -16,6 +16,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         static MultiprocessLogger() => s_Logger = new Logger(logHandler: new MultiprocessLogHandler());
 
+        public static void Flush()
+        {
+            foreach (var task in MultiprocessLogHandler.AllTasks)
+            {
+                task.Wait();
+            }
+        }
+
         public static void Log(string msg)
         {
             s_Logger.Log(msg);

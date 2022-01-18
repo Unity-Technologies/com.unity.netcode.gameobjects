@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -85,6 +86,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End for loop");
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End of test");
+            MultiprocessLogger.Flush();
         }
     }
 }

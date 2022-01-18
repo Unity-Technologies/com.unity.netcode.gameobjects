@@ -237,16 +237,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (LaunchRemotely)
             {
-                MultiprocessLogger.Log("Kill multi process test player");
+                foreach (var process in BokkenMachine.ProcessList)
+                {
+                    if (!process.HasExited)
+                    {
+                        MultiprocessLogger.Log($"Teardown found an active process {process.ProcessName} {process.Id}");
+                    }
+                }
+
+                MultiprocessLogger.Log("Kill multi process test players");
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                 MultiprocessLogger.Log("Fetching log files");
                 BokkenMachine.FetchAllLogFiles();
                 MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
             }
 
-            TestCoordinator.Instance.TestRunTeardown();
-            MultiprocessLogger.Log("TestRunTearDown ... Done");
-
+            TestCoordinator.Instance.TestRunTeardown();            
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
@@ -261,16 +267,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
-                    BokkenMachine.FetchAllLogFiles();
-                    BokkenMachine.DumpProcessList();
+                    BokkenMachine.FetchAllLogFiles();                    
 
                     Process[] allProcesses = Process.GetProcesses();
                     foreach (Process process in allProcesses)
                     {
                         if (process.ProcessName.Contains("dotnet"))
                         {
-                            MultiprocessLogger.Log($"dotnet process found : {process.StartInfo.Arguments} : {process.StartTime.ToShortTimeString()} {process.Id}");
-                            process.Kill();
+                            MultiprocessLogger.Log($"dotnet process found : {process.StartTime.ToShortTimeString()} {process.Id}");
+                            if (!process.HasExited)
+                            {
+                                process.Kill();
+                            }
+                            
                         }
                     }
                 }
