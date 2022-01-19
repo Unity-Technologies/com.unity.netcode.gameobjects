@@ -1,4 +1,4 @@
-**For bug reports, please follow the standard [Unity Bug Reporting](https://unity3d.com/unity/qa/bug-reporting) process.**
+**For bug reports, please follow the standard [Unity Bug Reporting](https://unity3d.com/unity/qa/bug-reporting) process. We no longer accept bug reports via GitHub Issues.**
 
 ---
 
