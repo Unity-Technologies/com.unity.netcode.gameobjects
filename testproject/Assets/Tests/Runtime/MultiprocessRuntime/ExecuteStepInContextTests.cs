@@ -15,6 +15,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [TestFixture(2)]
     public class ExecuteStepInContextTests : BaseMultiprocessTests
     {
+        private string[] m_Platforms;
+        protected override string[] platformList => m_Platforms;
+
         private int m_WorkerCountToTest;
 
         public ExecuteStepInContextTests(int workerCountToTest)

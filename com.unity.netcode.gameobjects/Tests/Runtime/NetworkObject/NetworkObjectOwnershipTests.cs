@@ -106,8 +106,9 @@ namespace Unity.Netcode.RuntimeTests
             var dummyNetworkObjectId = dummyNetworkObject.NetworkObjectId;
             Assert.That(dummyNetworkObjectId, Is.GreaterThan(0));
 
-            int nextFrameNumber = Time.frameCount + 4;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // Wait for two snapshot messages, because there's likely one already in flight that doesn't have the spawn yet.
+            yield return MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]);
+            yield return MultiInstanceHelpers.WaitForMessageOfType<SnapshotDataMessage>(m_ClientNetworkManagers[0]);
 
             Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
@@ -136,17 +137,14 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return MultiInstanceHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
 
             Assert.That(clientComponent.OnGainedOwnershipFired);
             Assert.That(clientComponent.CachedOwnerIdOnGainedOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
             serverObject.ChangeOwnership(m_ServerNetworkManager.ServerClientId);
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
+            yield return MultiInstanceHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
             Assert.That(serverObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);

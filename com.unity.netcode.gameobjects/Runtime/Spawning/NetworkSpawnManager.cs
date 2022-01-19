@@ -280,6 +280,10 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
+            if (TryGetNetworkClient(clientId, out NetworkClient newNetworkClient))
+            {
+                newNetworkClient.OwnedObjects.Add(networkObject);
+            }
 
             var message = new ChangeOwnershipMessage
             {
@@ -529,29 +533,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
-        {
-            if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-                //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
-                //placing this check here. [NSS]
-                if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
-                {
-                    return;
-                }
-
-                var message = new CreateObjectMessage
-                {
-                    ObjectInfo = networkObject.GetMessageSceneObject(clientId)
-                };
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
-
-                networkObject.MarkVariablesDirty();
-            }
-        }
-
         internal ulong? GetSpawnParentId(NetworkObject networkObject)
         {
             NetworkObject parentNetworkObject = null;
@@ -758,41 +739,7 @@ namespace Unity.Netcode
                     });
                 }
 
-                if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-                {
-                    networkObject.SnapshotDespawn();
-                }
-                else
-                {
-                    if (networkObject != null)
-                    {
-                        // As long as we have any remaining clients, then notify of the object being destroy.
-                        if (NetworkManager.ConnectedClientsList.Count > 0)
-                        {
-                            m_TargetClientIds.Clear();
-
-                            // We keep only the client for which the object is visible
-                            // as the other clients have them already despawned
-                            foreach (var clientId in NetworkManager.ConnectedClientsIds)
-                            {
-                                if (networkObject.IsNetworkVisibleTo(clientId))
-                                {
-                                    m_TargetClientIds.Add(clientId);
-                                }
-                            }
-
-                            var message = new DestroyObjectMessage
-                            {
-                                NetworkObjectId = networkObject.NetworkObjectId
-                            };
-                            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
-                            foreach (var targetClientId in m_TargetClientIds)
-                            {
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
-                            }
-                        }
-                    }
-                }
+                networkObject.SnapshotDespawn();
             }
 
             networkObject.IsSpawned = false;

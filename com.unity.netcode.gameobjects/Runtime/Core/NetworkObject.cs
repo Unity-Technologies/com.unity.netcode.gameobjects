@@ -237,14 +237,9 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn(clientId);
-            }
+            SnapshotSpawn(clientId);
 
             Observers.Add(clientId);
-
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
         /// <summary>
@@ -320,20 +315,7 @@ namespace Unity.Netcode
 
             Observers.Remove(clientId);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotDespawn(clientId);
-            }
-            else
-            {
-                var message = new DestroyObjectMessage
-                {
-                    NetworkObjectId = NetworkObjectId
-                };
-                // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
-            }
+            SnapshotDespawn(clientId);
         }
 
         /// <summary>
@@ -404,8 +386,6 @@ namespace Unity.Netcode
             var command = new SnapshotDespawnCommand();
             command.NetworkObjectId = NetworkObjectId;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
@@ -434,37 +414,36 @@ namespace Unity.Netcode
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
 
-            command.NetworkObject = this;
-
             return command;
         }
 
         private void SnapshotSpawn()
         {
             var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command);
+            NetworkManager.SnapshotSystem.Spawn(command, this, null);
         }
 
         private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Spawn(command);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
+
+            NetworkManager.SnapshotSystem.Spawn(command, this, targetClientIds);
         }
 
         internal void SnapshotDespawn()
         {
             var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command);
+            NetworkManager.SnapshotSystem.Despawn(command, this, null);
         }
 
         internal void SnapshotDespawn(ulong clientId)
         {
             var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Despawn(command);
+            var targetClientIds = new List<ulong>();
+            targetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Despawn(command, this, targetClientIds);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -482,19 +461,7 @@ namespace Unity.Netcode
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn();
-            }
-
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
-            for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-            {
-                if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
-                {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
-                }
-            }
+            SnapshotSpawn();
         }
 
         /// <summary>
