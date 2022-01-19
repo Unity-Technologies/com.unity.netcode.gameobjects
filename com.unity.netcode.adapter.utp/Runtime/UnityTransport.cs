@@ -161,7 +161,6 @@ namespace Unity.Netcode
         private NetworkPipeline m_UnreliableFragmentedPipeline;
         private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
-        private const byte k_PipelineCount = 3; //Represented the number of existing pipeline
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -579,11 +578,11 @@ namespace Unity.Netcode
                 var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
                 foreach (var ngoConnectionId in ngoConnectionIds)
                 {
-                    //Connection 0 when host is self and bypass the transport so would be invalid, skip it.
-                    if (ngoConnectionId > 0 || (ngoConnectionId == 0 && !NetworkManager.Singleton.IsHost))
+                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
                     {
-                        ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
+                        continue;
                     }
+                    ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
                 }
             }
             else
@@ -595,45 +594,30 @@ namespace Unity.Netcode
         private void ExtractNetworkMetricsForClient(ulong transportClientId)
         {
             var networkConnection =  ParseClientId(transportClientId);
-
-            //Two pipelines, unreliable sequence and reliable fragmented
-            for (byte i = 0; i < k_PipelineCount; ++i)
-            {
-                var pipeline = GetPipelineFromIndex(i);
-
-                //Don't need to dispose of the buffers, they are filled with data pointers.
-                m_Driver.GetPipelineBuffers(pipeline,
-                    NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-                    networkConnection,
-                    out _,
-                    out _,
-                    out var sharedBuffer);
-
-                unsafe
-                {
-                    var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
-
-                    NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
-                    NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
-
-                    networkMetricsContext->PacketSentCount = 0;
-                    networkMetricsContext->PacketReceivedCount = 0;
-                }
-            }
+            ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedFragmentedPipeline, networkConnection);
         }
 
-        private NetworkPipeline GetPipelineFromIndex(byte index)
+        private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
         {
-            switch (index)
+            //Don't need to dispose of the buffers, they are filled with data pointers.
+            m_Driver.GetPipelineBuffers(pipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
             {
-                case 0:
-                    return m_UnreliableFragmentedPipeline;
-                case 1:
-                    return m_UnreliableSequencedFragmentedPipeline;
-                case 2:
-                    return m_ReliableSequencedFragmentedPipeline;
-                default:
-                    throw new InvalidOperationException("Invalid Pipeline Index");
+                var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+
+                NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
+
+                networkMetricsContext->PacketSentCount = 0;
+                networkMetricsContext->PacketReceivedCount = 0;
             }
         }
 #endif
