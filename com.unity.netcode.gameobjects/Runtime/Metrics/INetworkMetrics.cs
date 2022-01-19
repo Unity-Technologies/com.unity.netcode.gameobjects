@@ -83,6 +83,10 @@ namespace Unity.Netcode
 
         void TrackSceneEventReceived(ulong senderClientId, uint sceneEventType, string sceneName, long bytesCount);
 
+        void TrackPacketSent(uint packetCount);
+
+        void TrackPacketReceived(uint packetCount);
+
         void DispatchFrame();
     }
 }
