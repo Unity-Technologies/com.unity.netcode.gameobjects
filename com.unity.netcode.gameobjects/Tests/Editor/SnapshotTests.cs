@@ -39,6 +39,7 @@ namespace Unity.Netcode.EditorTests
             m_SendTimeSystem.Advance(1.0f / m_TicksPerSec);
             m_SendTickSystem.UpdateTick(m_SendTimeSystem.LocalTime, m_SendTimeSystem.ServerTime);
             m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void AdvanceOneTickRecvSide()
@@ -46,6 +47,7 @@ namespace Unity.Netcode.EditorTests
             m_RecvTimeSystem.Advance(1.0f / m_TicksPerSec);
             m_RecvTickSystem.UpdateTick(m_RecvTimeSystem.LocalTime, m_RecvTimeSystem.ServerTime);
             m_RecvSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void AdvanceOneTick()

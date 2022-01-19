@@ -374,7 +374,10 @@ namespace Unity.Netcode
         {
             if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
-                m_NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_NetworkManager);
+                if (m_NetworkManager)
+                {
+                    m_NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_NetworkManager);
+                }
 
                 UpdateClientServerData();
 
