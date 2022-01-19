@@ -58,6 +58,9 @@ namespace Unity.Netcode
             byte* sendProcessBuffer, int sendProcessBufferLength, byte* receiveProcessBuffer, int receiveProcessBufferLength,
             byte* sharedProcessBuffer, int sharedProcessBufferLength)
         {
+            var networkMetricContext = (NetworkMetricsContext*)sharedProcessBuffer;
+            networkMetricContext->PacketSentCount = 0;
+            networkMetricContext->PacketReceivedCount = 0;
         }
     }
 }

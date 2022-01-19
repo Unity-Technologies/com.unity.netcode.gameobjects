@@ -143,7 +143,6 @@ namespace Unity.Netcode
 
         private NetworkPipeline m_UnreliableSequencedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
-        private NetworkPipeline m_LastSendPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -518,27 +517,21 @@ namespace Unity.Netcode
                 {
                     ;
                 }
-
                 
-                //TODO: Get the correct connection instead of m_ServerConnection
-                m_Driver.GetPipelineBuffers(m_LastSendPipeline, NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-                    m_ServerConnection, out var readProcessingBuffer, out var writeProcessingBuffer,
-                    out var sharedBuffer);
-                unsafe
+#if MULTIPLAYER_TOOLS
+                if (NetworkManager.Singleton.IsServer)
                 {
-                    var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
-                    
-                        
-                    Debug.Log($"Packet Sent count: ${networkMetricsContext->PacketSentCount}");
-                    Debug.Log($"Packet Received count: ${networkMetricsContext->PacketReceivedCount}");
-                    
-                    NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
-                    NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
-
-                    networkMetricsContext->PacketSentCount = 0;
-                    networkMetricsContext->PacketReceivedCount = 0;
+                    var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
+                    foreach (var ngoConnectionId in ngoConnectionIds)
+                    {
+                        ExtractNetworkMetrics(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
+                    }
                 }
-                
+                else
+                {
+                    ExtractNetworkMetrics(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
+                }
+#endif
             }
         }
 
@@ -546,6 +539,45 @@ namespace Unity.Netcode
         {
             DisposeDriver();
         }
+        
+#if MULTIPLAYER_TOOLS
+        private void ExtractNetworkMetrics(ulong transportClientId)
+        {
+            var networkConnection =  ParseClientId(transportClientId);
+            
+            //Two pipelines, unreliable sequence and reliable fragmented
+            for (byte i = 0; i < 2; ++i)
+            {
+                var pipeline = i == 0 ? m_UnreliableSequencedPipeline : m_ReliableSequencedFragmentedPipeline;
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                try
+#endif
+                {
+                    //Don't need to dispose of the buffers, they are filled with data pointers. 
+                    m_Driver.GetPipelineBuffers(pipeline, NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                        networkConnection, out var readProcessingBuffer, out var writeProcessingBuffer, out var sharedBuffer);
+
+                    unsafe
+                    {
+                        var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+
+                        NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                        NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
+
+                        networkMetricsContext->PacketSentCount = 0;
+                        networkMetricsContext->PacketReceivedCount = 0;
+                    }
+                }
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                catch (InvalidOperationException e)
+                {
+                    //Can ignore, may happen if a pipeline is not used
+                }
+#endif
+            }
+        }
+#endif
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
@@ -647,7 +679,6 @@ namespace Unity.Netcode
         {
             var size = payload.Count + 1 + 4; // 1 extra byte for the channel and another 4 for the count of the data
             var pipeline = SelectSendPipeline(networkDelivery, size);
-            m_LastSendPipeline = pipeline;
             
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
