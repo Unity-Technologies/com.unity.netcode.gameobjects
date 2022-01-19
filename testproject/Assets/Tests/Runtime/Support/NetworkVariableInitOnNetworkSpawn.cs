@@ -8,7 +8,7 @@ namespace TestProject.RuntimeTests.Support
         public NetworkVariable<int> Variable = new NetworkVariable<int>();
         public static bool NetworkSpawnCalledOnServer;
         public static bool NetworkSpawnCalledOnClient;
-        public static bool OnValueChangedCalledOnClient = false;
+        public static bool OnValueChangedCalledOnClient;
 
         private void Awake()
         {
@@ -25,7 +25,6 @@ namespace TestProject.RuntimeTests.Support
 
         public override void OnNetworkSpawn()
         {
-            Assert.IsFalse(OnValueChangedCalledOnClient);
             base.OnNetworkSpawn();
             if (IsServer)
             {
@@ -35,8 +34,8 @@ namespace TestProject.RuntimeTests.Support
             else
             {
                 NetworkSpawnCalledOnClient = true;
+                Assert.AreEqual(5, Variable.Value);
             }
-            Assert.AreEqual(5, Variable.Value);
         }
     }
 }
