@@ -519,18 +519,7 @@ namespace Unity.Netcode
                 }
                 
 #if MULTIPLAYER_TOOLS
-                if (NetworkManager.Singleton.IsServer)
-                {
-                    var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
-                    foreach (var ngoConnectionId in ngoConnectionIds)
-                    {
-                        ExtractNetworkMetrics(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
-                    }
-                }
-                else
-                {
-                    ExtractNetworkMetrics(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
-                }
+                ExtractNetworkMetrics();
 #endif
             }
         }
@@ -541,7 +530,27 @@ namespace Unity.Netcode
         }
         
 #if MULTIPLAYER_TOOLS
-        private void ExtractNetworkMetrics(ulong transportClientId)
+        private void ExtractNetworkMetrics()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
+                foreach (var ngoConnectionId in ngoConnectionIds)
+                {
+                    //Connection 0 when host is self and bypass the transport so would be invalid, skip it.
+                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
+                    {
+                        ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
+                    }
+                }
+            }
+            else
+            {
+                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
+            }
+        }
+        
+        private void ExtractNetworkMetricsForClient(ulong transportClientId)
         {
             var networkConnection =  ParseClientId(transportClientId);
             
@@ -550,31 +559,24 @@ namespace Unity.Netcode
             {
                 var pipeline = i == 0 ? m_UnreliableSequencedPipeline : m_ReliableSequencedFragmentedPipeline;
 
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                try
-#endif
+                //Don't need to dispose of the buffers, they are filled with data pointers. 
+                m_Driver.GetPipelineBuffers(pipeline,
+                    NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                    networkConnection, 
+                    out _, 
+                    out _, 
+                    out var sharedBuffer);
+
+                unsafe
                 {
-                    //Don't need to dispose of the buffers, they are filled with data pointers. 
-                    m_Driver.GetPipelineBuffers(pipeline, NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-                        networkConnection, out var readProcessingBuffer, out var writeProcessingBuffer, out var sharedBuffer);
+                    var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
 
-                    unsafe
-                    {
-                        var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+                    NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                    NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
 
-                        NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
-                        NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
-
-                        networkMetricsContext->PacketSentCount = 0;
-                        networkMetricsContext->PacketReceivedCount = 0;
-                    }
+                    networkMetricsContext->PacketSentCount = 0;
+                    networkMetricsContext->PacketReceivedCount = 0;
                 }
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                catch (InvalidOperationException e)
-                {
-                    //Can ignore, may happen if a pipeline is not used
-                }
-#endif
             }
         }
 #endif
