@@ -115,7 +115,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+            NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             m_HasSceneLoaded = true;
+        }
+
+        private void Singleton_OnClientConnectedCallback(ulong obj)
+        {
+            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}");
         }
 
         /// <summary>
@@ -211,6 +217,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             int counter = 0;
+            MultiprocessLogger.Log($"Request for the ConnectedClients Count");
+            int connectedClientsCount = NetworkManager.Singleton.ConnectedClients.Count;
+            MultiprocessLogger.Log($"Request for the ConnectedClients Count...done, was there an exception just above here?");
+            
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 counter++;
