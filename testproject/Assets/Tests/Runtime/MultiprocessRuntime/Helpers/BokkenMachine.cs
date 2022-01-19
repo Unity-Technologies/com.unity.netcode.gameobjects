@@ -151,7 +151,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 p = ExecuteCommand(cmd + "ls", true, true);
             }
-            
         }
 
         public void Launch()

@@ -9,7 +9,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using Unity.Netcode.Transports.UNET;
-using System.Diagnostics;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -50,7 +49,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
-            
+
             if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");

@@ -109,7 +109,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 method3 = st.GetFrame(3).GetMethod().Name;
             }
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
-            var webLog = new WebLog();            
+            var webLog = new WebLog();
             webLog.Message = $"{DateTime.Now:T} {args[0].ToString()}";
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
@@ -127,7 +127,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var json = JsonUtility.ToJson(content);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
-            
+
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
