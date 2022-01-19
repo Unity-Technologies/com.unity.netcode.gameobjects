@@ -43,6 +43,7 @@ namespace TestProject.RuntimeTests
             NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer = false;
             NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient = false;
             NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient = false;
+            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 5;
 
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
@@ -122,6 +123,10 @@ namespace TestProject.RuntimeTests
         [Description("When a network variable is changed just after OnNetworkSpawn on the server, OnValueChanged is called after OnNetworkSpawn")]
         public IEnumerator WhenANetworkVariableIsInitializedJustAfterOnNetworkSpawnOnTheServer_OnValueChangedIsCalledAfterOnNetworkSpawn()
         {
+            NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer = false;
+            NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient = false;
+            NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient = false;
+
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
@@ -156,9 +161,14 @@ namespace TestProject.RuntimeTests
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
+
             serverNetworkObject.Spawn();
             serverNetworkObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 10;
+
             Assert.IsFalse(NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient);
+
+            // Expect the value to spawn with the already updated value
+            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 10;
 
             // Wait until all objects have spawned.
             //const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.

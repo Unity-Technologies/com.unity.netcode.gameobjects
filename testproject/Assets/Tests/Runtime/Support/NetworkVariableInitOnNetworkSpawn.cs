@@ -9,6 +9,7 @@ namespace TestProject.RuntimeTests.Support
         public static bool NetworkSpawnCalledOnServer;
         public static bool NetworkSpawnCalledOnClient;
         public static bool OnValueChangedCalledOnClient;
+        public static int ExpectedSpawnValueOnClient;
 
         private void Awake()
         {
@@ -34,7 +35,7 @@ namespace TestProject.RuntimeTests.Support
             else
             {
                 NetworkSpawnCalledOnClient = true;
-                Assert.AreEqual(5, Variable.Value);
+                Assert.AreEqual(ExpectedSpawnValueOnClient, Variable.Value);
             }
         }
     }

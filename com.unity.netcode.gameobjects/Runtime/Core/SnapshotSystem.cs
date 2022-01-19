@@ -219,7 +219,7 @@ namespace Unity.Netcode
             }
 
             // register for updates in EarlyUpdate
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
             SpawnsMeta = new SnapshotSpawnDespawnCommandMeta[SpawnsBufferCount];
@@ -367,13 +367,15 @@ namespace Unity.Netcode
 
         public void Dispose()
         {
-            this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (updateStage == NetworkUpdateStage.EarlyUpdate)
+            if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
+                m_NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_NetworkManager);
+
                 UpdateClientServerData();
 
                 var tick = m_NetworkTickSystem.LocalTime.Tick;

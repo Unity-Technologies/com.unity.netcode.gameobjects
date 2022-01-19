@@ -1273,9 +1273,6 @@ namespace Unity.Netcode
         /// </summary>
         private void OnNetworkManagerTick()
         {
-            // Do NetworkVariable updates
-            BehaviourUpdater.NetworkBehaviourUpdate(this);
-
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
