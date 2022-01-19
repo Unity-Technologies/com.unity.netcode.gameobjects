@@ -130,7 +130,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            // response.EnsureSuccessStatusCode();
         }
     }
 
