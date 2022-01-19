@@ -106,7 +106,7 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         if (isClient)
-        {            
+        {
             MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName}");
             NetworkManager.Singleton.StartClient();
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");

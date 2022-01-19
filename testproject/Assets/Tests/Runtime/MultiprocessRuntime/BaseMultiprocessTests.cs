@@ -97,7 +97,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
                 case UnityTransport unityTransport:
                     unityTransport.ConnectionData.Port = ushortport;
-                    MultiprocessLogger.Log($"unityTransport ConnectionData: "+
+                    MultiprocessLogger.Log($"unityTransport ConnectionData: " +
                         $"{unityTransport.ConnectionData.Address}:{unityTransport.ConnectionData.Port}");
                     break;
                 default:
@@ -252,7 +252,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Flush();
             }
 
-            TestCoordinator.Instance.TestRunTeardown();            
+            TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 

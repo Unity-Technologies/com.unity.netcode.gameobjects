@@ -236,8 +236,7 @@ public class CommandLineProcessor
                 break;
         }
     }
-
-    }
+}
 
 /// <summary>
 /// Command line handler component to attach to a GameObject in the
