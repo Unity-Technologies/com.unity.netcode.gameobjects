@@ -161,6 +161,7 @@ namespace Unity.Netcode
         private NetworkPipeline m_UnreliableFragmentedPipeline;
         private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
         private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
+        private const byte k_PipelineCount = 3; //Represented the number of existing pipeline
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -558,7 +559,7 @@ namespace Unity.Netcode
                 {
                     ;
                 }
-                
+
 #if MULTIPLAYER_TOOLS
                 ExtractNetworkMetrics();
 #endif
@@ -569,7 +570,7 @@ namespace Unity.Netcode
         {
             DisposeDriver();
         }
-        
+
 #if MULTIPLAYER_TOOLS
         private void ExtractNetworkMetrics()
         {
@@ -579,7 +580,7 @@ namespace Unity.Netcode
                 foreach (var ngoConnectionId in ngoConnectionIds)
                 {
                     //Connection 0 when host is self and bypass the transport so would be invalid, skip it.
-                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
+                    if (ngoConnectionId > 0 || (ngoConnectionId == 0 && !NetworkManager.Singleton.IsHost))
                     {
                         ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
                     }
@@ -590,22 +591,22 @@ namespace Unity.Netcode
                 ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
             }
         }
-        
+
         private void ExtractNetworkMetricsForClient(ulong transportClientId)
         {
             var networkConnection =  ParseClientId(transportClientId);
-            
-            //Two pipelines, unreliable sequence and reliable fragmented
-            for (byte i = 0; i < 2; ++i)
-            {
-                var pipeline = i == 0 ? m_UnreliableSequencedPipeline : m_ReliableSequencedFragmentedPipeline;
 
-                //Don't need to dispose of the buffers, they are filled with data pointers. 
+            //Two pipelines, unreliable sequence and reliable fragmented
+            for (byte i = 0; i < k_PipelineCount; ++i)
+            {
+                var pipeline = GetPipelineFromIndex(i);
+
+                //Don't need to dispose of the buffers, they are filled with data pointers.
                 m_Driver.GetPipelineBuffers(pipeline,
                     NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-                    networkConnection, 
-                    out _, 
-                    out _, 
+                    networkConnection,
+                    out _,
+                    out _,
                     out var sharedBuffer);
 
                 unsafe
@@ -618,6 +619,21 @@ namespace Unity.Netcode
                     networkMetricsContext->PacketSentCount = 0;
                     networkMetricsContext->PacketReceivedCount = 0;
                 }
+            }
+        }
+
+        private NetworkPipeline GetPipelineFromIndex(byte index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return m_UnreliableFragmentedPipeline;
+                case 1:
+                    return m_UnreliableSequencedFragmentedPipeline;
+                case 2:
+                    return m_ReliableSequencedFragmentedPipeline;
+                default:
+                    throw new InvalidOperationException("Invalid Pipeline Index");
             }
         }
 #endif
