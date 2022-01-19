@@ -18,10 +18,31 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void Flush()
         {
+            Thread.Sleep(1000);
+            int canceledCount = 0;
+            int totalCount = MultiprocessLogHandler.AllTasks.Count;
+            int ranToCompletionCount = 0;
+            int runningCount = 0;
+
             foreach (var task in MultiprocessLogHandler.AllTasks)
             {
-                task.Wait();
+                if (task.Status == TaskStatus.Canceled)
+                {
+                    canceledCount++;
+                }
+                else if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    ranToCompletionCount++;
+                }
+                else if (task.Status == TaskStatus.Running)
+                {
+                    runningCount++;
+                }
             }
+            string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount}";
+            Console.WriteLine(msg);
+            Log(msg);
+            Thread.Sleep(1000);
         }
 
         public static void Log(string msg)
