@@ -268,21 +268,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
-                    BokkenMachine.FetchAllLogFiles();                    
-
-                    Process[] allProcesses = Process.GetProcesses();
-                    foreach (Process process in allProcesses)
-                    {
-                        if (process.ProcessName.Contains("dotnet"))
-                        {
-                            MultiprocessLogger.Log($"dotnet process found : {process.StartTime.ToShortTimeString()} {process.Id}");
-                            if (!process.HasExited)
-                            {
-                                process.Kill();
-                            }
-                            
-                        }
-                    }
+                    BokkenMachine.FetchAllLogFiles();
                 }
             }
             catch (Exception e)

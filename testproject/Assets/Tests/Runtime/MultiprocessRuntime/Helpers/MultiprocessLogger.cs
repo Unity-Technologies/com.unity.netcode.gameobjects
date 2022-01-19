@@ -113,6 +113,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             webLog.Message = $"{DateTime.Now:T} {args[0].ToString()}";
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
+            webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
             string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
@@ -140,6 +141,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string Message;
         public long ReferenceId;
         public string TestMethod;
+        public string ClientEventDate;
 
         public override string ToString()
         {
