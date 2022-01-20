@@ -8,6 +8,7 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed
 
+- Updated links to the UTP package docs, this is a backport of PR-1603 (#1604)
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1585)
 
 ### Fixed
