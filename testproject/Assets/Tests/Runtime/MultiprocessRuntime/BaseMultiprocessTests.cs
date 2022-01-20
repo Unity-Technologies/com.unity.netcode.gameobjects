@@ -45,6 +45,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // We want to keep a reference to the
         private Scene m_OriginalActiveScene;
 
+        // As an alternative to polling ConnectedClients Count we can store a
+        // collection of connected clients as reported by the client connect
+        // and client disconnect callbacks
+        protected List<ulong> m_ConnectedClientsList;
+
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
@@ -115,13 +120,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+            m_ConnectedClientsList = new List<ulong>();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             m_HasSceneLoaded = true;
+        }
+
+        private void Singleton_OnClientDisconnectCallback(ulong obj)
+        {
+            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
+            m_ConnectedClientsList.Remove(obj);
         }
 
         private void Singleton_OnClientConnectedCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}");
+            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, current count is {m_ConnectedClientsList.Count}");
+            m_ConnectedClientsList.Add(obj);
         }
 
         /// <summary>
@@ -217,17 +231,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             int counter = 0;
-            MultiprocessLogger.Log($"Request for the ConnectedClients Count");
-            int connectedClientsCount = NetworkManager.Singleton.ConnectedClients.Count;
-            MultiprocessLogger.Log($"Request for the ConnectedClients Count...done, was there an exception just above here?");
+            MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
             
-            while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
+            while (m_ConnectedClientsList.Count <= WorkerCount)
             {
                 counter++;
                 yield return new WaitForSeconds(0.2f);
                 if (counter % 7 == 0)
                 {
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {NetworkManager.Singleton.ConnectedClients.Count} > {WorkerCount}");
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} > {WorkerCount}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
