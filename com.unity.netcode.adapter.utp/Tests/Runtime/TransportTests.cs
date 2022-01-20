@@ -138,12 +138,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(new byte[payloadSize]);
+            var payloadData = new byte[payloadSize];
+            for (int i = 0; i < payloadData.Length; i++)
+            {
+                payloadData = (byte)i;
+            }
+
+            var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
             Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
+
+            var receivedArray = m_ServerEvents[1].Data.Array;
+            var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
+            for (int i = 0; i < payloadSize; i++)
+            {
+                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i])
+            }
 
             yield return null;
         }
