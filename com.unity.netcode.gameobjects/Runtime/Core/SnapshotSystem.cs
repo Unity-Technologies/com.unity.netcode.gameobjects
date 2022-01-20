@@ -189,7 +189,7 @@ namespace Unity.Netcode
         internal int UpdatesBufferCount { get; private set; } = 100;
 
         internal const int TotalMaxIndices = 1000;
-        internal const int TotalBufferMemory = 10000;
+        internal const int TotalBufferMemory = 100000;
 
         internal IndexAllocator MemoryStorage = new IndexAllocator(TotalBufferMemory, TotalMaxIndices);
         internal byte[] MemoryBuffer = new byte[TotalBufferMemory];
@@ -411,7 +411,8 @@ namespace Unity.Netcode
         private void SendSnapshot(ulong clientId)
         {
             var header = new SnapshotHeader();
-            var message = new SnapshotDataMessage(0);
+            // todo: we should have a way to get an upper bound for that
+            var message = new SnapshotDataMessage(TotalBufferMemory);
 
             // Verify we allocated client Data for this clientId
             if (!m_ClientData.ContainsKey(clientId))
@@ -897,7 +898,7 @@ namespace Unity.Netcode
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
-            m_NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+            m_NetworkManager.SendMessage(ref message, NetworkDelivery.Unreliable, clientId);
 
             return 0;
         }
