@@ -222,7 +222,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
-                        Thread.Sleep(1500);
+                        yield return new WaitForSeconds(1.1f);
                         MultiprocessLogger.Log($"Launching process complete");
                         MultiprocessLogger.Log($"ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
@@ -240,8 +240,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 counter++;
-                // yield return new WaitForSeconds(0.2f);
-                Thread.Sleep(200);
+                yield return new WaitForSeconds(0.7f);
                 if (counter % 7 == 0)
                 {
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
