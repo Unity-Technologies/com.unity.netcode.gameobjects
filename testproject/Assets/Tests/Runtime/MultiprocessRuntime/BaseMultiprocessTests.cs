@@ -128,14 +128,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Remove(obj);
+            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
         }
 
         private void Singleton_OnClientConnectedCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, current count is {m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Add(obj);
+            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, current count is {m_ConnectedClientsList.Count}");
         }
 
         /// <summary>
@@ -163,12 +163,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
-            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and connection listener has fired: {m_ConnectedClientsList.Count}");
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
+            if (m_ConnectedClientsList.Count < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 if (!LaunchRemotely)
@@ -209,7 +209,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         machine.CheckDirectoryStructure();
                     }
 
-                    MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {NetworkManager.Singleton.ConnectedClients.Count}"
+                    MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {m_ConnectedClientsList.Count}"
                         + $" by launching {machines.Count} new instances");
 
                     foreach (var machine in machines)
@@ -219,7 +219,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         machine.Launch();
                         Thread.Sleep(1500);
                         MultiprocessLogger.Log($"Launching process complete");
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
+                        MultiprocessLogger.Log($"ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
                 }
             }
@@ -233,22 +233,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             int counter = 0;
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
             
-            while (m_ConnectedClientsList.Count <= WorkerCount)
+            while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 counter++;
                 yield return new WaitForSeconds(0.2f);
                 if (counter % 7 == 0)
                 {
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} > {WorkerCount}");
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count} clients, but was expecting {WorkerCount}, failing");
+                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                     throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
-            MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} while waiting for WorkerCount {WorkerCount}");
+            MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
         }
 
         [TearDown]
