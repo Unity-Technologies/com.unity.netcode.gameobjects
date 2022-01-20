@@ -141,7 +141,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             var payloadData = new byte[payloadSize];
             for (int i = 0; i < payloadData.Length; i++)
             {
-                payloadData = (byte)i;
+                payloadData[i] = (byte)i;
             }
 
             var payload = new ArraySegment<byte>(payloadData);
@@ -155,7 +155,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
             for (int i = 0; i < payloadSize; i++)
             {
-                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i])
+                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i]);
             }
 
             yield return null;
