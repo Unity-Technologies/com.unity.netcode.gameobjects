@@ -159,22 +159,22 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
-        MultiprocessLogger.Log("OnEnable - Setting OnClientDisconnectCallback");
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        MultiprocessLogger.Log("OnEnable - Setting OnBeforeDisconnectCallback");
+        NetworkManager.ConnectionManager.OnBeforeDisconnectCallback += OnBeforeDisconnectCallback;
     }
 
     public void OnDisable()
     {
         if (IsSpawned && NetworkObject != null && NetworkObject.NetworkManager != null)
         {
-            MultiprocessLogger.Log("OnDisable - Removing OnClientDisconnectCallback");
-            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            MultiprocessLogger.Log("OnDisable - Removing OnBeforeDisconnectCallback");
+            NetworkManager.ConnectionManager.OnBeforeDisconnectCallback -= OnBeforeDisconnectCallback;
         }
 
         base.OnDestroy();
     }
 
-    private static void OnClientDisconnectCallback(ulong clientId)
+    private static void OnBeforeDisconnectCallback(ulong clientId)
     {
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {

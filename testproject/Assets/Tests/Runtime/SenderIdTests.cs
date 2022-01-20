@@ -102,7 +102,7 @@ namespace TestProject.RuntimeTests
                 Assert.AreEqual(firstClientId, id);
                 received = true;
             };
-            m_ServerNetworkManager.OnClientDisconnectCallback += firstCallback;
+            m_ServerNetworkManager.ConnectionManager.OnBeforeDisconnectCallback += firstCallback;
             FirstClient.Shutdown();
 
             yield return new WaitForSeconds(0.2f);
@@ -111,8 +111,8 @@ namespace TestProject.RuntimeTests
             var secondClientId = SecondClient.LocalClientId;
             received = false;
 
-            m_ServerNetworkManager.OnClientDisconnectCallback -= firstCallback;
-            m_ServerNetworkManager.OnClientDisconnectCallback += id =>
+            m_ServerNetworkManager.ConnectionManager.OnBeforeDisconnectCallback -= firstCallback;
+            m_ServerNetworkManager.ConnectionManager.OnBeforeDisconnectCallback += id =>
             {
                 Assert.AreEqual(secondClientId, id);
                 received = true;

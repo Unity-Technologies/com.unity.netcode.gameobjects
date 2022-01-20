@@ -207,12 +207,12 @@ namespace TestProject.RuntimeTests
             Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-            server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            server.ConnectionManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
 
             foreach (var client in clients)
             {
                 client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-                client.OnClientConnectedCallback += Client_OnClientConnectedCallback;
+                client.ConnectionManager.OnClientConnectedCallback += Client_OnClientConnectedCallback;
             }
 
             // Start the instances
@@ -258,7 +258,7 @@ namespace TestProject.RuntimeTests
             Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-            server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
+            server.ConnectionManager.OnBeforeDisconnectCallback += ServerOnBeforeDisconnectedCallback;
             server.NetworkConfig.ConnectionApproval = connectionApproval;
 
             foreach (var client in clients)
@@ -279,7 +279,7 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
         }
 
-        private void Server_OnClientDisconnectedCallback(ulong clientId)
+        private void ServerOnBeforeDisconnectedCallback(ulong clientId)
         {
             m_ServerClientDisconnectedInvocations++;
         }

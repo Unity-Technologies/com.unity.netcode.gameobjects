@@ -84,7 +84,7 @@ namespace Unity.Netcode
                 using var tempBuffer = new FastBufferReader(bufferWriter, Allocator.Temp);
                 var context = new NetworkContext
                 {
-                    SenderId = NetworkManager.ServerClientId,
+                    SenderId = ConnectionManager.ServerClientId,
                     Timestamp = Time.realtimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.

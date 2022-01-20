@@ -43,7 +43,7 @@ namespace Unity.Netcode
                 // todo: temporary hack around bug
                 if (!networkManager.IsServer)
                 {
-                    senderId = networkManager.ServerClientId;
+                    senderId = ConnectionManager.ServerClientId;
                 }
 
                 var snapshotSystem = networkManager.SnapshotSystem;

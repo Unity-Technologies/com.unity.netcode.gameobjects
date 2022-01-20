@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.Null(m_Client.NetworkTickSystem);
 
-            m_Client.OnClientConnectedCallback += ClientOnOnClientConnectedCallback;
+            m_Client.ConnectionManager.OnClientConnectedCallback += ClientOnOnClientConnectedCallback;
 
             var clientStartRealTime = Time.time;
 

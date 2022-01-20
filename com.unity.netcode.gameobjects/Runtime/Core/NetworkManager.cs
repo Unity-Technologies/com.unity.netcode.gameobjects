@@ -41,9 +41,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
         private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
-        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
-        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
@@ -142,7 +140,7 @@ namespace Unity.Netcode
 
             public bool OnVerifyCanReceive(ulong senderId, Type messageType)
             {
-                if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
+                if (m_NetworkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
                        (client.ConnectionState == PendingClient.State.PendingApproval ||
                         (client.ConnectionState == PendingClient.State.PendingConnection &&
                          messageType != typeof(ConnectionRequestMessage))))
@@ -180,7 +178,7 @@ namespace Unity.Netcode
             {
                 var sendBuffer = batchData.ToTempByteArray();
 
-                m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ClientIdToTransportId(clientId), sendBuffer, delivery);
+                m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId), sendBuffer, delivery);
             }
         }
 
@@ -247,14 +245,13 @@ namespace Unity.Netcode
 
         public NetworkSceneManager SceneManager { get; private set; }
 
-        public readonly ulong ServerClientId = 0;
+        // Pre-construct & assign so that users can easily set various connection callback handlers before starting
+        public ConnectionManager ConnectionManager { get; private set; } = new ConnectionManager();
 
         /// <summary>
-        /// Gets the networkId of the server
+        /// Use <see cref="ConnectionManager.ServerClientId"/> instead.
         /// </summary>
-        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ??
-                                       throw new NullReferenceException(
-                                           $"The transport in the active {nameof(NetworkConfig)} is null");
+        public readonly ulong ServerClientId = 0;
 
         /// <summary>
         /// Returns ServerClientId if IsServer or LocalClientId if not
@@ -267,70 +264,28 @@ namespace Unity.Netcode
 
         private ulong m_LocalClientId;
 
-        private Dictionary<ulong, NetworkClient> m_ConnectedClients = new Dictionary<ulong, NetworkClient>();
-
-        private ulong m_NextClientId = 1;
-        private Dictionary<ulong, ulong> m_ClientIdToTransportIdMap = new Dictionary<ulong, ulong>();
-        private Dictionary<ulong, ulong> m_TransportIdToClientIdMap = new Dictionary<ulong, ulong>();
-
-        private List<NetworkClient> m_ConnectedClientsList = new List<NetworkClient>();
-
-        private List<ulong> m_ConnectedClientIds = new List<ulong>();
-
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
+        /// Prefer <see cref="ConnectionManager.ConnectedClients"/> when possible.
         /// </summary>
-        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectedClients)} should only be accessed on server.");
-                }
-                return m_ConnectedClients;
-            }
-        }
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => ConnectionManager.ConnectedClients;
 
         /// <summary>
         /// Gets a list of connected clients. This is only accessible on the server.
+        /// Prefer <see cref="ConnectionManager.ConnectedClientsList"/> when possible.
         /// </summary>
-        public IReadOnlyList<NetworkClient> ConnectedClientsList
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectedClientsList)} should only be accessed on server.");
-                }
-                return m_ConnectedClientsList;
-            }
-        }
+        public IReadOnlyList<NetworkClient> ConnectedClientsList => ConnectionManager.ConnectedClientsList;
 
         /// <summary>
         /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
+        /// Prefer <see cref="ConnectionManager.ConnectedClientsIds"/> when possible.
         /// </summary>
-        public IReadOnlyList<ulong> ConnectedClientsIds
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(m_ConnectedClientIds)} should only be accessed on server.");
-                }
-                return m_ConnectedClientIds;
-            }
-        }
+        public IReadOnlyList<ulong> ConnectedClientsIds => ConnectionManager.ConnectedClientsIds;
 
         /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
         /// </summary>
         public NetworkClient LocalClient { get; internal set; }
-
-        /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
-        /// </summary>
-        public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 
         /// <summary>
         /// Gets Whether or not a server is running
@@ -363,13 +318,13 @@ namespace Unity.Netcode
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
+        [Obsolete("Use ConnectionManager.OnClientConnectedCallback", false)]
         public event Action<ulong> OnClientConnectedCallback = null;
-
-        internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
         /// <summary>
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
+        [Obsolete("Use ConnectionManager.OnBeforeDisconnectCallback", false)]
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
@@ -538,10 +493,6 @@ namespace Unity.Netcode
 #endif
             LocalClientId = ulong.MaxValue;
 
-            PendingClients.Clear();
-            m_ConnectedClients.Clear();
-            m_ConnectedClientsList.Clear();
-            m_ConnectedClientIds.Clear();
             LocalClient = null;
             NetworkObject.OrphanChildren.Clear();
 
@@ -553,7 +504,6 @@ namespace Unity.Netcode
             SceneManager = new NetworkSceneManager(this);
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
-
 
             if (NetworkMetrics == null)
             {
@@ -582,6 +532,15 @@ namespace Unity.Netcode
             }
 
             NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
+            ConnectionManager.SetApprovalTimeout = new DefaultConnectionApprovalTimeout(this).StartApprovalTimeout;
+            ConnectionManager.RemoveOwnedObjects = RemoveOwnedObjects;
+            ConnectionManager.IsServer = server;
+            ConnectionManager.Transport = NetworkConfig.NetworkTransport;
+            ConnectionManager.OnClientConnectedCallback += InvokeOnClientConnectedCallback;
+            ConnectionManager.OnBeforeDisconnectCallback += InvokeOnClientDisconnectCallback;
+            ConnectionManager.OnClientConnectionPendingCallback += MessagingSystem.ClientConnected;
+            ConnectionManager.OnAfterDisconnectCallback += OnAfterDisconnect;
 
             //This 'if' should never enter
             if (SnapshotSystem != null)
@@ -925,8 +884,8 @@ namespace Unity.Netcode
             Initialize(true);
 
             var result = NetworkConfig.NetworkTransport.StartServer();
-            MessagingSystem.ClientConnected(ServerClientId);
-            LocalClientId = ServerClientId;
+            MessagingSystem.ClientConnected(ConnectionManager.ServerClientId);
+            LocalClientId = ConnectionManager.ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
 
             IsServer = true;
@@ -935,7 +894,7 @@ namespace Unity.Netcode
 
             if (NetworkConfig.ConnectionApproval)
             {
-                InvokeConnectionApproval(NetworkConfig.ConnectionData, ServerClientId,
+                InvokeConnectionApproval(NetworkConfig.ConnectionData, ConnectionManager.ServerClientId,
                     (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
                     {
                         // You cannot decline the local server. Force approved to true
@@ -948,12 +907,12 @@ namespace Unity.Netcode
                             }
                         }
 
-                        HandleApproval(ServerClientId, createPlayerObject, playerPrefabHash, true, position, rotation);
+                        HandleApproval(ConnectionManager.ServerClientId, createPlayerObject, playerPrefabHash, true, position, rotation);
                     });
             }
             else
             {
-                HandleApproval(ServerClientId, NetworkConfig.PlayerPrefab != null, null, true, null, null);
+                HandleApproval(ConnectionManager.ServerClientId, NetworkConfig.PlayerPrefab != null, null, true, null, null);
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -988,6 +947,22 @@ namespace Unity.Netcode
             }
         }
 
+        // Add a "chained" event for the refactored OnClientConnectedCallback
+        private void InvokeOnClientConnectedCallback(ulong clientId)
+        {
+#pragma warning disable 618
+            OnClientConnectedCallback?.Invoke(clientId);
+#pragma warning restore 618
+        }
+
+        // Add a "chained" event for the refactored OnClientDisconnectCallback
+        private void InvokeOnClientDisconnectCallback(ulong clientId)
+        {
+#pragma warning disable 618
+            OnClientDisconnectCallback?.Invoke(clientId);
+#pragma warning restore 618
+        }
+
         private void Awake()
         {
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -1019,12 +994,6 @@ namespace Unity.Netcode
             {
                 Singleton = null;
             }
-        }
-
-        private void DisconnectRemoteClient(ulong clientId)
-        {
-            var transportId = ClientIdToTransportId(clientId);
-            NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
 
         /// <summary>
@@ -1062,39 +1031,19 @@ namespace Unity.Netcode
                 {
                     MessagingSystem.ProcessSendQueues();
                 }
+            }
 
-                var disconnectedIds = new HashSet<ulong>();
-
-                //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shutdown. But this way the clients get a disconnect message from server (so long it does't get lost)
-
-                foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
+            if (ConnectionManager != null)
+            {
+                ConnectionManager.OnClientConnectedCallback -= InvokeOnClientConnectedCallback;
+                ConnectionManager.OnBeforeDisconnectCallback -= InvokeOnClientDisconnectCallback;
+                ConnectionManager.OnAfterDisconnectCallback -= OnAfterDisconnect;
+                if (MessagingSystem != null)
                 {
-                    if (!disconnectedIds.Contains(pair.Key))
-                    {
-                        disconnectedIds.Add(pair.Key);
-
-                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                        {
-                            continue;
-                        }
-
-                        DisconnectRemoteClient(pair.Key);
-                    }
+                    ConnectionManager.OnClientConnectionPendingCallback -= MessagingSystem.ClientConnected;
                 }
 
-                foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
-                {
-                    if (!disconnectedIds.Contains(pair.Key))
-                    {
-                        disconnectedIds.Add(pair.Key);
-                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                        {
-                            continue;
-                        }
-
-                        DisconnectRemoteClient(pair.Key);
-                    }
-                }
+                ConnectionManager.Shutdown();
             }
 
             if (IsClient && IsConnectedClient)
@@ -1170,9 +1119,6 @@ namespace Unity.Netcode
                 //The Transport is set during initialization, thus it is possible for the Transport to be null
                 NetworkConfig?.NetworkTransport?.Shutdown();
             }
-
-            m_ClientIdToTransportIdMap.Clear();
-            m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
             m_ShuttingDown = false;
@@ -1283,133 +1229,27 @@ namespace Unity.Netcode
             }
         }
 
-        private void SendConnectionRequest()
+        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong transportId, ArraySegment<byte> payload, float receiveTime)
         {
-            var message = new ConnectionRequestMessage
-            {
-                ConfigHash = NetworkConfig.GetConfig(),
-                ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
-                ConnectionData = NetworkConfig.ConnectionData
-            };
-            SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
-        }
-
-        private IEnumerator ApprovalTimeout(ulong clientId)
-        {
-            NetworkTime timeStarted = LocalTime;
-
-            //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while ((LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
-            {
-                yield return null;
-            }
-
-            if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
-            {
-                // Timeout
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                {
-                    NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
-                }
-
-                DisconnectClient(clientId);
-            }
-        }
-
-        private ulong TransportIdToClientId(ulong transportId)
-        {
-            return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
-        }
-
-        internal ulong ClientIdToTransportId(ulong clientId)
-        {
-            return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
-        }
-
-        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
-        {
-            var transportId = clientId;
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportConnect.Begin();
-#endif
-
-                    clientId = m_NextClientId++;
-                    m_ClientIdToTransportIdMap[clientId] = transportId;
-                    m_TransportIdToClientIdMap[transportId] = clientId;
-
-                    MessagingSystem.ClientConnected(clientId);
-                    if (IsServer)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo("Client Connected");
-                        }
-
-                        PendingClients.Add(clientId, new PendingClient()
-                        {
-                            ClientId = clientId,
-                            ConnectionState = PendingClient.State.PendingConnection
-                        });
-
-                        StartCoroutine(ApprovalTimeout(clientId));
-                    }
-                    else
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo("Connected");
-                        }
-
-                        SendConnectionRequest();
-                        StartCoroutine(ApprovalTimeout(clientId));
-                    }
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportConnect.End();
-#endif
+                    ConnectionManager.HandleConnectEvent(transportId, IsServer, NetworkConfig, MessagingSystem);
                     break;
                 case NetworkEvent.Data:
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                         {
-                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                            NetworkLog.LogInfo($"Incoming Data From {transportId}: {payload.Count} bytes");
                         }
 
-                        clientId = TransportIdToClientId(clientId);
+                        ulong clientId = ConnectionManager.TransportIdToClientId(transportId);
 
                         HandleIncomingData(clientId, payload, receiveTime);
                         break;
                     }
                 case NetworkEvent.Disconnect:
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.Begin();
-#endif
-                    clientId = TransportIdToClientId(clientId);
-
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
-                    m_TransportIdToClientIdMap.Remove(transportId);
-                    m_ClientIdToTransportIdMap.Remove(clientId);
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Disconnect Event From {clientId}");
-                    }
-
-                    if (IsServer)
-                    {
-                        OnClientDisconnectFromServer(clientId);
-                    }
-                    else
-                    {
-                        Shutdown();
-                    }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.End();
-#endif
+                    ConnectionManager.HandleDisconnectEvent(transportId, IsServer);
                     break;
             }
         }
@@ -1503,101 +1343,100 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Disconnects the remote client.
+        /// Prefer <see cref="ConnectionManager.DisconnectClient"/>.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
         public void DisconnectClient(ulong clientId)
         {
-            if (!IsServer)
-            {
-                throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
-            }
-
-            OnClientDisconnectFromServer(clientId);
-            DisconnectRemoteClient(clientId);
+            ConnectionManager.DisconnectClient(clientId);
         }
 
-        private void OnClientDisconnectFromServer(ulong clientId)
+        /// <summary>
+        /// Triggered via the ConnectionManager event, once a connection is completely closed clean up NM
+        /// On a client this method will:
+        /// - Trigger shutdown for the client
+        /// On the server this method will:
+        /// - Tell the MessagingSystem the client has disconnected
+        /// </summary>
+        private void OnAfterDisconnect(ulong clientId)
         {
-            PendingClients.Remove(clientId);
-
-            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
+            if (IsServer)
             {
-                if (IsServer)
-                {
-                    var playerObject = networkClient.PlayerObject;
-                    if (playerObject != null)
-                    {
-                        // As long as we can destroy the PlayerObject with the owner
-                        if (!playerObject.DontDestroyWithOwner)
-                        {
-                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
-                            {
-                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            }
-                            else
-                            {
-                                Destroy(playerObject.gameObject);
-                            }
-                        }
-                        else // Otherwise, just remove the ownership
-                        {
-                            playerObject.RemoveOwnership();
-                        }
-                    }
-
-                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
-                    {
-                        var ownedObject = networkClient.OwnedObjects[i];
-                        if (ownedObject != null)
-                        {
-                            if (!ownedObject.DontDestroyWithOwner)
-                            {
-                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i]
-                                    .GlobalObjectIdHash))
-                                {
-                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                }
-                                else
-                                {
-                                    Destroy(ownedObject.gameObject);
-                                }
-                            }
-                            else
-                            {
-                                ownedObject.RemoveOwnership();
-                            }
-                        }
-                    }
-
-                    // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
-
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                    {
-                        sobj.Observers.Remove(clientId);
-                    }
-                }
-
-                for (int i = 0; i < ConnectedClientsList.Count; i++)
-                {
-                    if (ConnectedClientsList[i].ClientId == clientId)
-                    {
-                        m_ConnectedClientsList.RemoveAt(i);
-                        break;
-                    }
-                }
-
-                for (int i = 0; i < ConnectedClientsIds.Count; i++)
-                {
-                    if (ConnectedClientsIds[i] == clientId)
-                    {
-                        m_ConnectedClientIds.RemoveAt(i);
-                        break;
-                    }
-                }
-
-                m_ConnectedClients.Remove(clientId);
+                MessagingSystem.ClientDisconnected(clientId);
             }
-            MessagingSystem.ClientDisconnected(clientId);
+            else
+            {
+                Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// - Destroy the player object for the associated client or remove its ownership
+        /// - Destroy all owned objects or remove ownership
+        /// - Remove this client from all spawned object observer lists
+        /// </summary>
+        private void RemoveOwnedObjects(NetworkClient networkClient)
+        {
+            if (networkClient == null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("ClientID not recognized during Disconnect event handling.");
+                }
+
+                return;
+            }
+
+            var playerObject = networkClient.PlayerObject;
+            if (playerObject != null)
+            {
+                // As long as we can destroy the PlayerObject with the owner
+                if (!playerObject.DontDestroyWithOwner)
+                {
+                    if (PrefabHandler.ContainsHandler(playerObject.GlobalObjectIdHash))
+                    {
+                        PrefabHandler.HandleNetworkPrefabDestroy(playerObject);
+                    }
+                    else
+                    {
+                        Destroy(playerObject.gameObject);
+                    }
+                }
+                else // Otherwise, just remove the ownership
+                {
+                    playerObject.RemoveOwnership();
+                }
+            }
+
+            for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
+            {
+                var ownedObject = networkClient.OwnedObjects[i];
+                if (ownedObject != null)
+                {
+                    if (!ownedObject.DontDestroyWithOwner)
+                    {
+                        if (PrefabHandler.ContainsHandler(ownedObject.GlobalObjectIdHash))
+                        {
+                            PrefabHandler.HandleNetworkPrefabDestroy(ownedObject);
+                        }
+                        else
+                        {
+                            Destroy(ownedObject.gameObject);
+                        }
+                    }
+                    else
+                    {
+                        ownedObject.RemoveOwnership();
+                    }
+                }
+            }
+
+            // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
+
+            foreach (var sobj in SpawnManager.SpawnedObjectsList)
+            {
+                sobj.Observers.Remove(networkClient.ClientId);
+            }
         }
 
         private void SyncTime()
@@ -1631,72 +1470,64 @@ namespace Unity.Netcode
         /// <param name="rotation">Used when createPlayerObject is true, rotation of the player when spawned</param>
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
-            if (approved)
+            if (!approved)
             {
-                // Inform new client it got approved
-                PendingClients.Remove(ownerClientId);
-
-                var client = new NetworkClient { ClientId = ownerClientId, };
-                m_ConnectedClients.Add(ownerClientId, client);
-                m_ConnectedClientsList.Add(client);
-                m_ConnectedClientIds.Add(client.ClientId);
-
-                if (createPlayerObject)
-                {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
-
-                    ConnectedClients[ownerClientId].PlayerObject = networkObject;
-                }
-
-                // Server doesn't send itself the connection approved message
-                if (ownerClientId != ServerClientId)
-                {
-                    var message = new ConnectionApprovedMessage
-                    {
-                        OwnerClientId = ownerClientId,
-                        NetworkTick = LocalTime.Tick
-                    };
-                    if (!NetworkConfig.EnableSceneManagement)
-                    {
-                        if (SpawnManager.SpawnedObjectsList.Count != 0)
-                        {
-                            message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
-                        }
-                    }
-
-                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
-
-                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
-                    if (!NetworkConfig.EnableSceneManagement)
-                    {
-                        InvokeOnClientConnectedCallback(ownerClientId);
-                    }
-                    else
-                    {
-                        SceneManager.SynchronizeNetworkObjects(ownerClientId);
-                    }
-                }
-                else // Server just adds itself as an observer to all spawned NetworkObjects
-                {
-                    LocalClient = client;
-                    SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
-                    InvokeOnClientConnectedCallback(ownerClientId);
-                }
-
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
-                {
-                    return;
-                }
-
-                // Separating this into a contained function call for potential further future separation of when this notification is sent.
-                ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                ConnectionManager.RejectPendingClient(ownerClientId);
+                return;
             }
-            else
+
+            NetworkClient client = ConnectionManager.ApprovePendingClient(ownerClientId);
+
+            if (createPlayerObject)
             {
-                PendingClients.Remove(ownerClientId);
-                DisconnectRemoteClient(ownerClientId);
+                var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
+                SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
+
+                client.PlayerObject = networkObject;
             }
+
+            // Server doesn't send itself the connection approved message
+            if (ownerClientId != ServerClientId)
+            {
+                var message = new ConnectionApprovedMessage
+                {
+                    OwnerClientId = ownerClientId,
+                    NetworkTick = LocalTime.Tick
+                };
+                if (!NetworkConfig.EnableSceneManagement)
+                {
+                    if (SpawnManager.SpawnedObjectsList.Count != 0)
+                    {
+                        message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
+                    }
+                }
+
+                SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+
+                // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
+                if (!NetworkConfig.EnableSceneManagement)
+                {
+                    ConnectionManager.InvokeOnClientConnectedCallback(ownerClientId);
+                }
+                else
+                {
+                    SceneManager.SynchronizeNetworkObjects(ownerClientId);
+                }
+            }
+            else // Server just adds itself as an observer to all spawned NetworkObjects
+            {
+                LocalClient = client;
+                SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
+                ConnectionManager.InvokeOnClientConnectedCallback(ownerClientId);
+            }
+
+            if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
+            {
+                return;
+            }
+
+            // Separating this into a contained function call for potential further future separation of when this notification is sent.
+            ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
         }
 
         /// <summary>

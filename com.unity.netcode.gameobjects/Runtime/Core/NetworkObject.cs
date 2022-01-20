@@ -72,7 +72,7 @@ namespace Unity.Netcode
             {
                 if (OwnerClientIdInternal == null)
                 {
-                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
+                    return NetworkManager != null ? ConnectionManager.ServerClientId : 0;
                 }
                 else
                 {
@@ -81,7 +81,7 @@ namespace Unity.Netcode
             }
             internal set
             {
-                if (NetworkManager != null && value == NetworkManager.ServerClientId)
+                if (NetworkManager != null && value == ConnectionManager.ServerClientId)
                 {
                     OwnerClientIdInternal = null;
                 }
@@ -117,7 +117,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => NetworkManager != null && OwnerClientId == NetworkManager.ServerClientId;
+        public bool IsOwnedByServer => NetworkManager != null && OwnerClientId == ConnectionManager.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network

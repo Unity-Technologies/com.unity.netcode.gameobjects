@@ -204,27 +204,27 @@ namespace Unity.Netcode
                         networkClient.OwnedObjects.RemoveAt(i);
                     }
                 }
-
-                networkObject.OwnerClientIdInternal = null;
-
-                var message = new ChangeOwnershipMessage
-                {
-                    NetworkObjectId = networkObject.NetworkObjectId,
-                    OwnerClientId = networkObject.OwnerClientId
-                };
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
-
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-                }
             }
             else
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"No connected clients prior to removing ownership for {networkObject.name}.  Make sure you are not initializing or shutting down when removing ownership.");
                 }
+            }
+
+            networkObject.OwnerClientIdInternal = null;
+
+            var message = new ChangeOwnershipMessage
+            {
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 

@@ -55,7 +55,7 @@ namespace TestProject.ManualTests
             if (NetworkManager.IsServer)
             {
                 m_IsServer = true;
-                NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                NetworkManager.ConnectionManager.OnClientConnectedCallback += OnClientConnectedCallback;
             }
             else
             {
@@ -94,7 +94,7 @@ namespace TestProject.ManualTests
         {
             if (NetworkManager != null)
             {
-                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+                NetworkManager.ConnectionManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             }
 
             base.OnDestroy();

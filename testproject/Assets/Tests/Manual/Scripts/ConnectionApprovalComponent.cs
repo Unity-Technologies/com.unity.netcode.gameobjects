@@ -77,8 +77,8 @@ namespace TestProject.ManualTests
                 }
             }
 
-            NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
-            NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+            NetworkManager.ConnectionManager.OnBeforeDisconnectCallback += NetworkManagerOnBeforeDisconnectCallback;
+            NetworkManager.ConnectionManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace TestProject.ManualTests
         /// are not listening and not the server we reset the UI Connection
         /// mode buttons
         /// </summary>
-        private void NetworkManager_OnClientDisconnectCallback(ulong clientId)
+        private void NetworkManagerOnBeforeDisconnectCallback(ulong clientId)
         {
 
             AddNewMessage($"Client {clientId} was disconnected!");

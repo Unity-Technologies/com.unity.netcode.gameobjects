@@ -318,8 +318,8 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
-                NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                NetworkManager.ConnectionManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                NetworkManager.ConnectionManager.OnBeforeDisconnectCallback += OnBeforeDisconnectCallback;
                 if (IsHost)
                 {
                     m_ClientSpecificCounters.Add(NetworkManager.LocalClientId, 0);
@@ -335,8 +335,8 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
-                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-                NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                NetworkManager.ConnectionManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+                NetworkManager.ConnectionManager.OnBeforeDisconnectCallback -= OnBeforeDisconnectCallback;
             }
             base.OnNetworkDespawn();
         }
@@ -345,7 +345,7 @@ namespace TestProject.ManualTests
         /// Called when a client disconnects
         /// </summary>
         /// <param name="clientId">client id that disconnected</param>
-        private void OnClientDisconnectCallback(ulong clientId)
+        private void OnBeforeDisconnectCallback(ulong clientId)
         {
             if (m_ClientSpecificCounters.ContainsKey(clientId))
             {

@@ -39,7 +39,7 @@ namespace Unity.Netcode
                         NetworkLog.LogWarning($"Incomplete connection request message given config - possible {nameof(NetworkConfig)} mismatch.");
                     }
 
-                    networkManager.DisconnectClient(context.SenderId);
+                    networkManager.ConnectionManager.DisconnectClient(context.SenderId);
                     return false;
                 }
                 reader.ReadValue(out ConfigHash);
@@ -90,7 +90,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
 
-            if (networkManager.PendingClients.TryGetValue(senderId, out PendingClient client))
+            if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
                 client.ConnectionState = PendingClient.State.PendingApproval;

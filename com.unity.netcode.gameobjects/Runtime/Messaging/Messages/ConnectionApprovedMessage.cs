@@ -100,7 +100,7 @@ namespace Unity.Netcode
                 // Mark the client being connected
                 networkManager.IsConnectedClient = true;
                 // When scene management is disabled we notify after everything is synchronized
-                networkManager.InvokeOnClientConnectedCallback(context.SenderId);
+                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
             }
         }
     }

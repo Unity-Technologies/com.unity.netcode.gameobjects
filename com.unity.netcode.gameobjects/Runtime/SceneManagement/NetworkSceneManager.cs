@@ -1608,7 +1608,7 @@ namespace Unity.Netcode
                             m_NetworkManager.IsConnectedClient = true;
 
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
-                            m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
+                            m_NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
                             // Notify the client that they have finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1734,7 +1734,7 @@ namespace Unity.Netcode
                         // We now can call the client connected callback on the server at this time
                         // This assures the client is fully synchronized with all loaded scenes and
                         // NetworkObjects
-                        m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
+                        m_NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
 
                         // TODO: This check and associated code can be removed once we determine all
                         // snapshot destroy messages are being updated until the server receives ACKs
