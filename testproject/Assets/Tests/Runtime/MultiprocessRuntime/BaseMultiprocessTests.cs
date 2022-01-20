@@ -30,7 +30,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || !BuildMultiprocessTestPlayer.IsMultiprocessTestPlayerAvailable();
 
-
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
         /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
@@ -52,7 +51,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+            MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup");
 
             if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
@@ -85,6 +84,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
+            MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

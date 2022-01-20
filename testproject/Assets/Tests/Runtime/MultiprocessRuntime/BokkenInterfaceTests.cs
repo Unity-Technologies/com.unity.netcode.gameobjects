@@ -30,7 +30,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public override void SetupTestSuite()
         {
-            MultiprocessLogger.Log("Running SetupTestSuite - override from BaseMultiprocessTests");
+            MultiprocessLogger.Log("BokkenInterfaceTests - SetupTestSuite - override from BaseMultiprocessTests");
         }
 
         [UnityTest]
