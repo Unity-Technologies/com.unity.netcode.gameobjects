@@ -28,6 +28,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             m_Platforms = platformList;
         }
 
+        public override void SetupTestSuite()
+        {
+            MultiprocessLogger.Log("Running SetupTestSuite - override from BaseMultiprocessTests");
+        }
+
         [UnityTest]
         public IEnumerator CheckPreconditions()
         {
