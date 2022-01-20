@@ -2,6 +2,9 @@
     "name": "TestProject.MultiprocessTests",
     "references": [
         "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Netcode.Components",
+        "Unity.Netcode.Adapter.UTP",
         "ScriptsForAutomatedTesting",
         "Unity.PerformanceTesting"
     ],

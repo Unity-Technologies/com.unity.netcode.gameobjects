@@ -58,7 +58,7 @@ namespace Unity.Netcode
 
         // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
         //  to use the InterestManager
-        internal InterestManager<NetworkObject> InterestManager
+        public InterestManager<NetworkObject> InterestManager
         {
             get
             {
@@ -1321,7 +1321,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        private ulong ClientIdToTransportId(ulong clientId)
+        internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
