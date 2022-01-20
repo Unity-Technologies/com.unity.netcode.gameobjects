@@ -217,13 +217,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {m_ConnectedClientsList.Count}"
                         + $" by launching {machines.Count} new instances");
 
+                    int initialCount = m_ConnectedClientsList.Count;
                     foreach (var machine in machines)
                     {
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
-                        yield return new WaitForSeconds(1.1f);
                         MultiprocessLogger.Log($"Launching process complete");
+                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
+                        initialCount = m_ConnectedClientsList.Count;
                         MultiprocessLogger.Log($"ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
                 }
