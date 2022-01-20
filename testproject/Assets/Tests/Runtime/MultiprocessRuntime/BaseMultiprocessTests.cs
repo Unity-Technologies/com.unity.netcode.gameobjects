@@ -52,7 +52,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup");
-
+            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
             if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");

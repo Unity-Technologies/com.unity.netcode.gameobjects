@@ -27,11 +27,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             m_WorkerCount = platformList.Length;
             m_Platforms = platformList;
         }
-
+        /*
         public override void SetupTestSuite()
         {
             MultiprocessLogger.Log("BokkenInterfaceTests - SetupTestSuite - override from BaseMultiprocessTests");
         }
+        */
 
         [UnityTest]
         public IEnumerator CheckPreconditions()

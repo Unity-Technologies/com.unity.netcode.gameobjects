@@ -110,7 +110,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             var webLog = new WebLog();
-            webLog.Message = $"{DateTime.Now:T} {args[0].ToString()}";
+            webLog.Message = $"{testName} {args[0].ToString()}";
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
             webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
