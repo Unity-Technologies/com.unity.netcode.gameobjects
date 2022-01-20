@@ -153,16 +153,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        public void Launch()
+        public static void LogProcessListStatus()
         {
-            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
-            Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
-            MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
-            if (!ProcessList.Contains(p))
-            {
-                ProcessList.Add(p);
-            }
-            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             int counter = 0;
             var deletionList = new List<Process>();
             foreach (var process in ProcessList)
@@ -170,7 +162,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 counter++;
                 if (!process.HasExited)
                 {
-                    MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime} {process.HasExited} with args {process.StartInfo.Arguments}");
+                    MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime} {process.HasExited}");
                 }
                 else
                 {
@@ -182,6 +174,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 ProcessList.Remove(processToDelete);
             }
+        }
+
+        public void Launch()
+        {
+            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
+            Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
+            MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
+            if (!ProcessList.Contains(p))
+            {
+                ProcessList.Add(p);
+            }
+            MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
+            LogProcessListStatus();
         }
 
         public void KillMptPlayer()

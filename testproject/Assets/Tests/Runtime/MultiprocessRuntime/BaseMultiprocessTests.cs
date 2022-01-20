@@ -164,6 +164,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
             MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and connection listener has fired: {m_ConnectedClientsList.Count}");
+            if (m_ConnectedClientsList.Count > 0)
+            {
+                MultiprocessLogger.Log($"There are {m_ConnectedClientsList.Count} connected clients which shouldn't be the case as we haven't started yet");
+                BokkenMachine.LogProcessListStatus();
+                MultiprocessLogger.Log($"Bokken Machine process count is : {BokkenMachine.ProcessList.Count}");
+            }
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -236,7 +242,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 counter++;
+                MultiprocessLogger.Log("Before call to yield");
                 yield return new WaitForSeconds(0.2f);
+                MultiprocessLogger.Log("After call to yield, look for Burst exception around this point");
                 if (counter % 7 == 0)
                 {
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
