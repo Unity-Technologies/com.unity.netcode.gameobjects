@@ -6,9 +6,12 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
+- A new 'Listen Address' field under 'Connection Data' in the inspector has been added to specify the address a server should listen to, in case it differs from the main 'Address' field. The `SetConnectionData` method has been updated accordingly to take an optional parameter to specify that listen address.
+
 ### Changed
 
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1585)
+- Implicit conversions between `ConnectionAddressData` and `NetworkEndPoint` are now deprecated, since their semantics are no longer clear with the introduction of the new `ListenAddress` field (see above).
 
 ### Fixed
 
