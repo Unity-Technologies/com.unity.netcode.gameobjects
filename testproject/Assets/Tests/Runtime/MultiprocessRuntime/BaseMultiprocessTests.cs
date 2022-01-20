@@ -256,10 +256,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
         }
 
-        [TearDown]
+        [UnityTearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");            
 
             if (LaunchRemotely)
             {
@@ -305,6 +305,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
             MultiprocessOrchestration.ShutdownAllProcesses();
             MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
+            MultiprocessLogger.Log($"Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
             NetworkManager.Singleton.Shutdown();
             Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
             MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");

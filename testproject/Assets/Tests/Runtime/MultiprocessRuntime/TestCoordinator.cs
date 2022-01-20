@@ -371,6 +371,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         try
         {
+            MultiprocessLogger.Log($"Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
             NetworkManager.Singleton.Shutdown();
             m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
             MultiprocessLogger.Log("Quitting player cleanly");

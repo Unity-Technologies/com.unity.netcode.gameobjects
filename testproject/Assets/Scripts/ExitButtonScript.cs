@@ -14,6 +14,7 @@ public class ExitButtonScript : MonoBehaviour
     {
         if (NetworkManager.Singleton)
         {
+            MultiprocessLogger.Log($"Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
             NetworkManager.Singleton.Shutdown();
             Destroy(NetworkManager.Singleton.gameObject);
         }
