@@ -163,7 +163,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
-            MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and connection listener has fired: {m_ConnectedClientsList.Count}");
             if (m_ConnectedClientsList.Count > 0)
             {
                 MultiprocessLogger.Log($"There are {m_ConnectedClientsList.Count} connected clients which shouldn't be the case as we haven't started yet");
@@ -236,15 +235,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
-            int counter = 0;
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-            
+            int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 counter++;
-                MultiprocessLogger.Log("Before call to yield");
-                yield return new WaitForSeconds(0.2f);
-                MultiprocessLogger.Log("After call to yield, look for Burst exception around this point");
+                // yield return new WaitForSeconds(0.2f);
+                Thread.Sleep(200);
                 if (counter % 7 == 0)
                 {
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
