@@ -115,8 +115,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
-            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
-            NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
