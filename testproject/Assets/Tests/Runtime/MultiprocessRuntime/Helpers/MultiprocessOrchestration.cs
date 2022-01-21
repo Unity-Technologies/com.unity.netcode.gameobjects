@@ -254,6 +254,23 @@ public class MultiprocessOrchestration
         }
 
         s_Processes.Clear();
+
+        foreach (var process in BokkenMachine.ProcessList)
+        {
+            if (!process.HasExited)
+            {
+                try
+                {
+                    MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
+                    process.CloseMainWindow();
+                    process.Close();
+                }
+                catch (Exception e)
+                {
+                    MultiprocessLogger.Log(e.Message);
+                }
+            }
+        }
     }
 
     private static void WriteLocalIP(string localip)

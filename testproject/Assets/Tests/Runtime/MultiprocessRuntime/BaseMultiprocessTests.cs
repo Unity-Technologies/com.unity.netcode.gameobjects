@@ -121,11 +121,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
+            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
+            bool didStart = NetworkManager.Singleton.StartHost();
+            MultiprocessLogger.Log($"OnSceneLoaded: Host Start Complete with status {didStart}");
             m_HasSceneLoaded = true;
         }
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
         {
+            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Remove(obj);
             MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
         }

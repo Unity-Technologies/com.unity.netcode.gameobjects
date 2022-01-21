@@ -231,16 +231,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             workerProcess.StartInfo.Arguments = $"{PathToDll} {command} ";
             try
             {
-                MultiprocessLogger.Log($"Starting process : waitForResult is {waitForResult}");
                 var newProcessStarted = workerProcess.Start();
 
                 if (!newProcessStarted)
                 {
                     throw new Exception("Failed to start worker process!");
-                }
-                else
-                {
-                    MultiprocessLogger.Log($"Started process : waitForResult is {waitForResult}");
                 }
             }
             catch (Win32Exception e)
