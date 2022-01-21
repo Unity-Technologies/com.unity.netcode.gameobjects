@@ -381,6 +381,33 @@ namespace Unity.Netcode
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, bool isSecure = false)
+        {
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, isSecure: isSecure);
+        }
+
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="hostConnectionData">Host's connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetClientRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, byte[] hostConnectionData, bool isSecure = false)
+        {
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
+        }
+
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
