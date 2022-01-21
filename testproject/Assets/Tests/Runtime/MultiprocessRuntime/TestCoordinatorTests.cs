@@ -53,7 +53,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Sanity check for TestCoordinator
             // Call the method
             MultiprocessLogger.Log("Before sending message, let's see that we have the right number of connected clients");
-            Assert.Equals(WorkerCount, m_ConnectedClientsList.Count);
+            MultiprocessLogger.Log($"{WorkerCount}, {m_ConnectedClientsList.Count}");
             MultiprocessLogger.Log("CheckTestCoordinator test in TestCoordinatorTests about to call InvokeFromMethodActionRpc");
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 

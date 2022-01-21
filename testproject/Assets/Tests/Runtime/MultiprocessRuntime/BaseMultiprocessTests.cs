@@ -240,7 +240,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete");
-                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
+                        // yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
                         initialCount = m_ConnectedClientsList.Count;
                         MultiprocessLogger.Log($"ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
