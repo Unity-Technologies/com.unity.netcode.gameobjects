@@ -261,9 +261,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($"t1.Result.Outcome.Label {t1.Result.Outcome.Label}");
+            MultiprocessLogger.Log($"t1.Result.Outcome {t1.Result.Outcome}");
             var t2 = TestContext.CurrentTestExecutionContext;
-            MultiprocessLogger.Log($"t2.CurrentResult.FullName {t2.CurrentResult.FullName}");
+            MultiprocessLogger.Log($"t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
 
             if (LaunchRemotely)
             {
