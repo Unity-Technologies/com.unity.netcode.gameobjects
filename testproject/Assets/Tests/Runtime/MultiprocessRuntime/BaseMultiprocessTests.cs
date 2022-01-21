@@ -256,10 +256,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
         }
 
-        [UnityTearDown]
+        [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");            
+            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
 
             if (LaunchRemotely)
             {
