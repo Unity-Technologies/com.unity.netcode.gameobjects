@@ -115,8 +115,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
-            MultiprocessLogger.Log($"OnSceneLoaded: Starting Server {((UnityTransport)transport).ConnectionData.Address}");
-            NetworkManager.Singleton.StartServer();
+            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
+            NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
             m_ConnectedClientsList = new List<ulong>();
@@ -260,6 +260,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void Teardown()
         {
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
+            TestContext t1 = TestContext.CurrentContext;
+            MultiprocessLogger.Log($"t1.Result.Outcome.Label {t1.Result.Outcome.Label}");
+            var t2 = TestContext.CurrentTestExecutionContext;
+            MultiprocessLogger.Log($"t2.CurrentResult.FullName {t2.CurrentResult.FullName}");
 
             if (LaunchRemotely)
             {
