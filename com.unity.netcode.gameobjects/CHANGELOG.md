@@ -12,6 +12,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added `PreviousValue` in NetworkListEvent, when `Value` has changed (#1528)
 
+### Fixed
+- Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
+
 ## [1.0.0-pre.4] - 2021-01-04
 
 ### Added
