@@ -347,7 +347,7 @@ namespace Unity.Netcode
 
         internal void SetMaxPayloadSize(int maxPayloadSize)
         {
-            m_SendQueueBatchSize = maxPayloadSize;
+            m_MaxPayloadSize = maxPayloadSize;
         }
 
         private void SetProtocol(ProtocolType inProtocol)

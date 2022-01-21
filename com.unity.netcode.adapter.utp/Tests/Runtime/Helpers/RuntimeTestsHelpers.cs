@@ -36,7 +36,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
         // Common code to initialize a UnityTransport that logs its events.
         public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
-            int maxPayloadSize = UnityTransport.InitialBatchQueueSize)
+            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize)
         {
             var logger = new TransportEventLogger();
             events = logger.Events;
