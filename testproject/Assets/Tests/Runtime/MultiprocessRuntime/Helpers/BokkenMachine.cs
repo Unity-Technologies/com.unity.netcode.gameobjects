@@ -157,22 +157,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             int counter = 0;
             var deletionList = new List<Process>();
-            foreach (var process in ProcessList)
+            try
             {
-                counter++;
-                if (!process.HasExited)
+                foreach (var process in ProcessList)
                 {
-                    MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime} {process.HasExited}");
+                    counter++;
+                    if (!process.HasExited)
+                    {
+                        MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime}");
+                    }
+                    else
+                    {
+                        deletionList.Add(process);
+                    }
                 }
-                else
+
+                foreach (var processToDelete in deletionList)
                 {
-                    deletionList.Add(process);
+                    ProcessList.Remove(processToDelete);
                 }
             }
-
-            foreach (var processToDelete in deletionList)
+            catch (Exception e)
             {
-                ProcessList.Remove(processToDelete);
+                MultiprocessLogger.Log($"LogProcessListStatus Excetion message - {e.Message}");
             }
         }
 
