@@ -81,7 +81,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $" currently active scene is {currentlyActiveScene.name}");
             }
             m_OriginalActiveScene = currentlyActiveScene;
-
+            m_ConnectedClientsList = new List<ulong>();
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
@@ -119,7 +119,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
-            m_ConnectedClientsList = new List<ulong>();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             m_HasSceneLoaded = true;
@@ -174,9 +173,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"There are {m_ConnectedClientsList.Count} connected clients which shouldn't be the case as we haven't started yet");
                 var connectedClients = NetworkManager.Singleton.ConnectedClients;
                 MultiprocessLogger.Log($"NetworkManager count is {connectedClients.Count}");
+                var clientsToDisconnect = new List<ulong>();
                 foreach (ulong id in connectedClients.Keys)
                 {
-                    MultiprocessLogger.Log($"Disconnecting client {id} {connectedClients[id]}");
+                    MultiprocessLogger.Log($"Identified still connected client {id} {connectedClients[id]}");
+                    clientsToDisconnect.Add(id);
+                }
+                foreach (var id in clientsToDisconnect)
+                {
+                    MultiprocessLogger.Log($"Disconnect {id}");
                     NetworkManager.Singleton.DisconnectClient(id);
                 }
             }
@@ -275,7 +280,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($"t1.Result.Outcome {t1.Result.Outcome}");
+            MultiprocessLogger.Log($"t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($"t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
 
