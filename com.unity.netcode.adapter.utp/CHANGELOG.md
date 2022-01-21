@@ -6,7 +6,7 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
-- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available).
+- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
 
 ### Changed
 
