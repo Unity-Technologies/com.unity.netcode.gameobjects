@@ -90,7 +90,7 @@ namespace Unity.Netcode
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
-        { Address = "127.0.0.1", Port = 7777, ListenAddress = null };
+        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = null };
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
@@ -138,7 +138,7 @@ namespace Unity.Netcode
             [SerializeField] public ushort Port;
 
             [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
-            [SerializeField] public string ListenAddress;
+            [SerializeField] public string ServerListenAddress;
 
             private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
             {
@@ -153,7 +153,7 @@ namespace Unity.Netcode
 
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
-            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(ListenAddress ?? Address, Port);
+            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(ServerListenAddress ?? Address, Port);
 
             [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
             public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
@@ -161,7 +161,7 @@ namespace Unity.Netcode
 
             [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
             public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
-                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ListenAddress = null };
+                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = null };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -405,7 +405,7 @@ namespace Unity.Netcode
             {
                 Address = ipv4Address,
                 Port = port,
-                ListenAddress = listenAddress
+                ServerListenAddress = listenAddress
             };
 
             SetProtocol(ProtocolType.UnityTransport);
