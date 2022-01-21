@@ -65,6 +65,8 @@ namespace Unity.Netcode
         private readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogReceived.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
+        private readonly EventMetric<PacketEvent> m_PacketSentEvent = new EventMetric<PacketEvent>(NetworkMetricTypes.PacketEventSent.Id);
+        private readonly EventMetric<PacketEvent> m_PacketReceivedEvent = new EventMetric<PacketEvent>(NetworkMetricTypes.PacketEventReceived.Id);
 
         private ulong m_NumberOfMetricsThisFrame;
 
@@ -82,6 +84,7 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
+                .WithMetricEvents(m_PacketSentEvent, m_PacketReceivedEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(NetcodeObserver.Observer);
@@ -409,10 +412,24 @@ namespace Unity.Netcode
 
         public void TrackPacketSent(uint packetCount)
         {
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketSentEvent.Mark(new PacketEvent(packetCount));
+            IncrementMetricCount();
         }
 
         public void TrackPacketReceived(uint packetCount)
         {
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketReceivedEvent.Mark(new PacketEvent(packetCount));
+            IncrementMetricCount();
         }
 
         public void DispatchFrame()
