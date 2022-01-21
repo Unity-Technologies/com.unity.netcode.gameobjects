@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.Linq;
@@ -61,3 +62,4 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
     }
 }
+#endif
