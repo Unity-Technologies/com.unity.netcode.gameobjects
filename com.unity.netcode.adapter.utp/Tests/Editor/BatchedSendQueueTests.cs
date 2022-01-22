@@ -64,92 +64,12 @@ namespace Unity.Netcode.UTP.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_FillWriterReturnValue()
-        {
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(k_TestMessageSize + BatchedSendQueue.PerMessageOverhead, q.FillWriter(ref writer));
-        }
-
-        [Test]
         public void BatchedSendQueue_LengthIncreasedAfterPush()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
 
             q.PushMessage(m_TestMessage);
             Assert.AreEqual(k_TestMessageSize + BatchedSendQueue.PerMessageOverhead, q.Length);
-        }
-
-        [Test]
-        public void BatchedSendQueue_WriterNotFilledWithNoPushedMessages()
-        {
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(0, q.FillWriter(ref writer));
-        }
-
-        [Test]
-        public void BatchedSendQueue_WriterNotFilledIfNotEnoughCapacity()
-        {
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(2, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(0, q.FillWriter(ref writer));
-        }
-
-        [Test]
-        public void BatchedSendQueue_WriterFilledWithSinglePushedMessage()
-        {
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            q.FillWriter(ref writer);
-            AssertIsTestMessage(data);
-        }
-
-        [Test]
-        public void BatchedSendQueue_WriterFilledWithMultiplePushedMessages()
-        {
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            q.FillWriter(ref writer);
-
-            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
-            AssertIsTestMessage(data);
-            AssertIsTestMessage(data.GetSubArray(messageLength, messageLength));
-        }
-
-        [Test]
-        public void BatchedSendQueue_WriterFilledWithPartialPushedMessages()
-        {
-            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
-
-            using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            using var data = new NativeArray<byte>(messageLength, Allocator.Temp);
-
-            q.PushMessage(m_TestMessage);
-            q.PushMessage(m_TestMessage);
-
-            var writer = new DataStreamWriter(data);
-            Assert.AreEqual(messageLength, q.FillWriter(ref writer));
-            AssertIsTestMessage(data);
         }
 
         [Test]
@@ -167,6 +87,143 @@ namespace Unity.Netcode.UTP.EditorTests
             q.Consume(messageLength);
             Assert.IsTrue(q.PushMessage(m_TestMessage));
             Assert.AreEqual(queueCapacity, q.Length);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_ReturnValue()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            var filled = q.FillWriterWithMessages(ref writer);
+            Assert.AreEqual(k_TestMessageSize + BatchedSendQueue.PerMessageOverhead, filled);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_NoopIfNoPushedMessages()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(0, q.FillWriterWithMessages(ref writer));
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_NoopIfNotEnoughCapacity()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(2, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(0, q.FillWriterWithMessages(ref writer));
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_SinglePushedMessage()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            q.FillWriterWithMessages(ref writer);
+            AssertIsTestMessage(data);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_MultiplePushedMessages()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            q.FillWriterWithMessages(ref writer);
+
+            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+            AssertIsTestMessage(data);
+            AssertIsTestMessage(data.GetSubArray(messageLength, messageLength));
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_PartialPushedMessages()
+        {
+            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(messageLength, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(messageLength, q.FillWriterWithMessages(ref writer));
+            AssertIsTestMessage(data);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_NoopIfNoData()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(0, q.FillWriterWithBytes(ref writer));
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityMoreThanLength()
+        {
+            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
+            AssertIsTestMessage(data);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityLessThanLength()
+        {
+            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
+            AssertIsTestMessage(data);
+        }
+
+        [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_WriterCapacityEqualToLength()
+        {
+            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer));
+            AssertIsTestMessage(data);
         }
 
         [Test]
