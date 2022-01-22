@@ -638,7 +638,7 @@ namespace Unity.Netcode
             var networkConnection =  ParseClientId(transportClientId);
             ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
-            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
         }
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
