@@ -114,14 +114,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"OnSceneLoaded: setting active scene");
                 SceneManager.SetActiveScene(scene);
             }
-
+            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
+            bool didStart = NetworkManager.Singleton.StartHost();
+            MultiprocessLogger.Log($"OnSceneLoaded: Host Start Complete with status {didStart}");
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
-            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
-            bool didStart = NetworkManager.Singleton.StartHost();
-            MultiprocessLogger.Log($"OnSceneLoaded: Host Start Complete with status {didStart}");
+            
             m_HasSceneLoaded = true;
         }
 
@@ -313,20 +313,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
             MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
-
-            try
+            
+            MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+            if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
-                MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-                if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
-                {
-                    BokkenMachine.FetchAllLogFiles();
-                }
+                BokkenMachine.FetchAllLogFiles();
             }
-            catch (Exception e)
-            {
-                MultiprocessLogger.LogError($"Error getting dotnet process info {e.Message}");
-            }
-
+            
             MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
             MultiprocessOrchestration.ShutdownAllProcesses();
             MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
