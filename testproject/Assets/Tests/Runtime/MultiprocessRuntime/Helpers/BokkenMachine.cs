@@ -162,7 +162,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 counter++;
                 if (!process.HasExited)
                 {
-                    MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count} status: {process.StartTime}");
+                    MultiprocessLogger.Log($"BokkenMachine process list item {counter} of {ProcessList.Count}");
                 }
                 else
                 {

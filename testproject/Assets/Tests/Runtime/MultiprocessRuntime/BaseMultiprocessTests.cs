@@ -295,9 +295,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 foreach (var process in BokkenMachine.ProcessList)
                 {
-                    if (!process.HasExited)
+                    MultiprocessLogger.Log("About to call HasExited on a process");
+                    try
                     {
-                        MultiprocessLogger.Log($"Teardown found an active process {process.ProcessName} {process.Id}");
+                        if (!process.HasExited)
+                        {
+                            MultiprocessLogger.Log($"Teardown found an active process {process.ProcessName} {process.Id}");
+                        }
+                    }
+                    catch (InvalidOperationException ioe)
+                    {
+                        MultiprocessLogger.Log($"HasExited threw an exception {ioe.StackTrace}");
                     }
                 }
 
@@ -313,6 +321,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
         }
 
+
+        [UnityTearDown]
+        public IEnumerator UnityTearDown()
+        {
+            MultiprocessLogger.Log("13/21 - UnityTearDown");
+            yield return null;
+        }
+
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
@@ -325,34 +341,34 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 BokkenMachine.FetchAllLogFiles();
             }
             
-            MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
+            MultiprocessLogger.Log($"1/20 - TeardownSuite - ShutdownAllProcesses");
             MultiprocessOrchestration.ShutdownAllProcesses();
-            MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
-            MultiprocessLogger.Log($"Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
+            MultiprocessLogger.Log($"2/20 - NetworkManager.Singleton.Shutdown");
+            MultiprocessLogger.Log($"3/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
             NetworkManager.Singleton.Shutdown();
             Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-            MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
-            MultiprocessLogger.Log($"Original active scene {m_OriginalActiveScene.name}");
-            MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+            MultiprocessLogger.Log($"4/20 - Currently active scene {SceneManager.GetActiveScene().name}");
+            MultiprocessLogger.Log($"5/20 - Original active scene {m_OriginalActiveScene.name}");
+            MultiprocessLogger.Log($"6/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
             if (m_OriginalActiveScene.IsValid())
             {
-                MultiprocessLogger.Log($"Setting the ActiveScene back to Origianl");
+                MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Origianl");
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
             else
             {
-                MultiprocessLogger.Log($"m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
+                MultiprocessLogger.Log($"8/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
             }
-            MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+            MultiprocessLogger.Log($"9/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
             AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-            MultiprocessLogger.Log($"TeardownSuite - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+            MultiprocessLogger.Log($"10/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
             asyncOperation.completed += AsyncOperation_completed;
-            MultiprocessLogger.Log($"TeardownSuite - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+            MultiprocessLogger.Log($"11/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)
         {
-            MultiprocessLogger.Log($"TeardownSuite - Unload - UnloadScene {obj.progress} ");
+            MultiprocessLogger.Log($"12/20 - Unload - UnloadScene {obj.progress} ");
         }
     }
 }
