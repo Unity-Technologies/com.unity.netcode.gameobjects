@@ -83,6 +83,17 @@ public class MultiprocessOrchestration
         return bokkenMachine;
     }
 
+    public static void LogProcessList()
+    {
+        if (s_Processes != null)
+        {
+            foreach (var process in s_Processes)
+            {
+                MultiprocessLogger.Log($"Process item: {process.StartTime} {process.HasExited}");
+            }
+        }
+    }
+
     public static string StartWorkerNode()
     {
         if (s_Processes == null)

@@ -51,6 +51,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            m_ConnectedClientsList = new List<ulong>();
+
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup");
             MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
             if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
@@ -70,6 +72,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             var currentlyActiveScene = SceneManager.GetActiveScene();
+            MultiprocessLogger.Log($"Current Active Scene is {currentlyActiveScene.name}");
             // Just adding a sanity check here to help with debugging in the event that SetupTestSuite is
             // being invoked and the TestRunner scene has not been set to the active scene yet.
             // This could mean that TeardownSuite wasn't called or SceneManager is not finished unloading
@@ -81,7 +84,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $" currently active scene is {currentlyActiveScene.name}");
             }
             m_OriginalActiveScene = currentlyActiveScene;
-            m_ConnectedClientsList = new List<ulong>();
+
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
@@ -201,6 +204,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is null");
                         m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                         MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
+                        MultiprocessLogger.Log($"Checking spawned process");
+                        MultiprocessOrchestration.LogProcessList();
                         MultiprocessLogger.Log($"connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
                     }
                 }
@@ -256,7 +261,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-            /*
+            
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
@@ -274,7 +279,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
-            */
+            
         }
 
         [TearDown]
@@ -327,14 +332,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.Shutdown();
             Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
             MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+            MultiprocessLogger.Log($"Original active scene {m_OriginalActiveScene.name}");
             MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
             if (m_OriginalActiveScene.IsValid())
             {
+                MultiprocessLogger.Log($"Setting the ActiveScene back to Origianl");
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
+            }
+            else
+            {
+                MultiprocessLogger.Log($"m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
             }
             MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
             AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+            MultiprocessLogger.Log($"TeardownSuite - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
             asyncOperation.completed += AsyncOperation_completed;
+            MultiprocessLogger.Log($"TeardownSuite - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)
