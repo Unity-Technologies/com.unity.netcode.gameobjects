@@ -113,7 +113,16 @@ namespace Unity.Netcode
         private void UpdateCache()
         {
             double d = m_TimeSec / m_TickInterval;
-            m_CachedTick = (int)Math.Round(d);
+            var truncated = Math.Truncate(d);
+            var deltaTruncated = d - truncated;
+            if (deltaTruncated >= 0.75 * m_TickInterval)
+            {
+                m_CachedTick = (int)Math.Round(d);
+            }
+            else
+            {
+                m_CachedTick = (int)d;
+            }
             m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
 
             // This handles negative time, decreases tick by 1 and makes offset positive.
