@@ -48,7 +48,7 @@ namespace Unity.Netcode.EditorTests
         [TestCase(-27.4133d, -27.42d, 50u)]
         public void TestToFixedTime(double time, double expectedFixedTime, uint tickRate)
         {
-            Assert.IsTrue(Approximately(expectedFixedTime, new NetworkTime(tickRate, time).ToFixedTime().Time,0.5));
+            Assert.AreEqual(expectedFixedTime, new NetworkTime(tickRate, time).ToFixedTime().Time);
         }
 
         [Test]
