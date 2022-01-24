@@ -325,8 +325,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log("13/21 - UnityTearDown");
+            MultiprocessLogger.Log("13/20 - UnityTearDown");
             yield return null;
+            MultiprocessLogger.Log("14/20 - UnityTearDown ... end");
         }
 
         [OneTimeTearDown]
@@ -352,7 +353,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"6/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
             if (m_OriginalActiveScene.IsValid())
             {
-                MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Origianl");
+                MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Original");
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
             else

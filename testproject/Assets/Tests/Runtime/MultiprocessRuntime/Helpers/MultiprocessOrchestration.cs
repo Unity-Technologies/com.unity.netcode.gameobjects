@@ -246,9 +246,9 @@ public class MultiprocessOrchestration
         MultiprocessLogger.Log("Shutting down all processes..");
         foreach (var process in s_Processes)
         {
-            MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
             try
             {
+                MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
                 if (!process.HasExited)
                 {
                     // Close process by sending a close message to its main window.
@@ -268,18 +268,18 @@ public class MultiprocessOrchestration
 
         foreach (var process in BokkenMachine.ProcessList)
         {
-            if (!process.HasExited)
+            try
             {
-                try
+                if (!process.HasExited)
                 {
                     MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
                     process.CloseMainWindow();
                     process.Close();
                 }
-                catch (Exception e)
-                {
-                    MultiprocessLogger.Log(e.Message);
-                }
+            }
+            catch (Exception e)
+            {
+                MultiprocessLogger.Log(e.Message);
             }
         }
     }
