@@ -161,6 +161,28 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
         }
 
+        public void DisconnectClients()
+        {
+            int messageCounter = 1;
+            if (m_ConnectedClientsList.Count > 0)
+            {
+                MultiprocessLogger.Log($"... {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
+                var connectedClients = NetworkManager.Singleton.ConnectedClients;
+                MultiprocessLogger.Log($"... {messageCounter++} NetworkManager count is {connectedClients.Count}");
+                var clientsToDisconnect = new List<ulong>();
+                foreach (ulong id in connectedClients.Keys)
+                {
+                    MultiprocessLogger.Log($"... {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
+                    clientsToDisconnect.Add(id);
+                }
+                foreach (var id in clientsToDisconnect)
+                {
+                    MultiprocessLogger.Log($"... {messageCounter++} Disconnect {id}");
+                    NetworkManager.Singleton.DisconnectClient(id);
+                }
+            }
+        }
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
@@ -171,25 +193,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
 
-            yield return new WaitUntil(() => m_HasSceneLoaded == true);
-
-            if (m_ConnectedClientsList.Count > 0)
-            {
-                MultiprocessLogger.Log($"There are {m_ConnectedClientsList.Count} connected clients which shouldn't be the case as we haven't started yet");
-                var connectedClients = NetworkManager.Singleton.ConnectedClients;
-                MultiprocessLogger.Log($"NetworkManager count is {connectedClients.Count}");
-                var clientsToDisconnect = new List<ulong>();
-                foreach (ulong id in connectedClients.Keys)
-                {
-                    MultiprocessLogger.Log($"Identified still connected client {id} {connectedClients[id]}");
-                    clientsToDisconnect.Add(id);
-                }
-                foreach (var id in clientsToDisconnect)
-                {
-                    MultiprocessLogger.Log($"Disconnect {id}");
-                    NetworkManager.Singleton.DisconnectClient(id);
-                }
-            }
+            yield return new WaitUntil(() => m_HasSceneLoaded == true);            
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -285,11 +289,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown");
+            int messageCounter = 0;
+            MultiprocessLogger.Log($"{messageCounter++} BaseMultiProcessTests - Teardown : Running teardown");
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($"t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
+            MultiprocessLogger.Log($"{messageCounter++} t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
-            MultiprocessLogger.Log($"t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
+            MultiprocessLogger.Log($"{messageCounter++} t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
+
+
 
             if (LaunchRemotely)
             {
@@ -326,20 +333,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator UnityTearDown()
         {
             MultiprocessLogger.Log($"1/20 - UnityTearDown - {m_ConnectedClientsList.Count}");
-            var clientsToDisconnect = new List<ulong>();
-            var connectedClients = NetworkManager.Singleton.ConnectedClients;
-            foreach (ulong id in connectedClients.Keys)
-            {
-                MultiprocessLogger.Log($"2/20 (+1) Identified still connected client {id} {connectedClients[id]}");
-                clientsToDisconnect.Add(id);
-            }
-            foreach (var id in clientsToDisconnect)
-            {
-                MultiprocessLogger.Log($"2/20 (+2) Disconnect {id}");
-                NetworkManager.Singleton.DisconnectClient(id);
-            }
-            MultiprocessLogger.Log($"3/20 - UnityTearDown ... yield until ConnectClientsList is zero - {m_ConnectedClientsList.Count}");
-            yield return new WaitUntil(() => m_ConnectedClientsList.Count == 0);
+            DisconnectClients();
+            yield return new WaitForSeconds(1.0f);
             MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count}");
         }
 
@@ -350,7 +345,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
                 MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
-
                 MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
