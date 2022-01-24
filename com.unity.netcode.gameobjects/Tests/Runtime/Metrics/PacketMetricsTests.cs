@@ -35,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             var totalPacketCount = metricValues.Sum(x => x.PacketCount);
-            Assert.That(totalPacketCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(totalPacketCount, Is.InRange(1, 4));
         }
 
         [UnityTest]
@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             var totalPacketCount = metricValues.Sum(x => x.PacketCount);
-            Assert.That(totalPacketCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(totalPacketCount, Is.InRange(1, 4));
         }
     }
 }
