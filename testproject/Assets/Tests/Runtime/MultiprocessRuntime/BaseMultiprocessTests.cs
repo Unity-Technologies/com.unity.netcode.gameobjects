@@ -382,7 +382,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             catch (Exception e)
             {
-                MultiprocessLogger.Log($"WARNING: Suiteteardown threw exception which means all subsequent tests will fail {e.Message}");
+                MultiprocessLogger.Log($"WARNING: Suiteteardown threw exception which means all subsequent tests will fail {e.Message} {e.StackTrace}");
             }
         }
 
