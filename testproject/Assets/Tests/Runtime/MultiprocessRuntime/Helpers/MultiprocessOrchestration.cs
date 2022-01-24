@@ -260,7 +260,7 @@ public class MultiprocessOrchestration
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                MultiprocessLogger.Log($"ShutdownAllProcesses - 1/2 {ex.Message}");
             }
         }
 
@@ -279,7 +279,7 @@ public class MultiprocessOrchestration
             }
             catch (Exception e)
             {
-                MultiprocessLogger.Log(e.Message);
+                MultiprocessLogger.Log($"ShutdownAllProcesses - 2/2 {e.Message}");
             }
         }
     }
