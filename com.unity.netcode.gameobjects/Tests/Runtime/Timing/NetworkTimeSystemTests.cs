@@ -47,8 +47,8 @@ namespace Unity.Netcode.RuntimeTests
             while (tickSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Math.Round((tickSystem.LocalTime.Time / delta)), NetworkManager.Singleton.LocalTime.Tick);
-                Assert.AreEqual(Math.Round((tickSystem.ServerTime.Time / delta)), NetworkManager.Singleton.ServerTime.Tick);
+                Assert.AreEqual(Math.Floor((tickSystem.LocalTime.Time / delta)), NetworkManager.Singleton.LocalTime.Tick);
+                Assert.AreEqual(Math.Floor((tickSystem.ServerTime.Time / delta)), NetworkManager.Singleton.ServerTime.Tick);
                 Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
             }
         }

@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
-            var expectedServerTickCount = (int)System.Math.Round((float)(serverTimePassed * 30));
+            var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
 
             var ticksPassed = server.NetworkTickSystem.ServerTime.Tick - serverTick;
             Assert.AreEqual(expectedServerTickCount, ticksPassed);
@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.WaitForClientsConnected(clients);
 
             var clientStartRealTimeDuration = Time.time - clientStartRealTime;
-            var clientStartRealTickDuration = (int)System.Math.Round(clientStartRealTimeDuration * 30);
+            var clientStartRealTickDuration = Mathf.FloorToInt(clientStartRealTimeDuration * 30);
 
             // check tick is initialized with server value
             Assert.AreNotEqual(0, m_ConnectedTick);
