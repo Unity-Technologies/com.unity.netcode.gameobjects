@@ -243,7 +243,10 @@ public class MultiprocessOrchestration
 
     public static void ShutdownAllProcesses()
     {
-        MultiprocessLogger.Log("Shutting down all processes..");
+        MultiprocessLogger.Log("Shutting down all processes... by clearing the process from the stack");
+        s_Processes.Clear();
+        BokkenMachine.ProcessList.Clear();
+        /*
         foreach (var process in s_Processes)
         {
             try
@@ -264,7 +267,7 @@ public class MultiprocessOrchestration
             }
         }
 
-        s_Processes.Clear();
+        
 
         foreach (var process in BokkenMachine.ProcessList)
         {
@@ -282,6 +285,7 @@ public class MultiprocessOrchestration
                 MultiprocessLogger.Log($"ShutdownAllProcesses - 2/2 {e.Message}");
             }
         }
+        */
     }
 
     private static void WriteLocalIP(string localip)

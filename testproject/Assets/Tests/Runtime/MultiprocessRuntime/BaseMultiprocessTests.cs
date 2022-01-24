@@ -325,9 +325,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log("13/20 - UnityTearDown");
+            MultiprocessLogger.Log("1/20 - UnityTearDown");
+            var clientsToDisconnect = new List<ulong>();
+            var connectedClients = NetworkManager.Singleton.ConnectedClients;
+            foreach (ulong id in connectedClients.Keys)
+            {
+                MultiprocessLogger.Log($"2/20 (+1) Identified still connected client {id} {connectedClients[id]}");
+                clientsToDisconnect.Add(id);
+            }
+            foreach (var id in clientsToDisconnect)
+            {
+                MultiprocessLogger.Log($"3/20 (+2) Disconnect {id}");
+                NetworkManager.Singleton.DisconnectClient(id);
+            }
             yield return null;
-            MultiprocessLogger.Log("14/20 - UnityTearDown ... end");
+            MultiprocessLogger.Log("4/20 - UnityTearDown ... end");
         }
 
         [OneTimeTearDown]
@@ -344,29 +356,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     BokkenMachine.FetchAllLogFiles();
                 }
 
-                MultiprocessLogger.Log($"1/20 - TeardownSuite - ShutdownAllProcesses");
+                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses");
                 MultiprocessOrchestration.ShutdownAllProcesses();
-                MultiprocessLogger.Log($"2/20 - NetworkManager.Singleton.Shutdown");
-                MultiprocessLogger.Log($"3/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
+                MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
+                MultiprocessLogger.Log($"7/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
                 NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                MultiprocessLogger.Log($"4/20 - Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiprocessLogger.Log($"5/20 - Original active scene {m_OriginalActiveScene.name}");
-                MultiprocessLogger.Log($"6/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+                MultiprocessLogger.Log($"8/20 - Currently active scene {SceneManager.GetActiveScene().name}");
+                MultiprocessLogger.Log($"9/20 - Original active scene {m_OriginalActiveScene.name}");
+                MultiprocessLogger.Log($"10/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
                 if (m_OriginalActiveScene.IsValid())
                 {
-                    MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Original");
+                    MultiprocessLogger.Log($"11/20 - Setting the ActiveScene back to Original");
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
                 }
                 else
                 {
-                    MultiprocessLogger.Log($"8/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
+                    MultiprocessLogger.Log($"12/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
                 }
-                MultiprocessLogger.Log($"9/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+                MultiprocessLogger.Log($"13/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
                 AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                MultiprocessLogger.Log($"10/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                MultiprocessLogger.Log($"14/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
                 asyncOperation.completed += AsyncOperation_completed;
-                MultiprocessLogger.Log($"11/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                MultiprocessLogger.Log($"15/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
             }
             catch (Exception e)
             {
@@ -376,7 +388,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void AsyncOperation_completed(AsyncOperation obj)
         {
-            MultiprocessLogger.Log($"12/20 - Unload - UnloadScene {obj.progress} ");
+            MultiprocessLogger.Log($"16/20 - Unload - UnloadScene {obj.progress} ");
         }
     }
 }
