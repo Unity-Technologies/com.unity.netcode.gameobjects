@@ -138,7 +138,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private void Singleton_OnClientConnectedCallback(ulong obj)
         {
             m_ConnectedClientsList.Add(obj);
-            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, current count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, new count is {m_ConnectedClientsList.Count}");
         }
 
         /// <summary>
@@ -161,24 +161,27 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
         }
 
-        public void DisconnectClients()
+        public void DisconnectClients(int previousMessageCounter = 0)
         {
             int messageCounter = 1;
             if (m_ConnectedClientsList.Count > 0)
             {
-                MultiprocessLogger.Log($"... {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
+                MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
                 var connectedClients = NetworkManager.Singleton.ConnectedClients;
-                MultiprocessLogger.Log($"... {messageCounter++} NetworkManager count is {connectedClients.Count}");
+                MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} NetworkManager count is {connectedClients.Count}");
                 var clientsToDisconnect = new List<ulong>();
                 foreach (ulong id in connectedClients.Keys)
                 {
-                    MultiprocessLogger.Log($"... {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
+                    MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
                     clientsToDisconnect.Add(id);
                 }
                 foreach (var id in clientsToDisconnect)
                 {
-                    MultiprocessLogger.Log($"... {messageCounter++} Disconnect {id}");
-                    NetworkManager.Singleton.DisconnectClient(id);
+                    if (id != 0)
+                    {
+                        MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} Disconnecting client with id {id}");
+                        NetworkManager.Singleton.DisconnectClient(id);
+                    }
                 }
             }
         }
@@ -186,7 +189,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count} ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
 
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
