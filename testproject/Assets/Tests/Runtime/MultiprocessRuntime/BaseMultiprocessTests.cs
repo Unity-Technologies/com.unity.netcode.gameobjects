@@ -325,7 +325,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log("1/20 - UnityTearDown");
+            MultiprocessLogger.Log($"1/20 - UnityTearDown - {m_ConnectedClientsList.Count}");
             var clientsToDisconnect = new List<ulong>();
             var connectedClients = NetworkManager.Singleton.ConnectedClients;
             foreach (ulong id in connectedClients.Keys)
@@ -339,7 +339,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 NetworkManager.Singleton.DisconnectClient(id);
             }
             yield return null;
-            MultiprocessLogger.Log("4/20 - UnityTearDown ... end");
+            MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count}");
         }
 
         [OneTimeTearDown]
