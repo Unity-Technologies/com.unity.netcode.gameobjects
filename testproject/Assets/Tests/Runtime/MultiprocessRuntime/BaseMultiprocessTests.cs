@@ -335,9 +335,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             foreach (var id in clientsToDisconnect)
             {
-                MultiprocessLogger.Log($"3/20 (+2) Disconnect {id}");
+                MultiprocessLogger.Log($"2/20 (+2) Disconnect {id}");
                 NetworkManager.Singleton.DisconnectClient(id);
             }
+            MultiprocessLogger.Log($"3/20 - UnityTearDown ... yield until ConnectClientsList is zero - {m_ConnectedClientsList.Count}");
             yield return new WaitUntil(() => m_ConnectedClientsList.Count == 0);
             MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count}");
         }
