@@ -333,38 +333,45 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
-            MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
-            
-            MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-            if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            try
             {
-                BokkenMachine.FetchAllLogFiles();
+                MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
+                MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
+
+                MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+                if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
+                {
+                    BokkenMachine.FetchAllLogFiles();
+                }
+
+                MultiprocessLogger.Log($"1/20 - TeardownSuite - ShutdownAllProcesses");
+                MultiprocessOrchestration.ShutdownAllProcesses();
+                MultiprocessLogger.Log($"2/20 - NetworkManager.Singleton.Shutdown");
+                MultiprocessLogger.Log($"3/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
+                NetworkManager.Singleton.Shutdown();
+                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                MultiprocessLogger.Log($"4/20 - Currently active scene {SceneManager.GetActiveScene().name}");
+                MultiprocessLogger.Log($"5/20 - Original active scene {m_OriginalActiveScene.name}");
+                MultiprocessLogger.Log($"6/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+                if (m_OriginalActiveScene.IsValid())
+                {
+                    MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Original");
+                    SceneManager.SetActiveScene(m_OriginalActiveScene);
+                }
+                else
+                {
+                    MultiprocessLogger.Log($"8/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
+                }
+                MultiprocessLogger.Log($"9/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                MultiprocessLogger.Log($"10/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                asyncOperation.completed += AsyncOperation_completed;
+                MultiprocessLogger.Log($"11/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
             }
-            
-            MultiprocessLogger.Log($"1/20 - TeardownSuite - ShutdownAllProcesses");
-            MultiprocessOrchestration.ShutdownAllProcesses();
-            MultiprocessLogger.Log($"2/20 - NetworkManager.Singleton.Shutdown");
-            MultiprocessLogger.Log($"3/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
-            NetworkManager.Singleton.Shutdown();
-            Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-            MultiprocessLogger.Log($"4/20 - Currently active scene {SceneManager.GetActiveScene().name}");
-            MultiprocessLogger.Log($"5/20 - Original active scene {m_OriginalActiveScene.name}");
-            MultiprocessLogger.Log($"6/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
-            if (m_OriginalActiveScene.IsValid())
+            catch (Exception e)
             {
-                MultiprocessLogger.Log($"7/20 - Setting the ActiveScene back to Original");
-                SceneManager.SetActiveScene(m_OriginalActiveScene);
+                MultiprocessLogger.Log($"WARNING: Suiteteardown threw exception which means all subsequent tests will fail {e.Message}");
             }
-            else
-            {
-                MultiprocessLogger.Log($"8/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
-            }
-            MultiprocessLogger.Log($"9/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
-            AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-            MultiprocessLogger.Log($"10/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
-            asyncOperation.completed += AsyncOperation_completed;
-            MultiprocessLogger.Log($"11/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)
