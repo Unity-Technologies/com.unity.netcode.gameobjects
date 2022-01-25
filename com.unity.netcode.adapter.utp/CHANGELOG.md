@@ -6,11 +6,15 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
+- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
+
 ### Changed
 
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage (#1584)
 
 ### Fixed
+
+- Lifted the limit of ~44KB for reliable payloads. Before the fix, attempting to send a payload larger than that with reliable delivery would silently fail. Note that it is still not recommended to send such large reliable payloads, since their delivery could take a few network round-trips. (#1596)
 
 ## [1.0.0-pre.4] - 2022-01-04
 
