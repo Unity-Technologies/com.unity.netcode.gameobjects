@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0. (#1480)
 - Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
