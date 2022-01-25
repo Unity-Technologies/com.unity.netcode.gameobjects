@@ -44,6 +44,8 @@ namespace Unity.Netcode.RuntimeTests
         {
             bool setupSucceeded = false;
             var serverNetVarsToUpdate = new List<NetworkVariable<int>>();
+            var prefabToSpawn = new GameObject();
+            var spawnedPrefabs = new List<GameObject>();
             try
             {
                 // Create multiple NetworkManager instances
@@ -64,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
                         var info = prefab.AddComponent(type) as INetVarInfo;
                     }
                 }
-                var prefabToSpawn = new GameObject();
+
                 var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
                 AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
                 AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
@@ -90,6 +92,7 @@ namespace Unity.Netcode.RuntimeTests
                 for (int i = 0; i < nbSpawnedObjects; i++)
                 {
                     var spawnedObject = Object.Instantiate(prefabToSpawn);
+                    spawnedPrefabs.Add(spawnedObject);
                     var networkSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
                     networkSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
                     networkSpawnedObject.Spawn();
@@ -102,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(nbBehaviours, Is.EqualTo((firstNetworkBehaviour == null ? 0 : 1) + (secondNetworkBehaviour == null ? 0 : 1)), "Setup: Did not find expected number of NetworkBehaviours");
                 }
 
-                yield return new WaitForSeconds(0); // wait a frame to make sure spawn is done
+                yield return null; // wait a frame to make sure spawn is done
                 // todo: with Snapshot spawns enabled and the current race condition, the following line is needed:
                 // yield return new WaitForSeconds(0.2f); // wait a bit to fix the spawn/update race condition
 
@@ -115,7 +118,8 @@ namespace Unity.Netcode.RuntimeTests
             }
             finally
             {
-                Debug.Log(setupSucceeded ? "Test Setup Completed." : "Test Setup Failed.");
+                Assert.True(setupSucceeded, "Test Setup Failed.");
+                //Debug.Log(setupSucceeded ? "Test Setup Completed." : "Test Setup Failed.");
             }
 
             // test updating all netvars
@@ -142,33 +146,159 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
+            var clientStatesToCheck = new List<StateOfClientCheck>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var nbVarsCheckedClientSide = 0;
-                var countSpawnObjectResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-                yield return MultiInstanceHelpers.WaitForCondition(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
-                Assert.That(countSpawnObjectResult.Result, Is.True, "Client should have spawned expected number of objects (MultiInstanceHelper)");
+                clientStatesToCheck.Add(new StateOfClientCheck(client, nbSpawnedObjects, updatedValue));
+            }
 
-                foreach (var spawnedObject in client.SpawnManager.SpawnedObjects)
+
+            var allClientsCompleted = false;
+            var testTimedOut = false;
+            var timeOutAfter = Time.realtimeSinceStartup + 15;
+            while (!allClientsCompleted && !testTimedOut)
+            {
+                if ( timeOutAfter < Time.realtimeSinceStartup)
                 {
-                    foreach (var behaviour in spawnedObject.Value.GetComponentsInChildren<NetworkBehaviour>())
+                    testTimedOut = true;
+                    continue;
+                }
+                var clientsCompleted = 0;
+                foreach (var clientStateCheck in clientStatesToCheck)
+                {
+                    if (clientStateCheck.IsClientCheckComplete())
                     {
-                        foreach (var networkVariable in behaviour.NetworkVariableFields)
-                        {
-                            var varInt = networkVariable as NetworkVariable<int>;
-                            var varUpdateResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-                            yield return MultiInstanceHelpers.WaitForCondition(() => varInt.Value == updatedValue, varUpdateResult);
-                            Assert.That(varUpdateResult.Result, Is.True, "Variable should be updated on the clients");
-
-                            nbVarsCheckedClientSide++;
-                        }
+                        clientsCompleted++;
                     }
                 }
 
-                Assert.That(nbVarsCheckedClientSide, Is.EqualTo(serverNetVarsToUpdate.Count), $"Client expected to have received {serverNetVarsToUpdate.Count} updates");
+                if (clientsCompleted == clientStatesToCheck.Count)
+                {
+                    allClientsCompleted = true;
+                    continue;
+                }
+                yield return null;
+            }
+
+            Assert.False(testTimedOut, "The client check test timed out!");
+            Assert.True(allClientsCompleted, "Not all client state checks completed!");
+
+            clientStatesToCheck.Clear();
+            Object.Destroy(prefabToSpawn);
+
+            foreach(var spawnedObject in spawnedPrefabs)
+            {
+                Object.Destroy(spawnedObject);
+            }
+
+            spawnedPrefabs.Clear();
+
+            //foreach (var client in m_ClientNetworkManagers)
+            //{
+            //    var nbVarsCheckedClientSide = 0;
+            //    var countSpawnObjectResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            //    yield return MultiInstanceHelpers.WaitForCondition(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
+            //    Assert.That(countSpawnObjectResult.Result, Is.True, "Client should have spawned expected number of objects (MultiInstanceHelper)");
+
+            //    foreach (var spawnedObject in client.SpawnManager.SpawnedObjects)
+            //    {
+            //        foreach (var behaviour in spawnedObject.Value.GetComponentsInChildren<NetworkBehaviour>())
+            //        {
+            //            foreach (var networkVariable in behaviour.NetworkVariableFields)
+            //            {
+            //                var varInt = networkVariable as NetworkVariable<int>;
+            //                var varUpdateResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            //                yield return MultiInstanceHelpers.WaitForCondition(() => varInt.Value == updatedValue, varUpdateResult);
+            //                Assert.That(varUpdateResult.Result, Is.True, "Variable should be updated on the clients");
+
+            //                nbVarsCheckedClientSide++;
+            //            }
+            //        }
+            //    }
+
+            //    Assert.That(nbVarsCheckedClientSide, Is.EqualTo(serverNetVarsToUpdate.Count), $"Client expected to have received {serverNetVarsToUpdate.Count} updates");
+            //}
+        }
+
+        private class StateOfClientCheck
+        {
+            private NetworkManager m_ClientNetworkManager;
+            private CheckClientState m_CheckClientState;
+            private List<NetworkVariable<int>> m_NetworkVariablesToCheck = new List<NetworkVariable<int>>();
+            private int m_ExpectedSpawnedObjects;
+            private int m_ExpectedNetVarValue;
+            private enum CheckClientState
+            {
+                SpawnCheck,
+                NetworkVarCheck,
+                CheckComplete
+            }
+
+            public bool IsClientCheckComplete()
+            {
+                var isComplete = false;
+                switch(m_CheckClientState)
+                {
+                    case CheckClientState.SpawnCheck:
+                        {
+                            if (m_ClientNetworkManager.SpawnManager.SpawnedObjects.Count == m_ExpectedSpawnedObjects)
+                            {
+                                m_CheckClientState = CheckClientState.NetworkVarCheck;
+                                foreach (var spawnedObject in m_ClientNetworkManager.SpawnManager.SpawnedObjects)
+                                {
+                                    foreach (var behaviour in spawnedObject.Value.GetComponentsInChildren<NetworkBehaviour>())
+                                    {
+                                        foreach (var networkVariable in behaviour.NetworkVariableFields)
+                                        {
+                                            m_NetworkVariablesToCheck.Add(networkVariable as NetworkVariable<int>);
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    case CheckClientState.NetworkVarCheck:
+                        {
+                            var allNetworkVariablesPassed = true;
+                            foreach (var networkVariable in m_NetworkVariablesToCheck)
+                            {
+                                if (networkVariable.Value != m_ExpectedNetVarValue)
+                                {
+                                    allNetworkVariablesPassed = false;
+                                    break;
+                                }
+                            }
+
+                            if (allNetworkVariablesPassed)
+                            {
+                                isComplete = true;
+                                m_CheckClientState = CheckClientState.CheckComplete;
+                            }
+
+                            break;
+                        }
+                    case CheckClientState.CheckComplete:
+                        {
+                            isComplete = true;
+                            break;
+                        }
+                }
+
+                return isComplete;
+            }
+
+            public StateOfClientCheck(NetworkManager networkManager, int expectedSpawnedObjects, int expectedNetvarValue)
+            {
+                m_ClientNetworkManager = networkManager;
+                m_CheckClientState = CheckClientState.SpawnCheck;
+                m_ExpectedSpawnedObjects = expectedSpawnedObjects;
+                m_ExpectedNetVarValue = expectedNetvarValue;
             }
         }
+
+
     }
+
 
     public interface INetVarInfo
     {
