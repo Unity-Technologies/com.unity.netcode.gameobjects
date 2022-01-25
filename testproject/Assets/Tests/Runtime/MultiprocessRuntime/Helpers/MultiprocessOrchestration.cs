@@ -241,11 +241,14 @@ public class MultiprocessOrchestration
         }
     }
 
-    public static void ShutdownAllProcesses()
+    public static void ShutdownAllProcesses(bool launchRemotely)
     {
         MultiprocessLogger.Log("Shutting down all processes... by clearing the process from the stack");
         s_Processes.Clear();
-        BokkenMachine.ProcessList.Clear();
+        if (launchRemotely)
+        {
+            BokkenMachine.ProcessList.Clear();
+        }
         /*
         foreach (var process in s_Processes)
         {
