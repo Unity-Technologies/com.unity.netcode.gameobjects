@@ -351,7 +351,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     BokkenMachine.FetchAllLogFiles();
                 }
 
-                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses");
+                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {LaunchRemotely}");
                 MultiprocessOrchestration.ShutdownAllProcesses(LaunchRemotely);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
                 MultiprocessLogger.Log($"7/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");

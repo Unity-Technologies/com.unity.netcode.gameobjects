@@ -247,48 +247,9 @@ public class MultiprocessOrchestration
         s_Processes.Clear();
         if (launchRemotely)
         {
+            MultiprocessLogger.Log($"Shutting down all Bokken processes... by clearing the process from the stack");
             BokkenMachine.ProcessList.Clear();
         }
-        /*
-        foreach (var process in s_Processes)
-        {
-            try
-            {
-                MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
-                if (!process.HasExited)
-                {
-                    // Close process by sending a close message to its main window.
-                    process.CloseMainWindow();
-
-                    // Free resources associated with process.
-                    process.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                MultiprocessLogger.Log($"ShutdownAllProcesses - 1/2 {ex.Message}");
-            }
-        }
-
-        
-
-        foreach (var process in BokkenMachine.ProcessList)
-        {
-            try
-            {
-                if (!process.HasExited)
-                {
-                    MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
-                    process.CloseMainWindow();
-                    process.Close();
-                }
-            }
-            catch (Exception e)
-            {
-                MultiprocessLogger.Log($"ShutdownAllProcesses - 2/2 {e.Message}");
-            }
-        }
-        */
     }
 
     private static void WriteLocalIP(string localip)
