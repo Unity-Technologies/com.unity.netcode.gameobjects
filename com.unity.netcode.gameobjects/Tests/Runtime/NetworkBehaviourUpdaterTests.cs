@@ -119,7 +119,6 @@ namespace Unity.Netcode.RuntimeTests
             finally
             {
                 Assert.True(setupSucceeded, "Test Setup Failed.");
-                //Debug.Log(setupSucceeded ? "Test Setup Completed." : "Test Setup Failed.");
             }
 
             // test updating all netvars
@@ -192,32 +191,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             spawnedPrefabs.Clear();
-
-            //foreach (var client in m_ClientNetworkManagers)
-            //{
-            //    var nbVarsCheckedClientSide = 0;
-            //    var countSpawnObjectResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-            //    yield return MultiInstanceHelpers.WaitForCondition(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
-            //    Assert.That(countSpawnObjectResult.Result, Is.True, "Client should have spawned expected number of objects (MultiInstanceHelper)");
-
-            //    foreach (var spawnedObject in client.SpawnManager.SpawnedObjects)
-            //    {
-            //        foreach (var behaviour in spawnedObject.Value.GetComponentsInChildren<NetworkBehaviour>())
-            //        {
-            //            foreach (var networkVariable in behaviour.NetworkVariableFields)
-            //            {
-            //                var varInt = networkVariable as NetworkVariable<int>;
-            //                var varUpdateResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-            //                yield return MultiInstanceHelpers.WaitForCondition(() => varInt.Value == updatedValue, varUpdateResult);
-            //                Assert.That(varUpdateResult.Result, Is.True, "Variable should be updated on the clients");
-
-            //                nbVarsCheckedClientSide++;
-            //            }
-            //        }
-            //    }
-
-            //    Assert.That(nbVarsCheckedClientSide, Is.EqualTo(serverNetVarsToUpdate.Count), $"Client expected to have received {serverNetVarsToUpdate.Count} updates");
-            //}
         }
 
         private class StateOfClientCheck
@@ -295,8 +268,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_ExpectedNetVarValue = expectedNetvarValue;
             }
         }
-
-
     }
 
 
