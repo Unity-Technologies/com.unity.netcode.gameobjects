@@ -115,7 +115,7 @@ namespace Unity.Netcode
             double d = m_TimeSec / m_TickInterval;
             var truncated = Math.Truncate(d);
             var deltaTruncated = d - truncated;
-            if (deltaTruncated >= 0.9999)
+            if (deltaTruncated >= 0.999999999999)
             {
                 m_CachedTick = (int)Math.Round(d);
             }
