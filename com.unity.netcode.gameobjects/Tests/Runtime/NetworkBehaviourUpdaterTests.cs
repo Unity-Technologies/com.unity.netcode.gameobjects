@@ -157,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests
             var timeOutAfter = Time.realtimeSinceStartup + 15;
             while (!allClientsCompleted && !testTimedOut)
             {
-                if ( timeOutAfter < Time.realtimeSinceStartup)
+                if (timeOutAfter < Time.realtimeSinceStartup)
                 {
                     testTimedOut = true;
                     continue;
@@ -185,7 +185,7 @@ namespace Unity.Netcode.RuntimeTests
             clientStatesToCheck.Clear();
             Object.Destroy(prefabToSpawn);
 
-            foreach(var spawnedObject in spawnedPrefabs)
+            foreach (var spawnedObject in spawnedPrefabs)
             {
                 Object.Destroy(spawnedObject);
             }
@@ -210,7 +210,7 @@ namespace Unity.Netcode.RuntimeTests
             public bool IsClientCheckComplete()
             {
                 var isComplete = false;
-                switch(m_CheckClientState)
+                switch (m_CheckClientState)
                 {
                     case CheckClientState.SpawnCheck:
                         {
