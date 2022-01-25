@@ -327,9 +327,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 MultiprocessLogger.Log("Kill multi process test players");
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-                MultiprocessLogger.Log("Fetching log files");
-                BokkenMachine.FetchAllLogFiles();
-                MultiprocessLogger.Log("Fetching log files ... Done, now running TestRunTearDown");
                 MultiprocessLogger.Flush();
             }
 
