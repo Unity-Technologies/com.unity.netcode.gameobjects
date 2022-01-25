@@ -407,6 +407,14 @@ namespace Unity.Netcode
             IncrementMetricCount();
         }
 
+        public void TrackPacketSent(uint packetCount)
+        {
+        }
+
+        public void TrackPacketReceived(uint packetCount)
+        {
+        }
+
         public void DispatchFrame()
         {
             s_FrameDispatch.Begin();
