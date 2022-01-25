@@ -36,7 +36,6 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="nbSpawnedObjects"></param>
         /// <param name="firstNetworkBehaviour"></param>
         /// <param name="secondNetworkBehaviour"></param>
-        /// <param name="thirdNetworkBehaviour"></param>
         /// <returns></returns>
         [UnityTest]
         public IEnumerator BehaviourUpdaterAllTests([Values(0, 1, 2)] int nbClients, [Values] bool useHost, [Values(0, 1, 2)] int nbSpawnedObjects,
