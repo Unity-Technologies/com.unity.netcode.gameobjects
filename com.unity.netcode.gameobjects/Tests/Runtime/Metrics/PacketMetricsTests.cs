@@ -5,6 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Multiplayer.Tools.NetStats;
 using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -23,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForMetricValues<PacketEvent>(serverMetrics.Dispatcher, NetworkMetricTypes.PacketEventSent, metric => { return metric.PacketCount > 0; });
+            var waitForMetricValues = new WaitForCounterMetricValue(serverMetrics.Dispatcher, NetworkMetricTypes.PacketSent, metric => metric > 0);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -33,8 +34,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            var totalPacketCount = metricValues.Sum(x => x.PacketCount);
+            var totalPacketCount = waitForMetricValues.AssertMetricValueHaveBeenFound();
             Assert.That(totalPacketCount, Is.InRange(1, 4));
         }
 
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var clientMetrics = (NetworkMetrics)clients[0].NetworkMetrics;
-            var waitForMetricValues = new WaitForMetricValues<PacketEvent>(clientMetrics.Dispatcher, NetworkMetricTypes.PacketEventReceived, metric => { return metric.PacketCount > 0; });
+            var waitForMetricValues = new WaitForCounterMetricValue(clientMetrics.Dispatcher, NetworkMetricTypes.PacketReceived, metric => metric > 0);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -58,8 +58,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            var totalPacketCount = metricValues.Sum(x => x.PacketCount);
+            var totalPacketCount = waitForMetricValues.AssertMetricValueHaveBeenFound();
             Assert.That(totalPacketCount, Is.InRange(1, 4));
         }
     }

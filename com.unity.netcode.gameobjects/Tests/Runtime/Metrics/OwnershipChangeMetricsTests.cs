@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeSent);
+            var waitForMetricValues = new WaitForEventMetricValues<OwnershipChangeEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeSent);
 
             networkObject.ChangeOwnership(1);
 
@@ -72,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return new WaitForSeconds(0.2f);
 
-            var waitForMetricValues = new WaitForMetricValues<OwnershipChangeEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeReceived);
+            var waitForMetricValues = new WaitForEventMetricValues<OwnershipChangeEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.OwnershipChangeReceived);
 
             networkObject.ChangeOwnership(1);
 
