@@ -190,6 +190,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
+            m_ConnectedClientsList.Clear();
             if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
             {
                 MultiprocessLogger.Log($"NetworkManager.Singleton.ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
@@ -266,6 +267,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else
             {
+                // Maybe this should be an exception, there doesn't seem to be a legit reason to not have a new client for each test
                 MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
             MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
