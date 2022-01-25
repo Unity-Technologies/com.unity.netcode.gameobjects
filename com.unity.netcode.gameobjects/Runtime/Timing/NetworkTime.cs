@@ -114,6 +114,7 @@ namespace Unity.Netcode
         {
             double d = m_TimeSec / m_TickInterval;
             m_CachedTick = (int)d;
+            // This check is needed due to double division imprecision of large numbers
             if ((d - m_CachedTick) >= 0.999999999999)
             {
                 m_CachedTick++;
