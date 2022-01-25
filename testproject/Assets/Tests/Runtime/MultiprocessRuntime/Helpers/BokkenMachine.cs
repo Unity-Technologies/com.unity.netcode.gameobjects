@@ -174,7 +174,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 ProcessList.Remove(processToDelete);
             }
-            
         }
 
         public void Launch()

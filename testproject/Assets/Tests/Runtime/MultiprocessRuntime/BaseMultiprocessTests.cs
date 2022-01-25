@@ -124,7 +124,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
-            
             m_HasSceneLoaded = true;
         }
 
@@ -196,13 +195,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"NetworkManager.Singleton.ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
             }
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-
-            yield return new WaitUntil(() => m_HasSceneLoaded == true);            
-
+            yield return new WaitUntil(() => m_HasSceneLoaded == true);
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
@@ -274,7 +269,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-            
+
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {

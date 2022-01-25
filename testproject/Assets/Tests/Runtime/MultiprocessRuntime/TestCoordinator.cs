@@ -141,10 +141,6 @@ public class TestCoordinator : NetworkBehaviour
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
-        else
-        {            
-            // MultiprocessLogger.Log($"{Environment.OSVersion.Platform} {Environment.OSVersion.VersionString} isClient {IsClient} IsConnectedClient {NetworkManager.Singleton.IsConnectedClient}");
-        }
     }
 
     private static void QuitApplication()
