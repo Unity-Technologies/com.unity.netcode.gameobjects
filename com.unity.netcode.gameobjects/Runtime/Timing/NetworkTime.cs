@@ -113,9 +113,8 @@ namespace Unity.Netcode
         private void UpdateCache()
         {
             double d = m_TimeSec / m_TickInterval;
-            var truncated = Math.Truncate(d);
-            m_CachedTick = (int)truncated;
-            if ((d - truncated) >= 0.999999999999)
+            m_CachedTick = (int)d;
+            if ((d - m_CachedTick) >= 0.999999999999)
             {
                 m_CachedTick++;
             }
