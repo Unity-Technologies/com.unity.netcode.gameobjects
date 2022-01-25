@@ -11,6 +11,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Changed
 
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1584)
+- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
 
 ### Fixed
 
