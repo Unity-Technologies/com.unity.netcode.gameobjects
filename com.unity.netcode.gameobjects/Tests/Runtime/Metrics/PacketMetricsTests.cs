@@ -17,8 +17,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketSentMetric()
         {
-            const int clientCount = 1;
-            MultiInstanceHelpers.Create(clientCount, out var server, out var clients, 60, MultiInstanceHelpers.InstanceTransport.UTP);
+            MultiInstanceHelpers.Create(
+                clientCount: 1,
+                out var server,
+                out var clients,
+                targetFrameRate: 60,
+                MultiInstanceHelpers.InstanceTransport.UTP);
 
             server.StartServer();
             clients[0].StartClient();
@@ -41,8 +45,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketReceivedMetric()
         {
-            const int clientCount = 1;
-            MultiInstanceHelpers.Create(clientCount, out var server, out var clients, 60, MultiInstanceHelpers.InstanceTransport.UTP);
+            MultiInstanceHelpers.Create(
+                clientCount: 1,
+                out var server,
+                out var clients,
+                targetFrameRate: 60,
+                MultiInstanceHelpers.InstanceTransport.UTP);
 
             server.StartServer();
             clients[0].StartClient();

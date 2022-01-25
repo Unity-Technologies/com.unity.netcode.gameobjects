@@ -179,11 +179,10 @@ namespace Unity.Netcode.RuntimeTests
             switch (instanceTransport)
             {
                 case InstanceTransport.SIP:
+                default:
                     return go.AddComponent<SIPTransport>();
                 case InstanceTransport.UTP:
                     return go.AddComponent<UnityTransport>();
-                default:
-                    return go.AddComponent<SIPTransport>();
             }
         }
 
