@@ -130,9 +130,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"OnClientDisconnectCallback triggered {obj}");
             m_ConnectedClientsList.Remove(obj);
-            MultiprocessLogger.Log($"OnClientDisconnectedCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"OnClientDisconnectCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
         }
 
         private void Singleton_OnClientConnectedCallback(ulong obj)
