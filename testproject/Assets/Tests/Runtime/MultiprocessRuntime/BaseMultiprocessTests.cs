@@ -189,7 +189,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count} ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
+            if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
+            {
+                MultiprocessLogger.Log($"NetworkManager.Singleton.ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
+            }
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
 
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
