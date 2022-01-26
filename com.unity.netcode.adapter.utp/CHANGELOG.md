@@ -6,9 +6,13 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
+- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
+
 ### Changed
 
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage (#1584)
+- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
+- Updated Burst package to 1.6.4. (#1615)
 
 ### Fixed
 
