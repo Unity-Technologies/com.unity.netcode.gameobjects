@@ -106,9 +106,10 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(nbBehaviours, Is.EqualTo((firstNetworkBehaviour == null ? 0 : 1) + (secondNetworkBehaviour == null ? 0 : 1)), "Setup: Did not find expected number of NetworkBehaviours");
                 }
 
-                yield return null; // wait a frame to make sure spawn is done
+                //yield return null; // wait a frame to make sure spawn is done
                 // todo: with Snapshot spawns enabled and the current race condition, the following line is needed:
-                // yield return new WaitForSeconds(0.2f); // wait a bit to fix the spawn/update race condition
+                //yield return new WaitForSeconds(0.2f); // wait a bit to fix the spawn/update race condition
+                yield return new WaitForSeconds(1.0f / (float)m_ServerNetworkManager.NetworkConfig.TickRate);
 
                 foreach (var netVar in serverNetVarsToUpdate)
                 {
@@ -154,7 +155,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var allClientsCompleted = false;
             var testTimedOut = false;
-            var timeOutAfter = Time.realtimeSinceStartup + 15;
+            var timeOutAfter = Time.realtimeSinceStartup + 5;
             while (!allClientsCompleted && !testTimedOut)
             {
                 if (timeOutAfter < Time.realtimeSinceStartup)
@@ -178,14 +179,16 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 yield return null;
             }
+
+            var clientTestTimedOut = "The client check test timed out!\n";
             if (testTimedOut)
             {
                 foreach (var clientStateCheck in clientStatesToCheck)
                 {
-                    clientStateCheck.DisplayCurrentStateInfo();
+                    clientTestTimedOut += clientStateCheck.DisplayCurrentStateInfo();
                 }
             }
-            Assert.False(testTimedOut, "The client check test timed out!");
+            Assert.False(testTimedOut, clientTestTimedOut);
             Assert.True(allClientsCompleted, "Not all client state checks completed!");
 
             clientStatesToCheck.Clear();
@@ -218,28 +221,29 @@ namespace Unity.Netcode.RuntimeTests
                 CheckComplete
             }
 
-            public void DisplayCurrentStateInfo()
+            public string DisplayCurrentStateInfo()
             {
-                Debug.Log($"Client Current State: {m_CheckClientState}");
+                var logString = $"Client Current State: {m_CheckClientState}\n";
                 switch (m_CheckClientState)
                 {
                     case CheckClientState.SpawnCheck:
                         {
-                            Debug.Log($"Client-Side Spawned Objects: {m_ClientNetworkManager.SpawnManager.SpawnedObjects.Count} expected SpawnedObjects {m_ExpectedSpawnedObjects}");
+                            logString += $"Client-Side Spawned Objects: {m_ClientNetworkManager.SpawnManager.SpawnedObjects.Count} expected SpawnedObjects {m_ExpectedSpawnedObjects} \n";
                             break;
                         }
                     case CheckClientState.NetworkVarCheck:
                         {
                             var count = 0;
-                            var netVarValues = $"Expected Value {m_ExpectedNetVarValue} NetworkVariable Values:\n";
+                            logString += $"Expected Value {m_ExpectedNetVarValue} NetworkVariable Values:\n";
                             foreach (var networkVariable in m_NetworkVariablesToCheck)
                             {
-                                netVarValues += $"NetVar{count}:{networkVariable.Value}";
+                                logString += $"NetVar{count}:{networkVariable.Value}\n";
                                 count++;
                             }
                             break;
                         }
                 }
+                return logString;
             }
 
             public bool IsClientCheckComplete()
