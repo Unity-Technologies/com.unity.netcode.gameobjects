@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -81,6 +80,14 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
+            if (!IsServer)
+            {
+                NetworkBehaviourUpdaterTests.ClientSideNotifyObjectSpawned(gameObject);
+            }
+        }
+
+        public void SetNetworkVariableValues()
+        {
             if (IsServer)
             {
                 switch (NumberOfNetVarsToCheck)
@@ -99,10 +106,6 @@ namespace Unity.Netcode.RuntimeTests
                             break;
                         }
                 }
-            }
-            else
-            {
-                NetworkBehaviourUpdaterTests.ClientSideNotifyObjectSpawned(gameObject);
             }
         }
     }
@@ -137,11 +140,10 @@ namespace Unity.Netcode.RuntimeTests
             return s_TimeOutPeriod <= Time.realtimeSinceStartup;
         }
 
-        [OneTimeSetUp]
-        public void GlobalSetup()
+        public override IEnumerator Setup()
         {
-            // This prevents clients and server from being started during Setup;
             m_BypassStartAndWaitForClients = true;
+            yield return base.Setup();
         }
 
         private List<NetworkManager> m_ActiveClientsForCurrentTest;
@@ -156,8 +158,10 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabObject });
+            m_ServerNetworkManager.NetworkConfig.TickRate = 30;
             foreach (var clientManager in m_ActiveClientsForCurrentTest)
             {
+                m_ServerNetworkManager.NetworkConfig.TickRate = 30;
                 clientManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabObject });
             }
 
@@ -189,6 +193,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return StartClientsAndServer(useHost, nbClients, prefabToSpawn);
             var spawnedPrefabs = new List<GameObject>();
+            var tickInterval = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
+            var numberOfObjectsToSpawnOnClients = numToSpawn * nbClients;
 
             // spawn the objects
             for (int i = 0; i < numToSpawn; i++)
@@ -198,6 +204,35 @@ namespace Unity.Netcode.RuntimeTests
                 var networkSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
                 networkSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
                 networkSpawnedObject.Spawn();
+            }
+
+            // When there are no clients (excluding when server is in host mode), we can skip all of this
+            // wait until all objects are spawned on the clients
+            if (numberOfObjectsToSpawnOnClients > 0)
+            {
+                var allClientsSpawnedObjects = false;
+                BumpTimeOut();
+                while (!allClientsSpawnedObjects && !HasTimedOut())
+                {
+                    allClientsSpawnedObjects = numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count;
+                    yield return new WaitForSeconds(tickInterval);
+                }
+
+                Assert.True(!HasTimedOut(), $"Timed out waiting for clients to report spawning objects! " +
+                    $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
+
+                // This really should never fail as it should timeout first
+                Assert.True(allClientsSpawnedObjects, "Not all clients spawned their objects!");
+            }
+
+            // Now set the network variables on the server
+            foreach (var spawnedPrefab in spawnedPrefabs)
+            {
+                var netVarContiners = spawnedPrefab.GetComponents<NetVarContainer>();
+                foreach (var netVarContiner in netVarContiners)
+                {
+                    netVarContiner.SetNetworkVariableValues();
+                }
             }
 
             // Update the NetworkBehaviours to make sure all network variables are no longer marked as dirty
@@ -218,27 +253,9 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            var tickInterval = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
-            // Now wait for all clients to spawn the objects in question
-            var numberOfObjectsToSpawnOnClients = numToSpawn * nbClients;
-
             // When there are no clients (excluding when server is in host mode), we can skip all of this
             if (numberOfObjectsToSpawnOnClients > 0)
             {
-                var allClientsSpawnedObjects = false;
-                BumpTimeOut();
-                while (!allClientsSpawnedObjects && !HasTimedOut())
-                {
-                    allClientsSpawnedObjects = numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count;
-                    yield return new WaitForSeconds(tickInterval);
-                }
-
-                Assert.True(!HasTimedOut(), $"Timed out waiting for clients to report spawning objects! " +
-                    $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
-
-                // This really should never fail as it should timeout first
-                Assert.True(allClientsSpawnedObjects, "Not all clients spawned their objects!");
-
                 var clientSideNetVarContainers = new List<NetVarContainer>();
                 foreach (var clientSpawnedObjects in s_ClientSpawnedNetworkObjects)
                 {
@@ -253,8 +270,6 @@ namespace Unity.Netcode.RuntimeTests
                 BumpTimeOut();
                 while (!allClientsCompleted && !HasTimedOut())
                 {
-                    yield return new WaitForSeconds(tickInterval);
-
                     var completedCount = 0;
                     foreach (var clientNetVarContainer in clientSideNetVarContainers)
                     {
@@ -265,6 +280,8 @@ namespace Unity.Netcode.RuntimeTests
                     }
 
                     allClientsCompleted = completedCount == clientSideNetVarContainers.Count;
+
+                    yield return new WaitForSeconds(tickInterval);
                 }
 
                 Assert.True(!HasTimedOut(), $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
