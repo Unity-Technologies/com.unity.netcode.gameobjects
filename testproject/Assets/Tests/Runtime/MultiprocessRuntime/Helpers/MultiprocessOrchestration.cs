@@ -245,7 +245,7 @@ public class MultiprocessOrchestration
     {
         MultiprocessLogger.Log("Shutting down all processes... by clearing the process from the stack");
         s_Processes.Clear();
-        if (launchRemotely)
+        if (launchRemotely && ShouldRunMultiMachineTests())
         {
             MultiprocessLogger.Log($"Shutting down all Bokken processes... by clearing the process from the stack");
             BokkenMachine.ProcessList.Clear();

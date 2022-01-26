@@ -301,7 +301,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
 
 
-            if (LaunchRemotely)
+            if (LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 foreach (var process in BokkenMachine.ProcessList)
                 {
