@@ -90,7 +90,7 @@ namespace Unity.Netcode
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
-        { Address = "127.0.0.1", Port = 7777 };
+        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = null };
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
@@ -131,22 +131,37 @@ namespace Unity.Netcode
         [Serializable]
         public struct ConnectionAddressData
         {
+            [Tooltip("IP address of the server (address to which clients will connect to).")]
             [SerializeField] public string Address;
-            [SerializeField] public int Port;
 
-            public static implicit operator NetworkEndPoint(ConnectionAddressData d)
+            [Tooltip("UDP port of the server.")]
+            [SerializeField] public ushort Port;
+
+            [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
+            [SerializeField] public string ServerListenAddress;
+
+            private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
             {
-                if (!NetworkEndPoint.TryParse(d.Address, (ushort)d.Port, out var networkEndPoint))
+                if (!NetworkEndPoint.TryParse(ip, port, out var endpoint))
                 {
-                    Debug.LogError($"Invalid address {d.Address}:{d.Port}");
+                    Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
                     return default;
                 }
 
-                return networkEndPoint;
+                return endpoint;
             }
 
+            public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+
+            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(ServerListenAddress ?? Address, Port);
+
+            [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
+            public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
+                ParseNetworkEndpoint(d.Address, d.Port);
+
+            [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
             public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
-                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port };
+                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = null };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -272,7 +287,7 @@ namespace Unity.Netcode
             }
             else
             {
-                serverEndpoint = ConnectionData;
+                serverEndpoint = ConnectionData.ServerEndPoint;
             }
 
             InitDriver();
@@ -421,26 +436,36 @@ namespace Unity.Netcode
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        public void SetConnectionData(string ipv4Address, ushort port)
+        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
-            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var endPoint))
+            ConnectionData = new ConnectionAddressData
             {
-                Debug.LogError($"Invalid address {ipv4Address}:{port}");
-                ConnectionData = default;
+                Address = ipv4Address,
+                Port = port,
+                ServerListenAddress = listenAddress
+            };
 
-                return;
-            }
-
-            SetConnectionData(endPoint);
+            SetProtocol(ProtocolType.UnityTransport);
         }
 
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        public void SetConnectionData(NetworkEndPoint endPoint)
+        public void SetConnectionData(NetworkEndPoint endPoint, NetworkEndPoint listenEndPoint = default)
         {
-            ConnectionData = endPoint;
-            SetProtocol(ProtocolType.UnityTransport);
+            string serverAddress = endPoint.Address.Split(':')[0];
+
+            string listenAddress = null;
+            if (listenEndPoint != default)
+            {
+                listenAddress = listenEndPoint.Address.Split(':')[0];
+                if (endPoint.Port != listenEndPoint.Port)
+                {
+                    Debug.LogError($"Port mismatch between server and listen endpoints ({endPoint.Port} vs {listenEndPoint.Port}).");
+                }
+            }
+
+            SetConnectionData(serverAddress, endPoint.Port, listenAddress);
         }
 
         private bool StartRelayServer()
@@ -829,7 +854,7 @@ namespace Unity.Netcode
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    return ServerBindAndListen(ConnectionData);
+                    return ServerBindAndListen(ConnectionData.ListenEndPoint);
                 case ProtocolType.RelayUnityTransport:
                     return StartRelayServer();
                 default:
