@@ -8,10 +8,10 @@ namespace Unity.Netcode.UTP.Utilities
     internal class BatchedReceiveQueue
     {
         private byte[] m_Data;
-        private DataStreamReader m_Reader;
-        private int m_ReaderOffset;
+        private int m_Offset;
+        private int m_Length;
 
-        public bool IsEmpty => m_ReaderOffset >= m_Reader.Length;
+        public bool IsEmpty => m_Length <= 0;
 
         /// <summary>
         /// Construct a new receive queue from a <see cref="DataStreamReader"/> returned by
@@ -29,26 +29,66 @@ namespace Unity.Netcode.UTP.Utilities
                 }
             }
 
-            m_Reader = reader;
-            m_ReaderOffset = 0;
+            m_Offset = 0;
+            m_Length = reader.Length;
         }
 
-        /// <summary>Pop the next message in the queue.</summary>
-        /// <returns>The message, or the default value if no more messages.</returns>
+        /// <summary>
+        /// Push the entire data from a <see cref="DataStreamReader"/> (as returned by popping an
+        /// event from a <see cref="NetworkDriver">) to the queue.
+        /// </summary>
+        /// <param name="reader">The <see cref="DataStreamReader"/> to push the data of.</param>
+        public void PushReader(DataStreamReader reader)
+        {
+            // Resize the array and copy the existing data to the beginning if there's not enough
+            // room to copy the reader's data at the end of the existing data.
+            var available = m_Data.Length - (m_Offset + m_Length);
+            if (available < reader.Length)
+            {
+                if (m_Length > 0)
+                {
+                    Array.Copy(m_Data, m_Offset, m_Data, 0, m_Length);
+                }
+
+                m_Offset = 0;
+
+                while (m_Data.Length - m_Length < reader.Length)
+                {
+                    Array.Resize(ref m_Data, m_Data.Length * 2);
+                }
+            }
+
+            unsafe
+            {
+                fixed (byte* dataPtr = m_Data)
+                {
+                    reader.ReadBytes(dataPtr + m_Offset + m_Length, reader.Length);
+                }
+            }
+
+            m_Length += reader.Length;
+        }
+
+        /// <summary>Pop the next full message in the queue.</summary>
+        /// <returns>The message, or the default value if no more full messages.</returns>
         public ArraySegment<byte> PopMessage()
         {
-            if (IsEmpty)
+            if (m_Length < sizeof(int))
             {
                 return default;
             }
 
-            m_Reader.SeekSet(m_ReaderOffset);
+            var messageLength = BitConverter.ToInt32(m_Data, m_Offset);
 
-            var messageLength = m_Reader.ReadInt();
-            m_ReaderOffset += sizeof(int);
+            if (m_Length - sizeof(int) < messageLength)
+            {
+                return default;
+            }
 
-            var data = new ArraySegment<byte>(m_Data, m_ReaderOffset, messageLength);
-            m_ReaderOffset += messageLength;
+            var data = new ArraySegment<byte>(m_Data, m_Offset + sizeof(int), messageLength);
+
+            m_Offset += sizeof(int) + messageLength;
+            m_Length -= sizeof(int) + messageLength;
 
             return data;
         }

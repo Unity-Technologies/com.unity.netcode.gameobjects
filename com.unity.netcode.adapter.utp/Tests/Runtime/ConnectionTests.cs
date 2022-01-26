@@ -20,8 +20,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
-            Debug.Log("Calling Cleanup");
-
             if (m_Server)
             {
                 m_Server.Shutdown();

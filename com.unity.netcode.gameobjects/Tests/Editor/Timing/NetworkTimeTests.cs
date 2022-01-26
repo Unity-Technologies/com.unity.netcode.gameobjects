@@ -198,6 +198,39 @@ namespace Unity.Netcode.EditorTests
             Assert.IsTrue(Approximately(startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
         }
 
+        [Test]
+        public void NetworkTickAdvanceTest()
+        {
+            var shortSteps = Enumerable.Repeat(1 / 30f, 1000);
+            NetworkTickAdvanceTestInternal(shortSteps, 30, 0.0f, 0.0f);
+        }
+
+        private NetworkTickSystem m_TickSystem;
+        private NetworkTimeSystem m_TimeSystem;
+        private int m_PreviousTick;
+
+        private void NetworkTickAdvanceTestInternal(IEnumerable<float> steps, uint tickRate, float start, float start2 = 0f)
+        {
+            m_PreviousTick = 0;
+            m_TickSystem = new NetworkTickSystem(tickRate, start, start2);
+            m_TimeSystem = NetworkTimeSystem.ServerTimeSystem();
+
+            m_TickSystem.Tick += TickUpdate;
+            foreach (var step in steps)
+            {
+                m_TimeSystem.Advance(step);
+                m_TickSystem.UpdateTick(m_TimeSystem.LocalTime, m_TimeSystem.ServerTime);
+            }
+        }
+
+        private void TickUpdate()
+        {
+            // Make sure our tick is precisely 1 + m_PreviousTick
+            Assert.IsTrue(m_TickSystem.LocalTime.Tick == m_PreviousTick + 1);
+            // Assign the m_PreviousTick value for next tick check
+            m_PreviousTick = m_TickSystem.LocalTime.Tick;
+        }
+
         private static bool Approximately(double a, double b, double epsilon = 0.000001d)
         {
             var dif = Math.Abs(a - b);

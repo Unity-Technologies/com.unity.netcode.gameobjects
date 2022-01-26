@@ -7,13 +7,17 @@ All notable changes to this package will be documented in this file. The format 
 ### Added
 
 - A new 'Server Listen Address' field under 'Connection Data' in the inspector has been added to specify the address a server should listen to, in case it differs from the main 'Address' field. The `SetConnectionData` method has been updated accordingly to take an optional parameter to specify that listen address. (#1605)
+- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
 
 ### Changed
 
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1584)
 - Implicit conversions between `ConnectionAddressData` and `NetworkEndPoint` are now deprecated, since their semantics are no longer clear with the introduction of the new `ServerListenAddress` field (see above). (#1605)
+- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
 
 ### Fixed
+
+- Lifted the limit of ~44KB for reliable payloads. Before the fix, attempting to send a payload larger than that with reliable delivery would silently fail. Note that it is still not recommended to send such large reliable payloads, since their delivery could take a few network round-trips. (#1596)
 
 ## [1.0.0-pre.4] - 2022-01-04
 
