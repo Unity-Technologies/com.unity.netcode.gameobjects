@@ -330,6 +330,11 @@ namespace Unity.Netcode
         {
             m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId, out NetworkObject networkObject);
 
+            if (networkObject == null)
+            {
+                return;
+            }
+
             m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             //todo: discuss with tools how to report shared bytes
             m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
