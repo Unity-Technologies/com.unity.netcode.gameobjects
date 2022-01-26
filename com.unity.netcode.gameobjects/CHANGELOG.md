@@ -35,6 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
 - Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
+- Fixed network tick value sometimes being duplicated or skipped. (#1614)
 
 ### Changed
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
