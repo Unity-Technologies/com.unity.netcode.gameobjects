@@ -15,6 +15,10 @@ using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
+#if NETCODE_USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 namespace Unity.Netcode
 {
     /// <summary>
@@ -606,6 +610,10 @@ namespace Unity.Netcode
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
+#if NETCODE_USE_ADDRESSABLES
+            // TODO: (Cosmin) This is a temporary place, we would want to change this once we add Addressables per Map
+            BuildAddressableLookupTable();
+#endif
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
 
@@ -797,6 +805,41 @@ namespace Unity.Netcode
                 }
             }
 
+#if NETCODE_USE_ADDRESSABLES
+            // If we have Some NetworkAddressablesPrefabs filled in then we must register them to our NetworkPrefabs list
+            if (NetworkConfig.NetworkAddressablesPrefabs.Count > 0)
+            {
+                for (int index = 0; index < NetworkConfig.NetworkAddressablesPrefabs.Count; index++)
+                {
+                    AssetReferenceGameObject assetReference = NetworkConfig.NetworkAddressablesPrefabs[index].Reference;
+                    if (assetReference.OperationHandle.Status != AsyncOperationStatus.Succeeded)
+                    {
+                        Debug.LogError("Initialization: Addressable assets were not preloaded!"
+                            + "You will not be able to use them at runtime! To fix this make sure you preload them using the NetworkAddressablesPreloader!");
+                        continue;
+                    }
+
+                    // By accessing Asset we simply get a reference to the underlying object that the Addressable is pointing to
+                    // In this case it MUST be a Prefab with a NetworkObject attached to it
+                    var addressablesPrefab = (GameObject)assetReference.Asset;
+
+                    Debug.Assert(addressablesPrefab != null);
+                    var addressablesNetworkObject = addressablesPrefab.GetComponent<NetworkObject>();
+                    if (addressablesNetworkObject != null)
+                    {
+                        if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(addressablesNetworkObject
+                                .GlobalObjectIdHash))
+                        {
+                            var addressablesNetworkPrefab = new NetworkPrefab();
+                            addressablesNetworkPrefab.Prefab = addressablesPrefab;
+                            NetworkConfig.NetworkPrefabs.Add(addressablesNetworkPrefab);
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(addressablesNetworkObject.GlobalObjectIdHash,
+                                addressablesNetworkPrefab);
+                        }
+                    }
+                }
+            }
+#endif
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
             // Iterate backwards so indices don't shift as we remove
             for (int i = removeEmptyPrefabs.Count - 1; i >= 0; i--)
@@ -1771,6 +1814,46 @@ namespace Unity.Netcode
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
         }
 #endif
-    }
 
+#if NETCODE_USE_ADDRESSABLES
+
+        /// <summary>
+        /// Cache the AssetGUID to it's AssetReference for fast access and being able to use the same AssetReference (ref type) from different classes
+        /// Since our Addressables are preloaded for 1.x, there is no way around (for now) to use the Loaded Asset without paying a big overhead
+        /// If you use InstantiateAsync on an loaded asset, the Addressable system would have to compare locations + look up if you have it into your cache
+        /// Additionally, the Addressable system would also track your newly returned handle by default from InstantiateAsync/LoadAssetAsync, therefore makes no sense to pay that
+        /// Since we already keep track of them ourselves in the NetworkAddressablesPreloader
+        /// Furthermore, some issues could occur where if the Handle is released automatically by using InstantiateAsync upon destruction of the
+        /// NetworkAddressablePrefab GameObject there may be cases where the object would simply disappear, regardless if we keep track manually in our Preloader.
+        /// </summary>
+        private static readonly Dictionary<string, AssetReferenceGameObject> k_AssetGuidsToAddressableLookupTable = new Dictionary<string, AssetReferenceGameObject>();
+
+
+        /// <summary>
+        /// @return the reference to the AssetReferenceGameObject we have stored in our look up table based on the AssetGUID
+        /// </summary>
+        public static AssetReferenceGameObject LookupAddressableAssetReference(string assetGUID)
+        {
+            return k_AssetGuidsToAddressableLookupTable.TryGetValue(assetGUID, out AssetReferenceGameObject result) ? result : null;
+        }
+
+        private void BuildAddressableLookupTable()
+        {
+            k_AssetGuidsToAddressableLookupTable.Clear();
+            // TODO: (Cosmin) I don't like the consistency between storing AssetReferenceGameObject here directly versus the NetworkAddressablePrefab, think about this again
+            foreach (var networkAddressablesPrefab in NetworkConfig
+                         .GetNetworkAddressablesPrefabs)
+            {
+                if (networkAddressablesPrefab?.Reference == null)
+                {
+                    continue;
+                }
+
+                string assetReferenceGUID =  networkAddressablesPrefab.Reference.AssetGUID;
+                k_AssetGuidsToAddressableLookupTable.Add(assetReferenceGUID, networkAddressablesPrefab.Reference);
+                Debug.LogFormat("Adding addressable {0} to look up table!", assetReferenceGUID);
+            }
+        }
+#endif
+    }
 }

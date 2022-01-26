@@ -8,7 +8,9 @@
         "Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
-        "Unity.Services.Relay"
+        "Unity.Services.Relay",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -22,6 +24,11 @@
             "name": "com.unity.services.relay",
             "expression": "0.0.1-preview.3",
             "define": "ENABLE_RELAY_SERVICE"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "NETCODE_USE_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

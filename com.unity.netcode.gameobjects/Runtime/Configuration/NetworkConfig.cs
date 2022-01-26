@@ -4,6 +4,10 @@ using UnityEngine;
 using System.Linq;
 using Unity.Collections;
 
+#if NETCODE_USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -37,6 +41,16 @@ namespace Unity.Netcode
         [Tooltip("The prefabs that can be spawned across the network")]
         internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
+#if NETCODE_USE_ADDRESSABLES
+        // TODO: (Cosmin) How can we improve this when adding Prefabs per Scene?
+        /// <summary>
+        /// A list of the Registered Addressables Prefabs that should have a NetworkObject attached to them
+        /// </summary>
+        [SerializeField]
+        internal List<NetworkAddressablesPrefab> NetworkAddressablesPrefabs = new List<NetworkAddressablesPrefab>();
+
+        public List<NetworkAddressablesPrefab> GetNetworkAddressablesPrefabs => NetworkAddressablesPrefabs;
+#endif
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
         /// Generated at runtime and OnValidate

@@ -4,6 +4,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
+#if NETCODE_USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
+
 namespace Unity.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
@@ -39,6 +43,9 @@ namespace Unity.Netcode.Editor
 
         private ReorderableList m_NetworkPrefabsList;
 
+#if NETCODE_USE_ADDRESSABLES
+        private ReorderableList m_NetworkAddressableList;
+#endif
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
 
@@ -194,6 +201,25 @@ namespace Unity.Netcode.Editor
                 }
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
+
+#if NETCODE_USE_ADDRESSABLES
+
+            m_NetworkAddressableList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig))
+                .FindPropertyRelative(nameof(NetworkConfig.NetworkAddressablesPrefabs)), true, true, true, true)
+            {
+                elementHeightCallback = index => 8 + EditorGUIUtility.singleLineHeight + 2,
+                drawElementCallback = (rect, index, isActive, isFocused) =>
+                {
+                    var networkedAddressableElement = m_NetworkAddressableList.serializedProperty.GetArrayElementAtIndex(index);
+                    var addressableAssetReferenceProp = networkedAddressableElement.FindPropertyRelative(nameof(NetworkAddressablesPrefab.Reference));
+                    {
+                       EditorGUI.PropertyField(rect, addressableAssetReferenceProp , GUIContent.none);
+                    }
+                },
+
+                drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkAddressables")
+            };
+#endif
         }
 
         public override void OnInspectorGUI()
@@ -230,6 +256,10 @@ namespace Unity.Netcode.Editor
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
 
+#if NETCODE_USE_ADDRESSABLES
+                m_NetworkAddressableList.DoLayoutList();
+                EditorGUILayout.Space();
+#endif
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
 

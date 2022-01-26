@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+#if NETCODE_USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
 
 namespace Unity.Netcode
 {
@@ -42,4 +45,12 @@ namespace Unity.Netcode
         /// </summary>
         public GameObject OverridingTargetPrefab;
     }
+
+#if NETCODE_USE_ADDRESSABLES
+    [Serializable]
+    public class NetworkAddressablesPrefab
+    {
+        public AssetReferenceGameObject Reference;
+    }
+#endif
 }
