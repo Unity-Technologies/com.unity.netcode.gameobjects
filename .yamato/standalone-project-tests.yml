@@ -29,6 +29,7 @@ standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
+        - "build/test-results/**"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 
