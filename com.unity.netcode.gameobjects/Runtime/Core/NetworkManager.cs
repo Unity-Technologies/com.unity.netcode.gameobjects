@@ -198,11 +198,6 @@ namespace Unity.Netcode
         public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         /// <summary>
-        /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
-        /// </summary>
-        [HideInInspector] public bool DontDestroy = true;
-
-        /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
         [HideInInspector] public bool RunInBackground = true;
@@ -490,6 +485,13 @@ namespace Unity.Netcode
 
         private void Initialize(bool server)
         {
+            // Don't allow the user to start a network session if the NetworkManager is
+            // still parented under another GameObject
+            if (NetworkManagerCheckForParent(true))
+            {
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Initialize));
@@ -941,11 +943,6 @@ namespace Unity.Netcode
 
         private void OnEnable()
         {
-            if (DontDestroy)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-
             if (RunInBackground)
             {
                 Application.runInBackground = true;
@@ -955,12 +952,59 @@ namespace Unity.Netcode
             {
                 SetSingleton();
             }
+
+            if (!NetworkManagerCheckForParent())
+            {
+                DontDestroyOnLoad(gameObject);
+            }
         }
 
         private void Awake()
         {
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
+
+        /// <summary>
+        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            NetworkManagerCheckForParent();
+        }
+
+        /// <summary>
+        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
+        /// notifies the user that this is not allowed for the NetworkManager.
+        /// </summary>
+        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
+        {
+#if UNITY_EDITOR
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+#else
+            var isParented = transform.root != transform;
+            if (isParented)
+            {
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+            }
+#endif
+            return isParented;
+        }
+
+        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
+#if UNITY_EDITOR
+        static internal INetworkManagerHelper NetworkManagerHelper;
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+        }
+#endif
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
         private void OnSceneUnloaded(Scene scene)
