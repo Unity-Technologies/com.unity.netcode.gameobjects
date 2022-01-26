@@ -46,6 +46,7 @@ namespace Unity.Netcode
         // snapshot internal
         internal int TickWritten;
         internal int SerializedLength;
+        internal bool IsDelta; // Is this carrying a ReadDelta(). Should always be true except for spawn-generated updates
     }
 
     internal struct UpdateCommandMeta
@@ -568,7 +569,7 @@ namespace Unity.Netcode
                         updateCommand.BehaviourIndex = childIndex;
                         updateCommand.VariableIndex = variableIndex;
 
-                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex]);
+                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex], false);
                     }
                 }
             }
@@ -616,9 +617,11 @@ namespace Unity.Netcode
         }
 
         // entry-point for value updates
-        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable)
+        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable, bool isDelta = true)
         {
             command.TickWritten = m_CurrentTick;
+            command.IsDelta = isDelta;
+
             var commandPosition = -1;
 
             List<ulong> targetClientIds = GetClientList();
@@ -678,7 +681,17 @@ namespace Unity.Netcode
                 Debug.Assert(false);
             }
 
-            networkVariable.WriteDelta(m_Writer);
+            // we use WriteDelta for updates, but WriteField for spawns. It is important to use the correct one
+            // for NetworkList. And, in the future, NetworkVariables might care, too.
+            if (command.IsDelta)
+            {
+                networkVariable.WriteDelta(m_Writer);
+            }
+            else
+            {
+                networkVariable.WriteField(m_Writer);
+            }
+
             command.SerializedLength = m_Writer.Length;
 
             var allocated = MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
@@ -756,18 +769,19 @@ namespace Unity.Netcode
                 // Find the network variable;
                 GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
 
-                if (variable == null)
-                {
-                    Debug.LogError($"Could not find NetworkVariable for " +
-                                   $"Object {updateCommand.NetworkObjectId} " +
-                                   $"Behaviour {updateCommand.BehaviourIndex} " +
-                                   $"Variable {updateCommand.VariableIndex}");
-                }
-
-                if (updateCommand.TickWritten > variable.TickRead)
+                // if the variable is not present anymore (despawned) or if this is an older update, let skip
+                // we still need to seek over the message, though
+                if (variable != null && updateCommand.TickWritten > variable.TickRead)
                 {
                     variable.TickRead = updateCommand.TickWritten;
-                    variable.ReadDelta(message.ReadBuffer, false); // todo: pass something for keep dirty delta
+                    if (updateCommand.IsDelta)
+                    {
+                        variable.ReadDelta(message.ReadBuffer, false); // todo: pass something for keep dirty delta
+                    }
+                    else
+                    {
+                        variable.ReadField(message.ReadBuffer);
+                    }
 
                     m_NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                         clientId, behaviour.NetworkObject, variable.Name, behaviour.__getTypeName(), 20); // todo: what length ?
