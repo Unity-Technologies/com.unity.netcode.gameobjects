@@ -168,9 +168,18 @@ namespace Unity.Netcode
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
 
+        // The following handlers decouple SnapshotSystem from its dependencies
+
+        // Handler that is called by SnapshotSystem to send a SnapshotMessage.
         internal SendMessageHandler SendMessage;
-        internal SpawnObjectHandler SpawnObject;
+        // Handlers that are called by SnapshotSystem to spawn an object locally.
+        // The pre- version is called first, to allow the SDK to create the object.
+        // The post- version is called later, after reading the initial values of the NetworkVariable an object contains
+        internal SpawnObjectHandler PreSpawnObject;
+        internal SpawnObjectHandler PostSpawnObject;
+        // Handler that is called by SnapshotSystem to despawn an object locally.
         internal DespawnObjectHandler DespawnObject;
+        // Handler that is called by SnapshotSystem to obtain a specific NetworkBehaviour and NetworkVariable.
         internal GetBehaviourVariableHandler GetBehaviourVariable;
 
         // Property showing visibility into inner workings, for testing
@@ -203,13 +212,14 @@ namespace Unity.Netcode
                 // If we have a NetworkManager, let's send on the network. This can be overriden for tests
                 SendMessage = NetworkSendMessage;
                 // If we have a NetworkManager, let's (de)spawn with the rest of our package. This can be overriden for tests
-                SpawnObject = NetworkSpawnObject;
+                PreSpawnObject = NetworkPreSpawnObject;
+                PostSpawnObject = NetworkPostSpawnObject;
                 DespawnObject = NetworkDespawnObject;
                 GetBehaviourVariable = NetworkGetBehaviourVariable;
             }
 
             // register for updates in EarlyUpdate
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
             SpawnsMeta = new SnapshotSpawnDespawnCommandMeta[SpawnsBufferCount];
@@ -266,9 +276,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Called by SnapshotSystem, to spawn an object locally
-        /// todo: consider observer pattern
+        /// In the pre- phase, we trigger the object creation and call
+        /// PreSpawnNetworkObjectLocallyCommon which trigger internal things like creating the NetworkVariables
         /// </summary>
-        internal void NetworkSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        internal void NetworkPreSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
         {
             NetworkObject networkObject;
             if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
@@ -284,10 +295,31 @@ namespace Unity.Netcode
                     spawnCommand.ObjectRotation);
             }
 
-            m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
+            m_NetworkManager.SpawnManager.PreSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
                 true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+
             //todo: discuss with tools how to report shared bytes
             m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
+        }
+
+        /// <summary>
+        /// Called by SnapshotSystem, to spawn an object locally
+        /// In the post- phase, we call PostSpawnNetworkObjectLocallyCommon
+        /// which will notify the game code. This is done in two steps as it needs to happen after the object's
+        /// NetworkVariables have been read
+        /// </summary>
+        internal void NetworkPostSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        {
+            if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(spawnCommand.NetworkObjectId,
+                out NetworkObject networkObject))
+            {
+                m_NetworkManager.SpawnManager.PostSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
+                    true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+            }
+            else
+            {
+                Debug.LogError($"Didn't find expected NetworkObject for NetworkObjectId {spawnCommand.NetworkObjectId}");
+            }
         }
 
         /// <summary>
@@ -335,13 +367,18 @@ namespace Unity.Netcode
 
         public void Dispose()
         {
-            this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (updateStage == NetworkUpdateStage.EarlyUpdate)
+            if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
+                if (m_NetworkManager)
+                {
+                    m_NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_NetworkManager);
+                }
+
                 UpdateClientServerData();
 
                 var tick = m_NetworkTickSystem.LocalTime.Tick;
@@ -517,6 +554,23 @@ namespace Unity.Netcode
                 {
                     m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, networkObject, 8);
                 }
+
+                // When we spawn an object we need to include its initial value.
+                // This scans the NetworkVariable of the spawn object and store its NetworkVariables
+
+                var updateCommand = new UpdateCommand();
+                for (ushort childIndex = 0; childIndex < networkObject.ChildNetworkBehaviours.Count; childIndex++)
+                {
+                    var behaviour = networkObject.ChildNetworkBehaviours[childIndex];
+                    for (var variableIndex = 0; variableIndex < behaviour.NetworkVariableFields.Count; variableIndex++)
+                    {
+                        updateCommand.NetworkObjectId = command.NetworkObjectId;
+                        updateCommand.BehaviourIndex = childIndex;
+                        updateCommand.VariableIndex = variableIndex;
+
+                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex]);
+                    }
+                }
             }
         }
 
@@ -665,6 +719,11 @@ namespace Unity.Netcode
                 // todo: error handling
                 message.ReadBuffer.ReadValue(out header);
             }
+            else
+            {
+                Debug.LogError("Error reading header");
+                return;
+            }
 
             var clientData = m_ClientData[clientId];
             clientData.LastReceivedTick = header.CurrentTick;
@@ -675,6 +734,7 @@ namespace Unity.Netcode
                 // todo: deal with error
             }
 
+            var spawnPosition = message.ReadBuffer.Position;
             for (int index = 0; index < header.SpawnCount; index++)
             {
                 message.ReadBuffer.ReadValue(out spawnCommand);
@@ -685,8 +745,7 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
-                SpawnObject(spawnCommand, clientId);
+                PreSpawnObject(spawnCommand, clientId);
             }
 
             for (int index = 0; index < header.UpdateCount; index++)
@@ -694,8 +753,16 @@ namespace Unity.Netcode
                 message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
                 message.ReadBuffer.ReadValue(out updateCommand);
 
-                //NetworkVariableBase variable;
+                // Find the network variable;
                 GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
+
+                if (variable == null)
+                {
+                    Debug.LogError($"Could not find NetworkVariable for " +
+                                   $"Object {updateCommand.NetworkObjectId} " +
+                                   $"Behaviour {updateCommand.BehaviourIndex} " +
+                                   $"Variable {updateCommand.VariableIndex}");
+                }
 
                 if (updateCommand.TickWritten > variable.TickRead)
                 {
@@ -791,6 +858,23 @@ namespace Unity.Netcode
                 }
                 i++;
             }
+
+            var endPosition = message.ReadBuffer.Position;
+            message.ReadBuffer.Seek(spawnPosition);
+            for (int index = 0; index < header.SpawnCount; index++)
+            {
+                message.ReadBuffer.ReadValue(out spawnCommand);
+
+                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+                PostSpawnObject(spawnCommand, clientId);
+            }
+            message.ReadBuffer.Seek(endPosition);
         }
 
         internal void NetworkGetBehaviourVariable(UpdateCommand updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, ulong srcClientId)
