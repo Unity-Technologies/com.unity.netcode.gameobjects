@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
@@ -44,6 +45,7 @@ namespace Unity.Netcode.RuntimeTests
             bool setupSucceeded = false;
             var serverNetVarsToUpdate = new List<NetworkVariable<int>>();
             var prefabToSpawn = new GameObject();
+            prefabToSpawn.name = "BehaviourUpdaterObject";
             var spawnedPrefabs = new List<GameObject>();
             try
             {
@@ -150,7 +152,6 @@ namespace Unity.Netcode.RuntimeTests
                 clientStatesToCheck.Add(new StateOfClientCheck(client, nbSpawnedObjects, updatedValue));
             }
 
-
             var allClientsCompleted = false;
             var testTimedOut = false;
             var timeOutAfter = Time.realtimeSinceStartup + 15;
@@ -177,19 +178,30 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 yield return null;
             }
-
+            if (testTimedOut)
+            {
+                foreach (var clientStateCheck in clientStatesToCheck)
+                {
+                    clientStateCheck.DisplayCurrentStateInfo();
+                }
+            }
             Assert.False(testTimedOut, "The client check test timed out!");
             Assert.True(allClientsCompleted, "Not all client state checks completed!");
 
             clientStatesToCheck.Clear();
-            Object.Destroy(prefabToSpawn);
+            Object.DestroyImmediate(prefabToSpawn);
 
             foreach (var spawnedObject in spawnedPrefabs)
             {
-                Object.Destroy(spawnedObject);
+                Object.DestroyImmediate(spawnedObject);
             }
 
             spawnedPrefabs.Clear();
+            var behaviourUpdaterObjects = Object.FindObjectsOfType<GameObject>().Where(c => c.name.Contains("BehaviourUpdaterObject")).ToList();
+            foreach (var behaviourUpdater in behaviourUpdaterObjects)
+            {
+                Object.DestroyImmediate(behaviourUpdater);
+            }
         }
 
         private class StateOfClientCheck
@@ -206,6 +218,30 @@ namespace Unity.Netcode.RuntimeTests
                 CheckComplete
             }
 
+            public void DisplayCurrentStateInfo()
+            {
+                Debug.Log($"Client Current State: {m_CheckClientState}");
+                switch (m_CheckClientState)
+                {
+                    case CheckClientState.SpawnCheck:
+                        {
+                            Debug.Log($"Client-Side Spawned Objects: {m_ClientNetworkManager.SpawnManager.SpawnedObjects.Count} expected SpawnedObjects {m_ExpectedSpawnedObjects}");
+                            break;
+                        }
+                    case CheckClientState.NetworkVarCheck:
+                        {
+                            var count = 0;
+                            var netVarValues = $"Expected Value {m_ExpectedNetVarValue} NetworkVariable Values:\n";
+                            foreach (var networkVariable in m_NetworkVariablesToCheck)
+                            {
+                                netVarValues += $"NetVar{count}:{networkVariable.Value}";
+                                count++;
+                            }
+                            break;
+                        }
+                }
+            }
+
             public bool IsClientCheckComplete()
             {
                 var isComplete = false;
@@ -213,12 +249,23 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     case CheckClientState.SpawnCheck:
                         {
-                            if (m_ClientNetworkManager.SpawnManager.SpawnedObjects.Count == m_ExpectedSpawnedObjects)
+                            var spawnedBehaviourUpdaterObjects = new List<NetworkObject>();
+
+                            foreach (var spawnedObject in m_ClientNetworkManager.SpawnManager.SpawnedObjects)
+                            {
+                                if (spawnedObject.Value.name.Contains("BehaviourUpdaterObject"))
+                                {
+                                    spawnedBehaviourUpdaterObjects.Add(spawnedObject.Value);
+                                }
+                            }
+
+
+                            if (spawnedBehaviourUpdaterObjects.Count == m_ExpectedSpawnedObjects)
                             {
                                 m_CheckClientState = CheckClientState.NetworkVarCheck;
-                                foreach (var spawnedObject in m_ClientNetworkManager.SpawnManager.SpawnedObjects)
+                                foreach (var spawnedObject in spawnedBehaviourUpdaterObjects)
                                 {
-                                    foreach (var behaviour in spawnedObject.Value.GetComponentsInChildren<NetworkBehaviour>())
+                                    foreach (var behaviour in spawnedObject.GetComponentsInChildren<NetworkBehaviour>())
                                     {
                                         foreach (var networkVariable in behaviour.NetworkVariableFields)
                                         {
