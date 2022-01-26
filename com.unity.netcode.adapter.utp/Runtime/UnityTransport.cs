@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
@@ -22,7 +23,7 @@ namespace Unity.Netcode
             out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedFragmentedPipeline);
+            out NetworkPipeline reliableSequencedPipeline);
     }
 
     public static class ErrorUtilities
@@ -85,8 +86,8 @@ namespace Unity.Netcode
         }
 
         public const int InitialMaxPacketQueueSize = 128;
-        public const int InitialBatchQueueSize = 6 * 1024;
-        public const int InitialMaxSendQueueSize = 16 * InitialBatchQueueSize;
+        public const int InitialMaxPayloadSize = 6 * 1024;
+        public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
         { Address = "127.0.0.1", Port = 7777 };
@@ -103,9 +104,9 @@ namespace Unity.Netcode
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
 
-        [Tooltip("The maximum size of a batched send. The send queue accumulates messages and batches them together " +
-            "up to this size. This is effectively the maximum payload size that can be handled by the transport.")]
-        [SerializeField] private int m_SendQueueBatchSize = InitialBatchQueueSize;
+        [Tooltip("The maximum size of a payload that can be handled by the transport.")]
+        [FormerlySerializedAs("m_SendQueueBatchSize")]
+        [SerializeField] private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
         [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for " +
             "batching and stores messages when other internal send queues are full. If you routinely observe an " +
@@ -159,7 +160,7 @@ namespace Unity.Netcode
 
         private NetworkPipeline m_UnreliableFragmentedPipeline;
         private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
-        private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
+        private NetworkPipeline m_ReliableSequencedPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -209,6 +210,11 @@ namespace Unity.Netcode
         /// </summary>
         private readonly Dictionary<SendTarget, BatchedSendQueue> m_SendQueue = new Dictionary<SendTarget, BatchedSendQueue>();
 
+        // Since reliable messages may be spread out over multiple transport payloads, it's possible
+        // to receive only parts of a message in an update. We thus keep the reliable receive queues
+        // around to avoid losing partial messages.
+        private readonly Dictionary<ulong, BatchedReceiveQueue> m_ReliableReceiveQueues = new Dictionary<ulong, BatchedReceiveQueue>();
+
         private void InitDriver()
         {
             DriverConstructor.CreateDriver(
@@ -216,7 +222,7 @@ namespace Unity.Netcode
                 out m_Driver,
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
-                out m_ReliableSequencedFragmentedPipeline);
+                out m_ReliableSequencedPipeline);
         }
 
         private void DisposeDriver()
@@ -240,7 +246,7 @@ namespace Unity.Netcode
                 case NetworkDelivery.Reliable:
                 case NetworkDelivery.ReliableSequenced:
                 case NetworkDelivery.ReliableFragmentedSequenced:
-                    return m_ReliableSequencedFragmentedPipeline;
+                    return m_ReliableSequencedPipeline;
 
                 default:
                     Debug.LogError($"Unknown {nameof(NetworkDelivery)} value: {delivery}");
@@ -339,6 +345,11 @@ namespace Unity.Netcode
             }
         }
 
+        internal void SetMaxPayloadSize(int maxPayloadSize)
+        {
+            m_MaxPayloadSize = maxPayloadSize;
+        }
+
         private void SetProtocol(ProtocolType inProtocol)
         {
             m_ProtocolType = inProtocol;
@@ -378,6 +389,33 @@ namespace Unity.Netcode
 
 
             SetProtocol(ProtocolType.RelayUnityTransport);
+        }
+
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, bool isSecure = false)
+        {
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, isSecure: isSecure);
+        }
+
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="hostConnectionData">Host's connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetClientRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, byte[] hostConnectionData, bool isSecure = false)
+        {
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
 
         /// <summary>
@@ -438,7 +476,14 @@ namespace Unity.Netcode
                     return;
                 }
 
-                var written = queue.FillWriter(ref writer);
+                // We don't attempt to send entire payloads over the reliable pipeline. Instead we
+                // fragment it manually. This is safe and easy to do since the reliable pipeline
+                // basically implements a stream, so as long as we separate the different messages
+                // in the stream (the send queue does that automatically) we are sure they'll be
+                // reassembled properly at the other end. This allows us to lift the limit of ~44KB
+                // on reliable payloads (because of the reliable window size).
+                var written = pipeline == m_ReliableSequencedPipeline
+                    ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
 
                 result = m_Driver.EndSend(writer);
                 if (result == written)
@@ -480,9 +525,42 @@ namespace Unity.Netcode
 
         }
 
+        private void ReceiveMessages(ulong clientId, NetworkPipeline pipeline, DataStreamReader dataReader)
+        {
+            BatchedReceiveQueue queue;
+            if (pipeline == m_ReliableSequencedPipeline)
+            {
+                if (m_ReliableReceiveQueues.TryGetValue(clientId, out queue))
+                {
+                    queue.PushReader(dataReader);
+                }
+                else
+                {
+                    queue = new BatchedReceiveQueue(dataReader);
+                    m_ReliableReceiveQueues[clientId] = queue;
+                }
+            }
+            else
+            {
+                queue = new BatchedReceiveQueue(dataReader);
+            }
+
+            while (!queue.IsEmpty)
+            {
+                var message = queue.PopMessage();
+                if (message == default)
+                {
+                    // Only happens if there's only a partial message in the queue (rare).
+                    break;
+                }
+
+                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, Time.realtimeSinceStartup);
+            }
+        }
+
         private bool ProcessEvent()
         {
-            var eventType = m_Driver.PopEvent(out var networkConnection, out var reader);
+            var eventType = m_Driver.PopEvent(out var networkConnection, out var reader, out var pipeline);
 
             switch (eventType)
             {
@@ -509,6 +587,8 @@ namespace Unity.Netcode
                             }
                         }
 
+                        m_ReliableReceiveQueues.Remove(ParseClientId(networkConnection));
+
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             ParseClientId(networkConnection),
                             default(ArraySegment<byte>),
@@ -519,17 +599,7 @@ namespace Unity.Netcode
                     }
                 case TransportNetworkEvent.Type.Data:
                     {
-                        var queue = new BatchedReceiveQueue(reader);
-
-                        while (!queue.IsEmpty)
-                        {
-                            InvokeOnTransportEvent(NetcodeNetworkEvent.Data,
-                                ParseClientId(networkConnection),
-                                queue.PopMessage(),
-                                Time.realtimeSinceStartup
-                            );
-                        }
-
+                        ReceiveMessages(ParseClientId(networkConnection), pipeline, reader);
                         return true;
                     }
             }
@@ -557,6 +627,10 @@ namespace Unity.Netcode
                 {
                     ;
                 }
+
+#if MULTIPLAYER_TOOLS
+                ExtractNetworkMetrics();
+#endif
             }
         }
 
@@ -564,6 +638,58 @@ namespace Unity.Netcode
         {
             DisposeDriver();
         }
+
+#if MULTIPLAYER_TOOLS
+        private void ExtractNetworkMetrics()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
+                foreach (var ngoConnectionId in ngoConnectionIds)
+                {
+                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
+                    {
+                        continue;
+                    }
+                    ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
+                }
+            }
+            else
+            {
+                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
+            }
+        }
+
+        private void ExtractNetworkMetricsForClient(ulong transportClientId)
+        {
+            var networkConnection =  ParseClientId(transportClientId);
+            ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
+        }
+
+        private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
+        {
+            //Don't need to dispose of the buffers, they are filled with data pointers.
+            m_Driver.GetPipelineBuffers(pipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
+            {
+                var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+
+                NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
+
+                networkMetricsContext->PacketSentCount = 0;
+                networkMetricsContext->PacketReceivedCount = 0;
+            }
+        }
+#endif
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
@@ -639,9 +765,9 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
-            // If the user sends a message of exactly m_SendQueueBatchSize in length, we need to
+            // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
-            var fragmentationCapacity = m_SendQueueBatchSize + BatchedSendQueue.PerMessageOverhead;
+            var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
 
             m_NetworkSettings
                 .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
@@ -660,9 +786,9 @@ namespace Unity.Netcode
 
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            if (payload.Count > m_SendQueueBatchSize)
+            if (payload.Count > m_MaxPayloadSize)
             {
-                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Send Queue Batch Size' ({m_SendQueueBatchSize}).");
+                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
                 return;
             }
 
@@ -671,7 +797,7 @@ namespace Unity.Netcode
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
-                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_SendQueueBatchSize));
+                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
             }
 
@@ -743,7 +869,7 @@ namespace Unity.Netcode
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedFragmentedPipeline)
+            out NetworkPipeline reliableSequencedPipeline)
         {
 #if MULTIPLAYER_TOOLS
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
@@ -772,7 +898,11 @@ namespace Unity.Netcode
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
@@ -782,8 +912,7 @@ namespace Unity.Netcode
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                     );
-                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
+                reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
@@ -809,8 +938,7 @@ namespace Unity.Netcode
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
-                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
+                reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS
                     ,typeof(NetworkMetricsPipelineStage)

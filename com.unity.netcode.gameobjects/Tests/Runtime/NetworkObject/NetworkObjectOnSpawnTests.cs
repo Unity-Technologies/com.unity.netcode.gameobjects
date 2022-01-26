@@ -20,7 +20,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
             m_TestNetworkObjectPrefab = new GameObject("InstantiateDestroySpawnNotCalled_Object");
@@ -77,7 +76,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
@@ -120,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned
-            int nextFrameNumber = Time.frameCount + 2;
+            int nextFrameNumber = Time.frameCount + 4;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // check despawned on clients

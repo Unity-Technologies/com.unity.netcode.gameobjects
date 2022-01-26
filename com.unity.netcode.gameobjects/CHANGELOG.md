@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed client player object being destroyed on server when the client's player object has DontDestroyWithOwner set. (#1433)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0. (#1480)
 - Fixed an exception being thrown during NetworkVariableDeltaMessage serialization when EnsureNetworkVariableLengthSafety is enabled (#1487)
@@ -23,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1509)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
+- Fixed network tick value sometimes being duplicated or skipped. (#1614)
 
 ### Changed
 
