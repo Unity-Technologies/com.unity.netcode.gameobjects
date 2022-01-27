@@ -574,7 +574,8 @@ namespace Unity.Netcode
                         updateCommand.BehaviourIndex = childIndex;
                         updateCommand.VariableIndex = variableIndex;
 
-                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex], false);
+                        // because this is a spawn, we specify that this isn't a delta update
+                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex], /* IsDelta = */ false);
                     }
                 }
             }
@@ -781,7 +782,9 @@ namespace Unity.Netcode
                     variable.TickRead = updateCommand.TickWritten;
                     if (updateCommand.IsDelta)
                     {
-                        variable.ReadDelta(message.ReadBuffer, false); // todo: pass something for keep dirty delta
+                        // todo: revisit if we need to pass something for keepDirtyDelta
+                        // since we currently only have server-authoritative changes, this makes no difference
+                        variable.ReadDelta(message.ReadBuffer, /* keepDirtyDelta = */false);
                     }
                     else
                     {
