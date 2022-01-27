@@ -85,6 +85,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private const float k_TimeOutWaitPeriod = 2.0f;
         private static float s_TimeOutPeriod;
+
         /// <summary>
         /// This will simply advance the timeout period
         /// Note: When ClientSideNotifyObjectSpawned is invoked this will get
@@ -125,6 +126,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.Setup();
         }
 
+        /// <summary>
+        /// This is an adjustment to how the server and clients are started in order
+        /// to avoid timing issues when running in a stand alone test runner build.
+        /// </summary>
         private IEnumerator InitializeServerAndClients(bool useHost)
         {
             s_ClientNetworkVariableTestInstances.Clear();
