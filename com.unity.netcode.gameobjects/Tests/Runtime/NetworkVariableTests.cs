@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -50,6 +51,15 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
 
         public bool ListDelegateTriggered;
+
+        public override void OnNetworkSpawn()
+        {
+            if (!IsServer)
+            {
+                NetworkVariableTests.ClientNetworkVariableTestSpawned(this);
+            }
+            base.OnNetworkSpawn();
+        }
     }
 
     [TestFixture(true)]
@@ -67,13 +77,38 @@ namespace Unity.Netcode.RuntimeTests
 
         private const int k_TestKey1 = 0x0f0f;
 
+        private static List<NetworkVariableTest> s_ClientNetworkVariableTestInstances = new List<NetworkVariableTest>();
+        public static void ClientNetworkVariableTestSpawned(NetworkVariableTest networkVariableTest)
+        {
+            s_ClientNetworkVariableTestInstances.Add(networkVariableTest);
+        }
+
+        private const float k_TimeOutWaitPeriod = 2.0f;
+        private static float s_TimeOutPeriod;
+        /// <summary>
+        /// This will simply advance the timeout period
+        /// Note: When ClientSideNotifyObjectSpawned is invoked this will get
+        /// called to handle any potential latencies due to poor performance or
+        /// the like.
+        /// </summary>
+        private static void AdvanceTimeOutPeriod()
+        {
+            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
+        }
+
+        /// <summary>
+        /// Checks if the timeout period has elapsed
+        /// </summary>
+        private static bool HasTimedOut()
+        {
+            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
+        }
+
         // Player1 component on the server
         private NetworkVariableTest m_Player1OnServer;
 
         // Player1 component on client1
         private NetworkVariableTest m_Player1OnClient1;
-
-        private bool m_TestWithHost;
 
         private bool m_EnsureLengthSafety;
 
@@ -85,17 +120,34 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    playerPrefab.AddComponent<NetworkVariableTest>();
-                });
+            m_BypassStartAndWaitForClients = true;
+
+            yield return base.Setup();
+        }
+
+        private IEnumerator InitializeServerAndClients(bool useHost)
+        {
+            s_ClientNetworkVariableTestInstances.Clear();
+            m_PlayerPrefab.AddComponent<NetworkVariableTest>();
 
             m_ServerNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
+                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
+
+            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+
+            RegisterSceneManagerHandler();
+
+            // Wait for connection on client side
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+
+            // Wait for connection on server side
+            var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
             var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -122,6 +174,19 @@ namespace Unity.Netcode.RuntimeTests
             {
                 throw new Exception("at least one client network container not empty at start");
             }
+
+            var allClientNetworkVariableTestInstancesSpawned = false;
+            var waitPeriod = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
+            var timedOut = false;
+            AdvanceTimeOutPeriod();
+            while (!allClientNetworkVariableTestInstancesSpawned && !HasTimedOut())
+            {
+                allClientNetworkVariableTestInstancesSpawned = s_ClientNetworkVariableTestInstances.Count >= NbClients;
+                timedOut = HasTimedOut();
+                yield return new WaitForSeconds(waitPeriod);
+            }
+
+            Assert.False(timedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
         }
 
         /// <summary>
@@ -130,7 +195,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator AllNetworkVariableTypes([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
 
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
@@ -172,10 +237,10 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        [Test]
-        public void ClientWritePermissionTest([Values(true, false)] bool useHost)
+        [UnityTest]
+        public IEnumerator ClientWritePermissionTest([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
 
             // client must not be allowed to write to a server auth variable
             Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
@@ -184,29 +249,27 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator FixedString32Test([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
+            yield return InitializeServerAndClients(useHost);
+            m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
 
-                    // we are writing to the private and public variables on player 1's object...
-                },
-                () =>
-                {
+            var timeOutperiod = Time.realtimeSinceStartup + 5.0f;
+            var timedOut = false;
+            var hasPlayerValueChanged = m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue;
+            var waitperiod = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
+            while (!hasPlayerValueChanged && !timedOut)
+            {
+                timedOut = timeOutperiod < Time.realtimeSinceStartup;
+                hasPlayerValueChanged = m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue;
+                yield return new WaitForSeconds(waitperiod);
+            }
 
-                    // ...and we should see the writes to the private var only on the server & the owner,
-                    //  but the public variable everywhere
-                    return
-                        m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue;
-                }
-            );
+            Assert.False(timedOut, "Timed out waiting for client-side NetworkVariable to update!");
         }
 
         [UnityTest]
         public IEnumerator NetworkListAdd([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -230,7 +293,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -250,7 +313,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListContains([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -269,7 +332,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListRemoveValue([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -293,7 +356,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListInsert([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -320,7 +383,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListIndexOf([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -343,7 +406,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListArrayOperator([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -368,7 +431,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListValueUpdate([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -416,10 +479,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(testSucceeded);
         }
 
-        [Test]
-        public void NetworkListIEnumerator([Values(true, false)] bool useHost)
+        [UnityTest]
+        public IEnumerator NetworkListIEnumerator([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             var correctVals = new int[3];
             correctVals[0] = k_TestVal1;
             correctVals[1] = k_TestVal2;
@@ -444,7 +507,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListRemoveAt([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
@@ -469,8 +532,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListClear([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
-
             // first put some stuff in; re-use the add test
             yield return NetworkListAdd(useHost);
 
@@ -490,7 +551,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -510,7 +571,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
         {
-            m_TestWithHost = useHost;
+            yield return InitializeServerAndClients(useHost);
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
