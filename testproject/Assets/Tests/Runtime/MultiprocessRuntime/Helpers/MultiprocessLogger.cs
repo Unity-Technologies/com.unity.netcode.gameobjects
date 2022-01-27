@@ -131,7 +131,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
-            // response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                Task<string> responseContentTask = response.Content.ReadAsStringAsync();
+                await responseContentTask;
+                MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
+            }
         }
     }
 
