@@ -87,9 +87,8 @@ namespace TestProject.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator ValidateNetworkObjectSynchronization([Values(true, false)] bool enableNetworkManagerDontDestroy)
+        public IEnumerator ValidateNetworkObjectSynchronization()
         {
-            m_ServerNetworkManager.DontDestroy = enableNetworkManagerDontDestroy;
             m_ServerNetworkManager.StartHost();
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
@@ -104,7 +103,6 @@ namespace TestProject.RuntimeTests
 
             foreach (var networkManager in m_ClientNetworkManagers)
             {
-                networkManager.DontDestroy = enableNetworkManagerDontDestroy;
                 networkManager.StartClient();
             }
 

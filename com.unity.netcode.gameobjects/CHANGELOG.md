@@ -43,6 +43,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 - Updated com.unity.collections to 1.1.0 (#1451)
+- NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
+- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
 
 ## [1.0.0-pre.3] - 2021-10-22
 
