@@ -10,9 +10,24 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `PreviousValue` in NetworkListEvent, when `Value` has changed (#1528)
+### Changed
 
 ### Fixed
+
+## [1.0.0-pre.5] - 2022-01-26
+
+### Added
+
+- Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
+
+### Changed
+
+- NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
+- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
+
+### Fixed
+
+- Fixed network tick value sometimes being duplicated or skipped. (#1614)
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 
 ## [1.0.0-pre.4] - 2021-01-04
