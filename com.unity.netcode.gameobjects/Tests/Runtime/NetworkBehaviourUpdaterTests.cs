@@ -278,6 +278,15 @@ namespace Unity.Netcode.RuntimeTests
         {
             s_ClientSpawnedNetworkObjects.Clear();
 
+            // The edge case scenario where we can exit early is when we are running
+            // just the server (i.e. non-host) and there are zero clients.  Under this
+            // edge case scenario of the various combinations we do not need to run
+            // this test as the IsDirty flag is never cleared when no clients exist at all.
+            if (nbClients == 0 && !useHost)
+            {
+                yield break;
+            }
+
             // Create our prefab based on the NetVarCombinationTypes
             var prefabToSpawn = NetVarContainer.CreatePrefabGameObject(varCombinationTypes);
 
@@ -338,16 +347,13 @@ namespace Unity.Netcode.RuntimeTests
             // Update the NetworkBehaviours to make sure all network variables are no longer marked as dirty
             m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
 
-            // Verify that all network variables are no longer dirty on server side only if we have clients
-            if (nbClients > 0 || useHost)
+            // Verify that all network variables are no longer dirty on server side only if we have clients (including host)
+            foreach (var serverSpawnedObject in spawnedPrefabs)
             {
-                foreach (var serverSpawnedObject in spawnedPrefabs)
+                var netVarContainers = serverSpawnedObject.GetComponents<NetVarContainer>();
+                foreach (var netVarContainer in netVarContainers)
                 {
-                    var netVarContainers = serverSpawnedObject.GetComponents<NetVarContainer>();
-                    foreach (var netVarContainer in netVarContainers)
-                    {
-                        Assert.False(netVarContainer.AreNetVarsDirty(), "Some NetworkVariables were still marked dirty after NetworkBehaviourUpdate!");
-                    }
+                    Assert.False(netVarContainer.AreNetVarsDirty(), "Some NetworkVariables were still marked dirty after NetworkBehaviourUpdate!");
                 }
             }
 
