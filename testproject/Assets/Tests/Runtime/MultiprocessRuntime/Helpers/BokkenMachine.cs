@@ -140,7 +140,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void CheckDirectoryStructure()
         {
-            MultiprocessLogger.Log("Did the setup complete correctly?");
+            MultiprocessLogger.Log("Checking if setup completed correctly by looking at dir output");
             Process p = null;
             string cmd = $" --command exec --input-path {PathToJson} --remote-command ";
             if (Image.Contains("win10"))
@@ -150,6 +150,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else
             {
                 p = ExecuteCommand(cmd + "ls", true, true);
+            }
+            if (p != null)
+            {
+                MultiprocessLogger.Log("p is not null, there should we an output log above this");
+            }
+            else
+            {
+                MultiprocessLogger.Log("WARNING: This should not happen, we should have called 'dir or ls' on the remote machine");
             }
         }
 
@@ -257,7 +265,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 ProcessList.Add(workerProcess);
             }
-            MultiprocessLogger.Log($"Execute Command End");
+            MultiprocessLogger.Log($"Execute Command: {command} End");
             return workerProcess;
         }
 
