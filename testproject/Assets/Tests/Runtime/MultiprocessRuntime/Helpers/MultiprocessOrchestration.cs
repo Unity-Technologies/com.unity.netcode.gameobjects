@@ -89,7 +89,10 @@ public class MultiprocessOrchestration
         {
             foreach (var process in s_Processes)
             {
-                MultiprocessLogger.Log($"Process item: {process.StartTime} {process.HasExited}");
+                if (!process.HasExited)
+                {
+                    MultiprocessLogger.Log($"Process item: {process.StartTime} {process.HasExited}");
+                }
             }
         }
     }
@@ -120,16 +123,12 @@ public class MultiprocessOrchestration
 
     public static string StartWorkerOnLocalNode()
     {
+        MultiprocessLogger.Log($"Starting Worker on local node because: ShouldRunMultiMachineTests is {ShouldRunMultiMachineTests()}");
         var workerProcess = new Process();
         s_TotalProcessCounter++;
         if (s_Processes.Count > 0)
         {
-            string message = "";
-            foreach (var p in s_Processes)
-            {
-                message += $" {p.Id} {p.HasExited} {p.StartTime} ";
-            }
-            MultiprocessLogger.Log($"Current process count {s_Processes.Count} with data {message}");
+            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
         }
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
@@ -169,6 +168,8 @@ public class MultiprocessOrchestration
             Debug.LogError($"Could not find build info file. {buildInstructions}");
             throw;
         }
+
+        MultiprocessLogger.Log($"extraArgs {extraArgs} workerProcess.StartInfo.FileName {workerProcess.StartInfo.FileName}");
 
         string logPath = Path.Combine(MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
