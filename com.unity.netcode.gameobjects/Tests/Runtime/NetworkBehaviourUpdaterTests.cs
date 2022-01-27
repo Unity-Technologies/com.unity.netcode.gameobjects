@@ -7,20 +7,30 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// This is a refactor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
+    /// </summary>
     public class NetVarContainer : NetworkBehaviour
     {
-        public static GameObject CreatePrefabGameObject(List<NetVarsToCheck> netVarsToCheck)
+        /// <summary>
+        /// Creates a prefab with two instances of this NetworkBehaviour
+        /// </summary>
+        /// <returns></returns>
+        public static GameObject CreatePrefabGameObject(NetVarCombinationTypes netVarsToCheck)
         {
             var gameObject = new GameObject();
+            // Always a good idea to name the Prefab for easy identification purposes
             gameObject.name = "NetVarContainerObject";
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
-            foreach (var netVarContainerType in netVarsToCheck)
-            {
-                var netVarContainer = gameObject.AddComponent<NetVarContainer>();
-                netVarContainer.NumberOfNetVarsToCheck = netVarContainerType;
-                netVarContainer.ValueToSetNetVarTo = NetworkBehaviourUpdaterTests.NetVarValueToSet;
-            }
+            // Create the two instances of the NetVarContainer components and add them to the
+            // GameObject of this prefab
+            var netVarContainer = gameObject.AddComponent<NetVarContainer>();
+            netVarContainer.NumberOfNetVarsToCheck = netVarsToCheck.FirstType;
+            netVarContainer.ValueToSetNetVarTo = NetworkBehaviourUpdaterTests.NetVarValueToSet;
+            netVarContainer = gameObject.AddComponent<NetVarContainer>();
+            netVarContainer.NumberOfNetVarsToCheck = netVarsToCheck.SecondType;
+            netVarContainer.ValueToSetNetVarTo = NetworkBehaviourUpdaterTests.NetVarValueToSet;
 
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
@@ -36,6 +46,10 @@ namespace Unity.Netcode.RuntimeTests
         public NetVarsToCheck NumberOfNetVarsToCheck;
         public int ValueToSetNetVarTo = 0;
 
+        /// <summary>
+        /// Only used on the client-side for this test, this
+        /// is used to see if the network variables have changed.
+        /// </summary>
         public bool HaveAllValuesChanged(int valueToCheck)
         {
             var allValuesChanged = false;
@@ -55,6 +69,10 @@ namespace Unity.Netcode.RuntimeTests
             return allValuesChanged;
         }
 
+        /// <summary>
+        /// Only used on the server side to check the isDirty flag for the
+        /// NetworkVariables being used for each test iteration
+        /// </summary>
         public bool AreNetVarsDirty()
         {
             var areDirty = false;
@@ -75,17 +93,28 @@ namespace Unity.Netcode.RuntimeTests
             return areDirty;
         }
 
+        /// <summary>
+        /// The original version of this test only ever had up to 2 NetworkVariables per
+        /// NetworkBehaviour.  As opposed to using a List of NetworkVariables, we just
+        /// create the maximum number that could be used and then only use what we need
+        /// for each test iteration.
+        /// </summary>
         private NetworkVariable<int> m_FirstValue = new NetworkVariable<int>();
         private NetworkVariable<int> m_SeconValue = new NetworkVariable<int>();
 
         public override void OnNetworkSpawn()
         {
+            // Clients will register each NetworkObject when it is spawned
             if (!IsServer)
             {
                 NetworkBehaviourUpdaterTests.ClientSideNotifyObjectSpawned(gameObject);
             }
         }
 
+        /// <summary>
+        /// Server side only, sets the NetworkVariables being used to the ValueToSetNetVarTo
+        /// that is pre-configured when the Network Prefab is created.
+        /// </summary>
         public void SetNetworkVariableValues()
         {
             if (IsServer)
@@ -110,6 +139,15 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// Used to define how many NetworkVariables to use per NetVarContainer instance.
+    /// There are always two
+    /// </summary>
+    public struct NetVarCombinationTypes
+    {
+        public NetVarContainer.NetVarsToCheck FirstType;
+        public NetVarContainer.NetVarsToCheck SecondType;
+    }
 
     public class NetworkBehaviourUpdaterTests : BaseMultiInstanceTest
     {
@@ -119,6 +157,12 @@ namespace Unity.Netcode.RuntimeTests
         public const int NetVarValueToSet = 1;
         private static float s_TimeOutPeriod;
         private static List<GameObject> s_ClientSpawnedNetworkObjects = new List<GameObject>();
+        private List<NetworkManager> m_ActiveClientsForCurrentTest;
+
+        /// <summary>
+        /// Clients will call this when NetworkObjects are spawned on their end
+        /// </summary>
+        /// <param name="objectSpaned">the GameObject of the NetworkObject spawned</param>
         public static void ClientSideNotifyObjectSpawned(GameObject objectSpaned)
         {
             if (!s_ClientSpawnedNetworkObjects.Contains(objectSpaned))
@@ -126,15 +170,24 @@ namespace Unity.Netcode.RuntimeTests
                 s_ClientSpawnedNetworkObjects.Add(objectSpaned);
                 // As long as we are getting notified the clients are spawning objects
                 // then bump up the timeout period
-                BumpTimeOut();
+                AdvanceTimeOutPeriod();
             }
         }
 
-        private static void BumpTimeOut()
+        /// <summary>
+        /// This will simply advance the timeout period
+        /// Note: When ClientSideNotifyObjectSpawned is invoked this will get
+        /// called to handle any potential latencies due to poor performance or
+        /// the like.
+        /// </summary>
+        private static void AdvanceTimeOutPeriod()
         {
             s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
         }
 
+        /// <summary>
+        /// Checks if the timeout period has elapsed
+        /// </summary>
         private static bool HasTimedOut()
         {
             return s_TimeOutPeriod <= Time.realtimeSinceStartup;
@@ -142,21 +195,28 @@ namespace Unity.Netcode.RuntimeTests
 
         public override IEnumerator Setup()
         {
+            // This makes sure the server and client are not started during the setup
+            // period of this particular test iteration
             m_BypassStartAndWaitForClients = true;
             yield return base.Setup();
         }
 
-        private List<NetworkManager> m_ActiveClientsForCurrentTest;
-
+        /// <summary>
+        /// Creates the server and client(s) required for this particular test iteration
+        /// </summary>
         private IEnumerator StartClientsAndServer(bool useHost, int numberOfClients, GameObject prefabObject)
         {
+            // Sanity check to make sure we are not trying to create more clients than we have available to use
             Assert.True(numberOfClients <= m_ClientNetworkManagers.Length);
             m_ActiveClientsForCurrentTest = new List<NetworkManager>();
+
+            // Create a list of the clients to be used in this test from the available clients
             for (int i = 0; i < numberOfClients; i++)
             {
                 m_ActiveClientsForCurrentTest.Add(m_ClientNetworkManagers[i]);
             }
 
+            // Add the prefab to be used for this particular test iteration
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabObject });
             m_ServerNetworkManager.NetworkConfig.TickRate = 30;
             foreach (var clientManager in m_ActiveClientsForCurrentTest)
@@ -169,6 +229,7 @@ namespace Unity.Netcode.RuntimeTests
             var clientsAsArry = m_ActiveClientsForCurrentTest.ToArray();
             Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, clientsAsArry), "Failed to start server and client instances");
 
+            // Only if we have clients (not host)
             if (numberOfClients > 0)
             {
                 RegisterSceneManagerHandler();
@@ -182,18 +243,53 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
         }
 
+        /// <summary>
+        /// This list replaces the original NetworkVariable types to be checked.
+        /// Both NetworkVariables are of type int and the original version of this test was testing
+        /// the NetworkBehaviour Update when there were 1 or more (i.e two) on the same NetworkBehaviour.
+        /// After reviewing, we really only needed to test a much smaller combination of types and so
+        /// this pre-generated array represents the reduced set of combinations to test.
+        /// Note:
+        /// The original test was also testing for no NetworkVariables of type int, which there ended up
+        /// being no reason to do that and only added to the length of the execution time for this test.
+        /// </summary>
+        public static NetVarCombinationTypes[] NetVarCombinationTypeValues = new[]{
+            new NetVarCombinationTypes() { FirstType = NetVarContainer.NetVarsToCheck.One, SecondType = NetVarContainer.NetVarsToCheck.One },
+            new NetVarCombinationTypes() { FirstType = NetVarContainer.NetVarsToCheck.One, SecondType = NetVarContainer.NetVarsToCheck.Two },
+            new NetVarCombinationTypes() { FirstType = NetVarContainer.NetVarsToCheck.Two, SecondType = NetVarContainer.NetVarsToCheck.Two }};
+
+        /// <summary>
+        /// The updated BehaviourUpdaterAllTests was re-designed to replicate the same functionality being tested in the
+        /// original version of this test with additional time out handling and a re-organization in the order of operations.
+        /// Things like making sure all clients have spawned the NetworkObjects in question prior to testing for the
+        /// NetworkVariable value changes helped to eliminate the timing issues that were happening when this test was run
+        /// in a stand alone test runner build (i.e. all consoles run the stand alone version as opposed to the in-editor
+        /// version like the desktop tests use).
+        /// This update also updated how the server and clients were being constructed to help reduce the execution time.
+        /// </summary>
+        /// <param name="useHost"> whether to run the server as a host or not</param>
+        /// <param name="varCombinationTypes">the NetworkVariable combination types</param>
+        /// <param name="nbClients"> number of clients to use for the test</param>
+        /// <param name="numToSpawn"> number of NetworkObjects to be spawned</param>
         [UnityTest]
-        public IEnumerator BehaviourUpdaterAllTests([Values(0, 1, 2)] int nbClients, [Values] bool useHost, [Values(1, 2)] int numToSpawn,
-    [Values(NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)] NetVarContainer.NetVarsToCheck firstType,
-    [Values(NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)] NetVarContainer.NetVarsToCheck secondType)
+        public IEnumerator BehaviourUpdaterAllTests([Values] bool useHost,
+            [ValueSource(nameof(NetVarCombinationTypeValues))] NetVarCombinationTypes varCombinationTypes,
+            [Values(0, 1, 2)] int nbClients, [Values(1, 2)] int numToSpawn)
         {
             s_ClientSpawnedNetworkObjects.Clear();
-            var netVarTypeList = new List<NetVarContainer.NetVarsToCheck>() { firstType, secondType };
-            var prefabToSpawn = NetVarContainer.CreatePrefabGameObject(netVarTypeList);
+
+            // Create our prefab based on the NetVarCombinationTypes
+            var prefabToSpawn = NetVarContainer.CreatePrefabGameObject(varCombinationTypes);
 
             yield return StartClientsAndServer(useHost, nbClients, prefabToSpawn);
+
+            // Tracks the server-side spawned prefab instances
             var spawnedPrefabs = new List<GameObject>();
             var tickInterval = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
+
+            // Used to determine if the client-side checks of this test should be
+            // executed or not as well is used to make sure all clients have spawned
+            // the appropriate number of NetworkObjects with the NetVarContainer behaviour
             var numberOfObjectsToSpawnOnClients = numToSpawn * nbClients;
 
             // spawn the objects
@@ -211,7 +307,10 @@ namespace Unity.Netcode.RuntimeTests
             if (numberOfObjectsToSpawnOnClients > 0)
             {
                 var allClientsSpawnedObjects = false;
-                BumpTimeOut();
+                // Reset the time out to be k_TimeOutWaitPeriod + the current time
+                AdvanceTimeOutPeriod();
+
+                // Waits for all clients to spawn the NetworkObjects
                 while (!allClientsSpawnedObjects && !HasTimedOut())
                 {
                     allClientsSpawnedObjects = numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count;
@@ -225,7 +324,8 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(allClientsSpawnedObjects, "Not all clients spawned their objects!");
             }
 
-            // Now set the network variables on the server
+            // Once all clients have spawned the NetworkObjects, set the network variables for
+            // those NetworkObjects on the server-side.
             foreach (var spawnedPrefab in spawnedPrefabs)
             {
                 var netVarContiners = spawnedPrefab.GetComponents<NetVarContainer>();
@@ -238,9 +338,7 @@ namespace Unity.Netcode.RuntimeTests
             // Update the NetworkBehaviours to make sure all network variables are no longer marked as dirty
             m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
 
-            // Verify that all network variables are no longer dirty on server side
-            // TODO: Check with Jeffrey and Matt to make sure this is correct but it appears server only will never update
-            // the dirty status if no clients are connected
+            // Verify that all network variables are no longer dirty on server side only if we have clients
             if (nbClients > 0 || useHost)
             {
                 foreach (var serverSpawnedObject in spawnedPrefabs)
@@ -256,6 +354,7 @@ namespace Unity.Netcode.RuntimeTests
             // When there are no clients (excluding when server is in host mode), we can skip all of this
             if (numberOfObjectsToSpawnOnClients > 0)
             {
+                // Get a list of all NetVarContainer components on the client-side spawned NetworkObjects
                 var clientSideNetVarContainers = new List<NetVarContainer>();
                 foreach (var clientSpawnedObjects in s_ClientSpawnedNetworkObjects)
                 {
@@ -267,7 +366,9 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 var allClientsCompleted = false;
-                BumpTimeOut();
+                AdvanceTimeOutPeriod();
+
+                // Wait until all clients have had their NetworkVariables updated
                 while (!allClientsCompleted && !HasTimedOut())
                 {
                     var completedCount = 0;
@@ -296,6 +397,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
+            // Make sure everything spawned/created is destroyed before starting next test iteration
             foreach (var spawnedObject in s_ClientSpawnedNetworkObjects)
             {
                 Object.DestroyImmediate(spawnedObject);
