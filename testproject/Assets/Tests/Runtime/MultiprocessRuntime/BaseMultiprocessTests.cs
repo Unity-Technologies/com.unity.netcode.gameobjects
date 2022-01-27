@@ -274,11 +274,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 counter++;
-                yield return new WaitForSeconds(0.7f);
+                yield return new WaitForSecondsRealtime(0.7f);
                 if (counter % 7 == 0)
                 {
-                    MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {Time.realtimeSinceStartup}");
-                    yield return new WaitForSeconds(0.7f);
+                    MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {Time.realtimeSinceStartup} and scale time {Time.timeScale}");
+                    yield return new WaitForSecondsRealtime(0.7f);
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
