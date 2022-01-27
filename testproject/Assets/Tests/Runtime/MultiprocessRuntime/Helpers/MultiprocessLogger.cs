@@ -57,7 +57,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void LogWarning(string msg)
         {
-            s_Logger.LogWarning("WARN", msg);
+            Log(msg);
+            s_Logger.LogWarning("WTAG", msg);
         }
     }
 
@@ -143,7 +144,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [Serializable]
     public struct WebLog
     {
-        public string Message;
+        private string m_Message;
+        public string Message {
+            get => m_Message;
+            set
+            {
+                if (value.Length > 255)
+                {
+                    m_Message = value.Substring(0, 250);
+                }
+            }
+        }
         public long ReferenceId;
         public string TestMethod;
         public string ClientEventDate;
