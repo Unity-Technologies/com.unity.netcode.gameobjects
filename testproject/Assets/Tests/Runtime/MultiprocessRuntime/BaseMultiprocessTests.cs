@@ -269,7 +269,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-
+            MultiprocessLogger.Flush();
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
@@ -277,9 +277,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 yield return new WaitForSecondsRealtime(0.7f);
                 if (counter % 7 == 0)
                 {
-                    MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {Time.realtimeSinceStartup} and scale time {Time.timeScale}");
+                    float beforeYield = Time.realtimeSinceStartup;
+                    MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {beforeYield} and scale time {Time.timeScale}");
                     yield return new WaitForSecondsRealtime(0.7f);
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}");
+                    float afterYield = Time.realtimeSinceStartup;
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
@@ -145,9 +146,12 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void QuitApplication()
     {
+        int pid = Process.GetCurrentProcess().Id;
 #if UNITY_EDITOR
+        MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {pid}");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
+        MultiprocessLogger.Log($"Calling Application.Quit for pid {pid}");
         Application.Quit();
 #endif
     }
