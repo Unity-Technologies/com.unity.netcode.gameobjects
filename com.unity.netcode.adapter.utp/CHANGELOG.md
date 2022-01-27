@@ -20,9 +20,10 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed
 
+- Updated Netcode for GameObjects dependency to 1.0.0-pre.5 (#1626)
+- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1584)
 - Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
-- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
 - Implicit conversions between `ConnectionAddressData` and `NetworkEndPoint` are now deprecated, since their semantics are no longer clear with the introduction of the new `ServerListenAddress` field (see above). (#1605)
 
 ### Fixed
