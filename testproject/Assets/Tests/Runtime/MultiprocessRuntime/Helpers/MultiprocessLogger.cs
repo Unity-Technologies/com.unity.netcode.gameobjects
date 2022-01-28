@@ -58,7 +58,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static void LogWarning(string msg)
         {
             Log(msg);
-            s_Logger.LogWarning("WTAG "+msg, msg);
+            s_Logger.LogWarning("WTAG " + msg, msg);
         }
     }
 

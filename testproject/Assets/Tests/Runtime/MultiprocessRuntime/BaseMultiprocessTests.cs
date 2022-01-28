@@ -367,9 +367,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {LaunchRemotely}");
                 MultiprocessOrchestration.ShutdownAllProcesses(LaunchRemotely);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
-                MultiprocessLogger.Log($"7/20 - Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
-                NetworkManager.Singleton.Shutdown();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                if (NetworkManager.Singleton != null)
+                {
+                    MultiprocessLogger.Log($"7/20 - Shutdown server/host/client " +
+                        $"{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
+                    NetworkManager.Singleton.Shutdown();
+                    Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                }
+                else
+                {
+                    MultiprocessLogger.Log($"7/20 - NetworkManager.Singleton was null");
+                }
                 MultiprocessLogger.Log($"8/20 - Currently active scene {SceneManager.GetActiveScene().name}");
                 MultiprocessLogger.Log($"9/20 - Original active scene {m_OriginalActiveScene.name}");
                 MultiprocessLogger.Log($"10/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
