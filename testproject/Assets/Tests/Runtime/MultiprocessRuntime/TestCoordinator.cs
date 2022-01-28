@@ -43,7 +43,14 @@ public class TestCoordinator : NetworkBehaviour
 
     private void Awake()
     {
-        MultiprocessLogger.Log("Awake");
+        string[] cliargList = Environment.GetCommandLineArgs();
+        string cliargs = "";
+        for (int i = 0; i < cliargList.Length; i++)
+        {
+            cliargs += " ";
+            cliargs += cliargList[i];
+        }
+        MultiprocessLogger.Log($"Awake - with args: {cliargs}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");

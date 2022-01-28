@@ -138,7 +138,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private void Singleton_OnClientConnectedCallback(ulong obj)
         {
             m_ConnectedClientsList.Add(obj);
-            MultiprocessLogger.Log($"OnClientConnectedCallback triggered {obj}, new count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"OnClientConnectedCallback triggered with id:{obj}, new count is {m_ConnectedClientsList.Count}");
         }
 
         /// <summary>
@@ -214,12 +214,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
-                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is null");
+                        MultiprocessLogger.Log($"Spawning testplayer {i}/{numProcessesToCreate} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is null");
                         m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                         MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
-                        MultiprocessLogger.Log($"Checking spawned process");
-                        MultiprocessOrchestration.LogProcessList();
-                        MultiprocessLogger.Log($"connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                        MultiprocessLogger.Log($"connected client count is NetworkManager:{NetworkManager.Singleton.ConnectedClients.Count}");
+                        MultiprocessLogger.Log($"connected client count is m_ConnectedClientCount: {m_ConnectedClientsList.Count}");
+                        MultiprocessLogger.Flush();
                     }
                 }
                 else
