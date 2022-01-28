@@ -2,11 +2,11 @@
     "name": "Unity.Netcode.Runtime",
     "rootNamespace": "Unity.Netcode",
     "references": [
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
-        "Unity.Multiplayer.NetStatsReporting",
-        "Unity.Multiplayer.NetworkSolutionInterface",
-        "Unity.Collections"
+        "GUID:7c4416f9e8f132246b0e1c1ec45be7d6",
+        "GUID:b1cd7326e664a434ab35daa802773c7f",
+        "GUID:821943bbff0df3b48b43584136c29e17",
+        "GUID:272061007ed268345bb3d3df8b09b583",
+        "GUID:e0cd26848372d4e5c891c569017e11f1"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
