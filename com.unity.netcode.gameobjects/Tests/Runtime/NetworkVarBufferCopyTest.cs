@@ -159,7 +159,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var timedOut = false;
             AdvanceTimeOutPeriod();
-            while(!HasTimedOut())
+            while (!HasTimedOut())
             {
                 if (s_ClientDummyNetBehavioursSpawned.Count >= 1)
                 {
