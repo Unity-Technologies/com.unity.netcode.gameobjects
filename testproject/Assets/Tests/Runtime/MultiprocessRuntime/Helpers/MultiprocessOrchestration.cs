@@ -97,6 +97,31 @@ public class MultiprocessOrchestration
         }
     }
 
+    public static void ClearProcesslist()
+    {
+        if (s_Processes != null)
+        {
+            foreach (var process in s_Processes)
+            {
+                MultiprocessLogger.Log("About to call HasExited on a process");
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        MultiprocessLogger.Log($"Teardown found an active process from MultiprocessOrchestration {process.ProcessName} {process.Id} {process.StartInfo.Arguments}");
+                        process.CloseMainWindow();
+                        process.Close();
+                    }
+                }
+                catch (InvalidOperationException ioe)
+                {
+                    MultiprocessLogger.Log($"HasExited threw an exception {ioe.Message} {ioe.StackTrace}");
+                }
+            }
+            s_Processes.Clear();
+        }
+    }
+
     public static string StartWorkerNode()
     {
         if (s_Processes == null)

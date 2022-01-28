@@ -306,14 +306,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
+            MultiprocessLogger.Log($" 1/Teardown BaseMultiProcessTests - Teardown : Running teardown");
             MultiprocessLogger.Flush();
-            int messageCounter = 0;
-            MultiprocessLogger.Log($"{messageCounter++} BaseMultiProcessTests - Teardown : Running teardown");
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($"{messageCounter++} t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
+            MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
-            MultiprocessLogger.Log($"{messageCounter++} t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
-
+            MultiprocessLogger.Log($" 3/Teardown t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
+            MultiprocessOrchestration.ClearProcesslist();
+            MultiprocessLogger.Log($" 4/Teardown Process List Cleared which should mean all spawned processes should stop");
             if (LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 foreach (var process in BokkenMachine.ProcessList)
