@@ -58,7 +58,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public static void LogWarning(string msg)
         {
             Log(msg);
-            s_Logger.LogWarning("WTAG", msg);
+            s_Logger.LogWarning("WTAG "+msg, msg);
         }
     }
 
@@ -112,6 +112,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             var webLog = new WebLog();
             webLog.Message = $"{testName} {args[0].ToString()}";
+            if (webLog.Message.Length > 255)
+            {
+                webLog.Message = webLog.Message.Substring(0, 254);
+            }
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
             webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
@@ -142,19 +146,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     }
 
     [Serializable]
-    public struct WebLog
+    public class WebLog
     {
-        private string m_Message;
-        public string Message {
-            get => m_Message;
-            set
-            {
-                if (value.Length > 255)
-                {
-                    m_Message = value.Substring(0, 250);
-                }
-            }
-        }
+        public string Message;
         public long ReferenceId;
         public string TestMethod;
         public string ClientEventDate;
@@ -162,6 +156,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override string ToString()
         {
             return base.ToString() + " " + Message;
+        }
+
+        public WebLog()
+        {
+            Message = "Default message from constructor";
         }
     }
 }
