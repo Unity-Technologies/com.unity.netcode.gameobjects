@@ -88,9 +88,6 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// This will simply advance the timeout period
-        /// Note: When ClientSideNotifyObjectSpawned is invoked this will get
-        /// called to handle any potential latencies due to poor performance or
-        /// the like.
         /// </summary>
         private static void AdvanceTimeOutPeriod()
         {
