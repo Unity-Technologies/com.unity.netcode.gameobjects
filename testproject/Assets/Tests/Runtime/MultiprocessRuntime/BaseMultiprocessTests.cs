@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
@@ -282,6 +283,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     yield return new WaitForSecondsRealtime(0.7f);
                     float afterYield = Time.realtimeSinceStartup;
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
+                    if (afterYield - beforeYield < 0.7f)
+                    {
+                        Thread.Sleep(700);
+                    }
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {

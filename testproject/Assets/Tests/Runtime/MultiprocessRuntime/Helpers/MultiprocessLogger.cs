@@ -112,9 +112,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
             var webLog = new WebLog();
             webLog.Message = $"{testName} {args[0].ToString()}";
-            if (webLog.Message.Length > 255)
+            if (webLog.Message.Length > 1000)
             {
-                webLog.Message = webLog.Message.Substring(0, 254);
+                webLog.Message = webLog.Message.Substring(0, 999);
             }
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
