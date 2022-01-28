@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -26,6 +25,8 @@ namespace Unity.Netcode.RuntimeTests
             MyNetworkVariable.OnValueChanged += Changed;
             MyNetworkList.OnListChanged += ListChanged;
             SpawnCount++;
+
+            ValueOnClient[NetworkManager.LocalClientId] = MyNetworkVariable.Value;
 
             base.OnNetworkSpawn();
         }
@@ -112,6 +113,7 @@ namespace Unity.Netcode.RuntimeTests
                         var curr = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList;
 
                         // check that the two lists are identical
+
                         Debug.Assert(curr.Count == prev.Count);
                         for (int index = 0; index < curr.Count; index++)
                         {
@@ -143,7 +145,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator HiddenVariableTest()
         {
             HiddenVariableObject.SpawnCount = 0;
@@ -172,7 +173,7 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log("Objects spawned");
 
             // ==== Set the NetworkVariable value to 2
-            HiddenVariableObject.ExpectedSize = 1;
+            HiddenVariableObject.ExpectedSize = 1; // list will only contain {2}
             HiddenVariableObject.SpawnCount = 0;
 
             m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 2;
@@ -190,7 +191,7 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log("Value changed");
 
             // ==== Hide our object to a different client
-            HiddenVariableObject.ExpectedSize = 2;
+            HiddenVariableObject.ExpectedSize = 2; // list will contain {2, 3}
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);
 
             // ==== Change the NetworkVariable value
@@ -211,7 +212,7 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log("Values changed");
 
             // ==== Show our object again to this client
-            HiddenVariableObject.ExpectedSize = 3;
+            HiddenVariableObject.ExpectedSize = 2; // list will contain {2, 3} upon spawn, that happens first
             m_NetSpawnedObject.NetworkShow(otherClient.ClientId);
 
             // ==== Wait for object to be spawned
@@ -221,6 +222,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // ==== We need a refresh for the newly re-spawned object
             yield return RefreshGameObects();
+
+            HiddenVariableObject.ExpectedSize = 3; // list will then contain {2, 3, 4} after Add()
 
             // ==== Change the NetworkVariable value
             // we should get all notifications of value changing and no errors or exception
