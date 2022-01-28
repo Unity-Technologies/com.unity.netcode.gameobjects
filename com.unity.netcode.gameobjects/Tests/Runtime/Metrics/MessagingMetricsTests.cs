@@ -63,7 +63,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNetworkMessageReceivedMetric()
         {
             var messageName = Guid.NewGuid();
@@ -73,7 +72,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 Debug.Log($"Received from {sender}");
             });
-            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageReceived);
+            var waitForMetricValues = new WaitForMetricValues<NetworkMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageReceived,
+                metric => metric.Name == nameof(NamedMessage));
+
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -89,7 +90,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackNamedMessageSentMetric()
         {
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);

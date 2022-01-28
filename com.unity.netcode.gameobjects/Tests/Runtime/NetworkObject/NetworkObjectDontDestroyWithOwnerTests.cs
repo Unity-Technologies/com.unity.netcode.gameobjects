@@ -10,7 +10,6 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkObjectDontDestroyWithOwnerTests
     {
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator DontDestroyWithOwnerTest()
         {
             // create server and client instances

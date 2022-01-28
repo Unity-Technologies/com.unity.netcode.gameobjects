@@ -144,6 +144,14 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out T value);
                 m_List.Add(value);
             }
+
+            if (OnListChanged != null)
+            {
+                OnListChanged(new NetworkListEvent<T>
+                {
+                    Type = NetworkListEvent<T>.EventType.Full
+                });
+            }
         }
 
         /// <inheritdoc />
