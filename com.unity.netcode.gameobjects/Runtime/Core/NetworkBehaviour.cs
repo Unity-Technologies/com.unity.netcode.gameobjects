@@ -304,8 +304,7 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null || NetworkManager.Singleton == null ||
-                    (NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress))
+                if (m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
                     {
