@@ -103,9 +103,10 @@ namespace Unity.Netcode.RuntimeTests
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
         {
             s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
+            AdvanceTimeOutPeriod();
         }
 
-        private const float k_TimeOutWaitPeriod = 2.0f;
+        private const float k_TimeOutWaitPeriod = 5.0f;
         private static float s_TimeOutPeriod;
 
         /// <summary>
@@ -154,8 +155,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverSideClientPlayer = serverClientPlayerResult.Result;
             var clientSideClientPlayer = clientClientPlayerResult.Result;
 
-            var serverComponent = (serverSideClientPlayer).GetComponent<DummyNetBehaviour>();
-            var clientComponent = (clientSideClientPlayer).GetComponent<DummyNetBehaviour>();
+            var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
+            var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
             var timedOut = false;
             AdvanceTimeOutPeriod();
@@ -176,6 +177,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             Assert.True(serverComponent.NetVar.FieldWritten);
+            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            serverComponent.NetVar.Dirty = true;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
             timedOut = false;
