@@ -158,7 +158,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
-            MultiprocessLogger.Log($"NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
+            TestContext t1 = TestContext.CurrentContext;
+            MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
+            var t2 = TestContext.CurrentTestExecutionContext;
+            MultiprocessLogger.Log($"3/3 {t2.CurrentTest.FullName}");
+
         }
 
         public void DisconnectClients(int previousMessageCounter = 0)
@@ -301,14 +306,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
+            MultiprocessLogger.Flush();
             int messageCounter = 0;
             MultiprocessLogger.Log($"{messageCounter++} BaseMultiProcessTests - Teardown : Running teardown");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"{messageCounter++} t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($"{messageCounter++} t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
-
-
 
             if (LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
