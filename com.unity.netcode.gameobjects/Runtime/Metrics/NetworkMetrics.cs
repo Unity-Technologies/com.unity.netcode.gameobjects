@@ -65,8 +65,14 @@ namespace Unity.Netcode
         private readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogReceived.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
-        private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id);
-        private readonly Counter m_PacketReceivedCounter = new Counter(NetworkMetricTypes.PacketsReceived.Id);
+        private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        private readonly Counter m_PacketReceivedCounter = new Counter(NetworkMetricTypes.PacketsReceived.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
 
 
         private ulong m_NumberOfMetricsThisFrame;
