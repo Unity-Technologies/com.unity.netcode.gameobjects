@@ -90,7 +90,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNamedMessageSentMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
+            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent,
+                metric => metric.Name == nameof(NamedMessage));
 
             var messageName = Guid.NewGuid();
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
@@ -115,8 +116,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNamedMessageSentMetricToMultipleClients()
         {
-            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
             var messageName = Guid.NewGuid();
+            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent,
+                metric => metric.Name == messageName.ToString());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
