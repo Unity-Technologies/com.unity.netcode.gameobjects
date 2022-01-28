@@ -69,10 +69,13 @@ namespace Unity.Netcode.RuntimeTests
             return allValuesChanged;
         }
 
+        /// <summary>
+        /// Only used on the server side to check the isDirty flag for the
         /// NetworkVariables being used for each test iteration
         /// </summary>
         public bool AreNetVarsDirty()
         {
+            var areDirty = false;
             switch (NumberOfNetVarsToCheck)
             {
                 case NetVarsToCheck.Two:
