@@ -18,11 +18,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void Flush()
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(100);
             int canceledCount = 0;
             int totalCount = MultiprocessLogHandler.AllTasks.Count;
             int ranToCompletionCount = 0;
             int runningCount = 0;
+            var tasksToRemove = new List<Task>();
 
             foreach (var task in MultiprocessLogHandler.AllTasks)
             {
@@ -33,6 +34,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else if (task.Status == TaskStatus.RanToCompletion)
                 {
                     ranToCompletionCount++;
+                    tasksToRemove.Add(task);
                 }
                 else if (task.Status == TaskStatus.Running)
                 {
@@ -42,7 +44,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount}";
             Console.WriteLine(msg);
             Log(msg);
-            Thread.Sleep(1000);
+            Thread.Sleep(100);
+            foreach (var task in tasksToRemove)
+            {
+                MultiprocessLogHandler.AllTasks.Remove(task);
+            }
         }
 
         public static void Log(string msg)
@@ -138,9 +144,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 .ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
-                Task<string> responseContentTask = response.Content.ReadAsStringAsync();
-                await responseContentTask;
-                MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
+                // Task<string> responseContentTask = response.Content.ReadAsStringAsync();
+                // await responseContentTask;
+                //MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
+                MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode}");
             }
         }
     }
