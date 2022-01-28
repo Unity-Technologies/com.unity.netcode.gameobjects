@@ -51,10 +51,10 @@ EditorBuildSettings:
     path: Assets/Scenes/EmptyScene.unity
     guid: a2545a872c007404fbb6b0393ab74974
   - enabled: 1
-    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase1.unity
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningAdditive.unity
     guid: 780f96a61e8ac8e41b638ae8ec3a3236
   - enabled: 1
-    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase2.unity
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningAdditiveSwitch.unity
     guid: 9e437cc704801bc47add735d743985f5
   - enabled: 1
     path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity
