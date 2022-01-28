@@ -24,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_TestWithHost;
 
-        public NetworkTransformTests(bool testWithHost = false, bool testWithClientNetworkTransform = false)
+        public NetworkTransformTests(bool testWithHost, bool testWithClientNetworkTransform)
         {
             m_TestWithHost = testWithHost; // from test fixture
             m_TestWithClientNetworkTransform = testWithClientNetworkTransform;
