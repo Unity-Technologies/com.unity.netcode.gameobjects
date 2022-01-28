@@ -304,10 +304,14 @@ namespace Unity.Netcode
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null || NetworkManager.Singleton == null ||
-                    (NetworkManager.Singleton != null && !NetworkManager.Singleton.ShutdownInProgress))
+                // ShutdownInProgress check:
+                // This prevents an edge case scenario where the NetworkManager is shutting down but user code
+                // in Update and/or in FixedUpdate could still be checking NetworkBehaviour.NetworkObject directly (i.e. does it exist?)
+                // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
+                // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
+                if (m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
                 {
-                    if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
                         NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                     }
