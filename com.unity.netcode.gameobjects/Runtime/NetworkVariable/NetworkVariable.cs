@@ -168,7 +168,10 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
+            T previousValue = m_InternalValue;
             Read(reader, out m_InternalValue);
+
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
         }
 
         /// <inheritdoc />

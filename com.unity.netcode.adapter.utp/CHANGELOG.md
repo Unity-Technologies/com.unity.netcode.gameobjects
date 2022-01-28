@@ -6,15 +6,25 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Added
 
+### Changed
+
+- Updated Burst package to 1.6.4. (#1615)
+
+### Fixed
+
+## [1.0.0-pre.5] - 2022-01-26
+
+### Added
+
 - A new 'Server Listen Address' field under 'Connection Data' in the inspector has been added to specify the address a server should listen to, in case it differs from the main 'Address' field. The `SetConnectionData` method has been updated accordingly to take an optional parameter to specify that listen address. (#1605)
+- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
 
 ### Changed
 
+- Updated Netcode for GameObjects dependency to 1.0.0-pre.5 (#1626)
+- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
 - Rename the 'Send Queue Batch Size' property to 'Max Payload Size' to better reflect its usage. (#1584)
 - Implicit conversions between `ConnectionAddressData` and `NetworkEndPoint` are now deprecated, since their semantics are no longer clear with the introduction of the new `ServerListenAddress` field (see above). (#1605)
-- Added new methods to set the relay server data: `SetHostRelayData` and `SetClientRelayData`. These are meant to be less error-prone than `SetRelayServerData` (which remains available). (#1609)
-- Updated Unity Transport package to 1.0.0-pre.12. (#1615)
-- Updated Burst package to 1.6.4. (#1615)
 
 ### Fixed
 
