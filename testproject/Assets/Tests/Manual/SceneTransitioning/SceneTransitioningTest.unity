@@ -1175,7 +1175,7 @@ MonoBehaviour:
   ConnectionData:
     Address: 127.0.0.1
     Port: 7777
-    ServerListenAddress: 
+    ServerListenAddress: 127.0.0.1
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
