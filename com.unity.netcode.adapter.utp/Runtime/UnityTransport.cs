@@ -90,7 +90,7 @@ namespace Unity.Netcode
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
-        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = null };
+        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
@@ -153,7 +153,8 @@ namespace Unity.Netcode
 
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
-            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(ServerListenAddress ?? Address, Port);
+            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(
+                (ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
 
             [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
             public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
@@ -161,7 +162,7 @@ namespace Unity.Netcode
 
             [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
             public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
-                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = null };
+                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = string.Empty };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -442,7 +443,7 @@ namespace Unity.Netcode
             {
                 Address = ipv4Address,
                 Port = port,
-                ServerListenAddress = listenAddress
+                ServerListenAddress = listenAddress ?? string.Empty
             };
 
             SetProtocol(ProtocolType.UnityTransport);
@@ -455,7 +456,7 @@ namespace Unity.Netcode
         {
             string serverAddress = endPoint.Address.Split(':')[0];
 
-            string listenAddress = null;
+            string listenAddress = string.Empty;
             if (listenEndPoint != default)
             {
                 listenAddress = listenEndPoint.Address.Split(':')[0];
