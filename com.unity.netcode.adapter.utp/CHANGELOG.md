@@ -12,6 +12,8 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Fixed
 
+- Fixed issue where the server `NetworkEndPoint` would fail to be created when 'Server Listen Address' was empty.
+
 ## [1.0.0-pre.5] - 2022-01-26
 
 ### Added
