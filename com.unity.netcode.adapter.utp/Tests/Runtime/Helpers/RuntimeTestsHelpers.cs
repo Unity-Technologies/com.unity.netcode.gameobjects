@@ -18,13 +18,13 @@ namespace Unity.Netcode.UTP.RuntimeTests
         public const float MaxNetworkEventWaitTime = 0.5f;
 #endif
 
+        // Wait for an event to appear in the given event list (must be the very next event).
         public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events)
         {
             int initialCount = events.Count;
-            int previousCount = initialCount;
-            float timeOutPeriod = Time.realtimeSinceStartup + MaxNetworkEventWaitTime;
+            float startTime = Time.realtimeSinceStartup;
 
-            while (timeOutPeriod > Time.realtimeSinceStartup)
+            while (Time.realtimeSinceStartup - startTime < MaxNetworkEventWaitTime)
             {
                 if (events.Count > initialCount)
                 {
@@ -32,12 +32,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
                     yield break;
                 }
 
-                if (previousCount < events.Count)
-                {
-                    timeOutPeriod += 0.01f;
-                }
-
-                previousCount = events.Count;
                 yield return null;
             }
 
