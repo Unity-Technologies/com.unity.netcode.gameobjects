@@ -138,16 +138,52 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var json = JsonUtility.ToJson(content);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
+            var logginMetric = LoggingMetric.StartNew();
 
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
+
             if (!response.IsSuccessStatusCode)
             {
                 // Task<string> responseContentTask = response.Content.ReadAsStringAsync();
                 // await responseContentTask;
                 //MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
                 MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode}");
+            }
+            logginMetric.Stop(response);
+        }
+    }
+
+    public class LoggingMetric
+    {
+        public static List<LoggingMetric> LoggingMetricsDataArray;
+
+        public Stopwatch Stopwatch;
+
+        static LoggingMetric()
+        {
+            LoggingMetricsDataArray = new List<LoggingMetric>();
+        }
+
+        public LoggingMetric()
+        {
+            Stopwatch = Stopwatch.StartNew();
+        }
+
+        public static LoggingMetric StartNew()
+        {
+            var lm = new LoggingMetric();
+            LoggingMetricsDataArray.Add(lm);
+            return lm;
+        }
+
+        public void Stop(HttpResponseMessage responseMessage)
+        {
+            Stopwatch.Stop();
+            if (Stopwatch.ElapsedMilliseconds > 5000)
+            {
+                MultiprocessLogger.Log($"POST call took {Stopwatch.ElapsedMilliseconds} with response {responseMessage.StatusCode}");
             }
         }
     }
