@@ -120,7 +120,7 @@ namespace Unity.Netcode.RuntimeTests
 
             AdvanceTimeOutPeriod();
             var timedOut = false;
-            while (!HasTimedOut())
+            while (!timedOut)
             {
                 var spawnedCount = 0;
                 // check spawned on client
@@ -154,7 +154,7 @@ namespace Unity.Netcode.RuntimeTests
 
             AdvanceTimeOutPeriod();
             timedOut = false;
-            while (!HasTimedOut())
+            while (!timedOut)
             {
                 var deSpawnedCount = 0;
                 foreach (var clientInstance in clientInstances)
@@ -186,7 +186,7 @@ namespace Unity.Netcode.RuntimeTests
 
             AdvanceTimeOutPeriod();
             timedOut = false;
-            while (!HasTimedOut())
+            while (!timedOut)
             {
                 var spawnedCount = 0;
                 // check spawned on client
@@ -219,7 +219,7 @@ namespace Unity.Netcode.RuntimeTests
 
             AdvanceTimeOutPeriod();
             timedOut = false;
-            while (!HasTimedOut())
+            while (!timedOut)
             {
                 var deSpawnedCount = 0;
                 foreach (var clientInstance in clientInstances)
