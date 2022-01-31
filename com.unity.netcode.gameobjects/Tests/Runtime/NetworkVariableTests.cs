@@ -83,25 +83,6 @@ namespace Unity.Netcode.RuntimeTests
             s_ClientNetworkVariableTestInstances.Add(networkVariableTest);
         }
 
-        private const float k_TimeOutWaitPeriod = 2.0f;
-        private static float s_TimeOutPeriod;
-
-        /// <summary>
-        /// This will simply advance the timeout period
-        /// </summary>
-        private static void AdvanceTimeOutPeriod()
-        {
-            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
-        }
-
-        /// <summary>
-        /// Checks if the timeout period has elapsed
-        /// </summary>
-        private static bool HasTimedOut()
-        {
-            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
-        }
-
         // Player1 component on the server
         private NetworkVariableTest m_Player1OnServer;
 
@@ -180,12 +161,13 @@ namespace Unity.Netcode.RuntimeTests
             var allClientNetworkVariableTestInstancesSpawned = false;
             var waitPeriod = 1.0f / m_ServerNetworkManager.NetworkConfig.TickRate;
             var timedOut = false;
-            AdvanceTimeOutPeriod();
-            while (!allClientNetworkVariableTestInstancesSpawned && !HasTimedOut())
+            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
+
+            while (!allClientNetworkVariableTestInstancesSpawned && !timedOut)
             {
                 allClientNetworkVariableTestInstancesSpawned = s_ClientNetworkVariableTestInstances.Count >= NbClients;
-                timedOut = HasTimedOut();
                 yield return new WaitForSeconds(waitPeriod);
+                timedOut = timeOutPeriod < Time.realtimeSinceStartup;
             }
 
             Assert.False(timedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
