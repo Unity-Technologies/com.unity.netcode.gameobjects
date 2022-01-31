@@ -18,14 +18,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void Flush()
         {
+            var stopWatch = Stopwatch.StartNew();
+            foreach (var task in MultiprocessLogHandler.AllTasks)
+            {
+                task.Wait();
+            }
+            stopWatch.Stop();
+            Log($"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ");
+        }
+
+        public static void ReportQueue()
+        {
             int canceledCount = 0;
             int totalCount = MultiprocessLogHandler.AllTasks.Count;
             int ranToCompletionCount = 0;
             int runningCount = 0;
             int waitingForActivation = 0;
             int waitingToRun = 0;
-            var tasksToRemove = new List<Task>();
-
+            var stopWatch = Stopwatch.StartNew();
             foreach (var task in MultiprocessLogHandler.AllTasks)
             {
                 if (task.Status == TaskStatus.Canceled)
@@ -35,7 +45,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else if (task.Status == TaskStatus.RanToCompletion)
                 {
                     ranToCompletionCount++;
-                    tasksToRemove.Add(task);
                 }
                 else if (task.Status == TaskStatus.Running)
                 {
@@ -50,20 +59,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     waitingToRun++;
                 }
             }
+            stopWatch.Stop();
             string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount} waitingToRun: {waitingToRun} waitingForActivation: {waitingForActivation}";
             Log(msg);
-
-            var stopWatch = Stopwatch.StartNew();
-            foreach (var task in MultiprocessLogHandler.AllTasks)
-            {
-                task.Wait();
-            }
-            stopWatch.Stop();
-            foreach (var task in tasksToRemove)
-            {
-                MultiprocessLogHandler.AllTasks.Remove(task);
-            }
-            Log($"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks}");
+            
         }
 
         public static void Log(string msg)
@@ -73,7 +72,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void LogError(string msg)
         {
-            s_Logger.LogError("ERROR", msg);
+            s_Logger.LogError("ERROR "+msg, msg);
         }
 
         public static void LogWarning(string msg)

@@ -115,7 +115,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
-                MultiprocessLogger.Log($"OnSceneLoaded: setting active scene");
+                MultiprocessLogger.Log($"OnSceneLoaded: setting active scene to {scene.name}");
                 SceneManager.SetActiveScene(scene);
             }
             MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
@@ -195,6 +195,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
+            MultiprocessLogger.ReportQueue();
             MultiprocessLogger.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Clear();
@@ -221,7 +222,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
                         MultiprocessLogger.Log($"connected client count is NetworkManager:{NetworkManager.Singleton.ConnectedClients.Count}");
                         MultiprocessLogger.Log($"connected client count is m_ConnectedClientCount: {m_ConnectedClientsList.Count}");
-                        MultiprocessLogger.Flush();
+                        MultiprocessLogger.ReportQueue();
                     }
                 }
                 else
@@ -277,7 +278,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-            MultiprocessLogger.Flush();
+            MultiprocessLogger.ReportQueue();
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
@@ -337,11 +338,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 MultiprocessLogger.Log("Kill multi process test players");
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-                MultiprocessLogger.Flush();
             }
 
             TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
+            MultiprocessLogger.ReportQueue();
             MultiprocessLogger.Flush();
         }
 
@@ -358,6 +359,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
+            MultiprocessLogger.ReportQueue();
             MultiprocessLogger.Flush();
             try
             {
