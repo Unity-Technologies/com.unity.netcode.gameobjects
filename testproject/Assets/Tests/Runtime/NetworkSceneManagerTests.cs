@@ -1136,7 +1136,7 @@ namespace TestProject.RuntimeTests
 
             // Spawn some NetworkObjects
             var spawnedNetworkObjects = new List<GameObject>();
-            for(int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 var instance = Object.Instantiate(gameObject);
                 var instanceNetworkObject = instance.GetComponent<NetworkObject>();
