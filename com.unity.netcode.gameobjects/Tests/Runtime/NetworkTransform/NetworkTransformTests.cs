@@ -20,9 +20,9 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_ClientSideClientPlayer;
         private NetworkObject m_ServerSideClientPlayer;
 
-        private bool m_TestWithClientNetworkTransform;
+        private readonly bool m_TestWithClientNetworkTransform;
 
-        private bool m_TestWithHost;
+        private readonly bool m_TestWithHost;
 
         public NetworkTransformTests(bool testWithHost, bool testWithClientNetworkTransform)
         {
