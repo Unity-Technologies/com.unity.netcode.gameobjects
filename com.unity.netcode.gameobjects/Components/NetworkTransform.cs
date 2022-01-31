@@ -808,7 +808,7 @@ namespace Unity.Netcode.Components
 
         public bool UseFixedUpdate;
 
-        private void InternalUpdate()
+        private void InternalUpdate(float deltaTime)
         {
             if (!IsSpawned)
             {
@@ -829,7 +829,8 @@ namespace Unity.Netcode.Components
             if (m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening)
             {
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
-                var cachedDeltaTime = Time.deltaTime;
+                var cachedDeltaTime = deltaTime;
+
                 var serverTime = NetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
                 var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
@@ -881,7 +882,7 @@ namespace Unity.Netcode.Components
         {
             if (!UseFixedUpdate)
             {
-                InternalUpdate();
+                InternalUpdate(Time.deltaTime);
             }
         }
 
@@ -889,7 +890,7 @@ namespace Unity.Netcode.Components
         {
             if (UseFixedUpdate)
             {
-                InternalUpdate();
+                InternalUpdate(Time.fixedDeltaTime);
             }
         }
 
