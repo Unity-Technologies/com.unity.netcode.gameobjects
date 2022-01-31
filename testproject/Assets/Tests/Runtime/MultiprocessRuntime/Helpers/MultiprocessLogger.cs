@@ -18,7 +18,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void Flush()
         {
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
             int canceledCount = 0;
             int totalCount = MultiprocessLogHandler.AllTasks.Count;
             int ranToCompletionCount = 0;
@@ -42,9 +42,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
             string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount}";
-            Console.WriteLine(msg);
             Log(msg);
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
             foreach (var task in tasksToRemove)
             {
                 MultiprocessLogHandler.AllTasks.Remove(task);
@@ -135,7 +134,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             using var client = new HttpClient();
             // TODO: Make this endpoint configurable and share this code across testproject
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/MultiprocessLogEvent");
             var json = JsonUtility.ToJson(content);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;

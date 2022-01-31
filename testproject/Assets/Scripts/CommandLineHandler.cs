@@ -284,7 +284,8 @@ public struct WebLogMessage
     {
         Debug.Log("Trying to post to endpoint");
         using var client = new HttpClient();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
+        // TODO: Make this endpoint configurable and share this code across testproject
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/MultiprocessLogEvent");
         var json = JsonUtility.ToJson(content);
         Debug.Log($"JSON version of {content} is {json}");
         using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
