@@ -18,11 +18,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void Flush()
         {
-            Thread.Sleep(1000);
             int canceledCount = 0;
             int totalCount = MultiprocessLogHandler.AllTasks.Count;
             int ranToCompletionCount = 0;
             int runningCount = 0;
+            int waitingForActivation = 0;
+            int waitingToRun = 0;
             var tasksToRemove = new List<Task>();
 
             foreach (var task in MultiprocessLogHandler.AllTasks)
@@ -40,14 +41,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     runningCount++;
                 }
+                else if (task.Status == TaskStatus.WaitingForActivation)
+                {
+                    waitingForActivation++;
+                }
+                else if (task.Status == TaskStatus.WaitingToRun)
+                {
+                    waitingToRun++;
+                }
             }
-            string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount}";
+            string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount} waitingToRun: {waitingToRun} waitingForActivation: {waitingForActivation}";
             Log(msg);
-            Thread.Sleep(1000);
+
+            var stopWatch = Stopwatch.StartNew();
+            foreach (var task in MultiprocessLogHandler.AllTasks)
+            {
+                task.Wait();
+            }
+            stopWatch.Stop();
             foreach (var task in tasksToRemove)
             {
                 MultiprocessLogHandler.AllTasks.Remove(task);
             }
+            Log($"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks}");
         }
 
         public static void Log(string msg)
