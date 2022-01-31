@@ -134,6 +134,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
         {
             using var client = new HttpClient();
+            // TODO: Make this endpoint configurable and share this code across testproject
             using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.test.ds.unity3d.com/api/MultiprocessLogEvent");
             var json = JsonUtility.ToJson(content);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");

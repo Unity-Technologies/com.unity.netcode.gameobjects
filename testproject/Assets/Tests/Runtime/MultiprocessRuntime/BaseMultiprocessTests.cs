@@ -88,6 +88,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
+            MultiprocessLogger.Flush();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -157,11 +158,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
+            MultiprocessLogger.Flush();
             MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($"3/3 {t2.CurrentTest.FullName}");
+            MultiprocessLogger.Flush();
         }
 
         public void DisconnectClients(int previousMessageCounter = 0)
@@ -192,6 +195,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
+            MultiprocessLogger.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Clear();
             if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
@@ -299,6 +303,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
+            MultiprocessLogger.Flush();
         }
 
         [TearDown]
@@ -337,6 +342,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
+            MultiprocessLogger.Flush();
         }
 
 
@@ -352,6 +358,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
+            MultiprocessLogger.Flush();
             try
             {
                 MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
