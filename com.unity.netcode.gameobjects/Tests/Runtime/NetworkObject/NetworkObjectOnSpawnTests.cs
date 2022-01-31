@@ -135,13 +135,14 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.AreEqual(0, clientInstance.OnNetworkDespawnCalledCount);
                 }
 
-                timedOut = HasTimedOut();
                 if (spawnedCount >= NbClients)
                 {
                     break;
                 }
 
                 yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
 
             Assert.False(timedOut, "Timed out while waiting for client side spawns!");
@@ -165,14 +166,14 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                timedOut = HasTimedOut();
-
                 if (deSpawnedCount >= NbClients)
                 {
                     break;
                 }
 
                 yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
 
             Assert.False(timedOut, "Timed out while waiting for client side despawns!");
@@ -198,13 +199,14 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                timedOut = HasTimedOut();
                 if (spawnedCount >= NbClients)
                 {
                     break;
                 }
 
                 yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
 
             Assert.False(timedOut, "Timed out while waiting for client side spawns! (2nd pass)");
@@ -230,14 +232,14 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                timedOut = HasTimedOut();
-
                 if (deSpawnedCount >= NbClients)
                 {
                     break;
                 }
 
                 yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
 
             Assert.False(timedOut, "Timed out while waiting for client side despawns! (2nd pass)");
