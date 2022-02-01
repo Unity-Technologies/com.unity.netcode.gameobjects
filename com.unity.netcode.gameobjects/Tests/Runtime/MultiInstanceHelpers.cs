@@ -113,7 +113,9 @@ namespace Unity.Netcode.RuntimeTests
         public enum InstanceTransport
         {
             SIP,
+#if UTP_ADAPTER
             UTP
+#endif
         }
 
         /// <summary>
@@ -181,8 +183,10 @@ namespace Unity.Netcode.RuntimeTests
                 case InstanceTransport.SIP:
                 default:
                     return go.AddComponent<SIPTransport>();
+#if UTP_ADAPTER
                 case InstanceTransport.UTP:
                     return go.AddComponent<UnityTransport>();
+#endif
             }
         }
 
