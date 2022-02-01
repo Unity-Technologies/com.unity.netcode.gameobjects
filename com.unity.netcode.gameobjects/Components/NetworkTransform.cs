@@ -830,7 +830,6 @@ namespace Unity.Netcode.Components
             {
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                 var cachedDeltaTime = Time.deltaTime;
-
                 var serverTime = NetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
                 var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
