@@ -147,7 +147,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 2);
 
             Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
 
