@@ -29,7 +29,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
-            Debug.Log("Calling Cleanup");
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -128,18 +127,36 @@ namespace Unity.Netcode.UTP.RuntimeTests
         [UnityTest]
         public IEnumerator SendMaximumPayloadSize([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            // We want something that's over the old limit of ~44KB for reliable payloads.
+            var payloadSize = 64 * 1024;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, payloadSize);
+            InitializeTransport(out m_Client1, out m_Client1Events, payloadSize);
 
             m_Server.StartServer();
             m_Client1.StartClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payload = new ArraySegment<byte>(new byte[UnityTransport.InitialMaxPayloadSize]);
+            var payloadData = new byte[payloadSize];
+            for (int i = 0; i < payloadData.Length; i++)
+            {
+                payloadData[i] = (byte)i;
+            }
+
+            var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 2);
+
+            Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
+
+            var receivedArray = m_ServerEvents[1].Data.Array;
+            var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
+            for (int i = 0; i < payloadSize; i++)
+            {
+                Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i]);
+            }
 
             yield return null;
         }

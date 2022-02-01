@@ -17,7 +17,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private static readonly int k_ServerLogReceivedMessageOverhead = 2;
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackServerLogSentMetric()
         {
             var waitForSentMetric = new WaitForEventMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
@@ -37,7 +36,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        [Ignore("Snapshot transition")]
         public IEnumerator TrackServerLogReceivedMetric()
         {
             var waitForReceivedMetric = new WaitForEventMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ServerLogReceived);

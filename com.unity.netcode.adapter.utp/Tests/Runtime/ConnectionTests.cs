@@ -39,8 +39,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
-            Debug.Log("Calling Cleanup");
-
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -72,7 +70,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ConnectSingleClient()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
@@ -92,7 +89,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ConnectMultipleClients()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             m_Server.StartServer();
 
@@ -253,7 +249,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator RepeatedClientDisconnectsNoop()
         {
-
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
 
@@ -277,6 +272,28 @@ namespace Unity.Netcode.RuntimeTests
             // Check we haven't received anything else on the client or server.
             Assert.AreEqual(m_ServerEvents.Count, previousServerEventsCount);
             Assert.AreEqual(m_ClientsEvents[0].Count, previousClientEventsCount);
+
+            yield return null;
+        }
+
+        // Check connection with different server/listen addresses.
+        [UnityTest]
+        public IEnumerator DifferentServerAndListenAddresses()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+
+            m_Server.SetConnectionData("127.0.0.1", 10042, "0.0.0.0");
+            m_Clients[0].SetConnectionData("127.0.0.1", 10042);
+
+            m_Server.StartServer();
+            m_Clients[0].StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
+
+            // Check we've received Connect event on server too.
+            Assert.AreEqual(1, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Connect, m_ServerEvents[0].Type);
 
             yield return null;
         }

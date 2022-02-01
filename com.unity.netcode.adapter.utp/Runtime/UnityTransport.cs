@@ -23,7 +23,7 @@ namespace Unity.Netcode
             out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedFragmentedPipeline);
+            out NetworkPipeline reliableSequencedPipeline);
     }
 
     public static class ErrorUtilities
@@ -90,7 +90,7 @@ namespace Unity.Netcode
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
-        { Address = "127.0.0.1", Port = 7777 };
+        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
@@ -131,22 +131,38 @@ namespace Unity.Netcode
         [Serializable]
         public struct ConnectionAddressData
         {
+            [Tooltip("IP address of the server (address to which clients will connect to).")]
             [SerializeField] public string Address;
-            [SerializeField] public int Port;
 
-            public static implicit operator NetworkEndPoint(ConnectionAddressData d)
+            [Tooltip("UDP port of the server.")]
+            [SerializeField] public ushort Port;
+
+            [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
+            [SerializeField] public string ServerListenAddress;
+
+            private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
             {
-                if (!NetworkEndPoint.TryParse(d.Address, (ushort)d.Port, out var networkEndPoint))
+                if (!NetworkEndPoint.TryParse(ip, port, out var endpoint))
                 {
-                    Debug.LogError($"Invalid address {d.Address}:{d.Port}");
+                    Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
                     return default;
                 }
 
-                return networkEndPoint;
+                return endpoint;
             }
 
+            public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+
+            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(
+                (ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+
+            [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
+            public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
+                ParseNetworkEndpoint(d.Address, d.Port);
+
+            [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
             public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
-                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port };
+                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = string.Empty };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -160,7 +176,7 @@ namespace Unity.Netcode
 
         private NetworkPipeline m_UnreliableFragmentedPipeline;
         private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
-        private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
+        private NetworkPipeline m_ReliableSequencedPipeline;
 
         public override ulong ServerClientId => m_ServerClientId;
 
@@ -210,6 +226,11 @@ namespace Unity.Netcode
         /// </summary>
         private readonly Dictionary<SendTarget, BatchedSendQueue> m_SendQueue = new Dictionary<SendTarget, BatchedSendQueue>();
 
+        // Since reliable messages may be spread out over multiple transport payloads, it's possible
+        // to receive only parts of a message in an update. We thus keep the reliable receive queues
+        // around to avoid losing partial messages.
+        private readonly Dictionary<ulong, BatchedReceiveQueue> m_ReliableReceiveQueues = new Dictionary<ulong, BatchedReceiveQueue>();
+
         private void InitDriver()
         {
             DriverConstructor.CreateDriver(
@@ -217,7 +238,7 @@ namespace Unity.Netcode
                 out m_Driver,
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
-                out m_ReliableSequencedFragmentedPipeline);
+                out m_ReliableSequencedPipeline);
         }
 
         private void DisposeDriver()
@@ -241,7 +262,7 @@ namespace Unity.Netcode
                 case NetworkDelivery.Reliable:
                 case NetworkDelivery.ReliableSequenced:
                 case NetworkDelivery.ReliableFragmentedSequenced:
-                    return m_ReliableSequencedFragmentedPipeline;
+                    return m_ReliableSequencedPipeline;
 
                 default:
                     Debug.LogError($"Unknown {nameof(NetworkDelivery)} value: {delivery}");
@@ -267,7 +288,7 @@ namespace Unity.Netcode
             }
             else
             {
-                serverEndpoint = ConnectionData;
+                serverEndpoint = ConnectionData.ServerEndPoint;
             }
 
             InitDriver();
@@ -340,6 +361,11 @@ namespace Unity.Netcode
             }
         }
 
+        internal void SetMaxPayloadSize(int maxPayloadSize)
+        {
+            m_MaxPayloadSize = maxPayloadSize;
+        }
+
         private void SetProtocol(ProtocolType inProtocol)
         {
             m_ProtocolType = inProtocol;
@@ -381,29 +407,66 @@ namespace Unity.Netcode
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
-        /// <summary>
-        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
-        /// </summary>
-        public void SetConnectionData(string ipv4Address, ushort port)
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, bool isSecure = false)
         {
-            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var endPoint))
-            {
-                Debug.LogError($"Invalid address {ipv4Address}:{port}");
-                ConnectionData = default;
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, isSecure: isSecure);
+        }
 
-                return;
-            }
-
-            SetConnectionData(endPoint);
+        /// <summary>Set the relay server data for the host.</summary>
+        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationId">Allocation ID as a byte array.</param>
+        /// <param name="key">Allocation key as a byte array.</param>
+        /// <param name="connectionData">Connection data as a byte array.</param>
+        /// <param name="hostConnectionData">Host's connection data as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
+        public void SetClientRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
+            byte[] connectionData, byte[] hostConnectionData, bool isSecure = false)
+        {
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
 
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        public void SetConnectionData(NetworkEndPoint endPoint)
+        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
-            ConnectionData = endPoint;
+            ConnectionData = new ConnectionAddressData
+            {
+                Address = ipv4Address,
+                Port = port,
+                ServerListenAddress = listenAddress ?? string.Empty
+            };
+
             SetProtocol(ProtocolType.UnityTransport);
+        }
+
+        /// <summary>
+        /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
+        /// </summary>
+        public void SetConnectionData(NetworkEndPoint endPoint, NetworkEndPoint listenEndPoint = default)
+        {
+            string serverAddress = endPoint.Address.Split(':')[0];
+
+            string listenAddress = string.Empty;
+            if (listenEndPoint != default)
+            {
+                listenAddress = listenEndPoint.Address.Split(':')[0];
+                if (endPoint.Port != listenEndPoint.Port)
+                {
+                    Debug.LogError($"Port mismatch between server and listen endpoints ({endPoint.Port} vs {listenEndPoint.Port}).");
+                }
+            }
+
+            SetConnectionData(serverAddress, endPoint.Port, listenAddress);
         }
 
         private bool StartRelayServer()
@@ -439,7 +502,14 @@ namespace Unity.Netcode
                     return;
                 }
 
-                var written = queue.FillWriter(ref writer);
+                // We don't attempt to send entire payloads over the reliable pipeline. Instead we
+                // fragment it manually. This is safe and easy to do since the reliable pipeline
+                // basically implements a stream, so as long as we separate the different messages
+                // in the stream (the send queue does that automatically) we are sure they'll be
+                // reassembled properly at the other end. This allows us to lift the limit of ~44KB
+                // on reliable payloads (because of the reliable window size).
+                var written = pipeline == m_ReliableSequencedPipeline
+                    ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
 
                 result = m_Driver.EndSend(writer);
                 if (result == written)
@@ -481,9 +551,42 @@ namespace Unity.Netcode
 
         }
 
+        private void ReceiveMessages(ulong clientId, NetworkPipeline pipeline, DataStreamReader dataReader)
+        {
+            BatchedReceiveQueue queue;
+            if (pipeline == m_ReliableSequencedPipeline)
+            {
+                if (m_ReliableReceiveQueues.TryGetValue(clientId, out queue))
+                {
+                    queue.PushReader(dataReader);
+                }
+                else
+                {
+                    queue = new BatchedReceiveQueue(dataReader);
+                    m_ReliableReceiveQueues[clientId] = queue;
+                }
+            }
+            else
+            {
+                queue = new BatchedReceiveQueue(dataReader);
+            }
+
+            while (!queue.IsEmpty)
+            {
+                var message = queue.PopMessage();
+                if (message == default)
+                {
+                    // Only happens if there's only a partial message in the queue (rare).
+                    break;
+                }
+
+                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, Time.realtimeSinceStartup);
+            }
+        }
+
         private bool ProcessEvent()
         {
-            var eventType = m_Driver.PopEvent(out var networkConnection, out var reader);
+            var eventType = m_Driver.PopEvent(out var networkConnection, out var reader, out var pipeline);
 
             switch (eventType)
             {
@@ -510,6 +613,8 @@ namespace Unity.Netcode
                             }
                         }
 
+                        m_ReliableReceiveQueues.Remove(ParseClientId(networkConnection));
+
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             ParseClientId(networkConnection),
                             default(ArraySegment<byte>),
@@ -520,17 +625,7 @@ namespace Unity.Netcode
                     }
                 case TransportNetworkEvent.Type.Data:
                     {
-                        var queue = new BatchedReceiveQueue(reader);
-
-                        while (!queue.IsEmpty)
-                        {
-                            InvokeOnTransportEvent(NetcodeNetworkEvent.Data,
-                                ParseClientId(networkConnection),
-                                queue.PopMessage(),
-                                Time.realtimeSinceStartup
-                            );
-                        }
-
+                        ReceiveMessages(ParseClientId(networkConnection), pipeline, reader);
                         return true;
                     }
             }
@@ -596,7 +691,7 @@ namespace Unity.Netcode
             var networkConnection =  ParseClientId(transportClientId);
             ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
-            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
         }
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
@@ -760,7 +855,7 @@ namespace Unity.Netcode
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    return ServerBindAndListen(ConnectionData);
+                    return ServerBindAndListen(ConnectionData.ListenEndPoint);
                 case ProtocolType.RelayUnityTransport:
                     return StartRelayServer();
                 default:
@@ -800,7 +895,7 @@ namespace Unity.Netcode
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedFragmentedPipeline)
+            out NetworkPipeline reliableSequencedPipeline)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
@@ -843,8 +938,7 @@ namespace Unity.Netcode
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                     );
-                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
+                reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
@@ -870,8 +964,7 @@ namespace Unity.Netcode
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
-                reliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
+                reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
                     ,typeof(NetworkMetricsPipelineStage)
