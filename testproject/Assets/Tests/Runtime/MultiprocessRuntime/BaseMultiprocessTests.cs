@@ -345,17 +345,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
-            MultiprocessLogHandler.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
         }
 
 
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log($"1/20 - UnityTearDown - {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"1/20 - UnityTearDown ... start - {m_ConnectedClientsList.Count}");
             DisconnectClients();
             yield return new WaitForSeconds(1.0f);
-            MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
+            MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count} | {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
         [OneTimeTearDown]
