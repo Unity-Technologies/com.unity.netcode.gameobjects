@@ -919,8 +919,7 @@ namespace Unity.Netcode
 
         internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
         {
-            m_NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-
+            m_NetworkManager.SendPreSerializedMessage(message.WriteBuffer, TotalBufferMemory, ref message, NetworkDelivery.Unreliable, clientId);
             return 0;
         }
     }
