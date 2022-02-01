@@ -88,7 +88,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
-            MultiprocessLogHandler.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -400,7 +401,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
                 else
                 {
-                    MultiprocessLogger.Log($"7/20 - NetworkManager.Singleton was null");
+                    MultiprocessLogger.Log($"20/20 - NetworkManager.Singleton was null");
                 }
             }
             catch (Exception e)

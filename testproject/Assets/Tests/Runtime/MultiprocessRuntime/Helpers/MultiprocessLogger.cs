@@ -13,9 +13,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class MultiprocessLogger
     {
         private static Logger s_Logger;
-
         static MultiprocessLogger() => s_Logger = new Logger(logHandler: new MultiprocessLogHandler());
-        
         public static void Log(string msg)
         {
             s_Logger.Log(msg);
@@ -23,7 +21,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void LogError(string msg)
         {
-            s_Logger.LogError("ERROR "+msg, msg);
+            s_Logger.LogError("ERROR " + msg, msg);
         }
 
         public static void LogWarning(string msg)
@@ -145,7 +143,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             webLog.ReferenceId = JobId;
             webLog.TestMethod = testName;
             webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-            string json = JsonUtility.ToJson(webLog);
+            // string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
             lock(k_Tasklock)
