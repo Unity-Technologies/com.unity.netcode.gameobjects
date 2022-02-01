@@ -88,7 +88,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -158,13 +158,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($"3/3 {t2.CurrentTest.FullName}");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
         }
 
         public void DisconnectClients(int previousMessageCounter = 0)
@@ -195,8 +195,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            MultiprocessLogger.ReportQueue();
-            MultiprocessLogger.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Clear();
             if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
@@ -222,7 +222,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"logPath to new process is {m_LogPath}");
                         MultiprocessLogger.Log($"connected client count is NetworkManager:{NetworkManager.Singleton.ConnectedClients.Count}");
                         MultiprocessLogger.Log($"connected client count is m_ConnectedClientCount: {m_ConnectedClientsList.Count}");
-                        MultiprocessLogger.ReportQueue();
+                        MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
                     }
                 }
                 else
@@ -278,7 +278,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
             MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
-            MultiprocessLogger.ReportQueue();
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
@@ -304,14 +304,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
         }
 
         [TearDown]
         public virtual void Teardown()
         {
             MultiprocessLogger.Log($" 1/Teardown BaseMultiProcessTests - Teardown : Running teardown");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
@@ -342,8 +342,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
-            MultiprocessLogger.ReportQueue();
-            MultiprocessLogger.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogHandler.Flush();
         }
 
 
@@ -359,8 +359,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            MultiprocessLogger.ReportQueue();
-            MultiprocessLogger.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogHandler.Flush();
             try
             {
                 MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
@@ -407,7 +407,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"WARNING: Suiteteardown threw exception which means all subsequent tests will fail {e.Message} {e.StackTrace}");
             }
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
         }
 
         private void AsyncOperation_completed(AsyncOperation obj)

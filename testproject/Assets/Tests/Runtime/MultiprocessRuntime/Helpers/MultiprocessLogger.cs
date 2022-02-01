@@ -15,56 +15,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static Logger s_Logger;
 
         static MultiprocessLogger() => s_Logger = new Logger(logHandler: new MultiprocessLogHandler());
-
-        public static void Flush()
-        {
-            var stopWatch = Stopwatch.StartNew();
-            foreach (var task in MultiprocessLogHandler.AllTasks)
-            {
-                task.Wait();
-            }
-            stopWatch.Stop();
-            Log($"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ");
-        }
-
-        public static void ReportQueue()
-        {
-            int canceledCount = 0;
-            int totalCount = MultiprocessLogHandler.AllTasks.Count;
-            int ranToCompletionCount = 0;
-            int runningCount = 0;
-            int waitingForActivation = 0;
-            int waitingToRun = 0;
-            var stopWatch = Stopwatch.StartNew();
-            foreach (var task in MultiprocessLogHandler.AllTasks)
-            {
-                if (task.Status == TaskStatus.Canceled)
-                {
-                    canceledCount++;
-                }
-                else if (task.Status == TaskStatus.RanToCompletion)
-                {
-                    ranToCompletionCount++;
-                }
-                else if (task.Status == TaskStatus.Running)
-                {
-                    runningCount++;
-                }
-                else if (task.Status == TaskStatus.WaitingForActivation)
-                {
-                    waitingForActivation++;
-                }
-                else if (task.Status == TaskStatus.WaitingToRun)
-                {
-                    waitingToRun++;
-                }
-            }
-            stopWatch.Stop();
-            string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount} waitingToRun: {waitingToRun} waitingForActivation: {waitingForActivation}";
-            Log(msg);
-            
-        }
-
+        
         public static void Log(string msg)
         {
             s_Logger.Log(msg);
@@ -85,17 +36,72 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class MultiprocessLogHandler : ILogHandler
     {
         private static HttpClient s_HttpClient = new HttpClient();
-        public static List<Task> AllTasks;
+        private static List<Task> s_AllTasks;
         public static long JobId;
+        private static readonly object k_Tasklock = new object();
 
         static MultiprocessLogHandler()
         {
-            AllTasks = new List<Task>();
+            s_AllTasks = new List<Task>();
             string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
             if (!long.TryParse(sJobId, out JobId))
             {
                 JobId = -2;
             }
+        }
+
+        public static string Flush()
+        {
+            var stopWatch = Stopwatch.StartNew();
+            lock (k_Tasklock)
+            {
+                foreach (var task in s_AllTasks)
+                {
+                    task.Wait();
+                }
+            }
+            stopWatch.Stop();
+            return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ";
+        }
+
+        public static string ReportQueue()
+        {
+            int canceledCount = 0;
+            int totalCount = s_AllTasks.Count;
+            int ranToCompletionCount = 0;
+            int runningCount = 0;
+            int waitingForActivation = 0;
+            int waitingToRun = 0;
+            var stopWatch = Stopwatch.StartNew();
+            lock (k_Tasklock)
+            {
+                foreach (var task in s_AllTasks)
+                {
+                    if (task.Status == TaskStatus.Canceled)
+                    {
+                        canceledCount++;
+                    }
+                    else if (task.Status == TaskStatus.RanToCompletion)
+                    {
+                        ranToCompletionCount++;
+                    }
+                    else if (task.Status == TaskStatus.Running)
+                    {
+                        runningCount++;
+                    }
+                    else if (task.Status == TaskStatus.WaitingForActivation)
+                    {
+                        waitingForActivation++;
+                    }
+                    else if (task.Status == TaskStatus.WaitingToRun)
+                    {
+                        waitingToRun++;
+                    }
+                }
+            }
+            stopWatch.Stop();
+            string msg = $"AllTasks.Count {totalCount} canceled: {canceledCount} completed: {ranToCompletionCount} running: {runningCount} waitingToRun: {waitingToRun} waitingForActivation: {waitingForActivation}";
+            return msg;
         }
 
         public void LogException(Exception exception, UnityEngine.Object context)
@@ -142,7 +148,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
-            AllTasks.Add(t);
+            lock(k_Tasklock)
+            {
+                s_AllTasks.Add(t);
+            }
         }
 
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
