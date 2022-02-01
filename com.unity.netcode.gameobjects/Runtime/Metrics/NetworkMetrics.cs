@@ -65,6 +65,8 @@ namespace Unity.Netcode
         private readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(NetworkMetricTypes.ServerLogReceived.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
         private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id)
         {
             ShouldResetOnDispatch = true,
@@ -73,6 +75,7 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
+#endif
 
 
         private ulong m_NumberOfMetricsThisFrame;
@@ -91,7 +94,9 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
+#endif
                 .Build();
 
             Dispatcher.RegisterObserver(NetcodeObserver.Observer);
@@ -419,6 +424,7 @@ namespace Unity.Netcode
 
         public void TrackPacketSent(uint packetCount)
         {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
             if (!CanSendMetrics)
             {
                 return;
@@ -426,10 +432,12 @@ namespace Unity.Netcode
 
             m_PacketSentCounter.Increment(packetCount);
             IncrementMetricCount();
+#endif
         }
 
         public void TrackPacketReceived(uint packetCount)
         {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
             if (!CanSendMetrics)
             {
                 return;
@@ -437,6 +445,7 @@ namespace Unity.Netcode
 
             m_PacketReceivedCounter.Increment(packetCount);
             IncrementMetricCount();
+#endif
         }
 
         public void DispatchFrame()
