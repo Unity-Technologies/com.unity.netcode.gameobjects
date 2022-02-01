@@ -806,9 +806,9 @@ namespace Unity.Netcode.Components
         }
         #endregion
 
-        public bool UseFixedUpdate;
-
-        private void InternalUpdate(float deltaTime)
+        // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
+        // conditional to users only making transform update changes in FixedUpdate.
+        protected virtual void Update()
         {
             if (!IsSpawned)
             {
@@ -829,7 +829,7 @@ namespace Unity.Netcode.Components
             if (m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening)
             {
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
-                var cachedDeltaTime = deltaTime;
+                var cachedDeltaTime = Time.deltaTime;
 
                 var serverTime = NetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
@@ -875,23 +875,6 @@ namespace Unity.Netcode.Components
             }
 
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-        }
-        // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
-        // conditional to users only making transform update changes in FixedUpdate.
-        protected virtual void Update()
-        {
-            if (!UseFixedUpdate)
-            {
-                InternalUpdate(Time.deltaTime);
-            }
-        }
-
-        private void FixedUpdate()
-        {
-            if (UseFixedUpdate)
-            {
-                InternalUpdate(Time.fixedDeltaTime);
-            }
         }
 
         /// <summary>

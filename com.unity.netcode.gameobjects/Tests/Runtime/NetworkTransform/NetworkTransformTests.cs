@@ -11,6 +11,18 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetworkTransformTestComponent:NetworkTransform
+    {
+        public bool ReadyToReceivePositionUpdate = false;
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            ReadyToReceivePositionUpdate = true;
+        }
+    }
+
     // [TestFixture(true, true)]
     [TestFixture(true, false)]
     // [TestFixture(false, true)]
@@ -58,19 +70,18 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.Setup();
         }
 
-
+        private WaitForSeconds m_WaitForNetworkTickInternal;
         public IEnumerator InitializeServerAndClients()
         {
-
+            m_WaitForNetworkTickInternal = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             if (m_TestWithClientNetworkTransform)
             {
                 // m_PlayerPrefab.AddComponent<ClientNetworkTransform>();
             }
             else
             {
-                var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransform>();
+                var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
                 networkTransform.Interpolate = false;
-                networkTransform.UseFixedUpdate = true;
             }
 
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
@@ -96,15 +107,30 @@ namespace Unity.Netcode.RuntimeTests
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
+            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
+
+            // Wait for 1 tick
+            yield return m_WaitForNetworkTickInternal;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult));
-
-            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
-            //m_ServerSideClientPlayer = m_ServerNetworkManager.ConnectedClients.Where(c => c.Key == m_ClientNetworkManagers[0].LocalClientId).FirstOrDefault().Value.PlayerObject;
-            //m_ClientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            AdvanceTimeOutPeriod();
+            bool hasTimedOut = false;
+            while (!otherSideNetworkTransform.ReadyToReceivePositionUpdate && !hasTimedOut)
+            {
+                yield return m_WaitForNetworkTickInternal;
+                hasTimedOut = HasTimedOut();
+            }
+
+            Assert.False(hasTimedOut, "Timed out waiting for client-side to notify it is ready!");
+
+            // Wait for 1 more tick before starting tests
+            yield return m_WaitForNetworkTickInternal;
         }
 
         // TODO: rewrite after perms & authority changes
