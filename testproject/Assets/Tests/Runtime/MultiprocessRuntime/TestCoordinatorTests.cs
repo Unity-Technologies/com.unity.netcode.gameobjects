@@ -78,7 +78,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator CheckTestCoordinatorWithArgs()
         {
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - Start");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
@@ -95,7 +95,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End for loop");
             Assert.That(nbResults, Is.EqualTo(WorkerCount));
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End of test");
-            MultiprocessLogger.Flush();
+            MultiprocessLogHandler.Flush();
         }
     }
 }
