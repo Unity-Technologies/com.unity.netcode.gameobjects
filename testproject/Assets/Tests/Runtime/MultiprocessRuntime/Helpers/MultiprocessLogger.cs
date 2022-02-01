@@ -146,7 +146,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
-            lock(k_Tasklock)
+            lock( k_Tasklock )
             {
                 s_AllTasks.Add(t);
             }

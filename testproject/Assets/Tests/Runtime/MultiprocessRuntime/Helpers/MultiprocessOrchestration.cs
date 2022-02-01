@@ -91,7 +91,7 @@ public class MultiprocessOrchestration
             {
                 if (!process.HasExited)
                 {
-                    MultiprocessLogger.Log($"Process item: {process.StartTime} {process.HasExited}");
+                    MultiprocessLogger.Log($"Process item: {process.StartTime} {process.StartInfo.Arguments}");
                 }
             }
         }
