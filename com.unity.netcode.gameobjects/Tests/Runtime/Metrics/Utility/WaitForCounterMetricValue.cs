@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
@@ -46,3 +47,4 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         }
     }
 }
+#endif
