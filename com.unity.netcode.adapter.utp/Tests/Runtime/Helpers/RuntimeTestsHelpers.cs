@@ -19,12 +19,13 @@ namespace Unity.Netcode.UTP.RuntimeTests
 #endif
 
         // Wait for an event to appear in the given event list (must be the very next event).
-        public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events)
+        public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events,
+            float timeout = MaxNetworkEventWaitTime)
         {
             int initialCount = events.Count;
             float startTime = Time.realtimeSinceStartup;
 
-            while (Time.realtimeSinceStartup - startTime < MaxNetworkEventWaitTime)
+            while (Time.realtimeSinceStartup - startTime < timeout)
             {
                 if (events.Count > initialCount)
                 {
@@ -32,7 +33,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
                     yield break;
                 }
 
-                yield return null;
+                yield return new WaitForSeconds(0.01f);
             }
 
             Assert.Fail("Timed out while waiting for network event.");
