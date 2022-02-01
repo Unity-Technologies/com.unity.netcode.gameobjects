@@ -11,7 +11,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformTestComponent:NetworkTransform
+    public class NetworkTransformTestComponent : NetworkTransform
     {
         public bool ReadyToReceivePositionUpdate = false;
 
