@@ -241,12 +241,21 @@ namespace Unity.Netcode
                 out m_ReliableSequencedPipeline);
         }
 
-        private void DisposeDriver()
+        private void DisposeInternals()
         {
             if (m_Driver.IsCreated)
             {
                 m_Driver.Dispose();
             }
+
+            m_NetworkSettings.Dispose();
+
+            foreach (var queue in m_SendQueue.Values)
+            {
+                queue.Dispose();
+            }
+
+            m_SendQueue.Clear();
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -662,7 +671,7 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            DisposeDriver();
+            DisposeInternals();
         }
 
 #if MULTIPLAYER_TOOLS
@@ -870,23 +879,12 @@ namespace Unity.Netcode
                 return;
             }
 
-
             // Flush the driver's internal send queue. If we're shutting down because the
             // NetworkManager is shutting down, it probably has disconnected some peer(s)
             // in the process and we want to get these disconnect messages on the wire.
             m_Driver.ScheduleFlushSend(default).Complete();
 
-            DisposeDriver();
-
-            m_NetworkSettings.Dispose();
-
-            foreach (var queue in m_SendQueue.Values)
-            {
-                queue.Dispose();
-            }
-
-            // make sure we don't leak queues when we shutdown
-            m_SendQueue.Clear();
+            DisposeInternals();
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = 0;
