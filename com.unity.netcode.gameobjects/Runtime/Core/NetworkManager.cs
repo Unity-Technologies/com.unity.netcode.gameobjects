@@ -1485,6 +1485,12 @@ namespace Unity.Netcode
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
 
+        internal int SendPreSerializedMessage<T>(in FastBufferWriter writer, int maxSize, ref T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage
+        {
+            return MessagingSystem.SendPreSerializedMessage(writer, maxSize, ref message, delivery, clientId);
+        }
+
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
