@@ -63,7 +63,8 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log("Start");
+        int pid = Process.GetCurrentProcess().Id;
+        MultiprocessLogger.Log($"Start with pid {pid}");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; ++i)
@@ -117,6 +118,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName}");
             NetworkManager.Singleton.StartClient();
+            NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
         MultiprocessLogger.Log("Initialize All Steps");
@@ -124,13 +126,19 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
+        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
+    }
+
+    private void Singleton_OnClientConnectedCallback(ulong obj)
+    {
+        MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
     }
 
     public void Update()
     {
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
+            MultiprocessLogger.Log($"Stayed idle too long, quitting");
             QuitApplication();
             Assert.Fail("Stayed idle too long");
         }
@@ -145,6 +153,7 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
+                MultiprocessLogger.Log($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
                 QuitApplication();
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
