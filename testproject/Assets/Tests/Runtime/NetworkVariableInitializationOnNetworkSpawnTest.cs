@@ -51,6 +51,7 @@ namespace TestProject.RuntimeTests
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
             m_Prefab.AddComponent<NetworkVariableInitOnNetworkSpawn>();
 
+            var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
@@ -80,6 +81,8 @@ namespace TestProject.RuntimeTests
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
             serverNetworkObject.Spawn();
+            // Wait 1 tick for client side spawn
+            yield return waitForTickInterval;
 
             // Wait until all objects have spawned.
             const int maxFrames = 240;
@@ -99,6 +102,18 @@ namespace TestProject.RuntimeTests
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
+
+            serverObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 5;
+
+            // Wait 1 tick for client side spawn
+            yield return waitForTickInterval;
+
+            // Get the NetworkVariableInitOnNetworkSpawn NetworkObject on the client-side
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult));
+            var networkVariableInitOnNetworkSpawnClientSide = clientClientPlayerResult.Result.GetComponent<NetworkVariableInitOnNetworkSpawn>();
+
+            Assert.AreEqual(networkVariableInitOnNetworkSpawnClientSide.Variable.Value, NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient);
         }
 
         [UnityTest]
@@ -163,17 +178,37 @@ namespace TestProject.RuntimeTests
             serverNetworkObject.NetworkManagerOwner = server;
 
             serverNetworkObject.Spawn();
-            serverNetworkObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 10;
 
             Assert.IsFalse(NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient);
+
+            // Wait for the client-side to have actually spawned first
+            const int maxFrames = 240;
+            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
+            while (!NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient)
+            {
+                if (Time.frameCount > maxFrames)
+                {
+                    // This is here in the event a platform is running at a higher
+                    // frame rate than expected
+                    if (doubleCheckTime < Time.realtimeSinceStartup)
+                    {
+                        Assert.Fail("Did not successfully spawn all expected NetworkObjects");
+                        break;
+                    }
+                }
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            }
+
+            // Then set the value on the server
+            serverNetworkObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 10;
 
             // Expect the value to spawn with the already updated value
             NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 10;
 
             // Wait until all objects have spawned.
             //const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
-            const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
+            doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
             while (!NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient)
             {
                 if (Time.frameCount > maxFrames)

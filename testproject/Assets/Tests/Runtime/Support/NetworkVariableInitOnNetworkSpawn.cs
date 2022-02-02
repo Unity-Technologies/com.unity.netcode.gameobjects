@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using NUnit.Framework;
 
 namespace TestProject.RuntimeTests.Support
 {
@@ -30,12 +29,10 @@ namespace TestProject.RuntimeTests.Support
             if (IsServer)
             {
                 NetworkSpawnCalledOnServer = true;
-                Variable.Value = 5;
             }
             else
             {
                 NetworkSpawnCalledOnClient = true;
-                Assert.AreEqual(ExpectedSpawnValueOnClient, Variable.Value);
             }
         }
     }
