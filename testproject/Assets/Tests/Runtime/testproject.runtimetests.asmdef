@@ -8,11 +8,6 @@
         "Unity.Collections",
         "UnityEngine.TestRunner",
         "Unity.Netcode.RuntimeTests",
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
-        "Unity.Netcode.Adapter.UTP",
-        "ClientNetworkTransform",
-        "Unity.PerformanceTesting",
         "TestProject.ManualTests",
         "TestProject"
     ],
