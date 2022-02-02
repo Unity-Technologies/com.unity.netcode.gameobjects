@@ -13,7 +13,16 @@
         "ClientNetworkTransform",
         "Unity.PerformanceTesting"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor",
+        "EmbeddedLinux",
+        "iOS",
+        "LinuxStandalone64",
+        "Lumin",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
