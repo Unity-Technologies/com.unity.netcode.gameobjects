@@ -7,13 +7,11 @@ namespace Unity.Netcode
     {
         internal FastBufferWriter WriteBuffer;
         internal FastBufferReader ReadBuffer;
-        private int m_BufferSize;
 
         // a constructor with an unused parameter is used because C# doesn't allow parameter-less constructors
-        public SnapshotDataMessage(int unused)
+        public SnapshotDataMessage(int bufferSize)
         {
-            m_BufferSize = 10000;
-            WriteBuffer = new FastBufferWriter(m_BufferSize, Allocator.Temp);
+            WriteBuffer = new FastBufferWriter(bufferSize, Allocator.Temp);
             ReadBuffer = new FastBufferReader(WriteBuffer, Allocator.Temp);
         }
 
