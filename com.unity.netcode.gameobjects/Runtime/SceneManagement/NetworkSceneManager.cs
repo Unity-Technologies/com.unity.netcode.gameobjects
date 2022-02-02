@@ -1802,6 +1802,11 @@ namespace Unity.Netcode
             var objectsToKeep = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
             foreach (var sobj in objectsToKeep)
             {
+                if (sobj == null)
+                {
+                    continue;
+                }
+
                 if (!sobj.DestroyWithScene || sobj.gameObject.scene == DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned network objects with no parent as child objects will follow
@@ -1877,6 +1882,10 @@ namespace Unity.Netcode
 
             foreach (var sobj in objectsToKeep)
             {
+                if (sobj == null)
+                {
+                    continue;
+                }
                 // If it is in the DDOL then
                 if (sobj.gameObject.scene == DontDestroyOnLoadScene)
                 {
