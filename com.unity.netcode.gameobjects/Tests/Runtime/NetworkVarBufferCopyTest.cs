@@ -27,6 +27,8 @@ namespace Unity.Netcode.RuntimeTests
                 return Dirty;
             }
 
+            public const float TimeOutAdvancePeriod = 1.0f;
+
             public override void WriteDelta(FastBufferWriter writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
@@ -37,7 +39,6 @@ namespace Unity.Netcode.RuntimeTests
                 writer.WriteValue(k_DummyValue);
 
                 DeltaWritten = true;
-                AdvanceTimeOutPeriod();
             }
 
             public override void WriteField(FastBufferWriter writer)
@@ -50,7 +51,6 @@ namespace Unity.Netcode.RuntimeTests
                 writer.WriteValue(k_DummyValue);
 
                 FieldWritten = true;
-                AdvanceTimeOutPeriod();
             }
 
             public override void ReadField(FastBufferReader reader)
@@ -65,7 +65,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(k_DummyValue, i);
 
                 FieldRead = true;
-                AdvanceTimeOutPeriod();
             }
 
             public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
@@ -80,7 +79,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(k_DummyValue, i);
 
                 DeltaRead = true;
-                AdvanceTimeOutPeriod();
             }
         }
 
@@ -103,26 +101,6 @@ namespace Unity.Netcode.RuntimeTests
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
         {
             s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
-            AdvanceTimeOutPeriod();
-        }
-
-        private const float k_TimeOutWaitPeriod = 5.0f;
-        private static float s_TimeOutPeriod;
-
-        /// <summary>
-        /// This will simply advance the timeout period
-        /// </summary>
-        public static void AdvanceTimeOutPeriod()
-        {
-            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
-        }
-
-        /// <summary>
-        /// Checks if the timeout period has elapsed
-        /// </summary>
-        private static bool HasTimedOut()
-        {
-            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
         }
 
         [UnitySetUp]
@@ -158,19 +136,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
             var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
-            var timedOut = false;
-            AdvanceTimeOutPeriod();
-            while (!HasTimedOut())
-            {
-                if (s_ClientDummyNetBehavioursSpawned.Count >= 1)
-                {
-                    break;
-                }
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-                timedOut = HasTimedOut();
-            }
-
-            Assert.False(timedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
+            yield return WaitForConditionOrTimeOut((c) => s_ClientDummyNetBehavioursSpawned.Count >= c, 1);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Send an update
             serverComponent.NetVar.Dirty = true;
@@ -181,20 +148,10 @@ namespace Unity.Netcode.RuntimeTests
             serverComponent.NetVar.Dirty = true;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
-            timedOut = false;
-            AdvanceTimeOutPeriod();
-            while (!HasTimedOut())
-            {
-                if (clientComponent.NetVar.FieldRead && clientComponent.NetVar.DeltaRead)
-                {
-                    break;
-                }
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-                timedOut = HasTimedOut();
-            }
+            yield return WaitForConditionOrTimeOut((c) => clientComponent.NetVar.FieldRead == c && clientComponent.NetVar.DeltaRead == c, true);
 
             var timedOutMessage = "Timed out waiting for client reads: ";
-            if (timedOut)
+            if (s_GloabalTimeOutHelper.TimedOut)
             {
                 if (!clientComponent.NetVar.FieldRead)
                 {
@@ -206,8 +163,7 @@ namespace Unity.Netcode.RuntimeTests
                     timedOutMessage += "[DeltaRead]";
                 }
             }
-
-            Assert.False(timedOut, timedOutMessage);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, timedOutMessage);
         }
     }
 }

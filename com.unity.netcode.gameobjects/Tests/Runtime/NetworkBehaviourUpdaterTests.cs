@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -153,9 +154,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
         protected override int NbClients => 2;
-        private const float k_TimeOutWaitPeriod = 2.0f;
         public const int NetVarValueToSet = 1;
-        private static float s_TimeOutPeriod;
         private static List<GameObject> s_ClientSpawnedNetworkObjects = new List<GameObject>();
         private List<NetworkManager> m_ActiveClientsForCurrentTest;
 
@@ -168,29 +167,7 @@ namespace Unity.Netcode.RuntimeTests
             if (!s_ClientSpawnedNetworkObjects.Contains(objectSpaned))
             {
                 s_ClientSpawnedNetworkObjects.Add(objectSpaned);
-                // As long as we are getting notified the clients are spawning objects
-                // then bump up the timeout period
-                AdvanceTimeOutPeriod();
             }
-        }
-
-        /// <summary>
-        /// This will simply advance the timeout period
-        /// Note: When ClientSideNotifyObjectSpawned is invoked this will get
-        /// called to handle any potential latencies due to poor performance or
-        /// the like.
-        /// </summary>
-        private static void AdvanceTimeOutPeriod()
-        {
-            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
-        }
-
-        /// <summary>
-        /// Checks if the timeout period has elapsed
-        /// </summary>
-        private static bool HasTimedOut()
-        {
-            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
         }
 
         public override IEnumerator Setup()
@@ -315,22 +292,10 @@ namespace Unity.Netcode.RuntimeTests
             // wait until all objects are spawned on the clients
             if (numberOfObjectsToSpawnOnClients > 0)
             {
-                var allClientsSpawnedObjects = false;
-                // Reset the time out to be k_TimeOutWaitPeriod + the current time
-                AdvanceTimeOutPeriod();
-
                 // Waits for all clients to spawn the NetworkObjects
-                while (!allClientsSpawnedObjects && !HasTimedOut())
-                {
-                    allClientsSpawnedObjects = numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count;
-                    yield return new WaitForSeconds(tickInterval);
-                }
-
-                Assert.True(!HasTimedOut(), $"Timed out waiting for clients to report spawning objects! " +
+                yield return WaitForConditionOrTimeOut((c) => c == s_ClientSpawnedNetworkObjects.Count, numberOfObjectsToSpawnOnClients);
+                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
                     $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
-
-                // This really should never fail as it should timeout first
-                Assert.True(allClientsSpawnedObjects, "Not all clients spawned their objects!");
             }
 
             // Once all clients have spawned the NetworkObjects, set the network variables for
@@ -371,30 +336,10 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                var allClientsCompleted = false;
-                AdvanceTimeOutPeriod();
-
-                // Wait until all clients have had their NetworkVariables updated
-                while (!allClientsCompleted && !HasTimedOut())
-                {
-                    var completedCount = 0;
-                    foreach (var clientNetVarContainer in clientSideNetVarContainers)
-                    {
-                        if (clientNetVarContainer.HaveAllValuesChanged(NetVarValueToSet))
-                        {
-                            completedCount++;
-                        }
-                    }
-
-                    allClientsCompleted = completedCount == clientSideNetVarContainers.Count;
-
-                    yield return new WaitForSeconds(tickInterval);
-                }
-
-                Assert.True(!HasTimedOut(), $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
-
-                // This really should never fail as it should timeout first
-                Assert.True(allClientsCompleted, "Not all client side NetworkVariables reported they were updated with target value!");
+                yield return WaitForConditionOrTimeOut((c) =>
+                clientSideNetVarContainers.Where(d =>
+                d.HaveAllValuesChanged(c)).Count() == clientSideNetVarContainers.Count, NetVarValueToSet);
+                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
             }
 
             Object.DestroyImmediate(prefabToSpawn);

@@ -13,25 +13,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 2;
 
-        private const float k_TimeOutWaitPeriod = 2.0f;
-        private static float s_TimeOutPeriod;
-
-        /// <summary>
-        /// This will simply advance the timeout period
-        /// </summary>
-        public static void AdvanceTimeOutPeriod()
-        {
-            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
-        }
-
-        /// <summary>
-        /// Checks if the timeout period has elapsed
-        /// </summary>
-        private static bool HasTimedOut()
-        {
-            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
-        }
-
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
@@ -115,134 +96,79 @@ namespace Unity.Netcode.RuntimeTests
             // check spawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkSpawnCalledCount);
 
-            // safety check despawned
+            // safety check server despawned
             Assert.AreEqual(0, serverInstance.OnNetworkDespawnCalledCount);
 
-            AdvanceTimeOutPeriod();
-            var timedOut = false;
-            while (!timedOut)
+            // Conditional check for clients spawning or despawning
+            bool checkSpawnCondition = false;
+            bool HasConditionBeenMet(int count)
             {
-                var spawnedCount = 0;
+                var clientsCompleted = 0;
                 // check spawned on client
                 foreach (var clientInstance in clientInstances)
                 {
-                    if (clientInstance.OnNetworkSpawnCalledCount == 1)
+                    if (checkSpawnCondition)
                     {
-                        spawnedCount++;
+                        if (clientInstance.OnNetworkSpawnCalledCount == count)
+                        {
+                            clientsCompleted++;
+                        }
                     }
-
-                    // safety check despawned
-                    Assert.AreEqual(0, clientInstance.OnNetworkDespawnCalledCount);
+                    else
+                    {
+                        if (clientInstance.OnNetworkDespawnCalledCount == count)
+                        {
+                            clientsCompleted++;
+                        }
+                    }
                 }
-
-                if (spawnedCount >= NbClients)
-                {
-                    break;
-                }
-
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-
-                timedOut = HasTimedOut();
+                return clientsCompleted >= NbClients;
             }
 
-            Assert.False(timedOut, "Timed out while waiting for client side spawns!");
+            // safety check that all clients have not been despawned yet
+            Assert.True(HasConditionBeenMet(0), "Failed condition that all clients not despawned yet!");
 
-            // despawn on server.  However, since we'll be using this object later in the test, don't delete it (false)
+            // now verify that all clients have been spawned
+            checkSpawnCondition = true;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns!");
+
+            // despawn on server.  However, since we'll be using this object later in the test, don't delete it
             serverInstance.GetComponent<NetworkObject>().Despawn(false);
 
             // check despawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
-            AdvanceTimeOutPeriod();
-            timedOut = false;
-            while (!timedOut)
-            {
-                var deSpawnedCount = 0;
-                foreach (var clientInstance in clientInstances)
-                {
-                    if (clientInstance.OnNetworkDespawnCalledCount == 1)
-                    {
-                        deSpawnedCount++;
-                    }
-                }
+            // verify that all client-side instances are despawned
+            checkSpawnCondition = false;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
 
-                if (deSpawnedCount >= NbClients)
-                {
-                    break;
-                }
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-
-                timedOut = HasTimedOut();
-            }
-
-            Assert.False(timedOut, "Timed out while waiting for client side despawns!");
-
-            //----------- step 2 check spawn again and destroy
+            //----------- step 2 check spawn and destroy again
             serverInstance.GetComponent<NetworkObject>().Spawn();
-
-            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            // wait a tick
+            yield return m_DefaultWaitForTick;
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
 
-            AdvanceTimeOutPeriod();
-            timedOut = false;
-            while (!timedOut)
-            {
-                var spawnedCount = 0;
-                // check spawned on client
-                foreach (var clientInstance in clientInstances)
-                {
-                    if (clientInstance.OnNetworkSpawnCalledCount == 1)
-                    {
-                        spawnedCount++;
-                    }
-                }
+            checkSpawnCondition = true;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
 
-                if (spawnedCount >= NbClients)
-                {
-                    break;
-                }
-
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-
-                timedOut = HasTimedOut();
-            }
-
-            Assert.False(timedOut, "Timed out while waiting for client side spawns! (2nd pass)");
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
             // destroy the server object
             Object.Destroy(serverInstance.gameObject);
 
-            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            yield return m_DefaultWaitForTick;
 
             // check whether despawned was called again on server instance
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
-            AdvanceTimeOutPeriod();
-            timedOut = false;
-            while (!timedOut)
-            {
-                var deSpawnedCount = 0;
-                foreach (var clientInstance in clientInstances)
-                {
-                    if (clientInstance.OnNetworkDespawnCalledCount == 1)
-                    {
-                        deSpawnedCount++;
-                    }
-                }
+            checkSpawnCondition = false;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
 
-                if (deSpawnedCount >= NbClients)
-                {
-                    break;
-                }
-
-                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-
-                timedOut = HasTimedOut();
-            }
-
-            Assert.False(timedOut, "Timed out while waiting for client side despawns! (2nd pass)");
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour

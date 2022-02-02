@@ -44,25 +44,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 1;
 
-        private const float k_TimeOutWaitPeriod = 2.0f;
-        private static float s_TimeOutPeriod;
-
-        /// <summary>
-        /// This will simply advance the timeout period
-        /// </summary>
-        private static void AdvanceTimeOutPeriod()
-        {
-            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
-        }
-
-        /// <summary>
-        /// Checks if the timeout period has elapsed
-        /// </summary>
-        private static bool HasTimedOut()
-        {
-            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
-        }
-
         [UnitySetUp]
         public override IEnumerator Setup()
         {
@@ -70,10 +51,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.Setup();
         }
 
-        private WaitForSeconds m_WaitForNetworkTickInternal;
+
         public IEnumerator InitializeServerAndClients()
         {
-            m_WaitForNetworkTickInternal = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             if (m_TestWithClientNetworkTransform)
             {
                 // m_PlayerPrefab.AddComponent<ClientNetworkTransform>();
@@ -110,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
 
             // Wait for 1 tick
-            yield return m_WaitForNetworkTickInternal;
+            yield return m_DefaultWaitForTick;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -119,18 +99,12 @@ namespace Unity.Netcode.RuntimeTests
             var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            AdvanceTimeOutPeriod();
-            bool hasTimedOut = false;
-            while (!otherSideNetworkTransform.ReadyToReceivePositionUpdate && !hasTimedOut)
-            {
-                yield return m_WaitForNetworkTickInternal;
-                hasTimedOut = HasTimedOut();
-            }
+            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.ReadyToReceivePositionUpdate == c, true);
 
-            Assert.False(hasTimedOut, "Timed out waiting for client-side to notify it is ready!");
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
 
             // Wait for 1 more tick before starting tests
-            yield return m_WaitForNetworkTickInternal;
+            yield return m_DefaultWaitForTick;
         }
 
         // TODO: rewrite after perms & authority changes
@@ -244,7 +218,7 @@ namespace Unity.Netcode.RuntimeTests
 
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            yield return m_DefaultWaitForTick;
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
 #if NGO_TRANSFORM_DEBUG
