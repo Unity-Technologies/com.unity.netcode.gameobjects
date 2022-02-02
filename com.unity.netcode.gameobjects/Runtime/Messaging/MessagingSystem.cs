@@ -352,7 +352,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -367,6 +367,12 @@ namespace Unity.Netcode
 
             message.Serialize(tmpSerializer);
 
+            return SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, clientIds);
+        }
+
+        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds)
+            where TMessageType : INetworkMessage
+        {
             using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp);
 
             var header = new MessageHeader
@@ -424,6 +430,13 @@ namespace Unity.Netcode
             }
 
             return tmpSerializer.Length + headerSerializer.Length;
+        }
+
+        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, ulong clientId)
+            where TMessageType : INetworkMessage
+        {
+            ulong* clientIds = stackalloc ulong[] { clientId };
+            return SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
         private struct PointerListWrapper<T> : IReadOnlyList<T>
