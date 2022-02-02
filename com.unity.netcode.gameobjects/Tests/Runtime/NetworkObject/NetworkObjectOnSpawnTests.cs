@@ -13,6 +13,24 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 2;
 
+        private const float k_TimeOutWaitPeriod = 2.0f;
+        private static float s_TimeOutPeriod;
+
+        /// <summary>
+        /// This will simply advance the timeout period
+        /// </summary>
+        public static void AdvanceTimeOutPeriod()
+        {
+            s_TimeOutPeriod = Time.realtimeSinceStartup + k_TimeOutWaitPeriod;
+        }
+
+        /// <summary>
+        /// Checks if the timeout period has elapsed
+        /// </summary>
+        private static bool HasTimedOut()
+        {
+            return s_TimeOutPeriod <= Time.realtimeSinceStartup;
+        }
 
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
@@ -57,7 +75,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
-
             if (m_TestNetworkObjectPrefab != null)
             {
                 Object.Destroy(m_TestNetworkObjectPrefab);
@@ -68,7 +85,6 @@ namespace Unity.Netcode.RuntimeTests
                 Object.Destroy(m_TestNetworkObjectInstance);
             }
             yield return base.Teardown();
-
         }
 
         /// <summary>
@@ -102,14 +118,34 @@ namespace Unity.Netcode.RuntimeTests
             // safety check despawned
             Assert.AreEqual(0, serverInstance.OnNetworkDespawnCalledCount);
 
-            // check spawned on client
-            foreach (var clientInstance in clientInstances)
+            AdvanceTimeOutPeriod();
+            var timedOut = false;
+            while (!timedOut)
             {
-                Assert.AreEqual(1, clientInstance.OnNetworkSpawnCalledCount);
+                var spawnedCount = 0;
+                // check spawned on client
+                foreach (var clientInstance in clientInstances)
+                {
+                    if (clientInstance.OnNetworkSpawnCalledCount == 1)
+                    {
+                        spawnedCount++;
+                    }
 
-                // safety check despawned
-                Assert.AreEqual(0, clientInstance.OnNetworkDespawnCalledCount);
+                    // safety check despawned
+                    Assert.AreEqual(0, clientInstance.OnNetworkDespawnCalledCount);
+                }
+
+                if (spawnedCount >= NbClients)
+                {
+                    break;
+                }
+
+                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
+
+            Assert.False(timedOut, "Timed out while waiting for client side spawns!");
 
             // despawn on server.  However, since we'll be using this object later in the test, don't delete it (false)
             serverInstance.GetComponent<NetworkObject>().Despawn(false);
@@ -117,51 +153,96 @@ namespace Unity.Netcode.RuntimeTests
             // check despawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
-            // wait long enough for player object to be despawned
-            int nextFrameNumber = Time.frameCount + 4;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-            // check despawned on clients
-            foreach (var clientInstance in clientInstances)
+            AdvanceTimeOutPeriod();
+            timedOut = false;
+            while (!timedOut)
             {
-                Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
+                var deSpawnedCount = 0;
+                foreach (var clientInstance in clientInstances)
+                {
+                    if (clientInstance.OnNetworkDespawnCalledCount == 1)
+                    {
+                        deSpawnedCount++;
+                    }
+                }
+
+                if (deSpawnedCount >= NbClients)
+                {
+                    break;
+                }
+
+                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
 
-            //----------- step 2 check spawn again and destroy
+            Assert.False(timedOut, "Timed out while waiting for client side despawns!");
 
+            //----------- step 2 check spawn again and destroy
             serverInstance.GetComponent<NetworkObject>().Spawn();
 
-            // wait long enough for player object to be spawned
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
+            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
 
-            // check spawned on client
-            foreach (var clientInstance in clientInstances)
+            AdvanceTimeOutPeriod();
+            timedOut = false;
+            while (!timedOut)
             {
-                Assert.AreEqual(1, clientInstance.OnNetworkSpawnCalledCount);
+                var spawnedCount = 0;
+                // check spawned on client
+                foreach (var clientInstance in clientInstances)
+                {
+                    if (clientInstance.OnNetworkSpawnCalledCount == 1)
+                    {
+                        spawnedCount++;
+                    }
+                }
+
+                if (spawnedCount >= NbClients)
+                {
+                    break;
+                }
+
+                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
+
+            Assert.False(timedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
             // destroy the server object
             Object.Destroy(serverInstance.gameObject);
 
-            // wait one frame for destroy to kick in
-            yield return null;
+            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
 
             // check whether despawned was called again on server instance
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
-            // wait long enough for player object to be despawned on client
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-            // check despawned on clients
-            foreach (var clientInstance in clientInstances)
+            AdvanceTimeOutPeriod();
+            timedOut = false;
+            while (!timedOut)
             {
-                Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
+                var deSpawnedCount = 0;
+                foreach (var clientInstance in clientInstances)
+                {
+                    if (clientInstance.OnNetworkDespawnCalledCount == 1)
+                    {
+                        deSpawnedCount++;
+                    }
+                }
+
+                if (deSpawnedCount >= NbClients)
+                {
+                    break;
+                }
+
+                yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+                timedOut = HasTimedOut();
             }
+
+            Assert.False(timedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour
