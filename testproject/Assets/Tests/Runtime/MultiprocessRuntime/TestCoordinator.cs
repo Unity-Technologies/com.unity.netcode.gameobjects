@@ -183,6 +183,13 @@ public class TestCoordinator : NetworkBehaviour
     {
         MultiprocessLogger.Log("OnEnable - Setting OnClientDisconnectCallback");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        MultiprocessLogger.Log("OnEnable - Setting OnClientConnectedCallback");
+        NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+    }
+
+    private void NetworkManager_OnClientConnectedCallback(ulong obj)
+    {
+        MultiprocessLogger.Log($"OnClientConnectedCallback triggered - {obj}");
     }
 
     public void OnDisable()
