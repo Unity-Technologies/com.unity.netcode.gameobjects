@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 using System;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utility
@@ -20,3 +21,4 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         }
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 using System;
 using System.Text;
 using System.Collections;
@@ -64,3 +65,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

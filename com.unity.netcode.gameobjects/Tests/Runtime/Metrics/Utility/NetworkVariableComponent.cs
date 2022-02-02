@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 #if MULTIPLAYER_TOOLS
 using UnityEngine;
 
@@ -16,4 +17,5 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         }
     }
 }
+#endif
 #endif

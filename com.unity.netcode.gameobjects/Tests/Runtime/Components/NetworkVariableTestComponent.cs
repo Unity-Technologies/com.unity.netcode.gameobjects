@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -240,3 +241,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

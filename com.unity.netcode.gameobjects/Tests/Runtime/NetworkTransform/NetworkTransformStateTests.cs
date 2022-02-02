@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -347,3 +348,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

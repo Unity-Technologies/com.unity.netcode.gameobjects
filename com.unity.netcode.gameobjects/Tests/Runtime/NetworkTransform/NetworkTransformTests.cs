@@ -1,3 +1,4 @@
+#if INCLUDE_NETCODE_RUNTIME_TESTS
 using System;
 using System.Collections;
 #if NGO_TRANSFORM_DEBUG
@@ -199,3 +200,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
