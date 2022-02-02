@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
+- Fixed client-side exception from being thrown in NetworkSceneManager when migrating NetworkObjects to or from the DDOL scene. (#1633)
 
 ### Changed
 
