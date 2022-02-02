@@ -14,12 +14,14 @@
         "Unity.PerformanceTesting"
     ],
     "includePlatforms": [
+        "CloudRendering",
         "Editor",
         "EmbeddedLinux",
         "iOS",
         "LinuxStandalone64",
-        "Lumin",
         "macOSStandalone",
+        "WSA",
+        "WebGL",
         "WindowsStandalone32",
         "WindowsStandalone64"
     ],
