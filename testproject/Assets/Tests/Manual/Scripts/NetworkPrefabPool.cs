@@ -238,6 +238,10 @@ namespace TestProject.ManualTests
 
             foreach (var obj in m_ObjectPool)
             {
+                if (obj == null)
+                {
+                    continue;
+                }
                 var networkObject = obj.GetComponent<NetworkObject>();
                 var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
                 if (networkObject.IsSpawned)
