@@ -13,18 +13,7 @@
         "ClientNetworkTransform",
         "Unity.PerformanceTesting"
     ],
-    "includePlatforms": [
-        "CloudRendering",
-        "Editor",
-        "EmbeddedLinux",
-        "iOS",
-        "LinuxStandalone64",
-        "macOSStandalone",
-        "WSA",
-        "WebGL",
-        "WindowsStandalone32",
-        "WindowsStandalone64"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
