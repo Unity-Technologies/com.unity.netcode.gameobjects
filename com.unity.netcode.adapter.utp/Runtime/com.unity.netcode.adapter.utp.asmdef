@@ -20,6 +20,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.3",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_3"
         }
     ],
     "noEngineReferences": false

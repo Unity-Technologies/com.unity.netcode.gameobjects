@@ -6,6 +6,10 @@
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.NetStatsReporting",
         "Unity.Multiplayer.NetworkSolutionInterface",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.NetStatsReporting",
+        "Unity.Multiplayer.Tools.NetworkSolutionInterface",
         "Unity.Collections"
     ],
     "includePlatforms": [],
