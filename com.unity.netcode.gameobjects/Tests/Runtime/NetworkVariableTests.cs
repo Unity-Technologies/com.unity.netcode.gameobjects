@@ -350,7 +350,7 @@ namespace Unity.Netcode.RuntimeTests
                        m_Player1OnClient1.TheList.Count == listCount;
 
                 // Check the client values against the server values to make sure they match
-                for(int i = 0; i < listCount; i++)
+                for (int i = 0; i < listCount; i++)
                 {
                     hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
                     if (!hasCorrectCountAndValues)
