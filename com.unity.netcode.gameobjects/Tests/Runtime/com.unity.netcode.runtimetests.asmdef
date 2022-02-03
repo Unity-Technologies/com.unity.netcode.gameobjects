@@ -9,6 +9,8 @@
         "UnityEngine.TestRunner",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
         "Unity.Netcode.Adapter.UTP",
         "ClientNetworkTransform",
         "Unity.PerformanceTesting"
