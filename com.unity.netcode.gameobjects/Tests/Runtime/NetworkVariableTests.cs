@@ -177,11 +177,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator AllNetworkVariableTypes([Values(true, false)] bool useHost)
         {
+            NetworkManager server;
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
             //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
+
+            Assert.IsTrue(server.IsHost == useHost, $"{nameof(useHost)} does not match the server.IsHost value!");
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
 
