@@ -78,15 +78,16 @@ namespace Unity.Netcode.RuntimeTests
             RegisterSceneManagerHandler();
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
             var clientsToWaitFor = m_TestWithHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
+            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
 
             // Wait for 1 tick
@@ -94,7 +95,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult));
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
             var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
 
@@ -152,7 +154,7 @@ namespace Unity.Netcode.RuntimeTests
 
             authPlayerTransform.position = new Vector3(10, 20, 30);
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, 5));
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, 5);
             if (!waitResult.Result)
             {
                 throw new Exception($"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
@@ -163,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
             // test rotation
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult));
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult);
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for rotation change");
@@ -178,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult));
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult);
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for scale change");
