@@ -67,7 +67,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             stopWatch.Stop();
             if (interrupted)
             {
-                return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} but was interrupted due to timeout"
+                return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} but was interrupted due to timeout";
             }    
             return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ";
         }
