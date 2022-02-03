@@ -680,14 +680,34 @@ namespace Unity.Netcode
             return *(NetworkConnection*)&netcodeConnectionId;
         }
 
+        private void ClearSendQueuesForClientId(ulong clientId)
+        {
+            // NativeList and manual foreach avoids any allocations.
+            using var keys = new NativeList<SendTarget>(16, Allocator.Temp);
+            foreach (var key in m_SendQueue.Keys)
+            {
+                if (key.ClientId == clientId)
+                {
+                    keys.Add(key);
+                }
+            }
+
+            foreach (var target in keys)
+            {
+                m_SendQueue[target].Dispose();
+                m_SendQueue.Remove(target);
+            }
+        }
+
         public override void DisconnectLocalClient()
         {
             if (m_State == State.Connected)
             {
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
                 {
-
                     m_State = State.Disconnected;
+
+                    ClearSendQueuesForClientId(m_ServerClientId);
 
                     // If we successfully disconnect we dispatch a local disconnect message
                     // this how uNET and other transports worked and so this is just keeping with the old behavior
@@ -713,22 +733,7 @@ namespace Unity.Netcode
                     m_Driver.Disconnect(connection);
                 }
 
-                // we need to cleanup any SendQueues for this connectionID;
-                var keys = new NativeList<SendTarget>(16, Allocator.Temp); // use nativelist and manual foreach to avoid allocations
-                foreach (var key in m_SendQueue.Keys)
-                {
-                    if (key.ClientId == clientId)
-                    {
-                        keys.Add(key);
-                    }
-                }
-
-                foreach (var queue in keys)
-                {
-                    m_SendQueue[queue].Dispose();
-                    m_SendQueue.Remove(queue);
-                }
-                keys.Dispose();
+                ClearSendQueuesForClientId(clientId);
             }
         }
 
