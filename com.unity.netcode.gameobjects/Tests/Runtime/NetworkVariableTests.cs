@@ -244,17 +244,24 @@ namespace Unity.Netcode.RuntimeTests
 
             bool TestCompleted(int listCount)
             {
-                return m_Player1OnServer.TheList.Count == listCount &&
-                    m_Player1OnClient1.TheList.Count == listCount &&
-                    m_Player1OnServer.ListDelegateTriggered &&
-                    m_Player1OnClient1.ListDelegateTriggered &&
-                    m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                    m_Player1OnClient1.TheList[0] == k_TestVal1 &&
-                    m_Player1OnServer.TheList[1] == k_TestVal2 &&
-                    m_Player1OnClient1.TheList[1] == k_TestVal2;
+                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
+                       m_Player1OnClient1.TheList.Count == listCount &&
+                       m_Player1OnServer.ListDelegateTriggered &&
+                       m_Player1OnClient1.ListDelegateTriggered;
+
+                // Check the client values against the server values to make sure they match
+                for (int i = 0; i < listCount; i++)
+                {
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
+                }
+                return hasCorrectCountAndValues;
             }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, 2);
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(NetworkListAdd)} to complete its test!");
         }
 
@@ -273,7 +280,7 @@ namespace Unity.Netcode.RuntimeTests
                        m_Player1OnClient1.TheLargeList.Count == listCount;
             }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, 20);
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown)} to complete its test!");
         }
 
@@ -344,30 +351,15 @@ namespace Unity.Netcode.RuntimeTests
                 bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
                        m_Player1OnClient1.TheList.Count == listCount;
 
-                if (listCount == 2)
+                // Check the client values against the server values to make sure they match
+                for(int i = 0; i < listCount; i++)
                 {
-                    hasCorrectCountAndValues = hasCorrectCountAndValues &&
-                        m_Player1OnServer.ListDelegateTriggered &&
-                        m_Player1OnClient1.ListDelegateTriggered &&
-                        m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                        m_Player1OnClient1.TheList[0] == k_TestVal1 &&
-                        m_Player1OnServer.TheList[1] == k_TestVal2 &&
-                        m_Player1OnClient1.TheList[1] == k_TestVal2;
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
                 }
-                else
-                if (listCount == 3)
-                {
-                    hasCorrectCountAndValues = hasCorrectCountAndValues &&
-                        m_Player1OnServer.ListDelegateTriggered &&
-                        m_Player1OnClient1.ListDelegateTriggered &&
-                        m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                        m_Player1OnClient1.TheList[0] == k_TestVal1 &&
-                        m_Player1OnServer.TheList[1] == k_TestVal3 &&
-                        m_Player1OnClient1.TheList[1] == k_TestVal3 &&
-                        m_Player1OnServer.TheList[2] == k_TestVal2 &&
-                        m_Player1OnClient1.TheList[2] == k_TestVal2;
-                }
-
                 return hasCorrectCountAndValues;
             }
 
@@ -396,17 +388,22 @@ namespace Unity.Netcode.RuntimeTests
 
             bool TestCompleted(int listCount)
             {
-                return m_Player1OnServer.TheList.Count == listCount &&
-                       m_Player1OnClient1.TheList.Count == listCount &&
-                       m_Player1OnServer.TheList.IndexOf(k_TestVal1) == 0 &&
-                       m_Player1OnClient1.TheList.IndexOf(k_TestVal1) == 0 &&
-                       m_Player1OnServer.TheList.IndexOf(k_TestVal2) == 1 &&
-                       m_Player1OnClient1.TheList.IndexOf(k_TestVal2) == 1 &&
-                       m_Player1OnServer.TheList.IndexOf(k_TestVal3) == 2 &&
-                       m_Player1OnClient1.TheList.IndexOf(k_TestVal3) == 2;
+                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
+                       m_Player1OnClient1.TheList.Count == listCount;
+
+                // Check the client values against the server values to make sure they match
+                for (int i = 0; i < listCount; i++)
+                {
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
+                }
+                return hasCorrectCountAndValues;
             }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, 3);
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(NetworkListIndexOf)} to complete its test!");
         }
 
@@ -414,23 +411,38 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkListArrayOperator([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            m_Player1OnServer.TheList.Add(k_TestVal3);
-            m_Player1OnServer.TheList.Add(k_TestVal3);
-            m_Player1OnServer.TheList[0] = k_TestVal1;
-            m_Player1OnServer.TheList[1] = k_TestVal2;
 
             bool TestCompleted(int listCount)
             {
-                return m_Player1OnServer.TheList.Count == listCount &&
-                       m_Player1OnClient1.TheList.Count == listCount &&
-                       m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                       m_Player1OnClient1.TheList[0] == k_TestVal1 &&
-                       m_Player1OnServer.TheList[1] == k_TestVal2 &&
-                       m_Player1OnClient1.TheList[1] == k_TestVal2;
+                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
+                       m_Player1OnClient1.TheList.Count == listCount;
+
+                // Check the client values against the server values to make sure they match
+                for (int i = 0; i < listCount; i++)
+                {
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
+                }
+                return hasCorrectCountAndValues;
             }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, 2);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(NetworkListArrayOperator)} to complete its test!");
+            m_Player1OnServer.TheList.Add(k_TestVal3);
+            m_Player1OnServer.TheList.Add(k_TestVal3);
+
+            // Make sure the client has the initial values
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListArrayOperator)} timed out waiting for client to have the initial values!");
+
+            // Change the values pn server side using the array operator
+            m_Player1OnServer.TheList[0] = k_TestVal1;
+            m_Player1OnServer.TheList[1] = k_TestVal2;
+
+            // Make sure the client has the updated values
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListArrayOperator)} timed out waiting for client to have the updated values!");
         }
 
 
