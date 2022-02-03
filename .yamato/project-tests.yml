@@ -66,8 +66,8 @@ multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   variables:
-    MP_NUMBEROF_MACS:"1"
-    MP_NUMBEROF_WIN:"1"
+    MP_NUMBEROF_MACS: "1"
+    MP_NUMBEROF_WIN: "1"
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -u {{ editor }} -c editor -w --fast
