@@ -125,25 +125,30 @@ namespace Unity.Netcode.RuntimeTests
             RegisterSceneManagerHandler();
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+
+            yield return m_DefaultWaitForTick;
 
             // Wait for connection on server side
             var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
+            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
             var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ServerNetworkManager, result));
+                m_ServerNetworkManager, result);
+
+            // Assign server-side client's player
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ClientNetworkManagers[0], result));
+                m_ClientNetworkManagers[0], result);
 
+            // Assign client-side local player
             m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
 
             m_Player1OnServer.TheList.Clear();

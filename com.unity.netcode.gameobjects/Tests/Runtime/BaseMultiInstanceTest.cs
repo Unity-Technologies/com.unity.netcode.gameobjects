@@ -235,7 +235,7 @@ namespace Unity.Netcode.RuntimeTests
     }
 
     /// <summary>
-    /// Can be used independently or a assigned to <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"></see> in the
+    /// Can be used independently or assigned to <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"></see> in the
     /// event the default timeout period needs to be adjusted
     /// </summary>
     public class TimeOutHelper
