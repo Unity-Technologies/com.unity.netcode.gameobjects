@@ -10,7 +10,7 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Fixed
 
-- Fixed issue where disconnecting from the server with data still in the queue would result in an error message about a stale connection.
+- Fixed issue where disconnecting from the server with data still in the queue would result in an error message about a stale connection. (#1649)
 - Fixed issue where the server `NetworkEndPoint` would fail to be created when 'Server Listen Address' is empty. (#1636)
 - Fixed issue with native collections not all being disposed of when destroying the component without shutting it down properly. This would result in errors in the console and memory leaks. (#1640)
 
