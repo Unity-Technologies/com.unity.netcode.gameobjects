@@ -87,6 +87,8 @@ namespace Unity.Netcode
 
         void TrackPacketReceived(uint packetCount);
 
+        void TrackRtt(ulong clientId, int rtt);
+
         void DispatchFrame();
     }
 }

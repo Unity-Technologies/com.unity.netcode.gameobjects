@@ -686,21 +686,24 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
+                    ExtractNetworkMetricsForClient(ngoConnectionId);
                 }
             }
             else
             {
-                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
+                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ServerClientId);
             }
         }
 
-        private void ExtractNetworkMetricsForClient(ulong transportClientId)
+        private void ExtractNetworkMetricsForClient(ulong ngoConnectionId)
         {
+            var transportClientId = NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId);
             var networkConnection =  ParseClientId(transportClientId);
             ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
+
+            ExtractRtt(networkConnection, ngoConnectionId);
         }
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
@@ -722,6 +725,23 @@ namespace Unity.Netcode
 
                 networkMetricsContext->PacketSentCount = 0;
                 networkMetricsContext->PacketReceivedCount = 0;
+            }
+        }
+
+        private void ExtractRtt(NetworkConnection networkConnection, ulong transportClientId)
+        {
+            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
+            {
+                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+
+                NetworkMetrics.TrackRtt(transportClientId, sharedContext->RttInfo.LastRtt);
             }
         }
 #endif

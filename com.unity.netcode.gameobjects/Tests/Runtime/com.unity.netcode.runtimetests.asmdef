@@ -34,6 +34,11 @@
             "name": "com.unity.netcode.adapter.utp",
             "expression": "",
             "define": "UTP_ADAPTER"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.3",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_3"
         }
     ],
     "noEngineReferences": false

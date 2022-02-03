@@ -75,6 +75,7 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
+        private readonly EventMetric<RTTEvent> m_RttEvent = new EventMetric<RTTEvent>(NetworkMetricTypes.Rtt.Id);
 #endif
 
 
@@ -96,6 +97,7 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
+                .WithMetricEvents(m_RttEvent)
 #endif
                 .Build();
 
@@ -445,6 +447,18 @@ namespace Unity.Netcode
 
             m_PacketReceivedCounter.Increment(packetCount);
             IncrementMetricCount();
+#endif
+        }
+
+        public void TrackRtt(ulong clientId, int rtt)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_RttEvent.Replace(new RTTEvent(new ConnectionInfo(clientId), rtt));
 #endif
         }
 
