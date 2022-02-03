@@ -1,4 +1,3 @@
-#if INCLUDE_NETCODE_RUNTIME_TESTS
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -85,4 +84,3 @@ namespace Unity.Netcode.RuntimeTests.Physics
         }
     }
 }
-#endif

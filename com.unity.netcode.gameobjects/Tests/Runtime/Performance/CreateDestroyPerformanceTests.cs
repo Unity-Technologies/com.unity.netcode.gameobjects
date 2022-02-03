@@ -1,4 +1,3 @@
-#if INCLUDE_NETCODE_RUNTIME_TESTS
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine;
@@ -92,4 +91,3 @@ namespace Unity.Netcode.RuntimeTests.Performance
         }
     }
 }
-#endif

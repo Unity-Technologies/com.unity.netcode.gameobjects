@@ -1,4 +1,3 @@
-#if INCLUDE_NETCODE_RUNTIME_TESTS
 using System;
 using System.Text;
 using NUnit.Framework;
@@ -51,4 +50,3 @@ namespace Unity.Netcode.RuntimeTests.Transport
         }
     }
 }
-#endif

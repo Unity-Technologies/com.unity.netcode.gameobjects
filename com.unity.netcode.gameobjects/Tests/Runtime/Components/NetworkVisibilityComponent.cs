@@ -1,4 +1,3 @@
-#if INCLUDE_NETCODE_RUNTIME_TESTS
 namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkVisibilityComponent : NetworkBehaviour
@@ -12,4 +11,3 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 }
-#endif
