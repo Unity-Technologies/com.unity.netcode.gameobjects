@@ -3,7 +3,6 @@
     "rootNamespace": "Unity.Netcode.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
         "Unity.Collections",
         "UnityEngine.TestRunner",
