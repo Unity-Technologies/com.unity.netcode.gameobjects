@@ -141,8 +141,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             for (int i = 3; i < st.FrameCount; i++)
             {
                 methods += " : " + st.GetFrame(i).GetMethod().Name + "." + i;
+                if (i > 8)
+                {
+                    break;
+                }
             }
-            
+
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
             var webLog = new WebLog();
             webLog.Message = $"{testName} {args[0].ToString()}";

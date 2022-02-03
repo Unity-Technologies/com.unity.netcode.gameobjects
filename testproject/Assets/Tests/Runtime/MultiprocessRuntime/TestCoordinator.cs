@@ -8,6 +8,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
+using UnityEngine.Networking.PlayerConnection;
 
 /// <summary>
 /// TestCoordinator
@@ -127,6 +128,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
         MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
+        PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
