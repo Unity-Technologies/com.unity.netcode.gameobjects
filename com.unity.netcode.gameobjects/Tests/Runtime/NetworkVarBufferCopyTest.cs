@@ -118,34 +118,37 @@ namespace Unity.Netcode.RuntimeTests
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ServerNetworkManager, serverClientPlayerResult));
+                m_ServerNetworkManager, serverClientPlayerResult);
+
+            var serverSideClientPlayer = serverClientPlayerResult.Result;
+            var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ClientNetworkManagers[0], clientClientPlayerResult));
+                m_ClientNetworkManagers[0], clientClientPlayerResult);
 
-            var serverSideClientPlayer = serverClientPlayerResult.Result;
             var clientSideClientPlayer = clientClientPlayerResult.Result;
-
-            var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
             var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
+            // Wait for the DummyNetBehaviours on the client side to notify they have been initialized and spawned
             yield return WaitForConditionOrTimeOut((c) => s_ClientDummyNetBehavioursSpawned.Count >= c, 1);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
-            // Send an update
+            // Check that FieldWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
-
-            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            yield return m_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.FieldWritten);
-            yield return new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+            // Check that DeltaWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
+            yield return m_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
+            // Check that both FieldRead and DeltaRead were invoked on the client side
             yield return WaitForConditionOrTimeOut((c) => clientComponent.NetVar.FieldRead == c && clientComponent.NetVar.DeltaRead == c, true);
 
             var timedOutMessage = "Timed out waiting for client reads: ";
