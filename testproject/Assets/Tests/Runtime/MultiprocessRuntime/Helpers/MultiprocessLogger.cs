@@ -68,7 +68,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (interrupted)
             {
                 return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} but was interrupted due to timeout";
-            }    
+            }
             return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ";
         }
 
@@ -135,15 +135,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             var st = new StackTrace(true);
-            string method1 = st.GetFrame(1).GetMethod().Name;
-            string method2 = "2";
-            string method3 = "3";
-            if (st.FrameCount > 3)
+
+            string methods = "";
+
+            for (int i = 3; i < st.FrameCount; i++)
             {
-                method2 = st.GetFrame(2).GetMethod().Name;
-                method3 = st.GetFrame(3).GetMethod().Name;
+                methods += " : " + st.GetFrame(i).GetMethod().Name + "." + i;
             }
-            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {method3} : {method2} : {method1} : {testName} : {format}", args);
+            
+            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
             var webLog = new WebLog();
             webLog.Message = $"{testName} {args[0].ToString()}";
             if (webLog.Message.Length > 1000)

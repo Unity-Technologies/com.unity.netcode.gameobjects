@@ -311,6 +311,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Logging PlayerConnection heartbeat... done");
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
+            MultiprocessLogger.Log($"UnitySetup in Base Class ... end");
         }
 
         [TearDown]
