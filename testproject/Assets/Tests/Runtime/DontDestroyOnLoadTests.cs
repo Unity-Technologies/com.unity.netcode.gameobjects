@@ -113,7 +113,7 @@ namespace TestProject.RuntimeTests
             yield return waitForTick;
             var timeOut = Time.realtimeSinceStartup + 2.0f;
             var timedOut = false;
-            while(!timedOut)
+            while (!timedOut)
             {
                 var allClientConditionsHaveBeenReached = true;
                 foreach (var networkManager in m_ClientNetworkManagers)
@@ -122,13 +122,13 @@ namespace TestProject.RuntimeTests
                     {
                         if (spawnedObject.NetworkManager == networkManager && spawnedObject.gameObject.name.Contains("DontDestroyOnLoadObject"))
                         {
-                            if(spawnedObject.gameObject.scene.name != "DontDestroyOnLoad")
+                            if (spawnedObject.gameObject.scene.name != "DontDestroyOnLoad")
                             {
                                 allClientConditionsHaveBeenReached = false;
                                 break;
                             }
                             var objectToNotDestroyBehaviour = spawnedObject.gameObject.GetComponent<ObjectToNotDestroyBehaviour>();
-                            if(objectToNotDestroyBehaviour.CurrentPing == 0 || serverobjectToNotDestroyBehaviour.CurrentPing != objectToNotDestroyBehaviour.CurrentPing)
+                            if (objectToNotDestroyBehaviour.CurrentPing == 0 || serverobjectToNotDestroyBehaviour.CurrentPing != objectToNotDestroyBehaviour.CurrentPing)
                             {
                                 allClientConditionsHaveBeenReached = false;
                                 break;
