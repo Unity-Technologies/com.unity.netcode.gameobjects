@@ -227,9 +227,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return InitializeServerAndClients(useHost);
             m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
 
-            // Wait a tick
-            yield return m_DefaultWaitForTick;
-
             // Now wait for the client side version to be updated to k_FixedStringTestValue
             yield return WaitForConditionOrTimeOut((c) => m_Player1OnClient1.FixedString32.Value == c, k_FixedStringTestValue);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
@@ -269,7 +266,8 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            for (var i = 0; i < 20; ++i)
+            var numberOfEntries = 20;
+            for (var i = 0; i < numberOfEntries; ++i)
             {
                 m_Player1OnServer.TheLargeList.Add(new FixedString128Bytes());
             }
@@ -280,7 +278,7 @@ namespace Unity.Netcode.RuntimeTests
                        m_Player1OnClient1.TheLargeList.Count == listCount;
             }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            yield return WaitForConditionOrTimeOut(TestCompleted, numberOfEntries);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown)} to complete its test!");
         }
 
