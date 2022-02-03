@@ -586,163 +586,165 @@ namespace TestProject.RuntimeTests
             ValidateUserSerializableStructs(userSerializableStruct);
         }
 
-    }
-
-    /// <summary>
-    /// Component used with NetworkSerializableTest that houses the
-    /// client and server RPC calls.
-    /// </summary>
-    public class TestSerializationComponent : NetworkBehaviour
-    {
-        public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
-        public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
-
-        public delegate void OnSerializableStructUpdatedDelgateHandler(UserSerializableStruct userSerializableStruct);
-        public OnSerializableStructUpdatedDelgateHandler OnSerializableStructUpdated;
-
-        public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
-        public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
-
-        public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
-        public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
-
-        public delegate void OnMyObjectPassedWithThisRefUpdatedDelgateHandler(MyObjectPassedWithThisRef obj);
-        public OnMyObjectPassedWithThisRefUpdatedDelgateHandler OnMyObjectPassedWithThisRefUpdated;
-
         /// <summary>
-        /// Starts the unit test and passes the UserSerializableClass from the client to the server
+        /// Component used with NetworkSerializableTest that houses the
+        /// client and server RPC calls.
         /// </summary>
-        /// <param name="userSerializableClass"></param>
-        public void ClientStartTest(UserSerializableClass userSerializableClass)
+        protected class TestSerializationComponent : NetworkBehaviour
         {
-            SendServerSerializedDataServerRpc(userSerializableClass);
-        }
+            public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
+            public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
 
-        /// <summary>
-        /// Server receives the UserSerializableClass, modifies it, and sends it back
-        /// </summary>
-        /// <param name="userSerializableClass"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableClass userSerializableClass)
-        {
-            userSerializableClass.MyintValue++;
-            userSerializableClass.MyulongValue++;
+            public delegate void OnSerializableStructUpdatedDelgateHandler(UserSerializableStruct userSerializableStruct);
+            public OnSerializableStructUpdatedDelgateHandler OnSerializableStructUpdated;
 
-            for (int i = 0; i < 32; i++)
+            public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
+            public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
+
+            public delegate void OnMyObjectUpdatedDelgateHandler(MyObject obj);
+            public OnMyObjectUpdatedDelgateHandler OnMyObjectUpdated;
+
+            public delegate void OnMyObjectPassedWithThisRefUpdatedDelgateHandler(MyObjectPassedWithThisRef obj);
+            public OnMyObjectPassedWithThisRefUpdatedDelgateHandler OnMyObjectPassedWithThisRefUpdated;
+
+            /// <summary>
+            /// Starts the unit test and passes the UserSerializableClass from the client to the server
+            /// </summary>
+            /// <param name="userSerializableClass"></param>
+            public void ClientStartTest(UserSerializableClass userSerializableClass)
             {
-                Assert.AreEqual(userSerializableClass.MyByteListValues[i], i);
+                SendServerSerializedDataServerRpc(userSerializableClass);
             }
 
-            for (int i = 32; i < 64; i++)
+            /// <summary>
+            /// Server receives the UserSerializableClass, modifies it, and sends it back
+            /// </summary>
+            /// <param name="userSerializableClass"></param>
+            [ServerRpc(RequireOwnership = false)]
+            private void SendServerSerializedDataServerRpc(UserSerializableClass userSerializableClass)
             {
-                userSerializableClass.MyByteListValues.Add((byte)i);
-            }
-            SendClientSerializedDataClientRpc(userSerializableClass);
-        }
+                userSerializableClass.MyintValue++;
+                userSerializableClass.MyulongValue++;
 
-        /// <summary>
-        /// Client receives the UserSerializableClass and then invokes the OnSerializableClassUpdated (if set)
-        /// </summary>
-        /// <param name="userSerializableClass"></param>
-        [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableClass userSerializableClass)
-        {
-            if (OnSerializableClassUpdated != null)
+                for (int i = 0; i < 32; i++)
+                {
+                    Assert.AreEqual(userSerializableClass.MyByteListValues[i], i);
+                }
+
+                for (int i = 32; i < 64; i++)
+                {
+                    userSerializableClass.MyByteListValues.Add((byte)i);
+                }
+                SendClientSerializedDataClientRpc(userSerializableClass);
+            }
+
+            /// <summary>
+            /// Client receives the UserSerializableClass and then invokes the OnSerializableClassUpdated (if set)
+            /// </summary>
+            /// <param name="userSerializableClass"></param>
+            [ClientRpc]
+            private void SendClientSerializedDataClientRpc(UserSerializableClass userSerializableClass)
             {
-                OnSerializableClassUpdated.Invoke(userSerializableClass);
+                if (OnSerializableClassUpdated != null)
+                {
+                    OnSerializableClassUpdated.Invoke(userSerializableClass);
+                }
             }
-        }
 
-        /// <summary>
-        /// Starts the unit test and passes the UserSerializableStruct from the client to the server
-        /// </summary>
-        /// <param name="userSerializableStruct"></param>
-        public void ClientStartTest(UserSerializableStruct userSerializableStruct)
-        {
-            SendServerSerializedDataServerRpc(userSerializableStruct);
-        }
-
-        /// <summary>
-        /// Server receives the UserSerializableStruct, modifies it, and sends it back
-        /// </summary>
-        /// <param name="userSerializableStruct"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableStruct userSerializableStruct)
-        {
-            userSerializableStruct.MyintValue++;
-            userSerializableStruct.MyulongValue++;
-
-            SendClientSerializedDataClientRpc(userSerializableStruct);
-        }
-
-        /// <summary>
-        /// Client receives the UserSerializableStruct and then invokes the OnSerializableStructUpdated (if set)
-        /// </summary>
-        /// <param name="userSerializableStruct"></param>
-        [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableStruct userSerializableStruct)
-        {
-            if (OnSerializableStructUpdated != null)
+            /// <summary>
+            /// Starts the unit test and passes the UserSerializableStruct from the client to the server
+            /// </summary>
+            /// <param name="userSerializableStruct"></param>
+            public void ClientStartTest(UserSerializableStruct userSerializableStruct)
             {
-                OnSerializableStructUpdated.Invoke(userSerializableStruct);
+                SendServerSerializedDataServerRpc(userSerializableStruct);
+            }
+
+            /// <summary>
+            /// Server receives the UserSerializableStruct, modifies it, and sends it back
+            /// </summary>
+            /// <param name="userSerializableStruct"></param>
+            [ServerRpc(RequireOwnership = false)]
+            private void SendServerSerializedDataServerRpc(UserSerializableStruct userSerializableStruct)
+            {
+                userSerializableStruct.MyintValue++;
+                userSerializableStruct.MyulongValue++;
+
+                SendClientSerializedDataClientRpc(userSerializableStruct);
+            }
+
+            /// <summary>
+            /// Client receives the UserSerializableStruct and then invokes the OnSerializableStructUpdated (if set)
+            /// </summary>
+            /// <param name="userSerializableStruct"></param>
+            [ClientRpc]
+            private void SendClientSerializedDataClientRpc(UserSerializableStruct userSerializableStruct)
+            {
+                if (OnSerializableStructUpdated != null)
+                {
+                    OnSerializableStructUpdated.Invoke(userSerializableStruct);
+                }
+            }
+
+            [ClientRpc]
+            public void SendMyObjectClientRpc(MyObject obj)
+            {
+                if (OnMyObjectUpdated != null)
+                {
+                    OnMyObjectUpdated.Invoke(obj);
+                }
+            }
+            [ClientRpc]
+            public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef obj)
+            {
+                if (OnMyObjectPassedWithThisRefUpdated != null)
+                {
+                    OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
+                }
+            }
+
+            [ClientRpc]
+            public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById obj)
+            {
+                if (OnMySharedObjectReferencedByIdUpdated != null)
+                {
+                    OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
+                }
+            }
+
+            [ServerRpc]
+            public void SendMyObjectServerRpc(MyObject obj)
+            {
+                if (OnMyObjectUpdated != null)
+                {
+                    OnMyObjectUpdated.Invoke(obj);
+                }
+                SendMyObjectClientRpc(obj);
+            }
+
+            [ServerRpc]
+            public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef obj)
+            {
+                if (OnMyObjectPassedWithThisRefUpdated != null)
+                {
+                    OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
+                }
+                SendMyObjectPassedWithThisRefClientRpc(obj);
+            }
+
+            [ServerRpc]
+            public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById obj)
+            {
+                if (OnMySharedObjectReferencedByIdUpdated != null)
+                {
+                    OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
+                }
+                SendMySharedObjectReferencedByIdClientRpc(obj);
             }
         }
 
-        [ClientRpc]
-        public void SendMyObjectClientRpc(MyObject obj)
-        {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(obj);
-            }
-        }
-        [ClientRpc]
-        public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef obj)
-        {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
-            }
-        }
 
-        [ClientRpc]
-        public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById obj)
-        {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
-            }
-        }
 
-        [ServerRpc]
-        public void SendMyObjectServerRpc(MyObject obj)
-        {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(obj);
-            }
-            SendMyObjectClientRpc(obj);
-        }
-
-        [ServerRpc]
-        public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef obj)
-        {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
-            }
-            SendMyObjectPassedWithThisRefClientRpc(obj);
-        }
-
-        [ServerRpc]
-        public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById obj)
-        {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
-            }
-            SendMySharedObjectReferencedByIdClientRpc(obj);
-        }
     }
 
     /// <summary>
