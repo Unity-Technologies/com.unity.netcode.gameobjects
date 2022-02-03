@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using Unity.Netcode.Transports.UNET;
+using UnityEngine.Networking.PlayerConnection;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -305,8 +306,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
             TestCoordinator.Instance.KeepAliveClientRpc();
+            MultiprocessLogger.Log("Logging PlayerConnection heartbeat... start");
+            PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
+            MultiprocessLogger.Log("Logging PlayerConnection heartbeat... done");
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
-            MultiprocessLogHandler.Flush();
+            MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
         }
 
         [TearDown]

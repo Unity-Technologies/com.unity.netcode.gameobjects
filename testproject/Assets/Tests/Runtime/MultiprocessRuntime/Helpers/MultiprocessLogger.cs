@@ -50,15 +50,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static string Flush()
         {
+            bool interrupted = false;
             var stopWatch = Stopwatch.StartNew();
             lock (k_Tasklock)
             {
                 foreach (var task in s_AllTasks)
                 {
                     task.Wait();
+                    if (stopWatch.ElapsedMilliseconds > 20000)
+                    {
+                        interrupted = true;
+                        break;
+                    }
                 }
             }
             stopWatch.Stop();
+            if (interrupted)
+            {
+                return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} but was interrupted due to timeout"
+            }    
             return $"Flush Logs took : {stopWatch.Elapsed} ticks: {stopWatch.ElapsedTicks} ";
         }
 
