@@ -165,9 +165,10 @@ public class TestCoordinator : NetworkBehaviour
         else if (m_Stopwatch.ElapsedMilliseconds > 5000)
         {
             m_Stopwatch.Restart();
-            MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-            MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-            MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
+            MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
+                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
+                $" is connected: {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 
