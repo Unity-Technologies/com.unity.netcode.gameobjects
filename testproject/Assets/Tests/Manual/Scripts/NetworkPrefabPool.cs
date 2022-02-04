@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Unity.Netcode;
+using Unity.Netcode.Components;
+using Random = UnityEngine.Random;
 
 namespace TestProject.ManualTests
 {
@@ -76,11 +79,41 @@ namespace TestProject.ManualTests
             }
         }
 
+        private bool m_Interpolate = true;
+
+        public void Update()
+        {
+            if (Input.GetKeyDown("space"))
+            {
+                m_Interpolate = !m_Interpolate;
+            }
+
+            if (m_ObjectPool != null && SpawnSlider != null)
+            {
+                foreach (var o in m_ObjectPool)
+                {
+                    o.GetComponent<NetworkTransform>().Interpolate = m_Interpolate;
+                }
+            }
+
+        }
+
+
+        public void FixedUpdate()
+        {
+            if (IsServer && m_ObjectPool != null && SpawnSlider != null)
+            {
+                foreach(var o in m_ObjectPool)
+                {
+                    o.GetComponent<GenericNetworkObjectBehaviour>().Rotate((int)SpawnSlider.value / 10.0f);
+                }
+            }
+        }
+
         private bool m_IsExitingScene;
         public void OnExitingScene(bool destroyObjects)
         {
             m_IsExitingScene = true;
-
             if (DontDestroy)
             {
                 if (destroyObjects)
@@ -457,52 +490,51 @@ namespace TestProject.ManualTests
                 yield return null;
             }
 
-            if (m_DelaySpawning > Time.realtimeSinceStartup)
-            {
-                yield return new WaitForSeconds(m_DelaySpawning - Time.realtimeSinceStartup);
-            }
-
             m_IsSpawningObjects = true;
 
+            const int numSpawn = 100;
 
-            while (m_IsSpawningObjects && !m_IsExitingScene)
+            while(!m_IsExitingScene)
             {
-                //Start spawning if auto spawn is enabled
-                if (AutoSpawnEnable)
+                GameObject go = GetObject();
+                if (go != null)
                 {
-                    float entitySpawnUpdateRate = 1.0f;
-                    if (SpawnsPerSecond > 0)
+                    go.transform.position = transform.position;
+
+                    float ang = Random.Range(0.0f, 2 * Mathf.PI);
+                    int i = Random.Range(0, numSpawn);
+                    go.GetComponent<GenericNetworkObjectBehaviour>().SetPosition(
+                                 new Vector3(15 * Mathf.Cos(i * 6.2832f / numSpawn ),
+                                            0,
+                                            15 * Mathf.Sin(i * 6.2832f / numSpawn )));
+
+                    var no = go.GetComponent<NetworkObject>();
+                    if (!no.IsSpawned)
                     {
-                        entitySpawnUpdateRate = 1.0f / Mathf.Min(SpawnsPerSecond, 60.0f);
-                        //While not 100% accurate, this basically allows for higher entities per second generation
-                        m_EntitiesPerFrame = (float)SpawnsPerSecond * entitySpawnUpdateRate;
-                        int entitityCountPerFrame = Mathf.RoundToInt(m_EntitiesPerFrame);
-                        //Spawn (n) entities then wait for 1/60th of a second and repeat
-                        for (int i = 0; i < entitityCountPerFrame; i++)
+                        no.Spawn(true);
+                    }
+                }
+                yield return new WaitForSeconds(0.001f);
+
+                while (!m_IsExitingScene && m_ObjectPool.Count >= numSpawn)
+                {
+                    int i = 0;
+                    for (i = 0; i < numSpawn; i++)
+                    {
+                        if (!m_ObjectPool[i].GetComponent<NetworkObject>().IsSpawned)
                         {
-                            GameObject go = GetObject();
-                            if (go != null)
-                            {
-                                go.transform.position = transform.position;
-
-                                float ang = Random.Range(0.0f, 2 * Mathf.PI);
-                                go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
-
-                                var no = go.GetComponent<NetworkObject>();
-                                if (!no.IsSpawned)
-                                {
-                                    no.Spawn(true);
-                                }
-                            }
+                            break;
                         }
                     }
-                    yield return new WaitForSeconds(entitySpawnUpdateRate);
-                }
-                else //Just hang out until it is enabled
-                {
-                    yield return new WaitForSeconds(1.0f);
+
+                    if (i != numSpawn)
+                    {
+                        break;
+                    }
+                    yield return new WaitForSeconds(0.001f);
                 }
             }
+
         }
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)

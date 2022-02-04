@@ -1,5 +1,7 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace TestProject.ManualTests
 {
@@ -15,7 +17,9 @@ namespace TestProject.ManualTests
         private Rigidbody m_RigidBody;
         private MeshRenderer m_MeshRenderer;
         private Vector3 m_Direction;
+        private Vector3 m_Position;
         private float m_Velocity;
+        private bool m_Positioned = false;
 
         private void Start()
         {
@@ -97,6 +101,23 @@ namespace TestProject.ManualTests
             m_Velocity = velocity;
         }
 
+        public void SetPosition(Vector3 position)
+        {
+            m_Position = position;
+            m_Positioned = true;
+        }
+
+        public void Rotate(float angle)
+        {
+            float x, y, z;
+            x = (float)(m_Position.x * Math.Cos(angle) + m_Position.z * Math.Sin(angle));
+            y = m_Position.y;
+            z = (float)(-m_Position.x * Math.Sin(angle) + m_Position.z * Math.Cos(angle));
+
+            m_Position = new Vector3(x, y, z);
+            m_Positioned = true;
+        }
+
         /// <summary>
         /// Handles moving the object based on its current direction and velocity
         /// </summary>
@@ -106,7 +127,14 @@ namespace TestProject.ManualTests
             {
                 if (IsOwner)
                 {
-                    m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
+                    if (m_Positioned)
+                    {
+                        m_RigidBody.MovePosition(m_Position);
+                    }
+                    else
+                    {
+                        m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
+                    }
 
                     if (m_MoveRandomly && Random.Range(0.0f, 1.0f) < 0.01f)
                     {
