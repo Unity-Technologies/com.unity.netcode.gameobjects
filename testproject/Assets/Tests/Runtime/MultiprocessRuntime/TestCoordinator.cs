@@ -42,6 +42,8 @@ public class TestCoordinator : NetworkBehaviour
     private string m_ConnectAddress = "127.0.0.1";
     private string m_Port = "3076";
 
+    private Stopwatch m_Stopwatch;
+
     private void Awake()
     {
         string[] cliargList = Environment.GetCommandLineArgs();
@@ -64,6 +66,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
+        m_Stopwatch = Stopwatch.StartNew();
         int pid = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Start with pid {pid}");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
@@ -128,7 +131,6 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
         MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
-        PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -159,6 +161,13 @@ public class TestCoordinator : NetworkBehaviour
                 QuitApplication();
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
+        }
+        else if (m_Stopwatch.ElapsedMilliseconds > 5000)
+        {
+            m_Stopwatch.Restart();
+            MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
+            MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
+            MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 
