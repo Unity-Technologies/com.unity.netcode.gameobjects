@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -103,7 +102,7 @@ namespace TestProject.ManualTests
         {
             if (IsServer && m_ObjectPool != null && SpawnSlider != null)
             {
-                foreach(var o in m_ObjectPool)
+                foreach (var o in m_ObjectPool)
                 {
                     o.GetComponent<GenericNetworkObjectBehaviour>().Rotate((int)SpawnSlider.value / 10.0f);
                 }
@@ -494,7 +493,7 @@ namespace TestProject.ManualTests
 
             const int numSpawn = 100;
 
-            while(!m_IsExitingScene)
+            while (!m_IsExitingScene)
             {
                 GameObject go = GetObject();
                 if (go != null)
@@ -504,9 +503,9 @@ namespace TestProject.ManualTests
                     float ang = Random.Range(0.0f, 2 * Mathf.PI);
                     int i = Random.Range(0, numSpawn);
                     go.GetComponent<GenericNetworkObjectBehaviour>().SetPosition(
-                                 new Vector3(15 * Mathf.Cos(i * 6.2832f / numSpawn ),
+                                 new Vector3(15 * Mathf.Cos(i * 6.2832f / numSpawn),
                                             0,
-                                            15 * Mathf.Sin(i * 6.2832f / numSpawn )));
+                                            15 * Mathf.Sin(i * 6.2832f / numSpawn)));
 
                     var no = go.GetComponent<NetworkObject>();
                     if (!no.IsSpawned)
