@@ -404,9 +404,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                     MultiprocessLogger.Log($"13/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
                     AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                    MultiprocessLogger.Log($"14/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
-                    asyncOperation.completed += AsyncOperation_completed;
-                    MultiprocessLogger.Log($"15/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                    if (asyncOperation == null)
+                    {
+                        MultiprocessLogger.Log("14/20 - WARNING - SceneManager.UnloadSceneAsync returned null");
+                    }
+                    else
+                    {
+                        asyncOperation.completed += AsyncOperation_completed;
+                        MultiprocessLogger.Log($"14/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                    }
                 }
                 else
                 {
