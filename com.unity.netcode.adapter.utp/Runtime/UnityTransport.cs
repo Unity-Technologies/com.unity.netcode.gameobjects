@@ -732,7 +732,7 @@ namespace Unity.Netcode
         {
             if (NetworkManager.Singleton.IsServer)
             {
-                NetworkMetrics.TrackRtt(0);
+                NetworkMetrics.TrackRttToServer(0);
             }
             else
             {
@@ -747,7 +747,7 @@ namespace Unity.Netcode
                 {
                     var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
-                    NetworkMetrics.TrackRtt(sharedContext->RttInfo.LastRtt);
+                    NetworkMetrics.TrackRttToServer(sharedContext->RttInfo.LastRtt);
                 }
             }
         }

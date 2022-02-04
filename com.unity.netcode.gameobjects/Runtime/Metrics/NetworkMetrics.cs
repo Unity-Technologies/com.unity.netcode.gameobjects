@@ -453,7 +453,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackRtt(int rtt)
+        public void TrackRttToServer(int rtt)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
             if (!CanSendMetrics)

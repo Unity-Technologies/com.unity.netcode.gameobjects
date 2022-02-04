@@ -87,7 +87,7 @@ namespace Unity.Netcode
 
         void TrackPacketReceived(uint packetCount);
 
-        void TrackRtt(int rtt);
+        void TrackRttToServer(int rtt);
 
         void DispatchFrame();
     }

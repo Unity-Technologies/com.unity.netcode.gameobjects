@@ -145,7 +145,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackRtt(int rtt)
+        public void TrackRttToServer(int rtt)
         {
         }
 
