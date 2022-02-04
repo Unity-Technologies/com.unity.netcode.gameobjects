@@ -447,19 +447,30 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkListValueUpdate([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
+
+            m_Player1OnServer.TheList.Add(k_TestVal1);
+
+            bool TestCompleted(int listCount)
+            {
+                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
+                       m_Player1OnClient1.TheList.Count == listCount;
+
+                // Check the client values against the server values to make sure they match
+                for (int i = 0; i < listCount; i++)
                 {
-                    m_Player1OnServer.TheList.Add(k_TestVal1);
-                },
-                () =>
-                {
-                    return m_Player1OnServer.TheList.Count == 1 &&
-                           m_Player1OnClient1.TheList.Count == 1 &&
-                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                           m_Player1OnClient1.TheList[0] == k_TestVal1;
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
                 }
-            );
+                return hasCorrectCountAndValues;
+            }
+
+            // Make sure the client has the updated values
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListValueUpdate)} timed out waiting for client to receive first value update!");
+
 
             var testSucceeded = false;
 
@@ -469,29 +480,13 @@ namespace Unity.Netcode.RuntimeTests
                                 changedEvent.Value == k_TestVal3;
             }
 
-            try
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_Player1OnServer.TheList[0] = k_TestVal3;
-                        m_Player1OnClient1.TheList.OnListChanged += TestValueUpdatedCallback;
-                    },
-                    () =>
-                    {
-                        return m_Player1OnServer.TheList.Count == 1 &&
-                               m_Player1OnClient1.TheList.Count == 1 &&
-                               m_Player1OnServer.TheList[0] == k_TestVal3 &&
-                               m_Player1OnClient1.TheList[0] == k_TestVal3;
-                    }
-                );
-            }
-            finally
-            {
-                m_Player1OnClient1.TheList.OnListChanged -= TestValueUpdatedCallback;
-            }
+            m_Player1OnClient1.TheList.OnListChanged += TestValueUpdatedCallback;
+            m_Player1OnServer.TheList[0] = k_TestVal3;
 
-            Assert.That(testSucceeded);
+            // Make sure the client has the updated values
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListValueUpdate)} timed out waiting for client to have the second value update!");
+            m_Player1OnClient1.TheList.OnListChanged -= TestValueUpdatedCallback;
         }
 
         [UnityTest]

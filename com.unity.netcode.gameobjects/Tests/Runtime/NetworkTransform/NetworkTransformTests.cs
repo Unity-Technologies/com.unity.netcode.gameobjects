@@ -164,11 +164,11 @@ namespace Unity.Netcode.RuntimeTests
             // test rotation
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
-            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult);
-            if (!waitResult.Result)
-            {
-                throw new Exception("timeout while waiting for rotation change");
-            }
+
+            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.rotation.eulerAngles.x > c, approximation);
+
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "timeout while waiting for rotation change");
+
             // approximation needed here since eulerAngles isn't super precise.
             Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
             Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), approximation, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
@@ -179,11 +179,11 @@ namespace Unity.Netcode.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
-            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult);
-            if (!waitResult.Result)
-            {
-                throw new Exception("timeout while waiting for scale change");
-            }
+
+            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.lossyScale.x > c, 1f + approximation);
+
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "timeout while waiting for scale change");
+
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost");
