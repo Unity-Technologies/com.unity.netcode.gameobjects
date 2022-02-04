@@ -2,10 +2,10 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using UnityEngine.ResourceManagement.ResourceProviders;
 #if NETCODE_USE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using Addressables = UnityEngine.AddressableAssets.Addressables;
 #endif
 
@@ -42,6 +42,7 @@ public class AddressablesSpawner : MonoBehaviour
             var go = Instantiate((GameObject)reference.Asset, transform.position, Quaternion.identity, null);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.Spawn();
+            go.AddComponent<AddressablesAutoDespawner>();
             m_SpawnIndex = (m_SpawnIndex + 1) % NetworkedAddressables.Count;
         }
     }

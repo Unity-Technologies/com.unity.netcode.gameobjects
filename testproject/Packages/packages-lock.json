@@ -15,7 +15,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.6.2",
+      "version": "1.6.4",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -73,8 +73,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.1",
-      "depth": 0,
+      "version": "1.2.5",
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -84,9 +84,9 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.burst": "1.6.2",
+        "com.unity.burst": "1.6.4",
         "com.unity.netcode.gameobjects": "1.0.0-pre.4",
-        "com.unity.transport": "1.0.0-pre.10"
+        "com.unity.transport": "1.0.0-pre.12"
       }
     },
     "com.unity.netcode.gameobjects": {
@@ -211,13 +211,13 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.10",
+      "version": "1.0.0-pre.12",
       "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.collections": "1.1.0",
-        "com.unity.burst": "1.5.5",
-        "com.unity.mathematics": "1.2.1"
+        "com.unity.burst": "1.6.4",
+        "com.unity.mathematics": "1.2.5"
       },
       "url": "https://packages.unity.com"
     },
