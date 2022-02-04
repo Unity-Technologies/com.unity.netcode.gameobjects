@@ -166,18 +166,20 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             var numSends = UnityTransport.InitialMaxSendQueueSize / 1024;
 
+            var payload = new ArraySegment<byte>(new byte[1024 - BatchedSendQueue.PerMessageOverhead]);
             for (int i = 0; i < numSends; i++)
             {
                 // We remove 4 bytes because each send carries a 4 bytes overhead in the send queue.
                 // Without that we wouldn't fill the send queue; it would get flushed right when we
                 // try to send the last message.
-                var payload = new ArraySegment<byte>(new byte[1024 - BatchedSendQueue.PerMessageOverhead]);
                 m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
+
+                yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
             }
 
             // Manually wait. This ends up generating quite a bit of packets and it might take a
             // while for everything to make it to the server.
-            yield return new WaitForSeconds(numSends * 0.02f);
+            //yield return new WaitForSeconds(numSends * 0.02f);
 
             // Extra event is the connect event.
             Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
@@ -187,8 +189,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
                 Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[i].Type);
                 Assert.AreEqual(1024 - BatchedSendQueue.PerMessageOverhead, m_ServerEvents[i].Data.Count);
             }
-
-            yield return null;
         }
 
         // Check making multiple sends to a client in a single frame.

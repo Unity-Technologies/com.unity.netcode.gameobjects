@@ -11,6 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public uint SomeInt;
         public bool SomeBool;
+
         public static bool NetworkSerializeCalledOnWrite;
         public static bool NetworkSerializeCalledOnRead;
 
@@ -519,85 +520,92 @@ namespace Unity.Netcode.RuntimeTests
         {
             yield return InitializeServerAndClients(useHost);
 
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
+            bool TestCompleted(int listCount)
+            {
+                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
+                       m_Player1OnClient1.TheList.Count == listCount;
+
+                // Check the client values against the server values to make sure they match
+                for (int i = 0; i < listCount; i++)
                 {
-                    m_Player1OnServer.TheList.Add(k_TestVal1);
-                    m_Player1OnServer.TheList.Add(k_TestVal2);
-                    m_Player1OnServer.TheList.Add(k_TestVal3);
-                    m_Player1OnServer.TheList.RemoveAt(1);
-                },
-                () =>
-                {
-                    return m_Player1OnServer.TheList.Count == 2 &&
-                           m_Player1OnClient1.TheList.Count == 2 &&
-                           m_Player1OnServer.TheList[0] == k_TestVal1 &&
-                           m_Player1OnClient1.TheList[0] == k_TestVal1 &&
-                           m_Player1OnServer.TheList[1] == k_TestVal3 &&
-                           m_Player1OnClient1.TheList[1] == k_TestVal3;
+                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
+                    if (!hasCorrectCountAndValues)
+                    {
+                        break;
+                    }
                 }
-            );
+                return hasCorrectCountAndValues;
+            }
+
+            m_Player1OnServer.TheList.Add(k_TestVal1);
+            m_Player1OnServer.TheList.Add(k_TestVal2);
+            m_Player1OnServer.TheList.Add(k_TestVal3);
+
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListRemoveAt)} timed out waiting for client to report having {m_Player1OnServer.TheList.Count} elements!");
+
+            m_Player1OnServer.TheList.RemoveAt(1);
+
+            yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListRemoveAt)} timed out waiting for client after removing one element!");
         }
 
         [UnityTest]
         public IEnumerator NetworkListClear([Values(true, false)] bool useHost)
         {
-            // first put some stuff in; re-use the add test
+            // Uses the NetworkListAdd test to initialize server and client and
+            // populate the server side player1 list with values
             yield return NetworkListAdd(useHost);
 
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () => m_Player1OnServer.TheList.Clear(),
-                () =>
-                {
-                    return
-                        m_Player1OnServer.ListDelegateTriggered &&
-                        m_Player1OnClient1.ListDelegateTriggered &&
-                        m_Player1OnServer.TheList.Count == 0 &&
-                        m_Player1OnClient1.TheList.Count == 0;
-                }
-            );
+            m_Player1OnServer.TheList.Clear();
+
+            yield return WaitForConditionOrTimeOut((c) =>
+            m_Player1OnServer.ListDelegateTriggered &&
+            m_Player1OnClient1.ListDelegateTriggered &&
+            m_Player1OnServer.TheList.Count == c &&
+            m_Player1OnClient1.TheList.Count == c, 0);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(NetworkListClear)} timed out waiting for client to clear its list!");
         }
 
         [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    m_Player1OnServer.TheStruct.Value =
-                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
-                    m_Player1OnServer.TheStruct.SetDirty(true);
-                },
-                () =>
-                {
-                    return
-                        m_Player1OnClient1.TheStruct.Value.SomeBool == false &&
-                        m_Player1OnClient1.TheStruct.Value.SomeInt == k_TestUInt;
-                }
-            );
+            var structInstance = new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
+
+            bool TestCompleted(TestStruct testStruct)
+            {
+                bool hasCorrectCountAndValues = m_Player1OnClient1.TheStruct.Value.SomeBool == testStruct.SomeBool &&
+                m_Player1OnClient1.TheStruct.Value.SomeInt == k_TestUInt;
+                return hasCorrectCountAndValues;
+            }
+
+            m_Player1OnServer.TheStruct.Value = structInstance;
+            m_Player1OnServer.TheStruct.SetDirty(true);
+
+            yield return WaitForConditionOrTimeOut(TestCompleted, structInstance);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TestNetworkVariableStruct)} timed out waiting for client to verify {nameof(TestStruct)} values!");
+
         }
 
         [UnityTest]
         public IEnumerator TestINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    TestStruct.NetworkSerializeCalledOnWrite = false;
-                    TestStruct.NetworkSerializeCalledOnRead = false;
-                    m_Player1OnServer.TheStruct.Value =
-                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
-                    m_Player1OnServer.TheStruct.SetDirty(true);
-                },
-                () =>
-                {
-                    return
-                        TestStruct.NetworkSerializeCalledOnWrite &&
-                        TestStruct.NetworkSerializeCalledOnRead;
-                }
-            );
+
+            TestStruct.NetworkSerializeCalledOnRead = false;
+            TestStruct.NetworkSerializeCalledOnWrite = false;
+            var structInstance = new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
+            m_Player1OnServer.TheStruct.Value = structInstance;
+            m_Player1OnServer.TheStruct.SetDirty(true);
+
+            bool TestCompleted(int nothing)
+            {
+                return TestStruct.NetworkSerializeCalledOnRead && TestStruct.NetworkSerializeCalledOnWrite;
+            }
+
+            yield return WaitForConditionOrTimeOut(TestCompleted, 0);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TestINetworkSerializableCallsNetworkSerialize)} timed out waiting for client to verify {nameof(TestStruct)} serialization read and write!");
         }
 
         [UnityTearDown]
