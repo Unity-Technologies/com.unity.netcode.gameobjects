@@ -262,6 +262,7 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
 
         public bool Interpolate = true;
+        private bool m_LastInterpolate = true;
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
@@ -367,7 +368,11 @@ namespace Unity.Netcode.Components
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
             m_ReplicatedNetworkState.Value = networkState;
-            AddInterpolatedState(networkState);
+
+            if (Interpolate)
+            {
+                AddInterpolatedState(networkState);
+            }
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
@@ -532,7 +537,12 @@ namespace Unity.Netcode.Components
             // again, we should be using quats here
             if (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
             {
-                var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                var eulerAngles = new Vector3();
+                if (Interpolate)
+                {
+                    eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                }
+
                 if (SyncRotAngleX)
                 {
                     interpolatedRotAngles.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
@@ -656,7 +666,10 @@ namespace Unity.Netcode.Components
 
             Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
 
-            AddInterpolatedState(newState);
+            if (Interpolate)
+            {
+                AddInterpolatedState(newState);
+            }
 
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
@@ -812,6 +825,17 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            if (!Interpolate && m_LastInterpolate)
+            {
+                // if we just stop interpolating
+                foreach (var interpolator in m_AllFloatInterpolators)
+                {
+                    interpolator.Clear();
+                }
+            }
+
+            m_LastInterpolate = Interpolate;
+
             if (CanCommitToTransform)
             {
                 if (m_CachedIsServer)
@@ -831,12 +855,15 @@ namespace Unity.Netcode.Components
                 var cachedServerTime = serverTime.Time;
                 var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
 
-                foreach (var interpolator in m_AllFloatInterpolators)
+                if (Interpolate)
                 {
-                    interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                }
+                    foreach (var interpolator in m_AllFloatInterpolators)
+                    {
+                        interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    }
 
-                m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                }
 
                 if (!CanCommitToTransform)
                 {
