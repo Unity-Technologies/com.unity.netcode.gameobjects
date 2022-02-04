@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForEventMetricValues<RTTEvent>(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
+            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -37,11 +37,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var rttValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.That(rttValues.Count, Is.GreaterThanOrEqualTo(1));
-
-            var average = rttValues.Average(rtt => rtt.RTT);
-            Assert.That(average, Is.GreaterThanOrEqualTo(1));
+            var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
+            Assert.That(rttValue, Is.EqualTo(0f));
         }
 
         [UnityTest]
@@ -59,7 +56,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[1].StartClient();
 
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForEventMetricValues<RTTEvent>(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
+            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -69,18 +66,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var rttValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.That(rttValues.Count, Is.GreaterThanOrEqualTo(1));
-
-            var valuesClient1 = rttValues.Where(rtt => rtt.Connection.Id == clients[0].ServerClientId);
-            Assert.That(valuesClient1.Count(), Is.GreaterThanOrEqualTo(1));
-            var averageClient1 = valuesClient1.Average(rtt => rtt.RTT);
-            Assert.That(averageClient1, Is.GreaterThanOrEqualTo(1));
-
-            var valuesClient2 = rttValues.Where(rtt => rtt.Connection.Id == clients[1].ServerClientId);
-            Assert.That(valuesClient2.Count(), Is.GreaterThanOrEqualTo(1));
-            var averageClient2 = valuesClient2.Average(rtt => rtt.RTT);
-            Assert.That(averageClient2, Is.GreaterThanOrEqualTo(1));
+            var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
+            Assert.That(rttValue, Is.EqualTo(0f));
         }
 
         [UnityTest]
@@ -97,7 +84,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var clientMetrics = (NetworkMetrics)clients[0].NetworkMetrics;
-            var waitForMetricValues = new WaitForEventMetricValues<RTTEvent>(clientMetrics.Dispatcher, NetworkMetricTypes.Rtt);
+            var waitForMetricValues = new WaitForGaugeMetricValues(clientMetrics.Dispatcher, NetworkMetricTypes.Rtt, metric => metric > 0f) ;
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -107,11 +94,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
-            var rttValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            Assert.That(rttValues.Count, Is.GreaterThanOrEqualTo(1));
-
-            var average = rttValues.Average(rtt => rtt.RTT);
-            Assert.That(average, Is.GreaterThanOrEqualTo(1));
+            var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
+            Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
         }
     }
 }

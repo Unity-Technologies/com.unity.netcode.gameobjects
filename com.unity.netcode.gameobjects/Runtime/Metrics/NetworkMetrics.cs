@@ -75,7 +75,10 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
-        private readonly EventMetric<RTTEvent> m_RttEvent = new EventMetric<RTTEvent>(NetworkMetricTypes.Rtt.Id);
+        private readonly Gauge m_RttToServerGauge = new Gauge(NetworkMetricTypes.Rtt.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
 #endif
 
 
@@ -97,7 +100,7 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
-                .WithMetricEvents(m_RttEvent)
+                .WithGauges(m_RttToServerGauge)
 #endif
                 .Build();
 
@@ -450,7 +453,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackRtt(ulong clientId, int rtt)
+        public void TrackRtt(int rtt)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_3
             if (!CanSendMetrics)
@@ -458,7 +461,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            m_RttEvent.Replace(new RTTEvent(new ConnectionInfo(clientId), rtt));
+            m_RttToServerGauge.Set(rtt);
 #endif
         }
 

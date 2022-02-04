@@ -730,18 +730,25 @@ namespace Unity.Netcode
 
         private void ExtractRtt(NetworkConnection networkConnection, ulong transportClientId)
         {
-            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-                networkConnection,
-                out _,
-                out _,
-                out var sharedBuffer);
-
-            unsafe
+            if (NetworkManager.Singleton.IsServer)
             {
-                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+                NetworkMetrics.TrackRtt(0);
+            }
+            else
+            {
+                m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                    NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                    networkConnection,
+                    out _,
+                    out _,
+                    out var sharedBuffer);
 
-                NetworkMetrics.TrackRtt(transportClientId, sharedContext->RttInfo.LastRtt);
+                unsafe
+                {
+                    var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+
+                    NetworkMetrics.TrackRtt(sharedContext->RttInfo.LastRtt);
+                }
             }
         }
 #endif
