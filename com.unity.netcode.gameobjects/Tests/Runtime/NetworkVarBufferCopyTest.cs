@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -80,13 +81,29 @@ namespace Unity.Netcode.RuntimeTests
 
         public class DummyNetBehaviour : NetworkBehaviour
         {
-            public DummyNetVar NetVar;
+            public DummyNetVar NetVar = new DummyNetVar();
+
+            public override void OnNetworkSpawn()
+            {
+                if (!IsServer)
+                {
+                    ClientDummyNetBehaviourSpawned(this);
+                }
+                base.OnNetworkSpawn();
+            }
         }
         protected override int NbClients => 1;
+
+        private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
+        public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
+        {
+            s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
+        }
 
         [UnitySetUp]
         public override IEnumerator Setup()
         {
+            s_ClientDummyNetBehavioursSpawned.Clear();
             yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
@@ -94,42 +111,59 @@ namespace Unity.Netcode.RuntimeTests
                 });
         }
 
+
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ServerNetworkManager, serverClientPlayerResult));
+                m_ServerNetworkManager, serverClientPlayerResult);
+
+            var serverSideClientPlayer = serverClientPlayerResult.Result;
+            var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ClientNetworkManagers[0], clientClientPlayerResult));
+                m_ClientNetworkManagers[0], clientClientPlayerResult);
 
-            var serverSideClientPlayer = serverClientPlayerResult.Result;
             var clientSideClientPlayer = clientClientPlayerResult.Result;
+            var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
-            var serverComponent = (serverSideClientPlayer).GetComponent<DummyNetBehaviour>();
-            var clientComponent = (clientSideClientPlayer).GetComponent<DummyNetBehaviour>();
+            // Wait for the DummyNetBehaviours on the client side to notify they have been initialized and spawned
+            yield return WaitForConditionOrTimeOut((c) => s_ClientDummyNetBehavioursSpawned.Count >= c, 1);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(
-                () => clientComponent.NetVar.DeltaRead == true,
-                waitResult,
-                maxFrames: 120));
-
-            if (!waitResult.Result)
-            {
-                Assert.Fail("Failed to send a delta within 120 frames");
-            }
+            // Check that FieldWritten is written when dirty
+            serverComponent.NetVar.Dirty = true;
+            yield return m_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.FieldWritten);
+
+            // Check that DeltaWritten is written when dirty
+            serverComponent.NetVar.Dirty = true;
+            yield return m_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.DeltaWritten);
-            Assert.True(clientComponent.NetVar.FieldRead);
-            Assert.True(clientComponent.NetVar.DeltaRead);
+
+            // Check that both FieldRead and DeltaRead were invoked on the client side
+            yield return WaitForConditionOrTimeOut((c) => clientComponent.NetVar.FieldRead == c && clientComponent.NetVar.DeltaRead == c, true);
+
+            var timedOutMessage = "Timed out waiting for client reads: ";
+            if (s_GloabalTimeOutHelper.TimedOut)
+            {
+                if (!clientComponent.NetVar.FieldRead)
+                {
+                    timedOutMessage += "[FieldRead]";
+                }
+
+                if (!clientComponent.NetVar.DeltaRead)
+                {
+                    timedOutMessage += "[DeltaRead]";
+                }
+            }
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, timedOutMessage);
         }
     }
 }

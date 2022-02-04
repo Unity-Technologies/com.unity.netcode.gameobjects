@@ -11,6 +11,18 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetworkTransformTestComponent : NetworkTransform
+    {
+        public bool ReadyToReceivePositionUpdate = false;
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+
+            ReadyToReceivePositionUpdate = true;
+        }
+    }
+
     // [TestFixture(true, true)]
     [TestFixture(true, false)]
     // [TestFixture(false, true)]
@@ -35,17 +47,25 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients, updatePlayerPrefab: playerPrefab =>
+            m_BypassStartAndWaitForClients = true;
+            yield return base.Setup();
+        }
+
+
+        public IEnumerator InitializeServerAndClients()
+        {
+            if (m_TestWithClientNetworkTransform)
             {
-                if (m_TestWithClientNetworkTransform)
-                {
-                    // playerPrefab.AddComponent<ClientNetworkTransform>();
-                }
-                else
-                {
-                    playerPrefab.AddComponent<NetworkTransform>();
-                }
-            });
+                // m_PlayerPrefab.AddComponent<ClientNetworkTransform>();
+            }
+            else
+            {
+                var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
+                networkTransform.Interpolate = false;
+            }
+
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            m_ClientNetworkManagers[0].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
 #if NGO_TRANSFORM_DEBUG
             // Log assert for writing without authority is a developer log...
@@ -53,23 +73,49 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
 #endif
+            Assert.True(MultiInstanceHelpers.Start(m_TestWithHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+
+            RegisterSceneManagerHandler();
+
+            // Wait for connection on client side
+            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+
+            // Wait for connection on server side
+            var clientsToWaitFor = m_TestWithHost ? NbClients + 1 : NbClients;
+            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
+            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
+
+            // Wait for 1 tick
+            yield return m_DefaultWaitForTick;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult));
-
-            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.ReadyToReceivePositionUpdate == c, true);
+
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
+
+            // Wait for 1 more tick before starting tests
+            yield return m_DefaultWaitForTick;
         }
 
         // TODO: rewrite after perms & authority changes
         [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
         {
+            yield return InitializeServerAndClients();
+
+
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
 
             NetworkTransform authoritativeNetworkTransform;
@@ -89,9 +135,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
             Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
 
-            authoritativeNetworkTransform.Interpolate = false;
-            otherSideNetworkTransform.Interpolate = false;
-
             if (authoritativeNetworkTransform.CanCommitToTransform)
             {
                 authoritativeNetworkTransform.InLocalSpace = testLocalTransform;
@@ -106,19 +149,23 @@ namespace Unity.Netcode.RuntimeTests
 
             // test position
             var authPlayerTransform = authoritativeNetworkTransform.transform;
-            authPlayerTransform.position = new Vector3(10, 20, 30);
+
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, maxFrames: 120));
+
+            authPlayerTransform.position = new Vector3(10, 20, 30);
+
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, 5);
             if (!waitResult.Result)
             {
-                throw new Exception("timeout while waiting for position change");
+                throw new Exception($"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
             }
+
             Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 
             // test rotation
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult, maxFrames: 120));
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult);
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for rotation change");
@@ -133,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult, maxFrames: 120));
+            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult);
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for scale change");
@@ -150,6 +197,8 @@ namespace Unity.Netcode.RuntimeTests
         // [Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
         public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
         {
+            yield return InitializeServerAndClients();
+
             // test server can't change client authoritative transform
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;
@@ -167,13 +216,11 @@ namespace Unity.Netcode.RuntimeTests
                 otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
             }
 
-            authoritativeNetworkTransform.Interpolate = false;
-            otherSideNetworkTransform.Interpolate = false;
-
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
+
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return null; // one frame
+            yield return m_DefaultWaitForTick;
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
 #if NGO_TRANSFORM_DEBUG
