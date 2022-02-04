@@ -37,6 +37,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static List<Task> s_AllTasks;
         public static long JobId;
         private static readonly object k_Tasklock = new object();
+        private static long s_EventIdCounter;
 
         static MultiprocessLogHandler()
         {
@@ -46,6 +47,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 JobId = -2;
             }
+            s_EventIdCounter = 0;
         }
 
         public static string Flush()
@@ -155,6 +157,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 webLog.Message = webLog.Message.Substring(0, 999);
             }
             webLog.ReferenceId = JobId;
+            webLog.EventId = s_EventIdCounter++;
             webLog.TestMethod = testName;
             webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
             // string json = JsonUtility.ToJson(webLog);
@@ -231,6 +234,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public long ReferenceId;
         public string TestMethod;
         public string ClientEventDate;
+        public long EventId;
 
         public override string ToString()
         {

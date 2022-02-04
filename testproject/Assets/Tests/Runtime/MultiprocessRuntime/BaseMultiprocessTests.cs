@@ -293,11 +293,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {beforeYield} and scale time {Time.timeScale}");
                     yield return new WaitForSecondsRealtime(0.7f);
                     float afterYield = Time.realtimeSinceStartup;
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                     if (afterYield - beforeYield < 0.7f)
                     {
-                        Thread.Sleep(700);
+                        MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...start");
+                        Thread.Sleep(5000);
+                        MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
                     }
+                    afterYield = Time.realtimeSinceStartup;
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
@@ -362,7 +365,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitForSeconds(1.0f);
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
-            MultiprocessLogger.Log($"4/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count} | {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"2/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count} | {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
         [OneTimeTearDown]
@@ -372,9 +375,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
             try
             {
-                MultiprocessLogger.Log($"BaseMultiProcessTests - TeardownSuite : One time teardown");
-                MultiprocessLogger.Log($"TeardownSuite should have disposed resources");
-                MultiprocessLogger.Log($"Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+                MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
                     BokkenMachine.FetchAllLogFiles();
@@ -415,6 +416,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             catch (Exception e)
             {
                 MultiprocessLogger.Log($"WARNING: Suiteteardown threw exception which means all subsequent tests will fail {e.Message} {e.StackTrace}");
+            }
+            finally
+            {
+                PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
             }
             MultiprocessLogHandler.Flush();
         }
