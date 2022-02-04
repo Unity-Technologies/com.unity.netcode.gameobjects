@@ -69,6 +69,11 @@ namespace Unity.Netcode
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
 
+                        if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
+                        {
+                            throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
+                        }
+
                         writer.WriteValueSafe((ushort)tmpWriter.Length);
                         tmpWriter.CopyTo(writer);
                     }

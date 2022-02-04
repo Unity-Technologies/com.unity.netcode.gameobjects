@@ -64,6 +64,7 @@ namespace Unity.Netcode.RuntimeTests
                 networkTransform.Interpolate = false;
             }
 
+
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             m_ClientNetworkManagers[0].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
@@ -154,11 +155,9 @@ namespace Unity.Netcode.RuntimeTests
 
             authPlayerTransform.position = new Vector3(10, 20, 30);
 
-            yield return MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, 5);
-            if (!waitResult.Result)
-            {
-                throw new Exception($"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
-            }
+            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.position.x > c, approximation);
+
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
 
             Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 

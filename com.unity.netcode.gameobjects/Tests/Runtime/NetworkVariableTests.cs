@@ -60,6 +60,8 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    [TestFixture(true)]
+    [TestFixture(false)]
     public class NetworkVariableTests : BaseMultiInstanceTest
     {
         private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
@@ -259,25 +261,25 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(NetworkListAdd)} to complete its test!");
         }
 
-        [UnityTest]
-        public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
-        {
-            yield return InitializeServerAndClients(useHost);
-            var numberOfEntries = 20;
-            for (var i = 0; i < numberOfEntries; ++i)
-            {
-                m_Player1OnServer.TheLargeList.Add(new FixedString128Bytes());
-            }
+        //[UnityTest]
+        //public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
+        //{
+        //    yield return InitializeServerAndClients(useHost);
+        //    var numberOfEntries = 20;
+        //    for (var i = 0; i < numberOfEntries; ++i)
+        //    {
+        //        m_Player1OnServer.TheLargeList.Add(new FixedString128Bytes());
+        //    }
 
-            bool TestCompleted(int listCount)
-            {
-                return m_Player1OnServer.TheLargeList.Count == listCount &&
-                       m_Player1OnClient1.TheLargeList.Count == listCount;
-            }
+        //    bool TestCompleted(int listCount)
+        //    {
+        //        return m_Player1OnServer.TheLargeList.Count == listCount &&
+        //               m_Player1OnClient1.TheLargeList.Count == listCount;
+        //    }
 
-            yield return WaitForConditionOrTimeOut(TestCompleted, numberOfEntries);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown)} to complete its test!");
-        }
+        //    yield return WaitForConditionOrTimeOut(TestCompleted, numberOfEntries);
+        //    Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for {nameof(WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown)} to complete its test!");
+        //}
 
         [UnityTest]
         public IEnumerator NetworkListContains([Values(true, false)] bool useHost)

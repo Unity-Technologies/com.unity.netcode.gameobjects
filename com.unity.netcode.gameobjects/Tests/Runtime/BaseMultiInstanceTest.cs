@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected bool m_BypassStartAndWaitForClients = false;
 
-        static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper();
+        static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
 
         protected const uint k_DefaultTickRate = 30;
         protected WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
@@ -119,6 +119,37 @@ namespace Unity.Netcode.RuntimeTests
 
             // reset the m_ServerWaitForTick for the next test to initialize
             m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        }
+
+        /// <summary>
+        /// NSS-TODO: See RegisterSceneManagerHandler
+        /// Override this method to control when clients
+        /// fake-load a scene.
+        /// </summary>
+        //protected virtual bool CanClientsLoad()
+        //{
+        //    return true;
+        //}
+
+        /// <summary>
+        /// NSS-TODO: See RegisterSceneManagerHandler
+        /// Override this method to control when clients
+        /// fake-unload a scene.
+        /// </summary>
+        //protected virtual bool CanClientsUnload()
+        //{
+        //    return true;
+        //}
+
+        /// <summary>
+        /// NSS-TODO: Get RegisterSceneManagerHandler implemented which most likely means get that PR back ported into v1.1.0
+        /// Registers the CanClientsLoad and CanClientsUnload events of the
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// </summary>
+        protected void RegisterSceneManagerHandler()
+        {
+            //MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+            //MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
         }
 
         /// <summary>
