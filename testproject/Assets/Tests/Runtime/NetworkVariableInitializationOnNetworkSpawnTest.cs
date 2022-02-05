@@ -32,6 +32,7 @@ namespace TestProject.RuntimeTests
                 Object.Destroy(m_Prefab);
                 m_Prefab = null;
             }
+
             NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient = false;
             NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer = false;
             NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient = false;
@@ -40,6 +41,11 @@ namespace TestProject.RuntimeTests
 
         private IEnumerator RunTest()
         {
+            NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer = false;
+            NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient = false;
+            NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient = false;
+            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 5;
+
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
@@ -66,11 +72,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -99,17 +104,30 @@ namespace TestProject.RuntimeTests
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            serverObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 5;
+            serverObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient;
 
             // Wait 1 tick for client side spawn
             yield return waitForTickInterval;
 
             // Get the NetworkVariableInitOnNetworkSpawn NetworkObject on the client-side
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult));
+            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult);
             var networkVariableInitOnNetworkSpawnClientSide = clientClientPlayerResult.Result.GetComponent<NetworkVariableInitOnNetworkSpawn>();
 
-            Assert.AreEqual(networkVariableInitOnNetworkSpawnClientSide.Variable.Value, NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient);
+            var timedOut = false;
+            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
+
+            while (!timedOut)
+            {
+                if (networkVariableInitOnNetworkSpawnClientSide.Variable.Value == NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient)
+                {
+                    break;
+                }
+                timedOut = timeOutPeriod < Time.realtimeSinceStartup;
+            }
+
+            Assert.False(timedOut, $"Timed out while waiting for Variable.Value to equal {NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient}");
+
         }
 
         [UnityTest]
@@ -122,6 +140,7 @@ namespace TestProject.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("Snapshot specific")]
         [Description("When a network variable is initialized in OnNetworkSpawn on the server, OnValueChanged is not called")]
         public IEnumerator WhenANetworkVariableIsInitializedInOnNetworkSpawnOnTheServer_OnValueChangedIsNotCalled()
         {
@@ -130,6 +149,7 @@ namespace TestProject.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("Snapshot specific")]
         [Description("When a network variable is changed just after OnNetworkSpawn on the server, OnValueChanged is called after OnNetworkSpawn")]
         public IEnumerator WhenANetworkVariableIsInitializedJustAfterOnNetworkSpawnOnTheServer_OnValueChangedIsCalledAfterOnNetworkSpawn()
         {
