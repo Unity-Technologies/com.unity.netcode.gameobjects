@@ -8,7 +8,6 @@ using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
-using UnityEngine.Networking.PlayerConnection;
 
 /// <summary>
 /// TestCoordinator
@@ -128,9 +127,10 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-        MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} is connected: {NetworkManager.Singleton.IsConnectedClient}");
+        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
+                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -165,10 +165,10 @@ public class TestCoordinator : NetworkBehaviour
         else if (m_Stopwatch.ElapsedMilliseconds > 5000)
         {
             m_Stopwatch.Restart();
-            MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
+            MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
                 $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
                 $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
-                $" is connected: {NetworkManager.Singleton.IsConnectedClient}");
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 

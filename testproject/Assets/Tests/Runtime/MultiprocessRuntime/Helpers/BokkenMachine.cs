@@ -125,7 +125,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void KillMultiprocessTestPlayer(string pathToJson, bool waitForCompletion = true)
         {
-            ExecuteCommand($" --command killmptplayer --input-path {pathToJson}", waitForCompletion);
+            ExecuteCommand($" --command killmptplayer --input-path {pathToJson}", waitForCompletion, true);
         }
 
         // 1. Put built player file on remote machine
@@ -195,11 +195,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             LogProcessListStatus();
-        }
-
-        public void KillMptPlayer()
-        {
-            ExecuteCommand($" --command killmptplayer --input-path {PathToJson}", true);
         }
 
         public void PrintTaskListForMultiprocessTestPlayer()
