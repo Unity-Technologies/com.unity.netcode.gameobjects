@@ -384,7 +384,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnServer.TheList.Add(k_TestVal2);
             m_Player1OnServer.TheList.Add(k_TestVal3);
 
-           bool TestCompleted(int listCount)
+            bool TestCompleted(int listCount)
             {
                 // Wait until both sides have the same number of elements
                 if (m_Player1OnServer.TheList.Count != m_Player1OnClient1.TheList.Count)
