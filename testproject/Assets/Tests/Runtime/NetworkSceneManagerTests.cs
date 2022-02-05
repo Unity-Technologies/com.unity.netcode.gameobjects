@@ -1000,13 +1000,15 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
 
             m_DDOL_ObjectToSpawn = new GameObject();
-            m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
+            var networkObject = m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
             m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
+
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                NetworkPrefabs = new List<NetworkPrefab>(),
+                NetworkPrefabs = new List<NetworkPrefab>() { new NetworkPrefab() { Prefab = m_DDOL_ObjectToSpawn } },
                 NetworkTransport = m_NetworkManagerGameObject.AddComponent<SIPTransport>(),
             };
             m_ServerNetworkManager.StartHost();
@@ -1054,8 +1056,10 @@ namespace TestProject.RuntimeTests
         {
             var isActive = activeState == DefaultState.IsEnabled ? true : false;
             var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
-            var networkObject = m_DDOL_ObjectToSpawn.GetComponent<NetworkObject>();
-            var ddolBehaviour = m_DDOL_ObjectToSpawn.GetComponent<DDOLBehaviour>();
+            var objectInstance = Object.Instantiate(m_DDOL_ObjectToSpawn);
+
+            var networkObject = objectInstance.GetComponent<NetworkObject>();
+            var ddolBehaviour = objectInstance.GetComponent<DDOLBehaviour>();
 
             // All tests require this to be false
             networkObject.DestroyWithScene = false;
@@ -1068,9 +1072,11 @@ namespace TestProject.RuntimeTests
             // Sets whether we are in-scene or dynamically spawned NetworkObject
             ddolBehaviour.SetInScene(isInScene);
 
+            networkObject.Spawn();
+
             Assert.That(networkObject.IsSpawned);
 
-            m_DDOL_ObjectToSpawn.SetActive(isActive);
+            objectInstance.SetActive(isActive);
 
             m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
 
@@ -1087,7 +1093,7 @@ namespace TestProject.RuntimeTests
             Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             //Done
-            networkObject.Despawn(false);
+            networkObject.Despawn();
         }
 
         public class DDOLBehaviour : NetworkBehaviour
