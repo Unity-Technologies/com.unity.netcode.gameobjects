@@ -384,21 +384,23 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnServer.TheList.Add(k_TestVal2);
             m_Player1OnServer.TheList.Add(k_TestVal3);
 
-            bool TestCompleted(int listCount)
+           bool TestCompleted(int listCount)
             {
-                bool hasCorrectCountAndValues = m_Player1OnServer.TheList.Count == listCount &&
-                       m_Player1OnClient1.TheList.Count == listCount;
-
-                // Check the client values against the server values to make sure they match
-                for (int i = 0; i < listCount; i++)
+                // Wait until both sides have the same number of elements
+                if (m_Player1OnServer.TheList.Count != m_Player1OnClient1.TheList.Count)
                 {
-                    hasCorrectCountAndValues = hasCorrectCountAndValues && m_Player1OnServer.TheList[i] == m_Player1OnClient1.TheList[i];
-                    if (!hasCorrectCountAndValues)
+                    return false;
+                }
+
+                foreach (var serverSideValue in m_Player1OnServer.TheList)
+                {
+                    var indexToTest = m_Player1OnServer.TheList.IndexOf(serverSideValue);
+                    if (indexToTest != m_Player1OnServer.TheList.IndexOf(serverSideValue))
                     {
-                        break;
+                        return false;
                     }
                 }
-                return hasCorrectCountAndValues;
+                return true;
             }
 
             yield return WaitForConditionOrTimeOut(TestCompleted, m_Player1OnServer.TheList.Count);
