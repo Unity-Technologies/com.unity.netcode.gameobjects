@@ -37,6 +37,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckPreconditions()
         {
+            MultiprocessLogger.Log($"Are Clients Connected: {WorkerCount}, {m_ConnectedClientsList.Count}");
+
             var pathTodll = new FileInfo(BokkenMachine.PathToDll);
             MultiprocessLogger.Log("The Bokken API Dll exists");
             Assert.True(pathTodll.Exists, "The Bokken API Dll exists");
