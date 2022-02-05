@@ -1,26 +1,30 @@
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 namespace Unity.Netcode.UTP.RuntimeTests
 {
     public static class RuntimeTestsHelpers
     {
-        // 2 seconds might seem like a very long time to wait for a network event, but in CI
+        // Half a second might seem like a very long time to wait for a network event, but in CI
         // many of the machines are underpowered (e.g. old Android devices or Macs) and there are
-        // sometimes lag spikes that cause can cause delays upwards of 300ms.
+        // sometimes very high lag spikes. PS4 and Switch are particularly sensitive in this regard
+        // so we allow even more time for these platforms.
+#if UNITY_PS4 || UNITY_SWITCH
         public const float MaxNetworkEventWaitTime = 2.0f;
+#else
+        public const float MaxNetworkEventWaitTime = 0.5f;
+#endif
 
         // Wait for an event to appear in the given event list (must be the very next event).
-        public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events)
+        public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events,
+            float timeout = MaxNetworkEventWaitTime)
         {
             int initialCount = events.Count;
             float startTime = Time.realtimeSinceStartup;
 
-            while (Time.realtimeSinceStartup - startTime < MaxNetworkEventWaitTime)
+            while (Time.realtimeSinceStartup - startTime < timeout)
             {
                 if (events.Count > initialCount)
                 {
@@ -28,7 +32,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
                     yield break;
                 }
 
-                yield return null;
+                yield return new WaitForSeconds(0.01f);
             }
 
             Assert.Fail("Timed out while waiting for network event.");
