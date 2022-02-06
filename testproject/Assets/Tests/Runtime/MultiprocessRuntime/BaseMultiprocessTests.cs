@@ -216,7 +216,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (m_ConnectedClientsList.Count < WorkerCount)
+            if (m_ConnectedClientsList.Count < WorkerCount )
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 if (!LaunchRemotely)
@@ -284,6 +284,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
+                if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount)
+                {
+                    MultiprocessLogger.Log("Warning: Client connection listener didn't fire " +
+                        $"{m_ConnectedClientsList.Count} but connected clients has increased" +
+                        $" {NetworkManager.Singleton.ConnectedClients.Count}");
+                    break;
+                }
                 counter++;
                 yield return new WaitForSecondsRealtime(0.7f);
                 if (counter % 7 == 0)
@@ -299,12 +306,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
                     }
                     afterYield = Time.realtimeSinceStartup;
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount} OR {NetworkManager.Singleton.ConnectedClients.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
-                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count} clients, but was expecting {WorkerCount + 1}, failing");
+                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count} clients, but was expecting {WorkerCount + 1}, failing");
                 }
             }
             // Need to make sure the host doesn't shutdown while setting up the clients

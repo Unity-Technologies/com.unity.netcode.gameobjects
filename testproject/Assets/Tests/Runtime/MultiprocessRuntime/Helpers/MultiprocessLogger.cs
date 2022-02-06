@@ -122,9 +122,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void LogFormat(LogType logType, UnityEngine.Object context, string format, params object[] args)
         {
             string testName = null;
+            string testClass = " - c -";
             try
             {
                 testName = TestContext.CurrentContext.Test.Name;
+                testClass = TestContext.CurrentContext.Test.ClassName;
+
             }
             catch (Exception)
             {
@@ -140,10 +143,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             string methods = "";
 
+            int maxFrame = 8;
             for (int i = 3; i < st.FrameCount; i++)
             {
-                methods += " : " + st.GetFrame(i).GetMethod().Name + "." + i;
-                if (i > 8)
+                string methodName = st.GetFrame(i).GetMethod().Name;
+                if (methodName.Contains("MoveNext") || methodName.Contains("Invoke"))
+                {
+                    maxFrame++;
+                }
+                else
+                {
+                    methods += " : " + methodName + "." + i;
+                }
+                if (i > maxFrame)
                 {
                     break;
                 }
@@ -151,7 +163,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
             var webLog = new WebLog();
-            webLog.Message = $"{testName} {args[0].ToString()}";
+            webLog.Message = $"{args[0].ToString()}";
             if (webLog.Message.Length > 1000)
             {
                 webLog.Message = webLog.Message.Substring(0, 999);
@@ -159,6 +171,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             webLog.ReferenceId = JobId;
             webLog.EventId = s_EventIdCounter++;
             webLog.TestMethod = testName;
+            webLog.TestClass = testClass;
             webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
             // string json = JsonUtility.ToJson(webLog);
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
@@ -233,6 +246,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string Message;
         public long ReferenceId;
         public string TestMethod;
+        public string TestClass;
         public string ClientEventDate;
         public long EventId;
 
