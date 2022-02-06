@@ -161,7 +161,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void SetUp()
         {
             MultiprocessLogHandler.Flush();
-            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count} {WorkerCount}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
             var t2 = TestContext.CurrentTestExecutionContext;
@@ -169,25 +169,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
         }
 
-        public void DisconnectClients(int previousMessageCounter = 0)
+        public void DisconnectClients(int messageCounter = 0)
         {
-            int messageCounter = 1;
             if (m_ConnectedClientsList.Count > 0)
             {
-                MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
+                MultiprocessLogger.Log($" {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
                 var connectedClients = NetworkManager.Singleton.ConnectedClients;
-                MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} NetworkManager count is {connectedClients.Count}");
+                MultiprocessLogger.Log($" {messageCounter++} NetworkManager count is {connectedClients.Count}");
                 var clientsToDisconnect = new List<ulong>();
                 foreach (ulong id in connectedClients.Keys)
                 {
-                    MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
+                    MultiprocessLogger.Log($" {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
                     clientsToDisconnect.Add(id);
                 }
                 foreach (var id in clientsToDisconnect)
                 {
                     if (id != 0)
                     {
-                        MultiprocessLogger.Log($"{previousMessageCounter}... {messageCounter++} Disconnecting client with id {id}");
+                        MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
                         NetworkManager.Singleton.DisconnectClient(id);
                     }
                 }
@@ -286,9 +285,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount)
                 {
-                    MultiprocessLogger.Log("Warning: Client connection listener didn't fire " +
+                    MultiprocessLogger.Log("Warning: Client connection listener didn't fire... a KeyNotFoundException at discconnect time might follow " +
                         $"{m_ConnectedClientsList.Count} but connected clients has increased" +
                         $" {NetworkManager.Singleton.ConnectedClients.Count}");
+                    yield return new WaitForSecondsRealtime(1.3f);
+                    Thread.Sleep(1300);
                     break;
                 }
                 counter++;
@@ -366,8 +367,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log($"1/20 - UnityTearDown ... start - {m_ConnectedClientsList.Count}");
-            DisconnectClients();
+            MultiprocessLogger.Log($"1/20 - UnityTearDown ... start - m_ConnectedClientsList.Count: {m_ConnectedClientsList.Count} and WorkerCount {WorkerCount}");
+            yield return new WaitForSeconds(1.0f);
+            DisconnectClients(1);
             yield return new WaitForSeconds(1.0f);
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
