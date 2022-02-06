@@ -419,6 +419,11 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
+    public void KeepAliveOnServer()
+    {
+        m_TimeSinceLastKeepAlive = Time.time;
+    }
+
     [ClientRpc]
     public void KeepAliveClientRpc()
     {
