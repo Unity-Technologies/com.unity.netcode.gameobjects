@@ -275,19 +275,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 // Maybe this should be an exception, there doesn't seem to be a legit reason to not have a new client for each test
                 MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
-            MultiprocessLogger.Log($"Checking timeout {Time.realtimeSinceStartup} + {TestCoordinator.MaxWaitTimeoutSec}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
-            MultiprocessLogger.Log($"Timeout is now {timeOutTime}");
-            MultiprocessLogger.Log($"According to connection listener we have {m_ConnectedClientsList.Count} clients currently connected");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             int counter = 0;
             while (m_ConnectedClientsList.Count < WorkerCount)
             {
                 if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount)
                 {
-                    MultiprocessLogger.Log("Warning: Client connection listener didn't fire... a KeyNotFoundException at discconnect time might follow " +
-                        $"{m_ConnectedClientsList.Count} but connected clients has increased" +
-                        $" {NetworkManager.Singleton.ConnectedClients.Count}");
+                    MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                     yield return new WaitForSecondsRealtime(1.3f);
                     Thread.Sleep(1300);
                     break;
@@ -322,6 +317,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("Logging PlayerConnection heartbeat... done");
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
+            if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount && m_ConnectedClientsList.Count < WorkerCount)
+            {
+                MultiprocessLogger.Log("Warning: Client connection listener didn't fire... a KeyNotFoundException at discconnect time might follow " +
+                    $"{m_ConnectedClientsList.Count} but connected clients has increased" +
+                    $" {NetworkManager.Singleton.ConnectedClients.Count}");
+                yield return new WaitForSecondsRealtime(1.3f);
+                Thread.Sleep(1300);
+            }
             MultiprocessLogger.Log($"UnitySetup in Base Class ... end");
         }
 
