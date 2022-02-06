@@ -197,6 +197,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
+            // Need to make sure the host doesn't shutdown while setting up the clients
+            TestCoordinator.Instance.KeepAliveClientRpc();
+
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
@@ -209,9 +212,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-
-            // Need to make sure the host doesn't shutdown while setting up the clients
-            TestCoordinator.Instance.KeepAliveClientRpc();
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -307,6 +307,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
+            // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveClientRpc();
             MultiprocessLogger.Log("Logging PlayerConnection heartbeat... start");
             PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
@@ -348,7 +349,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log("Kill multi process test players");
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             }
-
+            TestCoordinator.Instance.KeepAliveClientRpc();
             TestCoordinator.Instance.TestRunTeardown();
             MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());

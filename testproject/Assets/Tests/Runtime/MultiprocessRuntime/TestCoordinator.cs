@@ -142,7 +142,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
-            MultiprocessLogger.Log($"Stayed idle too long, quitting");
+            MultiprocessLogger.Log($"Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
             QuitApplication();
             Assert.Fail("Stayed idle too long");
         }
@@ -423,6 +423,7 @@ public class TestCoordinator : NetworkBehaviour
     public void KeepAliveClientRpc()
     {
         m_TimeSinceLastKeepAlive = Time.time;
+        MultiprocessLogger.Log($"Updated m_TimeSinceLastKeepAlive to {m_TimeSinceLastKeepAlive}");
     }
 
     [ServerRpc(RequireOwnership = false)]
