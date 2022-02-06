@@ -216,7 +216,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (m_ConnectedClientsList.Count < WorkerCount )
+            if (m_ConnectedClientsList.Count < WorkerCount)
             {
                 var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
                 if (!LaunchRemotely)
