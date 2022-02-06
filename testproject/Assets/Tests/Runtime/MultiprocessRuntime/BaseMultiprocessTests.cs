@@ -197,9 +197,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            // Need to make sure the host doesn't shutdown while setting up the clients
-            TestCoordinator.Instance.KeepAliveClientRpc();
-
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
@@ -212,6 +209,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
+
+            // Need to make sure the host doesn't shutdown while setting up the clients
+            TestCoordinator.Instance.KeepAliveClientRpc();
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
