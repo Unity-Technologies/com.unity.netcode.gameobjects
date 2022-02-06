@@ -124,13 +124,16 @@ public class TestCoordinator : NetworkBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
-        MultiprocessLogger.Log("Initialize All Steps");
+        else
+        {
+            m_TimeSinceLastKeepAlive = Time.time;
+        }
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
                 $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
                 $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
-                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}" +
+                $" m_TimeSinceLastKeepAlive is set to {m_TimeSinceLastKeepAlive}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -422,13 +425,13 @@ public class TestCoordinator : NetworkBehaviour
     public void KeepAliveOnServer()
     {
         m_TimeSinceLastKeepAlive = Time.time;
+        MultiprocessLogger.Log($"m_TimeSinceLastKeepAlive is {m_TimeSinceLastKeepAlive}");
     }
 
     [ClientRpc]
     public void KeepAliveClientRpc()
     {
         m_TimeSinceLastKeepAlive = Time.time;
-        MultiprocessLogger.Log($"Updated m_TimeSinceLastKeepAlive to {m_TimeSinceLastKeepAlive}");
     }
 
     [ServerRpc(RequireOwnership = false)]
