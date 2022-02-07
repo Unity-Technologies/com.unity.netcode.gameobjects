@@ -1,6 +1,5 @@
 using System;
-//TODO-NSS: Temporary work around until I migrate all helper code out of this assembly
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.EditorTests
 {

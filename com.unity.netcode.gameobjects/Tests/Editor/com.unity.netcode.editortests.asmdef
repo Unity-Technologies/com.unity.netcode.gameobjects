@@ -10,7 +10,7 @@
         "Unity.Multiplayer.NetStats",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.RuntimeTests"
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [
         "Editor"

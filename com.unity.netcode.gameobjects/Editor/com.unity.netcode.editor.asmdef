@@ -4,7 +4,7 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Netcode.RuntimeTests"
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [
         "Editor"
