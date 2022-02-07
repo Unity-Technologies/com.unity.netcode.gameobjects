@@ -187,7 +187,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     if (id != 0)
                     {
                         MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
-                        NetworkManager.Singleton.DisconnectClient(id);
+                        if (NetworkManager.Singleton != null &&
+                            NetworkManager.Singleton.IsServer &&
+                            NetworkManager.Singleton.IsListening)
+                        {
+                            NetworkManager.Singleton.DisconnectClient(id);
+                        }
                     }
                 }
             }
