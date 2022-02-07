@@ -16,19 +16,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
     public class ExecuteStepInContextTests : BaseMultiprocessTests
     {
-        private string[] m_Platforms;
-        protected override string[] platformList => m_Platforms;
-
         private int m_WorkerCount;
         protected override int WorkerCount => m_WorkerCount;
 
+        private string[] m_Platforms;
+        protected override string[] platformList => m_Platforms;
+        protected override bool LaunchRemotely => true;
+        protected override bool IsPerformanceTest => false;
+
         public ExecuteStepInContextTests(int workerCount, string[] platformList)
         {
-            m_WorkerCount = platformList.Length;
+            MultiprocessLogger.Log("Constructor for ExecuteStepsInContextTests");
+            m_WorkerCount = workerCount;
             m_Platforms = platformList;
         }
-
-        protected override bool IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestWithSameName([Values(1)] int a)

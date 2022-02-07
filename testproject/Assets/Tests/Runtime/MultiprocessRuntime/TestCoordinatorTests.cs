@@ -4,8 +4,13 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
+
+
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
+    /// <summary>
+    /// Smoke tests for ExecuteStepInContext, to make sure it's working properly before being used in other tests
+    /// </summary>
     [TestFixture(1, new string[] { "default-mac:test-mac" })]
     [TestFixture(2, new string[] { "default-win:test-win" })]
     [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
