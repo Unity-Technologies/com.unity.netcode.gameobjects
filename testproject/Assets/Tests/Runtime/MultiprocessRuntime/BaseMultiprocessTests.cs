@@ -342,6 +342,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($" 3/Teardown t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
+            DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
             MultiprocessLogger.Log($" 4/Teardown Process List Cleared which should mean all spawned processes should stop");
             if (LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
@@ -376,8 +377,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator UnityTearDown()
         {
             MultiprocessLogger.Log($"1/20 - UnityTearDown ... start - m_ConnectedClientsList.Count: {m_ConnectedClientsList.Count} and WorkerCount {WorkerCount}");
-            yield return new WaitForSeconds(1.0f);
-            DisconnectClients(1);
             yield return new WaitForSeconds(1.0f);
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
