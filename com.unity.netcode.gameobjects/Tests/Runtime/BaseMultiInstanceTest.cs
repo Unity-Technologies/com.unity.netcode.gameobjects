@@ -29,8 +29,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// An update to the original MultiInstanceHelpers.WaitForCondition that:
         ///     -operates at the current tick rate
-        ///     -provides a value of type T to be passed into the checkForCondition function
-        ///     -allows for a unique TimeOutHelper handler (if none then uses the default)
+        ///     -allows for a unique TimeOutHelper handler (if none then it uses the default)
         ///     -adjusts its yield period to the settings of the m_ServerNetworkManager.NetworkConfig.TickRate
         /// Notes: This method provides more stability when running integration tests that could
         /// be impacted by:
@@ -88,22 +87,8 @@ namespace Unity.Netcode.RuntimeTests
                 timeOutHelper = s_GloabalTimeOutHelper;
             }
 
-            // Start checking for a timeout
-            timeOutHelper.Start();
             conditionalPredicate.Started();
-            while (!timeOutHelper.HasTimedOut())
-            {
-                // Update and check to see if the condition has been met
-                if (conditionalPredicate.HasConditionBeenReached())
-                {
-                    break;
-                }
-
-                // Otherwise wait for 1 tick interval
-                yield return m_DefaultWaitForTick;
-            }
-            // Stop checking for a timeout
-            timeOutHelper.Stop();
+            yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
         }
 
@@ -172,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests
         //}
 
         /// <summary>
-        /// NSS-TODO: Get RegisterSceneManagerHandler implemented which most likely means get that PR back ported into v1.1.0
+        /// NSS-TODO: Back port PR-1405 to get this functionality
         /// Registers the CanClientsLoad and CanClientsUnload events of the
         /// ClientSceneHandler (default is IntegrationTestSceneHandler).
         /// </summary>
@@ -338,6 +323,11 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// Derive from this class to create your own conditional handling for your <see cref="BaseMultiInstanceTest"/>
+    /// integration tests when dealing with more complicated scenarios where initializing values, storing state to be
+    /// used across several integration tests.
+    /// </summary>
     public class ConditionalPredicateBase : IConditionalPredicate
     {
         private bool m_TimedOut;
@@ -354,20 +344,14 @@ namespace Unity.Netcode.RuntimeTests
             return OnHasConditionBeenReached();
         }
 
-        protected virtual void OnStarted()
-        {
-
-        }
+        protected virtual void OnStarted() { }
 
         public void Started()
         {
             OnStarted();
         }
 
-        protected virtual void OnFinished()
-        {
-
-        }
+        protected virtual void OnFinished() { }
 
         public void Finished(bool timedOut)
         {
@@ -378,10 +362,20 @@ namespace Unity.Netcode.RuntimeTests
 
     public interface IConditionalPredicate
     {
+        /// <summary>
+        /// Test the conditions of the test to be reached
+        /// </summary>
         bool HasConditionBeenReached();
 
+        /// <summary>
+        /// Wait for condition has started
+        /// </summary>
         void Started();
 
+        /// <summary>
+        /// Wait for condition has finished:
+        /// Condition(s) met or timed out
+        /// </summary>
         void Finished(bool timedOut);
 
     }
