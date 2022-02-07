@@ -22,9 +22,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        public int WorkerCount;
         private string m_LogPath;
         private bool m_HasSceneLoaded = false;
-        protected virtual bool LaunchRemotely => false;
+        protected bool m_LaunchRemotely;
 
         protected virtual bool IsPerformanceTest => true;
         private string m_Port = "3076"; // TODO This port will need to be reconfigurable
@@ -36,8 +37,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// Implement this to specify the amount of workers to spawn from your main test runner
         /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
         /// </summary>
-        protected abstract int WorkerCount { get; }
-        protected abstract string[] platformList { get; }
+        protected string[] platformList { get; set; }
 
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -55,9 +55,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             m_ConnectedClientsList = new List<ulong>();
 
+            platformList = MultiprocessOrchestration.GetRemotePlatformList();
+            if (platformList == null)
+            {
+                WorkerCount = 1;
+                m_LaunchRemotely = false;
+            }
+            else
+            {
+                m_LaunchRemotely = true;
+            }
+
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup");
-            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-            if (LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+            if (m_LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
             }
@@ -222,12 +233,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (m_ConnectedClientsList.Count < WorkerCount)
             {
-                var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
-                if (!LaunchRemotely)
+                var numProcessesToCreate = WorkerCount;
+                if (!m_LaunchRemotely)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
-                        MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is null");
+                        MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since ( connected client count - 1 ) is {NetworkManager.Singleton.ConnectedClients.Count - 1} is less than {WorkerCount} and platformList is null");
                         m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                     }
                 }
@@ -266,7 +277,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var machine in machines)
                     {
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
-                        MultiprocessLogger.Log($"Launching process on remote machine {machine.Name} {machine.Image} {machine.Type}");
+                        MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is not null");
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete");
                         // yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
@@ -307,12 +318,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
                     }
                     afterYield = Time.realtimeSinceStartup;
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount} OR {NetworkManager.Singleton.ConnectedClients.Count} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount} OR {NetworkManager.Singleton.ConnectedClients.Count - 1} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count} clients, but was expecting {WorkerCount + 1}, failing");
-                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count} clients, but was expecting {WorkerCount + 1}, failing");
+                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
             // Need to make sure the host doesn't shutdown while setting up the clients
@@ -339,13 +350,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($" 1/Teardown BaseMultiProcessTests - Teardown : Running teardown");
             MultiprocessLogHandler.Flush();
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message}");
+            MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($" 3/Teardown t2.CurrentResult.FullName {t2.CurrentResult.FullName} t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} {t2.CurrentResult.Duration}");
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
             MultiprocessLogger.Log($" 4/Teardown Process List Cleared which should mean all spawned processes should stop");
-            if (LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            if (m_LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 foreach (var process in BokkenMachine.ProcessList)
                 {
@@ -396,8 +407,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     BokkenMachine.FetchAllLogFiles();
                 }
 
-                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {LaunchRemotely}");
-                MultiprocessOrchestration.ShutdownAllProcesses(LaunchRemotely);
+                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {m_LaunchRemotely}");
+                MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
                 if (NetworkManager.Singleton != null)
                 {

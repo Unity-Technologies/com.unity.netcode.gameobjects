@@ -221,6 +221,20 @@ public class MultiprocessOrchestration
         return logPath;
     }
 
+    public static string[] GetRemotePlatformList()
+    {
+        // "default-win:test-win,default-mac:test-mac"
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        MultiprocessLogger.Log($"MP_PLATFORM_LIST is null? {encodedPlatformList == null}");
+        if (encodedPlatformList == null)
+        {
+            return null;
+        }
+        string[] separated = encodedPlatformList.Split(",");
+        return separated;
+
+    }
+
     public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
     {
         string launch_platform = Environment.GetEnvironmentVariable("LAUNCH_PLATFORM");

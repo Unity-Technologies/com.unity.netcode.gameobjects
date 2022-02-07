@@ -6,27 +6,15 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
-    [TestFixture(1, new string[] { "default-win:test-win" })]
-    [TestFixture(2, new string[] { "default-mac:test-mac" })]
-    [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
+    // [TestFixture(1, new string[] { "default-win:test-win" })]
+    // [TestFixture(2, new string[] { "default-mac:test-mac" })]
+    // [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
     // [TestFixture(4, new string[] { "default-win:test-win", "default-win:test-win2" })]
     // [TestFixture(5, new string[] { "default-mac:test-mac2", "default-mac:test-mac" })]
     public class BokkenInterfaceTests : BaseMultiprocessTests
     {
-        private int m_WorkerCount;
-        protected override int WorkerCount => m_WorkerCount;
-
-        private string[] m_Platforms;
-        protected override string[] platformList => m_Platforms;
-
-        protected override bool LaunchRemotely => true;
         protected override bool IsPerformanceTest => false;
 
-        public BokkenInterfaceTests(int workerCount, string[] platformList)
-        {
-            m_WorkerCount = platformList.Length;
-            m_Platforms = platformList;
-        }
         /*
         public override void SetupTestSuite()
         {

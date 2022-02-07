@@ -11,24 +11,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     /// <summary>
     /// Smoke tests for ExecuteStepInContext, to make sure it's working properly before being used in other tests
     /// </summary>
-    [TestFixture(1, new string[] { "default-mac:test-mac" })]
-    [TestFixture(2, new string[] { "default-win:test-win" })]
-    [TestFixture(3, new string[] { "default-win:test-win", "default-mac:test-mac" })]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
-        private int m_WorkerCount;
-        protected override int WorkerCount => m_WorkerCount;
-
-        private string[] m_Platforms;
-        protected override string[] platformList => m_Platforms;
-        protected override bool LaunchRemotely => true;
         protected override bool IsPerformanceTest => false;
-
-        public TestCoordinatorTests(int workerCount, string[] platformList)
-        {
-            m_WorkerCount = platformList.Length;
-            m_Platforms = platformList;
-        }
 
         static private float s_ValueToValidateAgainst;
         private static void ValidateSimpleCoordinatorTestValue(float resultReceived)
