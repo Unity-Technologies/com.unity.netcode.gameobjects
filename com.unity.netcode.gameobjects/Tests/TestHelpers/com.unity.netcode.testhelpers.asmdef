@@ -1,14 +1,33 @@
 {
     "name": "Unity.Netcode.TestHelpers",
-    "rootNamespace": "",
-    "references": [],
+    "rootNamespace": "Unity.Netcode.TestHelpers",
+   "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Components",
+        "Unity.Collections",
+        "UnityEngine.TestRunner",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Netcode.Adapter.UTP",
+        "ClientNetworkTransform"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        }
+    ],
     "noEngineReferences": false
 }

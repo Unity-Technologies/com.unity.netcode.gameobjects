@@ -9,4 +9,5 @@ using System.Runtime.CompilerServices;
 #endif
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
+[assembly: InternalsVisibleTo("Unity.Netcode.TestHelpers")]
 
