@@ -1,5 +1,5 @@
 #if MULTIPLAYER_TOOLS
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_3
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
 
 using System.Collections;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
+            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.RttToServer);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -38,7 +38,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricValues.WaitForMetricsReceived();
 
             var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
-            Assert.That(rttValue, Is.EqualTo(0f));
+            Assert.AreEqual(0f, rttValue);
         }
 
         [UnityTest]
@@ -56,7 +56,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[1].StartClient();
 
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.Rtt);
+            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.RttToServer);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
@@ -67,7 +67,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricValues.WaitForMetricsReceived();
 
             var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
-            Assert.That(rttValue, Is.EqualTo(0f));
+            Assert.AreEqual(0f, rttValue);
         }
 
         [UnityTest]
@@ -84,7 +84,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             clients[0].StartClient();
 
             var clientMetrics = (NetworkMetrics)clients[0].NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(clientMetrics.Dispatcher, NetworkMetricTypes.Rtt, metric => metric > 0f) ;
+            var waitForMetricValues = new WaitForGaugeMetricValues(clientMetrics.Dispatcher, NetworkMetricTypes.RttToServer, metric => metric > 0f) ;
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
