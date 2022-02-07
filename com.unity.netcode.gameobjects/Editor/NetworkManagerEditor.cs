@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
+//TODO-NSS: Temporary work around until I migrate all helper code out of this assembly
+using Unity.Netcode.RuntimeTests;
 
 namespace Unity.Netcode.Editor
 {

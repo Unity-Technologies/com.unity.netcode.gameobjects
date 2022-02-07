@@ -1,21 +1,20 @@
 using System;
 using System.Collections.Generic;
-//#if UNITY_EDITOR
-//using Unity.Netcode.Editor;
-//#endif
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class DontShowInTransportDropdownAttribute : Attribute
+    {
+    }
     /// <summary>
     /// SIPTransport (SIngleProcessTransport)
     /// is a NetworkTransport designed to be used with multiple network instances in a single process
     /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
-    //#if UNITY_EDITOR
-    //    [DontShowInTransportDropdown]
-    //#endif
+
+    [DontShowInTransportDropdown]
     public class SIPTransport : NetworkTransport
     {
         private struct Event
