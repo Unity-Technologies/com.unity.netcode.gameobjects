@@ -22,17 +22,30 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
         */
         [OneTimeSetUp]
-        public void SetUpBokkenInterfaceTests()
+        public void SetUpBokkenInterfaceTestSuite()
         {
-            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests() || !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            MultiprocessLogger.Log("SetupBokkenInterfaceTests... start");
+            
+        }
+
+        [UnitySetUp]
+        public IEnumerator SetupBokkenInterfaceTests()
+        {
+            while (IsSceneLoading)
             {
-                Assert.Ignore("Bokken Interface Tests not enabled");
+                MultiprocessLogger.Log($"Waiting on IsSceneLoading {IsSceneLoading} and {m_HasSceneLoaded}");
+                yield return new WaitForSecondsRealtime(1.0f);
             }
         }
 
         [UnityTest]
         public IEnumerator CheckPreconditions()
         {
+            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests() || !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            {
+                Assert.Ignore("Bokken Interface Tests not enabled");
+            }
+
             MultiprocessLogger.Log($"Are Clients Connected: {WorkerCount}, {m_ConnectedClientsList.Count}");
 
             var pathTodll = new FileInfo(BokkenMachine.PathToDll);

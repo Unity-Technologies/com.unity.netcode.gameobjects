@@ -24,7 +24,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public int WorkerCount;
         private string m_LogPath;
-        private bool m_HasSceneLoaded = false;
+        protected bool m_HasSceneLoaded = false;
         protected bool m_LaunchRemotely;
 
         protected virtual bool IsPerformanceTest => true;
@@ -49,6 +49,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // collection of connected clients as reported by the client connect
         // and client disconnect callbacks
         protected List<ulong> m_ConnectedClientsList;
+
+        public bool IsSceneLoading = false;
 
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
@@ -103,6 +105,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             m_OriginalActiveScene = currentlyActiveScene;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            MultiprocessLogger.Log($"Loading scene {BuildMultiprocessTestPlayer.MainSceneName}");
+            IsSceneLoading = true;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
@@ -144,6 +148,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             m_HasSceneLoaded = true;
+            IsSceneLoading = false;
         }
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
@@ -413,7 +418,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
 
                 MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {m_LaunchRemotely}");
-                MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely);
+                MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
                 if (NetworkManager.Singleton != null)
                 {
@@ -444,6 +449,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         asyncOperation.completed += AsyncOperation_completed;
                         MultiprocessLogger.Log($"14/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
                     }
+                }
+                else if (IsSceneLoading)
+                {
+                    MultiprocessLogger.Log($"Warning: Scene is still loading while we are in teardown, this is bad");
                 }
                 else
                 {

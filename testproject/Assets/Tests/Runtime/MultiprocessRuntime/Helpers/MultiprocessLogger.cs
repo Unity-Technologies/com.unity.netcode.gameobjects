@@ -203,7 +203,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 //MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
                 MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode}");
             }
-            logginMetric.Stop(response);
+            logginMetric.Stop(content, response);
         }
     }
 
@@ -230,12 +230,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return lm;
         }
 
-        public void Stop(HttpResponseMessage responseMessage)
+        public void Stop(WebLog content, HttpResponseMessage responseMessage)
         {
             Stopwatch.Stop();
             if (Stopwatch.ElapsedMilliseconds > 5000)
             {
-                MultiprocessLogger.Log($"POST call took {Stopwatch.ElapsedMilliseconds} with response {responseMessage.StatusCode}");
+                MultiprocessLogger.Log($"POST call took {Stopwatch.ElapsedMilliseconds} with response {responseMessage.StatusCode} for message: {content.EventId}");
             }
         }
     }
