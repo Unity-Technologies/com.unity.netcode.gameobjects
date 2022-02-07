@@ -36,7 +36,7 @@ namespace Unity.Netcode
                     // This var does not belong to the currently iterating delivery group.
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        writer.WriteValueSafe((short)0);
+                        writer.WriteValueSafe((ushort)0);
                     }
                     else
                     {
