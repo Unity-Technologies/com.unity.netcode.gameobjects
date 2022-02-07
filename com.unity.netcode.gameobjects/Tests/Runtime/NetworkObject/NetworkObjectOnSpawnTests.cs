@@ -100,8 +100,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(0, serverInstance.OnNetworkDespawnCalledCount);
 
             // Conditional check for clients spawning or despawning
-            bool checkSpawnCondition = false;
-            bool HasConditionBeenMet(int count)
+            var checkSpawnCondition = false;
+            var expectedSpawnCount = 1;
+            var expectedDespawnCount = 0;
+            bool HasConditionBeenMet()
             {
                 var clientsCompleted = 0;
                 // check spawned on client
@@ -109,14 +111,14 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     if (checkSpawnCondition)
                     {
-                        if (clientInstance.OnNetworkSpawnCalledCount == count)
+                        if (clientInstance.OnNetworkSpawnCalledCount == expectedSpawnCount)
                         {
                             clientsCompleted++;
                         }
                     }
                     else
                     {
-                        if (clientInstance.OnNetworkDespawnCalledCount == count)
+                        if (clientInstance.OnNetworkDespawnCalledCount == expectedDespawnCount)
                         {
                             clientsCompleted++;
                         }
@@ -126,11 +128,11 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // safety check that all clients have not been despawned yet
-            Assert.True(HasConditionBeenMet(0), "Failed condition that all clients not despawned yet!");
+            Assert.True(HasConditionBeenMet(), "Failed condition that all clients not despawned yet!");
 
             // now verify that all clients have been spawned
             checkSpawnCondition = true;
-            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns!");
 
             // despawn on server.  However, since we'll be using this object later in the test, don't delete it
@@ -138,10 +140,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // check despawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
+            // we now expect the clients to each have despawned once
+            expectedDespawnCount = 1;
 
             // verify that all client-side instances are despawned
             checkSpawnCondition = false;
-            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
@@ -153,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
 
             checkSpawnCondition = true;
-            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
@@ -166,7 +170,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
             checkSpawnCondition = false;
-            yield return WaitForConditionOrTimeOut(HasConditionBeenMet, 1);
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }

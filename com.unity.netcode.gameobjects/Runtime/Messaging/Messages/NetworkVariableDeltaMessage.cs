@@ -74,7 +74,7 @@ namespace Unity.Netcode
                             throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
                         }
 
-                        writer.WriteValueSafe((ushort)tmpWriter.Length);
+                        writer.WriteValue((ushort)tmpWriter.Length);
                         tmpWriter.CopyTo(writer);
                     }
                     else

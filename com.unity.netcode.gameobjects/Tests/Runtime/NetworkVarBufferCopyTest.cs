@@ -134,7 +134,7 @@ namespace Unity.Netcode.RuntimeTests
             var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
             // Wait for the DummyNetBehaviours on the client side to notify they have been initialized and spawned
-            yield return WaitForConditionOrTimeOut((c) => s_ClientDummyNetBehavioursSpawned.Count >= c, 1);
+            yield return WaitForConditionOrTimeOut(() => s_ClientDummyNetBehavioursSpawned.Count >= 1);
             Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Check that FieldWritten is written when dirty
@@ -148,7 +148,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
             // Check that both FieldRead and DeltaRead were invoked on the client side
-            yield return WaitForConditionOrTimeOut((c) => clientComponent.NetVar.FieldRead == c && clientComponent.NetVar.DeltaRead == c, true);
+            yield return WaitForConditionOrTimeOut(() => clientComponent.NetVar.FieldRead == true && clientComponent.NetVar.DeltaRead == true);
 
             var timedOutMessage = "Timed out waiting for client reads: ";
             if (s_GloabalTimeOutHelper.TimedOut)

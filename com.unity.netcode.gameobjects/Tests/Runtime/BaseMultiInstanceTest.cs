@@ -29,29 +29,19 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// An update to the original MultiInstanceHelpers.WaitForCondition that:
         ///     -operates at the current tick rate
-        ///     -provides a value of type T to be passed into the checkForCondition function
-        ///     -allows for a unique TimeOutHelper handler (if none then uses the default)
+        ///     -allows for a unique TimeOutHelper handler (if none then it uses the default)
         ///     -adjusts its yield period to the settings of the m_ServerNetworkManager.NetworkConfig.TickRate
         /// Notes: This method provides more stability when running integration tests that could
         /// be impacted by:
         ///     -how the integration test is being executed (i.e. in editor or in a stand alone build)
         ///     -potential platform performance issues (i.e. VM is throttled or maxed)
+        /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded version of this method
         /// </summary>
-        /// <typeparam name="T">type of the value to compare</typeparam>
-        /// <param name="checkForCondition">condition checking function that is passed valueToCompare to compare against</param>
-        /// <param name="valueToCompare">the value to compare against</param>
-        /// <param name="timeOutHelper">optional custom time out helper-handler</param>
-        /// <returns></returns>
-        protected IEnumerator WaitForConditionOrTimeOut<T>(Func<T, bool> checkForCondition, T valueToCompare, TimeOutHelper timeOutHelper = null)
+        protected IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
         {
             if (checkForCondition == null)
             {
                 throw new ArgumentNullException($"checkForCondition cannot be null!");
-            }
-
-            if (valueToCompare == null)
-            {
-                throw new ArgumentNullException($"The value to be compared cannot be null!");
             }
 
             // If none is provided we use the default global time out helper
@@ -65,7 +55,7 @@ namespace Unity.Netcode.RuntimeTests
             while (!timeOutHelper.HasTimedOut())
             {
                 // Update and check to see if the condition has been met
-                if (checkForCondition.Invoke(valueToCompare))
+                if (checkForCondition.Invoke())
                 {
                     break;
                 }
@@ -75,6 +65,31 @@ namespace Unity.Netcode.RuntimeTests
             }
             // Stop checking for a timeout
             timeOutHelper.Stop();
+        }
+
+        /// <summary>
+        /// This version accepts an IConditionalPredicate implementation to provide
+        /// more flexibility when the condition to be reached involves more than one
+        /// value to be checked.
+        /// Note: For simplicity, you can derive from the <see cref="ConditionalPredicateBase"/>
+        /// and accomplish most tests.
+        /// </summary>
+        protected IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
+        {
+            if (conditionalPredicate == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            // If none is provided we use the default global time out helper
+            if (timeOutHelper == null)
+            {
+                timeOutHelper = s_GloabalTimeOutHelper;
+            }
+
+            conditionalPredicate.Started();
+            yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
+            conditionalPredicate.Finished(timeOutHelper.TimedOut);
         }
 
         [UnitySetUp]
@@ -142,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests
         //}
 
         /// <summary>
-        /// NSS-TODO: Get RegisterSceneManagerHandler implemented which most likely means get that PR back ported into v1.1.0
+        /// NSS-TODO: Back port PR-1405 to get this functionality
         /// Registers the CanClientsLoad and CanClientsUnload events of the
         /// ClientSceneHandler (default is IntegrationTestSceneHandler).
         /// </summary>
@@ -306,5 +321,62 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_TimeOutPeriod = timeOutPeriod;
         }
+    }
+
+    /// <summary>
+    /// Derive from this class to create your own conditional handling for your <see cref="BaseMultiInstanceTest"/>
+    /// integration tests when dealing with more complicated scenarios where initializing values, storing state to be
+    /// used across several integration tests.
+    /// </summary>
+    public class ConditionalPredicateBase : IConditionalPredicate
+    {
+        private bool m_TimedOut;
+
+        public bool TimedOut { get { return m_TimedOut; } }
+
+        protected virtual bool OnHasConditionBeenReached()
+        {
+            return true;
+        }
+
+        public bool HasConditionBeenReached()
+        {
+            return OnHasConditionBeenReached();
+        }
+
+        protected virtual void OnStarted() { }
+
+        public void Started()
+        {
+            OnStarted();
+        }
+
+        protected virtual void OnFinished() { }
+
+        public void Finished(bool timedOut)
+        {
+            m_TimedOut = timedOut;
+            OnFinished();
+        }
+    }
+
+    public interface IConditionalPredicate
+    {
+        /// <summary>
+        /// Test the conditions of the test to be reached
+        /// </summary>
+        bool HasConditionBeenReached();
+
+        /// <summary>
+        /// Wait for condition has started
+        /// </summary>
+        void Started();
+
+        /// <summary>
+        /// Wait for condition has finished:
+        /// Condition(s) met or timed out
+        /// </summary>
+        void Finished(bool timedOut);
+
     }
 }

@@ -102,7 +102,7 @@ namespace Unity.Netcode.RuntimeTests
             var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.ReadyToReceivePositionUpdate == c, true);
+            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.ReadyToReceivePositionUpdate == true);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
 
@@ -155,7 +155,7 @@ namespace Unity.Netcode.RuntimeTests
 
             authPlayerTransform.position = new Vector3(10, 20, 30);
 
-            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.position.x > c, approximation);
+            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.position.x > approximation);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, $"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
 
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
 
-            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.rotation.eulerAngles.x > c, approximation);
+            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "timeout while waiting for rotation change");
 
@@ -180,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
 
-            yield return WaitForConditionOrTimeOut((c) => otherSideNetworkTransform.transform.lossyScale.x > c, 1f + approximation);
+            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "timeout while waiting for scale change");
 
