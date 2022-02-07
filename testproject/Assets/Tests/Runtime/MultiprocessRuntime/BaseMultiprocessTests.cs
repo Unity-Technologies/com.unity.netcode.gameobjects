@@ -78,6 +78,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
 
+            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests())
+            {
+
+            }
+
             // Build the multiprocess test player
             if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
             {
