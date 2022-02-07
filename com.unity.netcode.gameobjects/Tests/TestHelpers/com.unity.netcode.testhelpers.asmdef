@@ -1,7 +1,7 @@
 {
     "name": "Unity.Netcode.TestHelpers",
     "rootNamespace": "Unity.Netcode.TestHelpers",
-   "references": [
+    "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
         "Unity.Collections",
