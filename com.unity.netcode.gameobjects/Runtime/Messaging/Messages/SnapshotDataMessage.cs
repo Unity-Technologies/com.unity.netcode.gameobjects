@@ -1,152 +1,39 @@
-using System;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
     internal struct SnapshotDataMessage : INetworkMessage
     {
-        public int CurrentTick;
-        public ushort Sequence;
+        internal FastBufferWriter WriteBuffer;
+        internal FastBufferReader ReadBuffer;
 
-        public ushort Range;
-
-        public byte[] SendMainBuffer;
-        public NativeArray<byte> ReceiveMainBuffer;
-
-        public struct AckData
+        // a constructor with an unused parameter is used because C# doesn't allow parameter-less constructors
+        public SnapshotDataMessage(int bufferSize)
         {
-            public ushort LastReceivedSequence;
-            public ushort ReceivedSequenceMask;
+            WriteBuffer = new FastBufferWriter(bufferSize, Allocator.Temp);
+            ReadBuffer = new FastBufferReader(WriteBuffer, Allocator.Temp);
         }
 
-        public AckData Ack;
-
-        public struct EntryData
+        public void Serialize(FastBufferWriter writer)
         {
-            public ulong NetworkObjectId;
-            public ushort BehaviourIndex;
-            public ushort VariableIndex;
-            public int TickWritten;
-            public ushort Position;
-            public ushort Length;
-        }
-
-        public NativeList<EntryData> Entries;
-
-        public struct SpawnData
-        {
-            public ulong NetworkObjectId;
-            public uint Hash;
-            public bool IsSceneObject;
-
-            public bool IsPlayerObject;
-            public ulong OwnerClientId;
-            public ulong ParentNetworkId;
-            public Vector3 Position;
-            public Quaternion Rotation;
-            public Vector3 Scale;
-
-            public int TickWritten;
-        }
-
-        public NativeList<SpawnData> Spawns;
-
-        public struct DespawnData
-        {
-            public ulong NetworkObjectId;
-            public int TickWritten;
-        }
-
-        public NativeList<DespawnData> Despawns;
-
-        public unsafe void Serialize(FastBufferWriter writer)
-        {
-            if (!writer.TryBeginWrite(
-                FastBufferWriter.GetWriteSize(CurrentTick) +
-                FastBufferWriter.GetWriteSize(Sequence) +
-                FastBufferWriter.GetWriteSize(Range) + Range +
-                FastBufferWriter.GetWriteSize(Ack) +
-                FastBufferWriter.GetWriteSize<ushort>() +
-                Entries.Length * sizeof(EntryData) +
-                FastBufferWriter.GetWriteSize<ushort>() +
-                Spawns.Length * sizeof(SpawnData) +
-                FastBufferWriter.GetWriteSize<ushort>() +
-                Despawns.Length * sizeof(DespawnData)
-            ))
+            if (!writer.TryBeginWrite(WriteBuffer.Length))
             {
-                Entries.Dispose();
-                Spawns.Dispose();
-                Despawns.Dispose();
-                throw new OverflowException($"Not enough space to serialize {nameof(SnapshotDataMessage)}");
+                Debug.Log("Serialize. Not enough buffer");
             }
-            writer.WriteValue(CurrentTick);
-            writer.WriteValue(Sequence);
-
-            writer.WriteValue(Range);
-            writer.WriteBytes(SendMainBuffer, Range);
-            writer.WriteValue(Ack);
-
-            writer.WriteValue((ushort)Entries.Length);
-            writer.WriteBytes((byte*)Entries.GetUnsafePtr(), Entries.Length * sizeof(EntryData));
-
-            writer.WriteValue((ushort)Spawns.Length);
-            writer.WriteBytes((byte*)Spawns.GetUnsafePtr(), Spawns.Length * sizeof(SpawnData));
-
-            writer.WriteValue((ushort)Despawns.Length);
-            writer.WriteBytes((byte*)Despawns.GetUnsafePtr(), Despawns.Length * sizeof(DespawnData));
-
-            Entries.Dispose();
-            Spawns.Dispose();
-            Despawns.Dispose();
+            writer.CopyFrom(WriteBuffer);
         }
 
-        public static unsafe void Receive(FastBufferReader reader, in NetworkContext context)
+        public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
-            var message = new SnapshotDataMessage();
-            if (!reader.TryBeginRead(
-                FastBufferWriter.GetWriteSize(message.CurrentTick) +
-                FastBufferWriter.GetWriteSize(message.Sequence) +
-                FastBufferWriter.GetWriteSize(message.Range)
-            ))
-            {
-                throw new OverflowException($"Not enough space to deserialize {nameof(SnapshotDataMessage)}");
-            }
-            reader.ReadValue(out message.CurrentTick);
-            reader.ReadValue(out message.Sequence);
-
-            reader.ReadValue(out message.Range);
-            message.ReceiveMainBuffer = new NativeArray<byte>(message.Range, Allocator.Temp);
-            reader.ReadBytesSafe((byte*)message.ReceiveMainBuffer.GetUnsafePtr(), message.Range);
-            reader.ReadValueSafe(out message.Ack);
-
-            reader.ReadValueSafe(out ushort length);
-            message.Entries = new NativeList<EntryData>(length, Allocator.Temp);
-            message.Entries.Length = length;
-            reader.ReadBytesSafe((byte*)message.Entries.GetUnsafePtr(), message.Entries.Length * sizeof(EntryData));
-
-            reader.ReadValueSafe(out length);
-            message.Spawns = new NativeList<SpawnData>(length, Allocator.Temp);
-            message.Spawns.Length = length;
-            reader.ReadBytesSafe((byte*)message.Spawns.GetUnsafePtr(), message.Spawns.Length * sizeof(SpawnData));
-
-            reader.ReadValueSafe(out length);
-            message.Despawns = new NativeList<DespawnData>(length, Allocator.Temp);
-            message.Despawns.Length = length;
-            reader.ReadBytesSafe((byte*)message.Despawns.GetUnsafePtr(), message.Despawns.Length * sizeof(DespawnData));
-
-            using (message.ReceiveMainBuffer)
-            using (message.Entries)
-            using (message.Spawns)
-            using (message.Despawns)
-            {
-                message.Handle(context.SenderId, context.SystemOwner);
-            }
+            ReadBuffer = reader;
+            return true;
         }
 
-        public void Handle(ulong senderId, object systemOwner)
+        public void Handle(ref NetworkContext context)
         {
+            var systemOwner = context.SystemOwner;
+            var senderId = context.SenderId;
             if (systemOwner is NetworkManager)
             {
                 var networkManager = (NetworkManager)systemOwner;
@@ -160,13 +47,7 @@ namespace Unity.Netcode
                 var snapshotSystem = networkManager.SnapshotSystem;
                 snapshotSystem.HandleSnapshot(senderId, this);
             }
-            else
-            {
-                var ownerData = (Tuple<SnapshotSystem, ulong>)systemOwner;
-                var snapshotSystem = ownerData.Item1;
-                snapshotSystem.HandleSnapshot(ownerData.Item2, this);
-                return;
-            }
         }
     }
 }
+
