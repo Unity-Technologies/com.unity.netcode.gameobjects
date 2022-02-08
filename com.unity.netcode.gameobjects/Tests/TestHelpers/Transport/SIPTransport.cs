@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode.TestHelpers;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers.Transport
 {
     /// <summary>
     /// SIPTransport (SIngleProcessTransport)

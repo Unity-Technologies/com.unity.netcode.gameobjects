@@ -6,6 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Transport;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
 using Object = UnityEngine.Object;

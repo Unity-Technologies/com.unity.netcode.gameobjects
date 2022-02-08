@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Transport;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
