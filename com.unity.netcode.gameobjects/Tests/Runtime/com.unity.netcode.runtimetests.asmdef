@@ -3,14 +3,14 @@
     "rootNamespace": "Unity.Netcode.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
+        "Unity.Netcode.TestHelpers",
         "Unity.Netcode.Components",
         "Unity.Collections",
         "UnityEngine.TestRunner",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Netcode.Adapter.UTP",
-        "ClientNetworkTransform",
-        "Unity.Netcode.TestHelpers"
+        "ClientNetworkTransform"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
