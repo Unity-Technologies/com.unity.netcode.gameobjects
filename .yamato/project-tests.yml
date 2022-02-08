@@ -85,6 +85,5 @@ multiprocess_test_testproject_2021.2_{{ platform.name }}:
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% endfor -%}
-{% endfor -%}
 {% endif -%}
 {% endfor -%}
