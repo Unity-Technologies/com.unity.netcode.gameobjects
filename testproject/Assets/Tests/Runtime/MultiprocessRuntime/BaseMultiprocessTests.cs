@@ -19,7 +19,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
-        protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
+        protected virtual bool IgnoreMultiprocessTests => false;
 
         protected virtual bool IsPerformanceTest => true;
 
