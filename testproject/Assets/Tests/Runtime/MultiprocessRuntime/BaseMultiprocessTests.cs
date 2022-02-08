@@ -223,14 +223,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"UnitySetup in Base Class - Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Clear();
-            if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
-            {
-                MultiprocessLogger.Log($"NetworkManager.Singleton.ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
-            }
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
+
+            if ((NetworkManager.Singleton != null) && (NetworkManager.Singleton.ConnectedClients != null))
+            {
+                MultiprocessLogger.Log($"NetworkManager.Singleton.ConnectedClients:{NetworkManager.Singleton.ConnectedClients.Count}");
+            }
 
             // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveOnServer();
