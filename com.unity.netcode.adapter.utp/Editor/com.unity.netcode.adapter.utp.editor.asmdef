@@ -1,6 +1,6 @@
 {
     "name": "Unity.Netcode.Adapter.UTP.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "Unity.Netcode.UTP.Editor",
     "references": [
         "Unity.Collections",
         "Unity.Jobs",
@@ -16,7 +16,7 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

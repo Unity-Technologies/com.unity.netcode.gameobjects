@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.UTP.Editor
 {
     public class MultiplayerWindow : EditorWindow
     {
