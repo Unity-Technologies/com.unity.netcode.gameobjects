@@ -1,8 +1,49 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Unity.Netcode;
+using Random = UnityEngine.Random;
 
 namespace TestProject.ManualTests
 {
+    public class ListSerializerInt : INetworkSerializable
+    {
+        public List<int> Values { get; set; }
+
+        public ListSerializerInt()
+        {
+            Values = new List<int>();
+        }
+
+        public ListSerializerInt(List<int> values)
+        {
+            Values = values;
+        }
+
+        private void Read(FastBufferReader reader)
+        {
+            reader.ReadValue(out int[] ts);
+            Values = ts.ToList();
+        }
+
+        private void Write(FastBufferWriter writer)
+        {
+            writer.WriteValue(Values.ToArray());
+        }
+
+        public void NetworkSerialize<T1>(BufferSerializer<T1> serializer) where T1 : IReaderWriter
+        {
+            if (serializer.IsWriter)
+            {
+                Write(serializer.GetFastBufferWriter());
+            }
+            else if (serializer.IsReader)
+            {
+                Read(serializer.GetFastBufferReader());
+            }
+        }
+    }
 
     /// <summary>
     /// Used with GenericObjects to randomly move them around
@@ -12,9 +53,17 @@ namespace TestProject.ManualTests
         private Vector3 m_Direction;
         private Rigidbody m_Rigidbody;
 
+        [ServerRpc(RequireOwnership = false)]
+        internal void SendOrdersToServerRpc(ListSerializerInt orders, ServerRpcParams serverRpcParams = default)
+        {
+            Debug.Log("Received Server RPC");
+        }
+
 
         public override void OnNetworkSpawn()
         {
+            Debug.Log($"IsServer is {IsServer}");
+
             m_Rigidbody = GetComponent<Rigidbody>();
             if (NetworkObject != null && m_Rigidbody != null)
             {
@@ -55,10 +104,23 @@ namespace TestProject.ManualTests
             }
         }
 
-
         // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()
         {
+            if (IsLocalPlayer)
+            {
+                if (Input.GetKeyDown("space"))
+                {
+                    Debug.Log("Pressed SPACE");
+
+                    ListSerializerInt foo = new ListSerializerInt();
+                    foo.Values.Add(42);
+                    foo.Values.Add(56);
+
+                    SendOrdersToServerRpc(foo);
+                }
+            }
+
             if (IsServer && NetworkObject && NetworkObject.NetworkManager && NetworkObject.NetworkManager.IsListening)
             {
                 if (m_Rigidbody == null)
