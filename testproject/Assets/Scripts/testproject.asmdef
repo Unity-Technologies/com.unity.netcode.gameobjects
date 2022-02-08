@@ -8,8 +8,7 @@
         "Unity.Netcode.Adapter.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
-        "Unity.Services.Relay",
-        "Unity.Netcode.TestHelpers"
+        "Unity.Services.Relay"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
