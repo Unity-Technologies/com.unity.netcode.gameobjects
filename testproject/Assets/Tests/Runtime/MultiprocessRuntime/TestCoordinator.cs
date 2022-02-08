@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
 
 /// <summary>
@@ -20,9 +22,9 @@ using Unity.Netcode.MultiprocessRuntimeTests;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const int PerTestTimeoutSec = 5 * 60; // seconds
+    public const int PerTestTimeoutSec = 4 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 56;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -36,10 +38,21 @@ public class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    private string m_ConnectAddress = "127.0.0.1";
+    private string m_Port = "3076";
+
+    private Stopwatch m_Stopwatch;
 
     private void Awake()
     {
-        MultiprocessLogger.Log("Awake");
+        string[] cliargList = Environment.GetCommandLineArgs();
+        string cliargs = "";
+        for (int i = 0; i < cliargList.Length; i++)
+        {
+            cliargs += " ";
+            cliargs += cliargList[i];
+        }
+        MultiprocessLogger.Log($"Awake - with args: {cliargs}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -52,26 +65,87 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log("Start");
+        m_Stopwatch = Stopwatch.StartNew();
+        int pid = Process.GetCurrentProcess().Id;
+        MultiprocessLogger.Log($"Start with pid {pid}");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length; ++i)
+        {
+            string arg = args[i];
+            if (arg.Equals("-ip"))
+            {
+                m_ConnectAddress = args[i + 1];
+                MultiprocessLogger.Log($"command line ip was {m_ConnectAddress}");
+
+            }
+
+            if (arg.Equals("-p"))
+            {
+                m_Port = args[i + 1];
+                MultiprocessLogger.Log($"command line port was {m_Port}");
+            }
+        }
+        MultiprocessLogger.Log($"{m_Port}");
+        var ushortport = ushort.Parse(m_Port);
+        var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        MultiprocessLogger.Log($"Transport is {transport.ToString()}");
+        if (!isClient)
+        {
+            m_ConnectAddress = "0.0.0.0";
+        }
+
+        switch (transport)
+        {
+            case UNetTransport unetTransport:
+                MultiprocessLogger.Log("ERROR - UNetTransport should not be the transport in this case");
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                if (isClient)
+                {
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
+                }
+                break;
+            case UnityTransport unityTransport:
+                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {isClient}, Address {m_ConnectAddress}");
+                unityTransport.ConnectionData.Port = ushortport;
+                unityTransport.ConnectionData.Address = m_ConnectAddress;
+                break;
+            default:
+                MultiprocessLogger.LogError($"The transport {transport} has no case");
+                break;
+        }
+
         if (isClient)
         {
-            MultiprocessLogger.Log("starting netcode client");
+            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName}");
             NetworkManager.Singleton.StartClient();
+            NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
-        MultiprocessLogger.Log("Initialize All Steps");
+        else
+        {
+            m_TimeSinceLastKeepAlive = Time.time;
+        }
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-        MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
+        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
+                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}" +
+                $" m_TimeSinceLastKeepAlive is set to {m_TimeSinceLastKeepAlive}");
+    }
+
+    private void Singleton_OnClientConnectedCallback(ulong obj)
+    {
+        MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
     }
 
     public void Update()
     {
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
+            MultiprocessLogger.Log($"Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
             QuitApplication();
             Assert.Fail("Stayed idle too long");
         }
@@ -86,30 +160,51 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
+                MultiprocessLogger.Log($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
                 QuitApplication();
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
+        }
+        else if (m_Stopwatch.ElapsedMilliseconds > 5000)
+        {
+            m_Stopwatch.Restart();
+            MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
+                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
         }
     }
 
     private static void QuitApplication()
     {
+        int pid = Process.GetCurrentProcess().Id;
 #if UNITY_EDITOR
+        MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {pid}");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
+        MultiprocessLogger.Log($"Calling Application.Quit for pid {pid}");
         Application.Quit();
 #endif
     }
 
     public void TestRunTeardown()
     {
+        MultiprocessLogger.Log("TestCoordinator - TestRunTearDown");
         m_TestResultsLocal.Clear();
+        MultiprocessLogger.Log($"TestCoordinator - TestRunTearDown... Done clearing m_TestResultsLocal, count: {m_TestResultsLocal.Count}");
     }
 
     public void OnEnable()
     {
         MultiprocessLogger.Log("OnEnable - Setting OnClientDisconnectCallback");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        MultiprocessLogger.Log("OnEnable - Setting OnClientConnectedCallback");
+        NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+    }
+
+    private void NetworkManager_OnClientConnectedCallback(ulong obj)
+    {
+        MultiprocessLogger.Log($"OnClientConnectedCallback triggered - {obj}");
     }
 
     public void OnDisable()
@@ -314,6 +409,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         try
         {
+            MultiprocessLogger.Log($"Shutdown server/host/client {NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
             NetworkManager.Singleton.Shutdown();
             m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
             MultiprocessLogger.Log("Quitting player cleanly");
@@ -324,6 +420,12 @@ public class TestCoordinator : NetworkBehaviour
             WriteErrorServerRpc(e.ToString());
             throw;
         }
+    }
+
+    public void KeepAliveOnServer()
+    {
+        m_TimeSinceLastKeepAlive = Time.time;
+        MultiprocessLogger.Log($"m_TimeSinceLastKeepAlive is {m_TimeSinceLastKeepAlive}");
     }
 
     [ClientRpc]

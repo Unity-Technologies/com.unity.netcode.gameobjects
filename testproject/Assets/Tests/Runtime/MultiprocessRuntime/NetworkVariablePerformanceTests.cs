@@ -14,7 +14,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
-        protected override int WorkerCount { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
         private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
@@ -46,10 +45,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override void SetupTestSuite()
         {
             base.SetupTestSuite();
-            if (!IgnoreMultiprocessTests)
-            {
-                SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
-            }
+            SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 
         private void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
@@ -193,44 +189,43 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown, MultiprocessContextBasedTest]
         public IEnumerator UnityTeardown()
         {
-            if (!IgnoreMultiprocessTests)
+            InitializeContextSteps();
+
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
-                InitializeContextSteps();
-
-                yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+                foreach (var spawnedObject in m_ServerSpawnedObjects)
                 {
-                    foreach (var spawnedObject in m_ServerSpawnedObjects)
+                    spawnedObject.NetworkObject.Despawn(false);
+                    s_ServerObjectPool.Release(spawnedObject);
+                    StopSpawnedObject(spawnedObject);
+                }
+
+                m_ServerSpawnedObjects.Clear();
+            });
+
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                //todo move access to callbackcomponent to singleton
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null;
+
+                void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
+                {
+                    if (OneNetVar.InstanceCount == 0)
                     {
-                        spawnedObject.NetworkObject.Despawn(false);
-                        s_ServerObjectPool.Release(spawnedObject);
-                        StopSpawnedObject(spawnedObject);
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawnFunc;
+                        TestCoordinator.Instance.ClientFinishedServerRpc();
                     }
+                }
 
-                    m_ServerSpawnedObjects.Clear();
-                });
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawnFunc;
+            }, waitMultipleUpdates: true, ignoreTimeoutException: true); // ignoring timeout since you don't want to hide any issues in the main tests
 
-                yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
-                {
-                    NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null; // todo move access to callbackcomponent to singleton
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            {
+                m_ClientPrefabHandler.Dispose();
+                NetworkManager.Singleton.PrefabHandler.RemoveHandler(m_PrefabToSpawn.NetworkObject);
+            });
 
-                    void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
-                    {
-                        if (OneNetVar.InstanceCount == 0)
-                        {
-                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawnFunc;
-                            TestCoordinator.Instance.ClientFinishedServerRpc();
-                        }
-                    }
-
-                    NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawnFunc;
-                }, waitMultipleUpdates: true, ignoreTimeoutException: true); // ignoring timeout since you don't want to hide any issues in the main tests
-
-                yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
-                {
-                    m_ClientPrefabHandler.Dispose();
-                    NetworkManager.Singleton.PrefabHandler.RemoveHandler(m_PrefabToSpawn.NetworkObject);
-                });
-            }
             yield return null;
         }
 
@@ -238,7 +233,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public override void TeardownSuite()
         {
             base.TeardownSuite();
-            if (!IsPerformanceTest && !IgnoreMultiprocessTests)
+            if (!IsPerformanceTest)
             {
                 s_ServerObjectPool.Dispose();
             }

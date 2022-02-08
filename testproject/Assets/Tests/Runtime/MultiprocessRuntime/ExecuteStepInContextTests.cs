@@ -11,18 +11,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     /// <summary>
     /// Smoke tests for ExecuteStepInContext, to make sure it's working properly before being used in other tests
     /// </summary>
-    [TestFixture(1)]
-    [TestFixture(2)]
     public class ExecuteStepInContextTests : BaseMultiprocessTests
     {
-        private int m_WorkerCountToTest;
-
-        public ExecuteStepInContextTests(int workerCountToTest)
-        {
-            m_WorkerCountToTest = workerCountToTest;
-        }
-
-        protected override int WorkerCount => m_WorkerCountToTest;
         protected override bool IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
@@ -110,7 +100,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < m_WorkerCountToTest; i++)
+                for (int i = 0; i < WorkerCount; i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionMessageToTest}.*"));
                 }
@@ -129,7 +119,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < m_WorkerCountToTest; i++)
+                for (int i = 0; i < WorkerCount; i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionUpdateMessageToTest}.*"));
                 }
@@ -159,7 +149,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, additionalIsFinishedWaiter: () =>
             {
                 int nbFinished = 0;
-                for (int i = 0; i < m_WorkerCountToTest; i++)
+                for (int i = 0; i < WorkerCount; i++)
                 {
                     if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
                     {
@@ -167,11 +157,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                 }
 
-                return nbFinished == m_WorkerCountToTest;
+                return nbFinished == WorkerCount;
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(m_WorkerCountToTest));
+                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(WorkerCount));
                 foreach (var clientId in TestCoordinator.AllClientIdsExceptMine)
                 {
                     var current = 0;
@@ -188,6 +178,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExecuteInContext()
         {
+            MultiprocessLogger.Log("TestExecuteInContext test method start");
             InitializeContextSteps();
 
             int stepCountExecuted = 0;
@@ -258,4 +249,3 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
     }
 }
-

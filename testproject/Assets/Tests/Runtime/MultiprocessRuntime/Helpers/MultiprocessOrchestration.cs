@@ -1,4 +1,8 @@
 using System;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,6 +14,7 @@ using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
+    private static FileInfo s_Localip_fileinfo;
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
     public static DirectoryInfo MultiprocessDirInfo
@@ -37,6 +42,7 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
+        s_Localip_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "localip"));
         return s_MultiprocessDirInfo;
     }
 
@@ -45,26 +51,80 @@ public class MultiprocessOrchestration
         initMultiprocessDirinfo();
     }
 
-    public static int ActiveWorkerCount()
+    /// <summary>
+    /// Test to see if multimachine testing is enabled via command line switch.
+    /// The result of this setting is so that any tests that want to run multimachine tests can
+    /// decide if they are enabled or not.
+    /// </summary>
+    /// <returns></returns>
+    public static bool ShouldRunMultiMachineTests()
     {
-        int activeWorkerCount = 0;
-        if (s_Processes == null)
-        {
-            return activeWorkerCount;
-        }
+        return Environment.GetCommandLineArgs().Contains("-enableMultiMachineTesting");
+    }
 
-        if (s_Processes.Count > 0)
+    public static bool ShouldRunMultiprocessTests()
+    {
+        return Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
+    }
+
+    public static BokkenMachine ProvisionWorkerNode(string platformString)
+    {
+        MultiprocessLogger.Log("ProvisionWorkerNode - Start");
+        var bokkenMachine = BokkenMachine.Parse(platformString);
+        bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, $"{bokkenMachine.Name}.json");
+        var fi = new FileInfo(bokkenMachine.PathToJson);
+        if (!fi.Exists)
         {
-            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
-            foreach (var p in s_Processes)
+            MultiprocessLogger.Log($"WARNING: Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
+            bokkenMachine.Provision();
+            bokkenMachine.Setup();
+        }
+        else
+        {
+            MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists, just kill any old processes");
+            BokkenMachine.KillMultiprocessTestPlayer(bokkenMachine.PathToJson);
+        }
+        MultiprocessLogger.Log("ProvisionWorkerNode - Complete");
+        return bokkenMachine;
+    }
+
+    public static void LogProcessList()
+    {
+        if (s_Processes != null)
+        {
+            foreach (var process in s_Processes)
             {
-                if ((p != null) && (!p.HasExited))
+                if (!process.HasExited)
                 {
-                    activeWorkerCount++;
+                    MultiprocessLogger.Log($"Process item: {process.StartTime} {process.StartInfo.Arguments}");
                 }
             }
         }
-        return activeWorkerCount;
+    }
+
+    public static void ClearProcesslist()
+    {
+        if (s_Processes != null)
+        {
+            foreach (var process in s_Processes)
+            {
+                MultiprocessLogger.Log("About to call HasExited on a process");
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        MultiprocessLogger.Log($"Teardown found an active process from MultiprocessOrchestration {process.ProcessName} {process.Id} {process.StartInfo.Arguments}");
+                        process.CloseMainWindow();
+                        process.Close();
+                    }
+                }
+                catch (InvalidOperationException ioe)
+                {
+                    MultiprocessLogger.Log($"HasExited threw an exception {ioe.Message} {ioe.StackTrace}");
+                }
+            }
+            s_Processes.Clear();
+        }
     }
 
     public static string StartWorkerNode()
@@ -74,16 +134,31 @@ public class MultiprocessOrchestration
             s_Processes = new List<Process>();
         }
 
+        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
+        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
+        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
+
+        if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
+        {
+            MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
+            StartWorkersOnRemoteNodes(rootdir_fileinfo);
+            return "";
+        }
+        else
+        {
+            MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
+            return StartWorkerOnLocalNode();
+        }
+    }
+
+    public static string StartWorkerOnLocalNode()
+    {
+        MultiprocessLogger.Log($"Starting Worker on local node because: ShouldRunMultiMachineTests is {ShouldRunMultiMachineTests()}");
         var workerProcess = new Process();
         s_TotalProcessCounter++;
         if (s_Processes.Count > 0)
         {
-            string message = "";
-            foreach (var p in s_Processes)
-            {
-                message += $" {p.Id} {p.HasExited} {p.StartTime} ";
-            }
-            MultiprocessLogger.Log($"Current process count {s_Processes.Count} with data {message}");
+            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
         }
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
@@ -124,6 +199,8 @@ public class MultiprocessOrchestration
             throw;
         }
 
+        MultiprocessLogger.Log($"extraArgs {extraArgs} workerProcess.StartInfo.FileName {workerProcess.StartInfo.FileName}");
+
         string logPath = Path.Combine(MultiprocessDirInfo.FullName, $"logfile-mp{s_TotalProcessCounter}.log");
 
         workerProcess.StartInfo.UseShellExecute = false;
@@ -149,29 +226,156 @@ public class MultiprocessOrchestration
         return logPath;
     }
 
-    public static void ShutdownAllProcesses()
+    public static string[] GetRemotePlatformList()
     {
-        MultiprocessLogger.Log("Shutting down all processes..");
-        foreach (var process in s_Processes)
+        // "default-win:test-win,default-mac:test-mac"
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        MultiprocessLogger.Log($"MP_PLATFORM_LIST is null? {encodedPlatformList == null}");
+        if (encodedPlatformList == null)
         {
-            MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
-            try
-            {
-                if (!process.HasExited)
-                {
-                    // Close process by sending a close message to its main window.
-                    process.CloseMainWindow();
+            return null;
+        }
+        string[] separated = encodedPlatformList.Split(',');
+        return separated;
 
-                    // Free resources associated with process.
-                    process.Close();
-                }
-            }
-            catch (Exception ex)
+    }
+
+    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
+    {
+        string launch_platform = Environment.GetEnvironmentVariable("LAUNCH_PLATFORM");
+        MultiprocessLogger.Log("StartWorkerOnRemoteNodes");
+        // That suggests sufficient information to determine that we can run remotely
+        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
+        var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
+        var fileNameInfo = new FileInfo(fileName);
+
+        MultiprocessLogger.Log($"launching {fileName} does it exist {fileNameInfo.Exists} ");
+
+        var workerProcess = new Process();
+
+        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{fileName} launch {launch_platform}";
+        try
+        {
+            MultiprocessLogger.Log($"{workerProcess.StartInfo.Arguments}");
+            var newProcessStarted = workerProcess.Start();
+            if (!newProcessStarted)
             {
-                Debug.LogException(ex);
+                throw new Exception("Failed to start worker process!");
+            }
+            else
+            {
+                MultiprocessLogger.Log($" {workerProcess.HasExited} ");
             }
         }
+        catch (Win32Exception e)
+        {
+            MultiprocessLogger.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+            throw;
+        }
+    }
 
+    public static void KillAllTestPlayersOnRemoteMachines()
+    {
+        foreach (var f in MultiprocessDirInfo.GetFiles("*.json"))
+        {
+            BokkenMachine.KillMultiprocessTestPlayer(f.FullName);
+        }
+    }
+
+    public static void ShutdownAllProcesses(bool launchRemotely, int logCount)
+    {
+
+        MultiprocessLogger.Log($"{logCount + 0.1f} Shutting down all processes... by clearing the process from the stack");
         s_Processes.Clear();
+        if (launchRemotely && ShouldRunMultiMachineTests())
+        {
+            MultiprocessLogger.Log($"{logCount + 0.2f} Shutting down all Bokken processes... by clearing the process from the stack");
+            BokkenMachine.ProcessList.Clear();
+        }
+    }
+
+    private static void WriteLocalIP(string localip)
+    {
+        using StreamWriter sw = File.CreateText(s_Localip_fileinfo.FullName);
+        sw.WriteLine(localip);
+    }
+
+    public static string GetLocalIPAddress()
+    {
+        string bOKKEN_HOST_IP = Environment.GetEnvironmentVariable("BOKKEN_HOST_IP");
+        if (!string.IsNullOrEmpty(bOKKEN_HOST_IP) && bOKKEN_HOST_IP.Contains("."))
+        {
+            MultiprocessLogger.Log($"BOKKEN_HOST_IP was found as {bOKKEN_HOST_IP}");
+            return bOKKEN_HOST_IP;
+        }
+
+        if (s_Localip_fileinfo.Exists)
+        {
+            string alllines = File.ReadAllText(s_Localip_fileinfo.FullName).Trim();
+            MultiprocessLogger.Log($"localIP file was found as {alllines}");
+            return alllines;
+        }
+
+        string localhostname = Dns.GetHostName();
+
+        try
+        {
+            if (!localhostname.Equals("Mac-mini.local"))
+            {
+                var host = Dns.GetHostEntry(localhostname);
+
+                foreach (var ip in host.AddressList)
+                {
+
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        string localIPAddress = ip.ToString();
+
+                        WriteLocalIP(localIPAddress);
+                        return localIPAddress;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);
+        }
+
+        try
+        {
+            return GetLocalIPAddressFromNetworkInterface();
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.LogError("Error: " + e.Message);
+            MultiprocessLogger.LogError("Error Stack: " + e.StackTrace);
+        }
+
+        throw new Exception("No network adapters with an IPv4 address in the system!");
+    }
+
+    private static string GetLocalIPAddressFromNetworkInterface()
+    {
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        foreach (NetworkInterface ni in interfaces)
+        {
+            foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+            {
+
+                if (ip.Address.ToString().Contains(".") && !ip.Address.ToString().Equals("127.0.0.1"))
+                {
+                    // TODO: Write this to a file so we don't have to keep getting this IP over and over
+                    WriteLocalIP(ip.Address.ToString());
+                    return ip.Address.ToString();
+                }
+            }
+        }
+        return "";
     }
 }
