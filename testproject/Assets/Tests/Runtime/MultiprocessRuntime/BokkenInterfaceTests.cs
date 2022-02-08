@@ -15,19 +15,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected override bool IsPerformanceTest => false;
 
-        public BokkenInterfaceTests()
+        /*
+        public override void SetupTestSuite()
         {
-            MultiprocessLogger.Log("Bokken Interface Tests ... Constructor");
-            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests() || !MultiprocessOrchestration.ShouldRunMultiMachineTests())
-            {
-                Assert.Ignore("Bokken Interface Tests not enabled");
-            }
+            MultiprocessLogger.Log("BokkenInterfaceTests - SetupTestSuite - override from BaseMultiprocessTests");
         }
-        
+        */
         [OneTimeSetUp]
         public void SetUpBokkenInterfaceTestSuite()
         {
             MultiprocessLogger.Log("SetupBokkenInterfaceTests... start");
+            
         }
 
         [UnitySetUp]
@@ -43,6 +41,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckPreconditions()
         {
+            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests() || !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            {
+                Assert.Ignore("Bokken Interface Tests not enabled");
+            }
+
             MultiprocessLogger.Log($"Are Clients Connected: {WorkerCount}, {m_ConnectedClientsList.Count}");
 
             var pathTodll = new FileInfo(BokkenMachine.PathToDll);

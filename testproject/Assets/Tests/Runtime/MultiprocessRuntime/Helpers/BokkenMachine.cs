@@ -138,6 +138,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Setup end {Name}");
         }
 
+        public void CheckDirectoryStructure()
+        {
+            MultiprocessLogger.Log("Checking if setup completed correctly by looking at dir output");
+            Process p = null;
+            string cmd = $" --command exec --input-path {PathToJson} --remote-command ";
+            if (Image.Contains("win10"))
+            {
+                p = ExecuteCommand(cmd + "dir", true, true);
+            }
+            else
+            {
+                p = ExecuteCommand(cmd + "ls", true, true);
+            }
+            if (p != null)
+            {
+                MultiprocessLogger.Log("p is not null, there should we an output log above this");
+            }
+            else
+            {
+                MultiprocessLogger.Log("WARNING: This should not happen, we should have called 'dir or ls' on the remote machine");
+            }
+        }
+
         public static void LogProcessListStatus()
         {
             int counter = 0;

@@ -23,6 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         public int WorkerCount;
+        private string m_LogPath;
         protected bool m_HasSceneLoaded = false;
         protected bool m_LaunchRemotely;
 
@@ -246,7 +247,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
                         MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since ( connected client count - 1 ) is {NetworkManager.Singleton.ConnectedClients.Count - 1} is less than {WorkerCount} and platformList is null");
-                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        m_LogPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                     }
                 }
                 else
@@ -270,6 +271,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     {
                         MultiprocessLogger.Log($"Task id {task.Id}");
                         task.Wait();
+                    }
+
+                    foreach (var machine in machines)
+                    {
+                        machine.CheckDirectoryStructure();
                     }
 
                     MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {m_ConnectedClientsList.Count}"
@@ -301,8 +307,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount)
                 {
                     MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count - 1}");
-                    yield return new WaitForSecondsRealtime(0.8f);
-                    Thread.Sleep(800);
+                    yield return new WaitForSecondsRealtime(1.3f);
+                    Thread.Sleep(1300);
                     break;
                 }
                 counter++;
@@ -316,7 +322,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     if (afterYield - beforeYield < 0.7f)
                     {
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...start");
-                        Thread.Sleep(700);
+                        Thread.Sleep(5000);
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
                     }
                     afterYield = Time.realtimeSinceStartup;
@@ -340,8 +346,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log("Warning: Client connection listener didn't fire... a KeyNotFoundException at discconnect time might follow " +
                     $"{m_ConnectedClientsList.Count} but connected clients has increased" +
                     $" {NetworkManager.Singleton.ConnectedClients.Count}");
-                yield return new WaitForSecondsRealtime(0.8f);
-                Thread.Sleep(800);
+                yield return new WaitForSecondsRealtime(1.3f);
+                Thread.Sleep(1300);
             }
             MultiprocessLogger.Log($"UnitySetup in Base Class ... end");
         }
@@ -354,9 +360,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
             var t2 = TestContext.CurrentTestExecutionContext;
-            TimeSpan duration = DateTime.Now - t2.StartTime;
             MultiprocessLogger.Log($" 3/Teardown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
-                $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime} duration: {duration.TotalSeconds}");
+                $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime} end: {t2.CurrentResult.EndTime}");
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
             MultiprocessLogger.Log($" 4/Teardown Process List Cleared which should mean all spawned processes should stop");
