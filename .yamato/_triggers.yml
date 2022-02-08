@@ -6,7 +6,7 @@ release_1.1_nightly_trigger:
   triggers:
     recurring:
       - branch: "release/1.1.0"
-        frequency: 4 * * ?
+        frequency: daily
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
