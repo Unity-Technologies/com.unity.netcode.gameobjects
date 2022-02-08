@@ -703,7 +703,8 @@ namespace Unity.Netcode
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
 
-            ExtractRtt(networkConnection, ngoConnectionId);
+            var rttValue = ExtractRtt(networkConnection);
+            NetworkMetrics.TrackRttToServer(rttValue);
         }
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
@@ -727,12 +728,13 @@ namespace Unity.Netcode
                 networkMetricsContext->PacketReceivedCount = 0;
             }
         }
+#endif
 
-        private void ExtractRtt(NetworkConnection networkConnection, ulong transportClientId)
+        private int ExtractRtt(NetworkConnection networkConnection)
         {
             if (NetworkManager.Singleton.IsServer)
             {
-                NetworkMetrics.TrackRttToServer(0);
+                return 0;
             }
             else
             {
@@ -747,11 +749,10 @@ namespace Unity.Netcode
                 {
                     var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
-                    NetworkMetrics.TrackRttToServer(sharedContext->RttInfo.LastRtt);
+                    return sharedContext->RttInfo.LastRtt;
                 }
             }
         }
-#endif
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
