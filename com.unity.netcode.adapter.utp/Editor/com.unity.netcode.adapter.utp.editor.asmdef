@@ -6,7 +6,8 @@
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Netcode.Runtime",
-        "Unity.Networking.Transport"
+        "Unity.Networking.Transport",
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [
         "Editor"
@@ -15,7 +16,7 @@
     "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
