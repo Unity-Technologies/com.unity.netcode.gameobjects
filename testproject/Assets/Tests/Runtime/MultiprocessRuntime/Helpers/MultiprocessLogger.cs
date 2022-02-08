@@ -162,23 +162,26 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
-            var webLog = new WebLog();
-            webLog.Message = $"{testName} {args[0].ToString()}";
-            if (webLog.Message.Length > 1000)
+            if (!args[0].ToString().Contains("POST called failed"))
             {
-                webLog.Message = webLog.Message.Substring(0, 999);
-            }
-            webLog.ReferenceId = JobId;
-            webLog.EventId = s_EventIdCounter++;
-            webLog.TestMethod = testName;
-            webLog.TestClass = testClass;
-            webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-            // string json = JsonUtility.ToJson(webLog);
-            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-            Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
-            lock (k_Tasklock)
-            {
-                s_AllTasks.Add(t);
+                var webLog = new WebLog();
+                webLog.Message = $"{testName} {args[0].ToString()}";
+                if (webLog.Message.Length > 1000)
+                {
+                    webLog.Message = webLog.Message.Substring(0, 999);
+                }
+                webLog.ReferenceId = JobId;
+                webLog.EventId = s_EventIdCounter++;
+                webLog.TestMethod = testName;
+                webLog.TestClass = testClass;
+                webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+                // string json = JsonUtility.ToJson(webLog);
+                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
+                lock (k_Tasklock)
+                {
+                    s_AllTasks.Add(t);
+                }
             }
         }
 
@@ -198,10 +201,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (!response.IsSuccessStatusCode)
             {
-                // Task<string> responseContentTask = response.Content.ReadAsStringAsync();
-                // await responseContentTask;
-                //MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} and message is {responseContentTask.Result}");
-                MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode}");
+                MultiprocessLogger.LogWarning($"POST called failed with {response.StatusCode} for message with id {content.EventId} and message {content.Message}");
             }
             logginMetric.Stop(content, response);
         }

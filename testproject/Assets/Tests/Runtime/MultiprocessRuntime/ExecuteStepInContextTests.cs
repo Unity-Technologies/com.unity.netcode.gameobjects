@@ -178,7 +178,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExecuteInContext()
         {
-            MultiprocessLogger.Log("TestExecuteInContext test method start");
             InitializeContextSteps();
 
             int stepCountExecuted = 0;

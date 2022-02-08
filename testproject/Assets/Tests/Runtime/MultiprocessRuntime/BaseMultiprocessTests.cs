@@ -65,9 +65,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else
             {
                 m_LaunchRemotely = true;
+                foreach (var platformListItem in platformList)
+                {
+                    MultiprocessLogger.Log($"Platform: {platformListItem}");
+                }
             }
 
-            MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup");
             MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
             if (m_LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
@@ -107,6 +110,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Loading scene {BuildMultiprocessTestPlayer.MainSceneName}");
             IsSceneLoading = true;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
+            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
         }
 
@@ -150,9 +154,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientDisconnectCallback triggered {obj}");
-            m_ConnectedClientsList.Remove(obj);
             MultiprocessLogger.Log($"OnClientDisconnectCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
+            m_ConnectedClientsList.Remove(obj);
         }
 
         private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -178,7 +181,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
-            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count} {WorkerCount}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
@@ -330,9 +332,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveOnServer();
-            MultiprocessLogger.Log("Logging PlayerConnection heartbeat... start");
             PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
-            MultiprocessLogger.Log("Logging PlayerConnection heartbeat... done");
             MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount && m_ConnectedClientsList.Count < WorkerCount)
@@ -349,6 +349,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
+            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($" 1/Teardown BaseMultiProcessTests - Teardown : Running teardown");
             MultiprocessLogHandler.Flush();
             TestContext t1 = TestContext.CurrentContext;

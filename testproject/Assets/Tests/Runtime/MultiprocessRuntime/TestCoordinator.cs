@@ -129,11 +129,11 @@ public class TestCoordinator : NetworkBehaviour
             m_TimeSinceLastKeepAlive = Time.time;
         }
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
-                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
-                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
-                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}" +
-                $" m_TimeSinceLastKeepAlive is set to {m_TimeSinceLastKeepAlive}");
+        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()};" +
+                $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name: {NetworkManager.NetworkConfig.NetworkTransport.name};" +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};" +
+                $" m_TimeSinceLastKeepAlive:  {m_TimeSinceLastKeepAlive}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
