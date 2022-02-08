@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD:com.unity.netcode.adapter.utp/Tests/Editor/BatchedReceiveQueueTests.cs.meta
+guid: 9228b9e34a97c3d4cae09c689cbe2cdc
+=======
 guid: be6aa2f5820911841850340049879f16
+>>>>>>> release/1.1.0:com.unity.netcode.adapter.utp/Runtime/BatchedSendQueue.cs.meta
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

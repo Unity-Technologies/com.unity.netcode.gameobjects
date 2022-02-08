@@ -50,7 +50,6 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(firstReceived);
             Assert.IsTrue(secondReceived);
         }
-
         [UnityTest]
         public IEnumerator WhenSendingMessageFromClientToServer_SenderIdIsCorrect()
         {
@@ -89,39 +88,6 @@ namespace TestProject.RuntimeTests
 
             Assert.IsTrue(firstReceived);
             Assert.IsTrue(secondReceived);
-        }
-
-
-        [UnityTest]
-        public IEnumerator WhenClientDisconnectsFromServer_ClientIdIsCorrect()
-        {
-            var firstClientId = FirstClient.LocalClientId;
-            bool received = false;
-            Action<ulong> firstCallback = id =>
-            {
-                Assert.AreEqual(firstClientId, id);
-                received = true;
-            };
-            m_ServerNetworkManager.OnClientDisconnectCallback += firstCallback;
-            FirstClient.Shutdown();
-
-            yield return new WaitForSeconds(0.2f);
-
-            Assert.IsTrue(received);
-            var secondClientId = SecondClient.LocalClientId;
-            received = false;
-
-            m_ServerNetworkManager.OnClientDisconnectCallback -= firstCallback;
-            m_ServerNetworkManager.OnClientDisconnectCallback += id =>
-            {
-                Assert.AreEqual(secondClientId, id);
-                received = true;
-            };
-            SecondClient.Shutdown();
-
-            yield return new WaitForSeconds(0.2f);
-
-            Assert.IsTrue(received);
         }
     }
 }

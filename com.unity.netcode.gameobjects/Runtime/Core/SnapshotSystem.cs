@@ -1,65 +1,33 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-
-// SnapshotSystem stores:
-//
-// - Spawn, Despwan commands (done)
-// - NetworkVariable value updates (todo)
-// - RPC commands (todo)
-//
-// and sends a SnapshotDataMessage every tick containing all the un-acknowledged commands.
-//
-// SnapshotSystem can function even if some messages are lost. It provides eventual consistency.
-// The client receiving a message will get a consistent state for a given tick, but possibly not every ticks
-// Reliable RPCs will be guaranteed, unreliable ones not
-//
-// SnapshotSystem relies on the Transport adapter to fragment an arbitrary-sized message into packets
-// This comes with a tradeoff. The Transport-level fragmentation is specialized for networking
-// but lacks the context that SnapshotSystem has of the meaning of the RPC, Spawns, etc...
-// This could be revisited in the future
-//
-// It also relies on the INetworkMessage interface and MessagingSystem, but deals directly
-// with the FastBufferReader and FastBufferWriter to read/write the messages
 
 namespace Unity.Netcode
 {
-    /// <summary>
-    /// Header information for a SnapshotDataMessage
-    /// </summary>
-    internal struct SnapshotHeader
+    // Structure that acts as a key for a NetworkVariable
+    // Allows telling which variable we're talking about.
+    // Might include tick in a future milestone, to address past variable value
+    internal struct VariableKey
     {
-        internal int CurrentTick; // the tick this captures information for
-        internal int LastReceivedSequence; // what we are ack'ing
-        internal int SpawnCount; // number of spawn commands included
-        internal int DespawnCount; // number of despawn commands included
-        internal int UpdateCount; // number of update commands included
+        internal ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
+        internal ushort BehaviourIndex; // the index of the behaviour in this GameObject
+        internal ushort VariableIndex; // the index of the variable in this NetworkBehaviour
+        internal int TickWritten; // the network tick at which this variable was set
     }
 
-    internal struct UpdateCommand
+    // Index for a NetworkVariable in our table of variables
+    // Store when a variable was written and where the variable is serialized
+    internal struct Entry
     {
-        internal ulong NetworkObjectId;
-        internal ushort BehaviourIndex;
-        internal int VariableIndex;
+        internal VariableKey Key;
+        internal ushort Position; // the offset in our Buffer
+        internal ushort Length; // the Length of the data in Buffer
 
-        // snapshot internal
-        internal int TickWritten;
-        internal int SerializedLength;
-        internal bool IsDelta; // Is this carrying a ReadDelta(). Should always be true except for spawn-generated updates
+        internal const int NotFound = -1;
     }
 
-    internal struct UpdateCommandMeta
-    {
-        internal int Index; // the index for the index allocator
-        internal int BufferPos; // the allocated position in the buffer
-        internal List<ulong> TargetClientIds;
-    }
-
-    /// <summary>
-    /// A command to despawn an object
-    /// Which object it is, and the tick at which it was despawned
-    /// </summary>
     internal struct SnapshotDespawnCommand
     {
         // identity
@@ -67,12 +35,10 @@ namespace Unity.Netcode
 
         // snapshot internal
         internal int TickWritten;
+        internal List<ulong> TargetClientIds;
+        internal int TimesWritten;
     }
 
-    /// <summary>
-    /// A command to spawn an object
-    /// Which object it is, what type it has, the spawn parameters and the tick at which it was spawned
-    /// </summary>
     internal struct SnapshotSpawnCommand
     {
         // identity
@@ -80,7 +46,7 @@ namespace Unity.Netcode
 
         // archetype
         internal uint GlobalObjectIdHash;
-        internal bool IsSceneObject; //todo: how is this unused ?
+        internal bool IsSceneObject;
 
         // parameters
         internal bool IsPlayerObject;
@@ -88,155 +54,140 @@ namespace Unity.Netcode
         internal ulong ParentNetworkId;
         internal Vector3 ObjectPosition;
         internal Quaternion ObjectRotation;
-        internal Vector3 ObjectScale; //todo: how is this unused ?
+        internal Vector3 ObjectScale;
 
-        // internal
+        // snapshot internal
         internal int TickWritten;
-    }
-
-    /// <summary>
-    /// Stores supplemental meta-information about a Spawn or Despawn command.
-    /// This part doesn't get sent, so is stored elsewhere in order to allow writing just the SnapshotSpawnCommand
-    /// </summary>
-    internal struct SnapshotSpawnDespawnCommandMeta
-    {
-        // The remaining clients a command still has to be sent to
         internal List<ulong> TargetClientIds;
-    };
-
-    /// <summary>
-    /// Stores information about a specific client.
-    /// What tick they ack'ed, for now.
-    /// </summary>
-    internal struct ClientData
-    {
-        internal int LastReceivedTick; // the last tick received by this client
-
-        internal ClientData(int unused)
-        {
-            LastReceivedTick = -1;
-        }
+        internal int TimesWritten;
     }
 
-    internal delegate int SendMessageHandler(SnapshotDataMessage message, ulong clientId);
-    internal delegate void SpawnObjectHandler(SnapshotSpawnCommand spawnCommand, ulong srcClientId);
-    internal delegate void DespawnObjectHandler(SnapshotDespawnCommand despawnCommand, ulong srcClientId);
-    internal delegate void GetBehaviourVariableHandler(UpdateCommand updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, ulong srcClientId);
+    internal class ClientData
+    {
+        internal struct SentSpawn // this struct also stores Despawns, not just Spawns
+        {
+            internal ulong SequenceNumber;
+            internal ulong ObjectId;
+            internal int Tick;
+        }
+
+        internal ushort SequenceNumber = 0; // the next sequence number to use for this client
+        internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
+        internal ushort ReceivedSequenceMask = 0; // bitmask of the messages before the last one that we received.
+
+        internal int NextSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
+        internal int NextDespawnIndex = 0; // same as above, but for despawns.
+
+        // by objectId
+        // which spawns and despawns did this connection ack'ed ?
+        internal Dictionary<ulong, int> SpawnAck = new Dictionary<ulong, int>();
+
+        // list of spawn and despawns commands we sent, with sequence number
+        // need to manage acknowledgements
+        internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
+    }
+
+    internal delegate int MockSendMessage(in SnapshotDataMessage message, NetworkDelivery delivery, ulong clientId);
+    internal delegate int MockSpawnObject(SnapshotSpawnCommand spawnCommand);
+    internal delegate int MockDespawnObject(SnapshotDespawnCommand despawnCommand);
 
 
+    // A table of NetworkVariables that constitutes a Snapshot.
+    // Stores serialized NetworkVariables
+    // todo --M1--
+    // The Snapshot will change for M1b with memory management, instead of just FreeMemoryPosition, there will be data structure
+    // around available buffer, etc.
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        private NetworkManager m_NetworkManager;
-        private NetworkTickSystem m_NetworkTickSystem;
+        // todo --M1-- functionality to grow these will be needed in a later milestone
+        private const int k_MaxVariables = 2000;
+        internal int SpawnsBufferCount { get; private set; } = 100;
+        internal int DespawnsBufferCount { get; private set; } = 100;
 
+        private const int k_BufferSize = 30000;
+
+        private NetworkManager m_NetworkManager = default;
+
+        // by clientId
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
-        // todo: how is this unused and does it belong here ?
         private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
-        // The tick we're currently processing (or last we processed, outside NetworkUpdate())
+        private bool m_UseSnapshotDelta;
+        private bool m_UseSnapshotSpawn;
+        private int m_SnapshotMaxSpawnUsage;
+        private NetworkTickSystem m_NetworkTickSystem;
+
         private int m_CurrentTick = NetworkTickSystem.NoTick;
 
-        internal UpdateCommand[] Updates;
-        internal UpdateCommandMeta[] UpdatesMeta;
-        internal int NumUpdates = 0;
+        internal byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
+        internal byte[] RecvBuffer = new byte[k_BufferSize]; // buffer holding the received snapshot message
 
-        // This arrays contains all the spawn commands received by the game code.
-        // This part can be written as-is to the message.
-        // Those are cleaned-up once the spawns are ack'ed by all target clients
+        internal IndexAllocator Allocator;
+
+        internal Entry[] Entries = new Entry[k_MaxVariables];
+        internal int LastEntry = 0;
+
         internal SnapshotSpawnCommand[] Spawns;
-        // Meta-information about Spawns. Entries are matched by index
-        internal SnapshotSpawnDespawnCommandMeta[] SpawnsMeta;
-        // Number of spawns used in the array. The array might actually be bigger, as it reserves space for performance reasons
         internal int NumSpawns = 0;
 
-        // This arrays contains all the despawn commands received by the game code.
-        // This part can be written as-is to the message.
-        // Those are cleaned-up once the despawns are ack'ed by all target clients
         internal SnapshotDespawnCommand[] Despawns;
-        // Meta-information about Despawns. Entries are matched by index
-        internal SnapshotSpawnDespawnCommandMeta[] DespawnsMeta;
-        // Number of spawns used in the array. The array might actually be bigger, as it reserves space for performance reasons
         internal int NumDespawns = 0;
 
-        // Local state. Stores which spawns and despawns were applied locally
         // indexed by ObjectId
         internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
         internal Dictionary<ulong, int> TickAppliedDespawn = new Dictionary<ulong, int>();
 
-        // Settings
         internal bool IsServer { get; set; }
         internal bool IsConnectedClient { get; set; }
         internal ulong ServerClientId { get; set; }
         internal List<ulong> ConnectedClientsId { get; } = new List<ulong>();
+        internal MockSendMessage MockSendMessage { get; set; }
+        internal MockSpawnObject MockSpawnObject { get; set; }
+        internal MockDespawnObject MockDespawnObject { get; set; }
 
-        // The following handlers decouple SnapshotSystem from its dependencies
-
-        // Handler that is called by SnapshotSystem to send a SnapshotMessage.
-        internal SendMessageHandler SendMessage;
-        // Handlers that are called by SnapshotSystem to spawn an object locally.
-        // The pre- version is called first, to allow the SDK to create the object.
-        // The post- version is called later, after reading the initial values of the NetworkVariable an object contains
-        internal SpawnObjectHandler PreSpawnObject;
-        internal SpawnObjectHandler PostSpawnObject;
-        // Handler that is called by SnapshotSystem to despawn an object locally.
-        internal DespawnObjectHandler DespawnObject;
-        // Handler that is called by SnapshotSystem to obtain a specific NetworkBehaviour and NetworkVariable.
-        internal GetBehaviourVariableHandler GetBehaviourVariable;
-
-        // Property showing visibility into inner workings, for testing
-        internal int SpawnsBufferCount { get; private set; } = 100;
-        internal int DespawnsBufferCount { get; private set; } = 100;
-
-        internal int UpdatesBufferCount { get; private set; } = 100;
-
-        internal const int TotalMaxIndices = 1000;
-        internal const int TotalBufferMemory = 10000;
-
-        internal IndexAllocator MemoryStorage = new IndexAllocator(TotalBufferMemory, TotalMaxIndices);
-        internal byte[] MemoryBuffer = new byte[TotalBufferMemory];
-
-        private int[] m_AvailableIndices; // The IndexAllocator indices for memory management
-        private int m_AvailableIndicesBufferCount = TotalMaxIndices; // Size of the buffer storing indices
-        private int m_NumAvailableIndices = TotalMaxIndices; // Current number of valid indices in m_AvailableIndices
-
-        private FastBufferWriter m_Writer;
-
-        internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
+        internal void Clear()
         {
-            m_NetworkManager = networkManager;
-            m_NetworkTickSystem = networkTickSystem;
-
-            m_Writer = new FastBufferWriter(TotalBufferMemory, Allocator.Persistent);
-
-            if (networkManager != null)
-            {
-                // If we have a NetworkManager, let's send on the network. This can be overriden for tests
-                SendMessage = NetworkSendMessage;
-                // If we have a NetworkManager, let's (de)spawn with the rest of our package. This can be overriden for tests
-                PreSpawnObject = NetworkPreSpawnObject;
-                PostSpawnObject = NetworkPostSpawnObject;
-                DespawnObject = NetworkDespawnObject;
-                GetBehaviourVariable = NetworkGetBehaviourVariable;
-            }
-
-            // register for updates in EarlyUpdate
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
-
-            Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
-            SpawnsMeta = new SnapshotSpawnDespawnCommandMeta[SpawnsBufferCount];
-            Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
-            DespawnsMeta = new SnapshotSpawnDespawnCommandMeta[DespawnsBufferCount];
-            Updates = new UpdateCommand[UpdatesBufferCount];
-            UpdatesMeta = new UpdateCommandMeta[UpdatesBufferCount];
-
-            m_AvailableIndices = new int[m_AvailableIndicesBufferCount];
-            for (var i = 0; i < m_AvailableIndicesBufferCount; i++)
-            {
-                m_AvailableIndices[i] = i;
-            }
+            LastEntry = 0;
+            Allocator.Reset();
         }
 
-        // returns the default client list: just the server, on clients, all clients, on the server
+        /// <summary>
+        /// Finds the position of a given NetworkVariable, given its key
+        /// </summary>
+        /// <param name="key">The key we're looking for</param>
+        internal int Find(VariableKey key)
+        {
+            // todo: Add a IEquatable interface for VariableKey. Rely on that instead.
+            for (int i = 0; i < LastEntry; i++)
+            {
+                // todo: revisit how we store past ticks
+                if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
+                    Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
+                    Entries[i].Key.VariableIndex == key.VariableIndex)
+                {
+                    return i;
+                }
+            }
+
+            return Entry.NotFound;
+        }
+
+        /// <summary>
+        /// Adds an entry in the table for a new key
+        /// </summary>
+        internal int AddEntry(in VariableKey k)
+        {
+            var pos = LastEntry++;
+            var entry = Entries[pos];
+
+            entry.Key = k;
+            entry.Position = 0;
+            entry.Length = 0;
+            Entries[pos] = entry;
+
+            return pos;
+        }
+
         internal List<ulong> GetClientList()
         {
             List<ulong> clientList;
@@ -260,10 +211,61 @@ namespace Unity.Netcode
             return clientList;
         }
 
-        /// <summary>
-        /// Shrink the buffer to the minimum needed. Frees the reserved space.
-        /// Mostly for testing at the moment, but could be useful for game code to reclaim memory
-        /// </summary>
+        internal void AddSpawn(SnapshotSpawnCommand command)
+        {
+            if (NumSpawns >= SpawnsBufferCount)
+            {
+                Array.Resize(ref Spawns, 2 * SpawnsBufferCount);
+                SpawnsBufferCount = SpawnsBufferCount * 2;
+                // Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
+            }
+
+            if (NumSpawns < SpawnsBufferCount)
+            {
+                if (command.TargetClientIds == default)
+                {
+                    command.TargetClientIds = GetClientList();
+                }
+
+                // todo: store, for each client, the spawn not ack'ed yet,
+                // to prevent sending despawns to them.
+                // for clientData in client list
+                // clientData.SpawnSet.Add(command.NetworkObjectId);
+
+                // todo:
+                // this 'if' might be temporary, but is needed to help in debugging
+                // or maybe it stays
+                if (command.TargetClientIds.Count > 0)
+                {
+                    Spawns[NumSpawns] = command;
+                    NumSpawns++;
+                }
+            }
+        }
+
+        internal void AddDespawn(SnapshotDespawnCommand command)
+        {
+            if (NumDespawns >= DespawnsBufferCount)
+            {
+                Array.Resize(ref Despawns, 2 * DespawnsBufferCount);
+                DespawnsBufferCount = DespawnsBufferCount * 2;
+                // Debug.Log($"[JEFF] despawn size is now {m_MaxDespawns}");
+            }
+
+            if (NumDespawns < DespawnsBufferCount)
+            {
+                if (command.TargetClientIds == default)
+                {
+                    command.TargetClientIds = GetClientList();
+                }
+                if (command.TargetClientIds.Count > 0)
+                {
+                    Despawns[NumDespawns] = command;
+                    NumDespawns++;
+                }
+            }
+        }
+
         internal void ReduceBufferUsage()
         {
             var count = Math.Max(1, NumDespawns);
@@ -275,77 +277,417 @@ namespace Unity.Netcode
             SpawnsBufferCount = count;
         }
 
-        /// <summary>
-        /// Called by SnapshotSystem, to spawn an object locally
-        /// In the pre- phase, we trigger the object creation and call
-        /// PreSpawnNetworkObjectLocallyCommon which trigger internal things like creating the NetworkVariables
-        /// </summary>
-        internal void NetworkPreSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        internal ClientData.SentSpawn GetSpawnData(in ClientData clientData, in SnapshotSpawnCommand spawn, out SnapshotDataMessage.SpawnData data)
         {
-            NetworkObject networkObject;
-            if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
-            {
-                networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
-                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
-                    spawnCommand.ObjectRotation);
-            }
-            else
-            {
-                networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
-                    spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
-                    spawnCommand.ObjectRotation);
-            }
+            // remember which spawn we sent this connection with which sequence number
+            // that way, upon ack, we can track what is being ack'ed
+            ClientData.SentSpawn sentSpawn;
+            sentSpawn.ObjectId = spawn.NetworkObjectId;
+            sentSpawn.Tick = spawn.TickWritten;
+            sentSpawn.SequenceNumber = clientData.SequenceNumber;
 
-            m_NetworkManager.SpawnManager.PreSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
-                true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+            data = new SnapshotDataMessage.SpawnData
+            {
+                NetworkObjectId = spawn.NetworkObjectId,
+                Hash = spawn.GlobalObjectIdHash,
+                IsSceneObject = spawn.IsSceneObject,
 
-            //todo: discuss with tools how to report shared bytes
-            m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
+                IsPlayerObject = spawn.IsPlayerObject,
+                OwnerClientId = spawn.OwnerClientId,
+                ParentNetworkId = spawn.ParentNetworkId,
+                Position = spawn.ObjectPosition,
+                Rotation = spawn.ObjectRotation,
+                Scale = spawn.ObjectScale,
+
+                TickWritten = spawn.TickWritten
+            };
+            return sentSpawn;
+        }
+
+        internal ClientData.SentSpawn GetDespawnData(in ClientData clientData, in SnapshotDespawnCommand despawn, out SnapshotDataMessage.DespawnData data)
+        {
+            // remember which spawn we sent this connection with which sequence number
+            // that way, upon ack, we can track what is being ack'ed
+            ClientData.SentSpawn sentSpawn;
+            sentSpawn.ObjectId = despawn.NetworkObjectId;
+            sentSpawn.Tick = despawn.TickWritten;
+            sentSpawn.SequenceNumber = clientData.SequenceNumber;
+
+            data = new SnapshotDataMessage.DespawnData
+            {
+                NetworkObjectId = despawn.NetworkObjectId,
+                TickWritten = despawn.TickWritten
+            };
+
+            return sentSpawn;
+        }
+        /// <summary>
+        /// Read a received Entry
+        /// Must match WriteEntry
+        /// </summary>
+        /// <param name="data">Deserialized snapshot entry data</param>
+        internal Entry ReadEntry(SnapshotDataMessage.EntryData data)
+        {
+            Entry entry;
+            entry.Key.NetworkObjectId = data.NetworkObjectId;
+            entry.Key.BehaviourIndex = data.BehaviourIndex;
+            entry.Key.VariableIndex = data.VariableIndex;
+            entry.Key.TickWritten = data.TickWritten;
+            entry.Position = data.Position;
+            entry.Length = data.Length;
+
+            return entry;
+        }
+
+        internal SnapshotSpawnCommand ReadSpawn(SnapshotDataMessage.SpawnData data)
+        {
+            var command = new SnapshotSpawnCommand();
+
+            command.NetworkObjectId = data.NetworkObjectId;
+            command.GlobalObjectIdHash = data.Hash;
+            command.IsSceneObject = data.IsSceneObject;
+            command.IsPlayerObject = data.IsPlayerObject;
+            command.OwnerClientId = data.OwnerClientId;
+            command.ParentNetworkId = data.ParentNetworkId;
+            command.ObjectPosition = data.Position;
+            command.ObjectRotation = data.Rotation;
+            command.ObjectScale = data.Scale;
+
+            command.TickWritten = data.TickWritten;
+
+            return command;
+        }
+
+        internal SnapshotDespawnCommand ReadDespawn(SnapshotDataMessage.DespawnData data)
+        {
+            var command = new SnapshotDespawnCommand();
+
+            command.NetworkObjectId = data.NetworkObjectId;
+            command.TickWritten = data.TickWritten;
+
+            return command;
         }
 
         /// <summary>
-        /// Called by SnapshotSystem, to spawn an object locally
-        /// In the post- phase, we call PostSpawnNetworkObjectLocallyCommon
-        /// which will notify the game code. This is done in two steps as it needs to happen after the object's
-        /// NetworkVariables have been read
+        /// Allocate memory from the buffer for the Entry and update it to point to the right location
         /// </summary>
-        internal void NetworkPostSpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        /// <param name="entry">The entry to allocate for</param>
+        /// <param name="size">The need size in bytes</param>
+        internal void AllocateEntry(ref Entry entry, int index, int size)
         {
-            if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(spawnCommand.NetworkObjectId,
-                out NetworkObject networkObject))
+            // todo: deal with full buffer
+
+            if (entry.Length > 0)
             {
-                m_NetworkManager.SpawnManager.PostSpawnNetworkObjectLocallyCommon(networkObject, spawnCommand.NetworkObjectId,
+                Allocator.Deallocate(index);
+            }
+
+            int pos;
+            bool ret = Allocator.Allocate(index, size, out pos);
+
+            if (!ret)
+            {
+                //todo: error handling
+            }
+
+            entry.Position = (ushort)pos;
+            entry.Length = (ushort)size;
+        }
+
+        /// <summary>
+        /// Read the buffer part of a snapshot
+        /// Must match WriteBuffer
+        /// The stream is actually a memory stream and we seek to each variable position as we deserialize them
+        /// </summary>
+        /// <param name="message">The message to pull the buffer from</param>
+        internal void ReadBuffer(in SnapshotDataMessage message)
+        {
+            RecvBuffer = message.ReceiveMainBuffer.ToArray(); // Note: Allocates
+        }
+
+        /// <summary>
+        /// Read the snapshot index from a buffer
+        /// Stores the entry. Allocates memory if needed. The actual buffer will be read later
+        /// </summary>
+        /// <param name="message">The message to read the index from</param>
+        internal void ReadIndex(in SnapshotDataMessage message)
+        {
+            Entry entry;
+
+            for (var i = 0; i < message.Entries.Length; i++)
+            {
+                bool added = false;
+
+                entry = ReadEntry(message.Entries[i]);
+
+                int pos = Find(entry.Key);// should return if there's anything more recent
+                if (pos == Entry.NotFound)
+                {
+                    pos = AddEntry(entry.Key);
+                    added = true;
+                }
+
+                // if we need to allocate more memory (the variable grew in size)
+                if (Entries[pos].Length < entry.Length)
+                {
+                    AllocateEntry(ref entry, pos, entry.Length);
+                    added = true;
+                }
+
+                if (added || entry.Key.TickWritten > Entries[pos].Key.TickWritten)
+                {
+                    Buffer.BlockCopy(RecvBuffer, entry.Position, MainBuffer, Entries[pos].Position, entry.Length);
+
+                    Entries[pos] = entry;
+
+                    // copy from readbuffer into buffer
+                    var networkVariable = FindNetworkVar(Entries[pos].Key);
+                    if (networkVariable != null)
+                    {
+                        unsafe
+                        {
+                            // This avoids copies - using Allocator.None creates a direct memory view into the buffer.
+                            fixed (byte* buffer = RecvBuffer)
+                            {
+                                var reader = new FastBufferReader(buffer, Collections.Allocator.None, RecvBuffer.Length);
+                                using (reader)
+                                {
+                                    reader.Seek(Entries[pos].Position);
+                                    // todo: consider refactoring out in its own function to accomodate
+                                    // other ways to (de)serialize
+                                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
+                                    networkVariable.ReadDelta(reader, false);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        internal void SpawnObject(SnapshotSpawnCommand spawnCommand, ulong srcClientId)
+        {
+            if (m_NetworkManager)
+            {
+                NetworkObject networkObject;
+                if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+                else
+                {
+                    networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false,
+                            spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition,
+                            spawnCommand.ObjectRotation);
+                }
+
+                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
                     true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
             }
             else
             {
-                Debug.LogError($"Didn't find expected NetworkObject for NetworkObjectId {spawnCommand.NetworkObjectId}");
+                MockSpawnObject(spawnCommand);
             }
         }
 
-        /// <summary>
-        /// Called by SnapshotSystem, to despawn an object locally
-        /// </summary>
-        internal void NetworkDespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
+        internal void DespawnObject(SnapshotDespawnCommand despawnCommand, ulong srcClientId)
         {
-            m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId, out NetworkObject networkObject);
-
-            if (networkObject == null)
+            if (m_NetworkManager)
             {
-                return;
+                m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                    out NetworkObject networkObject);
+
+                m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+                //todo: discuss with tools how to report shared bytes
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
+            }
+            else
+            {
+                MockDespawnObject(despawnCommand);
+            }
+        }
+
+
+        internal void ReadSpawns(in SnapshotDataMessage message, ulong srcClientId)
+        {
+            SnapshotSpawnCommand spawnCommand;
+            SnapshotDespawnCommand despawnCommand;
+
+            for (var i = 0; i < message.Spawns.Length; i++)
+            {
+                spawnCommand = ReadSpawn(message.Spawns[i]);
+
+                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+
+                // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
+
+                SpawnObject(spawnCommand, srcClientId);
+            }
+            for (var i = 0; i < message.Despawns.Length; i++)
+            {
+                despawnCommand = ReadDespawn(message.Despawns[i]);
+
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+
+                // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
+
+                DespawnObject(despawnCommand, srcClientId);
+            }
+        }
+
+        internal void ReadAcks(ulong clientId, ClientData clientData, in SnapshotDataMessage message, ConnectionRtt connection)
+        {
+            ushort ackSequence = message.Ack.LastReceivedSequence;
+            ushort seqMask = message.Ack.ReceivedSequenceMask;
+
+            // process the latest acknowledgment
+            ProcessSingleAck(ackSequence, clientId, clientData, connection);
+
+            // for each bit in the mask, acknowledge one message before
+            while (seqMask != 0)
+            {
+                ackSequence--;
+                // extract least bit
+                if (seqMask % 2 == 1)
+                {
+                    ProcessSingleAck(ackSequence, clientId, clientData, connection);
+                }
+                // move to next bit
+                seqMask >>= 1;
+            }
+        }
+
+        internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
+        {
+            // look through the spawns sent
+            for (int index = 0; index < clientData.SentSpawns.Count; /*no increment*/)
+            {
+                // needless copy, but I didn't find a way around
+                ClientData.SentSpawn sent = clientData.SentSpawns[index];
+
+                // for those with the sequence number being ack'ed
+                if (sent.SequenceNumber == ackSequence)
+                {
+                    // remember the tick
+                    if (!clientData.SpawnAck.ContainsKey(sent.ObjectId))
+                    {
+                        clientData.SpawnAck.Add(sent.ObjectId, sent.Tick);
+                    }
+                    else
+                    {
+                        clientData.SpawnAck[sent.ObjectId] = sent.Tick;
+                    }
+
+                    // check the spawn and despawn commands, find them, and if this is the last connection
+                    // to ack, let's remove them
+                    for (var i = 0; i < NumSpawns; i++)
+                    {
+                        if (Spawns[i].TickWritten == sent.Tick &&
+                            Spawns[i].NetworkObjectId == sent.ObjectId)
+                        {
+                            Spawns[i].TargetClientIds.Remove(clientId);
+
+                            if (Spawns[i].TargetClientIds.Count == 0)
+                            {
+                                // remove by moving the last spawn over
+                                Spawns[i] = Spawns[NumSpawns - 1];
+                                NumSpawns--;
+                                break;
+                            }
+                        }
+                    }
+                    for (var i = 0; i < NumDespawns; i++)
+                    {
+                        if (Despawns[i].TickWritten == sent.Tick &&
+                            Despawns[i].NetworkObjectId == sent.ObjectId)
+                        {
+                            Despawns[i].TargetClientIds.Remove(clientId);
+
+                            if (Despawns[i].TargetClientIds.Count == 0)
+                            {
+                                // remove by moving the last spawn over
+                                Despawns[i] = Despawns[NumDespawns - 1];
+                                NumDespawns--;
+                                break;
+                            }
+                        }
+                    }
+
+                    // remove current `sent`, by moving last over,
+                    // as it was acknowledged.
+                    // skip incrementing index
+                    clientData.SentSpawns[index] = clientData.SentSpawns[clientData.SentSpawns.Count - 1];
+                    clientData.SentSpawns.RemoveAt(clientData.SentSpawns.Count - 1);
+                }
+                else
+                {
+                    index++;
+                }
             }
 
-            m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
-            //todo: discuss with tools how to report shared bytes
-            m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(srcClientId, networkObject, 8);
+            // keep track of RTTs, using the sequence number acknowledgement as a marker
+            connection.NotifyAck(ackSequence, Time.unscaledTime);
         }
 
         /// <summary>
-        /// Updates the internal state of SnapshotSystem to refresh its knowledge of:
-        /// - am I a server
-        /// - what are the client Ids
-        /// todo: consider optimizing
+        /// Helper function to find the NetworkVariable object from a key
+        /// This will look into all spawned objects
         /// </summary>
+        /// <param name="key">The key to search for</param>
+        private NetworkVariableBase FindNetworkVar(VariableKey key)
+        {
+            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
+
+            if (spawnedObjects.ContainsKey(key.NetworkObjectId))
+            {
+                var behaviour = spawnedObjects[key.NetworkObjectId]
+                    .GetNetworkBehaviourAtOrderIndex(key.BehaviourIndex);
+                return behaviour.NetworkVariableFields[key.VariableIndex];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// Registers the snapshot system for early updates, keeps reference to the NetworkManager
+        internal SnapshotSystem(NetworkManager networkManager, NetworkConfig config, NetworkTickSystem networkTickSystem)
+        {
+            m_NetworkManager = networkManager;
+            m_NetworkTickSystem = networkTickSystem;
+
+            m_UseSnapshotDelta = config.UseSnapshotDelta;
+            m_UseSnapshotSpawn = config.UseSnapshotSpawn;
+            m_SnapshotMaxSpawnUsage = config.SnapshotMaxSpawnUsage;
+
+            UpdateClientServerData();
+
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+
+            // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
+            Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
+            Spawns = new SnapshotSpawnCommand[SpawnsBufferCount];
+            Despawns = new SnapshotDespawnCommand[DespawnsBufferCount];
+        }
+
+        // since we don't want to access the NetworkManager directly, we refresh those values on Update
         internal void UpdateClientServerData()
         {
             if (m_NetworkManager)
@@ -368,23 +710,32 @@ namespace Unity.Netcode
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
-            return new ConnectionRtt();
+            if (!m_ConnectionRtts.ContainsKey(clientId))
+            {
+                m_ConnectionRtts.Add(clientId, new ConnectionRtt());
+            }
+
+            return m_ConnectionRtts[clientId];
         }
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        /// Unregisters the snapshot system from early updates
         public void Dispose()
         {
-            this.UnregisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            if (updateStage == NetworkUpdateStage.PostLateUpdate)
+            if (!m_UseSnapshotDelta && !m_UseSnapshotSpawn)
             {
-                if (m_NetworkManager)
-                {
-                    m_NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_NetworkManager);
-                }
+                return;
+            }
 
+            if (updateStage == NetworkUpdateStage.EarlyUpdate)
+            {
                 UpdateClientServerData();
 
                 var tick = m_NetworkTickSystem.LocalTime.Tick;
@@ -410,518 +761,382 @@ namespace Unity.Netcode
                         SendSnapshot(ServerClientId);
                     }
                 }
+
+                // useful for debugging, but generates LOTS of spam
+                // DebugDisplayStore();
             }
         }
 
-        // where we build and send a snapshot to a given client
+        // todo --M1--
+        // for now, the full snapshot is always sent
+        // this will change significantly
+        /// <summary>
+        /// Send the snapshot to a specific client
+        /// </summary>
+        /// <param name="clientId">The client index to send to</param>
         private void SendSnapshot(ulong clientId)
         {
-            var header = new SnapshotHeader();
-            var message = new SnapshotDataMessage(0);
-
-            // Verify we allocated client Data for this clientId
+            // make sure we have a ClientData and ConnectionRtt entry for each client
             if (!m_ClientData.ContainsKey(clientId))
             {
-                m_ClientData.Add(clientId, new ClientData(0));
+                m_ClientData.Add(clientId, new ClientData());
             }
 
-            // Find which spawns must be included
-            var spawnsToInclude = new List<int>();
-            for (var index = 0; index < NumSpawns; index++)
+            if (!m_ConnectionRtts.ContainsKey(clientId))
             {
-                if (SpawnsMeta[index].TargetClientIds.Contains(clientId))
+                m_ConnectionRtts.Add(clientId, new ConnectionRtt());
+            }
+
+            m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
+
+            var sequence = m_ClientData[clientId].SequenceNumber;
+            var message = new SnapshotDataMessage
+            {
+                CurrentTick = m_CurrentTick,
+                Sequence = sequence,
+                Range = (ushort)Allocator.Range,
+
+                // todo --M1--
+                // this sends the whole buffer
+                // we'll need to build a per-client list
+                SendMainBuffer = MainBuffer,
+
+                Ack = new SnapshotDataMessage.AckData
                 {
-                    spawnsToInclude.Add(index);
+                    LastReceivedSequence = m_ClientData[clientId].LastReceivedSequence,
+                    ReceivedSequenceMask = m_ClientData[clientId].ReceivedSequenceMask
                 }
-            }
-
-            // Find which despawns must be included
-            var despawnsToInclude = new List<int>();
-            for (var index = 0; index < NumDespawns; index++)
-            {
-                if (DespawnsMeta[index].TargetClientIds.Contains(clientId))
-                {
-                    despawnsToInclude.Add(index);
-                }
-            }
-
-            // Find which value updates must be included
-            var updatesToInclude = new List<int>();
-            var updatesPayloadLength = 0;
-            for (var index = 0; index < NumUpdates; index++)
-            {
-                if (UpdatesMeta[index].TargetClientIds.Contains(clientId))
-                {
-                    updatesToInclude.Add(index);
-                    updatesPayloadLength += Updates[index].SerializedLength;
-                }
-            }
+            };
 
 
-            header.CurrentTick = m_CurrentTick;
-            header.SpawnCount = spawnsToInclude.Count;
-            header.DespawnCount = despawnsToInclude.Count;
-            header.UpdateCount = updatesToInclude.Count;
-            header.LastReceivedSequence = m_ClientData[clientId].LastReceivedTick;
-
-            if (!message.WriteBuffer.TryBeginWrite(
-                FastBufferWriter.GetWriteSize(header) +
-                spawnsToInclude.Count * FastBufferWriter.GetWriteSize(Spawns[0]) +
-                despawnsToInclude.Count * FastBufferWriter.GetWriteSize(Despawns[0]) +
-                updatesToInclude.Count * FastBufferWriter.GetWriteSize(Updates[0]) +
-                updatesPayloadLength))
-            {
-                // todo: error handling
-                Debug.Assert(false, "Unable to secure buffer for sending");
-            }
-
-            message.WriteBuffer.WriteValue(header);
-
-            // Write the Spawns.
-            foreach (var index in spawnsToInclude)
-            {
-                message.WriteBuffer.WriteValue(Spawns[index]);
-            }
-
-            // Write the Updates, interleaved with the variable payload
-            foreach (var index in updatesToInclude)
-            {
-                message.WriteBuffer.WriteValue(Updates[index]);
-                message.WriteBuffer.WriteBytes(MemoryBuffer, Updates[index].SerializedLength, UpdatesMeta[index].BufferPos);
-            }
-
-            // Write the Despawns.
-            foreach (var index in despawnsToInclude)
-            {
-                message.WriteBuffer.WriteValue(Despawns[index]);
-            }
-
-            SendMessage(message, clientId);
-        }
-
-        internal void CleanUpdateFromSnapshot(SnapshotDespawnCommand despawnCommand)
-        {
-            for (int i = 0; i < NumUpdates; /*increment done below*/)
-            {
-                // if this is a despawn command for an object we have an update for, let's forget it
-                if (Updates[i].NetworkObjectId == despawnCommand.NetworkObjectId)
-                {
-                    // deallocate the memory
-                    MemoryStorage.Deallocate(UpdatesMeta[i].Index);
-                    // retrieve the index as available
-                    m_AvailableIndices[m_NumAvailableIndices++] = UpdatesMeta[i].Index;
-
-                    Updates[i] = Updates[NumUpdates - 1];
-                    UpdatesMeta[i] = UpdatesMeta[NumUpdates - 1];
-                    NumUpdates--;
-
-                    // skip incrementing i
-                }
-                else
-                {
-                    i++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Entry-point into SnapshotSystem to spawn an object
-        /// called with a SnapshotSpawnCommand, the NetworkObject and a list of target clientIds, where null means all clients
-        /// </summary>
-        internal void Spawn(SnapshotSpawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
-        {
-            command.TickWritten = m_CurrentTick;
-
-            if (NumSpawns >= SpawnsBufferCount)
-            {
-                SpawnsBufferCount = SpawnsBufferCount * 2;
-                Array.Resize(ref Spawns, SpawnsBufferCount);
-                Array.Resize(ref SpawnsMeta, SpawnsBufferCount);
-            }
-
-            if (targetClientIds == default)
-            {
-                targetClientIds = GetClientList();
-            }
-
-            // todo:
-            // this 'if' might be temporary, but is needed to help in debugging
-            // or maybe it stays
-            if (targetClientIds.Count > 0)
-            {
-                Spawns[NumSpawns] = command;
-                SpawnsMeta[NumSpawns].TargetClientIds = targetClientIds;
-                NumSpawns++;
-            }
+            // write the snapshot: buffer, index, spawns, despawns
+            WriteIndex(ref message);
+            WriteSpawns(ref message, clientId);
 
             if (m_NetworkManager)
             {
-                foreach (var dstClientId in targetClientIds)
-                {
-                    m_NetworkManager.NetworkMetrics.TrackObjectSpawnSent(dstClientId, networkObject, 8);
-                }
+                m_NetworkManager.SendMessage(message, NetworkDelivery.Unreliable, clientId);
+            }
+            else
+            {
+                MockSendMessage(message, NetworkDelivery.Unreliable, clientId);
+            }
 
-                // When we spawn an object we need to include its initial value.
-                // This scans the NetworkVariable of the spawn object and store its NetworkVariables
+            m_ClientData[clientId].LastReceivedSequence = 0;
 
-                var updateCommand = new UpdateCommand();
-                for (ushort childIndex = 0; childIndex < networkObject.ChildNetworkBehaviours.Count; childIndex++)
+            // todo: this is incorrect (well, sub-optimal)
+            // we should still continue ack'ing past messages, in case this one is dropped
+            m_ClientData[clientId].ReceivedSequenceMask = 0;
+            m_ClientData[clientId].SequenceNumber++;
+        }
+
+        // Checks if a given SpawnCommand should be written to a Snapshot Message
+        // Performs exponential back off. To write a spawn a second time
+        // two ticks must have gone by. To write it a third time, four ticks, etc...
+        // This prioritize commands that have been re-sent less than others
+        private bool ShouldWriteSpawn(in SnapshotSpawnCommand spawnCommand)
+        {
+            if (m_CurrentTick < spawnCommand.TickWritten)
+            {
+                return false;
+            }
+
+            // 63 as we can't shift more than that.
+            var diff = Math.Min(63, m_CurrentTick - spawnCommand.TickWritten);
+
+            // -1 to make the first resend immediate
+            return (1 << diff) > (spawnCommand.TimesWritten - 1);
+        }
+
+        private bool ShouldWriteDespawn(in SnapshotDespawnCommand despawnCommand)
+        {
+            if (m_CurrentTick < despawnCommand.TickWritten)
+            {
+                return false;
+            }
+
+            // 63 as we can't shift more than that.
+            var diff = Math.Min(63, m_CurrentTick - despawnCommand.TickWritten);
+
+            // -1 to make the first resend immediate
+            return (1 << diff) > (despawnCommand.TimesWritten - 1);
+        }
+
+        private void WriteSpawns(ref SnapshotDataMessage message, ulong clientId)
+        {
+            var spawnWritten = 0;
+            var despawnWritten = 0;
+            var overSize = false;
+
+            ClientData clientData = m_ClientData[clientId];
+
+            // this is needed because spawns being removed may have reduce the size below LRU position
+            if (NumSpawns > 0)
+            {
+                clientData.NextSpawnIndex %= NumSpawns;
+            }
+            else
+            {
+                clientData.NextSpawnIndex = 0;
+            }
+
+            if (NumDespawns > 0)
+            {
+                clientData.NextDespawnIndex %= NumDespawns;
+            }
+            else
+            {
+                clientData.NextDespawnIndex = 0;
+            }
+
+            message.Spawns = new NativeList<SnapshotDataMessage.SpawnData>(NumSpawns, Collections.Allocator.TempJob);
+            message.Despawns = new NativeList<SnapshotDataMessage.DespawnData>(NumDespawns, Collections.Allocator.TempJob);
+            var spawnUsage = 0;
+
+            for (var j = 0; j < NumSpawns && !overSize; j++)
+            {
+                var index = clientData.NextSpawnIndex;
+
+                // todo: re-enable ShouldWriteSpawn, once we have a mechanism to not let despawn pass in front of spawns
+                if (Spawns[index].TargetClientIds.Contains(clientId) /*&& ShouldWriteSpawn(Spawns[index])*/)
                 {
-                    var behaviour = networkObject.ChildNetworkBehaviours[childIndex];
-                    for (var variableIndex = 0; variableIndex < behaviour.NetworkVariableFields.Count; variableIndex++)
+                    spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.SpawnData>();
+
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (spawnUsage > m_SnapshotMaxSpawnUsage)
                     {
-                        updateCommand.NetworkObjectId = command.NetworkObjectId;
-                        updateCommand.BehaviourIndex = childIndex;
-                        updateCommand.VariableIndex = variableIndex;
-
-                        // because this is a spawn, we specify that this isn't a delta update
-                        Store(updateCommand, behaviour.NetworkVariableFields[variableIndex], /* IsDelta = */ false);
+                        overSize = true;
+                        break;
                     }
+                    var sentSpawn = GetSpawnData(clientData, in Spawns[index], out var spawn);
+                    message.Spawns.Add(spawn);
+
+                    Spawns[index].TimesWritten++;
+                    clientData.SentSpawns.Add(sentSpawn);
+                    spawnWritten++;
                 }
+                clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % NumSpawns;
+            }
+
+            // even though we might have a spawn we could not fit, it's possible despawns will fit (they're smaller)
+
+            // todo: this next line is commented for now because there's no check for a spawn command to have been
+            // ack'ed before sending a despawn for the same object.
+            // Uncommenting this line would allow some despawn to be sent while spawns are pending.
+            // As-is it is overly restrictive but allows us to go forward without the spawn/despawn dependency check
+            // overSize = false;
+
+            for (var j = 0; j < NumDespawns && !overSize; j++)
+            {
+                var index = clientData.NextDespawnIndex;
+
+                // todo: re-enable ShouldWriteSpawn, once we have a mechanism to not let despawn pass in front of spawns
+                if (Despawns[index].TargetClientIds.Contains(clientId) /*&& ShouldWriteDespawn(Despawns[index])*/)
+                {
+                    spawnUsage += FastBufferWriter.GetWriteSize<SnapshotDataMessage.DespawnData>();
+
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (spawnUsage > m_SnapshotMaxSpawnUsage)
+                    {
+                        overSize = true;
+                        break;
+                    }
+                    var sentDespawn = GetDespawnData(clientData, in Despawns[index], out var despawn);
+                    message.Despawns.Add(despawn);
+                    Despawns[index].TimesWritten++;
+                    clientData.SentSpawns.Add(sentDespawn);
+                    despawnWritten++;
+                }
+                clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % NumDespawns;
             }
         }
 
         /// <summary>
-        /// Entry-point into SnapshotSystem to despawn an object
-        /// called with a SnapshotDespawnCommand, the NetworkObject and a list of target clientIds, where null means all clients
+        /// Write the snapshot index to a buffer
         /// </summary>
-        internal void Despawn(SnapshotDespawnCommand command, NetworkObject networkObject, List<ulong> targetClientIds)
+        /// <param name="message">The message to write the index to</param>
+        private void WriteIndex(ref SnapshotDataMessage message)
+        {
+            message.Entries = new NativeList<SnapshotDataMessage.EntryData>(LastEntry, Collections.Allocator.TempJob);
+            for (var i = 0; i < LastEntry; i++)
+            {
+                var entryMeta = Entries[i];
+                var entry = entryMeta.Key;
+                message.Entries.Add(new SnapshotDataMessage.EntryData
+                {
+                    NetworkObjectId = entry.NetworkObjectId,
+                    BehaviourIndex = entry.BehaviourIndex,
+                    VariableIndex = entry.VariableIndex,
+                    TickWritten = entry.TickWritten,
+                    Position = entryMeta.Position,
+                    Length = entryMeta.Length
+                });
+            }
+        }
+
+        internal void Spawn(SnapshotSpawnCommand command)
         {
             command.TickWritten = m_CurrentTick;
+            AddSpawn(command);
 
-            if (NumDespawns >= DespawnsBufferCount)
+            // Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
+        }
+
+        internal void Despawn(SnapshotDespawnCommand command)
+        {
+            command.TickWritten = m_CurrentTick;
+            AddDespawn(command);
+
+            // Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
+        }
+
+        // todo: consider using a Key, instead of 3 ints, if it can be exposed
+        /// <summary>
+        /// Called by the rest of the netcode when a NetworkVariable changed and need to go in our snapshot
+        /// Might not happen for all variable on every frame. Might even happen more than once.
+        /// </summary>
+        /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
+        internal void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, NetworkVariableBase networkVariable)
+        {
+            VariableKey k;
+            k.NetworkObjectId = networkObjectId;
+            k.BehaviourIndex = (ushort)behaviourIndex;
+            k.VariableIndex = (ushort)variableIndex;
+            k.TickWritten = m_NetworkTickSystem.LocalTime.Tick;
+
+            int pos = Find(k);
+            if (pos == Entry.NotFound)
             {
-                DespawnsBufferCount = DespawnsBufferCount * 2;
-                Array.Resize(ref Despawns, DespawnsBufferCount);
-                Array.Resize(ref DespawnsMeta, DespawnsBufferCount);
+                pos = AddEntry(k);
             }
 
-            if (targetClientIds == default)
-            {
-                targetClientIds = GetClientList();
-            }
+            Entries[pos].Key.TickWritten = k.TickWritten;
 
-            // todo:
-            // this 'if' might be temporary, but is needed to help in debugging
-            // or maybe it stays
-            if (targetClientIds.Count > 0)
-            {
-                Despawns[NumDespawns] = command;
-                DespawnsMeta[NumDespawns].TargetClientIds = targetClientIds;
-                NumDespawns++;
-            }
+            WriteVariable(networkVariable, pos);
+        }
 
-            CleanUpdateFromSnapshot(command);
-
-            if (m_NetworkManager)
+        private unsafe void WriteVariable(NetworkVariableBase networkVariable, int index)
+        {
+            // write var into buffer, possibly adjusting entry's position and Length
+            var varBuffer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Collections.Allocator.Temp);
+            using (varBuffer)
             {
-                foreach (var dstClientId in targetClientIds)
+                networkVariable.WriteDelta(varBuffer);
+                if (varBuffer.Length > Entries[index].Length)
                 {
-                    m_NetworkManager.NetworkMetrics.TrackObjectDestroySent(dstClientId, networkObject, 8);
+                    // allocate this Entry's buffer
+                    AllocateEntry(ref Entries[index], index, (int)varBuffer.Length);
+                }
+
+                fixed (byte* buffer = MainBuffer)
+                {
+                    UnsafeUtility.MemCpy(buffer + Entries[index].Position, varBuffer.GetUnsafePtr(), varBuffer.Length);
                 }
             }
         }
 
-        // entry-point for value updates
-        internal void Store(UpdateCommand command, NetworkVariableBase networkVariable, bool isDelta = true)
+
+        /// <summary>
+        /// Entry point when a Snapshot is received
+        /// This is where we read and store the received snapshot
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="message">The message to read from</param>
+        internal void HandleSnapshot(ulong clientId, in SnapshotDataMessage message)
         {
-            command.TickWritten = m_CurrentTick;
-            command.IsDelta = isDelta;
-
-            var commandPosition = -1;
-
-            List<ulong> targetClientIds = GetClientList();
-
-            if (targetClientIds.Count == 0)
-            {
-                return;
-            }
-
-            // Look for an existing variable's position to update before adding a new entry
-            for (var i = 0; i < NumUpdates; i++)
-            {
-                if (Updates[i].BehaviourIndex == command.BehaviourIndex &&
-                    Updates[i].NetworkObjectId == command.NetworkObjectId &&
-                    Updates[i].VariableIndex == command.VariableIndex)
-                {
-                    commandPosition = i;
-                    break;
-                }
-            }
-
-            if (commandPosition == -1)
-            {
-                int index = -1;
-
-                if (NumUpdates >= UpdatesBufferCount)
-                {
-                    UpdatesBufferCount = UpdatesBufferCount * 2;
-                    Array.Resize(ref Updates, UpdatesBufferCount);
-                    Array.Resize(ref UpdatesMeta, UpdatesBufferCount);
-                }
-
-                commandPosition = NumUpdates;
-                NumUpdates++;
-
-                index = m_AvailableIndices[0];
-                m_AvailableIndices[0] = m_AvailableIndices[m_NumAvailableIndices - 1];
-                m_NumAvailableIndices--;
-
-                UpdatesMeta[commandPosition].Index = index;
-            }
-            else
-            {
-                // de-allocate previous buffer as a new one will be allocated
-                MemoryStorage.Deallocate(UpdatesMeta[commandPosition].Index);
-            }
-
-            // the position we'll be serializing the network variable at, in our memory buffer
-            int bufferPos = 0;
-
-            m_Writer.Seek(0);
-            m_Writer.Truncate(0);
-
-            if (m_NumAvailableIndices == 0)
-            {
-                // todo: error handling
-                Debug.Assert(false);
-            }
-
-            // we use WriteDelta for updates, but WriteField for spawns. It is important to use the correct one
-            // for NetworkList. And, in the future, NetworkVariables might care, too.
-            if (command.IsDelta)
-            {
-                networkVariable.WriteDelta(m_Writer);
-            }
-            else
-            {
-                networkVariable.WriteField(m_Writer);
-            }
-
-            command.SerializedLength = m_Writer.Length;
-
-            var allocated = MemoryStorage.Allocate(UpdatesMeta[commandPosition].Index, m_Writer.Length, out bufferPos);
-
-            Debug.Assert(allocated);
-
-            unsafe
-            {
-                fixed (byte* buff = &MemoryBuffer[0])
-                {
-                    Buffer.MemoryCopy(m_Writer.GetUnsafePtr(), buff + bufferPos, TotalBufferMemory - bufferPos,
-                        m_Writer.Length);
-                }
-            }
-
-            Updates[commandPosition] = command;
-            UpdatesMeta[commandPosition].TargetClientIds = targetClientIds;
-            UpdatesMeta[commandPosition].BufferPos = bufferPos;
-        }
-
-        internal void HandleSnapshot(ulong clientId, SnapshotDataMessage message)
-        {
-            // Read the Spawns. Count first, then each spawn
-            var spawnCommand = new SnapshotSpawnCommand();
-            var despawnCommand = new SnapshotDespawnCommand();
-            var updateCommand = new UpdateCommand();
-
-            var header = new SnapshotHeader();
-
-            // Verify we allocated client Data for this clientId
+            // make sure we have a ClientData entry for each client
             if (!m_ClientData.ContainsKey(clientId))
             {
-                m_ClientData.Add(clientId, new ClientData(0));
+                m_ClientData.Add(clientId, new ClientData());
             }
 
-            if (message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(header)))
+            if (message.Sequence >= m_ClientData[clientId].LastReceivedSequence)
             {
-                // todo: error handling
-                message.ReadBuffer.ReadValue(out header);
-            }
-            else
-            {
-                Debug.LogError("Error reading header");
-                return;
-            }
-
-            var clientData = m_ClientData[clientId];
-            clientData.LastReceivedTick = header.CurrentTick;
-            m_ClientData[clientId] = clientData;
-
-            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(spawnCommand) * header.SpawnCount))
-            {
-                // todo: deal with error
-            }
-
-            var spawnPosition = message.ReadBuffer.Position;
-            for (int index = 0; index < header.SpawnCount; index++)
-            {
-                message.ReadBuffer.ReadValue(out spawnCommand);
-
-                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
-                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
+                if (m_ClientData[clientId].ReceivedSequenceMask != 0)
                 {
-                    continue;
-                }
-
-                PreSpawnObject(spawnCommand, clientId);
-            }
-
-            for (int index = 0; index < header.UpdateCount; index++)
-            {
-                message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(updateCommand));
-                message.ReadBuffer.ReadValue(out updateCommand);
-
-                // Find the network variable;
-                GetBehaviourVariable(updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, clientId);
-
-                // if the variable is not present anymore (despawned) or if this is an older update, let skip
-                // we still need to seek over the message, though
-                if (variable != null && updateCommand.TickWritten > variable.TickRead)
-                {
-                    variable.TickRead = updateCommand.TickWritten;
-                    if (updateCommand.IsDelta)
+                    // since each bit in ReceivedSequenceMask is relative to the last received sequence
+                    // we need to shift all the bits by the difference in sequence
+                    var shift = message.Sequence - m_ClientData[clientId].LastReceivedSequence;
+                    if (shift < sizeof(ushort) * 8)
                     {
-                        // todo: revisit if we need to pass something for keepDirtyDelta
-                        // since we currently only have server-authoritative changes, this makes no difference
-                        variable.ReadDelta(message.ReadBuffer, /* keepDirtyDelta = */false);
+                        m_ClientData[clientId].ReceivedSequenceMask <<= shift;
                     }
                     else
                     {
-                        variable.ReadField(message.ReadBuffer);
+                        m_ClientData[clientId].ReceivedSequenceMask = 0;
                     }
-
-                    m_NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
-                        clientId, behaviour.NetworkObject, variable.Name, behaviour.__getTypeName(), 20); // todo: what length ?
-                }
-                else
-                {
-                    // skip over the value update payload we don't need to read
-                    message.ReadBuffer.Seek(message.ReadBuffer.Position + updateCommand.SerializedLength);
-                }
-            }
-
-            if (!message.ReadBuffer.TryBeginRead(FastBufferWriter.GetWriteSize(despawnCommand) * header.DespawnCount))
-            {
-                // todo: deal with error
-            }
-
-            for (int index = 0; index < header.DespawnCount; index++)
-            {
-                message.ReadBuffer.ReadValue(out despawnCommand);
-
-                // todo: can we keep a single value of which tick we applied instead of per object ?
-                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
-                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
-                {
-                    continue;
                 }
 
-                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
-                DespawnObject(despawnCommand, clientId);
-            }
-
-            // todo: can we keep a single value of which tick we applied instead of per object ?
-
-            for (int i = 0; i < NumSpawns;)
-            {
-                if (Spawns[i].TickWritten < header.LastReceivedSequence &&
-                    SpawnsMeta[i].TargetClientIds.Contains(clientId))
+                if (m_ClientData[clientId].LastReceivedSequence != 0)
                 {
-                    SpawnsMeta[i].TargetClientIds.Remove(clientId);
-
-                    if (SpawnsMeta[i].TargetClientIds.Count == 0)
+                    // because the bit we're adding for the previous ReceivedSequenceMask
+                    // was implicit, it needs to be shift by one less
+                    var shift = message.Sequence - 1 - m_ClientData[clientId].LastReceivedSequence;
+                    if (shift < sizeof(ushort) * 8)
                     {
-                        SpawnsMeta[i] = SpawnsMeta[NumSpawns - 1];
-                        Spawns[i] = Spawns[NumSpawns - 1];
-                        NumSpawns--;
-
-                        continue; // skip the i++ below
+                        m_ClientData[clientId].ReceivedSequenceMask |= (ushort)(1 << shift);
                     }
                 }
-                i++;
-            }
-            for (int i = 0; i < NumDespawns;)
-            {
-                if (Despawns[i].TickWritten < header.LastReceivedSequence &&
-                    DespawnsMeta[i].TargetClientIds.Contains(clientId))
-                {
-                    DespawnsMeta[i].TargetClientIds.Remove(clientId);
 
-                    if (DespawnsMeta[i].TargetClientIds.Count == 0)
-                    {
-                        DespawnsMeta[i] = DespawnsMeta[NumDespawns - 1];
-                        Despawns[i] = Despawns[NumDespawns - 1];
-                        NumDespawns--;
-
-                        continue; // skip the i++ below
-                    }
-                }
-                i++;
-            }
-            for (int i = 0; i < NumUpdates;)
-            {
-                if (Updates[i].TickWritten < header.LastReceivedSequence &&
-                    UpdatesMeta[i].TargetClientIds.Contains(clientId))
-                {
-                    UpdatesMeta[i].TargetClientIds.Remove(clientId);
-
-                    if (UpdatesMeta[i].TargetClientIds.Count == 0)
-                    {
-                        MemoryStorage.Deallocate(UpdatesMeta[i].Index);
-                        m_AvailableIndices[m_NumAvailableIndices++] = UpdatesMeta[i].Index;
-
-                        UpdatesMeta[i] = UpdatesMeta[NumUpdates - 1];
-                        Updates[i] = Updates[NumUpdates - 1];
-                        NumUpdates--;
-
-                        continue; // skip the i++ below
-                    }
-                }
-                i++;
-            }
-
-            var endPosition = message.ReadBuffer.Position;
-            message.ReadBuffer.Seek(spawnPosition);
-            for (int index = 0; index < header.SpawnCount; index++)
-            {
-                message.ReadBuffer.ReadValue(out spawnCommand);
-
-                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
-                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
-                {
-                    continue;
-                }
-
-                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
-                PostSpawnObject(spawnCommand, clientId);
-            }
-            message.ReadBuffer.Seek(endPosition);
-        }
-
-        internal void NetworkGetBehaviourVariable(UpdateCommand updateCommand, out NetworkBehaviour behaviour, out NetworkVariableBase variable, ulong srcClientId)
-        {
-            if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(updateCommand.NetworkObjectId,
-                out NetworkObject networkObject))
-            {
-                behaviour = networkObject.GetNetworkBehaviourAtOrderIndex(updateCommand.BehaviourIndex);
-
-                Debug.Assert(networkObject != null);
-
-                variable = behaviour.NetworkVariableFields[updateCommand.VariableIndex];
+                m_ClientData[clientId].LastReceivedSequence = message.Sequence;
             }
             else
             {
-                variable = null;
-                behaviour = null;
+                // todo: Missing: dealing with out-of-order message acknowledgments
+                // we should set m_ClientData[clientId].ReceivedSequenceMask accordingly
+                // testing this will require a way to reorder SnapshotMessages, which we lack at the moment
+                //
+                // without this, we incur extra retransmit, not a catastrophic failure
             }
+
+            ReadBuffer(message);
+            ReadIndex(message);
+            ReadAcks(clientId, m_ClientData[clientId], message, GetConnectionRtt(clientId));
+            ReadSpawns(message, clientId);
         }
 
-        internal int NetworkSendMessage(SnapshotDataMessage message, ulong clientId)
+        // todo --M1--
+        // This is temporary debugging code. Once the feature is complete, we can consider removing it
+        // But we could also leave it in in debug to help developers
+        private void DebugDisplayStore()
         {
-            m_NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+            string table = "=== Snapshot table ===\n";
+            table += $"We're clientId {m_NetworkManager.LocalClientId}\n";
 
-            return 0;
+            table += "=== Variables ===\n";
+            for (int i = 0; i < LastEntry; i++)
+            {
+                table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", Entries[i].Key.NetworkObjectId, Entries[i].Key.BehaviourIndex,
+                    Entries[i].Key.VariableIndex, Entries[i].Position, Entries[i].Position + Entries[i].Length, Entries[i].Key.TickWritten);
+
+                for (int j = 0; j < Entries[i].Length && j < 4; j++)
+                {
+                    table += MainBuffer[Entries[i].Position + j].ToString("X2") + " ";
+                }
+
+                table += "\n";
+            }
+
+            table += "=== Spawns ===\n";
+
+            for (int i = 0; i < NumSpawns; i++)
+            {
+                string targets = "";
+                foreach (var target in Spawns[i].TargetClientIds)
+                {
+                    targets += target.ToString() + ", ";
+                }
+                table += $"Spawn Object Id {Spawns[i].NetworkObjectId}, Tick {Spawns[i].TickWritten}, Target {targets}\n";
+            }
+
+            table += $"=== RTTs ===\n";
+            foreach (var iterator in m_ConnectionRtts)
+            {
+                table += $"client {iterator.Key} RTT {iterator.Value.GetRtt().AverageSec}\n";
+            }
+
+            table += "======\n";
+            Debug.Log(table);
         }
     }
 }

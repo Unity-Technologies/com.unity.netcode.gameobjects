@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -54,28 +53,12 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        private InterestManager<NetworkObject> m_InterestManager;
-
-        // For unit (vs. integration) testing and for better decoupling, we don't want to have to require Initialize()
-        //  to use the InterestManager
-        public InterestManager<NetworkObject> InterestManager
-        {
-            get
-            {
-                if (m_InterestManager == null)
-                {
-                    m_InterestManager = new InterestManager<NetworkObject>();
-                }
-                return m_InterestManager;
-            }
-        }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
-
 
         public NetworkPrefabHandler PrefabHandler
         {
@@ -91,7 +74,6 @@ namespace Unity.Netcode
         }
 
         private bool m_ShuttingDown;
-
         private bool m_StopProcessingMessages;
 
         private class NetworkManagerHooks : INetworkHooks
@@ -103,11 +85,11 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
+            public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
             {
             }
 
-            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
+            public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
             {
             }
 
@@ -156,14 +138,6 @@ namespace Unity.Netcode
                 }
 
                 return !m_NetworkManager.m_StopProcessingMessages;
-            }
-
-            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-            {
-            }
-
-            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-            {
             }
         }
 
@@ -581,8 +555,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
-
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
@@ -611,7 +583,6 @@ namespace Unity.Netcode
 
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
-            NetworkConfig.OverrideToNetworkPrefab.Clear();
 
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -993,6 +964,48 @@ namespace Unity.Netcode
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
+        /// <summary>
+        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            NetworkManagerCheckForParent();
+        }
+
+        /// <summary>
+        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
+        /// notifies the user that this is not allowed for the NetworkManager.
+        /// </summary>
+        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
+        {
+#if UNITY_EDITOR
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+#else
+            var isParented = transform.root != transform;
+            if (isParented)
+            {
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+            }
+#endif
+            return isParented;
+        }
+
+        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
+#if UNITY_EDITOR
+        static internal INetworkManagerHelper NetworkManagerHelper;
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+        }
+#endif
+
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
         private void OnSceneUnloaded(Scene scene)
         {
@@ -1119,11 +1132,6 @@ namespace Unity.Netcode
             {
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
-            }
-
-            if (m_InterestManager != null)
-            {
-                m_InterestManager = null;
             }
 
             if (MessagingSystem != null)
@@ -1273,6 +1281,9 @@ namespace Unity.Netcode
         /// </summary>
         private void OnNetworkManagerTick()
         {
+            // Do NetworkVariable updates
+            BehaviourUpdater.NetworkBehaviourUpdate(this);
+
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
@@ -1288,7 +1299,7 @@ namespace Unity.Netcode
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
-            SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            SendMessage(message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1318,7 +1329,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        internal ulong ClientIdToTransportId(ulong clientId)
+        private ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
@@ -1411,7 +1422,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1434,12 +1445,12 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
-            return MessagingSystem.SendMessage(ref message, delivery, clientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds);
         }
 
-        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1462,19 +1473,19 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
             }
 
-            return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
+            return MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
         }
 
-        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
-            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+            return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
@@ -1482,7 +1493,7 @@ namespace Unity.Netcode
             {
                 return 0;
             }
-            return MessagingSystem.SendMessage(ref message, delivery, clientId);
+            return MessagingSystem.SendMessage(message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1524,21 +1535,13 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
-                        // As long as we can destroy the PlayerObject with the owner
-                        if (!playerObject.DontDestroyWithOwner)
+                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
-                            {
-                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            }
-                            else
-                            {
-                                Destroy(playerObject.gameObject);
-                            }
+                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
                         }
-                        else // Otherwise, just remove the ownership
+                        else
                         {
-                            playerObject.RemoveOwnership();
+                            Destroy(playerObject.gameObject);
                         }
                     }
 
@@ -1611,7 +1614,7 @@ namespace Unity.Netcode
             {
                 Tick = NetworkTickSystem.ServerTime.Tick
             };
-            SendMessage(ref message, NetworkDelivery.Unreliable, ConnectedClientsIds);
+            SendMessage(message, NetworkDelivery.Unreliable, ConnectedClientsIds);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
 #endif
@@ -1658,11 +1661,12 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
+                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
 
-                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
@@ -1722,52 +1726,9 @@ namespace Unity.Netcode
                 message.ObjectInfo.Header.HasParent = false;
                 message.ObjectInfo.Header.IsPlayerObject = true;
                 message.ObjectInfo.Header.OwnerClientId = clientId;
-                var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
-
-        /// <summary>
-        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
-        /// </summary>
-        private void OnTransformParentChanged()
-        {
-            NetworkManagerCheckForParent();
-        }
-
-        /// <summary>
-        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
-        /// notifies the user that this is not allowed for the NetworkManager.
-        /// </summary>
-        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
-        {
-#if UNITY_EDITOR
-            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
-#else
-            var isParented = transform.root != transform;
-            if (isParented)
-            {
-                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
-            }
-#endif
-            return isParented;
-        }
-
-        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
-        {
-            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
-        }
-
-#if UNITY_EDITOR
-        static internal INetworkManagerHelper NetworkManagerHelper;
-        /// <summary>
-        /// Interface for NetworkManagerHelper
-        /// </summary>
-        internal interface INetworkManagerHelper
-        {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
-        }
-#endif
     }
-
 }

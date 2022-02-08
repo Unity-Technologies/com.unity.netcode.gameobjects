@@ -241,12 +241,21 @@ namespace Unity.Netcode
                 out m_ReliableSequencedPipeline);
         }
 
-        private void DisposeDriver()
+        private void DisposeInternals()
         {
             if (m_Driver.IsCreated)
             {
                 m_Driver.Dispose();
             }
+
+            m_NetworkSettings.Dispose();
+
+            foreach (var queue in m_SendQueue.Values)
+            {
+                queue.Dispose();
+            }
+
+            m_SendQueue.Clear();
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -653,69 +662,13 @@ namespace Unity.Netcode
                 {
                     ;
                 }
-
-#if MULTIPLAYER_TOOLS
-                ExtractNetworkMetrics();
-#endif
             }
         }
 
         private void OnDestroy()
         {
-            DisposeDriver();
+            DisposeInternals();
         }
-
-#if MULTIPLAYER_TOOLS
-        private void ExtractNetworkMetrics()
-        {
-            if (NetworkManager.Singleton.IsServer)
-            {
-                var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
-                foreach (var ngoConnectionId in ngoConnectionIds)
-                {
-                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
-                    {
-                        continue;
-                    }
-                    ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId));
-                }
-            }
-            else
-            {
-                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ClientIdToTransportId(NetworkManager.Singleton.ServerClientId));
-            }
-        }
-
-        private void ExtractNetworkMetricsForClient(ulong transportClientId)
-        {
-            var networkConnection =  ParseClientId(transportClientId);
-            ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
-            ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
-            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
-        }
-
-        private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
-        {
-            //Don't need to dispose of the buffers, they are filled with data pointers.
-            m_Driver.GetPipelineBuffers(pipeline,
-                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-                networkConnection,
-                out _,
-                out _,
-                out var sharedBuffer);
-
-            unsafe
-            {
-                var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
-
-                NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
-                NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
-
-                networkMetricsContext->PacketSentCount = 0;
-                networkMetricsContext->PacketReceivedCount = 0;
-            }
-        }
-#endif
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
@@ -870,23 +823,12 @@ namespace Unity.Netcode
                 return;
             }
 
-
             // Flush the driver's internal send queue. If we're shutting down because the
             // NetworkManager is shutting down, it probably has disconnected some peer(s)
             // in the process and we want to get these disconnect messages on the wire.
             m_Driver.ScheduleFlushSend(default).Complete();
 
-            DisposeDriver();
-
-            m_NetworkSettings.Dispose();
-
-            foreach (var queue in m_SendQueue.Values)
-            {
-                queue.Dispose();
-            }
-
-            // make sure we don't leak queues when we shutdown
-            m_SendQueue.Clear();
+            DisposeInternals();
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = 0;
@@ -897,9 +839,6 @@ namespace Unity.Netcode
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS
-            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-#endif
             var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -917,58 +856,32 @@ namespace Unity.Netcode
                 maxFrameTimeMS: maxFrameTimeMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
+                    typeof(SimulatorPipelineStageInSend));
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                    );
+                    typeof(SimulatorPipelineStageInSend));
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                    );
+                    typeof(SimulatorPipelineStageInSend));
             }
             else
 #endif
             {
-
                 unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
+                    typeof(FragmentationPipelineStage));
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(UnreliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
+                    typeof(FragmentationPipelineStage), typeof(UnreliableSequencedPipelineStage));
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
                 );
             }
         }
