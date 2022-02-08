@@ -3,7 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.TestHelpers",
+        "Unity.Netcode.Utilities",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
         "Unity.Netcode.Adapter.UTP",

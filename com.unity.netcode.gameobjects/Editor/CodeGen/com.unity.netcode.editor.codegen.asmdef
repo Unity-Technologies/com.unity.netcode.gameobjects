@@ -3,7 +3,7 @@
     "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.TestHelpers"
+        "Unity.Netcode.Utilities"
     ],
     "includePlatforms": [
         "Editor"

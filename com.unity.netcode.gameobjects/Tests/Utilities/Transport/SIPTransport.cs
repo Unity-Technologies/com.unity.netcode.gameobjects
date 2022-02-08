@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Netcode.TestHelpers.Transport
+namespace Unity.Netcode.Utilities.Transport
 {
     /// <summary>
     /// SIPTransport (SIngleProcessTransport)
