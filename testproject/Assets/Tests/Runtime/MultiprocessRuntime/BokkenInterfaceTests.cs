@@ -23,7 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Ignore("Bokken Interface Tests not enabled");
             }
         }
-        
+
         [OneTimeSetUp]
         public void SetUpBokkenInterfaceTestSuite()
         {
