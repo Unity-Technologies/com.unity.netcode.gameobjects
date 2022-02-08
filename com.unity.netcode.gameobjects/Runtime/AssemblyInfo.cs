@@ -9,4 +9,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("TestProject.ToolsIntegration.RuntimeTests")]
 #endif
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
+[assembly: InternalsVisibleTo("Unity.Netcode.Adapter.UTP")]
 

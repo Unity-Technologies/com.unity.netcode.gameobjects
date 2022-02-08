@@ -7,8 +7,8 @@
         "Unity.Netcode.Components",
         "Unity.Collections",
         "UnityEngine.TestRunner",
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
         "Unity.Netcode.Adapter.UTP",
         "ClientNetworkTransform"
     ],
@@ -28,6 +28,16 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "UTP_ADAPTER"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.4",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
         }
     ],
     "noEngineReferences": false

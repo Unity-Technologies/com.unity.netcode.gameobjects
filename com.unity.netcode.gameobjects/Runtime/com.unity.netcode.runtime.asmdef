@@ -2,10 +2,6 @@
     "name": "Unity.Netcode.Runtime",
     "rootNamespace": "Unity.Netcode",
     "references": [
-        "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
-        "Unity.Multiplayer.NetStatsReporting",
-        "Unity.Multiplayer.NetworkSolutionInterface",
         "Unity.Multiplayer.Tools.MetricTypes",
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Multiplayer.Tools.NetStatsReporting",
@@ -24,6 +20,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.4",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
         }
     ],
     "noEngineReferences": false

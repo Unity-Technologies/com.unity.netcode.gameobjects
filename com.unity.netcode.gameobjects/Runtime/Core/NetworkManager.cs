@@ -555,6 +555,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
@@ -1329,7 +1331,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        private ulong ClientIdToTransportId(ulong clientId)
+        internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
