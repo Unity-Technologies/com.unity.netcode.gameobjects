@@ -1,16 +1,16 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-develop_nightly_trigger:
-  name: Develop Branch Nightly Trigger
-  triggers:
-    recurring:
-      - branch: "develop"
-        frequency: 4 * * ?
-  dependencies:
-    - .yamato/_run-all.yml#run_all_tests
-{% for project in projects -%}
-    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
-{% endfor -%}
+#develop_nightly_trigger:
+#  name: Develop Branch Nightly Trigger
+#  triggers:
+#    recurring:
+#     - branch: "develop"
+#       frequency: 4 * * ?
+#  dependencies:
+#   - .yamato/_run-all.yml#run_all_tests
+#{% for project in projects -%}
+#   - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
+#{% endfor -%}
     
 # Legacy job that matches the name with branch protections as of 8/11
 # Can be removed once branch protections are updated to the new name
