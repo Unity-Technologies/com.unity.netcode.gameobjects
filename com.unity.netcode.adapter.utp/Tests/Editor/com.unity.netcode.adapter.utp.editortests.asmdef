@@ -6,7 +6,8 @@
         "Unity.Networking.Transport",
         "Unity.Netcode.Adapter.UTP",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [
         "Editor"

@@ -6,10 +6,9 @@
         "Unity.Netcode.Components",
         "Unity.Collections",
         "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
         "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats",
-        "Unity.Netcode.Adapter.UTP",
-        "ClientNetworkTransform"
+        "Unity.Multiplayer.NetStats"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

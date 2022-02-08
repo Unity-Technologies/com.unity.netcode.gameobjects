@@ -6,7 +6,8 @@
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Netcode.Runtime",
-        "Unity.Networking.Transport"
+        "Unity.Networking.Transport",
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [
         "Editor"
