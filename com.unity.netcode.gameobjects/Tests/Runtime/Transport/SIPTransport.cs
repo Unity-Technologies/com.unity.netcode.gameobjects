@@ -13,6 +13,8 @@ namespace Unity.Netcode.RuntimeTests
     /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
+
+    // TODO: This attribute will be migrated into a neutral assembly in PR for MTT-2435
     //#if UNITY_EDITOR
     //    [DontShowInTransportDropdown]
     //#endif
