@@ -2,9 +2,8 @@ using System;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
-using Unity.Netcode.TestHelpers.Transport;
 
-namespace Unity.Netcode.RuntimeTests.Transport
+namespace Unity.Netcode.TestHelpers.Transport
 {
     public class SIPTransportTests
     {

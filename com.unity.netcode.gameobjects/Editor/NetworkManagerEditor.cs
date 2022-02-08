@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
-using Unity.Netcode.TestHelpers;
+using Unity.Netcode.TestHelpers.Transport;
 
 namespace Unity.Netcode.Editor
 {

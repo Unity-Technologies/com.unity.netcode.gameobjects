@@ -1,5 +1,5 @@
 using System;
-using Unity.Netcode.TestHelpers;
+using Unity.Netcode.TestHelpers.Transport;
 
 namespace Unity.Netcode.EditorTests
 {

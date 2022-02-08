@@ -1,3 +1,4 @@
+#if UNITY_INCLUDE_TESTS
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -268,3 +269,4 @@ namespace Unity.Netcode.TestHelpers.Transport
         }
     }
 }
+#endif
