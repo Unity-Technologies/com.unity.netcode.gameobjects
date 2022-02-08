@@ -7,6 +7,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
+using Unity.Netcode.TestHelpers.Transport;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
@@ -293,4 +294,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return null;
         }
     }
+
+    internal class TestHelperUsageRuntime
+    {
+        private SIPTransport m_SIPTransport;
+    }
+
 }

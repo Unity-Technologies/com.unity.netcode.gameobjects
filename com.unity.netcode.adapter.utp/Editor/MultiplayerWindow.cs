@@ -57,4 +57,10 @@ namespace Unity.Netcode.UTP.Editor
             return value;
         }
     }
+
+    [TestHelpers.Transport.DontShowInTransportDropdown]
+    internal class TestHelperUsageEditor
+    {
+
+    }
 }
