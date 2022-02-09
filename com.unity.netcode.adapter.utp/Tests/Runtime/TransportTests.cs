@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
@@ -27,6 +28,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
+            Debug.Log(NetworkManagerHelper.NetworkManagerGameObject?.name ?? "NetworkManagerGameObject is null");
+
             if (m_Server)
             {
                 m_Server.Shutdown();
