@@ -8,11 +8,22 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
 using Unity.Netcode.Components;
-using Unity.Netcode.Utilities.Transport;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
+using Unity.Netcode.RuntimeTests;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
+    public class SomeTests : BaseMultiInstanceTest
+    {
+        protected override int NbClients => 2;
+
+        [Test]
+        public void BlaBla()
+        {
+            Debug.Log($"{nameof(BlaBla)} -> catch me if you can!");
+        }
+    }
+
     internal class ExternalSipTransport : NetworkBehaviour
     {
         private void Start()
@@ -20,11 +31,6 @@ namespace Unity.Netcode.UTP.RuntimeTests
             gameObject.AddComponent<NetworkObject>();
             gameObject.AddComponent<NetworkTransform>();
         }
-    }
-
-    internal class MyExtendedSipTransport:SIPTransport
-    {
-
     }
 
 

@@ -2,13 +2,14 @@
     "name": "Unity.Netcode.Adapter.UTP.RuntimeTests",
     "rootNamespace": "Unity.Netcode.UTP.RuntimeTests",
     "references": [
-        "GUID:1491147abca9d7d4bb7105af628b223e",
-        "GUID:73b560397fe59374494dd6059c13450b",
-        "GUID:3b8ed52f1b5c64994af4c4e0aa4b6c4b",
-        "GUID:f2d49d9fa7e7eb3418e39723a7d3b92f",
-        "GUID:27619889b8ba8c24980f49ee34dbb44a",
-        "GUID:0acc523941302664db1f4e527237feb3",
-        "GUID:3bf5041814073ec4089849c425919d5a"
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.RuntimeTests",
+        "Unity.Netcode.Utilities",
+        "Unity.Netcode.Components",
+        "Unity.Networking.Transport",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Netcode.Adapter.UTP"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
