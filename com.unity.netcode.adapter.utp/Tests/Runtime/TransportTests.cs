@@ -7,13 +7,19 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
-using Unity.Netcode.Utilities.Transport;
+using Unity.Netcode.Components;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
-    internal class ExternalSipTransport : SIPTransport
-    { }
+    internal class ExternalSipTransport : NetworkBehaviour
+    {
+        private void Start()
+        {
+            gameObject.AddComponent<NetworkObject>();
+            gameObject.AddComponent<NetworkTransform>();
+        }
+    }
 
 
     public class TransportTests
