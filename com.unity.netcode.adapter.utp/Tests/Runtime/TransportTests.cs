@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
 using Unity.Netcode.Components;
+using Unity.Netcode.Utilities.Transport;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
@@ -19,6 +20,11 @@ namespace Unity.Netcode.UTP.RuntimeTests
             gameObject.AddComponent<NetworkObject>();
             gameObject.AddComponent<NetworkTransform>();
         }
+    }
+
+    internal class MyExtendedSipTransport:SIPTransport
+    {
+
     }
 
 
