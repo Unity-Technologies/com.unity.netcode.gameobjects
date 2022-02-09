@@ -47,6 +47,9 @@ pull_request_trigger:
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ project.test_editors.first }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-tests.yml#multiprocess_test_testproject_2021.1_{{ platform.name }}
+{% endfor -%}
   triggers:
     cancel_old_ci: true
     pull_requests:
