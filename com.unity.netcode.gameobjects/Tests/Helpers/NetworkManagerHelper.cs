@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using NUnit.Framework;
 using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.TestHelpers
@@ -108,14 +107,17 @@ namespace Unity.Netcode.TestHelpers
             // Create the player object that we will spawn as a host
             var gameObject = new GameObject(nameOfGameObject);
 
-            Assert.IsNotNull(gameObject);
+            // TODO: Determine best way to handle asserts
+            //Assert.IsNotNull(gameObject);
 
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
-            Assert.IsNotNull(networkObject);
+            // TODO: Determine best way to handle asserts
+            //Assert.IsNotNull(networkObject);
 
-            Assert.IsFalse(InstantiatedGameObjects.ContainsKey(gameObjectId));
-            Assert.IsFalse(InstantiatedNetworkObjects.ContainsKey(gameObjectId));
+            // TODO: Determine best way to handle asserts
+            //Assert.IsFalse(InstantiatedGameObjects.ContainsKey(gameObjectId));
+            //Assert.IsFalse(InstantiatedNetworkObjects.ContainsKey(gameObjectId));
 
             InstantiatedGameObjects.Add(gameObjectId, gameObject);
             InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
@@ -131,7 +133,8 @@ namespace Unity.Netcode.TestHelpers
         /// <returns></returns>
         public static T AddComponentToObject<T>(Guid gameObjectIdentifier) where T : NetworkBehaviour
         {
-            Assert.IsTrue(InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
+            // TODO: Determine best way to handle asserts
+            //Assert.IsTrue(InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
             return InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
         }
 
@@ -141,7 +144,8 @@ namespace Unity.Netcode.TestHelpers
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
+            // TODO: Determine best way to handle asserts
+            //Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
             if (!InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
             {
                 InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
