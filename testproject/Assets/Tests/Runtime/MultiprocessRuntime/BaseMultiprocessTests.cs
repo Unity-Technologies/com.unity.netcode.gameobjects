@@ -64,6 +64,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else
             {
+                WorkerCount = platformList.Length;
                 m_LaunchRemotely = true;
                 foreach (var platformListItem in platformList)
                 {
@@ -224,9 +225,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogHandler.Flush();
             int platformCount = platformList == null ? 0 : platformList.Length;
-            MultiprocessLogger.Log($"UnitySetup in Base Class - " +
-                $" Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count}, " +
-                $" WorkerCount {WorkerCount}" +
+            MultiprocessLogger.Log($"UnitySetup in Base Class - \n" +
+                $" Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count},\n" +
+                $" WorkerCount {WorkerCount},\n" +
                 $" platformList is : {platformCount}");
             m_ConnectedClientsList.Clear();
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
@@ -437,23 +438,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiprocessLogger.Log($"11/20 - Setting the ActiveScene back to Original");
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
+                    MultiprocessLogger.Log($"12/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
+                    AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                    if (asyncOperation == null)
+                    {
+                        MultiprocessLogger.Log("13/20 - WARNING - SceneManager.UnloadSceneAsync returned null");
+                    }
+                    else
+                    {
+                        asyncOperation.completed += AsyncOperation_completed;
+                        MultiprocessLogger.Log($"13/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
+                    }
                 }
                 else
                 {
-                    MultiprocessLogger.Log($"12/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
+                    MultiprocessLogger.Log($"11/20 - m_OriginalActiveScene is not valid so not setting the ActiveScene back to Original, this will probably lead to failures");
                 }
-                MultiprocessLogger.Log($"13/20 - TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName} ... start ");
-                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                if (asyncOperation == null)
-                {
-                    MultiprocessLogger.Log("14/20 - WARNING - SceneManager.UnloadSceneAsync returned null");
-                }
-                else
-                {
-                    asyncOperation.completed += AsyncOperation_completed;
-                    MultiprocessLogger.Log($"14/20 - Unload scene operation status {asyncOperation.isDone} {asyncOperation.progress} ");
-                }
-
             }
             catch (Exception e)
             {
