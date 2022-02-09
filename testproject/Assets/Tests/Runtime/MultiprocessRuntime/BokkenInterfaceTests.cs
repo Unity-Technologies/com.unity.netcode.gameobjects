@@ -18,7 +18,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public BokkenInterfaceTests()
         {
             MultiprocessLogger.Log("Bokken Interface Tests ... Constructor");
-            if (!MultiprocessOrchestration.ShouldRunMultiprocessTests() || !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            if (!MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore("Bokken Interface Tests not enabled");
             }

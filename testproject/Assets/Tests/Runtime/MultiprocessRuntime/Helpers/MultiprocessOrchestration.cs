@@ -62,11 +62,6 @@ public class MultiprocessOrchestration
         return Environment.GetCommandLineArgs().Contains("-enableMultiMachineTesting");
     }
 
-    public static bool ShouldRunMultiprocessTests()
-    {
-        return Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
-    }
-
     public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
         MultiprocessLogger.Log("ProvisionWorkerNode - Start");
