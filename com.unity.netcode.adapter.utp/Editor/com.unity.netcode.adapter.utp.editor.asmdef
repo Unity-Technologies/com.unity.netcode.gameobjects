@@ -2,12 +2,11 @@
     "name": "Unity.Netcode.Adapter.UTP.Editor",
     "rootNamespace": "Unity.Netcode.UTP.Editor",
     "references": [
-        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "Unity.Collections",
         "Unity.Jobs",
-        "GUID:2665a8d13d1b3f18800f46e256720795",
-        "GUID:1491147abca9d7d4bb7105af628b223e",
-        "GUID:73b560397fe59374494dd6059c13450b",
-        "GUID:f2d49d9fa7e7eb3418e39723a7d3b92f"
+        "Unity.Burst",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport"
     ],
     "includePlatforms": [
         "Editor"

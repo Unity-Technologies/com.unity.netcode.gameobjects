@@ -2,12 +2,11 @@
     "name": "Unity.Netcode.Adapter.UTP.EditorTests",
     "rootNamespace": "Unity.Netcode.UTP.EditorTests",
     "references": [
-        "GUID:1491147abca9d7d4bb7105af628b223e",
-        "GUID:73b560397fe59374494dd6059c13450b",
-        "GUID:f2d49d9fa7e7eb3418e39723a7d3b92f",
-        "GUID:3bf5041814073ec4089849c425919d5a",
-        "GUID:27619889b8ba8c24980f49ee34dbb44a",
-        "GUID:0acc523941302664db1f4e527237feb3"
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.Netcode.Adapter.UTP",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"

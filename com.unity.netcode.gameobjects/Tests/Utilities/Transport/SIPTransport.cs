@@ -11,10 +11,7 @@ namespace Unity.Netcode.Utilities.Transport
     /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
-#if UNITY_EDITOR
-    [DontShowInTransportDropdown]
-#endif
-    public class SIPTransport : NetworkTransport
+    public class SIPTransport : TestingNetworkTransport
     {
         private struct Event
         {

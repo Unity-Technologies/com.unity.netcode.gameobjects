@@ -97,4 +97,11 @@ namespace Unity.Netcode
         /// </summary>
         public abstract void Initialize();
     }
+
+    /// <summary>
+    /// Derive from this to create a testing transport that does not show up as a valid transport in the NetworkManager
+    /// </summary>
+    public abstract class TestingNetworkTransport : NetworkTransport
+    {
+    }
 }

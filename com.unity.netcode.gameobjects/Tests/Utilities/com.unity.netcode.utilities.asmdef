@@ -4,13 +4,17 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Collections"
+        "Unity.Collections",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
