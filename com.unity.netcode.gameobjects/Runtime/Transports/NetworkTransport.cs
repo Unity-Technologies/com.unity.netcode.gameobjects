@@ -97,4 +97,11 @@ namespace Unity.Netcode
         /// </summary>
         public abstract void Initialize();
     }
+
+#if UNITY_INCLUDE_TESTS
+    public abstract class TestingNetworkTransport : NetworkTransport
+    {
+
+    }
+#endif
 }
