@@ -2,16 +2,14 @@
     "name": "Unity.Netcode.TestHelpers",
     "rootNamespace": "Unity.Netcode.TestHelpers",
     "references": [
-        "Unity.Netcode.Runtime"
+        "GUID:1491147abca9d7d4bb7105af628b223e"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
