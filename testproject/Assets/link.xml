@@ -1,4 +1,3 @@
 <linker>
 	<assembly fullname="Unity.PerformanceTesting" preserve="all"/>
-	<assenbly fullname="Unity.Netcode.Utilities"  preserve="all"/>
 </linker>

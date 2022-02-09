@@ -2,8 +2,7 @@
     "name": "Unity.Netcode.Editor.CodeGen",
     "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Netcode.Utilities"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [
         "Editor"
