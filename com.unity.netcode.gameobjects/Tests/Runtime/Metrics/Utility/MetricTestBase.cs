@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 {
