@@ -106,7 +106,15 @@ namespace TestProject.ManualTests
             {
                 if (IsOwner)
                 {
-                    m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
+                    if (m_Velocity == 0)
+                    {
+                        transform.localPosition = new Vector3(1.0f,10.0f,1.0f);
+                        m_RigidBody.MovePosition(transform.position);
+                    }
+                    else
+                    {
+                        m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
+                    }
 
                     if (m_MoveRandomly && Random.Range(0.0f, 1.0f) < 0.01f)
                     {
@@ -178,7 +186,23 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    m_ShouldDespawn = true;
+                    if (other.CompareTag("Boundary"))
+                    {
+                        m_ShouldDespawn = true;
+                    }
+                    else
+                    {
+                        NetworkObject otherNetworkObject = other.GetComponent<NetworkObject>();
+                        if (other.GetComponent<NetworkObject>() != null)
+                        {
+                            Debug.Log("Collision with a network object");
+                            transform.SetParent(otherNetworkObject.transform);
+                            transform.localPosition = new Vector3(1.0f, 10.0f, 1.0f);
+                            m_RigidBody.MovePosition(transform.position);
+
+                            m_Velocity = 0.0f;
+                        }
+                    }
                 }
             }
         }
