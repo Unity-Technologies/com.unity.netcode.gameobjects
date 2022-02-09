@@ -1,11 +1,14 @@
 blank_issues_enabled: True
 contact_links:
-  - name: Documentation
+  - name: How to Report Bugs
+    url: https://unity3d.com/unity/qa/bug-reporting
+    about: Learn how to report a bug using Unity Bug Reporter
+  - name: Documentation Issues
     url: https://github.com/Unity-Technologies/com.unity.multiplayer.docs/issues
-    about: Create a documentation issue in our docs repository.
-  - name: Discord
+    about: Create a documentation issue in our docs repository
+  - name: Discord Community
     url: https://discord.gg/buMxnnPvTb
-    about: Join us on Discord for questions, support and discussions.
+    about: Join our Discord community for questions, support and discussions
   - name: Unity Multiplayer Forum
     url: https://forum.unity.com/forums/multiplayer.26/
-    about: Create a thread in the Unity Multiplayer Forum.
+    about: Create a thread in the Unity Multiplayer Forum
