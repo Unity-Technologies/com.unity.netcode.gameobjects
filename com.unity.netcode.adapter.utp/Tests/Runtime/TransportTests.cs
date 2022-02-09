@@ -7,10 +7,15 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
+using Unity.Netcode.Utilities.Transport;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
+    internal class ExternalSipTransport : SIPTransport
+    { }
+
+
     public class TransportTests
     {
         // No need to test all reliable delivery methods since they all map to the same pipeline.
