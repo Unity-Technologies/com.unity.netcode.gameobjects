@@ -4,7 +4,7 @@ using UnityEngine;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UNET;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager
@@ -22,9 +22,9 @@ namespace Unity.Netcode.RuntimeTests
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 
-        internal static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
-        internal static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
-        internal static NetworkManagerOperatingMode CurrentNetworkManagerMode;
+        public static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
+        public static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
+        public static NetworkManagerOperatingMode CurrentNetworkManagerMode;
 
         /// <summary>
         /// This provides the ability to start NetworkManager in various modes

@@ -5,6 +5,7 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
+        "Unity.Netcode.TestHelpers",
         "Unity.Collections",
         "UnityEngine.TestRunner",
         "Unity.Multiplayer.MetricTypes",

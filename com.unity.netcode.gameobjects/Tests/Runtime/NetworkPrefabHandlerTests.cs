@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
