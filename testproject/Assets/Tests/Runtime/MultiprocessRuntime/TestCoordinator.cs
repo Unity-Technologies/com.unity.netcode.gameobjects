@@ -42,9 +42,11 @@ public class TestCoordinator : NetworkBehaviour
     private string m_Port = "3076";
 
     private Stopwatch m_Stopwatch;
+    private int m_ProcessId;
 
     private void Awake()
     {
+        m_ProcessId = Process.GetCurrentProcess().Id;
         string[] cliargList = Environment.GetCommandLineArgs();
         string cliargs = "";
         for (int i = 0; i < cliargList.Length; i++)
@@ -52,7 +54,7 @@ public class TestCoordinator : NetworkBehaviour
             cliargs += " ";
             cliargs += cliargList[i];
         }
-        MultiprocessLogger.Log($"Awake - with args: {cliargs}");
+        MultiprocessLogger.Log($"Awake - {m_ProcessId} with args: {cliargs}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -66,8 +68,6 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         m_Stopwatch = Stopwatch.StartNew();
-        int pid = Process.GetCurrentProcess().Id;
-        MultiprocessLogger.Log($"Start with pid {pid}");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; ++i)
@@ -119,7 +119,7 @@ public class TestCoordinator : NetworkBehaviour
 
         if (isClient)
         {
-            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName}");
+            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName} with pid {m_ProcessId}");
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
@@ -129,11 +129,12 @@ public class TestCoordinator : NetworkBehaviour
             m_TimeSinceLastKeepAlive = Time.time;
         }
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()};" +
-                $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};" +
-                $" NetworkManager.NetworkConfig.NetworkTransport.name: {NetworkManager.NetworkConfig.NetworkTransport.name};" +
-                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};" +
-                $" m_TimeSinceLastKeepAlive:  {m_TimeSinceLastKeepAlive}");
+        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
+                $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}\n;" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name: {NetworkManager.NetworkConfig.NetworkTransport.name};\n" +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
+                $" m_TimeSinceLastKeepAlive:  {m_TimeSinceLastKeepAlive}; \n" +
+                $" pid: {m_ProcessId}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -145,7 +146,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
-            MultiprocessLogger.Log($"Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
+            MultiprocessLogger.Log($"{m_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
             QuitApplication();
             Assert.Fail("Stayed idle too long");
         }
@@ -171,7 +172,8 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
                 $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
                 $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
-                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
+                $" pid: {m_ProcessId}");
         }
     }
 
