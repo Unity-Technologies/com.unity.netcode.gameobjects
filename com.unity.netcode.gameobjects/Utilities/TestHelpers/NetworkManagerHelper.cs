@@ -95,6 +95,11 @@ namespace Unity.Netcode.TestHelpers
             return true;
         }
 
+        internal static void ThrowException(string message)
+        {
+            throw new Exception(message);
+        }
+
         /// <summary>
         /// Add a GameObject with a NetworkObject component
         /// </summary>
@@ -107,15 +112,27 @@ namespace Unity.Netcode.TestHelpers
             // Create the player object that we will spawn as a host
             var gameObject = new GameObject(nameOfGameObject);
 
-            // TODO: Handle asserts
-            //Assert.IsNotNull(gameObject);
+            if (gameObject == null)
+            {
+                ThrowException($"{nameof(GameObject)} is null!");
+            }
 
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            // TODO: Handle asserts
-            //Assert.IsNotNull(networkObject);
 
-            //Assert.IsFalse(InstantiatedGameObjects.ContainsKey(gameObjectId));
-            //Assert.IsFalse(InstantiatedNetworkObjects.ContainsKey(gameObjectId));
+            if (networkObject == null)
+            {
+                ThrowException($"{nameof(NetworkObject)} is null!");
+            }
+
+            if (InstantiatedGameObjects.ContainsKey(gameObjectId))
+            {
+                ThrowException($"{gameObjectId} already exists in {nameof(InstantiatedGameObjects)} dictionary!");
+            }
+
+            if (InstantiatedGameObjects.ContainsKey(gameObjectId))
+            {
+                ThrowException($"{gameObjectId} already exists in {nameof(InstantiatedNetworkObjects)} dictionary!");
+            }
 
             InstantiatedGameObjects.Add(gameObjectId, gameObject);
             InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
@@ -131,8 +148,11 @@ namespace Unity.Netcode.TestHelpers
         /// <returns></returns>
         public static T AddComponentToObject<T>(Guid gameObjectIdentifier) where T : NetworkBehaviour
         {
-            // TODO: Handle asserts
-            //Assert.IsTrue(InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
+            if (!InstantiatedGameObjects.ContainsKey(gameObjectIdentifier))
+            {
+                ThrowException($"{gameObjectIdentifier} does not exist in {nameof(InstantiatedGameObjects)} dictionary!");
+            }
+
             return InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
         }
 
@@ -142,8 +162,11 @@ namespace Unity.Netcode.TestHelpers
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            // TODO: Handle asserts
-            //Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
+            if (!InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier))
+            {
+                ThrowException($"{gameObjectIdentifier} does not exist in {nameof(InstantiatedNetworkObjects)} dictionary!");
+            }
+
             if (!InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
             {
                 InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
