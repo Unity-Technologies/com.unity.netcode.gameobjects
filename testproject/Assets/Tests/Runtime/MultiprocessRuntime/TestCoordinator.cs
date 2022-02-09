@@ -42,11 +42,11 @@ public class TestCoordinator : NetworkBehaviour
     private string m_Port = "3076";
 
     private Stopwatch m_Stopwatch;
-    private int m_ProcessId;
+    private static int s_ProcessId;
 
     private void Awake()
     {
-        m_ProcessId = Process.GetCurrentProcess().Id;
+        s_ProcessId = Process.GetCurrentProcess().Id;
         string[] cliargList = Environment.GetCommandLineArgs();
         string cliargs = "";
         for (int i = 0; i < cliargList.Length; i++)
@@ -54,7 +54,7 @@ public class TestCoordinator : NetworkBehaviour
             cliargs += " ";
             cliargs += cliargList[i];
         }
-        MultiprocessLogger.Log($"Awake - {m_ProcessId} with args: {cliargs}");
+        MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -119,7 +119,7 @@ public class TestCoordinator : NetworkBehaviour
 
         if (isClient)
         {
-            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName} with pid {m_ProcessId}");
+            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName} with pid {s_ProcessId}");
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
@@ -134,7 +134,7 @@ public class TestCoordinator : NetworkBehaviour
                 $" NetworkTransport.name:    {NetworkManager.NetworkConfig.NetworkTransport.name};\n" +
                 $" isConnectedClient:        {NetworkManager.Singleton.IsConnectedClient};\n" +
                 $" m_TimeSinceLastKeepAlive: {m_TimeSinceLastKeepAlive}; \n" +
-                $"           pid:            {m_ProcessId}");
+                $"           pid:            {s_ProcessId}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -146,8 +146,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
-            MultiprocessLogger.Log($"{m_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
-            QuitApplication();
+            QuitApplication($"{s_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
             Assert.Fail("Stayed idle too long");
         }
 
@@ -161,8 +160,7 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
-                MultiprocessLogger.Log($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
-                QuitApplication();
+                QuitApplication($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
@@ -173,18 +171,17 @@ public class TestCoordinator : NetworkBehaviour
                 $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
                 $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $" pid: {m_ProcessId}");
+                $" pid: {s_ProcessId}");
         }
     }
 
-    private static void QuitApplication()
+    private static void QuitApplication(string reason)
     {
-        int pid = Process.GetCurrentProcess().Id;
 #if UNITY_EDITOR
-        MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {pid}");
+        MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {s_ProcessId} because {reason}");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        MultiprocessLogger.Log($"Calling Application.Quit for pid {pid}");
+        MultiprocessLogger.Log($"Calling Application.Quit for pid {pid} because: {reason}");
         Application.Quit();
 #endif
     }
@@ -225,8 +222,7 @@ public class TestCoordinator : NetworkBehaviour
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
-            MultiprocessLogger.Log($"received disconnect from {clientId}, quitting");
-            QuitApplication();
+            QuitApplication($"received disconnect from {clientId}, quitting pid {s_ProcessId}");
         }
     }
 
