@@ -1,50 +1,43 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Unity.Netcode;
 
-namespace Unity.Netcode.RuntimeTests
+namespace TestProject.EditorTests
 {
     public class NetworkPrefabGlobalObjectIdHashTests
     {
         private Scene m_TestScene;
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            if (scene.name == nameof(NetworkPrefabGlobalObjectIdHashTests))
-            {
-                m_TestScene = scene;
-            }
-        }
-
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-
-            const string scenePath = "Assets/Tests/Runtime/GlobalObjectIdHash/" + nameof(NetworkPrefabGlobalObjectIdHashTests) + ".unity";
-            yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            const string scenePath = "Assets/Tests/Editor/GlobalObjectIdHash/" + nameof(NetworkPrefabGlobalObjectIdHashTests) + ".unity";
+            m_TestScene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+            Assert.That(m_TestScene.isLoaded, Is.True);
+            yield return null;
         }
 
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-
             if (m_TestScene.isLoaded)
             {
-                yield return SceneManager.UnloadSceneAsync(m_TestScene);
+                Assert.True(EditorSceneManager.CloseScene(m_TestScene, true));
             }
+            yield return null;
         }
 
         [Test]
         public void VerifyUniquenessOfNetworkPrefabs()
         {
             Assert.That(m_TestScene.isLoaded, Is.True);
-
-            var networkManager = NetworkManager.Singleton;
+            var networkManagerObject = GameObject.Find("[NetworkManager]");
+            var networkManager = networkManagerObject.GetComponent<NetworkManager>();
             Assert.That(networkManager, Is.Not.Null);
             Assert.That(networkManager.NetworkConfig, Is.Not.Null);
             Assert.That(networkManager.NetworkConfig.NetworkPrefabs, Is.Not.Null);

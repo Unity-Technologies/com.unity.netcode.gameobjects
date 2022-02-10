@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
@@ -113,9 +114,12 @@ namespace TestProject.RuntimeTests
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            var handlers = new List<SpawnRpcDespawnInstanceHandler>();
             var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+
             foreach (var client in clients)
             {
+                // TODO: Create a unique handler per client
                 client.PrefabHandler.AddHandler(networkObject, handler);
             }
 
@@ -188,9 +192,17 @@ namespace TestProject.RuntimeTests
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            var handlers = new List<SpawnRpcDespawnInstanceHandler>();
             var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+
+            // We *must* always add a unique handler to both the server and the clients
+            server.PrefabHandler.AddHandler(networkObject, handler);
+            handlers.Add(handler);
             foreach (var client in clients)
             {
+                // Create a unique SpawnRpcDespawnInstanceHandler per client
+                handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+                handlers.Add(handler);
                 client.PrefabHandler.AddHandler(networkObject, handler);
             }
 
@@ -201,6 +213,8 @@ namespace TestProject.RuntimeTests
             {
                 client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
             }
+
+            var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
 
             // Start the instances
             if (!MultiInstanceHelpers.Start(false, server, clients))
@@ -242,10 +256,30 @@ namespace TestProject.RuntimeTests
 
             Assert.True(handler.WasSpawned);
             Assert.True(Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled);
-            var lastFrameNumber = Time.frameCount + 1;
-            Object.Destroy(serverObject);
-            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
-            Assert.True(handler.WasDestroyed);
+
+            // Despawning the server-side NetworkObject will invoke the handler's OnDestroy method
+            serverNetworkObject.Despawn();
+            yield return waitForTickInterval;
+
+            var hasTimedOut = false;
+            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
+            var allHandlersDestroyed = false;
+            while (!allHandlersDestroyed && !hasTimedOut)
+            {
+                allHandlersDestroyed = true;
+                foreach (var handlerInstance in handlers)
+                {
+                    if (!handlerInstance.WasDestroyed)
+                    {
+                        allHandlersDestroyed = false;
+                        break;
+                    }
+                }
+                hasTimedOut = timeOutPeriod < Time.realtimeSinceStartup;
+                yield return waitForTickInterval;
+            }
+
+            Assert.False(hasTimedOut, "Timed out waiting for handlers to be destroyed");
         }
     }
 }
