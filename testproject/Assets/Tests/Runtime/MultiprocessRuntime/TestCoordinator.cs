@@ -122,7 +122,7 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName} with pid {s_ProcessId}");
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
+            MultiprocessLogger.Log($"started netcode client, isConnected: {NetworkManager.Singleton.IsConnectedClient}, with pid {s_ProcessId}");
         }
         else
         {
@@ -164,13 +164,14 @@ public class TestCoordinator : NetworkBehaviour
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
-        else if (m_Stopwatch.ElapsedMilliseconds > 5000)
+        else if (m_Stopwatch.ElapsedMilliseconds > 2500)
         {
             m_Stopwatch.Restart();
-            MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()}" +
-                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}" +
-                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name} " +
+            MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
+                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};\n" +
+                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n " +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
+                $" isClient: {IsClient} IsServer: {IsServer};\n" + 
                 $" pid: {s_ProcessId}");
         }
     }
