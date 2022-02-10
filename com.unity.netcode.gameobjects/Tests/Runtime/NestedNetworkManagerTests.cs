@@ -1,11 +1,9 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
 using Object = UnityEngine.Object;
 
-namespace TestProject.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NestedNetworkManagerTests
     {

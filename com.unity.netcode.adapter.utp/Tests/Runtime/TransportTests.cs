@@ -1,3 +1,5 @@
+// todo @simon-lemay-unity: un-guard/re-enable after validating UTP on consoles
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -30,19 +32,25 @@ namespace Unity.Netcode.UTP.RuntimeTests
             if (m_Server)
             {
                 m_Server.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Server);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
             }
 
             if (m_Client1)
             {
                 m_Client1.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client1);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
             }
 
             if (m_Client2)
             {
                 m_Client2.Shutdown();
-                UnityEngine.Object.DestroyImmediate(m_Client2);
+
+                // Need to destroy the GameObject (all assigned components will get destroyed too)
+                UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
             }
 
             m_ServerEvents?.Clear();
@@ -62,7 +70,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
             m_Client1.Send(m_Client1.ServerClientId, ping, delivery);
@@ -91,7 +99,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var ping = new ArraySegment<byte>(Encoding.ASCII.GetBytes("ping"));
             m_Server.Send(m_ServerEvents[0].ClientID, ping, delivery);
@@ -128,7 +136,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var payloadData = new byte[payloadSize];
             for (int i = 0; i < payloadData.Length; i++)
@@ -139,7 +147,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             var payload = new ArraySegment<byte>(payloadData);
             m_Client1.Send(m_Client1.ServerClientId, payload, delivery);
 
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 2);
 
             Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
 
@@ -162,7 +170,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var numSends = UnityTransport.InitialMaxSendQueueSize / 1024;
 
@@ -180,7 +188,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return new WaitForSeconds(numSends * 0.02f);
 
             // Extra event is the connect event.
-            Assert.AreEqual(m_ServerEvents.Count, numSends + 1);
+            Assert.AreEqual(numSends + 1, m_ServerEvents.Count);
 
             for (int i = 1; i <= numSends; i++)
             {
@@ -201,7 +209,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
             m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
@@ -232,7 +240,11 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Client1.StartClient();
             m_Client2.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+            if (m_Client2Events.Count == 0)
+            {
+                yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client2Events);
+            }
 
             // Ensure we got both Connect events.
             Assert.AreEqual(2, m_ServerEvents.Count);
@@ -252,7 +264,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             byte c1Data = m_Client1Events[1].Data.First();
             byte c2Data = m_Client2Events[1].Data.First();
-            Assert.True((c1Data == 11 && c2Data == 22) || (c1Data == 22 && c2Data == 11));
+            Assert.That((c1Data == 11 && c2Data == 22) || (c1Data == 22 && c2Data == 11));
 
             yield return null;
         }
@@ -270,9 +282,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Client2.StartClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
-
-            // Ensure we got the Connect event on the other client too.
-            Assert.AreEqual(1, m_Client2Events.Count);
+            if (m_Client2Events.Count == 0)
+            {
+                yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client2Events);
+            }
 
             var data1 = new ArraySegment<byte>(new byte[] { 11 });
             m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
@@ -288,9 +301,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             byte sData1 = m_ServerEvents[2].Data.First();
             byte sData2 = m_ServerEvents[3].Data.First();
-            Assert.True((sData1 == 11 && sData2 == 22) || (sData1 == 22 && sData2 == 11));
+            Assert.That((sData1 == 11 && sData2 == 22) || (sData1 == 22 && sData2 == 11));
 
             yield return null;
         }
     }
 }
+#endif
