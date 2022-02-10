@@ -181,7 +181,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {s_ProcessId} because {reason}");
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        MultiprocessLogger.Log($"Calling Application.Quit for pid {pid} because: {reason}");
+        MultiprocessLogger.Log($"Calling Application.Quit for pid {s_ProcessId} because: {reason}");
         Application.Quit();
 #endif
     }
