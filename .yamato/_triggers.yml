@@ -1,12 +1,13 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-# release/1.1.0 trigger
-release_1.1_nightly_trigger:
-  name: Release 1.1 Branch Nightly Trigger
+# `develop` trigger
+develop_nightly_trigger:
+  name: Develop Branch Nightly Trigger
   triggers:
     recurring:
-      - branch: "release/1.1.0"
+      - branch: develop
         frequency: daily
+        rerun: always
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
