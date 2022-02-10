@@ -1273,9 +1273,6 @@ namespace Unity.Netcode
         /// </summary>
         private void OnNetworkManagerTick()
         {
-            // Do NetworkVariable updates
-            BehaviourUpdater.NetworkBehaviourUpdate(this);
-
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
@@ -1321,7 +1318,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        private ulong ClientIdToTransportId(ulong clientId)
+        internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
@@ -1486,6 +1483,12 @@ namespace Unity.Netcode
                 return 0;
             }
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
+        }
+
+        internal int SendPreSerializedMessage<T>(in FastBufferWriter writer, int maxSize, ref T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage
+        {
+            return MessagingSystem.SendPreSerializedMessage(writer, maxSize, ref message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)

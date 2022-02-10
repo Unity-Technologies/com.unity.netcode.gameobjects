@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
 - Added InterestManager now has a `Disable` setting to allow the user to bypass its function for debugging (#1567)
 - SnapshotSystem carries Spawns, Despawns and NetworkVariable value updates (#1544)
 
@@ -24,12 +23,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect. (#1513)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership. (#1572)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1588)
+- Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
+- Fixed client-side exception from being thrown in NetworkSceneManager when migrating NetworkObjects to or from the DDOL scene. (#1633)
 
 ### Changed
 
 - ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere. (#1318)
+
+## [1.0.0-pre.5] - 2022-01-26
+
+### Added
+
+- Added `PreviousValue` in `NetworkListEvent`, when `Value` has changed (#1528)
+
+### Changed
+
 - NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
 - NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
+
+### Fixed
+
+- Fixed network tick value sometimes being duplicated or skipped. (#1614)
+- Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 
 ## [1.0.0-pre.4] - 2021-01-04
 

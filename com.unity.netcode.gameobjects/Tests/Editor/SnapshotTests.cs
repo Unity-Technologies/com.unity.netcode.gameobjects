@@ -39,6 +39,7 @@ namespace Unity.Netcode.EditorTests
             m_SendTimeSystem.Advance(1.0f / m_TicksPerSec);
             m_SendTickSystem.UpdateTick(m_SendTimeSystem.LocalTime, m_SendTimeSystem.ServerTime);
             m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void AdvanceOneTickRecvSide()
@@ -46,6 +47,7 @@ namespace Unity.Netcode.EditorTests
             m_RecvTimeSystem.Advance(1.0f / m_TicksPerSec);
             m_RecvTickSystem.UpdateTick(m_RecvTimeSystem.LocalTime, m_RecvTimeSystem.ServerTime);
             m_RecvSnapshot.NetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            m_SendSnapshot.NetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
 
         public void AdvanceOneTick()
@@ -54,9 +56,14 @@ namespace Unity.Netcode.EditorTests
             AdvanceOneTickRecvSide();
         }
 
-        internal void SpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
+        internal void PreSpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
         {
             m_SpawnedObjectCount++;
+        }
+
+        internal void PostSpawnObject(SnapshotSpawnCommand command, ulong srcClientId)
+        {
+
         }
 
         internal void DespawnObject(SnapshotDespawnCommand command, ulong srcClientId)
@@ -87,6 +94,8 @@ namespace Unity.Netcode.EditorTests
 
         internal int SendMessageRecvSide(SnapshotDataMessage message, ulong clientId)
         {
+            SimulateTransport(ref message);
+
             if (m_PassBackResponses)
             {
                 // todo: pass back to sending Snapshot
@@ -116,7 +125,8 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_SendSnapshot.SendMessage = SendMessage;
-            m_SendSnapshot.SpawnObject = SpawnObject;
+            m_SendSnapshot.PreSpawnObject = PreSpawnObject;
+            m_SendSnapshot.PostSpawnObject = PostSpawnObject;
             m_SendSnapshot.DespawnObject = DespawnObject;
         }
 
@@ -139,7 +149,8 @@ namespace Unity.Netcode.EditorTests
             m_SendSnapshot.ConnectedClientsId.Add(0);
             m_SendSnapshot.ConnectedClientsId.Add(1);
             m_RecvSnapshot.SendMessage = SendMessageRecvSide;
-            m_RecvSnapshot.SpawnObject = SpawnObject;
+            m_RecvSnapshot.PreSpawnObject = PreSpawnObject;
+            m_RecvSnapshot.PostSpawnObject = PostSpawnObject;
             m_RecvSnapshot.DespawnObject = DespawnObject;
         }
 
