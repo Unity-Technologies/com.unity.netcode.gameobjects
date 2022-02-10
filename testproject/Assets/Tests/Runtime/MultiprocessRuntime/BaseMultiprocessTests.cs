@@ -188,14 +188,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void DisconnectClients(int messageCounter = 0)
         {
             int localMessageCounter = 1;
-            MultiprocessLogger.Log($"{messageCounter}.{(localMessageCounter++)/10.0f} DisconnectClients - Start");
+            MultiprocessLogger.Log($"{messageCounter}.{(localMessageCounter++) / 10.0f} DisconnectClients - Start");
             MultiprocessLogHandler.Flush();
             var connectedClients = NetworkManager.Singleton.ConnectedClients;
             MultiprocessLogger.Log($"{messageCounter}.{(localMessageCounter++) / 10.0f} DisconnectClients - ConnectedClients.Count {connectedClients.Count}");
             if (m_ConnectedClientsList.Count > 0 || connectedClients.Count > 1)
             {
                 MultiprocessLogger.Log(
-                    $" {messageCounter}.{localMessageCounter++/10.0f} Connect Clients - \n" +
+                    $" {messageCounter}.{localMessageCounter++ / 10.0f} Connect Clients - \n" +
                     $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
                     $" NetworkManagerCount: {connectedClients.Count}\n");
                 var clientsToDisconnect = new List<ulong>();
@@ -410,7 +410,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
             for (int i = 0; i < 10; i++)
             {
-                MultiprocessLogger.Log($" 6.{i/10}/20 Need to confirm that {WorkerCount} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
+                MultiprocessLogger.Log($" 6.{i / 10}/20 Need to confirm that {WorkerCount} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
                 yield return new WaitForSeconds(1.0f);
                 if (NetworkManager.Singleton.ConnectedClients.Count == 1)
                 {
