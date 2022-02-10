@@ -13,6 +13,8 @@ All notable changes to this package will be documented in this file. The format 
 - Fixed issue where disconnecting from the server with data still in the queue would result in an error message about a stale connection. (#1649)
 - Fixed issue where the server `NetworkEndPoint` would fail to be created when 'Server Listen Address' is empty. (#1636)
 - Fixed issue with native collections not all being disposed of when destroying the component without shutting it down properly. This would result in errors in the console and memory leaks. (#1640)
+- Fixed an issue where packets causing errors would not be removed from the send queue, which would cause the error message to be spammed on every frame as the adapter would try to resend the packet. (#1648)
+- Fixed and issue where a server would fail to disconnect a client if another client had previously disconnected itself. (#1673)
 
 ## [1.0.0-pre.5] - 2022-01-26
 

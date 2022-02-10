@@ -41,13 +41,38 @@ namespace Unity.Netcode.RuntimeTests
         {
             var tickSystem = NetworkManager.Singleton.NetworkTickSystem;
             var delta = tickSystem.LocalTime.FixedDeltaTime;
+            var previous_localTickCalculated = 0;
+            var previous_serverTickCalculated = 0;
 
             while (tickSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt((tickSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
-                Assert.AreEqual(Mathf.FloorToInt((tickSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
-                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
+
+                var tickCalculated = tickSystem.LocalTime.Time / delta;
+                previous_localTickCalculated = (int)tickCalculated;
+
+                // This check is needed due to double division imprecision of large numbers
+                if ((tickCalculated - previous_localTickCalculated) >= 0.999999999999)
+                {
+                    previous_localTickCalculated++;
+                }
+
+
+                tickCalculated = NetworkManager.Singleton.ServerTime.Time / delta;
+                previous_serverTickCalculated = (int)tickCalculated;
+
+                // This check is needed due to double division imprecision of large numbers
+                if ((tickCalculated - previous_serverTickCalculated) >= 0.999999999999)
+                {
+                    previous_serverTickCalculated++;
+                }
+
+                Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} " +
+                    $"does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!");
+                Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} " +
+                    $"does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!");
+                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time), $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} " +
+                    $"is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!");
             }
         }
 
