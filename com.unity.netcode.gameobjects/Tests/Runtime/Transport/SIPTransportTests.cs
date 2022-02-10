@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests.Transport
 {

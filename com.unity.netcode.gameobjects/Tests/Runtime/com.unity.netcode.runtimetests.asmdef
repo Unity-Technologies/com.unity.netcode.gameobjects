@@ -9,7 +9,8 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Netcode.Adapter.UTP",
-        "ClientNetworkTransform"
+        "ClientNetworkTransform",
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

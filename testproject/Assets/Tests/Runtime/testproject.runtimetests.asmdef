@@ -6,7 +6,8 @@
         "UnityEngine.TestRunner",
         "Unity.Netcode.RuntimeTests",
         "TestProject.ManualTests",
-        "TestProject"
+        "TestProject",
+        "Unity.Netcode.TestHelpers"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
