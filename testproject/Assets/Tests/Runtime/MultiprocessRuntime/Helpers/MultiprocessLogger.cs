@@ -146,7 +146,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             string methods = "";
 
-            int maxFrame = 8;
+            int maxFrame = 5;
             for (int i = 3; i < st.FrameCount; i++)
             {
                 string methodName = st.GetFrame(i).GetMethod().Name;

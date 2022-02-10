@@ -187,9 +187,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public IEnumerator DisconnectClients(int messageCounter = 0)
         {
-            if (m_ConnectedClientsList.Count > 0)
+            MultiprocessLogger.Log($"DisconnectClients - Start");
+            MultiprocessLogHandler.Flush();
+            var connectedClients = NetworkManager.Singleton.ConnectedClients;
+            MultiprocessLogger.Log($"DisconnectClients - ConnectedClients.Count {connectedClients.Count}");
+            if (m_ConnectedClientsList.Count > 0 || connectedClients.Count > 1)
             {
-                var connectedClients = NetworkManager.Singleton.ConnectedClients;
                 MultiprocessLogger.Log(
                     $" {messageCounter++} Connect Clients - \n" +
                     $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
@@ -400,7 +403,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log($"1/20 - UnityTearDown - BaseMultiProcessTests - start");
+            MultiprocessLogger.Log($"1/20 - UnityTearDown - BaseMultiProcessTests - start, calling DisconnectClients");
 
             DisconnectClients(1);
 
