@@ -185,7 +185,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
         }
 
-        public IEnumerator DisconnectClients(int messageCounter = 0)
+        public void DisconnectClients(int messageCounter = 0)
         {
             MultiprocessLogger.Log($"DisconnectClients - Start");
             MultiprocessLogHandler.Flush();
@@ -218,7 +218,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         {
                             MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
                             NetworkManager.Singleton.DisconnectClient(id);
-                            yield return new WaitUntil(() => NetworkManager.Singleton.ConnectedClients.Count < connectedClientsDotCount);
                             connectedClientsDotCount = NetworkManager.Singleton.ConnectedClients.Count;
                         }
                     }
@@ -412,6 +411,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"Need to confirm that {WorkerCount} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
                 yield return new WaitForSeconds(1.0f);
+                if (NetworkManager.Singleton.ConnectedClients.Count == 1)
+                {
+                    break;
+                }
             }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             MultiprocessLogger.Log($"2/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
