@@ -270,7 +270,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         });
                         MultiprocessLogger.Log($"Task {provisionTask.Id} is for {platform}");
                         tasks.Add(provisionTask);
-                        MultiprocessLogger.Log($"Machines list is now : {machines.Count}");
                     }
 
                     foreach (var task in tasks)
@@ -285,6 +284,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     int initialCount = m_ConnectedClientsList.Count;
                     foreach (var machine in machines)
                     {
+                        if (!machine.IsValid())
+                        {
+                            MultiprocessLogger.Log("Warning: machine is not valid");
+                        }
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is not null");
                         machine.Launch();
