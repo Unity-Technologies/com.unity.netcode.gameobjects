@@ -322,6 +322,8 @@ namespace Unity.Netcode.RuntimeTests
             m_Clients[0].DisconnectLocalClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+        }
+
         // Check that a server can disconnect a client after another client has disconnected.
         [UnityTest]
         public IEnumerator ServerDisconnectAfterClientDisconnect()
