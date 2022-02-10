@@ -615,7 +615,7 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass userSerializableClass)
         {
-            SendServerSerializedDataServerRpc(userSerializableClass);
+            SendServerSerializedDataClassServerRpc(userSerializableClass);
         }
 
         /// <summary>
@@ -623,7 +623,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableClass userSerializableClass)
+        private void SendServerSerializedDataClassServerRpc(UserSerializableClass userSerializableClass)
         {
             userSerializableClass.MyintValue++;
             userSerializableClass.MyulongValue++;
@@ -637,7 +637,7 @@ namespace TestProject.RuntimeTests
             {
                 userSerializableClass.MyByteListValues.Add((byte)i);
             }
-            SendClientSerializedDataClientRpc(userSerializableClass);
+            SendClientSerializedDataClassClientRpc(userSerializableClass);
         }
 
         /// <summary>
@@ -645,7 +645,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableClass userSerializableClass)
+        private void SendClientSerializedDataClassClientRpc(UserSerializableClass userSerializableClass)
         {
             if (OnSerializableClassUpdated != null)
             {
@@ -659,7 +659,7 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableStruct"></param>
         public void ClientStartTest(UserSerializableStruct userSerializableStruct)
         {
-            SendServerSerializedDataServerRpc(userSerializableStruct);
+            SendServerSerializedDataStructServerRpc(userSerializableStruct);
         }
 
         /// <summary>
@@ -667,12 +667,12 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableStruct"></param>
         [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableStruct userSerializableStruct)
+        private void SendServerSerializedDataStructServerRpc(UserSerializableStruct userSerializableStruct)
         {
             userSerializableStruct.MyintValue++;
             userSerializableStruct.MyulongValue++;
 
-            SendClientSerializedDataClientRpc(userSerializableStruct);
+            SendClientSerializedDataStructClientRpc(userSerializableStruct);
         }
 
         /// <summary>
@@ -680,7 +680,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableStruct"></param>
         [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableStruct userSerializableStruct)
+        private void SendClientSerializedDataStructClientRpc(UserSerializableStruct userSerializableStruct)
         {
             if (OnSerializableStructUpdated != null)
             {
@@ -776,7 +776,7 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass[] userSerializableClasses)
         {
-            SendServerSerializedDataServerRpc(userSerializableClasses);
+            SendServerSerializedDataClassArryServerRpc(userSerializableClasses);
         }
 
         /// <summary>
@@ -785,13 +785,13 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableClass[] userSerializableClasses)
+        private void SendServerSerializedDataClassArryServerRpc(UserSerializableClass[] userSerializableClasses)
         {
             if (OnSerializableClassesUpdatedServerRpc != null)
             {
                 OnSerializableClassesUpdatedServerRpc.Invoke(userSerializableClasses);
             }
-            SendClientSerializedDataClientRpc(userSerializableClasses);
+            SendClientSerializedDataClassArrayClientRpc(userSerializableClasses);
         }
 
         /// <summary>
@@ -800,7 +800,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableClasses"></param>
         [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableClass[] userSerializableClasses)
+        private void SendClientSerializedDataClassArrayClientRpc(UserSerializableClass[] userSerializableClasses)
         {
             if (OnSerializableClassesUpdatedClientRpc != null)
             {
@@ -815,7 +815,7 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableStructs"></param>
         public void ClientStartStructTest(UserSerializableStruct[] userSerializableStructs)
         {
-            SendServerSerializedDataServerRpc(userSerializableStructs);
+            SendServerSerializedDataStructArrayServerRpc(userSerializableStructs);
         }
 
         /// <summary>
@@ -824,13 +824,13 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableStructs"></param>
         [ServerRpc(RequireOwnership = false)]
-        private void SendServerSerializedDataServerRpc(UserSerializableStruct[] userSerializableStructs)
+        private void SendServerSerializedDataStructArrayServerRpc(UserSerializableStruct[] userSerializableStructs)
         {
             if (OnSerializableStructsUpdatedServerRpc != null)
             {
                 OnSerializableStructsUpdatedServerRpc.Invoke(userSerializableStructs);
             }
-            SendClientSerializedDataClientRpc(userSerializableStructs);
+            SendClientSerializedDataStructArrayClientRpc(userSerializableStructs);
         }
 
         /// <summary>
@@ -839,7 +839,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="userSerializableStructs"></param>
         [ClientRpc]
-        private void SendClientSerializedDataClientRpc(UserSerializableStruct[] userSerializableStructs)
+        private void SendClientSerializedDataStructArrayClientRpc(UserSerializableStruct[] userSerializableStructs)
         {
             if (OnSerializableStructsUpdatedClientRpc != null)
             {

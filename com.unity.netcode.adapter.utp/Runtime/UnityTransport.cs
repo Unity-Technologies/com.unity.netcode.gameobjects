@@ -530,11 +530,14 @@ namespace Unity.Netcode
                 {
                     // Some error occured. If it's just the UTP queue being full, then don't log
                     // anything since that's okay (the unsent message(s) are still in the queue
-                    // and we'll retry sending the later);
+                    // and we'll retry sending the later). Otherwise log the error and remove the
+                    // message from the queue (we don't want to resend it again since we'll likely
+                    // just get the same error again).
                     if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
                     {
                         Debug.LogError("Error sending the message: " +
                             ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
+                        queue.Consume(written);
                     }
 
                     return;

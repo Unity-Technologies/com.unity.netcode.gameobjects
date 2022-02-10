@@ -4,41 +4,32 @@ using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Unity.Netcode;
 
-namespace Unity.Netcode.RuntimeTests
+namespace TestProject.EditorTests
 {
     public class NetworkObjectGlobalObjectIdHashTests
     {
         private Scene m_TestScene;
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            if (scene.name == nameof(NetworkObjectGlobalObjectIdHashTests))
-            {
-                m_TestScene = scene;
-            }
-        }
-
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            SceneManager.sceneLoaded += OnSceneLoaded;
+            const string scenePath = "Assets/Tests/Editor/GlobalObjectIdHash/" + nameof(NetworkObjectGlobalObjectIdHashTests) + ".unity";
 
-            const string scenePath = "Assets/Tests/Runtime/GlobalObjectIdHash/" + nameof(NetworkObjectGlobalObjectIdHashTests) + ".unity";
-
-            yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            m_TestScene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
             Assert.That(m_TestScene.isLoaded, Is.True);
+            yield return null;
         }
 
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-
             if (m_TestScene.isLoaded)
             {
-                yield return SceneManager.UnloadSceneAsync(m_TestScene);
+                Assert.True(EditorSceneManager.CloseScene(m_TestScene, true));
             }
+            yield return null;
         }
 
         [Test]

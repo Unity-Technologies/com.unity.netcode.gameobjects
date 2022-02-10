@@ -100,4 +100,11 @@ namespace Unity.Netcode
         /// /// <param name="networkManager">optionally pass in NetworkManager</param>
         public abstract void Initialize(NetworkManager networkManager = null);
     }
+
+#if UNITY_INCLUDE_TESTS
+    public abstract class TestingNetworkTransport : NetworkTransport
+    {
+
+    }
+#endif
 }
