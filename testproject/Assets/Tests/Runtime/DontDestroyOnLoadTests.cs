@@ -3,7 +3,7 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers;
 using TestProject.ManualTests;
 
 namespace TestProject.RuntimeTests

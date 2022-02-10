@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {

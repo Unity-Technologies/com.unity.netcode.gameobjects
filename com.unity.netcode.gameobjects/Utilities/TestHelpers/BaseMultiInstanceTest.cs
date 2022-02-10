@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers
 {
     public abstract class BaseMultiInstanceTest
     {

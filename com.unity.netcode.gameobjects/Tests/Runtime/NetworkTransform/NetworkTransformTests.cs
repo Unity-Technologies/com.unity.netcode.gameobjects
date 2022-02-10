@@ -8,6 +8,7 @@ using NUnit.Framework;
 // using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {

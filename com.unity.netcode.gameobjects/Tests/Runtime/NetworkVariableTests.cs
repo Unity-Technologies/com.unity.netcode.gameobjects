@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Netcode.TestHelpers;
 using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests

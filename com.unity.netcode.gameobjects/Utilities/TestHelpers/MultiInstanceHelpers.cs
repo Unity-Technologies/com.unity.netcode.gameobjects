@@ -5,10 +5,9 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Netcode.TestHelpers;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.

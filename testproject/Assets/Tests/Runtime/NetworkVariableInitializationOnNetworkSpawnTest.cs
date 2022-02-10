@@ -2,7 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers;
 using UnityEngine;
 using UnityEngine.TestTools;
 
