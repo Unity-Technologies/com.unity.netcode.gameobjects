@@ -95,6 +95,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        public abstract void Initialize();
+        public abstract void Initialize(NetworkManager networkManager = null);
     }
 }
