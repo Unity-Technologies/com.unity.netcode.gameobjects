@@ -682,16 +682,16 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_4
         private void ExtractNetworkMetrics()
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (NetworkManager.IsServer)
             {
-                var ngoConnectionIds = NetworkManager.Singleton.ConnectedClients.Keys;
+                var ngoConnectionIds = NetworkManager.ConnectedClients.Keys;
                 foreach (var ngoConnectionId in ngoConnectionIds)
                 {
-                    if (ngoConnectionId == 0 && NetworkManager.Singleton.IsHost)
+                    if (ngoConnectionId == 0 && NetworkManager.IsHost)
                     {
                         continue;
                     }
-                    var transportClientId = NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId);
+                    var transportClientId = NetworkManager.ClientIdToTransportId(ngoConnectionId);
                     ExtractNetworkMetricsForClient(transportClientId);
                 }
             }
@@ -740,7 +740,7 @@ namespace Unity.Netcode
 
         private int ExtractRtt(NetworkConnection networkConnection)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (NetworkManager.IsServer)
             {
                 return 0;
             }

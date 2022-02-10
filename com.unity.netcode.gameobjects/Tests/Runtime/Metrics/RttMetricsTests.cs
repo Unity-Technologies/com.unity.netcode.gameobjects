@@ -26,9 +26,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             server.StartServer();
             clients[0].StartClient();
 
-            var serverNM = MultiInstanceHelpers.NetworkManagerInstances.Where(x => x.IsServer).First();
-            serverNM.SetSingleton();
-
             var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
             var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.RttToServer);
 

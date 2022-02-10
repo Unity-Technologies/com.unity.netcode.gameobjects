@@ -781,7 +781,7 @@ namespace Unity.Netcode
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
-            NetworkConfig.NetworkTransport.Initialize();
+            NetworkConfig.NetworkTransport.Initialize(this);
         }
 
         /// <summary>
