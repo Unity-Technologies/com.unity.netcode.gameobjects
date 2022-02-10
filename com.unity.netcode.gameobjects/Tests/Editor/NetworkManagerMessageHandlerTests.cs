@@ -45,7 +45,7 @@ namespace Unity.Netcode.EditorTests
         {
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
         }
     }
