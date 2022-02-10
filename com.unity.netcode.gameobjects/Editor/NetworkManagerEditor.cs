@@ -57,7 +57,7 @@ namespace Unity.Netcode.Editor
 
                 foreach (var type in types)
                 {
-                    if (type.IsSubclassOf(typeof(NetworkTransport)) && type.GetCustomAttributes(typeof(DontShowInTransportDropdownAttribute), true).Length == 0)
+                    if (type.IsSubclassOf(typeof(NetworkTransport)) && !type.IsSubclassOf(typeof(TestingNetworkTransport)) && type != typeof(TestingNetworkTransport))
                     {
                         m_TransportTypes.Add(type);
                     }

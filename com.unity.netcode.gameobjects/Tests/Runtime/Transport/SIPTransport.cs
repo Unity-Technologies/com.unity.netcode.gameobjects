@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using Unity.Netcode.Editor;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -13,10 +10,7 @@ namespace Unity.Netcode.RuntimeTests
     /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
-#if UNITY_EDITOR
-    [DontShowInTransportDropdown]
-#endif
-    public class SIPTransport : NetworkTransport
+    public class SIPTransport : TestingNetworkTransport
     {
         private struct Event
         {

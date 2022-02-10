@@ -1,4 +1,5 @@
-namespace Unity.Netcode.RuntimeTests
+using Unity.Netcode;
+namespace TestProject.RuntimeTests
 {
     public class ReparentingCubeNetBhv : NetworkBehaviour
     {
