@@ -29,7 +29,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         static BokkenMachine()
         {
             s_FileInfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "rootdir"));
-            s_Rootdir = (File.ReadAllText(s_FileInfo.FullName)).Trim();
+            if (s_FileInfo.Exists)
+            {
+                s_Rootdir = (File.ReadAllText(s_FileInfo.FullName)).Trim();
+            }
             PathToDll = Path.Combine(s_Rootdir, "BokkenForNetcode", "ProvisionBokkenMachines", "bin", "Debug", "netcoreapp3.1", "ProvisionBokkenMachines.dll");
         }
 

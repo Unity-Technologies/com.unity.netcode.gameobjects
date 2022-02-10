@@ -418,7 +418,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
             MultiprocessLogger.Log($" 7/20 - UnityTearDown - Reporting on processes calling bokkenapi");
-            BokkenMachine.LogProcessListStatus();
+            if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            {
+                BokkenMachine.LogProcessListStatus();
+            }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             MultiprocessLogger.Log($" 8/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
         }
