@@ -76,8 +76,7 @@ public class MultiprocessOrchestration
         }
         else
         {
-            MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists, just kill any old processes");
-            BokkenMachine.KillMultiprocessTestPlayer(bokkenMachine.PathToJson);
+            MultiprocessLogger.Log($"A machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} already exists");
         }
         MultiprocessLogger.Log("ProvisionWorkerNode - Complete");
         return bokkenMachine;

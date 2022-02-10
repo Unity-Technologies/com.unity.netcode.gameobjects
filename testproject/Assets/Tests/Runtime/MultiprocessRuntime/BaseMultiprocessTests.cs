@@ -185,7 +185,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
         }
 
-        public void DisconnectClients(int messageCounter = 0)
+        public IEnumerator DisconnectClients(int messageCounter = 0)
         {
             if (m_ConnectedClientsList.Count > 0)
             {
@@ -203,6 +203,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         clientsToDisconnect.Add(id);
                     }
                 }
+
+                int connectedClientsDotCount = NetworkManager.Singleton.ConnectedClients.Count;
                 foreach (var id in clientsToDisconnect)
                 {
                     if (id != 0)
@@ -213,6 +215,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         {
                             MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
                             NetworkManager.Singleton.DisconnectClient(id);
+                            yield return new WaitUntil(() => NetworkManager.Singleton.ConnectedClients.Count < connectedClientsDotCount);
+                            connectedClientsDotCount = NetworkManager.Singleton.ConnectedClients.Count;
                         }
                     }
                 }
@@ -360,6 +364,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TimeSpan duration = DateTime.Now - t2.StartTime;
             MultiprocessLogger.Log($" 3/TearDown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
                 $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime} duration: {duration.TotalSeconds}");
+            /*
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
             MultiprocessLogger.Log($" 4/TearDown Process List Cleared which should mean all spawned processes should stop");
@@ -382,6 +387,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
             TestCoordinator.Instance.TestRunTeardown();
+            */
             MultiprocessLogger.Log("BaseMultiProcessTests - TearDown : Running TearDown ... Complete");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
@@ -392,7 +398,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator UnityTearDown()
         {
             MultiprocessLogger.Log($"1/20 - UnityTearDown - BaseMultiProcessTests - start");
-            // - m_ConnectedClientsList.Count: {m_ConnectedClientsList.Count} and WorkerCount {WorkerCount}
+
+            DisconnectClients(1);
+
             // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
             for (int i = 0; i < 10; i++)
             {
