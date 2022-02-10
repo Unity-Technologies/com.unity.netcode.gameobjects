@@ -130,6 +130,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             LogInformation($"started netcode client, isConnected: {NetworkManager.Singleton.IsConnectedClient}, with pid {s_ProcessId}");
         }
         else
@@ -139,9 +140,14 @@ public class TestCoordinator : NetworkBehaviour
         ExecuteStepInContext.InitializeAllSteps();
     }
 
+    private void Singleton_OnClientDisconnectCallback(ulong obj)
+    {
+        LogInformation($"Singleton_OnClientDisconnectCallback in TestCoordinator triggered {obj}");
+    }
+
     private void Singleton_OnClientConnectedCallback(ulong obj)
     {
-        LogInformation($"OnClientConnectedCallback triggered");
+        LogInformation($"Singleton_OnClientConnectedCallback in TestCoordinator triggered {obj}");
     }
 
     public void Update()

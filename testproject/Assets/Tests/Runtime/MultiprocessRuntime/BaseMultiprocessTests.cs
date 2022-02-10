@@ -150,14 +150,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
         {
-            MultiprocessLogger.Log($"OnClientDisconnectCallback triggered {obj} current count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"Singleton_OnClientDisconnectCallback in BaseMultiprocessTests triggered {obj} current count is {m_ConnectedClientsList.Count}");
             m_ConnectedClientsList.Remove(obj);
         }
 
         private void Singleton_OnClientConnectedCallback(ulong obj)
         {
             m_ConnectedClientsList.Add(obj);
-            MultiprocessLogger.Log($"OnClientConnectedCallback triggered with id:{obj}, new count is {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"Singleton_OnClientConnectedCallback in BaseMultiprocessTests triggered with id:{obj}, new count is {m_ConnectedClientsList.Count}");
         }
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveOnServer();
             PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
-            MultiprocessLogger.Log($"SUCCESS - Connected client count is {NetworkManager.Singleton.ConnectedClients.Count} and {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
+            MultiprocessLogger.Log($"SUCCESS - Connected client count: NetworkManager {NetworkManager.Singleton.ConnectedClients.Count} Listener: {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount && m_ConnectedClientsList.Count < WorkerCount)
             {
