@@ -42,10 +42,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         static MultiprocessLogHandler()
         {
             s_AllTasks = new List<Task>();
-            string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
-            if (!long.TryParse(sJobId, out JobId))
+            if (JobId == 0)
             {
-                JobId = -2;
+                string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
+                if (!long.TryParse(sJobId, out JobId))
+                {
+                    JobId = -2;
+                }
             }
             s_EventIdCounter = 0;
         }

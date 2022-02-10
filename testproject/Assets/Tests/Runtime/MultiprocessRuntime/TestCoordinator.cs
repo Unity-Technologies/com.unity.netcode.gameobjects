@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
@@ -76,14 +77,22 @@ public class TestCoordinator : NetworkBehaviour
             if (arg.Equals("-ip"))
             {
                 m_ConnectAddress = args[i + 1];
-                MultiprocessLogger.Log($"command line ip was {m_ConnectAddress}");
-
             }
 
             if (arg.Equals("-p"))
             {
                 m_Port = args[i + 1];
-                MultiprocessLogger.Log($"command line port was {m_Port}");
+            }
+
+            if (arg.Equals("-jobid"))
+            {
+                string sJobId = args[i + 1];
+                long jobId;
+                if (!long.TryParse(sJobId, out jobId))
+                {
+                    jobId = -2;
+                }
+                MultiprocessLogHandler.JobId = jobId;
             }
         }
         MultiprocessLogger.Log($"{m_Port}");
@@ -119,27 +128,20 @@ public class TestCoordinator : NetworkBehaviour
 
         if (isClient)
         {
-            MultiprocessLogger.Log($"Starting netcode client on {Environment.MachineName} with pid {s_ProcessId}");
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
-            MultiprocessLogger.Log($"started netcode client, isConnected: {NetworkManager.Singleton.IsConnectedClient}, with pid {s_ProcessId}");
+            LogInformation($"started netcode client, isConnected: {NetworkManager.Singleton.IsConnectedClient}, with pid {s_ProcessId}");
         }
         else
         {
             m_TimeSinceLastKeepAlive = Time.time;
         }
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Start - IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
-                $" IsActiveAndEnabled:       {NetworkManager.Singleton.isActiveAndEnabled};\n" +
-                $" NetworkTransport.name:    {NetworkManager.NetworkConfig.NetworkTransport.name};\n" +
-                $" isConnectedClient:        {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $" m_TimeSinceLastKeepAlive: {m_TimeSinceLastKeepAlive}; \n" +
-                $"           pid:            {s_ProcessId}");
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
     {
-        MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
+        LogInformation($"OnClientConnectedCallback triggered");
     }
 
     public void Update()
@@ -167,13 +169,20 @@ public class TestCoordinator : NetworkBehaviour
         else if (m_Stopwatch.ElapsedMilliseconds > 2500)
         {
             m_Stopwatch.Restart();
-            MultiprocessLogger.Log($"Update - IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
+            LogInformation();
+        }
+    }
+
+    private void LogInformation(string extraMessage = "")
+    {
+        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
                 $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};\n" +
                 $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n " +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $" isClient: {IsClient} IsServer: {IsServer};\n" + 
-                $" pid: {s_ProcessId}");
-        }
+                $" isClient: {IsClient} IsServer: {IsServer};\n" +
+                $" Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
+                $" pid: {s_ProcessId};\n" +
+                $" {extraMessage}");
     }
 
     private static void QuitApplication(string reason)
@@ -196,15 +205,13 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
-        MultiprocessLogger.Log("OnEnable - Setting OnClientDisconnectCallback");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
-        MultiprocessLogger.Log("OnEnable - Setting OnClientConnectedCallback");
         NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
     }
 
     private void NetworkManager_OnClientConnectedCallback(ulong obj)
     {
-        MultiprocessLogger.Log($"OnClientConnectedCallback triggered - {obj}");
+        LogInformation($"OnClientConnectedCallback triggered - {obj}");
     }
 
     public void OnDisable()
