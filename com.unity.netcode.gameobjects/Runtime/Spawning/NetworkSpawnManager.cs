@@ -525,6 +525,13 @@ namespace Unity.Netcode
                 triggerInfo.TriggerData.Dispose();
                 m_Triggers.Remove(networkId);
             }
+
+            // propagate the IsSceneObject setting to child NetworkObjects
+            var children = networkObject.GetComponentsInChildren<NetworkObject>();
+            foreach (var childObject in children)
+            {
+                childObject.IsSceneObject = sceneObject;
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
