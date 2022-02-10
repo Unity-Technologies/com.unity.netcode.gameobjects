@@ -174,6 +174,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else
                 {
                     deletionList.Add(process);
+                    MultiprocessLogger.Log($" Deletion list for BokkenMachine process is now {deletionList.Count}");
                 }
             }
 
@@ -193,7 +194,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 ProcessList.Add(p);
             }
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
-            LogProcessListStatus();
         }
 
         public void PrintTaskListForMultiprocessTestPlayer()
