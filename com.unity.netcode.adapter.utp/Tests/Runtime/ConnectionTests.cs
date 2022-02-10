@@ -278,5 +278,41 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return null;
         }
+
+        // Check that a server can disconnect a client after another client has disconnected.
+        [UnityTest]
+        public IEnumerator ServerDisconnectAfterClientDisconnect()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+            InitializeTransport(out m_Clients[1], out m_ClientsEvents[1]);
+
+            m_Server.StartServer();
+
+            m_Clients[0].StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
+
+            m_Clients[1].StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[1]);
+
+            m_Clients[0].DisconnectLocalClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+
+            // Pick the client ID of the still connected client.
+            var clientId = m_ServerEvents[0].ClientID;
+            if (m_ServerEvents[2].ClientID == clientId)
+            {
+                clientId = m_ServerEvents[1].ClientID;
+            }
+
+            m_Server.DisconnectRemoteClient(clientId);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ClientsEvents[1]);
+
+            yield return null;
+        }
     }
 }
