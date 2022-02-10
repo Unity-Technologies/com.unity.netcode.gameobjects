@@ -182,6 +182,8 @@ namespace Unity.Netcode
 
         private RelayServerData m_RelayServerData;
 
+        internal NetworkManager NetworkManager;
+
 #if UNITY_EDITOR
         private static int ClientPacketDelayMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay");
         private static int ClientPacketJitterMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter");
@@ -747,10 +749,12 @@ namespace Unity.Netcode
             return 0;
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
                 "Netcode connection id size does not match UTP connection id size");
+
+            NetworkManager = networkManager;
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
