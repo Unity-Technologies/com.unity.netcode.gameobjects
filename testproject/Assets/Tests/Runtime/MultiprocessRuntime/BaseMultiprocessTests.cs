@@ -189,24 +189,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             if (m_ConnectedClientsList.Count > 0)
             {
-                MultiprocessLogger.Log($" {messageCounter++} There are {m_ConnectedClientsList.Count} connected clients");
                 var connectedClients = NetworkManager.Singleton.ConnectedClients;
-                MultiprocessLogger.Log($" {messageCounter++} NetworkManager count is {connectedClients.Count}");
+                MultiprocessLogger.Log(
+                    $" {messageCounter++} Connect Clients - \n" +
+                    $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
+                    $" NetworkManagerCount: {connectedClients.Count}\n");
                 var clientsToDisconnect = new List<ulong>();
                 foreach (ulong id in connectedClients.Keys)
                 {
-                    MultiprocessLogger.Log($" {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
-                    clientsToDisconnect.Add(id);
+                    if (id != 0)
+                    {
+                        MultiprocessLogger.Log($" {messageCounter++} Identified still connected client {id} {connectedClients[id]}");
+                        clientsToDisconnect.Add(id);
+                    }
                 }
                 foreach (var id in clientsToDisconnect)
                 {
                     if (id != 0)
                     {
-                        MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
                         if (NetworkManager.Singleton != null &&
                             NetworkManager.Singleton.IsServer &&
                             NetworkManager.Singleton.IsListening)
                         {
+                            MultiprocessLogger.Log($" {messageCounter++} Disconnecting client with id {id}");
                             NetworkManager.Singleton.DisconnectClient(id);
                         }
                     }
@@ -347,17 +352,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void Teardown()
         {
             MultiprocessLogHandler.Flush();
-            MultiprocessLogger.Log($" 1/Teardown BaseMultiProcessTests - Teardown : Running teardown");
+            MultiprocessLogger.Log($" 1/TearDown - BaseMultiProcessTests - start teardown");
             MultiprocessLogHandler.Flush();
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($" 2/Teardown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
+            MultiprocessLogger.Log($" 2/TearDown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
             var t2 = TestContext.CurrentTestExecutionContext;
             TimeSpan duration = DateTime.Now - t2.StartTime;
-            MultiprocessLogger.Log($" 3/Teardown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
+            MultiprocessLogger.Log($" 3/TearDown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
                 $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime} duration: {duration.TotalSeconds}");
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
-            MultiprocessLogger.Log($" 4/Teardown Process List Cleared which should mean all spawned processes should stop");
+            MultiprocessLogger.Log($" 4/TearDown Process List Cleared which should mean all spawned processes should stop");
             if (m_LaunchRemotely && MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 foreach (var process in BokkenMachine.ProcessList)
@@ -375,12 +380,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log($"HasExited threw an exception {ioe.StackTrace}");
                     }
                 }
-
-                MultiprocessLogger.Log("Kill multi process test players");
-                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             }
             TestCoordinator.Instance.TestRunTeardown();
-            MultiprocessLogger.Log("BaseMultiProcessTests - Teardown : Running teardown ... Complete");
+            MultiprocessLogger.Log("BaseMultiProcessTests - TearDown : Running TearDown ... Complete");
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
         }
@@ -389,11 +391,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTearDown]
         public IEnumerator UnityTearDown()
         {
-            MultiprocessLogger.Log($"1/20 - UnityTearDown ... start - m_ConnectedClientsList.Count: {m_ConnectedClientsList.Count} and WorkerCount {WorkerCount}");
-            yield return new WaitForSeconds(1.0f);
-            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogger.Log($"1/20 - UnityTearDown - BaseMultiProcessTests - start");
+            // - m_ConnectedClientsList.Count: {m_ConnectedClientsList.Count} and WorkerCount {WorkerCount}
+            // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
+            for (int i = 0; i < 10; i++)
+            {
+                MultiprocessLogger.Log($"Need to confirm that {WorkerCount} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
+                yield return new WaitForSeconds(1.0f);
+            }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
-            MultiprocessLogger.Log($"2/20 - UnityTearDown ... end - {m_ConnectedClientsList.Count} | {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"2/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
         [OneTimeTearDown]

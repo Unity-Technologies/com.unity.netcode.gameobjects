@@ -211,7 +211,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void NetworkManager_OnClientConnectedCallback(ulong obj)
     {
-        LogInformation($"OnClientConnectedCallback triggered - {obj}");
+        LogInformation($"NetworkManager_OnClientConnectedCallback triggered - {obj}");
     }
 
     public void OnDisable()
