@@ -94,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
-            Assert.AreEqual(1, objectDestroyedSentMetricValues.Count);
+            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
 
             var objectDestroyed = objectDestroyedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectDestroyed.Connection.Id);

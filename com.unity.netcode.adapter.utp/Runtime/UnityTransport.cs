@@ -686,18 +686,21 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    ExtractNetworkMetricsForClient(ngoConnectionId);
+                    var transportClientId = NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId);
+                    ExtractNetworkMetricsForClient(transportClientId);
                 }
             }
             else
             {
-                ExtractNetworkMetricsForClient(NetworkManager.Singleton.ServerClientId);
+                if (m_ServerClientId != 0)
+                {
+                    ExtractNetworkMetricsForClient(m_ServerClientId);
+                }
             }
         }
 
-        private void ExtractNetworkMetricsForClient(ulong ngoConnectionId)
+        private void ExtractNetworkMetricsForClient(ulong transportClientId)
         {
-            var transportClientId = NetworkManager.Singleton.ClientIdToTransportId(ngoConnectionId);
             var networkConnection =  ParseClientId(transportClientId);
             ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
