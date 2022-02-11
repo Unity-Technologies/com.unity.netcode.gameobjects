@@ -6,13 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-== [Unreleased]
+## [Unreleased]
 
-=== Added
+### Added
 
-=== Changed
+### Changed
 
-=== Fixed
+### Fixed
 
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 
