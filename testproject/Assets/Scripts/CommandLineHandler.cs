@@ -206,6 +206,15 @@ public class CommandLineProcessor
                 unetTransport.ConnectAddress = address;
                 break;
 #endif
+            case UnityTransport utpTransport:
+                {
+                    utpTransport.ConnectionData.Address = address;
+                    if (utpTransport.ConnectionData.ServerListenAddress == string.Empty)
+                    {
+                        utpTransport.ConnectionData.ServerListenAddress = address;
+                    }
+                    break;
+                }
         }
     }
 
@@ -220,6 +229,11 @@ public class CommandLineProcessor
                 unetTransport.ServerListenPort = port;
                 break;
 #endif
+            case UnityTransport utpTransport:
+                {
+                    utpTransport.ConnectionData.Port = port;
+                    break;
+                }
         }
     }
 }
