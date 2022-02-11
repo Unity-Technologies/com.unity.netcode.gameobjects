@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests.Serialization

@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
