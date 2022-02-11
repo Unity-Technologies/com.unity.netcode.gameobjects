@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
+#if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
-
+#endif
 
 /// <summary>
 /// Provides basic command line handling capabilities
