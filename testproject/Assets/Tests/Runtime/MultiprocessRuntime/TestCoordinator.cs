@@ -178,7 +178,7 @@ public class TestCoordinator : NetworkBehaviour
         else if (m_Stopwatch.ElapsedMilliseconds > 2500)
         {
             m_Stopwatch.Restart();
-            LogInformation();
+            LogInformation("Update - ");
         }
     }
 

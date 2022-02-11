@@ -430,10 +430,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"In teardown we tried to disconnect: {clientId}");
             }
 
-            disconnectedClients = "";
+            disconnectedClients = " - ";
             foreach (var clientId in TestCoordinator.NetworkManagerClientDisconnectedCallbackReceived)
             {
-                disconnectedClients += $" {clientId} ";
+                disconnectedClients += $" - {clientId} ";
             }
             MultiprocessLogger.Log($"After UnityTearDown call to DisconnectClients {disconnectedClients}");
             // Discovered that even after disconnect the player process doesn't auto-quit so need to force it
