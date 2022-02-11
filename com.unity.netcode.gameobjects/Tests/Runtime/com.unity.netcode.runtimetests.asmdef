@@ -31,9 +31,14 @@
             "define": "MULTIPLAYER_TOOLS"
         },
         {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        },
+        {
             "name": "com.unity.netcode.adapter.utp",
             "expression": "",
-            "define": "UTP_ADAPTER"
+            "define": "UTP_ADAPTER"        
         },
         {
             "name": "com.unity.multiplayer.tools",
