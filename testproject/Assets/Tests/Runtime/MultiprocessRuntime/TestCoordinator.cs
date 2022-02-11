@@ -237,6 +237,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void NetworkManager_OnClientDisconnectCallback(ulong clientId)
     {
+        MultiprocessLogger.Log($"NetworkManager_OnClientConnectedCallback triggered - {clientId}");
         NetworkManagerClientDisconnectedCallbackReceived.Add(clientId);
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {

@@ -199,7 +199,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $" {messageCounter}.{localMessageCounter++ / 10.0f} Connect Clients - \n" +
                     $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
                     $" NetworkManagerCount: {connectedClients.Count}\n");
-                
+
                 foreach (ulong id in connectedClients.Keys)
                 {
                     if (id != 0)
