@@ -22,6 +22,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var waitForSentMetric = new WaitForEventMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
 
             var message = Guid.NewGuid().ToString();
+            Client.LogLevel = LogLevel.Developer;
+            Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
 
             yield return waitForSentMetric.WaitForMetricsReceived();
@@ -41,6 +43,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var waitForReceivedMetric = new WaitForEventMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ServerLogReceived);
 
             var message = Guid.NewGuid().ToString();
+            Client.LogLevel = LogLevel.Developer;
+            Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
