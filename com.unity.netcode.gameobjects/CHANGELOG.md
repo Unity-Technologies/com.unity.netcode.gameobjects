@@ -14,7 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 === Fixed
 
-- Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1588)
+- Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 
 
 ## [1.0.0-pre.5] - 2022-01-26
