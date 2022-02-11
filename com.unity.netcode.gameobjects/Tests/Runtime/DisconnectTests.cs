@@ -13,13 +13,13 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator RemoteDisconnectPlayerObjectCleanup()
         {
             // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
 
             // create prefab
             var gameObject = new GameObject("PlayerObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.DontDestroyWithOwner = true;
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             server.NetworkConfig.PlayerPrefab = gameObject;
 
@@ -29,13 +29,13 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // start server and connect clients
-            MultiInstanceHelpers.Start(false, server, clients);
+            NetcodeIntegrationTestHelpers.Start(false, server, clients);
 
             // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
 
             // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server));
 
             // disconnect the remote client
             server.DisconnectClient(clients[0].LocalClientId);
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
 
             // cleanup
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
         }
     }
 }

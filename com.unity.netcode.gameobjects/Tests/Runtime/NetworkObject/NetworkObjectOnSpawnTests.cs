@@ -7,7 +7,7 @@ using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkObjectOnSpawnTests : BaseMultiInstanceTest
+    public class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
     {
         private GameObject m_TestNetworkObjectPrefab;
         private GameObject m_TestNetworkObjectInstance;
@@ -77,16 +77,16 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
 
             var serverInstance = serverClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
 
             var clientInstances = new List<TrackOnSpawnFunctions>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
+                var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 clientInstances.Add(clientRpcTests);

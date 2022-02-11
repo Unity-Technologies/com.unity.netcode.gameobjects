@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers
 {
-    public abstract class BaseMultiInstanceTest
+    public abstract class NetcodeIntegrationTest
     {
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -27,7 +27,7 @@ namespace Unity.Netcode.TestHelpers
         protected WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
-        /// An update to the original MultiInstanceHelpers.WaitForCondition that:
+        /// An update to the original NetcodeIntegrationTestHelpers.WaitForCondition that:
         ///     -operates at the current tick rate
         ///     -allows for a unique TimeOutHelper handler (if none then it uses the default)
         ///     -adjusts its yield period to the settings of the m_ServerNetworkManager.NetworkConfig.TickRate
@@ -108,7 +108,7 @@ namespace Unity.Netcode.TestHelpers
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
-                MultiInstanceHelpers.Destroy();
+                NetcodeIntegrationTestHelpers.Destroy();
             }
             catch (Exception e) { throw e; }
             finally
@@ -163,8 +163,8 @@ namespace Unity.Netcode.TestHelpers
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
-            //MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
-            //MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            //NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+            //NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Unity.Netcode.TestHelpers
             }
 
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
+            if (!NetcodeIntegrationTestHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -251,7 +251,7 @@ namespace Unity.Netcode.TestHelpers
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             if (updatePlayerPrefab != null)
             {
@@ -270,23 +270,23 @@ namespace Unity.Netcode.TestHelpers
             {
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!MultiInstanceHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
+                if (!NetcodeIntegrationTestHelpers.Start(useHost, server, clients, SceneManagerValidationAndTestRunnerInitialization))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
 
                 // Wait for connection on client side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
 
                 // Wait for connection on server side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
             }
         }
     }
 
     /// <summary>
-    /// Can be used independently or assigned to <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"></see> in the
+    /// Can be used independently or assigned to <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"></see> in the
     /// event the default timeout period needs to be adjusted
     /// </summary>
     public class TimeOutHelper
@@ -324,7 +324,7 @@ namespace Unity.Netcode.TestHelpers
     }
 
     /// <summary>
-    /// Derive from this class to create your own conditional handling for your <see cref="BaseMultiInstanceTest"/>
+    /// Derive from this class to create your own conditional handling for your <see cref="NetcodeIntegrationTest"/>
     /// integration tests when dealing with more complicated scenarios where initializing values, storing state to be
     /// used across several integration tests.
     /// </summary>

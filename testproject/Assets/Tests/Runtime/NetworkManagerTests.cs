@@ -4,7 +4,7 @@ using Unity.Netcode.TestHelpers;
 
 namespace TestProject.RuntimeTests
 {
-    public class NetworkManagerTests : BaseMultiInstanceTest
+    public class NetworkManagerTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 1;
 

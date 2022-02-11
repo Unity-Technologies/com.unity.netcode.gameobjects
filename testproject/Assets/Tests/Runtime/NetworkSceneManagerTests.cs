@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-    public class NetworkSceneManagerTests : BaseMultiInstanceTest
+    public class NetworkSceneManagerTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 9;
 
@@ -84,18 +84,18 @@ namespace TestProject.RuntimeTests
             var isHost = serverType == ServerType.Host ? true : false;
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!NetcodeIntegrationTestHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
 
             var numberOfClients = isHost ? NbClients + 1 : NbClients;
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
 
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
@@ -735,7 +735,7 @@ namespace TestProject.RuntimeTests
             yield return Setup();
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
@@ -765,10 +765,10 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
 
             //////////////////////////////////////////
             // Testing synchronize event notifications
@@ -1004,7 +1004,7 @@ namespace TestProject.RuntimeTests
             var networkObject = m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
             m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
 
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {

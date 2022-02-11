@@ -6,7 +6,7 @@ using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkSpawnManagerTests : BaseMultiInstanceTest
+    public class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
         private ulong serverSideClientId => m_ServerNetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
@@ -97,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
             // test when client connects, player object is now available
 
             // connect new client
-            if (!MultiInstanceHelpers.CreateNewClients(1, out NetworkManager[] clients))
+            if (!NetcodeIntegrationTestHelpers.CreateNewClients(1, out NetworkManager[] clients))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -105,8 +105,8 @@ namespace Unity.Netcode.RuntimeTests
             var newClientNetworkManager = clients[0];
             newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             newClientNetworkManager.StartClient();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(newClientNetworkManager));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnected(newClientNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
 
             // test new client can get that itself locally
@@ -120,8 +120,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // test when client disconnects, player object no longer available.
             var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
-            MultiInstanceHelpers.StopOneClient(newClientNetworkManager);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
+            NetcodeIntegrationTestHelpers.StopOneClient(newClientNetworkManager);
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
 
             serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.Null(serverSideNewClientPlayer);

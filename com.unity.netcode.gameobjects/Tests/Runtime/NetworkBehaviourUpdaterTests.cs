@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
             netVarContainer.NumberOfNetVarsToCheck = netVarsToCheck.SecondType;
             netVarContainer.ValueToSetNetVarTo = NetworkBehaviourUpdaterTests.NetVarValueToSet;
 
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             return gameObject;
         }
@@ -151,7 +151,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetVarContainer.NetVarsToCheck SecondType;
     }
 
-    public class NetworkBehaviourUpdaterTests : BaseMultiInstanceTest
+    public class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
         protected override int NbClients => 2;
@@ -205,7 +205,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now spin everything up normally
             var clientsAsArry = m_ActiveClientsForCurrentTest.ToArray();
-            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, clientsAsArry), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, clientsAsArry), "Failed to start server and client instances");
 
             // Only if we have clients (not host)
             if (numberOfClients > 0)
@@ -214,11 +214,11 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAsArry));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAsArry));
 
             // Wait for connection on server side
             var clientsToWaitFor = useHost ? numberOfClients + 1 : numberOfClients;
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
         }
 
         /// <summary>

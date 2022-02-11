@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests the times of two clients connecting to a server using the SIPTransport (returns 50ms RTT but has no latency simulation)
     /// </summary>
-    public class TimeMultiInstanceTest : BaseMultiInstanceTest
+    public class TimeMultiInstanceTest : NetcodeIntegrationTest
     {
         private const double k_AdditionalTimeTolerance = 0.3d; // magic number and in theory not needed but without this mac os test fail in Yamato because it looks like we get random framerate drops during unit test.
 
@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
             double frameInterval = 1d / targetFrameRate;
             double tickInterval = 1d / tickRate;
 
-            var networkManagers = MultiInstanceHelpers.NetworkManagerInstances.ToArray();
+            var networkManagers = NetcodeIntegrationTestHelpers.NetworkManagerInstances.ToArray();
 
             var server = networkManagers.First(t => t.IsServer);
             var firstClient = networkManagers.First(t => !t.IsServer);
@@ -92,11 +92,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        // This is from BaseMultiInstanceTest but we need a custom version of this to modifiy the config
+        // This is from NetcodeIntegrationTest but we need a custom version of this to modifiy the config
         private IEnumerator StartSomeClientsAndServerWithPlayersCustom(bool useHost, int nbClients, int targetFrameRate, uint tickRate)
         {
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
+            if (!NetcodeIntegrationTestHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -117,7 +117,7 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
@@ -131,17 +131,17 @@ namespace Unity.Netcode.RuntimeTests
             server.NetworkConfig.TickRate = tickRate;
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(useHost, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(useHost, server, clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
 
         private IEnumerator WaitForFrames(int count)

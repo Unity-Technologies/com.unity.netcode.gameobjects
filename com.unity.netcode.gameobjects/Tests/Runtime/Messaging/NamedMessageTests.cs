@@ -9,7 +9,7 @@ using Unity.Netcode.TestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NamedMessageTests : BaseMultiInstanceTest
+    public class NamedMessageTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 2;
 

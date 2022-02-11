@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// This class is for testing general fixes or functionality of NetworkBehaviours
     /// </summary>
-    public class NetworkBehaviourGenericTests : BaseMultiInstanceTest
+    public class NetworkBehaviourGenericTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 0;
         public override IEnumerator Setup()
@@ -38,7 +38,7 @@ namespace Unity.Netcode.RuntimeTests
             var simpleNetworkBehaviour = objectToTest.AddComponent<SimpleNetworkBehaviour>();
 
             // Now just start the Host
-            Assert.True(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }), "Failed to start the host!");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }), "Failed to start the host!");
 
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;

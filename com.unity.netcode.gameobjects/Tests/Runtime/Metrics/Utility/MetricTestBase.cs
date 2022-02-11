@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 {
-    internal abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
+    internal abstract class SingleClientMetricTestBase : NetcodeIntegrationTest
     {
         protected override int NbClients => 1;
 
@@ -36,7 +36,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
         }
     }
 
-    public abstract class DualClientMetricTestBase : BaseMultiInstanceTest
+    public abstract class DualClientMetricTestBase : NetcodeIntegrationTest
     {
         protected override int NbClients => 2;
 

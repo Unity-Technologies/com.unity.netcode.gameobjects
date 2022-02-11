@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(true)]
     [TestFixture(false)]
-    public class NetworkVariableTests : BaseMultiInstanceTest
+    public class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
         protected override int NbClients => 2;
@@ -124,23 +124,23 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             yield return m_DefaultWaitForTick;
 
             // Wait for connection on server side
             var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
-            var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            var result = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
 
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, result);
 
@@ -148,7 +148,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], result);
 
@@ -445,7 +445,7 @@ namespace Unity.Netcode.RuntimeTests
 
     /// <summary>
     /// Handles the more generic conditional logic for NetworkList tests
-    /// which can be used with the <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"/>
+    /// which can be used with the <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"/>
     /// that accepts anything derived from the <see cref="ConditionalPredicateBase"/> class
     /// as a parameter.
     /// </summary>

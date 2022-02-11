@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public override bool Kinematic => true;
     }
 
-    public abstract class NetworkRigidbody2DTestBase : BaseMultiInstanceTest
+    public abstract class NetworkRigidbody2DTestBase : NetcodeIntegrationTest
     {
         protected override int NbClients => 1;
 
@@ -44,13 +44,13 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public IEnumerator TestRigidbodyKinematicEnableDisable()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
             var serverPlayer = serverClientPlayerResult.Result.gameObject;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
             var clientPlayer = clientClientPlayerResult.Result.gameObject;
 
             Assert.IsNotNull(serverPlayer);

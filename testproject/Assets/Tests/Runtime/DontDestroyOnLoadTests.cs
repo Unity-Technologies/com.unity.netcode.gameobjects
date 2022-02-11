@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator Setup()
         {
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(4, out NetworkManager server, out NetworkManager[] clients, 60))
+            if (!NetcodeIntegrationTestHelpers.Create(4, out NetworkManager server, out NetworkManager[] clients, 60))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -30,13 +30,13 @@ namespace TestProject.RuntimeTests
             var playerNetworkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(playerNetworkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(playerNetworkObject);
 
             m_DontDestroyOnLoadObject = new GameObject("DontDestroyOnLoadObject");
             var dontDestroyOnLoadNetworkObject = m_DontDestroyOnLoadObject.AddComponent<NetworkObject>();
             m_DontDestroyOnLoadObject.AddComponent<ObjectToNotDestroyBehaviour>();
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(dontDestroyOnLoadNetworkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(dontDestroyOnLoadNetworkObject);
 
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
@@ -105,7 +105,7 @@ namespace TestProject.RuntimeTests
                 networkManager.StartClient();
             }
 
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             yield return waitForTick;
             var timeOut = Time.realtimeSinceStartup + 2.0f;

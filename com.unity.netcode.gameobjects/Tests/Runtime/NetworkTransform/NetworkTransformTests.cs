@@ -28,7 +28,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(true, false)]
     // [TestFixture(false, true)]
     [TestFixture(false, false)]
-    public class NetworkTransformTests : BaseMultiInstanceTest
+    public class NetworkTransformTests : NetcodeIntegrationTest
     {
         private NetworkObject m_ClientSideClientPlayer;
         private NetworkObject m_ServerSideClientPlayer;
@@ -75,20 +75,20 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
 #endif
-            Assert.True(MultiInstanceHelpers.Start(m_TestWithHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(m_TestWithHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
             var clientsToWaitFor = m_TestWithHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
             x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
 
@@ -96,8 +96,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return m_DefaultWaitForTick;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
             x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
             var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
@@ -118,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return InitializeServerAndClients();
 
 
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            var waitResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<bool>();
 
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;

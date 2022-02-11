@@ -12,7 +12,7 @@ namespace Unity.Netcode.TestHelpers
     /// <summary>
     /// Provides helpers for running multi instance tests.
     /// </summary>
-    public static class MultiInstanceHelpers
+    public static class NetcodeIntegrationTestHelpers
     {
         public const int DefaultMinFrames = 1;
         public const int DefaultMaxFrames = 64;

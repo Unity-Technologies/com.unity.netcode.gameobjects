@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HiddenVariableTests : BaseMultiInstanceTest
+    public class HiddenVariableTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 4;
 
@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var prefabToSpawn = new GameObject("MyTestObject");
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             prefabToSpawn.AddComponent<HiddenVariableObject>();
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
@@ -132,9 +132,9 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var netMan in m_ClientNetworkManagers)
             {
-                var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(
-                    MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+                yield return NetcodeIntegrationTestHelpers.Run(
+                    NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                         x => x.NetworkObjectId == m_NetSpawnedObject.NetworkObjectId,
                         netMan,
                         serverClientPlayerResult));

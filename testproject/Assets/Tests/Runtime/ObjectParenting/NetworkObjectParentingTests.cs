@@ -52,7 +52,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
             const string sceneName = nameof(NetworkObjectParentingTests);
 
@@ -91,7 +91,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Start server and client NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // Register our scene verification delegate handler so we don't load the unit test scene
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
@@ -102,10 +102,10 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
         }
 
         public void SetupSet(Transform rootTransform, int setIndex, NetworkManager networkManager)
@@ -205,7 +205,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
 
             if (m_TestScene.isLoaded)
             {

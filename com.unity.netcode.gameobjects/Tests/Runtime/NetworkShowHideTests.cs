@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class NetworkShowHideTests : BaseMultiInstanceTest
+    public class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 2;
 
@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabToSpawn = new GameObject();
             prefabToSpawn.AddComponent(type);
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -139,22 +139,22 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator RefreshNetworkObjects()
         {
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.Run(
+                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult));
             m_Object1OnClient0 = serverClientPlayerResult.Result;
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.Run(
+                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult));
             m_Object2OnClient0 = serverClientPlayerResult.Result;
-            serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.Run(
+                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult));
