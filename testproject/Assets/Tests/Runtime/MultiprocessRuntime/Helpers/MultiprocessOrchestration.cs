@@ -64,13 +64,13 @@ public class MultiprocessOrchestration
 
     public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
-        MultiprocessLogger.Log("ProvisionWorkerNode - Start");
         var bokkenMachine = BokkenMachine.Parse(platformString);
         bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, $"{bokkenMachine.Name}.json");
         var fi = new FileInfo(bokkenMachine.PathToJson);
+        MultiprocessLogger.Log($"ProvisionWorkerNode - {bokkenMachine.PathToJson}: {fi.Exists}, parsed from {platformString}");
         if (!fi.Exists)
         {
-            MultiprocessLogger.Log($"WARNING: Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson}");
+            MultiprocessLogger.Log($"WARNING: Need to provision and set up a new machine named {bokkenMachine.Name} with path {bokkenMachine.PathToJson} because {fi.FullName} doesn't exist");
             bokkenMachine.Provision();
             bokkenMachine.Setup();
         }
