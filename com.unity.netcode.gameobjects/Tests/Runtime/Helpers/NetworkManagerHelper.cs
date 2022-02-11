@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
+//#if UNITY_UNET_PRESENT
+//using Unity.Netcode.Transports.UNET;
+//#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
