@@ -8,7 +8,7 @@ using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public struct TestStruct : INetworkSerializable
+    public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
         public uint SomeInt;
         public bool SomeBool;
@@ -27,6 +27,24 @@ namespace Unity.Netcode.RuntimeTests
             }
             serializer.SerializeValue(ref SomeInt);
             serializer.SerializeValue(ref SomeBool);
+        }
+
+        public bool Equals(TestStruct other)
+        {
+            return SomeInt == other.SomeInt && SomeBool == other.SomeBool;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is TestStruct other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((int)SomeInt * 397) ^ SomeBool.GetHashCode();
+            }
         }
     }
 
@@ -49,6 +67,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
+        public readonly NetworkList<TestStruct> TheListOfStructs = new NetworkList<TestStruct>();
 
         public bool ListDelegateTriggered;
 
@@ -608,6 +627,28 @@ namespace Unity.Netcode.RuntimeTests
                     m_Player1OnServer.TheList.Add(Random.Range(0, k_MaxRandomValue));
                 }
             }
+        }
+		
+        [UnityTest]
+        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
+        {
+            m_TestWithHost = useHost;
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    TestStruct.NetworkSerializeCalledOnWrite = false;
+                    TestStruct.NetworkSerializeCalledOnRead = false;
+                    m_Player1OnServer.TheListOfStructs.Add(
+                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
+                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
+                },
+                () =>
+                {
+                    return
+                        TestStruct.NetworkSerializeCalledOnWrite &&
+                        TestStruct.NetworkSerializeCalledOnRead;
+                }
+            );
         }
     }
 }
