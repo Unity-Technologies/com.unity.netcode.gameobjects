@@ -423,7 +423,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 BokkenMachine.LogProcessListStatus();
-                BokkenMachine.DisposeResources();
+                MultiprocessOrchestration.ShutdownAllProcesses(true, 7);
             }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             MultiprocessLogger.Log($" 8/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
