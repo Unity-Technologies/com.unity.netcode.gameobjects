@@ -137,6 +137,18 @@ namespace Unity.Netcode
         {
         }
 
+        public void TrackPacketSent(uint packetCount)
+        {
+        }
+
+        public void TrackPacketReceived(uint packetCount)
+        {
+        }
+
+        public void TrackRttToServer(int rtt)
+        {
+        }
+
         public void DispatchFrame()
         {
         }

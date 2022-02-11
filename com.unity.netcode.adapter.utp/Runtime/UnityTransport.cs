@@ -670,12 +670,99 @@ namespace Unity.Netcode
                 {
                     ;
                 }
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                ExtractNetworkMetrics();
+#endif
             }
         }
 
         private void OnDestroy()
         {
             DisposeInternals();
+        }
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+        private void ExtractNetworkMetrics()
+        {
+            if (NetworkManager.IsServer)
+            {
+                var ngoConnectionIds = NetworkManager.ConnectedClients.Keys;
+                foreach (var ngoConnectionId in ngoConnectionIds)
+                {
+                    if (ngoConnectionId == 0 && NetworkManager.IsHost)
+                    {
+                        continue;
+                    }
+                    var transportClientId = NetworkManager.ClientIdToTransportId(ngoConnectionId);
+                    ExtractNetworkMetricsForClient(transportClientId);
+                }
+            }
+            else
+            {
+                if (m_ServerClientId != 0)
+                {
+                    ExtractNetworkMetricsForClient(m_ServerClientId);
+                }
+            }
+        }
+
+        private void ExtractNetworkMetricsForClient(ulong transportClientId)
+        {
+            var networkConnection =  ParseClientId(transportClientId);
+            ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
+            ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
+
+            var rttValue = ExtractRtt(networkConnection);
+            NetworkMetrics.TrackRttToServer(rttValue);
+        }
+
+        private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
+        {
+            //Don't need to dispose of the buffers, they are filled with data pointers.
+            m_Driver.GetPipelineBuffers(pipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
+            {
+                var networkMetricsContext = (NetworkMetricsContext*)sharedBuffer.GetUnsafePtr();
+
+                NetworkMetrics.TrackPacketSent(networkMetricsContext->PacketSentCount);
+                NetworkMetrics.TrackPacketReceived(networkMetricsContext->PacketReceivedCount);
+
+                networkMetricsContext->PacketSentCount = 0;
+                networkMetricsContext->PacketReceivedCount = 0;
+            }
+        }
+#endif
+
+        private int ExtractRtt(NetworkConnection networkConnection)
+        {
+            if (NetworkManager.IsServer)
+            {
+                return 0;
+            }
+            else
+            {
+                m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                    NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                    networkConnection,
+                    out _,
+                    out _,
+                    out var sharedBuffer);
+
+                unsafe
+                {
+                    var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+
+                    return sharedContext->RttInfo.LastRtt;
+                }
+            }
         }
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
@@ -856,6 +943,9 @@ namespace Unity.Netcode
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
             var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -879,26 +969,50 @@ namespace Unity.Netcode
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    , typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend));
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
             }
             else
 #endif
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage));
+                    typeof(FragmentationPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage), typeof(UnreliableSequencedPipelineStage));
+                    typeof(FragmentationPipelineStage),
+                    typeof(UnreliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
                 );
             }
         }
