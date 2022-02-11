@@ -417,10 +417,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
                 }
             }
+            // Discovered that even after disconnect the player process doesn't auto-quit so need to force it
+            MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 6);
             MultiprocessLogger.Log($" 7/20 - UnityTearDown - Reporting on processes calling bokkenapi");
             if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 BokkenMachine.LogProcessListStatus();
+                BokkenMachine.DisposeResources();
             }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             MultiprocessLogger.Log($" 8/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");

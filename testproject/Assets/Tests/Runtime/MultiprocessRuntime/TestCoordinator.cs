@@ -31,6 +31,7 @@ public class TestCoordinator : NetworkBehaviour
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
     private float m_TimeSinceLastKeepAlive;
+    private bool m_IsClient;
 
     public static TestCoordinator Instance;
 
@@ -69,7 +70,7 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         m_Stopwatch = Stopwatch.StartNew();
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; ++i)
         {
@@ -99,7 +100,7 @@ public class TestCoordinator : NetworkBehaviour
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         MultiprocessLogger.Log($"Transport is {transport.ToString()}");
-        if (!isClient)
+        if (!m_IsClient)
         {
             m_ConnectAddress = "0.0.0.0";
         }
@@ -110,14 +111,14 @@ public class TestCoordinator : NetworkBehaviour
                 MultiprocessLogger.Log("ERROR - UNetTransport should not be the transport in this case");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
-                if (isClient)
+                if (m_IsClient)
                 {
                     MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
                     unetTransport.ConnectAddress = m_ConnectAddress;
                 }
                 break;
             case UnityTransport unityTransport:
-                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {isClient}, Address {m_ConnectAddress}");
+                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
                 unityTransport.ConnectionData.Port = ushortport;
                 unityTransport.ConnectionData.Address = m_ConnectAddress;
                 break;
@@ -126,7 +127,7 @@ public class TestCoordinator : NetworkBehaviour
                 break;
         }
 
-        if (isClient)
+        if (m_IsClient)
         {
             NetworkManager.Singleton.StartClient();
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
@@ -181,11 +182,12 @@ public class TestCoordinator : NetworkBehaviour
 
     private void LogInformation(string extraMessage = "")
     {
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
-                $"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};\n" +
-                $" NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n " +
+        MultiprocessLogger.Log($" IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
+                $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};\n" +
+                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n " +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $" isClient: {IsClient} IsServer: {IsServer};\n" +
+                $" isClient: {m_IsClient};\n" +
+                $" IsServer: {IsServer};\n" +
                 $" Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
                 $" pid: {s_ProcessId};\n" +
                 $" {extraMessage}");
