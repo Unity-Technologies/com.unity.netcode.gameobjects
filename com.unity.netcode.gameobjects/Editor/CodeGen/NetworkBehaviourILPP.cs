@@ -395,6 +395,17 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
 
+                if (methodDefinition.HasCustomAttributes)
+                {
+                    foreach (var attribute in methodDefinition.CustomAttributes)
+                    {
+                        if (attribute.AttributeType.Name == nameof(AsyncStateMachineAttribute))
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.FullName}: RPCs cannot be 'async'");
+                        }
+                    }
+                }
+
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, rpcMethodId);
 
                 rpcHandlers.Add((rpcMethodId, GenerateStaticHandler(methodDefinition, rpcAttribute)));
