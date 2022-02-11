@@ -126,7 +126,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void DisposeResources()
         {
-            MultiprocessLogger.Log("Disposing of resources");
             DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
             foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
             {
