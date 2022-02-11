@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
 - Fixed NetworkTransport Initialize now can receive the associated NetworkManager instance to avoid using NetworkManager.Singleton in transport layer (#1677)
+- Fixed: Messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
 
 ## [1.0.0-pre.4] - 2021-01-04
 
@@ -36,8 +37,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
 
 ### Fixed
+
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
-- Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
+- Fixed invalid IL code being generated when using this instead of this ref for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
 - Fixed a runtime error when sending an array of an INetworkSerializable type that's implemented as a struct (#1402)
 - NetworkConfig will no longer throw an OverflowException in GetConfig() when ForceSamePrefabs is enabled and the number of prefabs causes the config blob size to exceed 1300 bytes. (#1385)
@@ -46,14 +48,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkObjects not being despawned before they are destroyed during shutdown for client, host, and server instances. (#1390)
 - Fixed KeyNotFound exception when removing ownership of a newly spawned NetworkObject that is already owned by the server. (#1500)
 - Fixed NetworkManager.LocalClient not being set when starting as a host. (#1511)
+- Fixed InterestManager was declared internal / inaccessible outside tests (#1567)
 - Fixed a few memory leak cases when shutting down NetworkManager during Incoming Message Queue processing. (#1323)
-- Fixed network tick value sometimes being duplicated or skipped. (#1614)
 
 ### Changed
+
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 - Updated com.unity.collections to 1.1.0 (#1451)
-- NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
-- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
 
 ## [1.0.0-pre.3] - 2021-10-22
 
@@ -69,7 +70,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - IL2CPP would not properly compile (#1359)
 
 ## [1.0.0-pre.2] - 2021-10-19
-
 
 ### Added
 
