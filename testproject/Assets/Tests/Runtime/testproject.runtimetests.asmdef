@@ -19,6 +19,17 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.relay",
+            "expression": "0.0.1-preview.3",
+            "define": "ENABLE_RELAY_SERVICE"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        }
+    ],
     "noEngineReferences": false
 }
