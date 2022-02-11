@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+- Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
+- Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
+- Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
+
+
 ## [1.0.0-pre.5] - 2022-01-26
 
 ### Added
