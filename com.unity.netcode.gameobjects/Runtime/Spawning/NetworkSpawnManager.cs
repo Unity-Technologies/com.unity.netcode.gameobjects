@@ -698,7 +698,7 @@ namespace Unity.Netcode
                 }
             }
 
-            foreach(var networkObject in networkObjectsToSpawn)
+            foreach (var networkObject in networkObjectsToSpawn)
             {
                 SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
             }
