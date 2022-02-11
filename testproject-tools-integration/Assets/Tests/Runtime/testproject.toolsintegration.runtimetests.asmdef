@@ -4,6 +4,10 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.RuntimeTests",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.Multiplayer.Tools.MetricTypes",
