@@ -44,21 +44,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator CheckPreconditions()
         {
             MultiprocessLogger.Log($"Are Clients Connected: {WorkerCount}, {m_ConnectedClientsList.Count}");
-
+            MultiprocessLogger.Log($" {MultiprocessOrchestration.MultiprocessDirInfo.FullName}: {MultiprocessOrchestration.MultiprocessDirInfo.Exists}\n" +
+                $" {BokkenMachine.PathToDll}\n" +
+                $" {MultiprocessOrchestration.UserProfile_Home}");
+            
             var pathTodll = new FileInfo(BokkenMachine.PathToDll);
-            MultiprocessLogger.Log("The Bokken API Dll exists");
+
             Assert.True(pathTodll.Exists, "The Bokken API Dll exists");
 
             var externalProcess = BokkenMachine.ExecuteCommand("--help", true);
-            MultiprocessLogger.Log("The help command process should have exited");
+
             Assert.True(externalProcess.HasExited, "The process should have exited");
 
             string externalProcessStdOut = externalProcess.StandardOutput.ReadToEnd();
-            MultiprocessLogger.Log("Help stdout");
+
             Assert.IsNotNull(externalProcessStdOut, "The help output should not be null");
 
             string externalProcessStdErr = externalProcess.StandardError.ReadToEnd();
-            MultiprocessLogger.Log("The help command stderr");
+
             Assert.True(string.IsNullOrEmpty(externalProcessStdErr), $"The help command error stream should be null but was {externalProcessStdErr}");
 
             MultiprocessLogger.Log("Before yield");

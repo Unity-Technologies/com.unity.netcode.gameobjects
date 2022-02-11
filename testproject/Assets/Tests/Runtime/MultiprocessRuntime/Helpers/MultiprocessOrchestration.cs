@@ -24,20 +24,19 @@ public class MultiprocessOrchestration
     }
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
+    public static string UserProfile_Home;
 
     private static DirectoryInfo initMultiprocessDirinfo()
     {
-        string userprofile = "";
-
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
+            UserProfile_Home = Environment.GetEnvironmentVariable("USERPROFILE");
         }
         else
         {
-            userprofile = Environment.GetEnvironmentVariable("HOME");
+            UserProfile_Home = Environment.GetEnvironmentVariable("HOME");
         }
-        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
+        s_MultiprocessDirInfo = new DirectoryInfo(Path.Combine(UserProfile_Home, ".multiprocess"));
         if (!MultiprocessDirInfo.Exists)
         {
             MultiprocessDirInfo.Create();
@@ -49,6 +48,7 @@ public class MultiprocessOrchestration
     static MultiprocessOrchestration()
     {
         initMultiprocessDirinfo();
+        MultiprocessLogger.Log($" userprofile: {s_MultiprocessDirInfo.FullName} localipfile: {s_Localip_fileinfo}");
     }
 
     /// <summary>
