@@ -201,9 +201,11 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
+#if UNITY_UNET_PRESENT
             case UNetTransport unetTransport:
                 unetTransport.ConnectAddress = address;
                 break;
+#endif
         }
     }
 
@@ -212,10 +214,12 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
+#if UNITY_UNET_PRESENT
             case UNetTransport unetTransport:
                 unetTransport.ConnectPort = port;
                 unetTransport.ServerListenPort = port;
                 break;
+#endif
         }
     }
 }
@@ -233,6 +237,5 @@ public class CommandLineHandler : MonoBehaviour
         {
             s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
         }
-
     }
 }
