@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using NUnit.Framework;
 
 namespace TestProject.RuntimeTests.Support
 {
@@ -8,7 +7,8 @@ namespace TestProject.RuntimeTests.Support
         public NetworkVariable<int> Variable = new NetworkVariable<int>();
         public static bool NetworkSpawnCalledOnServer;
         public static bool NetworkSpawnCalledOnClient;
-        public static bool OnValueChangedCalledOnClient = false;
+        public static bool OnValueChangedCalledOnClient;
+        public static int ExpectedSpawnValueOnClient;
 
         private void Awake()
         {
@@ -25,18 +25,15 @@ namespace TestProject.RuntimeTests.Support
 
         public override void OnNetworkSpawn()
         {
-            Assert.IsFalse(OnValueChangedCalledOnClient);
             base.OnNetworkSpawn();
             if (IsServer)
             {
                 NetworkSpawnCalledOnServer = true;
-                Variable.Value = 5;
             }
             else
             {
                 NetworkSpawnCalledOnClient = true;
             }
-            Assert.AreEqual(5, Variable.Value);
         }
     }
 }

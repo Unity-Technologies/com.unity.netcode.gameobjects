@@ -13,7 +13,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 2;
 
-
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
@@ -57,7 +56,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
-
             if (m_TestNetworkObjectPrefab != null)
             {
                 Object.Destroy(m_TestNetworkObjectPrefab);
@@ -68,7 +66,6 @@ namespace Unity.Netcode.RuntimeTests
                 Object.Destroy(m_TestNetworkObjectInstance);
             }
             yield return base.Teardown();
-
         }
 
         /// <summary>
@@ -99,69 +96,83 @@ namespace Unity.Netcode.RuntimeTests
             // check spawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkSpawnCalledCount);
 
-            // safety check despawned
+            // safety check server despawned
             Assert.AreEqual(0, serverInstance.OnNetworkDespawnCalledCount);
 
-            // check spawned on client
-            foreach (var clientInstance in clientInstances)
+            // Conditional check for clients spawning or despawning
+            var checkSpawnCondition = false;
+            var expectedSpawnCount = 1;
+            var expectedDespawnCount = 0;
+            bool HasConditionBeenMet()
             {
-                Assert.AreEqual(1, clientInstance.OnNetworkSpawnCalledCount);
-
-                // safety check despawned
-                Assert.AreEqual(0, clientInstance.OnNetworkDespawnCalledCount);
+                var clientsCompleted = 0;
+                // check spawned on client
+                foreach (var clientInstance in clientInstances)
+                {
+                    if (checkSpawnCondition)
+                    {
+                        if (clientInstance.OnNetworkSpawnCalledCount == expectedSpawnCount)
+                        {
+                            clientsCompleted++;
+                        }
+                    }
+                    else
+                    {
+                        if (clientInstance.OnNetworkDespawnCalledCount == expectedDespawnCount)
+                        {
+                            clientsCompleted++;
+                        }
+                    }
+                }
+                return clientsCompleted >= NbClients;
             }
 
-            // despawn on server.  However, since we'll be using this object later in the test, don't delete it (false)
+            // safety check that all clients have not been despawned yet
+            Assert.True(HasConditionBeenMet(), "Failed condition that all clients not despawned yet!");
+
+            // now verify that all clients have been spawned
+            checkSpawnCondition = true;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns!");
+
+            // despawn on server.  However, since we'll be using this object later in the test, don't delete it
             serverInstance.GetComponent<NetworkObject>().Despawn(false);
 
             // check despawned on server
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
+            // we now expect the clients to each have despawned once
+            expectedDespawnCount = 1;
 
-            // wait long enough for player object to be despawned
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // verify that all client-side instances are despawned
+            checkSpawnCondition = false;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
-            // check despawned on clients
-            foreach (var clientInstance in clientInstances)
-            {
-                Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
-            }
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
-            //----------- step 2 check spawn again and destroy
-
+            //----------- step 2 check spawn and destroy again
             serverInstance.GetComponent<NetworkObject>().Spawn();
-
-            // wait long enough for player object to be spawned
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
+            // wait a tick
+            yield return m_DefaultWaitForTick;
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
 
-            // check spawned on client
-            foreach (var clientInstance in clientInstances)
-            {
-                Assert.AreEqual(1, clientInstance.OnNetworkSpawnCalledCount);
-            }
+            checkSpawnCondition = true;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
+
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
             // destroy the server object
             Object.Destroy(serverInstance.gameObject);
 
-            // wait one frame for destroy to kick in
-            yield return null;
+            yield return m_DefaultWaitForTick;
 
             // check whether despawned was called again on server instance
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
-            // wait long enough for player object to be despawned on client
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            checkSpawnCondition = false;
+            yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
-            // check despawned on clients
-            foreach (var clientInstance in clientInstances)
-            {
-                Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
-            }
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour
