@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
+- Fixed messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
