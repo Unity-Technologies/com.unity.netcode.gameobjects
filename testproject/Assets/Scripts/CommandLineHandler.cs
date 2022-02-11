@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Netcode;
+#if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
-
+#endif
 
 /// <summary>
 /// Provides basic command line handling capabilities
@@ -200,9 +201,20 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
+#if UNITY_UNET_PRESENT
             case UNetTransport unetTransport:
                 unetTransport.ConnectAddress = address;
                 break;
+#endif
+            case UnityTransport utpTransport:
+                {
+                    utpTransport.ConnectionData.Address = address;
+                    if (utpTransport.ConnectionData.ServerListenAddress == string.Empty)
+                    {
+                        utpTransport.ConnectionData.ServerListenAddress = address;
+                    }
+                    break;
+                }
         }
     }
 
@@ -211,10 +223,17 @@ public class CommandLineProcessor
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
+#if UNITY_UNET_PRESENT
             case UNetTransport unetTransport:
                 unetTransport.ConnectPort = port;
                 unetTransport.ServerListenPort = port;
                 break;
+#endif
+            case UnityTransport utpTransport:
+                {
+                    utpTransport.ConnectionData.Port = port;
+                    break;
+                }
         }
     }
 }
@@ -232,6 +251,5 @@ public class CommandLineHandler : MonoBehaviour
         {
             s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
         }
-
     }
 }
