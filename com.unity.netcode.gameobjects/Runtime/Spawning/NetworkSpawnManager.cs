@@ -685,6 +685,7 @@ namespace Unity.Netcode
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+            var networkObjectsToSpawn = new List<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -692,9 +693,14 @@ namespace Unity.Netcode
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
+            }
+
+            foreach(var networkObject in networkObjectsToSpawn)
+            {
+                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
             }
         }
 
