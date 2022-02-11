@@ -40,6 +40,8 @@ public class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    public static List<ulong> NetworkManagerClientConnectedCallbackReceived = new List<ulong>();
+    public static List<ulong> NetworkManagerClientDisconnectedCallbackReceived = new List<ulong>();
     private string m_ConnectAddress = "127.0.0.1";
     private string m_Port = "3076";
 
@@ -212,13 +214,14 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
         NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
     }
 
     private void NetworkManager_OnClientConnectedCallback(ulong obj)
     {
         LogInformation($"NetworkManager_OnClientConnectedCallback triggered - {obj}");
+        NetworkManagerClientConnectedCallbackReceived.Add(obj);
     }
 
     public void OnDisable()
@@ -226,14 +229,15 @@ public class TestCoordinator : NetworkBehaviour
         if (IsSpawned && NetworkObject != null && NetworkObject.NetworkManager != null)
         {
             MultiprocessLogger.Log("OnDisable - Removing OnClientDisconnectCallback");
-            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            NetworkManager.OnClientDisconnectCallback -= NetworkManager_OnClientDisconnectCallback;
         }
 
         base.OnDestroy();
     }
 
-    private static void OnClientDisconnectCallback(ulong clientId)
+    private static void NetworkManager_OnClientDisconnectCallback(ulong clientId)
     {
+        NetworkManagerClientDisconnectedCallbackReceived.Add(clientId);
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here

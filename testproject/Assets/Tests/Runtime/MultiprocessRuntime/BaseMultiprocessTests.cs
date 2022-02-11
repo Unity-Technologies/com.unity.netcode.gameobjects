@@ -185,8 +185,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
         }
 
-        public void DisconnectClients(int messageCounter = 0)
+        public List<ulong> DisconnectClients(int messageCounter = 0)
         {
+            var clientsToDisconnect = new List<ulong>();
             int localMessageCounter = 1;
             MultiprocessLogger.Log($"{messageCounter}.{(localMessageCounter++) / 10.0f} DisconnectClients - Start");
             MultiprocessLogHandler.Flush();
@@ -198,7 +199,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $" {messageCounter}.{localMessageCounter++ / 10.0f} Connect Clients - \n" +
                     $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
                     $" NetworkManagerCount: {connectedClients.Count}\n");
-                var clientsToDisconnect = new List<ulong>();
+                
                 foreach (ulong id in connectedClients.Keys)
                 {
                     if (id != 0)
@@ -224,6 +225,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                 }
             }
+            return clientsToDisconnect;
         }
 
         [UnitySetUp]
@@ -404,8 +406,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator UnityTearDown()
         {
             MultiprocessLogger.Log($" 5/20 - UnityTearDown - BaseMultiProcessTests - start, calling DisconnectClients");
-            MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
-            DisconnectClients(5);
+            string disconnectedClients = "";
+            foreach (var clientId in TestCoordinator.NetworkManagerClientDisconnectedCallbackReceived)
+            {
+                disconnectedClients += $" {clientId} ";
+            }
+            MultiprocessLogger.Log($"Before UnityTearDown call to DisconnectClients {disconnectedClients}");
+            List<ulong> clientsToDisconnect = DisconnectClients(5);
 
             // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
             for (int i = 0; i < 10; i++)
@@ -417,12 +424,25 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
                 }
             }
+
+            foreach (var clientId in clientsToDisconnect)
+            {
+                MultiprocessLogger.Log("In teardown we tried to disconnect: {clientId}");
+            }
+
+            disconnectedClients = "";
+            foreach (var clientId in TestCoordinator.NetworkManagerClientDisconnectedCallbackReceived)
+            {
+                disconnectedClients += $" {clientId} ";
+            }
+            MultiprocessLogger.Log($"After UnityTearDown call to DisconnectClients {disconnectedClients}");
             // Discovered that even after disconnect the player process doesn't auto-quit so need to force it
             MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 6);
             MultiprocessLogger.Log($" 7/20 - UnityTearDown - Reporting on processes calling bokkenapi");
             if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 BokkenMachine.LogProcessListStatus();
+                MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                 MultiprocessOrchestration.ShutdownAllProcesses(true, 7);
             }
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
