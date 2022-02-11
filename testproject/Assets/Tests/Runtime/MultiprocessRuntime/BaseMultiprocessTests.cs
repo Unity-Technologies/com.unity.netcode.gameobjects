@@ -427,7 +427,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             foreach (var clientId in clientsToDisconnect)
             {
-                MultiprocessLogger.Log("In teardown we tried to disconnect: {clientId}");
+                MultiprocessLogger.Log($"In teardown we tried to disconnect: {clientId}");
             }
 
             disconnectedClients = "";
