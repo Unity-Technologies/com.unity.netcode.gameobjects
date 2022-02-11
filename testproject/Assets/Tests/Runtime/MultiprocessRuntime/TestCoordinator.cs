@@ -182,14 +182,13 @@ public class TestCoordinator : NetworkBehaviour
 
     private void LogInformation(string extraMessage = "")
     {
-        MultiprocessLogger.Log($" IsInvoking: {NetworkManager.Singleton.IsInvoking()};\n" +
-                $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled};\n" +
-                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n " +
+        MultiprocessLogger.Log($"\n" +
+                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n" +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $" isClient: {m_IsClient};\n" +
-                $" IsServer: {IsServer};\n" +
-                $" Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
-                $" pid: {s_ProcessId};\n" +
+                $"          isClient: {m_IsClient}/{IsClient};\n" +
+                $"          IsServer: {IsServer};\n" +
+                $"          Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
+                $"               pid: {s_ProcessId};\n" +
                 $" {extraMessage}");
     }
 

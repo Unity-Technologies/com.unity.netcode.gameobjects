@@ -404,7 +404,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public IEnumerator UnityTearDown()
         {
             MultiprocessLogger.Log($" 5/20 - UnityTearDown - BaseMultiProcessTests - start, calling DisconnectClients");
-
+            MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
             DisconnectClients(5);
 
             // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
