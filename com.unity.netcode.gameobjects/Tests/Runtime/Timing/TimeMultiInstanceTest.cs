@@ -138,10 +138,10 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
             // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
         }
 
         private IEnumerator WaitForFrames(int count)

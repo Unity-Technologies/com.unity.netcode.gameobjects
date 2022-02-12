@@ -56,7 +56,7 @@ namespace TestProject.RuntimeTests
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
 
             var serverRpcTests = serverClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
             Assert.IsNotNull(serverRpcTests);
@@ -69,7 +69,7 @@ namespace TestProject.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
+                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult);
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
                 Assert.IsNotNull(clientRpcTests);
                 clientRpcQueueManualTestInstsances.Add(clientRpcTests);

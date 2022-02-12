@@ -140,24 +140,21 @@ namespace Unity.Netcode.RuntimeTests
         private IEnumerator RefreshNetworkObjects()
         {
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(
-                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object1OnClient0 = serverClientPlayerResult.Result;
-            yield return NetcodeIntegrationTestHelpers.Run(
-                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object2OnClient0 = serverClientPlayerResult.Result;
             serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(
-                NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object3OnClient0 = serverClientPlayerResult.Result;
 
             // make sure the objects are set with the right network manager

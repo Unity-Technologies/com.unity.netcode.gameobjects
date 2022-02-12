@@ -131,7 +131,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for connection on client side
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             // Wait for connection on server side
             var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
@@ -172,7 +172,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>

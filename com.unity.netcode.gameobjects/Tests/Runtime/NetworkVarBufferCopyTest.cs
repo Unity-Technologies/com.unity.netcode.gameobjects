@@ -140,12 +140,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Check that FieldWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.FieldWritten);
 
             // Check that DeltaWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
             // Check that both FieldRead and DeltaRead were invoked on the client side

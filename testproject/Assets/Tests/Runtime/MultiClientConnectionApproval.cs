@@ -125,10 +125,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1, null, 512);
 
             // Validate the number of failed connections is the same as expected
             Assert.IsTrue(m_FailedConnections == failureTestCount);
@@ -222,10 +222,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             Assert.AreEqual(3, m_ClientConnectedInvocations);
             Assert.AreEqual(4, m_ServerClientConnectedInvocations);

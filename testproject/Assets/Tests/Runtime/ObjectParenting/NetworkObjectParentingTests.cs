@@ -102,10 +102,10 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
         }
 
         public void SetupSet(Transform rootTransform, int setIndex, NetworkManager networkManager)

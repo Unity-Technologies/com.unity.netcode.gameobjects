@@ -33,10 +33,10 @@ namespace Unity.Netcode.RuntimeTests
                 NetcodeIntegrationTestHelpers.Start(false, server, clients);
 
                 // wait for connection on client side
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
                 // wait for connection on server side
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
 
                 // shutdown the server
                 server.Shutdown();

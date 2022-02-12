@@ -73,10 +73,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(NetcodeIntegrationTestHelpers.Start(m_IsHost, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
         }
 
         [TearDown]

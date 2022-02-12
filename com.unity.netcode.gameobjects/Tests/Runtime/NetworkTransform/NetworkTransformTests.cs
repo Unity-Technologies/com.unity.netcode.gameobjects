@@ -93,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
 
             // Wait for 1 tick
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
 
             // Wait for 1 more tick before starting tests
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
         }
 
         // TODO: rewrite after perms & authority changes
@@ -220,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
 
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
 #if NGO_TRANSFORM_DEBUG

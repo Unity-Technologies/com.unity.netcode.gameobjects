@@ -210,15 +210,15 @@ namespace Unity.Netcode.TestHelpers
         /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
         /// </summary>
         /// <param name="enumerator">The IEnumerator to run</param>
-        public static Coroutine Run(IEnumerator enumerator)
-        {
-            if (s_CoroutineRunner == null)
-            {
-                s_CoroutineRunner = new GameObject(nameof(CoroutineRunner)).AddComponent<CoroutineRunner>();
-            }
+        //public static Coroutine Run(IEnumerator enumerator)
+        //{
+        //    if (s_CoroutineRunner == null)
+        //    {
+        //        s_CoroutineRunner = new GameObject(nameof(CoroutineRunner)).AddComponent<CoroutineRunner>();
+        //    }
 
-            return s_CoroutineRunner.StartCoroutine(enumerator);
-        }
+        //    return s_CoroutineRunner.StartCoroutine(enumerator);
+        //}
 
         public class CoroutineResultWrapper<T>
         {
@@ -463,22 +463,22 @@ namespace Unity.Netcode.TestHelpers
         /// <param name="workload">Action / code to run</param>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
-        {
-            var waitResult = new CoroutineResultWrapper<bool>();
-            workload();
+        //public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        //{
+        //    var waitResult = new CoroutineResultWrapper<bool>();
+        //    workload();
 
-            yield return Run(WaitForCondition(
-                predicate,
-                waitResult,
-                maxFrames: maxFrames,
-                minFrames: minFrames));
+        //    yield return Run(WaitForCondition(
+        //        predicate,
+        //        waitResult,
+        //        maxFrames: maxFrames,
+        //        minFrames: minFrames));
 
-            if (!waitResult.Result)
-            {
-                Assert.Fail("Predicate condition failed");
-            }
-        }
+        //    if (!waitResult.Result)
+        //    {
+        //        Assert.Fail("Predicate condition failed");
+        //    }
+        //}
 
         /// <summary>
         /// Waits for a predicate condition to be met

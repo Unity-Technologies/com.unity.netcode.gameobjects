@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // [Host-Side] Get the Host owned instance
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
 
             var serverInstance = serverClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
 
@@ -86,7 +86,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
+                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult);
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 clientInstances.Add(clientRpcTests);
@@ -153,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
             //----------- step 2 check spawn and destroy again
             serverInstance.GetComponent<NetworkObject>().Spawn();
             // wait a tick
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
 
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
             // destroy the server object
             Object.Destroy(serverInstance.gameObject);
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             // check whether despawned was called again on server instance
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);

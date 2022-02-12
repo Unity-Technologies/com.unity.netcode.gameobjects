@@ -6,7 +6,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers;
 using Object = UnityEngine.Object;
@@ -91,11 +90,11 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             var numberOfClients = isHost ? NbClients + 1 : NbClients;
             // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients);
 
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
@@ -765,10 +764,10 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1);
 
             //////////////////////////////////////////
             // Testing synchronize event notifications

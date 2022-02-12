@@ -24,7 +24,7 @@ namespace Unity.Netcode.TestHelpers
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
 
         protected const uint k_DefaultTickRate = 30;
-        protected WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
         /// An update to the original NetcodeIntegrationTestHelpers.WaitForCondition that:
@@ -37,7 +37,7 @@ namespace Unity.Netcode.TestHelpers
         ///     -potential platform performance issues (i.e. VM is throttled or maxed)
         /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded version of this method
         /// </summary>
-        protected IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
+        public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
         {
             if (checkForCondition == null)
             {
@@ -61,7 +61,7 @@ namespace Unity.Netcode.TestHelpers
                 }
 
                 // Otherwise wait for 1 tick interval
-                yield return m_DefaultWaitForTick;
+                yield return s_DefaultWaitForTick;
             }
             // Stop checking for a timeout
             timeOutHelper.Stop();
@@ -74,7 +74,7 @@ namespace Unity.Netcode.TestHelpers
         /// Note: For simplicity, you can derive from the <see cref="ConditionalPredicateBase"/>
         /// and accomplish most tests.
         /// </summary>
-        protected IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
+        public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
         {
             if (conditionalPredicate == null)
             {
@@ -98,7 +98,7 @@ namespace Unity.Netcode.TestHelpers
             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ => { });
             if (m_ServerNetworkManager != null)
             {
-                m_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             }
         }
 
@@ -130,10 +130,10 @@ namespace Unity.Netcode.TestHelpers
 
             // wait for 1 tick interval so everything is destroyed and any following tests
             // can execute from clean environment
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             // reset the m_ServerWaitForTick for the next test to initialize
-            m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+            s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
         }
 
         /// <summary>
@@ -277,10 +277,10 @@ namespace Unity.Netcode.TestHelpers
                 }
 
                 // Wait for connection on client side
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
                 // Wait for connection on server side
-                yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
             }
         }
     }

@@ -39,10 +39,10 @@ namespace Unity.Netcode.RuntimeTests
             NetcodeIntegrationTestHelpers.Start(false, server, clients);
 
             // wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
             // wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
 
             // network objects
             var networkObjects = new List<NetworkObject>();
@@ -57,13 +57,13 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // wait for object spawn on client
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForCondition(() => clients[0].SpawnManager.SpawnedObjects.Count == 32));
+            yield return NetcodeIntegrationTestHelpers.WaitForCondition(() => clients[0].SpawnManager.SpawnedObjects.Count == 32);
 
             // disconnect the client that owns all the clients
             NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
 
             // wait for disconnect
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForCondition(() => server.ConnectedClients.Count == 0));
+            yield return NetcodeIntegrationTestHelpers.WaitForCondition(() => server.ConnectedClients.Count == 0);
 
             for (int i = 0; i < networkObjects.Count; i++)
             {

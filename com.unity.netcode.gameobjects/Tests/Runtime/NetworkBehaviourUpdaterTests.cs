@@ -214,11 +214,11 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAsArry));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAsArry);
 
             // Wait for connection on server side
             var clientsToWaitFor = useHost ? numberOfClients + 1 : numberOfClients;
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
         }
 
         /// <summary>
