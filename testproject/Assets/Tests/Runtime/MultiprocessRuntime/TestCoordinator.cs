@@ -143,9 +143,14 @@ public class TestCoordinator : NetworkBehaviour
         ExecuteStepInContext.InitializeAllSteps();
     }
 
-    private void Singleton_OnClientDisconnectCallback(ulong obj)
+    private void Singleton_OnClientDisconnectCallback(ulong clientId)
     {
-        LogInformation($"Singleton_OnClientDisconnectCallback in TestCoordinator triggered {obj}");
+        LogInformation($"Singleton_OnClientDisconnectCallback in TestCoordinator triggered {clientId}");
+        if (!IsServer)
+        {
+            // if disconnect callback is for me or for server, quit, we're done here
+            QuitApplication($"received disconnect from {clientId}, quitting pid {s_ProcessId} since we are not the server");
+        }
     }
 
     private void Singleton_OnClientConnectedCallback(ulong obj)
@@ -237,12 +242,18 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void NetworkManager_OnClientDisconnectCallback(ulong clientId)
     {
-        MultiprocessLogger.Log($"NetworkManager_OnClientConnectedCallback triggered - {clientId}");
+        MultiprocessLogger.Log($"NetworkManager_OnClientDisconnectCallback triggered - {clientId}");
         NetworkManagerClientDisconnectedCallbackReceived.Add(clientId);
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
             QuitApplication($"received disconnect from {clientId}, quitting pid {s_ProcessId}");
+        }
+        else
+        {
+            MultiprocessLogger.Log($"Not quitting application on client dissconnect received because " +
+                $" {clientId} does not equal {NetworkManager.Singleton.LocalClientId} && " +
+                $" {clientId} does not equal {NetworkManager.Singleton.ServerClientId}");
         }
     }
 

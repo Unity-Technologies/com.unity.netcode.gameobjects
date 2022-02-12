@@ -196,7 +196,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (m_ConnectedClientsList.Count > 0 || connectedClients.Count > 1)
             {
                 MultiprocessLogger.Log(
-                    $" {messageCounter}.{localMessageCounter++ / 10.0f} Connect Clients - \n" +
+                    $" {messageCounter}.{localMessageCounter++ / 10.0f} Connected Clients - \n" +
                     $" ListenerCount: {m_ConnectedClientsList.Count}\n" +
                     $" NetworkManagerCount: {connectedClients.Count}\n");
 
