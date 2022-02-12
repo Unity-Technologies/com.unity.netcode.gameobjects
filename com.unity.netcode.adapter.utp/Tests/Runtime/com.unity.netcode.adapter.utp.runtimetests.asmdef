@@ -6,7 +6,8 @@
         "Unity.Networking.Transport",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Netcode.Adapter.UTP"
+        "Unity.Netcode.Adapter.UTP",
+        "Unity.Netcode.TestHelpers.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,7 +18,6 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS",
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],

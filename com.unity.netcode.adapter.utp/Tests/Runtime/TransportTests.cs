@@ -9,10 +9,21 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.UTP.Utilities;
+using Unity.Netcode.TestHelpers.Runtime;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
 {
+    public class SomeRandomClass : NetcodeIntegrationTest
+    {
+        protected override int NbClients => 1;
+        [UnityTest]
+        public IEnumerator SomeTest()
+        {
+            yield return null;
+        }
+    }
+
     public class TransportTests
     {
         // No need to test all reliable delivery methods since they all map to the same pipeline.
