@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRpcSentMetricOnServer()
         {
             var clientPlayer = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer);
 
             var waitForMetricValues = new WaitForEventMetricValues<RpcEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.RpcSent);
 
@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRpcSentMetricOnClient()
         {
             var clientPlayer = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer);
 
             var waitForClientMetricsValues = new WaitForEventMetricValues<RpcEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.RpcSent);
 
@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRpcReceivedMetricOnServer()
         {
             var clientPlayer = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer);
 
             var waitForServerMetricsValues = new WaitForEventMetricValues<RpcEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.RpcReceived);
 
@@ -84,7 +84,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRpcReceivedMetricOnClient()
         {
             var clientPlayer = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.Run(NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer));
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer);
 
             var waitForClientMetricsValues = new WaitForEventMetricValues<RpcEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.RpcReceived);
 
