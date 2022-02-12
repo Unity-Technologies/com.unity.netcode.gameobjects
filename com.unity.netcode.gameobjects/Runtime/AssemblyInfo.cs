@@ -9,6 +9,6 @@ using System.Runtime.CompilerServices;
 #endif
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
-[assembly: InternalsVisibleTo("Unity.Netcode.TestHelpers")]
+[assembly: InternalsVisibleTo("Unity.Netcode.TestHelpers.Runtime")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Adapter.UTP")]
 

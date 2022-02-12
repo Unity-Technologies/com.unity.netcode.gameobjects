@@ -1,6 +1,6 @@
 {
-    "name": "Unity.Netcode.TestHelpers",
-    "rootNamespace": "Unity.Netcode.TestHelpers",
+    "name": "Unity.Netcode.TestHelpers.Runtime",
+    "rootNamespace": "Unity.Netcode.TestHelpers.Runtime",
     "references": [
         "Unity.Netcode.Runtime",
         "UnityEngine.TestRunner"

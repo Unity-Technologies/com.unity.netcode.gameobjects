@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode;
 using Debug = UnityEngine.Debug;
 

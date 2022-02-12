@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Netcode.TestHelpers
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Will automatically register for the NetworkVariable OnValueChanged

@@ -4,7 +4,7 @@ using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {

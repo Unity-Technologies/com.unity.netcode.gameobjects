@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.TestHelpers
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.

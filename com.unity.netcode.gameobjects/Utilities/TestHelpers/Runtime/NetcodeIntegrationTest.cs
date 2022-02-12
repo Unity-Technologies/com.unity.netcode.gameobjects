@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.TestHelpers
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     public abstract class NetcodeIntegrationTest
     {

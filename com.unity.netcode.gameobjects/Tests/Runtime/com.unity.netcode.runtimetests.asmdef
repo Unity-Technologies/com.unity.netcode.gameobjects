@@ -12,7 +12,7 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Netcode.Adapter.UTP",
         "ClientNetworkTransform",
-        "Unity.Netcode.TestHelpers"
+        "Unity.Netcode.TestHelpers.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -39,7 +39,7 @@
         {
             "name": "com.unity.netcode.adapter.utp",
             "expression": "",
-            "define": "UTP_ADAPTER"        
+            "define": "UTP_ADAPTER"
         },
         {
             "name": "com.unity.multiplayer.tools",

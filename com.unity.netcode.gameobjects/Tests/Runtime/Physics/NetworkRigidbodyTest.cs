@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests.Physics
 {

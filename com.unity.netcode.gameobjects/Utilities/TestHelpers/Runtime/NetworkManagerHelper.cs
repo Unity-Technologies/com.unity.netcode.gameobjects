@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
 
-
-namespace Unity.Netcode.TestHelpers
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager
