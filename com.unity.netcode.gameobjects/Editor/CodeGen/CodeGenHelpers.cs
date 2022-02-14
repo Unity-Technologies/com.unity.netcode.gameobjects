@@ -34,20 +34,15 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
-            var sigStr = $"{methodDefinition.Module.Name} / {methodDefinition.FullName}";
-            var sigArr = Encoding.UTF8.GetBytes(sigStr);
+            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} / {methodDefinition.FullName}");
             var sigLen = sigArr.Length;
-            uint sigHash = 0;
             unsafe
             {
                 fixed (byte* sigPtr = sigArr)
                 {
-                    sigHash = XXHash.Hash32(sigPtr, sigLen);
-                    // return XXHash.Hash32(sigPtr, sigLen);
+                    return XXHash.Hash32(sigPtr, sigLen);
                 }
             }
-            Console.WriteLine($"{sigHash}: {sigStr}");
-            return sigHash;
         }
 
         public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
