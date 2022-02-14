@@ -105,10 +105,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
-                if (MultiInstanceHelpers.ClientSceneHandler != null)
+                if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
                 {
-                    MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
-                    MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+                    NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+                    NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
                 }
 
                 NetcodeIntegrationTestHelpers.Destroy();
@@ -166,8 +166,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
-            MultiInstanceHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
-            MultiInstanceHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+            NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
         }
 
         private bool ClientSceneHandler_CanClientsUnload()
@@ -238,7 +238,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!MultiInstanceHelpers.Start(useHost, server, clients))
+                if (!NetcodeIntegrationTestHelpers.Start(useHost, server, clients))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");

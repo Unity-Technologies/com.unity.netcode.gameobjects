@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// The default SceneManagerHandler used for all unit/integration tests that

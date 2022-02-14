@@ -59,7 +59,7 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            MultiInstanceHelpers.CleanUpHandlers();
+            NetcodeIntegrationTestHelpers.CleanUpHandlers();
 
             m_ServerNetworkManager.Shutdown();
             foreach (var networkManager in m_ClientNetworkManagers)
@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ValidateNetworkObjectSynchronization()
         {
             m_ServerNetworkManager.StartHost();
-            MultiInstanceHelpers.RegisterHandlers(m_ServerNetworkManager);
+            NetcodeIntegrationTestHelpers.RegisterHandlers(m_ServerNetworkManager);
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
             instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
@@ -106,7 +106,7 @@ namespace TestProject.RuntimeTests
             foreach (var networkManager in m_ClientNetworkManagers)
             {
                 networkManager.StartClient();
-                MultiInstanceHelpers.RegisterHandlers(networkManager);
+                NetcodeIntegrationTestHelpers.RegisterHandlers(networkManager);
             }
 
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);

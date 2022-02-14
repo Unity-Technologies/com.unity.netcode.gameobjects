@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return new WaitForSeconds(serverStartDelay);
-            MultiInstanceHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
+            NetcodeIntegrationTestHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
             var serverTick = server.NetworkTickSystem.ServerTime.Tick;
@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             var clientStartRealTime = Time.time;
 
             m_Client.StartClient();
-            MultiInstanceHelpers.RegisterHandlers(clients[0]);
+            NetcodeIntegrationTestHelpers.RegisterHandlers(clients[0]);
 
             m_Client.NetworkTickSystem.Tick += NetworkTickSystemOnTick;
             m_ClientTickCounter = 0;

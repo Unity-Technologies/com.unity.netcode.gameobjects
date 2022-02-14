@@ -57,7 +57,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
         /// typically won't need to do this.
         /// </summary>
-        internal static void CleanUpHandlers()
+        public static void CleanUpHandlers()
         {
             if (ClientSceneHandler != null)
             {
@@ -79,7 +79,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
         /// typically won't need to call this.
         /// </summary>
-        internal static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
+        public static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
         {
             SceneManagerValidationAndTestRunnerInitialization(networkManager);
 
