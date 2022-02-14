@@ -56,12 +56,10 @@ namespace Unity.Netcode.RuntimeTests
                 Object.DestroyImmediate(networkObject);
             }
 
-            // wait for 1 tick interval so everything is destroyed and any following tests
-            // can execute from clean environment
-            yield return m_DefaultWaitForTick;
+            // wait for next frame so everything is destroyed, so following tests can execute from clean environment
+            int nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            // reset the m_ServerWaitForTick for the next test to initialize
-            m_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
         }
 
         /// <summary>
