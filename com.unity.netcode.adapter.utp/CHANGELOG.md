@@ -8,7 +8,7 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed
 
-- Updated Unity Transport package to 1.0.0-pre.13.
+- Updated Unity Transport package to 1.0.0-pre.13. (#1696)
 
 ### Fixed
 
