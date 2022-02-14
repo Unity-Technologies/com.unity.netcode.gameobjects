@@ -29,7 +29,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ServerNetworkSceneManager = Server.SceneManager;
             Server.NetworkConfig.EnableSceneManagement = true;
 
-            m_ClientNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
+            m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
         }
 
         [UnityTearDown]
@@ -48,10 +48,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Load))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
+                    serverSceneLoaded = true;
                 }
             };
 
@@ -251,10 +250,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
+                    serverSceneLoaded = true;
                 }
             };
 
@@ -684,15 +682,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             }
 
             m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
-            if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle))
-            {
-                return;
-            }
-
-            // As we are running the client and the server using the multi-instance test runner we need to sync the
-            // scene handles manually here, as they share a SceneManager.
-            m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
-            m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
         }
 
         private class WaitForSceneEvent
