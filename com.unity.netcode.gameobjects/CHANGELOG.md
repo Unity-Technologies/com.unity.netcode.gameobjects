@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed an issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
-- Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1690)
+- Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1694)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
