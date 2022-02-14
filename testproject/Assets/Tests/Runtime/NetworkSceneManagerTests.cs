@@ -83,7 +83,7 @@ namespace TestProject.RuntimeTests
             var isHost = serverType == ServerType.Host ? true : false;
 
             // Start the host and  clients
-            if (!NetcodeIntegrationTestHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
@@ -333,19 +333,7 @@ namespace TestProject.RuntimeTests
                             {
                                 m_ScenesLoaded.Add(scene);
                             }
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
+                            m_ClientsAreOkToLoad = true;
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
@@ -409,6 +397,12 @@ namespace TestProject.RuntimeTests
             return m_ClientVerifyScene;
         }
 
+        private bool m_ClientsAreOkToLoad = true;
+        protected override bool CanClientsLoad()
+        {
+            return m_ClientsAreOkToLoad;
+        }
+
         /// <summary>
         /// Unit test to verify that user defined scene verification process works on both the client and
         /// the server side.
@@ -464,6 +458,7 @@ namespace TestProject.RuntimeTests
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
             m_ClientsThatFailedVerification = 0;
+            m_ClientsAreOkToLoad = false;
             result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
@@ -473,6 +468,17 @@ namespace TestProject.RuntimeTests
 
             // Now unload the scene the server loaded from last test
             ResetWait();
+
+            // All clients did not load this scene, so we can ignore them for the wait
+            foreach (var listItem in m_ShouldWaitList)
+            {
+                if (listItem.ClientId == m_ServerNetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                listItem.ProcessedEvent = true;
+            }
+
             m_IsTestingVerifyScene = false;
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.Started);
@@ -734,11 +740,12 @@ namespace TestProject.RuntimeTests
             yield return Setup();
 
             // Start the host and  clients
-            if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
+            RegisterSceneManagerHandler();
 
             // Immediately register for all pertinent event notifications we want to test and validate working
             // For the server:
@@ -871,21 +878,6 @@ namespace TestProject.RuntimeTests
                         if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
                         {
                             m_CurrentScene = sceneEvent.Scene;
-                            var sceneHandle = sceneEvent.Scene.handle;
-                            var scene = sceneEvent.Scene;
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
                         }
                         break;
                     }
