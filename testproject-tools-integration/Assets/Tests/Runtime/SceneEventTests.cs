@@ -4,10 +4,10 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using SceneEventType = Unity.Netcode.SceneEventType;
 
 namespace TestProject.ToolsIntegration.RuntimeTests
@@ -48,7 +48,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Server.LocalClientId)
                 {
                     serverSceneLoaded = true;
                 }
@@ -250,9 +250,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload) && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneLoaded = true;
+                    serverSceneUnloaded = true;
                 }
             };
 
@@ -502,7 +502,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventType.Synchronize.ToString(), sentMetric.SceneEventType);
             Assert.AreEqual(newClient.LocalClientId, sentMetric.Connection.Id);
 
-            MultiInstanceHelpers.StopOneClient(newClient);
+            NetcodeIntegrationTestHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
@@ -529,7 +529,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventType.Synchronize.ToString(), receivedMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
 
-            MultiInstanceHelpers.StopOneClient(newClient);
+            NetcodeIntegrationTestHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
@@ -557,7 +557,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), sentMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
 
-            MultiInstanceHelpers.StopOneClient(newClient);
+            NetcodeIntegrationTestHelpers.StopOneClient(newClient);
         }
 
         [UnityTest]
@@ -583,13 +583,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(SceneEventType.SynchronizeComplete.ToString(), receivedMetric.SceneEventType);
             Assert.AreEqual(newClient.LocalClientId, receivedMetric.Connection.Id);
 
-            MultiInstanceHelpers.StopOneClient(newClient);
+            NetcodeIntegrationTestHelpers.StopOneClient(newClient);
         }
 
         // Create a new client to connect to an already started server to trigger a server sync.
         private NetworkManager CreateAndStartClient()
         {
-            MultiInstanceHelpers.CreateNewClients(1, out var newClients);
+            NetcodeIntegrationTestHelpers.CreateNewClients(1, out var newClients);
             var newClient = newClients[0];
 
             // Set up the client so it has the same NetworkConfig as the server

@@ -1,7 +1,7 @@
 #if MULTIPLAYER_TOOLS
 using UnityEngine;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     public class NetworkVariableComponent : NetworkBehaviour
     {

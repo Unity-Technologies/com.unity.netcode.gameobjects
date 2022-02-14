@@ -1,14 +1,10 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
-using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal abstract class SingleClientMetricTestBase : NetcodeIntegrationTest
     {

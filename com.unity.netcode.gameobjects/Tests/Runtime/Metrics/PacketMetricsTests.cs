@@ -7,9 +7,10 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
@@ -18,12 +19,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketSentMetric()
         {
-            MultiInstanceHelpers.Create(
+            NetcodeIntegrationTestHelpers.Create(
                 clientCount: 1,
                 out var server,
                 out var clients,
                 targetFrameRate: 60,
-                MultiInstanceHelpers.InstanceTransport.UTP);
+#if UTP_ADAPTER
+                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
+#else
+                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
+#endif
 
             server.StartServer();
             clients[0].StartClient();
@@ -46,13 +51,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketReceivedMetric()
         {
-            MultiInstanceHelpers.Create(
+            NetcodeIntegrationTestHelpers.Create(
                 clientCount: 1,
                 out var server,
                 out var clients,
                 targetFrameRate: 60,
-                MultiInstanceHelpers.InstanceTransport.UTP);
-
+#if UTP_ADAPTER
+                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
+#else
+                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
+#endif
             server.StartServer();
             clients[0].StartClient();
 

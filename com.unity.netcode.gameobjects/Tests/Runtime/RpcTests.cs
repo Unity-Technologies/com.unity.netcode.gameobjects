@@ -88,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
             serverClientPlayerResult.Result.GetComponent<RpcTestNB>().MyClientRpc();
 
             // Wait for RPCs to be received
-            yield return NetcodeIntegrationTestHelpers.WaitForCondition(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);
+            yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
             Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");

@@ -8,7 +8,7 @@ using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal class WaitForEventMetricValues<TMetric> : WaitForMetricValues<TMetric>
     {

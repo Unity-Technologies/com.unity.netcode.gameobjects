@@ -589,46 +589,46 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
-        {
-            if (predicate == null)
-            {
-                throw new ArgumentNullException("Predicate cannot be null");
-            }
+    //    public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+    //    {
+    //        if (predicate == null)
+    //        {
+    //            throw new ArgumentNullException("Predicate cannot be null");
+    //        }
 
-            var startFrameNumber = Time.frameCount;
+    //        var startFrameNumber = Time.frameCount;
 
-            if (minFrames > 0)
-            {
-                yield return new WaitUntil(() =>
-                {
-                    return Time.frameCount >= minFrames;
-                });
-            }
+    //        if (minFrames > 0)
+    //        {
+    //            yield return new WaitUntil(() =>
+    //            {
+    //                return Time.frameCount >= minFrames;
+    //            });
+    //        }
 
-            while (Time.frameCount - startFrameNumber <= maxFrames &&
-                !predicate())
-            {
-                // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
-                // see a value change (i.e. discovered in the NetworkTransformTests)
-                var nextFrameNumber = Time.frameCount + 2;
-                yield return new WaitUntil(() =>
-                {
-                    return Time.frameCount >= nextFrameNumber;
-                });
-            }
+    //        while (Time.frameCount - startFrameNumber <= maxFrames &&
+    //            !predicate())
+    //        {
+    //            // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
+    //            // see a value change (i.e. discovered in the NetworkTransformTests)
+    //            var nextFrameNumber = Time.frameCount + 2;
+    //            yield return new WaitUntil(() =>
+    //            {
+    //                return Time.frameCount >= nextFrameNumber;
+    //            });
+    //        }
 
-            var res = predicate();
+    //        var res = predicate();
 
-            if (result != null)
-            {
-                result.Result = res;
-            }
-            else
-            {
-                Assert.True(res, "PREDICATE CONDITION");
-            }
-        }
+    //        if (result != null)
+    //        {
+    //            result.Result = res;
+    //        }
+    //        else
+    //        {
+    //            Assert.True(res, "PREDICATE CONDITION");
+    //        }
+    //    }
     }
 
     // Empty MonoBehaviour that is a holder of coroutine

@@ -6,8 +6,9 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
@@ -16,12 +17,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackRttMetricServerToSingleClient()
         {
-            MultiInstanceHelpers.Create(
+            NetcodeIntegrationTestHelpers.Create(
                 clientCount: 1,
                 out var server,
                 out var clients,
                 targetFrameRate: 60,
-                MultiInstanceHelpers.InstanceTransport.UTP);
+#if UTP_ADAPTER
+                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
+#else
+                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
+#endif
 
             server.StartServer();
             clients[0].StartClient();
@@ -44,12 +49,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackRttMetricServerToMultipleClients()
         {
-            MultiInstanceHelpers.Create(
+            NetcodeIntegrationTestHelpers.Create(
                 clientCount: 2,
                 out var server,
                 out var clients,
                 targetFrameRate: 60,
-                MultiInstanceHelpers.InstanceTransport.UTP);
+                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
 
             server.StartServer();
             clients[0].StartClient();
@@ -73,12 +78,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackRttMetricClientToServer()
         {
-            MultiInstanceHelpers.Create(
+            NetcodeIntegrationTestHelpers.Create(
                 clientCount: 1,
                 out var server,
                 out var clients,
                 targetFrameRate: 60,
-                MultiInstanceHelpers.InstanceTransport.UTP);
+#if UTP_ADAPTER
+                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
+#else
+                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
+#endif
 
             server.StartServer();
             clients[0].StartClient();

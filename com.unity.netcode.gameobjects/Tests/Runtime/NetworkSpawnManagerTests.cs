@@ -106,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
             newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             newClientNetworkManager.StartClient();
             yield return NetcodeIntegrationTestHelpers.WaitForClientConnected(newClientNetworkManager);
-            yield return NetcodeIntegrationTestHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId));
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
 
             // test new client can get that itself locally
@@ -121,7 +121,7 @@ namespace Unity.Netcode.RuntimeTests
             // test when client disconnects, player object no longer available.
             var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
             NetcodeIntegrationTestHelpers.StopOneClient(newClientNetworkManager);
-            yield return NetcodeIntegrationTestHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1);
+            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1);
 
             serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.Null(serverSideNewClientPlayer);
