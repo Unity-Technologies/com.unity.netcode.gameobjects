@@ -124,8 +124,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
                 case UnityTransport unityTransport:
                     unityTransport.ConnectionData.Port = ushortport;
-                    MultiprocessLogger.Log($"unityTransport ConnectionData: " +
-                        $"{unityTransport.ConnectionData.Address}:{unityTransport.ConnectionData.Port}");
                     break;
                 default:
                     MultiprocessLogger.LogError($"OnSceneLoaded: Transport is {transport} which is an unaccounted for transport case");

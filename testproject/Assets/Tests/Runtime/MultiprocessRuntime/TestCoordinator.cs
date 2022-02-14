@@ -45,6 +45,7 @@ public class TestCoordinator : NetworkBehaviour
     private string m_ConnectAddress = "127.0.0.1";
     private string m_Port = "3076";
 
+    private int m_NumberOfCallsToUpdate;
     private Stopwatch m_Stopwatch;
     private static int s_ProcessId;
 
@@ -72,6 +73,7 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         m_Stopwatch = Stopwatch.StartNew();
+        m_NumberOfCallsToUpdate = 0;
         m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; ++i)
@@ -129,6 +131,14 @@ public class TestCoordinator : NetworkBehaviour
                 break;
         }
 
+        // Let's set the target framerate to see if we get more predictable results
+        // Setting the targetFrameRate to 5 should make for a lower load on the display adapter
+        // as well as the CPU so that the resources aren't being consumed in order to try and keep
+        // up: TODO: Make this a parameter so we can tune it.
+        Application.targetFrameRate = 5;
+        QualitySettings.vSyncCount = 0;
+
+
         if (m_IsClient)
         {
             NetworkManager.Singleton.StartClient();
@@ -160,6 +170,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
+        m_NumberOfCallsToUpdate++;
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication($"{s_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
@@ -183,17 +194,17 @@ public class TestCoordinator : NetworkBehaviour
         else if (m_Stopwatch.ElapsedMilliseconds > 2500)
         {
             m_Stopwatch.Restart();
-            LogInformation("Update - ");
+            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}");
         }
     }
 
     private void LogInformation(string extraMessage = "")
     {
         MultiprocessLogger.Log($"\n" +
-                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};\n" +
-                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient};\n" +
-                $"          isClient: {m_IsClient}/{IsClient};\n" +
-                $"          IsServer: {IsServer};\n" +
+                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}; " +
+                $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}; " +
+                $"          isClient: {m_IsClient}/{IsClient}; " +
+                $"          IsServer: {IsServer}; " +
                 $"          Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
                 $"               pid: {s_ProcessId};\n" +
                 $" {extraMessage}");
