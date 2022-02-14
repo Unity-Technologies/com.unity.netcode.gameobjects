@@ -7,7 +7,9 @@
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
         "Unity.Multiplayer.MetricTypes",
-        "Unity.Multiplayer.NetStats"
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

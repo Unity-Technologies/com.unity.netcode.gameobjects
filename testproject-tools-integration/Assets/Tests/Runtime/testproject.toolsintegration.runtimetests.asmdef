@@ -6,8 +6,11 @@
         "Unity.Netcode.RuntimeTests",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

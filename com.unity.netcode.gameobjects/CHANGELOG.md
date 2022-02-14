@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+### Added
+### Changed
+
+### Fixed
+- Fixed: Issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
+
+
 ## [1.0.0-pre.5] - 2022-01-26
 
 ### Added
@@ -15,13 +23,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
-- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)
+- NetworkManager DontDestroy property was removed and now NetworkManager always is migrated into the DontDestroyOnLoad scene. (#1484)'
 
 ### Fixed
 
 - Fixed network tick value sometimes being duplicated or skipped. (#1614)
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
+- Fixed NetworkTransport Initialize now can receive the associated NetworkManager instance to avoid using NetworkManager.Singleton in transport layer (#1677)
 
 ## [1.0.0-pre.4] - 2021-01-04
 

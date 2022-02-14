@@ -69,6 +69,13 @@ namespace Unity.Netcode
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
+        public void Clear()
+        {
+            m_Buffer.Clear();
+            m_EndTimeConsumed = 0.0d;
+            m_StartTimeConsumed = 0.0d;
+        }
+
         public void ResetTo(T targetValue, double serverTime)
         {
             m_LifetimeConsumedCount = 1;
