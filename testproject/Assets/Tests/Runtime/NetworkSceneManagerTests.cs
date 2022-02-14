@@ -334,19 +334,6 @@ namespace TestProject.RuntimeTests
                                 m_ScenesLoaded.Add(scene);
                             }
                             m_ClientsAreOkToLoad = true;
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
