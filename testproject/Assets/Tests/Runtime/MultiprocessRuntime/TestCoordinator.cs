@@ -135,7 +135,7 @@ public class TestCoordinator : NetworkBehaviour
         // Setting the targetFrameRate to 5 should make for a lower load on the display adapter
         // as well as the CPU so that the resources aren't being consumed in order to try and keep
         // up: TODO: Make this a parameter so we can tune it.
-        Application.targetFrameRate = 5;
+        Application.targetFrameRate = 10;
         QualitySettings.vSyncCount = 0;
 
 
@@ -201,12 +201,12 @@ public class TestCoordinator : NetworkBehaviour
     private void LogInformation(string extraMessage = "")
     {
         MultiprocessLogger.Log($"\n" +
-                $" NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}; " +
+                $"NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};" +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}; " +
-                $"          isClient: {m_IsClient}/{IsClient}; " +
-                $"          IsServer: {IsServer}; " +
-                $"          Platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};\n" +
-                $"               pid: {s_ProcessId};\n" +
+                $" isClient: {m_IsClient}/{IsClient}; " +
+                $" isServer: {IsServer}; " +
+                $" platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};" +
+                $" pid: {s_ProcessId};\n" +
                 $" {extraMessage}");
     }
 
