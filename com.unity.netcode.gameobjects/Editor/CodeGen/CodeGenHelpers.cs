@@ -34,7 +34,9 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
-            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} / {methodDefinition.FullName}");
+            var sigStr = $"{methodDefinition.Module.Name} / {methodDefinition.FullName}";
+            Console.WriteLine(sigStr);
+            var sigArr = Encoding.UTF8.GetBytes(sigStr);
             var sigLen = sigArr.Length;
             unsafe
             {
