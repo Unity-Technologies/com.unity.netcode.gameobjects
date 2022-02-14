@@ -135,7 +135,7 @@ public class TestCoordinator : NetworkBehaviour
         // Setting the targetFrameRate to 5 should make for a lower load on the display adapter
         // as well as the CPU so that the resources aren't being consumed in order to try and keep
         // up: TODO: Make this a parameter so we can tune it.
-        Application.targetFrameRate = 10;
+        Application.targetFrameRate = 20;
         QualitySettings.vSyncCount = 0;
 
 
