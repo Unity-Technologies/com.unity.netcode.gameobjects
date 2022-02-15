@@ -296,7 +296,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete... waiting");
                         yield return new WaitForSecondsRealtime(1.3f);
-                        Thread.Sleep(1300);
                         initialCount = m_ConnectedClientsList.Count;
                         MultiprocessLogger.Log($"Done waiting... ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
@@ -316,7 +315,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                     yield return new WaitForSecondsRealtime(0.8f);
-                    Thread.Sleep(800);
                     break;
                 }
                 counter++;
@@ -353,7 +351,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $"{m_ConnectedClientsList.Count} but connected clients has increased" +
                     $" {NetworkManager.Singleton.ConnectedClients.Count}");
                 yield return new WaitForSecondsRealtime(0.8f);
-                Thread.Sleep(800);
             }
             MultiprocessLogger.Log($"UnitySetup in Base Class ... end");
         }
