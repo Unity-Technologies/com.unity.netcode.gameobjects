@@ -21,19 +21,17 @@ namespace Unity.Netcode
             }
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsServer)
             {
-                return;
+                return false;
             }
 
-            var message = new ConnectionRequestMessage();
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
-                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.ConfigHash) +
-                                         FastBufferWriter.GetWriteSize<int>()))
+                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(ConfigHash) + FastBufferWriter.GetWriteSize<int>()))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -41,11 +39,12 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
-                reader.ReadValue(out message.ConfigHash);
 
-                if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
+                reader.ReadValue(out ConfigHash);
+
+                if (!networkManager.NetworkConfig.CompareConfig(ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -53,14 +52,14 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
 
-                reader.ReadValueSafe(out message.ConnectionData);
+                reader.ReadValueSafe(out ConnectionData);
             }
             else
             {
-                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(message.ConfigHash)))
+                if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(ConfigHash)))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -68,11 +67,11 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
-                reader.ReadValue(out message.ConfigHash);
+                reader.ReadValue(out ConfigHash);
 
-                if (!networkManager.NetworkConfig.CompareConfig(message.ConfigHash))
+                if (!networkManager.NetworkConfig.CompareConfig(ConfigHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -80,14 +79,18 @@ namespace Unity.Netcode
                     }
 
                     networkManager.DisconnectClient(context.SenderId);
-                    return;
+                    return false;
                 }
             }
-            message.Handle(networkManager, context.SenderId);
+
+            return true;
         }
 
-        public void Handle(NetworkManager networkManager, ulong senderId)
+        public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+            var senderId = context.SenderId;
+
             if (networkManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
@@ -102,8 +105,7 @@ namespace Unity.Netcode
                     (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
                     {
                         var localCreatePlayerObject = createPlayerObject;
-                        networkManager.HandleApproval(senderId, localCreatePlayerObject, playerPrefabHash, approved,
-                            position, rotation);
+                        networkManager.HandleApproval(senderId, localCreatePlayerObject, playerPrefabHash, approved, position, rotation);
                     });
             }
             else

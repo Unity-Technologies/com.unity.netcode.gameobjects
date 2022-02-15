@@ -13,7 +13,6 @@ using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
-
     internal sealed class INetworkMessageILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;
@@ -30,7 +29,6 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 return null;
             }
-
 
             m_Diagnostics.Clear();
 
@@ -95,27 +93,23 @@ namespace Unity.Netcode.Editor.CodeGen
         }
 
 
-        private TypeReference m_FastBufferReader_TypeRef;
-        private TypeReference m_NetworkContext_TypeRef;
+        private MethodReference m_MessagingSystem_ReceiveMessage_MethodRef;
         private TypeReference m_MessagingSystem_MessageWithHandler_TypeRef;
         private MethodReference m_MessagingSystem_MessageHandler_Constructor_TypeRef;
         private FieldReference m_ILPPMessageProvider___network_message_types_FieldRef;
         private FieldReference m_MessagingSystem_MessageWithHandler_MessageType_FieldRef;
         private FieldReference m_MessagingSystem_MessageWithHandler_Handler_FieldRef;
         private MethodReference m_Type_GetTypeFromHandle_MethodRef;
-
         private MethodReference m_List_Add_MethodRef;
+
+        private const string k_ReceiveMessageName = nameof(MessagingSystem.ReceiveMessage);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(typeof(FastBufferReader));
-            m_NetworkContext_TypeRef = moduleDefinition.ImportReference(typeof(NetworkContext));
-            m_MessagingSystem_MessageHandler_Constructor_TypeRef =
-                moduleDefinition.ImportReference(typeof(MessagingSystem.MessageHandler).GetConstructors()[0]);
+            m_MessagingSystem_MessageHandler_Constructor_TypeRef = moduleDefinition.ImportReference(typeof(MessagingSystem.MessageHandler).GetConstructors()[0]);
 
             var messageWithHandlerType = typeof(MessagingSystem.MessageWithHandler);
-            m_MessagingSystem_MessageWithHandler_TypeRef =
-                moduleDefinition.ImportReference(messageWithHandlerType);
+            m_MessagingSystem_MessageWithHandler_TypeRef = moduleDefinition.ImportReference(messageWithHandlerType);
             foreach (var fieldInfo in messageWithHandlerType.GetFields())
             {
                 switch (fieldInfo.Name)
@@ -162,38 +156,18 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-
-            return true;
-        }
-
-        private MethodReference GetNetworkMessageRecieveHandler(TypeDefinition typeDefinition)
-        {
-            SequencePoint typeSequence = null;
-            foreach (var method in typeDefinition.Methods)
+            var messagingSystemType = typeof(MessagingSystem);
+            foreach (var methodInfo in messagingSystemType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                var resolved = method.Resolve();
-                var methodSequence = resolved.DebugInformation.SequencePoints.FirstOrDefault();
-                if (typeSequence == null || methodSequence.StartLine < typeSequence.StartLine)
+                switch (methodInfo.Name)
                 {
-                    typeSequence = methodSequence;
-                }
-
-                if (resolved.IsStatic && resolved.IsPublic && resolved.Name == "Receive" && resolved.Parameters.Count == 2
-                    && !resolved.Parameters[0].IsIn
-                    && !resolved.Parameters[0].ParameterType.IsByReference
-                    && resolved.Parameters[0].ParameterType.Resolve() ==
-                        m_FastBufferReader_TypeRef.Resolve()
-                    && resolved.Parameters[1].IsIn
-                    && resolved.Parameters[1].ParameterType.IsByReference
-                    && resolved.Parameters[1].ParameterType.GetElementType().Resolve() == m_NetworkContext_TypeRef.Resolve()
-                    && resolved.ReturnType == resolved.Module.TypeSystem.Void)
-                {
-                    return method;
+                    case k_ReceiveMessageName:
+                        m_MessagingSystem_ReceiveMessage_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        break;
                 }
             }
 
-            m_Diagnostics.AddError(typeSequence, $"Class {typeDefinition.FullName} does not implement required method: `public static void Receive(FastBufferReader, in NetworkContext)`");
-            return null;
+            return true;
         }
 
         private MethodDefinition GetOrCreateStaticConstructor(TypeDefinition typeDefinition)
@@ -264,11 +238,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in networkMessageTypes)
                     {
-                        var receiveMethod = GetNetworkMessageRecieveHandler(type);
-                        if (receiveMethod == null)
-                        {
-                            continue;
-                        }
+                        var receiveMethod = new GenericInstanceMethod(m_MessagingSystem_ReceiveMessage_MethodRef);
+                        receiveMethod.GenericArguments.Add(type);
                         CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod);
                     }
 

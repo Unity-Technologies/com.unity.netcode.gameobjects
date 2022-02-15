@@ -40,7 +40,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(FastBufferReader reader, in NetworkContext context);
+        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, MessagingSystem system);
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
@@ -236,6 +236,7 @@ namespace Unity.Netcode
                 Timestamp = timestamp,
                 Header = header,
                 SerializedHeaderSize = serializedHeaderSize,
+                MessageSize = header.MessageSize,
             };
 
             var type = m_ReverseTypeMap[header.MessageType];
@@ -260,7 +261,7 @@ namespace Unity.Netcode
                 // for some dynamic-length value.
                 try
                 {
-                    handler.Invoke(reader, context);
+                    handler.Invoke(reader, ref context, this);
                 }
                 catch (Exception e)
                 {
@@ -319,6 +320,25 @@ namespace Unity.Netcode
             queue.Dispose();
         }
 
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
+        {
+            var message = new T();
+            if (message.Deserialize(reader, ref context))
+            {
+                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                {
+                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
+                }
+
+                message.Handle(ref context);
+
+                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                {
+                    system.m_Hooks[hookIdx].OnAfterHandleMessage(ref message, ref context);
+                }
+            }
+        }
+
         private bool CanSend(ulong clientId, Type messageType, NetworkDelivery delivery)
         {
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
@@ -332,7 +352,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -368,7 +388,7 @@ namespace Unity.Netcode
 
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnBeforeSendMessage(clientId, typeof(TMessageType), delivery);
+                    m_Hooks[hookIdx].OnBeforeSendMessage(clientId, ref message, delivery);
                 }
 
                 var sendQueueItem = m_SendQueues[clientId];
@@ -399,7 +419,7 @@ namespace Unity.Netcode
                 writeQueueItem.BatchHeader.BatchSize++;
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnAfterSendMessage(clientId, typeof(TMessageType), delivery, tmpSerializer.Length + headerSerializer.Length);
+                    m_Hooks[hookIdx].OnAfterSendMessage(clientId, ref message, delivery, tmpSerializer.Length + headerSerializer.Length);
                 }
             }
 
@@ -441,24 +461,24 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds, numClientIds));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             ulong* clientIds = stackalloc ulong[] { clientId };
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
         }
 
         internal unsafe void ProcessSendQueues()

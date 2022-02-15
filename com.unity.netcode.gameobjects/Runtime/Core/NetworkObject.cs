@@ -39,7 +39,7 @@ namespace Unity.Netcode
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
-#endif
+#endif // UNITY_EDITOR
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -328,7 +328,7 @@ namespace Unity.Netcode
                     NetworkObjectId = NetworkObjectId
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -714,7 +714,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
@@ -1142,8 +1142,7 @@ namespace Unity.Netcode
                     var globalObjectIdHash = NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
-                else
-                if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                else if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
                 {
                     return NetworkManager.NetworkConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
                 }

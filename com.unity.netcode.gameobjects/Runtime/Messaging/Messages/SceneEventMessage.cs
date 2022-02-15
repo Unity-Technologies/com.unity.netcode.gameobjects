@@ -6,14 +6,22 @@ namespace Unity.Netcode
     {
         public SceneEventData EventData;
 
+        private FastBufferReader m_ReceivedData;
+
         public void Serialize(FastBufferWriter writer)
         {
             EventData.Serialize(writer);
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).SceneManager.HandleSceneEvent(context.SenderId, reader);
+            m_ReceivedData = reader;
+            return true;
+        }
+
+        public void Handle(ref NetworkContext context)
+        {
+            ((NetworkManager)context.SystemOwner).SceneManager.HandleSceneEvent(context.SenderId, m_ReceivedData);
         }
     }
 }
