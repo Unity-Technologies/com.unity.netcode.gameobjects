@@ -101,7 +101,7 @@ public class TestCoordinator : NetworkBehaviour
             }
             if (arg.Equals("-testname"))
             {
-                string testname = args[i + 1];                
+                string testname = args[i + 1];
                 MultiprocessLogHandler.TestName = testname;
             }
         }
