@@ -293,10 +293,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         }
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is not null");
+                        initialCount = m_ConnectedClientsList.Count;
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete... waiting");
-                        yield return new WaitForSecondsRealtime(1.3f);
-                        initialCount = m_ConnectedClientsList.Count;
+                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
                         MultiprocessLogger.Log($"Done waiting... ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
                 }
