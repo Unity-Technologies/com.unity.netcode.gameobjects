@@ -140,9 +140,15 @@ public class TestCoordinator : NetworkBehaviour
         // Setting the targetFrameRate to 5 should make for a lower load on the display adapter
         // as well as the CPU so that the resources aren't being consumed in order to try and keep
         // up: TODO: Make this a parameter so we can tune it.
-        Application.targetFrameRate = 5;
         QualitySettings.vSyncCount = 0;
-
+        if (IsServer)
+        {
+            Application.targetFrameRate = 15;
+        }
+        else
+        {
+            Application.targetFrameRate = 5;
+        }
 
         if (m_IsClient)
         {
@@ -196,7 +202,7 @@ public class TestCoordinator : NetworkBehaviour
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
-        else if (m_Stopwatch.ElapsedMilliseconds > 2500)
+        else if (m_Stopwatch.ElapsedMilliseconds > 500)
         {
             m_Stopwatch.Restart();
             LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}");
