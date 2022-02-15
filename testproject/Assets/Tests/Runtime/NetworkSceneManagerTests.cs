@@ -1104,6 +1104,9 @@ namespace TestProject.RuntimeTests
 
     }
 
+    /// <summary>
+    /// Use this test group for validating NetworkSceneManager fixes.
+    /// </summary>
     public class NetworkSceneManagerFixValidationTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 0;
