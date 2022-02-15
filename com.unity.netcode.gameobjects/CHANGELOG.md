@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fixed an issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
+- Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1694)
+- Fixed spawn flow to propagate `IsSceneObject` down to children NetworkObjects, decouple implicit relationship between object spawning & `IsSceneObject` flag (#1685)
+
 ## [1.0.0-pre.5] - 2022-01-26
 
 ### Added
