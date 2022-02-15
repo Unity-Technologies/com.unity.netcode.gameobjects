@@ -209,9 +209,9 @@ public class TestCoordinator : NetworkBehaviour
                 $"NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};" +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}; " +
                 $" isClient: {m_IsClient}/{IsClient}; " +
-                $" isServer: {IsServer}; " +
+                $" isServer: {IsServer}\n; " +
                 $" platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};" +
-                $" pid: {s_ProcessId};\n" +
+                $" pid: {s_ProcessId};" +
                 $" {extraMessage}");
     }
 

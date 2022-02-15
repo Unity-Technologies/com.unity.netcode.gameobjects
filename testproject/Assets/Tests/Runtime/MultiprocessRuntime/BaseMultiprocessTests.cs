@@ -78,7 +78,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
             }
 
-            if (IsPerformanceTest)
+            if (IsPerformanceTest && !m_LaunchRemotely)
             {
                 Assert.Ignore("Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
