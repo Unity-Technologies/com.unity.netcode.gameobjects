@@ -187,15 +187,20 @@ public class TestCoordinator : NetworkBehaviour
 
     public void FixedUpdate()
     {
+        float deltaTime = Time.deltaTime;
         m_NumberOfCallsToFixedUpdate++;
-        m_FixedUpdateDeltaTime.Add(Time.deltaTime);
-        LogInformation($"FixedUpdate - Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {Time.deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
+        m_FixedUpdateDeltaTime.Add(deltaTime);
+        if (deltaTime > 0.5f)
+        {
+            LogInformation($"FixedUpdate - Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
+        }
     }
 
     public void Update()
     {
+        float deltaTime = Time.deltaTime;
         m_NumberOfCallsToUpdate++;
-        m_UpdateDeltaTime.Add(Time.deltaTime);
+        m_UpdateDeltaTime.Add(deltaTime);
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication($"{s_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
@@ -217,10 +222,10 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
 
-        if (m_Stopwatch.ElapsedMilliseconds > 500)
+        if (deltaTime > 0.4f || m_Stopwatch.ElapsedMilliseconds > 2500)
         {
             m_Stopwatch.Restart();
-            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {Time.deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
         }
     }
 
