@@ -46,6 +46,9 @@ public class TestCoordinator : NetworkBehaviour
     private string m_Port = "3076";
 
     private int m_NumberOfCallsToUpdate;
+    private List<float> m_UpdateDeltaTime;
+    private int m_NumberOfCallsToFixedUpdate;
+    private List<float> m_FixedUpdateDeltaTime;
     private Stopwatch m_Stopwatch;
     private static int s_ProcessId;
 
@@ -74,6 +77,9 @@ public class TestCoordinator : NetworkBehaviour
     {
         m_Stopwatch = Stopwatch.StartNew();
         m_NumberOfCallsToUpdate = 0;
+        m_NumberOfCallsToFixedUpdate = 0;
+        m_FixedUpdateDeltaTime = new List<float>();
+        m_UpdateDeltaTime = new List<float>();
         m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         string[] args = Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; ++i)
@@ -179,9 +185,17 @@ public class TestCoordinator : NetworkBehaviour
         LogInformation($"Singleton_OnClientConnectedCallback in TestCoordinator triggered {obj}");
     }
 
+    public void FixedUpdate()
+    {
+        m_NumberOfCallsToFixedUpdate++;
+        m_FixedUpdateDeltaTime.Add(Time.deltaTime);
+        LogInformation($"FixedUpdate - Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {Time.deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
+    }
+
     public void Update()
     {
         m_NumberOfCallsToUpdate++;
+        m_UpdateDeltaTime.Add(Time.deltaTime);
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication($"{s_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
@@ -202,10 +216,11 @@ public class TestCoordinator : NetworkBehaviour
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
-        else if (m_Stopwatch.ElapsedMilliseconds > 500)
+
+        if (m_Stopwatch.ElapsedMilliseconds > 500)
         {
             m_Stopwatch.Restart();
-            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}");
+            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {Time.deltaTime}; Average {m_UpdateDeltaTime.Average()}");
         }
     }
 
@@ -215,7 +230,7 @@ public class TestCoordinator : NetworkBehaviour
                 $"NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};" +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}; " +
                 $" isClient: {m_IsClient}/{IsClient}; " +
-                $" isServer: {IsServer}\n; " +
+                $" isServer: {IsServer};\n " +
                 $" platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};" +
                 $" pid: {s_ProcessId};" +
                 $" {extraMessage}");
