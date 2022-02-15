@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed network tick value sometimes being duplicated or skipped. (#1614)
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
+- Fixed client-side exception from being thrown in NetworkSceneManager when migrating NetworkObjects to or from the DDOL scene. (#1633)
 
 ## [1.0.0-pre.4] - 2021-01-04
 
