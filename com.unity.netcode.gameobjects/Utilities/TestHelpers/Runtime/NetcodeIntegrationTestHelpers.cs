@@ -635,4 +635,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
     internal class CoroutineRunner : MonoBehaviour
     {
     }
+
+    // Empty MonoBehaviour that is a holder of coroutine
+    internal class CoroutineRunner : MonoBehaviour
+    {
+    }
 }
