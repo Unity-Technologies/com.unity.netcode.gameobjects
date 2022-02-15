@@ -24,6 +24,12 @@
         "UNITY_EDITOR",
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        }
+    ],
     "noEngineReferences": false
 }

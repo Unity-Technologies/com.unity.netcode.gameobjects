@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
+#if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
+#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -68,6 +70,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
+#if UNITY_UNET_PRESENT
                 var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
                 if (networkConfig == null)
                 {
@@ -78,7 +81,6 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
-
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
                 unetTransport.ServerListenPort = 7777;
@@ -86,6 +88,18 @@ namespace Unity.Netcode.RuntimeTests
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
+#else
+                var sipTransport = NetworkManagerGameObject.AddComponent<SIPTransport>();
+                if (networkConfig == null)
+                {
+                    networkConfig = new NetworkConfig
+                    {
+                        EnableSceneManagement = false,
+                    };
+                }
+                NetworkManagerObject.NetworkConfig = networkConfig;
+                NetworkManagerObject.NetworkConfig.NetworkTransport = sipTransport;
+#endif
 
                 // Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);

@@ -1,3 +1,4 @@
+#if UNITY_UNET_PRESENT
 #pragma warning disable 618 // disable is obsolete
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
@@ -279,3 +280,4 @@ namespace Unity.Netcode.Transports.UNET
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore 618 // restore is obsolete
+#endif
