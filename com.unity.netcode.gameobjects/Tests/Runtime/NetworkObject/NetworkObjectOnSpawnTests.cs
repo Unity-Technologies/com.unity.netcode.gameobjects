@@ -54,8 +54,7 @@ namespace Unity.Netcode.RuntimeTests
             });
         }
 
-        [UnityTearDown]
-        public override IEnumerator Teardown()
+        protected override IEnumerator OnTearDown()
         {
             if (m_TestNetworkObjectPrefab != null)
             {
@@ -66,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Object.Destroy(m_TestNetworkObjectInstance);
             }
-            yield return base.Teardown();
+            yield return base.OnTearDown();
         }
 
         /// <summary>

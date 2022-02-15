@@ -23,11 +23,10 @@ namespace TestProject.RuntimeTests
             return base.Setup();
         }
 
-        [UnityTearDown]
-        public override IEnumerator Teardown()
+        protected override IEnumerator OnTearDown()
         {
             m_BypassStartAndWaitForClients = false;
-            return base.Teardown();
+            return base.OnTearDown();
         }
 
         private class SceneTestInfo

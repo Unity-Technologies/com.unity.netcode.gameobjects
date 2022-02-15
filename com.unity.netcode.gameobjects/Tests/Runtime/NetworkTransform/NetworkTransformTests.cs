@@ -237,11 +237,9 @@ namespace Unity.Netcode.RuntimeTests
          * test teleport without interpolation
          * test dynamic spawning
          */
-
-        [UnityTearDown]
-        public override IEnumerator Teardown()
+        protected override IEnumerator OnTearDown()
         {
-            yield return base.Teardown();
+            yield return base.OnTearDown();
             UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
         }
     }

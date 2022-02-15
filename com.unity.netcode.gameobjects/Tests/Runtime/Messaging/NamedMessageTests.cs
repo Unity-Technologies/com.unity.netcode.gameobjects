@@ -16,6 +16,13 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
 
+        protected override NetworkManagerIntegrationTestMode OnSetIntegrationTestMode()
+        {
+            // Don't spin up and shutdown NetworkManager instances for each test
+            // within this set of integration tests.
+            return NetworkManagerIntegrationTestMode.OneInstanceForAllTests;
+        }
+
         [UnityTest]
         public IEnumerator NamedMessageIsReceivedOnClientWithContent()
         {

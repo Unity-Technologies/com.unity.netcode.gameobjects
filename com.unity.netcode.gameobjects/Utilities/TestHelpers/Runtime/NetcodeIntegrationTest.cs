@@ -4,24 +4,31 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     public abstract class NetcodeIntegrationTest
     {
+
+        static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
+        static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        public enum NetworkManagerIntegrationTestMode
+        {
+            NewInstancePerTest,     // This will create new NetworkManagers for each test within a child derived class
+            OneInstanceForAllTests, // This will create one set of NetworkManagers used for all tests within a child derived class
+        }
+
+
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
-
         protected abstract int NbClients { get; }
-
         protected bool m_BypassStartAndWaitForClients = false;
-
-        static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
-
         protected const uint k_DefaultTickRate = 30;
-        static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+
+        private NetworkManagerIntegrationTestMode m_NetworkManagerIntegrationTestMode;
 
         /// <summary>
         /// An update to the original NetcodeIntegrationTestHelpers.WaitForCondition that:
@@ -89,18 +96,47 @@ namespace Unity.Netcode.TestHelpers.Runtime
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
         }
 
+        protected virtual NetworkManagerIntegrationTestMode OnSetIntegrationTestMode()
+        {
+            return NetworkManagerIntegrationTestMode.NewInstancePerTest;
+        }
+
+        protected virtual void OnOneTimeSetup()
+        {
+        }
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            m_NetworkManagerIntegrationTestMode = OnSetIntegrationTestMode();
+            OnOneTimeSetup();
+        }
+
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ => { });
+            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.OneInstanceForAllTests)
+            {
+                if (m_ServerNetworkManager == null)
+                {
+                    yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
+                }
+            }
+
+            yield return s_DefaultWaitForTick;
+
+            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.NewInstancePerTest)
+            {
+                yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
+            }
+
             if (m_ServerNetworkManager != null)
             {
                 s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             }
         }
 
-        [UnityTearDown]
-        public virtual IEnumerator Teardown()
+        private void ShutdownAndCleanUp()
         {
             // Shutdown and clean up both of our NetworkManager instances
             try
@@ -131,12 +167,42 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Object.DestroyImmediate(networkObject);
             }
 
+            // reset the m_ServerWaitForTick for the next test to initialize
+            s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        }
+
+        protected virtual IEnumerator OnTearDown()
+        {
             // wait for 1 tick interval so everything is destroyed and any following tests
             // can execute from clean environment
             yield return s_DefaultWaitForTick;
+        }
 
-            // reset the m_ServerWaitForTick for the next test to initialize
-            s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        [UnityTearDown]
+        public IEnumerator Teardown()
+        {
+            if(m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.NewInstancePerTest)
+            {
+                ShutdownAndCleanUp();
+            }
+
+            yield return OnTearDown();
+        }
+
+        protected virtual void OnOneTimeTearDown()
+        {
+
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            OnOneTimeTearDown();
+
+            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.OneInstanceForAllTests)
+            {
+                ShutdownAndCleanUp();
+            }
         }
 
         /// <summary>
@@ -160,14 +226,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// NSS-TODO: Back port PR-1405 to get this functionality
+        /// De-Registers from the CanClientsLoad and CanClientsUnload events of the
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// </summary>
+        protected void DeRegisterSceneManagerHandler()
+        {
+            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
+            {
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+            }
+        }
+
+        /// <summary>
         /// Registers the CanClientsLoad and CanClientsUnload events of the
         /// ClientSceneHandler (default is IntegrationTestSceneHandler).
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
-            NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
-            NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
+            {
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            }
         }
 
         private bool ClientSceneHandler_CanClientsUnload()
