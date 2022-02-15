@@ -35,6 +35,15 @@ namespace Unity.Netcode
 
             if (networkObject.OwnerClientId == networkManager.LocalClientId)
             {
+                //We are current owner.
+                networkObject.InvokeBehaviourOnLostOwnership();
+            }
+
+            networkObject.OwnerClientId = OwnerClientId;
+
+            if (OwnerClientId == networkManager.LocalClientId)
+            {
+                //We are new owner.
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
