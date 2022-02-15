@@ -222,10 +222,13 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
 
-        if (deltaTime > 0.4f)
+        if (!IsServer)
         {
-            m_Stopwatch.Restart();
-            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            if (m_NumberOfCallsToUpdate % 5 == 0 || m_Stopwatch.ElapsedMilliseconds > 1000)
+            {
+                m_Stopwatch.Restart();
+                LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            }
         }
     }
 
