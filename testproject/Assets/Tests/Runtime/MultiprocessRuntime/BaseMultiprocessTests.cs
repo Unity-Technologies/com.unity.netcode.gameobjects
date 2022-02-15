@@ -78,6 +78,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
             }
 
+            if (IsPerformanceTest)
+            {
+                Assert.Ignore("Performance tests unable to run at this time, see: https://unity-ci.cds.internal.unity3d.com/job/11651103/results");
+            }
+
             // Build the multiprocess test player
             if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
             {
