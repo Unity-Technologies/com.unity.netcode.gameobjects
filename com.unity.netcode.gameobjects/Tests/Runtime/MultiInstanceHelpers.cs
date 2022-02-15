@@ -21,6 +21,8 @@ namespace Unity.Netcode.RuntimeTests
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
+        private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
+
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
         public enum InstanceTransport
@@ -29,6 +31,62 @@ namespace Unity.Netcode.RuntimeTests
 #if UTP_ADAPTER
             UTP
 #endif
+        }
+
+        internal static IntegrationTestSceneHandler ClientSceneHandler = null;
+
+        /// <summary>
+        /// Registers the IntegrationTestSceneHandler for integration tests.
+        /// The default client behavior is to not load scenes on the client side.
+        /// </summary>
+        private static void RegisterSceneManagerHandler(NetworkManager networkManager)
+        {
+            if (!networkManager.IsServer)
+            {
+                if (ClientSceneHandler == null)
+                {
+                    ClientSceneHandler = new IntegrationTestSceneHandler();
+                }
+                networkManager.SceneManager.SceneManagerHandler = ClientSceneHandler;
+            }
+        }
+
+        /// <summary>
+        /// Call this to clean up the IntegrationTestSceneHandler and destroy the s_CoroutineRunner.
+        /// Note:
+        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// typically won't need to do this.
+        /// </summary>
+        internal static void CleanUpHandlers()
+        {
+            if (ClientSceneHandler != null)
+            {
+                ClientSceneHandler.Dispose();
+                ClientSceneHandler = null;
+            }
+
+            // Destroy the temporary GameObject used to run co-routines
+            if (s_CoroutineRunner != null)
+            {
+                s_CoroutineRunner.StopAllCoroutines();
+                Object.DestroyImmediate(s_CoroutineRunner.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Call this to register scene validation and the IntegrationTestSceneHandler
+        /// Note:
+        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// typically won't need to call this.
+        /// </summary>
+        internal static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
+        {
+            SceneManagerValidationAndTestRunnerInitialization(networkManager);
+
+            if (!networkManager.IsServer || networkManager.IsServer && serverSideSceneManager)
+            {
+                RegisterSceneManagerHandler(networkManager);
+            }
         }
 
         /// <summary>
@@ -155,7 +213,54 @@ namespace Unity.Netcode.RuntimeTests
                 Object.DestroyImmediate(s_CoroutineRunner);
             }
 
+            CleanUpHandlers();
+
             Application.targetFrameRate = s_OriginalTargetFrameRate;
+        }
+
+        /// <summary>
+        /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
+        /// synchronize to this scene when they connect
+        /// </summary>
+        private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            // exclude test runner scene
+            if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// This registers scene validation callback for the server to prevent it from telling connecting
+        /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
+        /// scene and its handle for both client(s) and server-host.
+        /// </summary>
+        private static void SceneManagerValidationAndTestRunnerInitialization(NetworkManager networkManager)
+        {
+            // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
+            // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
+            if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
+            {
+                networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+                // If a unit/integration test does not handle this on their own, then Ignore the validation warning
+                networkManager.SceneManager.DisableValidationWarnings(true);
+            }
+
+            // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
+            // warning about using the currently active scene
+            var scene = SceneManager.GetActiveScene();
+            // As long as this is a test runner scene (or most likely a test runner scene)
+            if (scene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            {
+                // Register the test runner scene just so we avoid another warning about not being able to find the
+                // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
+                // loaded and register the server to client scene handle since host-server shares the test runner scene
+                // with the clients.
+                networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
+                networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
+            }
         }
 
         /// <summary>
@@ -166,7 +271,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
         /// <returns></returns>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, Action<NetworkManager> startInitializationCallback = null)
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
         {
             if (s_IsStarted)
             {
@@ -186,23 +291,20 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // if set, then invoke this for the server
-            startInitializationCallback?.Invoke(server);
+            RegisterHandlers(server);
 
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
 
                 // if set, then invoke this for the client
-                startInitializationCallback?.Invoke(clients[i]);
+                RegisterHandlers(clients[i]);
             }
 
             return true;
         }
 
-        // Empty MonoBehaviour that is a holder of coroutine
-        private class CoroutineRunner : MonoBehaviour
-        {
-        }
+
 
         private static CoroutineRunner s_CoroutineRunner;
 
@@ -527,5 +629,10 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(res, "PREDICATE CONDITION");
             }
         }
+    }
+
+    // Empty MonoBehaviour that is a holder of coroutine
+    internal class CoroutineRunner : MonoBehaviour
+    {
     }
 }
