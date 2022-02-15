@@ -525,6 +525,13 @@ namespace Unity.Netcode
                 triggerInfo.TriggerData.Dispose();
                 m_Triggers.Remove(networkId);
             }
+
+            // propagate the IsSceneObject setting to child NetworkObjects
+            var children = networkObject.GetComponentsInChildren<NetworkObject>();
+            foreach (var childObject in children)
+            {
+                childObject.IsSceneObject = sceneObject;
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -678,6 +685,7 @@ namespace Unity.Netcode
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+            var networkObjectsToSpawn = new List<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -685,9 +693,14 @@ namespace Unity.Netcode
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
+            }
+
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
             }
         }
 
