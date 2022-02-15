@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.ComponentModel;
+using NUnit.Framework;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -304,7 +305,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 LogPath = @"C:\users\bokken\.multiprocess\" + $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log";
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
-                    $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                    $"--remote-command \"com.unity.netcode.gameobjects\\testproject\\Builds\\MultiprocessTests\\MultiprocessTestPlayer.exe -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -testname {TestContext.CurrentContext.Test.Name} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
                 MultiprocessLogger.Log(s);
                 return s;
             }
@@ -313,7 +314,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 LogPath = Path.Combine(@"/Users/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
-                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -testname {TestContext.CurrentContext.Test.Name;} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
                 MultiprocessLogger.Log(s);
                 return s;
             }

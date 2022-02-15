@@ -478,8 +478,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiprocessLogger.Log($"7/20 - NetworkManager.Singleton was null");
                 }
-                MultiprocessLogger.Log($"8/20 - Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiprocessLogger.Log($"9/20 - Original active scene {m_OriginalActiveScene.name}");
+                MultiprocessLogger.Log($"8/20 - Currently active scene name: {SceneManager.GetActiveScene().name}");
+                MultiprocessLogger.Log($"9/20 - Original active scene name: {m_OriginalActiveScene.name}");
                 MultiprocessLogger.Log($"10/20 - m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
                 if (m_OriginalActiveScene.IsValid())
                 {

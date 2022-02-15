@@ -36,6 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static HttpClient s_HttpClient = new HttpClient();
         private static List<Task> s_AllTasks;
         public static long JobId;
+        public static string TestName;
         private static readonly object k_Tasklock = new object();
         private static long s_EventIdCounter;
 
@@ -139,7 +140,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (string.IsNullOrEmpty(testName))
             {
-                testName = "unknown";
+                if (string.IsNullOrEmpty(TestName))
+                {
+                    testName = "unknown";
+                }
+                else
+                {
+                    testName = TestName;
+                }
             }
 
             var st = new StackTrace(true);

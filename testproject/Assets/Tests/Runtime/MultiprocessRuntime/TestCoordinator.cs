@@ -99,6 +99,11 @@ public class TestCoordinator : NetworkBehaviour
                 }
                 MultiprocessLogHandler.JobId = jobId;
             }
+            if (arg.Equals("-testname"))
+            {
+                string testname = args[i + 1];                
+                MultiprocessLogHandler.TestName = testname;
+            }
         }
         MultiprocessLogger.Log($"{m_Port}");
         var ushortport = ushort.Parse(m_Port);
@@ -112,7 +117,7 @@ public class TestCoordinator : NetworkBehaviour
         switch (transport)
         {
             case UNetTransport unetTransport:
-                MultiprocessLogger.Log("ERROR - UNetTransport should not be the transport in this case");
+                MultiprocessLogger.LogError("UNetTransport is no longer supported");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (m_IsClient)
@@ -135,7 +140,7 @@ public class TestCoordinator : NetworkBehaviour
         // Setting the targetFrameRate to 5 should make for a lower load on the display adapter
         // as well as the CPU so that the resources aren't being consumed in order to try and keep
         // up: TODO: Make this a parameter so we can tune it.
-        Application.targetFrameRate = 20;
+        Application.targetFrameRate = 10;
         QualitySettings.vSyncCount = 0;
 
 
