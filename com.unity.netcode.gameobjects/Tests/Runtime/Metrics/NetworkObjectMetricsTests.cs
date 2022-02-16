@@ -13,7 +13,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class NetworkObjectMetricsTests : SingleClientMetricTestBase
     {
-        private const string k_NewNetworkObjectName = "TestNetworkObjectToSpawn";
+        // Keep less than 23 chars to avoid issues if compared against a 32-byte fixed string
+        //   since it will have "(Clone)" appended
+        private const string k_NewNetworkObjectName = "TestObjectToSpawn";
         private NetworkObject m_NewNetworkPrefab;
 
         protected override Action<GameObject> UpdatePlayerPrefab => _ =>
