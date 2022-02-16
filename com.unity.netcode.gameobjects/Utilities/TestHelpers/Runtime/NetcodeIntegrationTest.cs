@@ -377,7 +377,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
             foreach (var networkObject in networkObjects)
             {
-                if(CanDestroyNetworkObject(networkObject))
+                if (CanDestroyNetworkObject(networkObject))
                 {
                     Object.DestroyImmediate(networkObject);
                 }
