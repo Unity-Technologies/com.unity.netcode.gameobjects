@@ -95,12 +95,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         //GetDefaultLinux
         public static BokkenMachine GetDefaultLinux(string name)
         {
-            var defaultWindows = new BokkenMachine();
-            defaultWindows.Type = "Unity::VM";
-            defaultWindows.Image = "package-ci/ubuntu:stable";
-            defaultWindows.Flavor = "b1.large";
-            defaultWindows.Name = name;
-            return defaultWindows;
+            var defaultLinux = new BokkenMachine();
+            defaultLinux.Type = "Unity::VM";
+            defaultLinux.Image = "package-ci/ubuntu:stable";
+            defaultLinux.Flavor = "b1.large";
+            defaultLinux.Name = name;
+            return defaultLinux;
         }
 
         public static BokkenMachine Parse(string shortcut)

@@ -98,6 +98,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
+            if (buildTarget == BuildTarget.StandaloneLinux64)
+            {
+                buildOptions |= BuildOptions.EnableHeadlessMode;
+            }
+
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
             buildPlayerOptions.options = buildOptions;
