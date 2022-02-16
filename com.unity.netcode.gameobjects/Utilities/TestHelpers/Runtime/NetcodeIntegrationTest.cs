@@ -102,9 +102,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return NetworkManagerInstatiationMode.PerTest;
         }
 
-        /// <summary>
-        /// Called from
-        /// </summary>
         protected virtual void OnOneTimeSetup()
         {
         }
@@ -116,11 +113,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnOneTimeSetup();
         }
 
+        /// <summary>
+        /// Called before creating and starting the server and clients
+        /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
+        /// mode can use one or both of the Pre-Post Setup methods.
+        /// </summary>
         protected virtual IEnumerator OnPreSetup()
         {
             yield return null;
         }
 
+        /// <summary>
+        /// Called after creating and starting the server and clients
+        /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
+        /// mode can use one or both of the Pre-Post Setup methods.
+        /// </summary>
         protected virtual IEnumerator OnPostSetup()
         {
             yield return null;
@@ -149,6 +156,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void ShutdownAndCleanUp()
         {
+            DestroySceneNetworkObjects();
+
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
@@ -168,14 +177,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.Destroy(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
-            }
-
-            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
-            // If we are tearing down, we don't want to leave NetworkObjects hanging around
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
-            foreach (var networkObject in networkObjects)
-            {
-                Object.DestroyImmediate(networkObject);
             }
 
             // reset the m_ServerWaitForTick for the next test to initialize
@@ -284,7 +285,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual void OnCreatePlayerPrefab()
         {
-
         }
 
         private void CreatePlayerPrefab()
@@ -308,15 +308,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
         {
-            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
-            // If we are tearing down, we don't want to leave NetworkObjects hanging around
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
-            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
-            foreach (var netObject in networkObjects)
-            {
-                Object.DestroyImmediate(netObject);
-            }
-
             // Create multiple NetworkManager instances
             if (!NetcodeIntegrationTestHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
@@ -368,100 +359,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
             }
         }
-    }
 
-    /// <summary>
-    /// Can be used independently or assigned to <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"></see> in the
-    /// event the default timeout period needs to be adjusted
-    /// </summary>
-    public class TimeOutHelper
-    {
-        private const float k_DefaultTimeOutWaitPeriod = 2.0f;
-
-        private float m_MaximumTimeBeforeTimeOut;
-        private float m_TimeOutPeriod;
-
-        private bool m_IsStarted;
-        public bool TimedOut { get; internal set; }
-
-        public void Start()
-        {
-            m_MaximumTimeBeforeTimeOut = Time.realtimeSinceStartup + m_TimeOutPeriod;
-            m_IsStarted = true;
-            TimedOut = false;
-        }
-
-        public void Stop()
-        {
-            TimedOut = HasTimedOut();
-            m_IsStarted = false;
-        }
-
-        public bool HasTimedOut()
-        {
-            return m_IsStarted ? m_MaximumTimeBeforeTimeOut < Time.realtimeSinceStartup : TimedOut;
-        }
-
-        public TimeOutHelper(float timeOutPeriod = k_DefaultTimeOutWaitPeriod)
-        {
-            m_TimeOutPeriod = timeOutPeriod;
-        }
-    }
-
-    /// <summary>
-    /// Derive from this class to create your own conditional handling for your <see cref="NetcodeIntegrationTest"/>
-    /// integration tests when dealing with more complicated scenarios where initializing values, storing state to be
-    /// used across several integration tests.
-    /// </summary>
-    public class ConditionalPredicateBase : IConditionalPredicate
-    {
-        private bool m_TimedOut;
-
-        public bool TimedOut { get { return m_TimedOut; } }
-
-        protected virtual bool OnHasConditionBeenReached()
+        /// <summary>
+        /// Override this to filter out the <see cref="NetworkObject"/>s that you
+        /// want to allow to persist between integration tests
+        /// </summary>
+        /// <param name="networkObject"></param>
+        protected virtual bool CanDestroyNetworkObject(NetworkObject networkObject)
         {
             return true;
         }
 
-        public bool HasConditionBeenReached()
+        protected void DestroySceneNetworkObjects()
         {
-            return OnHasConditionBeenReached();
+            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
+            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
+            foreach (var networkObject in networkObjects)
+            {
+                if(CanDestroyNetworkObject(networkObject))
+                {
+                    Object.DestroyImmediate(networkObject);
+                }
+            }
         }
-
-        protected virtual void OnStarted() { }
-
-        public void Started()
-        {
-            OnStarted();
-        }
-
-        protected virtual void OnFinished() { }
-
-        public void Finished(bool timedOut)
-        {
-            m_TimedOut = timedOut;
-            OnFinished();
-        }
-    }
-
-    public interface IConditionalPredicate
-    {
-        /// <summary>
-        /// Test the conditions of the test to be reached
-        /// </summary>
-        bool HasConditionBeenReached();
-
-        /// <summary>
-        /// Wait for condition has started
-        /// </summary>
-        void Started();
-
-        /// <summary>
-        /// Wait for condition has finished:
-        /// Condition(s) met or timed out
-        /// </summary>
-        void Finished(bool timedOut);
-
     }
 }
