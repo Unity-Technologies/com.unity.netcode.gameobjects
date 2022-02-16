@@ -1656,6 +1656,12 @@ namespace Unity.Netcode
                     var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
 
+                    var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
+                    if (networkObjectChildren.Length > 1)
+                    {
+                        Debug.LogError("Trying to spawn a Player Object with nested NetworkObject. This is not supported.");
+                    }
+
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
