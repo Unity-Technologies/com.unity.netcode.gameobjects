@@ -20,15 +20,13 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 
         internal NetworkMetrics ClientMetrics { get; private set; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPostSetup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
-
             Server = m_ServerNetworkManager;
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             Client = m_ClientNetworkManagers[0];
             ClientMetrics = Client.NetworkMetrics as NetworkMetrics;
+            return base.OnPreSetup();
         }
     }
 
@@ -50,17 +48,15 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 
         internal NetworkMetrics SecondClientMetrics { get; private set; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPostSetup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
-
             Server = m_ServerNetworkManager;
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             FirstClient = m_ClientNetworkManagers[0];
             FirstClientMetrics = FirstClient.NetworkMetrics as NetworkMetrics;
             SecondClient = m_ClientNetworkManagers[0];
             SecondClientMetrics = SecondClient.NetworkMetrics as NetworkMetrics;
+            return base.OnPreSetup();
         }
     }
 }

@@ -182,7 +182,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
         }
 
-        protected virtual IEnumerator OnTearDown()
+        protected virtual IEnumerator OnPreTearDown()
+        {
+            // wait for 1 tick interval so everything is destroyed and any following tests
+            // can execute from clean environment
+            yield return s_DefaultWaitForTick;
+        }
+
+        protected virtual IEnumerator OnPostTearDown()
         {
             // wait for 1 tick interval so everything is destroyed and any following tests
             // can execute from clean environment
@@ -194,10 +201,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
-                ShutdownAndCleanUp();
-            }
+                yield return OnPreTearDown();
 
-            yield return OnTearDown();
+                ShutdownAndCleanUp();
+
+                yield return OnPostTearDown();
+            }
         }
 
         protected virtual void OnOneTimeTearDown()
@@ -217,7 +226,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// NSS-TODO: See RegisterSceneManagerHandler
         /// Override this method to control when clients
         /// fake-load a scene.
         /// </summary>
@@ -227,7 +235,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// NSS-TODO: See RegisterSceneManagerHandler
         /// Override this method to control when clients
         /// fake-unload a scene.
         /// </summary>

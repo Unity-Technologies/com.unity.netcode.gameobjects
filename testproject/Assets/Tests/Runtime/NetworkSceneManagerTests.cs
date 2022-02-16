@@ -22,10 +22,10 @@ namespace TestProject.RuntimeTests
             return base.OnPreSetup();
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override IEnumerator OnPostTearDown()
         {
             m_BypassStartAndWaitForClients = false;
-            return base.OnTearDown();
+            return base.OnPostTearDown();
         }
 
         private class SceneTestInfo

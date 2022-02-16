@@ -49,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<TrackOnSpawnFunctions>();
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override IEnumerator OnPostTearDown()
         {
             if (m_TestNetworkObjectPrefab != null)
             {
@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Object.Destroy(m_TestNetworkObjectInstance);
             }
-            yield return base.OnTearDown();
+            yield return base.OnPostTearDown();
         }
 
         /// <summary>
