@@ -5,21 +5,23 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageRegistrationTests
     {
-
         private struct TestMessageOne : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-
             public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
             {
+                return true;
+            }
 
+            public void Handle(ref NetworkContext context)
+            {
             }
         }
 
@@ -28,15 +30,18 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-
             public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
             {
+                return true;
+            }
 
+            public void Handle(ref NetworkContext context)
+            {
             }
         }
         private class TestMessageProviderOne : IMessageProvider
@@ -48,12 +53,12 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageOne),
-                        Handler = TestMessageOne.Receive
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageOne>
                     },
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageTwo),
-                        Handler = TestMessageTwo.Receive
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageTwo>
                     }
                 };
             }
@@ -64,15 +69,18 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-
             public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
             {
+                return true;
+            }
 
+            public void Handle(ref NetworkContext context)
+            {
             }
         }
         private class TestMessageProviderTwo : IMessageProvider
@@ -84,26 +92,28 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageThree),
-                        Handler = TestMessageThree.Receive
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageThree>
                     }
                 };
             }
         }
-
         private struct TestMessageFour : INetworkMessage
         {
             public int A;
             public int B;
             public int C;
-
             public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValue(this);
             }
 
-            public static void Receive(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
             {
+                return true;
+            }
 
+            public void Handle(ref NetworkContext context)
+            {
             }
         }
         private class TestMessageProviderThree : IMessageProvider
@@ -115,7 +125,7 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageFour),
-                        Handler = TestMessageFour.Receive
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageFour>
                     }
                 };
             }
@@ -158,21 +168,17 @@ namespace Unity.Netcode.EditorTests
             using (systemTwo)
             using (systemThree)
             {
-                MessagingSystem.MessageHandler handlerOne = TestMessageOne.Receive;
-                MessagingSystem.MessageHandler handlerTwo = TestMessageTwo.Receive;
-                MessagingSystem.MessageHandler handlerThree = TestMessageThree.Receive;
-                MessagingSystem.MessageHandler handlerFour = TestMessageFour.Receive;
+                MessagingSystem.MessageHandler handlerOne = MessagingSystem.ReceiveMessage<TestMessageOne>;
+                MessagingSystem.MessageHandler handlerTwo = MessagingSystem.ReceiveMessage<TestMessageTwo>;
+                MessagingSystem.MessageHandler handlerThree = MessagingSystem.ReceiveMessage<TestMessageThree>;
+                MessagingSystem.MessageHandler handlerFour = MessagingSystem.ReceiveMessage<TestMessageFour>;
 
                 var foundHandlerOne = systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))];
 
-                Assert.AreEqual(handlerOne,
-                    systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))]);
-                Assert.AreEqual(handlerTwo,
-                    systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageTwo))]);
-                Assert.AreEqual(handlerThree,
-                    systemTwo.MessageHandlers[systemTwo.GetMessageType(typeof(TestMessageThree))]);
-                Assert.AreEqual(handlerFour,
-                    systemThree.MessageHandlers[systemThree.GetMessageType(typeof(TestMessageFour))]);
+                Assert.AreEqual(handlerOne, systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))]);
+                Assert.AreEqual(handlerTwo, systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageTwo))]);
+                Assert.AreEqual(handlerThree, systemTwo.MessageHandlers[systemTwo.GetMessageType(typeof(TestMessageThree))]);
+                Assert.AreEqual(handlerFour, systemThree.MessageHandlers[systemThree.GetMessageType(typeof(TestMessageFour))]);
             }
         }
     }
