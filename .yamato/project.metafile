@@ -7,11 +7,15 @@ test_platforms:
     type: Unity::VM
     image: package-ci/win10:stable
     flavor: b1.large
+    pathsep: \
+    standalone: StandaloneWindows64
     editorpath: .Editor\Unity.exe
     utr: .\utr.bat
   - name: mac
     type: Unity::VM::osx
     image: package-ci/mac:stable
+    pathsep: /
+    standalone: StandaloneOSX
     flavor: b1.large
     editorpath: .Editor/Unity.app/Contents/MacOS/Unity
     utr: ./utr
@@ -19,6 +23,8 @@ test_platforms:
     type: Unity::VM
     image: package-ci/ubuntu:stable
     flavor: b1.large
+    pathsep: /
+    standalone: StandaloneLinux64
     editorpath: .Editor/Unity
     utr: ./utr
 
@@ -39,9 +45,9 @@ projects:
       - 2021.2
       - 2020.3
       - trunk
-  - name: testproject-tools-integration
-    path: testproject-tools-integration
-    validate: false
-    test_editors:
-      - 2021.2
-      - trunk
+#  - name: testproject-tools-integration
+#    path: testproject-tools-integration
+#    validate: false
+#    test_editors:
+#      - 2021.2
+#      - trunk

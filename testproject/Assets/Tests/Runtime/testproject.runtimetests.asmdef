@@ -2,14 +2,11 @@
     "name": "TestProject.RuntimeTests",
     "rootNamespace": "TestProject.RuntimeTests",
     "references": [
-        "TestProject.ManualTests",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.RuntimeTests",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Unity.Netcode.Components",
-        "Sample",
-        "ClientNetworkTransform"
+        "Unity.Netcode.RuntimeTests",
+        "TestProject.ManualTests",
+        "TestProject"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -20,8 +17,6 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS",
-        "UNITY_EDITOR",
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [

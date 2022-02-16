@@ -29,7 +29,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ServerNetworkSceneManager = Server.SceneManager;
             Server.NetworkConfig.EnableSceneManagement = true;
 
-            m_ClientNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
+            m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
         }
 
         [UnityTearDown]
@@ -48,14 +48,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Load))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneLoaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneLoaded = true;
+                    serverSceneLoaded = true;
                 }
             };
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -91,7 +90,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 }
             };
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -121,7 +120,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ClientNetworkSceneManager,
                 SceneEventType.LoadComplete);
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventSent);
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -152,7 +151,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ClientNetworkSceneManager,
                 SceneEventType.LoadComplete);
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ServerMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
@@ -183,7 +182,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventType.LoadEventCompleted);
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.LoadEventCompleted.ToString()));
@@ -216,7 +215,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventType.LoadEventCompleted);
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.LoadEventCompleted.ToString()));
@@ -251,14 +250,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
+                    serverSceneLoaded = true;
                 }
             };
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.Unload.ToString()));
@@ -301,7 +299,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 }
             };
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.Unload.ToString()));
@@ -337,7 +335,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ClientNetworkSceneManager,
                 SceneEventType.UnloadComplete);
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.UnloadComplete.ToString()));
@@ -373,7 +371,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ClientNetworkSceneManager,
                 SceneEventType.UnloadComplete);
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.UnloadComplete.ToString()));
@@ -409,7 +407,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventType.UnloadEventCompleted);
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.UnloadEventCompleted.ToString()));
@@ -448,7 +446,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventType.UnloadEventCompleted);
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.UnloadEventCompleted.ToString()));
@@ -480,7 +478,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 m_ServerNetworkSceneManager,
                 SceneEventType.SynchronizeComplete);
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
@@ -516,7 +514,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Now the client is started we can grab the NetworkMetrics field from it
             var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
 
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 newClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.Synchronize.ToString()));
@@ -543,7 +541,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Now the client is started we can grab the NetworkMetrics field from it
             var newClientMetrics = newClient.NetworkMetrics as NetworkMetrics;
 
-            var waitForSentMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForSentMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 newClientMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
@@ -565,7 +563,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         [UnityTest]
         public IEnumerator TestC2SSyncCompleteReceived()
         {
-            var waitForReceivedMetric = new WaitForMetricValues<SceneEventMetric>(
+            var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(
                 ServerMetrics.Dispatcher,
                 NetworkMetricTypes.SceneEventReceived,
                 metric => metric.SceneEventType.Equals(SceneEventType.SynchronizeComplete.ToString()));
@@ -684,15 +682,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             }
 
             m_LoadedScene = SceneManager.GetSceneByName(sceneEvent.SceneName);
-            if (m_ClientNetworkSceneManager.ScenesLoaded.ContainsKey(m_LoadedScene.handle))
-            {
-                return;
-            }
-
-            // As we are running the client and the server using the multi-instance test runner we need to sync the
-            // scene handles manually here, as they share a SceneManager.
-            m_ClientNetworkSceneManager.ScenesLoaded.Add(m_LoadedScene.handle, m_LoadedScene);
-            m_ClientNetworkSceneManager.ServerSceneHandleToClientSceneHandle.Add(m_LoadedScene.handle, m_LoadedScene.handle);
         }
 
         private class WaitForSceneEvent

@@ -25,7 +25,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
+            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -397,7 +398,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, rpcMethodId);
 
-                rpcHandlers.Add((rpcMethodId, GenerateStaticHandler(methodDefinition, rpcAttribute)));
+                rpcHandlers.Add((rpcMethodId, GenerateStaticHandler(methodDefinition, rpcAttribute, rpcMethodId)));
 
                 if (isEditorOrDevelopment)
                 {
@@ -1132,18 +1133,18 @@ namespace Unity.Netcode.Editor.CodeGen
             instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
         }
 
-        private MethodDefinition GenerateStaticHandler(MethodDefinition methodDefinition, CustomAttribute rpcAttribute)
+        private MethodDefinition GenerateStaticHandler(MethodDefinition methodDefinition, CustomAttribute rpcAttribute, uint rpcMethodId)
         {
             var typeSystem = methodDefinition.Module.TypeSystem;
-            var nhandler = new MethodDefinition(
-                $"{methodDefinition.Name}__nhandler",
+            var rpcHandler = new MethodDefinition(
+                $"__rpc_handler_{rpcMethodId}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
-            nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, m_NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, m_FastBufferReader_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, m_RpcParams_TypeRef));
+            rpcHandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, m_NetworkBehaviour_TypeRef));
+            rpcHandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, m_FastBufferReader_TypeRef));
+            rpcHandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, m_RpcParams_TypeRef));
 
-            var processor = nhandler.Body.GetILProcessor();
+            var processor = rpcHandler.Body.GetILProcessor();
 
             // begin Try/Catch
             var tryStart = processor.Create(OpCodes.Nop);
@@ -1161,10 +1162,10 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            nhandler.Body.InitLocals = true;
+            rpcHandler.Body.InitLocals = true;
             // NetworkManager networkManager;
-            nhandler.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
-            int netManLocIdx = nhandler.Body.Variables.Count - 1;
+            rpcHandler.Body.Variables.Add(new VariableDefinition(m_NetworkManager_TypeRef));
+            int netManLocIdx = rpcHandler.Body.Variables.Count - 1;
 
             {
                 var returnInstr = processor.Create(OpCodes.Ret);
@@ -1233,8 +1234,8 @@ namespace Unity.Netcode.Editor.CodeGen
                 var paramType = paramDef.ParameterType;
 
                 // local variable
-                nhandler.Body.Variables.Add(new VariableDefinition(paramType));
-                int localIndex = nhandler.Body.Variables.Count - 1;
+                rpcHandler.Body.Variables.Add(new VariableDefinition(paramType));
+                int localIndex = rpcHandler.Body.Variables.Count - 1;
                 paramLocalMap[paramIndex] = localIndex;
 
                 // ServerRpcParams, ClientRpcParams
@@ -1268,8 +1269,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
 
                     // reader.ReadValueSafe(out bool isSet)
-                    nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
-                    int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
+                    rpcHandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                    int isSetLocalIndex = rpcHandler.Body.Variables.Count - 1;
                     processor.Emit(OpCodes.Ldarga, 1);
                     processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
                     processor.Emit(OpCodes.Call, boolMethodRef);
@@ -1345,8 +1346,8 @@ namespace Unity.Netcode.Editor.CodeGen
             // Get String.Format (This is equivalent to an interpolated string)
             var stringFormat = m_MainModule.ImportReference(typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }));
 
-            nhandler.Body.Variables.Add(new VariableDefinition(exception));
-            int exceptionVariableIndex = nhandler.Body.Variables.Count - 1;
+            rpcHandler.Body.Variables.Add(new VariableDefinition(exception));
+            int exceptionVariableIndex = rpcHandler.Body.Variables.Count - 1;
 
             //try ends/catch begins
             var catchEnds = processor.Create(OpCodes.Nop);
@@ -1384,7 +1385,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             processor.Emit(OpCodes.Ret);
 
-            return nhandler;
+            return rpcHandler;
         }
     }
 }

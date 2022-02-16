@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -70,8 +67,11 @@ namespace Unity.Netcode.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
-#if UNITY_UNET_PRESENT
-                var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
+                // NOTE: For now we only use SIPTransport for tests until UnityTransport
+                // has been verified working in nightly builds
+                // TODO-MTT-2486: Provide support for other transports once tested and verified
+                // working on consoles.
+                var sipTransport = NetworkManagerGameObject.AddComponent<SIPTransport>();
                 if (networkConfig == null)
                 {
                     networkConfig = new NetworkConfig
@@ -81,25 +81,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
-                unetTransport.ConnectAddress = "127.0.0.1";
-                unetTransport.ConnectPort = 7777;
-                unetTransport.ServerListenPort = 7777;
-                unetTransport.MessageBufferSize = 65535;
-                unetTransport.MaxConnections = 100;
-                unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
-#else
-                var sipTransport = NetworkManagerGameObject.AddComponent<SIPTransport>();
-                if (networkConfig == null)
-                {
-                    networkConfig = new NetworkConfig
-                    {
-                        EnableSceneManagement = false,
-                    };
-                }
-                NetworkManagerObject.NetworkConfig = networkConfig;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = sipTransport;
-#endif
 
                 // Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);

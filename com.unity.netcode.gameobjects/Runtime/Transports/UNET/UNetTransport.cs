@@ -42,6 +42,8 @@ namespace Unity.Netcode.Transports.UNET
 
         public override ulong ServerClientId => GetNetcodeClientId(0, 0, true);
 
+        internal NetworkManager NetworkManager;
+
         protected void LateUpdate()
         {
             if (UnityEngine.Networking.NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
@@ -49,7 +51,7 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_WEBGL
                 Debug.LogError("Cannot use queued sending mode for WebGL");
 #else
-                if (NetworkManager.Singleton.IsServer)
+                if (NetworkManager != null && NetworkManager.IsServer)
                 {
                     foreach (var targetClient in NetworkManager.Singleton.ConnectedClientsList)
                     {
@@ -231,8 +233,10 @@ namespace Unity.Netcode.Transports.UNET
             UnityEngine.Networking.NetworkTransport.Shutdown();
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
+            NetworkManager = networkManager;
+
             m_MessageBuffer = new byte[MessageBufferSize];
 
             UnityEngine.Networking.NetworkTransport.Init();

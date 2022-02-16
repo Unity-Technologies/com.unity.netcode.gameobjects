@@ -59,6 +59,8 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            MultiInstanceHelpers.CleanUpHandlers();
+
             m_ServerNetworkManager.Shutdown();
             foreach (var networkManager in m_ClientNetworkManagers)
             {
@@ -90,40 +92,62 @@ namespace TestProject.RuntimeTests
         public IEnumerator ValidateNetworkObjectSynchronization()
         {
             m_ServerNetworkManager.StartHost();
+            MultiInstanceHelpers.RegisterHandlers(m_ServerNetworkManager);
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
             instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
             instanceNetworkObject.Spawn();
             var serverobjectToNotDestroyBehaviour = objectInstance.GetComponent<ObjectToNotDestroyBehaviour>();
-
-            int nextFrameNumber = Time.frameCount + 32;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            var waitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            yield return waitForTick;
 
             Assert.IsTrue(objectInstance.scene.name == "DontDestroyOnLoad");
 
             foreach (var networkManager in m_ClientNetworkManagers)
             {
                 networkManager.StartClient();
+                MultiInstanceHelpers.RegisterHandlers(networkManager);
             }
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
-            nextFrameNumber = Time.frameCount + 32;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-            foreach (var networkManager in m_ClientNetworkManagers)
+            yield return waitForTick;
+            var timeOut = Time.realtimeSinceStartup + 2.0f;
+            var timedOut = false;
+            while (!timedOut)
             {
-                foreach (var spawnedObject in networkManager.SpawnManager.SpawnedObjectsList)
+                var allClientConditionsHaveBeenReached = true;
+                foreach (var networkManager in m_ClientNetworkManagers)
                 {
-                    if (spawnedObject.NetworkManager == networkManager && spawnedObject.gameObject.name.Contains("DontDestroyOnLoadObject"))
+                    foreach (var spawnedObject in networkManager.SpawnManager.SpawnedObjectsList)
                     {
-                        Assert.IsTrue(spawnedObject.gameObject.scene.name == "DontDestroyOnLoad");
-                        var objectToNotDestroyBehaviour = spawnedObject.gameObject.GetComponent<ObjectToNotDestroyBehaviour>();
-                        Assert.Greater(objectToNotDestroyBehaviour.CurrentPing, 0);
-                        Assert.AreEqual(serverobjectToNotDestroyBehaviour.CurrentPing, objectToNotDestroyBehaviour.CurrentPing);
+                        if (spawnedObject.NetworkManager == networkManager && spawnedObject.gameObject.name.Contains("DontDestroyOnLoadObject"))
+                        {
+                            if (spawnedObject.gameObject.scene.name != "DontDestroyOnLoad")
+                            {
+                                allClientConditionsHaveBeenReached = false;
+                                break;
+                            }
+                            var objectToNotDestroyBehaviour = spawnedObject.gameObject.GetComponent<ObjectToNotDestroyBehaviour>();
+                            if (objectToNotDestroyBehaviour.CurrentPing == 0 || serverobjectToNotDestroyBehaviour.CurrentPing != objectToNotDestroyBehaviour.CurrentPing)
+                            {
+                                allClientConditionsHaveBeenReached = false;
+                                break;
+                            }
+                        }
                     }
                 }
+
+                if (allClientConditionsHaveBeenReached)
+                {
+                    break;
+                }
+
+                yield return waitForTick;
+
+                timedOut = timeOut < Time.realtimeSinceStartup;
             }
+            Assert.False(timedOut, "Timed out while waiting for all client conditions to be reached!");
         }
     }
 }

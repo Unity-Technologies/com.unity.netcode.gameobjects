@@ -85,11 +85,11 @@ namespace Unity.Netcode
                 m_NetworkManager = manager;
             }
 
-            public void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery)
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
             {
             }
 
-            public void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes)
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
             {
             }
 
@@ -138,6 +138,14 @@ namespace Unity.Netcode
                 }
 
                 return !m_NetworkManager.m_StopProcessingMessages;
+            }
+
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
             }
         }
 
@@ -555,6 +563,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+
             //This 'if' should never enter
             if (SnapshotSystem != null)
             {
@@ -779,7 +789,7 @@ namespace Unity.Netcode
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
-            NetworkConfig.NetworkTransport.Initialize();
+            NetworkConfig.NetworkTransport.Initialize(this);
         }
 
         /// <summary>
@@ -1299,7 +1309,7 @@ namespace Unity.Netcode
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
-            SendMessage(message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1329,7 +1339,7 @@ namespace Unity.Netcode
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
 
-        private ulong ClientIdToTransportId(ulong clientId)
+        internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
         }
@@ -1422,7 +1432,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(in TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
         {
@@ -1445,12 +1455,12 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
-            return MessagingSystem.SendMessage(message, delivery, clientIds);
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds);
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery,
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
             ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1473,19 +1483,19 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
-                return MessagingSystem.SendMessage(message, delivery, nonServerIds, newIdx);
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
 
-            return MessagingSystem.SendMessage(message, delivery, clientIds, numClientIds);
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
         }
 
-        internal unsafe int SendMessage<T>(in T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
-            return SendMessage(message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        internal int SendMessage<T>(in T message, NetworkDelivery delivery, ulong clientId)
+        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
             // Prevent server sending to itself
@@ -1493,7 +1503,7 @@ namespace Unity.Netcode
             {
                 return 0;
             }
-            return MessagingSystem.SendMessage(message, delivery, clientId);
+            return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1614,7 +1624,7 @@ namespace Unity.Netcode
             {
                 Tick = NetworkTickSystem.ServerTime.Tick
             };
-            SendMessage(message, NetworkDelivery.Unreliable, ConnectedClientsIds);
+            SendMessage(ref message, NetworkDelivery.Unreliable, ConnectedClientsIds);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
 #endif
@@ -1666,7 +1676,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
@@ -1726,7 +1736,7 @@ namespace Unity.Netcode
                 message.ObjectInfo.Header.HasParent = false;
                 message.ObjectInfo.Header.IsPlayerObject = true;
                 message.ObjectInfo.Header.OwnerClientId = clientId;
-                var size = SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }

@@ -18,6 +18,8 @@ namespace Unity.Netcode
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
+        internal INetworkMetrics NetworkMetrics;
+
         /// <summary>
         /// Delegate for transport network events
         /// </summary>
@@ -95,6 +97,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        public abstract void Initialize();
+        /// /// <param name="networkManager">optionally pass in NetworkManager</param>
+        public abstract void Initialize(NetworkManager networkManager = null);
     }
+
+#if UNITY_INCLUDE_TESTS
+    public abstract class TestingNetworkTransport : NetworkTransport
+    {
+
+    }
+#endif
 }
