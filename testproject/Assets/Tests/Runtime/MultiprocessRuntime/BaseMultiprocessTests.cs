@@ -293,11 +293,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         }
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
                         MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is not null");
+                        initialCount = m_ConnectedClientsList.Count;
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete... waiting");
-                        yield return new WaitForSecondsRealtime(1.3f);
-                        Thread.Sleep(1300);
-                        initialCount = m_ConnectedClientsList.Count;
+                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
                         MultiprocessLogger.Log($"Done waiting... ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
                     }
                 }
@@ -316,7 +315,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                     yield return new WaitForSecondsRealtime(0.8f);
-                    Thread.Sleep(800);
                     break;
                 }
                 counter++;
@@ -353,7 +351,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $"{m_ConnectedClientsList.Count} but connected clients has increased" +
                     $" {NetworkManager.Singleton.ConnectedClients.Count}");
                 yield return new WaitForSecondsRealtime(0.8f);
-                Thread.Sleep(800);
             }
             MultiprocessLogger.Log($"UnitySetup in Base Class ... end");
         }

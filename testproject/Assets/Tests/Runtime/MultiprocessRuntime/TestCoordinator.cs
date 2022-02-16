@@ -190,7 +190,7 @@ public class TestCoordinator : NetworkBehaviour
         float deltaTime = Time.deltaTime;
         m_NumberOfCallsToFixedUpdate++;
         m_FixedUpdateDeltaTime.Add(deltaTime);
-        if (deltaTime > 0.5f)
+        if (deltaTime > 0.4f)
         {
             LogInformation($"FixedUpdate - Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
         }
@@ -222,10 +222,13 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
 
-        if (deltaTime > 0.4f || m_Stopwatch.ElapsedMilliseconds > 2500)
+        if (!IsServer)
         {
-            m_Stopwatch.Restart();
-            LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            if (m_NumberOfCallsToUpdate % 5 == 0 || m_Stopwatch.ElapsedMilliseconds > 1000)
+            {
+                m_Stopwatch.Restart();
+                LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            }
         }
     }
 
