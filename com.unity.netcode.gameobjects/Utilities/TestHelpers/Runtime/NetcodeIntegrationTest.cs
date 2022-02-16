@@ -156,8 +156,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void ShutdownAndCleanUp()
         {
-            DestroySceneNetworkObjects();
-
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
@@ -178,6 +176,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_PlayerPrefab = null;
                 }
             }
+
+            // Cleanup any remaining NetworkObjects
+            DestroySceneNetworkObjects();
 
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
