@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.RuntimeTests.Serialization
 {
     public class FastBufferWriterTests : BaseFastBufferReaderWriterTest
     {

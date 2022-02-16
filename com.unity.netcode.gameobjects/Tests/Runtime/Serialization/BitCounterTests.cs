@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.RuntimeTests.Serialization
 {
     public class BitCounterTests
     {

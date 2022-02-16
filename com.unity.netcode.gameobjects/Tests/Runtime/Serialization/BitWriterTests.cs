@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Unity.Collections;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.RuntimeTests.Serialization
 {
     public class BitWriterTests
     {

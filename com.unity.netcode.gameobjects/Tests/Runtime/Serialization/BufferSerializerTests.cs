@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.RuntimeTests.Serialization
 {
     public class BufferSerializerTests
     {
