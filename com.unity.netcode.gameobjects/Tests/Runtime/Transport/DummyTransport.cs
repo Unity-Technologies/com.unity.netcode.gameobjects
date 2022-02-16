@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.RuntimeTests
 {
     internal class DummyTransport : TestingNetworkTransport
     {
