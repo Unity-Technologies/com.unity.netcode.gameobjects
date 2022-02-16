@@ -44,14 +44,9 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                // add test component
-                playerPrefab.AddComponent<TrackOnSpawnFunctions>();
-            });
+            m_PlayerPrefab.AddComponent<TrackOnSpawnFunctions>();
         }
 
         protected override IEnumerator OnTearDown()

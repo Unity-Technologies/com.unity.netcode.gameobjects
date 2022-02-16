@@ -99,12 +99,10 @@ namespace Unity.Netcode.RuntimeTests
             m_EnsureLengthSafety = ensureLengthSafety;
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPreSetup()
         {
             m_BypassStartAndWaitForClients = true;
-
-            yield return base.Setup();
+            return base.OnPreSetup();
         }
 
         /// <summary>

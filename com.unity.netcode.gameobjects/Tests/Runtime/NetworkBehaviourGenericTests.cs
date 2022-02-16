@@ -12,13 +12,12 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkBehaviourGenericTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 0;
-        public override IEnumerator Setup()
+
+        protected override IEnumerator OnPreSetup()
         {
             // Make sure we don't automatically start
             m_BypassStartAndWaitForClients = true;
-
-            // Create the Host and add the SimpleNetworkBehaviour component
-            yield return base.Setup();
+            return base.OnPreSetup();
         }
 
         public class SimpleNetworkBehaviour : NetworkBehaviour

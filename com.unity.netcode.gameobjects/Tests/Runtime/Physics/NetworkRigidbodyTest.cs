@@ -23,17 +23,13 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
         public abstract bool Kinematic { get; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<NetworkTransform>();
-                playerPrefab.AddComponent<Rigidbody>();
-                playerPrefab.AddComponent<NetworkRigidbody>();
-                playerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-                playerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
-            });
+            m_PlayerPrefab.AddComponent<NetworkTransform>();
+            m_PlayerPrefab.AddComponent<Rigidbody>();
+            m_PlayerPrefab.AddComponent<NetworkRigidbody>();
+            m_PlayerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
+            m_PlayerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
         }
 
         /// <summary>

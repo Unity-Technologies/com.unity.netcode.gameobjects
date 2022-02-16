@@ -29,13 +29,9 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 1;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<RpcTestNB>();
-            });
+            m_PlayerPrefab.AddComponent<RpcTestNB>();
         }
 
         [UnityTest]

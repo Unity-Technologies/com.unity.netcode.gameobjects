@@ -44,12 +44,12 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NbClients => 1;
-
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPreSetup()
         {
+            // This makes sure the server and client are not started during the setup
+            // period of this particular test iteration
             m_BypassStartAndWaitForClients = true;
-            yield return base.Setup();
+            yield return base.OnPreSetup();
         }
 
 

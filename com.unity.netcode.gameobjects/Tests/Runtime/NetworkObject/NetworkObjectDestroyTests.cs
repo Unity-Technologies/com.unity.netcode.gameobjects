@@ -17,15 +17,6 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NbClients => 1;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
-        {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                // playerPrefab.AddComponent<TestDestroy>();
-            });
-        }
-
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
         /// </summary>

@@ -50,15 +50,10 @@ namespace Unity.Netcode.RuntimeTests
         private List<NetworkObject> m_NetSpawnedObjectOnClient = new List<NetworkObject>();
         private GameObject m_TestNetworkPrefab;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var networkTransform = playerPrefab.AddComponent<HiddenVariableTest>();
-                    m_TestNetworkPrefab = PreparePrefab();
-                });
+            var networkTransform = m_PlayerPrefab.AddComponent<HiddenVariableTest>();
+            m_TestNetworkPrefab = PreparePrefab();
         }
 
         public GameObject PreparePrefab()

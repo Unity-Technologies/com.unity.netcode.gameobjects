@@ -44,15 +44,10 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var networkTransform = playerPrefab.AddComponent<NetworkShowHideTest>();
-                    m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
-                });
+            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTest>();
+            m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
         }
 
         public GameObject PreparePrefab(Type type)

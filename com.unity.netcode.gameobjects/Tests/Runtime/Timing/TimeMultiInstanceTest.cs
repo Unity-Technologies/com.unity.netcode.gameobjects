@@ -21,10 +21,9 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NbClients => 2;
 
-        // we need to change frame rate which is done in startup so removing this from here and moving into the test.
-        public override IEnumerator Setup()
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            yield break;
+            return NetworkManagerInstatiationMode.DoNotCreate;
         }
 
         private void UpdateTimeStates(NetworkManager[] networkManagers)
@@ -90,6 +89,8 @@ namespace Unity.Netcode.RuntimeTests
                 // compares the two client times, only difference should be based on buffering.
                 m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
             }
+
+            ShutdownAndCleanUp();
         }
 
         // This is from NetcodeIntegrationTest but we need a custom version of this to modifiy the config

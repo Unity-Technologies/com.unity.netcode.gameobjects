@@ -18,10 +18,14 @@ namespace TestProject.RuntimeTests
 
         protected override int NbClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            yield break;
+            return NetworkManagerInstatiationMode.DoNotCreate;
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            ShutdownAndCleanUp();
         }
 
         [UnityTest]

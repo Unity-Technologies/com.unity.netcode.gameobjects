@@ -16,11 +16,10 @@ namespace TestProject.RuntimeTests
     {
         protected override int NbClients => 9;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPreSetup()
         {
             m_ShouldWaitList = new List<SceneTestInfo>();
-            return base.Setup();
+            return base.OnPreSetup();
         }
 
         protected override IEnumerator OnTearDown()
@@ -75,7 +74,7 @@ namespace TestProject.RuntimeTests
             m_BypassStartAndWaitForClients = true;
 
             // Now just create the instances (server and client) without starting anything
-            yield return Setup();
+            yield return SetUp();
 
             // This provides both host and server coverage, when a server we should still get SceneEventType.LoadEventCompleted and SceneEventType.UnloadEventCompleted events
             // but the client count as a server should be 1 less than when a host
@@ -736,7 +735,7 @@ namespace TestProject.RuntimeTests
             m_BypassStartAndWaitForClients = true;
 
             // Now just create the instances (server and client) without starting anything
-            yield return Setup();
+            yield return SetUp();
 
             // Start the host and  clients
             if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))

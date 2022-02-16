@@ -14,10 +14,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
         static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
-        public enum NetworkManagerIntegrationTestMode
+        public enum NetworkManagerInstatiationMode
         {
-            NewInstancePerTest,     // This will create new NetworkManagers for each test within a child derived class
-            OneInstanceForAllTests, // This will create one set of NetworkManagers used for all tests within a child derived class
+            PerTest,        // This will create and destroy new NetworkManagers for each test within a child derived class
+            AllTests,       // This will create one set of NetworkManagers used for all tests within a child derived class (destroyed once all tests are finished)
+            DoNotCreate     // This will not create any NetworkManagers, it is up to the derived class to manage.
         }
 
 
@@ -28,7 +29,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_BypassStartAndWaitForClients = false;
         protected const uint k_DefaultTickRate = 30;
 
-        private NetworkManagerIntegrationTestMode m_NetworkManagerIntegrationTestMode;
+        private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
         /// <summary>
         /// An update to the original NetcodeIntegrationTestHelpers.WaitForCondition that:
@@ -96,11 +97,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
         }
 
-        protected virtual NetworkManagerIntegrationTestMode OnSetIntegrationTestMode()
+        protected virtual NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            return NetworkManagerIntegrationTestMode.NewInstancePerTest;
+            return NetworkManagerInstatiationMode.PerTest;
         }
 
+        /// <summary>
+        /// Called from
+        /// </summary>
         protected virtual void OnOneTimeSetup()
         {
         }
@@ -108,35 +112,42 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            m_NetworkManagerIntegrationTestMode = OnSetIntegrationTestMode();
+            m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
             OnOneTimeSetup();
         }
 
-        [UnitySetUp]
-        public virtual IEnumerator Setup()
+        protected virtual IEnumerator OnPreSetup()
         {
-            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.OneInstanceForAllTests)
+            yield return null;
+        }
+
+        protected virtual IEnumerator OnPostSetup()
+        {
+            yield return null;
+        }
+
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+            yield return OnPreSetup();
+
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
             {
                 if (m_ServerNetworkManager == null)
                 {
                     yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
                 }
             }
-
-            yield return s_DefaultWaitForTick;
-
-            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.NewInstancePerTest)
+            else
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
             }
 
-            if (m_ServerNetworkManager != null)
-            {
-                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-            }
+            yield return OnPostSetup();
         }
 
-        private void ShutdownAndCleanUp()
+        protected void ShutdownAndCleanUp()
         {
             // Shutdown and clean up both of our NetworkManager instances
             try
@@ -181,7 +192,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            if(m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.NewInstancePerTest)
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 ShutdownAndCleanUp();
             }
@@ -199,7 +210,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             OnOneTimeTearDown();
 
-            if (m_NetworkManagerIntegrationTestMode == NetworkManagerIntegrationTestMode.OneInstanceForAllTests)
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
             {
                 ShutdownAndCleanUp();
             }
@@ -262,6 +273,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Override this to add components (or the like) to the default player prefab
+        /// </summary>
+        protected virtual void OnCreatePlayerPrefab()
+        {
+
+        }
+
+        private void CreatePlayerPrefab()
+        {
+            // Create playerPrefab
+            m_PlayerPrefab = new GameObject("Player");
+            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
+
+            // Make it a prefab
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+
+            OnCreatePlayerPrefab();
+        }
+
+        /// <summary>
         /// Utility to spawn some clients and a server and set them up
         /// </summary>
         /// <param name="nbClients"></param>
@@ -289,19 +320,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
 
-            // Create playerPrefab
-            m_PlayerPrefab = new GameObject("Player");
-            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            /*
-             * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
-             * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
-             * MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
-             * treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
-             * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
-             */
-            // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            CreatePlayerPrefab();
 
+            // NSS-TODO: Remove this
             if (updatePlayerPrefab != null)
             {
                 updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
@@ -317,6 +338,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (!m_BypassStartAndWaitForClients)
             {
+
+                if (m_ServerNetworkManager != null)
+                {
+                    s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+                }
+
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
                 if (!NetcodeIntegrationTestHelpers.Start(useHost, server, clients))

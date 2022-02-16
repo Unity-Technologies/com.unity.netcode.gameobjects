@@ -24,10 +24,9 @@ namespace TestProject.RuntimeTests
 
         protected override int NbClients => 1;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            yield break; // ignore
+            return NetworkManagerInstatiationMode.DoNotCreate;
         }
 
         /// <summary>
@@ -103,8 +102,7 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(m_UserSerializableStruct.MyulongValue, userSerializableStruct.MyulongValue + 1);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -209,8 +207,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -339,8 +336,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -483,9 +479,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
-
+            ShutdownAndCleanUp();
         }
 
         /// <summary>

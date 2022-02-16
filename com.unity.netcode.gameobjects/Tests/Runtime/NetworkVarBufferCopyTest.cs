@@ -101,17 +101,16 @@ namespace Unity.Netcode.RuntimeTests
             s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPreSetup()
         {
             s_ClientDummyNetBehavioursSpawned.Clear();
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var dummyNetBehaviour = playerPrefab.AddComponent<DummyNetBehaviour>();
-                });
+            return base.OnPreSetup();
         }
 
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
+        }
 
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
