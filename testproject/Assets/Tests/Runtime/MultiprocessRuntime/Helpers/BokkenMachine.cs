@@ -336,7 +336,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log(s);
                 return s;
             }
-            else if (Type.Contains("ubuntu"))
+            else if (Image.Contains("ubuntu"))
             {
                 LogPath = Path.Combine(@"/home/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
                 string s = $" --command exec " +
@@ -345,7 +345,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log(s);
                 return s;
             }
-            return "";
+            else
+            {
+                throw new NotImplementedException("Unknown Image or Type, no launch command available");
+            }
         }
     }
 
