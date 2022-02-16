@@ -92,6 +92,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return defaultWindows;
         }
 
+        //GetDefaultLinux
+        public static BokkenMachine GetDefaultLinux(string name)
+        {
+            var defaultWindows = new BokkenMachine();
+            defaultWindows.Type = "Unity::VM";
+            defaultWindows.Image = "package-ci/ubuntu:stable";
+            defaultWindows.Flavor = "b1.large";
+            defaultWindows.Name = name;
+            return defaultWindows;
+        }
+
         public static BokkenMachine Parse(string shortcut)
         {
             BokkenMachine bokkenMachine = null;
@@ -105,6 +116,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else if (type.Equals("default-win"))
             {
                 bokkenMachine = GetDefaultWin(name);
+            }
+            else if (type.Equals("default-linux"))
+            {
+                bokkenMachine = GetDefaultLinux(name);
             }
 
             return bokkenMachine;
@@ -318,6 +333,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 string s = $" --command exec " +
                     $"--input-path {PathToJson} " +
                     $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app/Contents/MacOS/testproject -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -testname {testName} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
+                MultiprocessLogger.Log(s);
+                return s;
+            }
+            else if (Type.Contains("ubuntu"))
+            {
+                LogPath = Path.Combine(@"/home/bokken/.multiprocess", $"logfile-mp-{DateTimeOffset.Now.ToUnixTimeSeconds()}.log");
+                string s = $" --command exec " +
+                    $"--input-path {PathToJson} " +
+                    $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -testname {testName} -popupwindow -screen-width 100 -screen-height 100 -p 3076 -ip {ip}\"";
                 MultiprocessLogger.Log(s);
                 return s;
             }
