@@ -132,6 +132,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
+
+        [MenuItem(MultiprocessBaseMenuName + "/Build Linux")]
+        public static void BuildLinux()
+        {
+            var report = BuildPlayerUtility(BuildTarget.StandaloneLinux64, "");
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
+            }
+        }
 #endif
 
         [Serializable]
