@@ -1105,14 +1105,14 @@ namespace TestProject.RuntimeTests
     /// <summary>
     /// Use this test group for validating NetworkSceneManager fixes.
     /// </summary>
-    public class NetworkSceneManagerFixValidationTests : BaseMultiInstanceTest
+    public class NetworkSceneManagerFixValidationTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 0;
 
-        public override IEnumerator Setup()
+        protected override IEnumerator OnPreSetup()
         {
             m_BypassStartAndWaitForClients = true;
-            return base.Setup();
+            return base.OnPreSetup();
         }
 
         /// <summary>
@@ -1124,7 +1124,7 @@ namespace TestProject.RuntimeTests
         {
             var gameObject = new GameObject();
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = gameObject });
 
@@ -1134,7 +1134,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the host and clients
-            if (!MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+            if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
