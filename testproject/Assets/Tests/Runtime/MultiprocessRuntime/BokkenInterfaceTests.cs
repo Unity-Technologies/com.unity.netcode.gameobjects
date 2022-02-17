@@ -6,18 +6,12 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
-    // [TestFixture(1, new string[] { "default-win:test-win" })]
-    // [TestFixture(2, new string[] { "default-mac:test-mac" })]
-    // [TestFixture(3, new string[] { "default-win:test-win"  , "default-mac:test-mac" })]
-    // [TestFixture(4, new string[] { "default-win:test-win"  , "default-win:test-win2" })]
-    // [TestFixture(5, new string[] { "default-mac:test-mac2" , "default-mac:test-mac" })]
     public class BokkenInterfaceTests : BaseMultiprocessTests
     {
         protected override bool IsPerformanceTest => false;
 
         public BokkenInterfaceTests()
         {
-            MultiprocessLogger.Log("Bokken Interface Tests ... Constructor");
             if (!MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 Assert.Ignore("Bokken Interface Tests not enabled");
@@ -33,11 +27,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public IEnumerator SetupBokkenInterfaceTests()
         {
-            while (IsSceneLoading)
-            {
-                MultiprocessLogger.Log($"Waiting on IsSceneLoading {IsSceneLoading} and {m_HasSceneLoaded}");
-                yield return new WaitForSecondsRealtime(1.0f);
-            }
+            yield return new WaitUntil(() => !IsSceneLoading);
         }
 
         [UnityTest]

@@ -175,23 +175,32 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
             if (!args[0].ToString().Contains("POST call")) // If we have to log that the logging system is acting up, don't post that as it would just make a never ending cycle
             {
-                var webLog = new WebLog();
-                webLog.Message = $"{testName} {args[0].ToString()}";
-                if (webLog.Message.Length > 1000)
+                string remainingMessage = $"{testName} {args[0].ToString()}";
+                while (remainingMessage.Length > 0)
                 {
-                    webLog.Message = webLog.Message.Substring(0, 999);
-                }
-                webLog.ReferenceId = JobId;
-                webLog.EventId = s_EventIdCounter++;
-                webLog.TestMethod = testName;
-                webLog.TestClass = testClass;
-                webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
-                // string json = JsonUtility.ToJson(webLog);
-                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-                Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
-                lock (k_Tasklock)
-                {
-                    s_AllTasks.Add(t);
+                    var webLog = new WebLog();
+                    if (remainingMessage.Length > 1000)
+                    {
+                        webLog.Message = $"{remainingMessage.Length} {remainingMessage.Substring(0, 999)}";
+                        remainingMessage = remainingMessage.Substring(999);
+                    }
+                    else
+                    {
+                        webLog.Message = remainingMessage;
+                        remainingMessage = "";
+                    }
+
+                    webLog.ReferenceId = JobId;
+                    webLog.EventId = s_EventIdCounter++;
+                    webLog.TestMethod = testName;
+                    webLog.TestClass = testClass;
+                    webLog.ClientEventDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+                    var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                    Task t = PostBasicAsync(webLog, cancelAfterDelay.Token);
+                    lock (k_Tasklock)
+                    {
+                        s_AllTasks.Add(t);
+                    }
                 }
             }
         }

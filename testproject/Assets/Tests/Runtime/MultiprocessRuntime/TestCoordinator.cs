@@ -235,7 +235,6 @@ public class TestCoordinator : NetworkBehaviour
     private void LogInformation(string extraMessage = "")
     {
         MultiprocessLogger.Log($"\n" +
-                $"NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name};" +
                 $" isConnectedClient: {NetworkManager.Singleton.IsConnectedClient}; " +
                 $" isClient: {m_IsClient}/{IsClient}; " +
                 $" isServer: {IsServer};\n " +

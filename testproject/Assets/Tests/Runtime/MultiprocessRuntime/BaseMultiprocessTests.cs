@@ -271,13 +271,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                             var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
                             machines.Add(machine);
                         });
-                        MultiprocessLogger.Log($"Task {provisionTask.Id} is for {platform}");
                         tasks.Add(provisionTask);
                     }
 
                     foreach (var task in tasks)
                     {
-                        MultiprocessLogger.Log($"Task id {task.Id}");
                         task.Wait();
                     }
 
