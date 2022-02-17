@@ -263,15 +263,17 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        public delegate void BeforeClientStartCallback();
+
         /// <summary>
         /// Starts NetworkManager instances created by the Create method.
         /// </summary>
         /// <param name="host">Whether or not to create a Host instead of Server</param>
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
-        /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
+        /// <param name="callback">called immediately after server is started and before client(s) are started</param>
         /// <returns></returns>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
         {
             if (s_IsStarted)
             {
@@ -292,6 +294,8 @@ namespace Unity.Netcode.RuntimeTests
 
             // if set, then invoke this for the server
             RegisterHandlers(server);
+
+            callback?.Invoke();
 
             for (int i = 0; i < clients.Length; i++)
             {
