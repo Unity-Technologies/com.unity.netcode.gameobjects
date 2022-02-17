@@ -14,6 +14,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
+- Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
+- Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
 - Disallowed async keyword in RPCs (#1681)
 - Fixed an issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
 - Fixed messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
