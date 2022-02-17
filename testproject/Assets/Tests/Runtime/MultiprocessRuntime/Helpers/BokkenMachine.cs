@@ -151,11 +151,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        public static void FetchAllLogFiles()
+        public static void FetchAllLogFiles(string counterPrefixString)
         {
             DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
-            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.FullName}");
-            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.GetFiles("*.json").Length}");
+            MultiprocessLogger.Log($"{counterPrefixString}.1 FetchAllLogFiles: {multiprocessAppDataDir.FullName} {multiprocessAppDataDir.GetFiles("*.json").Length}");
             foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
             {
                 MultiprocessLogger.Log($"Getting log files from {f.FullName}");
@@ -192,7 +191,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else
                 {
                     deletionList.Add(process);
-                    MultiprocessLogger.Log($" Deletion list for BokkenMachine process is now {deletionList.Count}");
+                    MultiprocessLogger.Log($"Deletion list for BokkenMachine process is now {deletionList.Count}");
                 }
             }
 
@@ -267,6 +266,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (waitForResult)
             {
                 workerProcess.WaitForExit(timeToWait);
+                MultiprocessLogger.Log($"ExitCode from workerProcess is {workerProcess.ExitCode}");
                 if (logStdOut)
                 {
                     string so = workerProcess.StandardOutput.ReadToEnd();

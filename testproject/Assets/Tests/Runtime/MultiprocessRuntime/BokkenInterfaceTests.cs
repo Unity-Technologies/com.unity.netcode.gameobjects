@@ -12,7 +12,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public BokkenInterfaceTests()
         {
-            if (!MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            if (!m_LaunchRemotely)
             {
                 Assert.Ignore("Bokken Interface Tests not enabled");
             }
