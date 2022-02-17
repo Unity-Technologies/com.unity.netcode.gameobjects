@@ -447,8 +447,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             try
             {
                 MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {m_LaunchRemotely}");
-                BokkenMachine.FetchAllLogFiles("3");
-                MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
+                if (m_LaunchRemotely)
+                {
+                    BokkenMachine.FetchAllLogFiles("3");
+                    MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
+                }
                 MultiprocessLogger.Log($"4/20 - NetworkManager.Singleton.Shutdown");
                 if (NetworkManager.Singleton != null)
                 {

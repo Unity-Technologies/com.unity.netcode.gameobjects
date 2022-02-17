@@ -153,12 +153,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static void FetchAllLogFiles(string counterPrefixString)
         {
-            DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
-            MultiprocessLogger.Log($"{counterPrefixString}.1 FetchAllLogFiles: {multiprocessAppDataDir.FullName} {multiprocessAppDataDir.GetFiles("*.json").Length}");
-            foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
+            try
             {
-                MultiprocessLogger.Log($"Getting log files from {f.FullName}");
-                ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
+                MultiprocessLogger.Log($"{counterPrefixString}.1 FetchAllLogFiles");
+                DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
+                MultiprocessLogger.Log($"{counterPrefixString}.2 FetchAllLogFiles: {multiprocessAppDataDir.FullName} {multiprocessAppDataDir.GetFiles("*.json").Length}");
+                foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
+                {
+                    MultiprocessLogger.Log($"{counterPrefixString}.3 Getting log files from {f.FullName}");
+                    ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
+                }
+            } catch (Exception e)
+            {
+                MultiprocessLogger.Log($"FetchAllLogFiles threw exception {e.Message} {e.StackTrace}");
             }
         }
 
