@@ -26,7 +26,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
         protected abstract int NbClients { get; }
-        protected bool m_BypassStartAndWaitForClients = false;
         protected const uint k_DefaultTickRate = 30;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
@@ -300,14 +299,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnCreatePlayerPrefab();
         }
 
-        /// <summary>
-        /// Utility to spawn some clients and a server and set them up
-        /// </summary>
-        /// <param name="nbClients"></param>
-        /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
-        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running. Will be reset on teardown.</param>
-        /// <returns></returns>
-        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
+        protected virtual void OnServerAndClientsCreated()
+        {
+        }
+
+        protected void CreateServerAndClients(int nbClients, int targetFrameRate = 60)
         {
             // Create multiple NetworkManager instances
             if (!NetcodeIntegrationTestHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
@@ -319,6 +315,31 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
 
+            if (m_ServerNetworkManager != null)
+            {
+                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            }
+
+            OnServerAndClientsCreated();
+        }
+
+        protected virtual bool CanStartServerAndClients()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Utility to spawn some clients and a server and set them up
+        /// </summary>
+        /// <param name="nbClients"></param>
+        /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running. Will be reset on teardown.</param>
+        /// <returns></returns>
+        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
+        {
+
+            CreateServerAndClients(nbClients);
+
             CreatePlayerPrefab();
 
             // NSS-TODO: Remove this
@@ -328,24 +349,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
-            for (int i = 0; i < clients.Length; i++)
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
-                clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                m_ClientNetworkManagers[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            if (!m_BypassStartAndWaitForClients)
+            if (CanStartServerAndClients())
             {
-
-                if (m_ServerNetworkManager != null)
-                {
-                    s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-                }
-
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!NetcodeIntegrationTestHelpers.Start(useHost, server, clients))
+                if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
@@ -354,10 +369,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 RegisterSceneManagerHandler();
 
                 // Wait for connection on client side
-                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
                 // Wait for connection on server side
-                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, useHost ? nbClients + 1 : nbClients);
             }
         }
 

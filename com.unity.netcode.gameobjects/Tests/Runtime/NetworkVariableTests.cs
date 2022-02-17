@@ -99,10 +99,9 @@ namespace Unity.Netcode.RuntimeTests
             m_EnsureLengthSafety = ensureLengthSafety;
         }
 
-        protected override IEnumerator OnPreSetup()
+        protected override bool CanStartServerAndClients()
         {
-            m_BypassStartAndWaitForClients = true;
-            return base.OnPreSetup();
+            return false;
         }
 
         /// <summary>

@@ -1,4 +1,3 @@
-using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -13,11 +12,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NbClients => 0;
 
-        protected override IEnumerator OnPreSetup()
+        protected override bool CanStartServerAndClients()
         {
-            // Make sure we don't automatically start
-            m_BypassStartAndWaitForClients = true;
-            return base.OnPreSetup();
+            return false;
         }
 
         public class SimpleNetworkBehaviour : NetworkBehaviour

@@ -22,12 +22,6 @@ namespace TestProject.RuntimeTests
             return base.OnPreSetup();
         }
 
-        protected override IEnumerator OnPostTearDown()
-        {
-            m_BypassStartAndWaitForClients = false;
-            return base.OnPostTearDown();
-        }
-
         private class SceneTestInfo
         {
             public bool ShouldWait;
@@ -46,7 +40,7 @@ namespace TestProject.RuntimeTests
         private const string k_AdditiveScene2 = "AdditiveScene1";
 
         private List<Scene> m_ScenesLoaded = new List<Scene>();
-
+        private bool m_CanStartServerAndClients = false;
 
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
@@ -55,6 +49,11 @@ namespace TestProject.RuntimeTests
         {
             Host,
             Server
+        }
+
+        protected override bool CanStartServerAndClients()
+        {
+            return m_CanStartServerAndClients;
         }
 
         /// <summary>
@@ -69,9 +68,6 @@ namespace TestProject.RuntimeTests
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
-
-            // We set this to true in order to bypass the automatic starting of the host and clients
-            m_BypassStartAndWaitForClients = true;
 
             // Now just create the instances (server and client) without starting anything
             yield return SetUp();
@@ -409,6 +405,16 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SceneVerifyBeforeLoadTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
+            m_CanStartServerAndClients = true;
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return Teardown();
+
+            // Give a little time for handling clean-up and the like
+            yield return s_DefaultWaitForTick;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return SetUp();
+
             m_ClientVerificationAction = ClientVerifySceneBeforeLoading;
             m_ServerVerificationAction = ServerVerifySceneBeforeLoading;
 
@@ -485,7 +491,7 @@ namespace TestProject.RuntimeTests
             yield return new WaitWhile(ShouldWait);
             Assert.IsFalse(m_TimedOut);
 
-            yield break;
+            m_CanStartServerAndClients = false;
         }
 
         private IEnumerator LoadScene(string sceneName)
@@ -550,6 +556,16 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
         {
+
+            m_CanStartServerAndClients = true;
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return Teardown();
+
+            yield return s_DefaultWaitForTick;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return SetUp();
+
             m_MultiSceneTest = true;
             m_ClientVerificationAction = DataPoolVerifySceneClient;
             m_ServerVerificationAction = DataPoolVerifySceneServer;
@@ -590,7 +606,7 @@ namespace TestProject.RuntimeTests
             }
             SceneManager.SetActiveScene(currentlyActiveScene);
             m_MultiSceneTest = false;
-            yield break;
+            m_CanStartServerAndClients = false;
         }
 
         private class SceneEventNotificationTestInfo
@@ -730,9 +746,6 @@ namespace TestProject.RuntimeTests
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
-
-            // We set this to true in order to bypass the automatic starting of the host and clients
-            m_BypassStartAndWaitForClients = true;
 
             // Now just create the instances (server and client) without starting anything
             yield return SetUp();
@@ -1109,10 +1122,9 @@ namespace TestProject.RuntimeTests
     {
         protected override int NbClients => 0;
 
-        protected override IEnumerator OnPreSetup()
+        protected override bool CanStartServerAndClients()
         {
-            m_BypassStartAndWaitForClients = true;
-            return base.OnPreSetup();
+            return false;
         }
 
         /// <summary>

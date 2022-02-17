@@ -44,14 +44,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NbClients => 1;
-        protected override IEnumerator OnPreSetup()
+        protected override bool CanStartServerAndClients()
         {
-            // This makes sure the server and client are not started during the setup
-            // period of this particular test iteration
-            m_BypassStartAndWaitForClients = true;
-            yield return base.OnPreSetup();
+            return false;
         }
-
 
         public IEnumerator InitializeServerAndClients()
         {
