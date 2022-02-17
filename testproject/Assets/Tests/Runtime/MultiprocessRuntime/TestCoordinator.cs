@@ -245,6 +245,11 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void QuitApplication(string reason)
     {
+        if (NetworkManager.Singleton != null)
+        {
+            MultiprocessLogger.Log("Shutting down Netcode library");
+            NetworkManager.Singleton.Shutdown();
+        }
 #if UNITY_EDITOR
         MultiprocessLogger.Log($"Setting UnityEditor isPlaying to false for pid {s_ProcessId} because {reason}");
         UnityEditor.EditorApplication.isPlaying = false;
