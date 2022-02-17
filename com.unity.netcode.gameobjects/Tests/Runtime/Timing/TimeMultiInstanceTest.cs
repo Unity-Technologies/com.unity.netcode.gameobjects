@@ -145,12 +145,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
         }
 
-        private IEnumerator WaitForFrames(int count)
-        {
-            int nextFrameNumber = Time.frameCount + count;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-        }
-
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>
         {
             public NetworkTime LocalTime { get; }
