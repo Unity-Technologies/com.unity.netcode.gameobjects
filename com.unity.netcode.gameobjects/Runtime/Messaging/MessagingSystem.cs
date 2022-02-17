@@ -377,7 +377,7 @@ namespace Unity.Netcode
 
             var header = new MessageHeader
             {
-                MessageSize = (ushort)tmpSerializer.Length,
+                MessageSize = (uint)tmpSerializer.Length,
                 MessageType = m_MessageTypes[typeof(TMessageType)],
             };
             BytePacker.WriteValueBitPacked(headerSerializer, header.MessageType);
