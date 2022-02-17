@@ -13,18 +13,18 @@ namespace Unity.Netcode
         /// Called before an individual message is sent.
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
-        /// <param name="messageType">The type of the message being sent</param>
+        /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
-        void OnBeforeSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery);
+        void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage;
 
         /// <summary>
         /// Called after an individual message is sent.
         /// </summary>
         /// <param name="clientId">The destination clientId</param>
-        /// <param name="messageType">The type of the message being sent</param>
+        /// <param name="message">The message being sent</param>
         /// <param name="delivery"></param>
         /// <param name="messageSizeBytes">Number of bytes in the message, not including the message header</param>
-        void OnAfterSendMessage(ulong clientId, Type messageType, NetworkDelivery delivery, int messageSizeBytes);
+        void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage;
 
         /// <summary>
         /// Called before an individual message is received.
@@ -93,5 +93,23 @@ namespace Unity.Netcode
         /// <param name="messageType">The type of the message</param>
         /// <returns></returns>
         bool OnVerifyCanReceive(ulong senderId, Type messageType);
+
+        /// <summary>
+        /// Called after a message is serialized, but before it's handled.
+        /// Differs from OnBeforeReceiveMessage in that the actual message object is passed and can be inspected.
+        /// </summary>
+        /// <param name="message">The message object</param>
+        /// <param name="context">The network context the message is being ahandled in</param>
+        /// <typeparam name="T"></typeparam>
+        void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
+
+        /// <summary>
+        /// Called after a message is serialized and handled.
+        /// Differs from OnAfterReceiveMessage in that the actual message object is passed and can be inspected.
+        /// </summary>
+        /// <param name="message">The message object</param>
+        /// <param name="context">The network context the message is being ahandled in</param>
+        /// <typeparam name="T"></typeparam>
+        void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage;
     }
 }

@@ -38,15 +38,6 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
-        {
-            if (sceneName.StartsWith("InitTestScene"))
-            {
-                return false;
-            }
-            return true;
-        }
-
         [UnitySetUp]
         public IEnumerator Setup()
         {
@@ -92,14 +83,6 @@ namespace TestProject.RuntimeTests
 
             // Start server and client NetworkManager instances
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
-
-            // Register our scene verification delegate handler so we don't load the unit test scene
-            m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            foreach (var entry in m_ClientNetworkManagers)
-            {
-                // Register our scene verification delegate handler so we don't load the unit test scene
-                entry.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            }
 
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
