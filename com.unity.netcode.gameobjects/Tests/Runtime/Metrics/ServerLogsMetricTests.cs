@@ -19,9 +19,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
-            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
+            var waitForSentMetric = new WaitForEventMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
 
             var message = Guid.NewGuid().ToString();
+            Client.LogLevel = LogLevel.Developer;
+            Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
 
             yield return waitForSentMetric.WaitForMetricsReceived();
@@ -38,9 +40,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogReceivedMetric()
         {
-            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ServerLogReceived);
+            var waitForReceivedMetric = new WaitForEventMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ServerLogReceived);
 
             var message = Guid.NewGuid().ToString();
+            Client.LogLevel = LogLevel.Developer;
+            Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();

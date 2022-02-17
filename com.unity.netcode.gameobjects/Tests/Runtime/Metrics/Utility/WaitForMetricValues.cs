@@ -8,52 +8,21 @@ using Unity.Multiplayer.Tools.NetStats;
 
 namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 {
-    internal class WaitForMetricValues<TMetric> : IMetricObserver
+    internal abstract class WaitForMetricValues<TMetric> : IMetricObserver
     {
-        readonly string m_MetricName;
-        bool m_Found;
-        bool m_HasError;
-        string m_Error;
-        uint m_NbFrames = 0;
-        IReadOnlyCollection<TMetric> m_Values;
-
-        public delegate bool Filter(TMetric metric);
-
-        Filter m_FilterDelegate;
-
+        protected readonly string m_MetricName;
+        protected bool m_Found;
+        protected bool m_HasError;
+        protected string m_Error;
+        protected uint m_NbFrames = 0;
 
         public WaitForMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName)
         {
             m_MetricName = directionalMetricName.Id;
-
             dispatcher.RegisterObserver(this);
         }
 
-        public WaitForMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName, Filter filter)
-            : this(dispatcher, directionalMetricName)
-        {
-            m_FilterDelegate = filter;
-        }
-
-        public IEnumerator WaitForMetricsReceived()
-        {
-            yield return WaitForFrames(60);
-        }
-
-        public IReadOnlyCollection<TMetric> AssertMetricValuesHaveBeenFound()
-        {
-            if (m_HasError)
-            {
-                Assert.Fail(m_Error);
-            }
-
-            if (!m_Found)
-            {
-                Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{m_NbFrames}' frames.");
-            }
-
-            return m_Values;
-        }
+        abstract public void Observe(MetricCollection collection);
 
         public void AssertMetricValuesHaveNotBeenFound()
         {
@@ -72,37 +41,51 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
             }
         }
 
-        public void Observe(MetricCollection collection)
+        public IEnumerator WaitForMetricsReceived()
+        {
+            yield return WaitForFrames(60);
+        }
+
+        protected void AssertHasError()
+        {
+            if (m_HasError)
+            {
+                Assert.Fail(m_Error);
+            }
+        }
+
+        protected void AssertIsFound()
+        {
+            if (!m_Found)
+            {
+                Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{m_NbFrames}' frames.");
+            }
+        }
+
+        protected bool FindMetric(MetricCollection collection, out IMetric metric)
         {
             if (m_Found || m_HasError)
             {
-                return;
+                metric = null;
+                return false;
             }
 
-            var metric = collection.Metrics.SingleOrDefault(x => x.Name == m_MetricName);
+            metric = collection.Metrics.SingleOrDefault(x => x.Name == m_MetricName);
             if (metric == default)
             {
                 m_HasError = true;
                 m_Error = $"Metric collection does not contain metric named '{m_MetricName}'.";
 
-                return;
+                return false;
             }
 
-            var typedMetric = metric as IEventMetric<TMetric>;
-            if (typedMetric == default)
-            {
-                m_HasError = true;
-                m_Error = $"Metric collection contains a metric of type '{metric.GetType().Name}' for name '{m_MetricName}', but was expecting '{typeof(TMetric).Name}'.";
+            return true;
+        }
 
-                return;
-            }
-
-            if (typedMetric.Values.Any())
-            {
-                // Apply filter if one was provided
-                m_Values = m_FilterDelegate != null ? typedMetric.Values.Where(x => m_FilterDelegate(x)).ToList() : typedMetric.Values.ToList();
-                m_Found = m_Values.Count > 0;
-            }
+        protected void SetError(IMetric metric)
+        {
+            m_HasError = true;
+            m_Error = $"Metric collection contains a metric of type '{metric.GetType().Name}' for name '{m_MetricName}', but was expecting '{typeof(TMetric).Name}'.";
         }
 
         private IEnumerator WaitForFrames(uint maxNbFrames)

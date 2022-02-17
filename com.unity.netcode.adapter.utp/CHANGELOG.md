@@ -8,6 +8,8 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Changed
 
+- Updated Unity Transport package to 1.0.0-pre.13. (#1696)
+
 ### Fixed
 
 - Fixed issue where disconnecting from the server with data still in the queue would result in an error message about a stale connection. (#1649)
