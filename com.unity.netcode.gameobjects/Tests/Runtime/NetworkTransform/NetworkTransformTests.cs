@@ -75,15 +75,11 @@ namespace Unity.Netcode.RuntimeTests
 
             RegisterSceneManagerHandler();
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            // Wait for connection on server side
-            var clientsToWaitFor = m_TestWithHost ? NbClients + 1 : NbClients;
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
             x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
@@ -92,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return s_DefaultWaitForTick;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
             x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
@@ -114,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return InitializeServerAndClients();
 
 
-            var waitResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<bool>();
+            var waitResult = new NetcodeIntegrationTestHelpers.ResultWrapper<bool>();
 
             NetworkTransform authoritativeNetworkTransform;
             NetworkTransform otherSideNetworkTransform;

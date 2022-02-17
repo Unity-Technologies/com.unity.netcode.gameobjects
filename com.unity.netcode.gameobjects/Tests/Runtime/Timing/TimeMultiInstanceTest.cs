@@ -138,11 +138,8 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
-
-            // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
         }
 
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>

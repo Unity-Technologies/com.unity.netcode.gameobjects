@@ -59,7 +59,7 @@ namespace TestProject.RuntimeTests
              });
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
 
             var serverRpcTests = serverClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
@@ -72,7 +72,7 @@ namespace TestProject.RuntimeTests
             var clientRpcQueueManualTestInstsances = new List<RpcQueueManualTests>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+                var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
                 yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult);
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
                 Assert.IsNotNull(clientRpcTests);

@@ -210,12 +210,8 @@ namespace Unity.Netcode.RuntimeTests
                 RegisterSceneManagerHandler();
             }
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAsArry);
-
-            // Wait for connection on server side
-            var clientsToWaitFor = useHost ? numberOfClients + 1 : numberOfClients;
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut(clientsAsArry);
         }
 
         /// <summary>

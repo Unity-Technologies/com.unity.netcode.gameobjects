@@ -64,13 +64,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ClientSceneHandler.Dispose();
                 ClientSceneHandler = null;
             }
-
-            // Destroy the temporary GameObject used to run co-routines
-            if (s_CoroutineRunner != null)
-            {
-                s_CoroutineRunner.StopAllCoroutines();
-                Object.DestroyImmediate(s_CoroutineRunner.gameObject);
-            }
         }
 
         /// <summary>
@@ -206,13 +199,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             NetworkManagerInstances.Clear();
 
-            // Destroy the temporary GameObject used to run co-routines
-            if (s_CoroutineRunner != null)
-            {
-                s_CoroutineRunner.StopAllCoroutines();
-                Object.DestroyImmediate(s_CoroutineRunner);
-            }
-
             CleanUpHandlers();
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
@@ -305,24 +291,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 
-
-        private static CoroutineRunner s_CoroutineRunner;
-
-        /// <summary>
-        /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
-        /// </summary>
-        /// <param name="enumerator">The IEnumerator to run</param>
-        //public static Coroutine Run(IEnumerator enumerator)
-        //{
-        //    if (s_CoroutineRunner == null)
-        //    {
-        //        s_CoroutineRunner = new GameObject(nameof(CoroutineRunner)).AddComponent<CoroutineRunner>();
-        //    }
-
-        //    return s_CoroutineRunner.StartCoroutine(enumerator);
-        //}
-
-        public class CoroutineResultWrapper<T>
+        public class ResultWrapper<T>
         {
             public T Result;
         }
@@ -388,7 +357,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientConnected(NetworkManager client, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, maxFrames);
         }
@@ -400,7 +369,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="maxFrames">The max frames to wait for</param>
         /// <returns></returns>
-        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             // Make sure none are the host client
             foreach (var client in clients)
@@ -454,7 +423,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, maxFrames);
         }
@@ -465,7 +434,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             if (!server.IsServer)
             {
@@ -500,7 +469,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
         {
             if (result == null)
             {
@@ -531,7 +500,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
+        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = DefaultMaxFrames)
         {
             if (result == null)
             {
@@ -558,77 +527,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Assert.Fail("NetworkObject could not be found");
             }
         }
-
-        /// <summary>
-        /// Runs some code, then verifies the condition (combines 'Run' and 'WaitForCondition')
-        /// </summary>
-        /// <param name="workload">Action / code to run</param>
-        /// <param name="predicate">The predicate to wait for</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
-        //public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
-        //{
-        //    var waitResult = new CoroutineResultWrapper<bool>();
-        //    workload();
-
-        //    yield return Run(WaitForCondition(
-        //        predicate,
-        //        waitResult,
-        //        maxFrames: maxFrames,
-        //        minFrames: minFrames));
-
-        //    if (!waitResult.Result)
-        //    {
-        //        Assert.Fail("Predicate condition failed");
-        //    }
-        //}
-
-        /// <summary>
-        /// Waits for a predicate condition to be met
-        /// </summary>
-        /// <param name="predicate">The predicate to wait for</param>
-        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
-        /// <param name="minFrames">The min frames to wait for</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
-        //    public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
-        //    {
-        //        if (predicate == null)
-        //        {
-        //            throw new ArgumentNullException("Predicate cannot be null");
-        //        }
-
-        //        var startFrameNumber = Time.frameCount;
-
-        //        if (minFrames > 0)
-        //        {
-        //            yield return new WaitUntil(() =>
-        //            {
-        //                return Time.frameCount >= minFrames;
-        //            });
-        //        }
-
-        //        while (Time.frameCount - startFrameNumber <= maxFrames &&
-        //            !predicate())
-        //        {
-        //            // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
-        //            // see a value change (i.e. discovered in the NetworkTransformTests)
-        //            var nextFrameNumber = Time.frameCount + 2;
-        //            yield return new WaitUntil(() =>
-        //            {
-        //                return Time.frameCount >= nextFrameNumber;
-        //            });
-        //        }
-
-        //        var res = predicate();
-
-        //        if (result != null)
-        //        {
-        //            result.Result = res;
-        //        }
-        //        else
-        //        {
-        //            Assert.True(res, "PREDICATE CONDITION");
-        //        }
-        //    }
     }
 
     // Empty MonoBehaviour that is a holder of coroutine

@@ -110,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             spawnedNetworkObject.Spawn(true);
 
             // Get the spawned object relative to which NetworkManager instance we are testing.
-            var relativeSpawnedObject = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var relativeSpawnedObject = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.GetComponent<OnNetworkDespawnTestComponent>() != null), networkManager, relativeSpawnedObject);
             var onNetworkDespawnTestComponent = relativeSpawnedObject.Result.GetComponent<OnNetworkDespawnTestComponent>();
 

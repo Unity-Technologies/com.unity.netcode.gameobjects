@@ -83,12 +83,8 @@ namespace TestProject.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            var numberOfClients = isHost ? NbClients + 1 : NbClients;
-            // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
@@ -781,11 +777,8 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.OnSynchronize += Client_OnSynchronize;
             }
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            // Wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             //////////////////////////////////////////
             // Testing synchronize event notifications

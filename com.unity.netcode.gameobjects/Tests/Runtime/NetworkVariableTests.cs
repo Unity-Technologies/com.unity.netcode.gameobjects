@@ -125,17 +125,11 @@ namespace Unity.Netcode.RuntimeTests
 
             RegisterSceneManagerHandler();
 
-            // Wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            yield return s_DefaultWaitForTick;
-
-            // Wait for connection on server side
-            var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
-            var result = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var result = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
 
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,

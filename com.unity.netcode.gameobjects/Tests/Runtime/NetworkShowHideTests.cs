@@ -134,7 +134,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator RefreshNetworkObjects()
         {
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
                     m_ClientNetworkManagers[0],
@@ -145,7 +145,7 @@ namespace Unity.Netcode.RuntimeTests
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object2OnClient0 = serverClientPlayerResult.Result;
-            serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+            serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
                     m_ClientNetworkManagers[0],

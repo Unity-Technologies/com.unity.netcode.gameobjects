@@ -11,7 +11,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 {
     public abstract class NetcodeIntegrationTest
     {
-
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
         static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
         public enum NetworkManagerInstatiationMode
@@ -20,7 +19,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             AllTests,       // This will create one set of NetworkManagers used for all tests within a child derived class (destroyed once all tests are finished)
             DoNotCreate     // This will not create any NetworkManagers, it is up to the derived class to manage.
         }
-
 
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
@@ -96,6 +94,38 @@ namespace Unity.Netcode.TestHelpers.Runtime
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
         }
 
+
+        /// <summary>
+        /// Validates that all remote clients (i.e. non-server) detect their are connected
+        /// to the server and that the server reflects the appropriate number of clients
+        /// are connected on its side.
+        /// </summary>
+        /// <param name="clientsToCheck">An array of clients to be checked</param>
+        protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
+        {
+            var remoteClientCount = clientsToCheck.Length;
+            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
+
+            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
+            m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+        }
+
+        /// <summary>
+        /// Overloaded method that just passes in all clients to
+        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/>
+        /// </summary>
+        protected IEnumerator WaitForClientsConnectedOrTimeOut()
+        {
+            yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
+        }
+
+        /// <summary>
+        /// The very first thing invoked during the <see cref="OneTimeSetup"/> that
+        /// determines how this integration test handles NetworkManager instantiation
+        /// and destruction.  <see cref="NetworkManagerInstatiationMode"/>
+        /// Override this method to change the default mode:
+        /// <see cref="NetworkManagerInstatiationMode.AllTests"/>
+        /// </summary>
         protected virtual NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
             return NetworkManagerInstatiationMode.PerTest;
@@ -183,17 +213,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
             s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
         }
 
+        /// <summary>
+        /// Only valid for integration test mode:
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
+        /// </summary>
         protected virtual IEnumerator OnPreTearDown()
         {
-            // wait for 1 tick interval so everything is destroyed and any following tests
-            // can execute from clean environment
             yield return s_DefaultWaitForTick;
         }
 
+        /// <summary>
+        /// Only valid for integration test mode:
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
+        /// </summary>
         protected virtual IEnumerator OnPostTearDown()
         {
-            // wait for 1 tick interval so everything is destroyed and any following tests
-            // can execute from clean environment
             yield return s_DefaultWaitForTick;
         }
 
@@ -212,7 +246,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected virtual void OnOneTimeTearDown()
         {
-
         }
 
         [OneTimeTearDown]
@@ -299,6 +332,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnCreatePlayerPrefab();
         }
 
+        /// <summary>
+        /// This is invoked before the server and clients are started.
+        /// Override this method if you want to make any adjustments to their
+        /// NetworkManager instance(s).
+        /// </summary>
         protected virtual void OnServerAndClientsCreated()
         {
         }
@@ -323,6 +361,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnServerAndClientsCreated();
         }
 
+        /// <summary>
+        /// Override this method and return false in order to be able
+        /// to manually control when the server and clients are started.
+        /// </summary>
+        /// <returns></returns>
         protected virtual bool CanStartServerAndClients()
         {
             return true;
@@ -368,11 +411,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 RegisterSceneManagerHandler();
 
-                // Wait for connection on client side
-                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-                // Wait for connection on server side
-                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, useHost ? nbClients + 1 : nbClients);
+                // Wait for all clients to connect
+                yield return WaitForClientsConnectedOrTimeOut();
             }
         }
 

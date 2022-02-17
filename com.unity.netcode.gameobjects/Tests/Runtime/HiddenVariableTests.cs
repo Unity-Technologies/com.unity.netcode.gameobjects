@@ -127,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var netMan in m_ClientNetworkManagers)
             {
-                var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.CoroutineResultWrapper<NetworkObject>();
+                var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
                 yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                         x => x.NetworkObjectId == m_NetSpawnedObject.NetworkObjectId,
                         netMan,
