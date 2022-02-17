@@ -550,9 +550,9 @@ namespace TestProject.RuntimeTests
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
+        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values] bool useHost, [Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16)] int numberOfScenesToLoad)
         {
-
+            m_UseHost = useHost;
             m_CanStartServerAndClients = true;
             // First we disconnect and shutdown because we want to verify the synchronize events
             yield return Teardown();
@@ -580,6 +580,9 @@ namespace TestProject.RuntimeTests
 
             // Now load the base scene
             m_CurrentSceneName = k_BaseUnitTestSceneName;
+
+            Debug.Break();
+
             yield return LoadScene(m_CurrentSceneName);
 
             var firstScene = m_CurrentScene;

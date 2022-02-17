@@ -137,7 +137,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        /// <returns></returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, InstanceTransport instanceTransport = InstanceTransport.SIP)
         {
             clients = new NetworkManager[clientCount];
@@ -290,7 +289,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-
+        /// <summary>
+        /// Used to return a value of type T from a wait condition
+        /// </summary>
         public class ResultWrapper<T>
         {
             public T Result;
@@ -368,7 +369,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients to be connected</param>
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        /// <returns></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames)
         {
             // Make sure none are the host client

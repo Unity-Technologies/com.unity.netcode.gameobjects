@@ -35,21 +35,15 @@ namespace Unity.Netcode.RuntimeTests
 
         private readonly bool m_TestWithClientNetworkTransform;
 
-        private readonly bool m_TestWithHost;
-
         public NetworkTransformTests(bool testWithHost, bool testWithClientNetworkTransform)
         {
-            m_TestWithHost = testWithHost; // from test fixture
+            m_UseHost = testWithHost; // from test fixture
             m_TestWithClientNetworkTransform = testWithClientNetworkTransform;
         }
 
         protected override int NbClients => 1;
-        protected override bool CanStartServerAndClients()
-        {
-            return false;
-        }
 
-        public IEnumerator InitializeServerAndClients()
+        protected override void OnCreatePlayerPrefab()
         {
             if (m_TestWithClientNetworkTransform)
             {
@@ -60,72 +54,41 @@ namespace Unity.Netcode.RuntimeTests
                 var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
                 networkTransform.Interpolate = false;
             }
+        }
 
-
-            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
+        protected override void OnServerAndClientsCreated()
+        {
 #if NGO_TRANSFORM_DEBUG
             // Log assert for writing without authority is a developer log...
             // TODO: This is why monolithic test base classes and test helpers are an anti-pattern - this is part of an individual test case setup but is separated from the code verifying it!
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
 #endif
-            Assert.True(NetcodeIntegrationTestHelpers.Start(m_TestWithHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+        }
 
-            RegisterSceneManagerHandler();
+        protected override IEnumerator OnServerAndClientsStartedAndConnected()
+        {
+            // Get the client player representation on both the server and the client side
+            m_ServerSideClientPlayer = m_ServerSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
+            m_ClientSideClientPlayer = m_ClientSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
 
-            // Wait for connection on client and server side
-            yield return WaitForClientsConnectedOrTimeOut();
-
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
-            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
-            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
-
-            // Wait for 1 tick
-            yield return s_DefaultWaitForTick;
-
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject &&
-            x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
-            m_ClientSideClientPlayer = clientClientPlayerResult.Result;
-            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
+            var otherSideNetworkTransformComponent = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.ReadyToReceivePositionUpdate == true);
+            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransformComponent.ReadyToReceivePositionUpdate == true);
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
-
-            // Wait for 1 more tick before starting tests
-            yield return s_DefaultWaitForTick;
         }
 
         // TODO: rewrite after perms & authority changes
         [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
         {
-            yield return InitializeServerAndClients();
+            // Get the client player's NetworkTransform for both instances
+            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
 
-
-            var waitResult = new NetcodeIntegrationTestHelpers.ResultWrapper<bool>();
-
-            NetworkTransform authoritativeNetworkTransform;
-            NetworkTransform otherSideNetworkTransform;
-            // if (m_TestWithClientNetworkTransform)
-            // {
-            //     // client auth net transform can write from client, not from server
-            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            // }
-            // else
-            {
-                // server auth net transform can't write from client, not from client
-                authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            }
             Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
             Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
 
@@ -186,27 +149,11 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        // [Ignore("skipping for now, still need to figure weird multiinstance issue with hosts")]
         public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
         {
-            yield return InitializeServerAndClients();
-
-            // test server can't change client authoritative transform
-            NetworkTransform authoritativeNetworkTransform;
-            NetworkTransform otherSideNetworkTransform;
-
-            // if (m_TestWithClientNetworkTransform)
-            // {
-            //     // client auth net transform can write from client, not from server
-            //     otherSideNetworkTransform = m_ServerSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            //     authoritativeNetworkTransform = m_ClientSideClientPlayer.GetComponent<ClientNetworkTransform>();
-            // }
-            // else
-            {
-                // server auth net transform can't write from client, not from client
-                authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-                otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            }
+            // Get the client player's NetworkTransform for both instances
+            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
 
