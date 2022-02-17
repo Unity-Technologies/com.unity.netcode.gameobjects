@@ -71,9 +71,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"Platform: {platformListItem}");
                 }
             }
-
             MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely}");
-            
             if (IsPerformanceTest)
             {
                 Assert.Ignore("Performance tests unable to run at this time, see: https://unity-ci.cds.internal.unity3d.com/job/11651103/results");
@@ -434,7 +432,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                 MultiprocessOrchestration.ShutdownAllProcesses(true, 7);
             }
-            
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
             MultiprocessLogger.Log($" 8/20 - UnityTearDown - BaseMultiProcessTests - ... end - m_ConnectedClientsList: {m_ConnectedClientsList.Count} | ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
         }

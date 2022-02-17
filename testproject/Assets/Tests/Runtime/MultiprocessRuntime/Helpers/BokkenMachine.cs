@@ -163,7 +163,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"{counterPrefixString}.3 Getting log files from {f.FullName}");
                     ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 MultiprocessLogger.Log($"FetchAllLogFiles threw exception {e.Message} {e.StackTrace}");
             }
