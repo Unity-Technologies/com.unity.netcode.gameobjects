@@ -13,6 +13,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
     {
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
         static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        protected const uint k_DefaultTickRate = 30;
+        protected abstract int NbClients { get; }
+
         public enum NetworkManagerInstatiationMode
         {
             PerTest,        // This will create and destroy new NetworkManagers for each test within a child derived class
@@ -23,101 +26,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
-        protected abstract int NbClients { get; }
-        protected const uint k_DefaultTickRate = 30;
+        protected bool m_UseHost = true;
+        protected int m_TargetFrameRate = 60;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
-
-        /// <summary>
-        /// An update to the original NetcodeIntegrationTestHelpers.WaitForCondition that:
-        ///     -operates at the current tick rate
-        ///     -allows for a unique TimeOutHelper handler (if none then it uses the default)
-        ///     -adjusts its yield period to the settings of the m_ServerNetworkManager.NetworkConfig.TickRate
-        /// Notes: This method provides more stability when running integration tests that could
-        /// be impacted by:
-        ///     -how the integration test is being executed (i.e. in editor or in a stand alone build)
-        ///     -potential platform performance issues (i.e. VM is throttled or maxed)
-        /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded version of this method
-        /// </summary>
-        public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
-        {
-            if (checkForCondition == null)
-            {
-                throw new ArgumentNullException($"checkForCondition cannot be null!");
-            }
-
-            // If none is provided we use the default global time out helper
-            if (timeOutHelper == null)
-            {
-                timeOutHelper = s_GloabalTimeOutHelper;
-            }
-
-            // Start checking for a timeout
-            timeOutHelper.Start();
-            while (!timeOutHelper.HasTimedOut())
-            {
-                // Update and check to see if the condition has been met
-                if (checkForCondition.Invoke())
-                {
-                    break;
-                }
-
-                // Otherwise wait for 1 tick interval
-                yield return s_DefaultWaitForTick;
-            }
-            // Stop checking for a timeout
-            timeOutHelper.Stop();
-        }
-
-        /// <summary>
-        /// This version accepts an IConditionalPredicate implementation to provide
-        /// more flexibility when the condition to be reached involves more than one
-        /// value to be checked.
-        /// Note: For simplicity, you can derive from the <see cref="ConditionalPredicateBase"/>
-        /// and accomplish most tests.
-        /// </summary>
-        public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
-        {
-            if (conditionalPredicate == null)
-            {
-                throw new ArgumentNullException($"checkForCondition cannot be null!");
-            }
-
-            // If none is provided we use the default global time out helper
-            if (timeOutHelper == null)
-            {
-                timeOutHelper = s_GloabalTimeOutHelper;
-            }
-
-            conditionalPredicate.Started();
-            yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
-            conditionalPredicate.Finished(timeOutHelper.TimedOut);
-        }
-
-
-        /// <summary>
-        /// Validates that all remote clients (i.e. non-server) detect their are connected
-        /// to the server and that the server reflects the appropriate number of clients
-        /// are connected on its side.
-        /// </summary>
-        /// <param name="clientsToCheck">An array of clients to be checked</param>
-        protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
-        {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-            m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
-        }
-
-        /// <summary>
-        /// Overloaded method that just passes in all clients to
-        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/>
-        /// </summary>
-        protected IEnumerator WaitForClientsConnectedOrTimeOut()
-        {
-            yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
-        }
 
         /// <summary>
         /// The very first thing invoked during the <see cref="OneTimeSetup"/> that
@@ -155,7 +67,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Called after creating and starting the server and clients
         /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
-        /// mode can use one or both of the Pre-Post Setup methods.
+        /// mode can use one or both of the Pre-Post Setup methods depending upon
+        /// when the child class instantiates its NetworkManager instances.
         /// </summary>
         protected virtual IEnumerator OnPostSetup()
         {
@@ -167,22 +80,183 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             yield return OnPreSetup();
 
-            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
+                m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
-                if (m_ServerNetworkManager == null)
-                {
-                    yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
-                }
-            }
-            else
-            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
-            {
-                yield return StartSomeClientsAndServerWithPlayers(true, NbClients);
+                CreateServerAndClients();
+
+                yield return StartServerAndClients();
             }
 
             yield return OnPostSetup();
         }
 
+        /// <summary>
+        /// Override this to add components (or the like) to the default player prefab
+        /// <see cref="m_PlayerPrefab"/>
+        /// </summary>
+        protected virtual void OnCreatePlayerPrefab()
+        {
+        }
+
+        private void CreatePlayerPrefab()
+        {
+            // Create playerPrefab
+            m_PlayerPrefab = new GameObject("Player");
+            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
+
+            // Make it a prefab
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+
+            OnCreatePlayerPrefab();
+        }
+
+        /// <summary>
+        /// This is invoked before the server and clients are started.
+        /// Override this method if you want to make any adjustments to their
+        /// NetworkManager instance(s).
+        /// </summary>
+        protected virtual void OnServerAndClientsCreated()
+        {
+        }
+
+        protected void CreateServerAndClients()
+        {
+            CreateServerAndClients(NbClients);
+        }
+
+        /// <summary>
+        /// Creates the server and clients (NBClients)
+        /// </summary>
+        /// <param name="numberOfClients"></param>
+        protected void CreateServerAndClients(int numberOfClients)
+        {
+            CreatePlayerPrefab();
+
+            // Create multiple NetworkManager instances
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate))
+            {
+                Debug.LogError("Failed to create instances");
+                Assert.Fail("Failed to create instances");
+            }
+
+            m_ClientNetworkManagers = clients;
+            m_ServerNetworkManager = server;
+
+            if (m_ServerNetworkManager != null)
+            {
+                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            }
+
+            // Set the player prefab for the server and clients
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            {
+                m_ClientNetworkManagers[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            }
+
+            // Provides opportunity to allow child derived class to
+            // modify player prefab
+            OnServerAndClientsCreated();
+        }
+
+        /// <summary>
+        /// Override this method and return false in order to be able
+        /// to manually control when the server and clients are started.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool CanStartServerAndClients()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Utility to spawn some clients and a server and set them up
+        /// </summary>
+        /// <param name="nbClients"></param>
+        /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running.
+        /// Will be reset during <see cref="Teardown"/>.</param>
+        /// <returns></returns>
+        protected IEnumerator StartServerAndClients()
+        {
+            if (CanStartServerAndClients())
+            {
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                RegisterSceneManagerHandler();
+
+                // Wait for all clients to connect
+                yield return WaitForClientsConnectedOrTimeOut();
+            }
+        }
+
+        /// <summary>
+        /// Override this method to control when clients
+        /// can fake-load a scene.
+        /// </summary>
+        protected virtual bool CanClientsLoad()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Override this method to control when clients
+        /// can fake-unload a scene.
+        /// </summary>
+        protected virtual bool CanClientsUnload()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// De-Registers from the CanClientsLoad and CanClientsUnload events of the
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// </summary>
+        protected void DeRegisterSceneManagerHandler()
+        {
+            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
+            {
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+            }
+        }
+
+        /// <summary>
+        /// Registers the CanClientsLoad and CanClientsUnload events of the
+        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// </summary>
+        protected void RegisterSceneManagerHandler()
+        {
+            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
+            {
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            }
+        }
+
+        private bool ClientSceneHandler_CanClientsUnload()
+        {
+            return CanClientsUnload();
+        }
+
+        private bool ClientSceneHandler_CanClientsLoad()
+        {
+            return CanClientsLoad();
+        }
+
+        /// <summary>
+        /// This shuts down all NetworkManager instances registered via the
+        /// <see cref="NetcodeIntegrationTestHelpers"/> class and cleans up
+        /// the test runner scene of any left over NetworkObjects.
+        /// </summary>
         protected void ShutdownAndCleanUp()
         {
             // Shutdown and clean up both of our NetworkManager instances
@@ -260,163 +334,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Override this method to control when clients
-        /// fake-load a scene.
-        /// </summary>
-        protected virtual bool CanClientsLoad()
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Override this method to control when clients
-        /// fake-unload a scene.
-        /// </summary>
-        protected virtual bool CanClientsUnload()
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// De-Registers from the CanClientsLoad and CanClientsUnload events of the
-        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
-        /// </summary>
-        protected void DeRegisterSceneManagerHandler()
-        {
-            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
-            {
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
-            }
-        }
-
-        /// <summary>
-        /// Registers the CanClientsLoad and CanClientsUnload events of the
-        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
-        /// </summary>
-        protected void RegisterSceneManagerHandler()
-        {
-            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
-            {
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
-            }
-        }
-
-        private bool ClientSceneHandler_CanClientsUnload()
-        {
-            return CanClientsUnload();
-        }
-
-        private bool ClientSceneHandler_CanClientsLoad()
-        {
-            return CanClientsLoad();
-        }
-
-        /// <summary>
-        /// Override this to add components (or the like) to the default player prefab
-        /// </summary>
-        protected virtual void OnCreatePlayerPrefab()
-        {
-        }
-
-        private void CreatePlayerPrefab()
-        {
-            // Create playerPrefab
-            m_PlayerPrefab = new GameObject("Player");
-            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-
-            // Make it a prefab
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            OnCreatePlayerPrefab();
-        }
-
-        /// <summary>
-        /// This is invoked before the server and clients are started.
-        /// Override this method if you want to make any adjustments to their
-        /// NetworkManager instance(s).
-        /// </summary>
-        protected virtual void OnServerAndClientsCreated()
-        {
-        }
-
-        protected void CreateServerAndClients(int nbClients, int targetFrameRate = 60)
-        {
-            // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
-
-            m_ClientNetworkManagers = clients;
-            m_ServerNetworkManager = server;
-
-            if (m_ServerNetworkManager != null)
-            {
-                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-            }
-
-            OnServerAndClientsCreated();
-        }
-
-        /// <summary>
-        /// Override this method and return false in order to be able
-        /// to manually control when the server and clients are started.
-        /// </summary>
-        /// <returns></returns>
-        protected virtual bool CanStartServerAndClients()
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Utility to spawn some clients and a server and set them up
-        /// </summary>
-        /// <param name="nbClients"></param>
-        /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
-        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running. Will be reset on teardown.</param>
-        /// <returns></returns>
-        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab = null, int targetFrameRate = 60)
-        {
-
-            CreateServerAndClients(nbClients);
-
-            CreatePlayerPrefab();
-
-            // NSS-TODO: Remove this
-            if (updatePlayerPrefab != null)
-            {
-                updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
-            }
-
-            // Set the player prefab
-            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
-            {
-                m_ClientNetworkManagers[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            }
-
-            if (CanStartServerAndClients())
-            {
-                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
-                // is started and after each client is started.
-                if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
-                {
-                    Debug.LogError("Failed to start instances");
-                    Assert.Fail("Failed to start instances");
-                }
-
-                RegisterSceneManagerHandler();
-
-                // Wait for all clients to connect
-                yield return WaitForClientsConnectedOrTimeOut();
-            }
-        }
-
-        /// <summary>
         /// Override this to filter out the <see cref="NetworkObject"/>s that you
         /// want to allow to persist between integration tests
         /// </summary>
@@ -438,6 +355,92 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.DestroyImmediate(networkObject);
                 }
             }
+        }
+
+        /// <summary>
+        /// Waits for the function condition to return true or will time out.
+        /// This will operate at the current m_ServerNetworkManager.NetworkConfig.TickRate
+        /// and allow for a unique TimeOutHelper handler (if none then it uses the default)
+        /// Notes: This method provides more stability when running integration tests that could
+        /// be impacted by:
+        ///     -how the integration test is being executed (i.e. in editor or in a stand alone build)
+        ///     -potential platform performance issues (i.e. VM is throttled or maxed)
+        /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded version of this method
+        /// </summary>
+        public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
+        {
+            if (checkForCondition == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            // If none is provided we use the default global time out helper
+            if (timeOutHelper == null)
+            {
+                timeOutHelper = s_GloabalTimeOutHelper;
+            }
+
+            // Start checking for a timeout
+            timeOutHelper.Start();
+            while (!timeOutHelper.HasTimedOut())
+            {
+                // Update and check to see if the condition has been met
+                if (checkForCondition.Invoke())
+                {
+                    break;
+                }
+
+                // Otherwise wait for 1 tick interval
+                yield return s_DefaultWaitForTick;
+            }
+            // Stop checking for a timeout
+            timeOutHelper.Stop();
+        }
+
+        /// <summary>
+        /// This version accepts an IConditionalPredicate implementation to provide
+        /// more flexibility for checking complex conditional cases.
+        /// </summary>
+        public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
+        {
+            if (conditionalPredicate == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            // If none is provided we use the default global time out helper
+            if (timeOutHelper == null)
+            {
+                timeOutHelper = s_GloabalTimeOutHelper;
+            }
+
+            conditionalPredicate.Started();
+            yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
+            conditionalPredicate.Finished(timeOutHelper.TimedOut);
+        }
+
+        /// <summary>
+        /// Validates that all remote clients (i.e. non-server) detect they are connected
+        /// to the server and that the server reflects the appropriate number of clients
+        /// are connected.
+        /// </summary>
+        /// <param name="clientsToCheck">An array of clients to be checked</param>
+        protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
+        {
+            var remoteClientCount = clientsToCheck.Length;
+            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
+
+            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
+            m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+        }
+
+        /// <summary>
+        /// Overloaded method that just passes in all clients to
+        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/>
+        /// </summary>
+        protected IEnumerator WaitForClientsConnectedOrTimeOut()
+        {
+            yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
         }
     }
 }

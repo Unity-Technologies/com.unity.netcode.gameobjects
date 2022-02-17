@@ -53,6 +53,10 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnCreatePlayerPrefab()
         {
             var networkTransform = m_PlayerPrefab.AddComponent<HiddenVariableTest>();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
             m_TestNetworkPrefab = PreparePrefab();
         }
 

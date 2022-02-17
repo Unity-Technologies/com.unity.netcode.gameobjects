@@ -34,7 +34,6 @@ namespace TestProject.RuntimeTests
             return AutomatedRpcTestsHandler(9);
         }
 
-
         /// <summary>
         /// This just helps to simplify any further tests that can leverage from
         /// the RpcQueueManualTests' wide array of RPC testing under different
@@ -51,12 +50,9 @@ namespace TestProject.RuntimeTests
 
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
-
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, numClients, playerPrefab =>
-             {
-                 // Add our RpcQueueManualTests component
-                 playerPrefab.AddComponent<RpcQueueManualTests>();
-             });
+            CreateServerAndClients(numClients);
+            m_PlayerPrefab.AddComponent<RpcQueueManualTests>();
+            yield return StartServerAndClients();
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();

@@ -41,10 +41,10 @@ namespace TestProject.RuntimeTests
             m_FinishedClassTest = false;
             var startTime = Time.realtimeSinceStartup;
 
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestSerializationComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
+
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
@@ -114,11 +114,9 @@ namespace TestProject.RuntimeTests
         {
             m_FinishedTest = false;
             var startTime = Time.realtimeSinceStartup;
-
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestSerializationComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
@@ -220,10 +218,9 @@ namespace TestProject.RuntimeTests
             m_FinishedTest = false;
             var startTime = Time.realtimeSinceStartup;
 
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
@@ -413,11 +410,9 @@ namespace TestProject.RuntimeTests
             }
 
             var startTime = Time.realtimeSinceStartup;
-
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            yield return StartServerAndClients();
 
             // [Host-Side] Get the host-server side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();

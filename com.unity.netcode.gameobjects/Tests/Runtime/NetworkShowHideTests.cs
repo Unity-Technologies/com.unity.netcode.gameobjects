@@ -47,6 +47,10 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnCreatePlayerPrefab()
         {
             var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTest>();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
             m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
         }
 
