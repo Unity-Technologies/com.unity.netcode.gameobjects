@@ -1562,7 +1562,7 @@ namespace Unity.Netcode
         {
             if (!IsServer)
             {
-                throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
+                throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
             }
 
             OnClientDisconnectFromServer(clientId);
