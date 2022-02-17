@@ -67,8 +67,7 @@ namespace TestProject.ManualTests
 
         private void DeregisterCustomPrefabHandler()
         {
-            // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+            if (EnableHandler && NetworkObject != null && (IsSpawned || (NetworkManager != null && NetworkManager.PrefabHandler != null)))
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -84,28 +83,16 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnDestroy()
         {
-            if (IsServer)
-            {
-                StopCoroutine(SpawnObjects());
-            }
+            InternalStopCoroutine();
             DeregisterCustomPrefabHandler();
 
-
-
-            if (NetworkManager != null && NetworkManager.SceneManager != null)
+            if (NetworkObject != null && NetworkManager != null && NetworkManager.SceneManager != null)
             {
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
 
             base.OnDestroy();
         }
-
-        // Start is called before the first frame update
-        private void Start()
-        {
-            NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
-        }
-
 
         /// <summary>
         /// For additive scenes, we only clear out our pooled NetworkObjects if we are migrating them from the ActiveScene
@@ -203,10 +190,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnUnloadScene()
         {
-            if (IsServer)
-            {
-                StopCoroutine(SpawnObjects());
-            }
+            InternalStopCoroutine();
 
             // De-register the custom prefab handler
             DeregisterCustomPrefabHandler();
@@ -221,6 +205,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
             InitializeObjectPool();
             if (IsServer)
             {
@@ -361,7 +346,7 @@ namespace TestProject.ManualTests
             if (SpawnsPerSecond == 0 && m_IsSpawningObjects)
             {
                 m_IsSpawningObjects = false;
-                StopCoroutine(SpawnObjects());
+                InternalStopCoroutine();
             }
 
         }
@@ -369,7 +354,18 @@ namespace TestProject.ManualTests
 
         private void OnDisable()
         {
-            StopCoroutine(SpawnObjects());
+            InternalStopCoroutine();
+        }
+
+        private bool m_CoroutineHasStarted = false;
+
+        private void InternalStopCoroutine()
+        {
+            if (m_CoroutineHasStarted)
+            {
+                StopCoroutine(SpawnObjects());
+                m_CoroutineHasStarted = false;
+            }
         }
 
         /// <summary>
@@ -388,6 +384,7 @@ namespace TestProject.ManualTests
             {
                 yield return new WaitForSeconds(m_DelaySpawning - Time.realtimeSinceStartup);
             }
+            m_CoroutineHasStarted = true;
 
             m_IsSpawningObjects = true;
             while (m_IsSpawningObjects)

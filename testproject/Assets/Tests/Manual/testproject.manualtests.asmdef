@@ -4,7 +4,15 @@
     "references": [
         "TestProject",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
         "Unity.Netcode.Components"
-    ]
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

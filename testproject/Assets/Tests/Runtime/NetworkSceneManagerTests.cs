@@ -83,7 +83,7 @@ namespace TestProject.RuntimeTests
             var isHost = serverType == ServerType.Host ? true : false;
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
@@ -333,19 +333,7 @@ namespace TestProject.RuntimeTests
                             {
                                 m_ScenesLoaded.Add(scene);
                             }
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
+                            m_ClientsAreOkToLoad = true;
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
@@ -409,6 +397,12 @@ namespace TestProject.RuntimeTests
             return m_ClientVerifyScene;
         }
 
+        private bool m_ClientsAreOkToLoad = true;
+        protected override bool CanClientsLoad()
+        {
+            return m_ClientsAreOkToLoad;
+        }
+
         /// <summary>
         /// Unit test to verify that user defined scene verification process works on both the client and
         /// the server side.
@@ -464,6 +458,7 @@ namespace TestProject.RuntimeTests
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
             m_ClientsThatFailedVerification = 0;
+            m_ClientsAreOkToLoad = false;
             result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
@@ -473,6 +468,17 @@ namespace TestProject.RuntimeTests
 
             // Now unload the scene the server loaded from last test
             ResetWait();
+
+            // All clients did not load this scene, so we can ignore them for the wait
+            foreach (var listItem in m_ShouldWaitList)
+            {
+                if (listItem.ClientId == m_ServerNetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                listItem.ProcessedEvent = true;
+            }
+
             m_IsTestingVerifyScene = false;
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.Started);
@@ -734,11 +740,12 @@ namespace TestProject.RuntimeTests
             yield return Setup();
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, SceneManagerValidationAndTestRunnerInitialization))
+            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
+            RegisterSceneManagerHandler();
 
             // Immediately register for all pertinent event notifications we want to test and validate working
             // For the server:
@@ -871,21 +878,6 @@ namespace TestProject.RuntimeTests
                         if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId)
                         {
                             m_CurrentScene = sceneEvent.Scene;
-                            var sceneHandle = sceneEvent.Scene.handle;
-                            var scene = sceneEvent.Scene;
-
-                            foreach (var manager in m_ClientNetworkManagers)
-                            {
-                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, scene);
-                                }
-
-                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneHandle))
-                                {
-                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(sceneHandle, sceneHandle);
-                                }
-                            }
                         }
                         break;
                     }
@@ -1000,13 +992,15 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
 
             m_DDOL_ObjectToSpawn = new GameObject();
-            m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
+            var networkObject = m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
             m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
+
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                NetworkPrefabs = new List<NetworkPrefab>(),
+                NetworkPrefabs = new List<NetworkPrefab>() { new NetworkPrefab() { Prefab = m_DDOL_ObjectToSpawn } },
                 NetworkTransport = m_NetworkManagerGameObject.AddComponent<SIPTransport>(),
             };
             m_ServerNetworkManager.StartHost();
@@ -1054,8 +1048,10 @@ namespace TestProject.RuntimeTests
         {
             var isActive = activeState == DefaultState.IsEnabled ? true : false;
             var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
-            var networkObject = m_DDOL_ObjectToSpawn.GetComponent<NetworkObject>();
-            var ddolBehaviour = m_DDOL_ObjectToSpawn.GetComponent<DDOLBehaviour>();
+            var objectInstance = Object.Instantiate(m_DDOL_ObjectToSpawn);
+
+            var networkObject = objectInstance.GetComponent<NetworkObject>();
+            var ddolBehaviour = objectInstance.GetComponent<DDOLBehaviour>();
 
             // All tests require this to be false
             networkObject.DestroyWithScene = false;
@@ -1068,9 +1064,11 @@ namespace TestProject.RuntimeTests
             // Sets whether we are in-scene or dynamically spawned NetworkObject
             ddolBehaviour.SetInScene(isInScene);
 
+            networkObject.Spawn();
+
             Assert.That(networkObject.IsSpawned);
 
-            m_DDOL_ObjectToSpawn.SetActive(isActive);
+            objectInstance.SetActive(isActive);
 
             m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
 
@@ -1087,7 +1085,7 @@ namespace TestProject.RuntimeTests
             Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             //Done
-            networkObject.Despawn(false);
+            networkObject.Despawn();
         }
 
         public class DDOLBehaviour : NetworkBehaviour
@@ -1106,4 +1104,68 @@ namespace TestProject.RuntimeTests
 
     }
 
+    /// <summary>
+    /// Use this test group for validating NetworkSceneManager fixes.
+    /// </summary>
+    public class NetworkSceneManagerFixValidationTests : BaseMultiInstanceTest
+    {
+        protected override int NbClients => 0;
+
+        public override IEnumerator Setup()
+        {
+            m_BypassStartAndWaitForClients = true;
+            return base.Setup();
+        }
+
+        /// <summary>
+        /// This validation test verifies that the NetworkSceneManager will not crash if
+        /// the SpawnManager.SpawnedObjectsList contains destroyed and invalid NetworkObjects.
+        /// </summary>
+        [Test]
+        public void DDOLPopulateWithNullNetworkObjectsValidation([Values] bool useHost)
+        {
+            var gameObject = new GameObject();
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = gameObject });
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = gameObject });
+            }
+
+            // Start the host and clients
+            if (!MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+            {
+                Debug.LogError("Failed to start instances");
+                Assert.Fail("Failed to start instances");
+            }
+
+            // Spawn some NetworkObjects
+            var spawnedNetworkObjects = new List<GameObject>();
+            for (int i = 0; i < 10; i++)
+            {
+                var instance = Object.Instantiate(gameObject);
+                var instanceNetworkObject = instance.GetComponent<NetworkObject>();
+                instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                instanceNetworkObject.Spawn();
+                spawnedNetworkObjects.Add(instance);
+            }
+
+            // Add a bogus entry to the SpawnManager
+            m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.Add(null);
+
+            // Verify moving all NetworkObjects into the DDOL when some might be invalid will not crash
+            m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
+
+            // Verify moving all NetworkObjects from DDOL back into the active scene will not crash even if some are invalid
+            m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
+
+            // Now remove the invalid object
+            m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.Remove(null);
+
+            // As long as there are no exceptions this test passes
+        }
+    }
 }

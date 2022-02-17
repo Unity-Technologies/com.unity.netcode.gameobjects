@@ -9,32 +9,27 @@ namespace Unity.Netcode
             writer.WriteValueSafe(this);
         }
 
-        public static void Receive(FastBufferReader reader, in NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
-                return;
+                return false;
             }
-            reader.ReadValueSafe(out DestroyObjectMessage message);
-            message.Handle(context.SenderId, networkManager, reader.Length);
+            reader.ReadValueSafe(out this);
+            return true;
         }
 
-        public void Handle(ulong senderId, NetworkManager networkManager, int messageSize)
+        public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
-                // while we still have access to the network ID, otherwise the log message will be less useful.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Trying to destroy {nameof(NetworkObject)} #{NetworkObjectId} but it does not exist in {nameof(NetworkSpawnManager.SpawnedObjects)} anymore!");
-                }
-
                 return;
             }
 
-            networkManager.NetworkMetrics.TrackObjectDestroyReceived(senderId, networkObject, messageSize);
+            networkManager.NetworkMetrics.TrackObjectDestroyReceived(context.SenderId, networkObject, context.MessageSize);
             networkManager.SpawnManager.OnDespawnObject(networkObject, true);
         }
     }

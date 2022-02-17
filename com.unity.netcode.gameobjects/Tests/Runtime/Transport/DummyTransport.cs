@@ -1,11 +1,9 @@
 using System;
-using Unity.Netcode.Editor;
 
-namespace Unity.Netcode.EditorTests
+
+namespace Unity.Netcode.RuntimeTests
 {
-    // Should probably have one of these for more files? In the future we could use the SIPTransport?
-    [DontShowInTransportDropdown]
-    internal class DummyTransport : NetworkTransport
+    internal class DummyTransport : TestingNetworkTransport
     {
         public override ulong ServerClientId { get; } = 0;
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
@@ -47,7 +45,7 @@ namespace Unity.Netcode.EditorTests
         {
         }
 
-        public override void Initialize()
+        public override void Initialize(NetworkManager networkManager = null)
         {
         }
     }

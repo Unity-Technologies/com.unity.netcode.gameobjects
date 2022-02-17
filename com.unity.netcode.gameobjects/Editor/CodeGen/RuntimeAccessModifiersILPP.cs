@@ -134,8 +134,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                if (methodDefinition.Name == nameof(NetworkBehaviour.__sendServerRpc)
-                    || methodDefinition.Name == nameof(NetworkBehaviour.__sendClientRpc))
+                if (methodDefinition.Name == nameof(NetworkBehaviour.__beginSendServerRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendServerRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc))
                 {
                     methodDefinition.IsFamily = true;
                 }

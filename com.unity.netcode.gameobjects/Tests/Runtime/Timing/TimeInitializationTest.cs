@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return new WaitForSeconds(serverStartDelay);
-            MultiInstanceHelpers.Start(false, server, new NetworkManager[] { }, BaseMultiInstanceTest.SceneManagerValidationAndTestRunnerInitialization); // passing no clients on purpose to start them manually later
+            MultiInstanceHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
             var serverTick = server.NetworkTickSystem.ServerTime.Tick;
@@ -34,9 +34,11 @@ namespace Unity.Netcode.RuntimeTests
             // server time should be 0
             Assert.AreEqual(0, server.NetworkTickSystem.ServerTime.Time);
 
-            // wait 2 frames to ensure network tick is run
-            yield return null;
-            yield return null;
+            // wait until at least more than 2 server ticks have passed
+            // Note: Waiting for more than 2 ticks on the server is due
+            // to the time system applying buffering to the received time
+            // in NetworkTimeSystem.Sync
+            yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
             var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
@@ -56,16 +58,13 @@ namespace Unity.Netcode.RuntimeTests
             var clientStartRealTime = Time.time;
 
             m_Client.StartClient();
-            BaseMultiInstanceTest.SceneManagerValidationAndTestRunnerInitialization(clients[0]);
+            MultiInstanceHelpers.RegisterHandlers(clients[0]);
 
             m_Client.NetworkTickSystem.Tick += NetworkTickSystemOnTick;
             m_ClientTickCounter = 0;
 
-
-            // don't check for anything here and assume non-async connection.
-
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return MultiInstanceHelpers.WaitForClientsConnected(clients);
 
             var clientStartRealTimeDuration = Time.time - clientStartRealTime;
             var clientStartRealTickDuration = Mathf.FloorToInt(clientStartRealTimeDuration * 30);
@@ -75,7 +74,6 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(m_ClientTickCounter <= clientStartRealTickDuration);
 
-            MultiInstanceHelpers.Destroy();
             yield return null;
         }
 

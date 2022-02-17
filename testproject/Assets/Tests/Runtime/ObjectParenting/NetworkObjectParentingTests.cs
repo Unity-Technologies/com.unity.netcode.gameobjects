@@ -2,12 +2,13 @@ using System.Collections;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Unity.Netcode;
+using Unity.Netcode.RuntimeTests;
 
-namespace Unity.Netcode.RuntimeTests
+namespace TestProject.RuntimeTests
 {
     public class NetworkObjectParentingTests
     {
@@ -37,15 +38,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
-        {
-            if (sceneName.StartsWith("InitTestScene"))
-            {
-                return false;
-            }
-            return true;
-        }
-
         [UnitySetUp]
         public IEnumerator Setup()
         {
@@ -53,10 +45,10 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
-            const string scenePath = "Assets/Tests/Runtime/ObjectParenting/" + nameof(NetworkObjectParentingTests) + ".unity";
+            const string sceneName = nameof(NetworkObjectParentingTests);
 
             m_InitScene = SceneManager.GetActiveScene();
-            yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             Assert.That(m_TestScene.isLoaded, Is.True);
             SceneManager.SetActiveScene(m_TestScene);
 
@@ -91,14 +83,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Start server and client NetworkManager instances
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
-
-            // Register our scene verification delegate handler so we don't load the unit test scene
-            m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            foreach (var entry in m_ClientNetworkManagers)
-            {
-                // Register our scene verification delegate handler so we don't load the unit test scene
-                entry.SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
-            }
 
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));

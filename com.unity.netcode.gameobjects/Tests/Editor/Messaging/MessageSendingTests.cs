@@ -14,14 +14,18 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
             public static bool Serialized;
-
             public void Serialize(FastBufferWriter writer)
             {
                 Serialized = true;
                 writer.WriteValueSafe(this);
             }
 
-            public static void Receive(FastBufferReader reader, in NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            {
+                return true;
+            }
+
+            public void Handle(ref NetworkContext context)
             {
             }
         }
@@ -45,7 +49,7 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = TestMessage.Receive
+                        Handler = MessagingSystem.ReceiveMessage<TestMessage>
                     }
                 };
             }
@@ -86,7 +90,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenSendingMessage_SerializeIsCalled()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             Assert.IsTrue(TestMessage.Serialized);
         }
 
@@ -94,7 +98,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenSendingMessage_NothingIsSentBeforeProcessingSendQueue()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             Assert.IsEmpty(m_MessageSender.MessageQueue);
         }
 
@@ -102,7 +106,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenProcessingSendQueue_MessageIsSent()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
             Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
@@ -112,9 +116,9 @@ namespace Unity.Netcode.EditorTests
         public void WhenSendingMultipleMessages_MessagesAreBatched()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
             Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
@@ -127,7 +131,7 @@ namespace Unity.Netcode.EditorTests
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < 1300 / size; ++i)
             {
-                m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+                m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
 
             m_MessagingSystem.ProcessSendQueues();
@@ -141,7 +145,7 @@ namespace Unity.Netcode.EditorTests
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < (1300 / size) + 1; ++i)
             {
-                m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+                m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
 
             m_MessagingSystem.ProcessSendQueues();
@@ -155,7 +159,7 @@ namespace Unity.Netcode.EditorTests
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < (1300 / size) + 1; ++i)
             {
-                m_MessagingSystem.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
+                m_MessagingSystem.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
 
             m_MessagingSystem.ProcessSendQueues();
@@ -166,9 +170,9 @@ namespace Unity.Netcode.EditorTests
         public void WhenSwitchingDelivery_NewBatchesAreCreated()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Unreliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Unreliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
             Assert.AreEqual(2, m_MessageSender.MessageQueue.Count);
@@ -178,9 +182,9 @@ namespace Unity.Netcode.EditorTests
         public void WhenSwitchingChannel_NewBatchesAreNotCreated()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
             Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
@@ -191,8 +195,8 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var message2 = GetMessage();
-            m_MessagingSystem.SendMessage(message, NetworkDelivery.Reliable, m_Clients);
-            m_MessagingSystem.SendMessage(message2, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessagingSystem.SendMessage(ref message2, NetworkDelivery.Reliable, m_Clients);
 
             m_MessagingSystem.ProcessSendQueues();
             var reader = new FastBufferReader(m_MessageSender.MessageQueue[0], Allocator.Temp);

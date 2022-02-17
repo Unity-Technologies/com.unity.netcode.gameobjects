@@ -5,8 +5,9 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
-[assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 [assembly: InternalsVisibleTo("TestProject.ToolsIntegration.RuntimeTests")]
 #endif
+[assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
+[assembly: InternalsVisibleTo("Unity.Netcode.Adapter.UTP")]
 
