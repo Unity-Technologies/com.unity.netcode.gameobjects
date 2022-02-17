@@ -46,10 +46,10 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 10f));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 10));
 
             // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server, null, 10f));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server, null, 10));
 
             // ensure all objects are replicated
             Assert.AreEqual(k_SpawnedObjects, clients[0].SpawnManager.SpawnedObjectsList.Count);
