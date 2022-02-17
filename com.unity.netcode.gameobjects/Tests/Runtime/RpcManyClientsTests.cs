@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -31,20 +32,15 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class RpcManyClientsTests : BaseMultiInstanceTest
+    public class RpcManyClientsTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 10;
 
         private GameObject m_PrefabToSpawn;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject));
-                });
+            m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject));
         }
 
         public GameObject PreparePrefab(Type type)
@@ -52,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabToSpawn = new GameObject();
             prefabToSpawn.AddComponent(type);
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
