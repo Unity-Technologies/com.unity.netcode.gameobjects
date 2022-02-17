@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -78,7 +79,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             // Build the multiprocess test player
-            if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
+            if (!m_LaunchRemotely && !BuildMultiprocessTestPlayer.DoesBuildInfoExist())
             {
                 Assert.Ignore($"Ignoring tests that require a multiprocess testplayer build");
             }
@@ -138,6 +139,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             m_HasSceneLoaded = true;
             IsSceneLoading = false;
+            var workerProcess = new Process();
+            workerProcess.StartInfo.FileName = "netstat";
+            workerProcess.StartInfo.UseShellExecute = false;
+            workerProcess.StartInfo.RedirectStandardError = true;
+            workerProcess.StartInfo.RedirectStandardOutput = true;
+            workerProcess.StartInfo.Arguments = $"-a -p UDP";
+            var newProcessStarted = workerProcess.Start();
+            workerProcess.WaitForExit(10000);
+            MultiprocessLogger.Log($"ExitCode from workerProcess is {workerProcess.ExitCode}");
+            string so = workerProcess.StandardOutput.ReadToEnd();
+            MultiprocessLogger.Log(so);
         }
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
