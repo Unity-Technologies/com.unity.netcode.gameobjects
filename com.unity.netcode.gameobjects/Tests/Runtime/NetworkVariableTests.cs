@@ -372,22 +372,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
-        {
-            yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    TestStruct.NetworkSerializeCalledOnWrite = false;
-                    TestStruct.NetworkSerializeCalledOnRead = false;
-                    m_Player1OnServer.TheListOfStructs.Add(new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
-                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
-                },
-                () => TestStruct.NetworkSerializeCalledOnWrite && TestStruct.NetworkSerializeCalledOnRead
-            );
-        }
-
-        [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
