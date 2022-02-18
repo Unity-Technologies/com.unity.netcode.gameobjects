@@ -427,10 +427,10 @@ namespace Unity.Netcode.RuntimeTests
         #endregion
 
 
-        protected override IEnumerator OnPostTearDown()
+        protected override IEnumerator OnTearDown()
         {
             m_NetworkListPredicateHandler = null;
-            yield return base.OnPostTearDown();
+            yield return base.OnTearDown();
         }
     }
 

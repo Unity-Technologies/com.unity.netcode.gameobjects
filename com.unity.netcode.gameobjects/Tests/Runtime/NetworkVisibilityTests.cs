@@ -1,70 +1,61 @@
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkVisibilityTests
+    public class NetworkVisibilityTests : NetcodeIntegrationTest
     {
-        private NetworkObject m_NetSpawnedObject;
+        protected override int NbClients => 1;
         private GameObject m_TestNetworkPrefab;
 
-        [TearDown]
-        public void TearDown()
+        protected override IEnumerator OnSetup()
         {
-            MultiInstanceHelpers.Destroy();
-            if (m_TestNetworkPrefab)
-            {
-                Object.Destroy(m_TestNetworkPrefab);
-                m_TestNetworkPrefab = null;
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator HiddenObjectsTest()
-        {
-
-            const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_TestNetworkPrefab = new GameObject("Object");
             var networkObject = m_TestNetworkPrefab.AddComponent<NetworkObject>();
             m_TestNetworkPrefab.AddComponent<NetworkVisibilityComponent>();
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            return base.OnSetup();
+        }
 
+        protected override void OnServerAndClientsCreated()
+        {
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_TestNetworkPrefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            server.NetworkConfig.EnableSceneManagement = false;
-            foreach (var client in clients)
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+            foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
                 client.NetworkConfig.EnableSceneManagement = false;
             }
+        }
 
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients, () =>
-            {
-                var serverObject = Object.Instantiate(m_TestNetworkPrefab, Vector3.zero, Quaternion.identity);
-                NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-                serverNetworkObject.NetworkManagerOwner = server;
-                serverNetworkObject.Spawn();
-                serverObject.GetComponent<NetworkVisibilityComponent>().Hide();
-            }))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
+        protected override IEnumerator OnServerAndClientsStartedAndConnected()
+        {
+            var serverObject = Object.Instantiate(m_TestNetworkPrefab, Vector3.zero, Quaternion.identity);
+            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
+            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkVisibilityComponent>().Hide();
+            serverNetworkObject.Spawn();
 
-            // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return base.OnServerAndClientsStartedAndConnected();
+        }
 
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
-
+        [Test]
+        public void HiddenObjectsTest()
+        {
             Assert.AreEqual(2, Object.FindObjectsOfType<NetworkVisibilityComponent>().Length);
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            Object.Destroy(m_TestNetworkPrefab);
+            m_TestNetworkPrefab = null;
+
+            return base.OnTearDown();
         }
     }
 }

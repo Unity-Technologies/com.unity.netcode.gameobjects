@@ -101,10 +101,10 @@ namespace Unity.Netcode.RuntimeTests
             s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
         }
 
-        protected override IEnumerator OnPreSetup()
+        protected override IEnumerator OnSetup()
         {
             s_ClientDummyNetBehavioursSpawned.Clear();
-            return base.OnPreSetup();
+            return base.OnSetup();
         }
 
         protected override void OnCreatePlayerPrefab()

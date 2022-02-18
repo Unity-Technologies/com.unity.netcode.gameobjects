@@ -16,10 +16,10 @@ namespace TestProject.RuntimeTests
     {
         protected override int NbClients => 9;
 
-        protected override IEnumerator OnPreSetup()
+        protected override IEnumerator OnSetup()
         {
             m_ShouldWaitList = new List<SceneTestInfo>();
-            return base.OnPreSetup();
+            return base.OnSetup();
         }
 
         private class SceneTestInfo

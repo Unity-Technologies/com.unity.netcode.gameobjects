@@ -339,14 +339,14 @@ namespace Unity.Netcode.RuntimeTests
             Object.DestroyImmediate(prefabToSpawn);
         }
 
-        protected override IEnumerator OnPostTearDown()
+        protected override IEnumerator OnTearDown()
         {
             // Make sure everything spawned/created is destroyed before starting next test iteration
             foreach (var spawnedObject in s_ClientSpawnedNetworkObjects)
             {
                 Object.DestroyImmediate(spawnedObject);
             }
-            return base.OnPostTearDown();
+            return base.OnTearDown();
         }
     }
 }

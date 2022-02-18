@@ -63,22 +63,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Called before creating and starting the server and clients
-        /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
-        /// mode can use one or both of the Pre-Post Setup methods depending upon
-        /// when the child class instantiates its NetworkManager instances.
+        /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests
+        /// this is invoked prior to creating the server and clients. For those two modes,
+        /// if you want to have access to the server or client <see cref="NetworkManager"/>s
+        /// then look at overrideing the <see cref="OnServerAndClientsCreated"/> method.
         /// </summary>
-        protected virtual IEnumerator OnPreSetup()
-        {
-            yield return null;
-        }
-
-        /// <summary>
-        /// Called after creating and starting the server and clients
-        /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
-        /// mode can use one or both of the Pre-Post Setup methods depending upon
-        /// when the child class instantiates its NetworkManager instances.
-        /// </summary>
-        protected virtual IEnumerator OnPostSetup()
+        protected virtual IEnumerator OnSetup()
         {
             yield return null;
         }
@@ -86,8 +77,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            yield return OnPreSetup();
-
+            yield return OnSetup();
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
                 m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
@@ -95,8 +85,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 yield return StartServerAndClients();
             }
-
-            yield return OnPostSetup();
         }
 
         /// <summary>
@@ -360,23 +348,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Only really valid for integration test mode:
-        /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
-        /// But could be used to clean up between tests in other
-        /// integration test modes.
+        /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> integration tests
+        /// this is Invoked after ShutdownAndCleanUp.
         /// </summary>
-        protected virtual IEnumerator OnPreTearDown()
-        {
-            yield return s_DefaultWaitForTick;
-        }
-
-        /// <summary>
-        /// Only really valid for integration test mode:
-        /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
-        /// But could be used to clean up between tests in other
-        /// integration test modes.
-        /// </summary>
-        protected virtual IEnumerator OnPostTearDown()
+        protected virtual IEnumerator OnTearDown()
         {
             yield return s_DefaultWaitForTick;
         }
@@ -386,12 +361,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
-                yield return OnPreTearDown();
-
                 ShutdownAndCleanUp();
-
-                yield return OnPostTearDown();
             }
+
+            yield return OnTearDown();
         }
 
         /// <summary>
