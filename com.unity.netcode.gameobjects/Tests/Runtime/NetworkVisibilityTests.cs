@@ -24,12 +24,12 @@ namespace Unity.Netcode.RuntimeTests
         {
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_TestNetworkPrefab;
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-            foreach (var client in m_ClientNetworkManagers)
+            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            server.NetworkConfig.EnableSceneManagement = enableSeneManagement;
+            foreach (var client in clients)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-                client.NetworkConfig.EnableSceneManagement = false;
+                client.NetworkConfig.EnableSceneManagement = enableSeneManagement;
             }
         }
 

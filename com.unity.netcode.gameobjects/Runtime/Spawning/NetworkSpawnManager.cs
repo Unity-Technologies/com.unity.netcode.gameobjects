@@ -835,7 +835,7 @@ namespace Unity.Netcode
         {
             foreach (var sobj in SpawnedObjectsList)
             {
-                if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
+                if (sobj.CheckObjectVisibility == null)
                 {
                     if (!sobj.Observers.Contains(clientId))
                     {
