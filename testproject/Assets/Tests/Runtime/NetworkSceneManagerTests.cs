@@ -581,8 +581,6 @@ namespace TestProject.RuntimeTests
             // Now load the base scene
             m_CurrentSceneName = k_BaseUnitTestSceneName;
 
-            Debug.Break();
-
             yield return LoadScene(m_CurrentSceneName);
 
             var firstScene = m_CurrentScene;
