@@ -499,7 +499,7 @@ public class TestCoordinator : NetworkBehaviour
     public void KeepAliveOnServer()
     {
         m_TimeSinceLastKeepAlive = Time.time;
-        MultiprocessLogger.Log($"m_TimeSinceLastKeepAlive is {m_TimeSinceLastKeepAlive}");
+        MultiprocessLogger.Log($"KeepAliveOnServer - m_TimeSinceLastKeepAlive is {m_TimeSinceLastKeepAlive}");
     }
 
     [ClientRpc]

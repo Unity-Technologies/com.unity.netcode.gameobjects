@@ -19,7 +19,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
         private CustomPrefabSpawnerForPerformanceTests<OneNetVar> m_ClientPrefabHandler;
         private OneNetVar m_PrefabToSpawn;
+        protected override bool RunUnityTearDown => false;
         protected override bool IsPerformanceTest => true;
+        public new int WorkerCount = 1;
 
         private class OneNetVar : NetworkBehaviour
         {
@@ -66,7 +68,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
-        public IEnumerator TestSpawningManyObjects([Values(1, 20, 50, 100, 800)] int nbObjects)
+        public IEnumerator TestSpawningManyObjects([Values(7, 80, 900, 1000)] int nbObjects)
         {
             InitializeContextSteps();
 
@@ -80,11 +82,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
+                MultiprocessLogger.Log("Step 1 - Start");
                 Assert.LessOrEqual(nbObjects, k_MaxObjectsToSpawn); // sanity check
+                MultiprocessLogger.Log("Step 1 - End");
             });
 
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
             {
+                MultiprocessLogger.Log("Step 2 - Start");
                 // setup clients
                 InitializePrefab();
                 var targetCount = BitConverter.ToInt32(nbObjectsBytes, 0);
@@ -97,6 +102,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 void UpdateFunc(float deltaTime)
                 {
                     var count = OneNetVar.InstanceCount;
+                    MultiprocessLogger.Log($"Step 2 - Update Func {deltaTime}");
                     if (count > 0)
                     {
                         TestCoordinator.Instance.WriteTestResultsServerRpc(count);
@@ -112,11 +118,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
             }, paramToPass: BitConverter.GetBytes(nbObjects));
 
+            int resultsCount = 0;
+
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
+                MultiprocessLogger.Log("Step 3 - Start");
                 // start test
                 using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects server side and getting report"))
                 {
+                    MultiprocessLogger.Log("Step 3 - Start using block");
                     // spawn prefabs for test
                     var totalAllocSampleGroup = new SampleGroup("GC Alloc", SampleUnit.Kilobyte);
                     var beforeAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
@@ -133,31 +143,43 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     Measure.Custom(totalAllocSampleGroup, afterAllocatedMemory / 1024f);
                     var diffAllocSampleGroup = new SampleGroup("GC Alloc diff for Spawn Server side", SampleUnit.Byte);
                     Measure.Custom(diffAllocSampleGroup, afterAllocatedMemory - beforeAllocatedMemory);
+                    MultiprocessLogger.Log("Step 3 - end using block");
                 }
             }, additionalIsFinishedWaiter: () =>
             {
-                // wait for spawn results coming from clients
-                int finishedCount = 0;
-                if (TestCoordinator.AllClientIdsWithResults.Count != WorkerCount)
+                if (TestCoordinator.AllClientIdsWithResults.Count > resultsCount)
+                {
+                    resultsCount = TestCoordinator.AllClientIdsWithResults.Count;
+                    MultiprocessLogger.Log($"Step 3 - additionalIsFinishedWaiter {TestCoordinator.AllClientIdsWithResults.Count} == {WorkerCount + 1}?");
+                    // wait for spawn results coming from clients
+                    int finishedCount = 0;
+                    if (TestCoordinator.AllClientIdsWithResults.Count != (WorkerCount + 1))
+                    {
+                        MultiprocessLogger.Log($"Apparently TestCoordinator.AllClientIdsWithResults.Count != (WorkerCount + 1)");
+                        return false;
+                    }
+
+                    foreach (var clientIdWithResult in TestCoordinator.AllClientIdsWithResults)
+                    {
+                        var latestResult = TestCoordinator.PeekLatestResult(clientIdWithResult);
+                        if (latestResult == nbObjects)
+                        {
+                            finishedCount++;
+                        }
+                    }
+                    MultiprocessLogger.Log($"finishedCount == WorkerCount + 1 : {finishedCount} == {WorkerCount + 1}");
+                    return finishedCount == WorkerCount + 1;
+                }
+                else
                 {
                     return false;
                 }
-
-                foreach (var clientIdWithResult in TestCoordinator.AllClientIdsWithResults)
-                {
-                    var latestResult = TestCoordinator.PeekLatestResult(clientIdWithResult);
-                    if (latestResult == nbObjects)
-                    {
-                        finishedCount++;
-                    }
-                }
-
-                return finishedCount == WorkerCount;
             });
 
             var serverLastResult = 0f;
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
+                MultiprocessLogger.Log("Step 4");
                 // add measurements
                 // todo add more client-side metrics like memory usage, time taken to execute, etc
                 var allocated = new SampleGroup("NbSpawnedPerFrame client side", SampleUnit.Undefined);
@@ -168,7 +190,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     Assert.That(lastResult, Is.EqualTo(nbObjects));
                 }
 
-                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(WorkerCount));
+                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(WorkerCount + 1));
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
                     Measure.Custom(allocated, result);
@@ -177,11 +199,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
+                MultiprocessLogger.Log("Step 5");
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
                 Assert.That(Object.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
             }, paramToPass: BitConverter.GetBytes(nbObjects));
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
+                MultiprocessLogger.Log("Step 6");
                 Debug.Log($"finished with test for {nbObjects} expected objects and got {serverLastResult} objects");
             });
         }
@@ -232,6 +256,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeTearDown]
         public override void TeardownSuite()
         {
+            UnityTearDown();
             base.TeardownSuite();
             if (!IsPerformanceTest)
             {
