@@ -64,7 +64,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Called before creating and starting the server and clients
         /// Note: Integration tests configured as <see cref="NetworkManagerInstatiationMode.DoNotCreate"/>
-        /// mode can use one or both of the Pre-Post Setup methods.
+        /// mode can use one or both of the Pre-Post Setup methods depending upon
+        /// when the child class instantiates its NetworkManager instances.
         /// </summary>
         protected virtual IEnumerator OnPreSetup()
         {
@@ -168,19 +169,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Provides opportunity to allow child derived class to
-            // modify player prefab
+            // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
         }
 
         /// <summary>
         /// Override this method and return false in order to be able
-        /// to manually control when the server and clients are started.
+        /// to manually control when the server and clients are started
+        /// but still follow the rest of the integration test flow.
         /// </summary>
         protected virtual bool CanStartServerAndClients()
         {
             return true;
         }
 
+        /// <summary>
+        /// Invoked after the server and clients have started and verified
+        /// their connection on both the server and client(s) sides
+        /// </summary>
         protected virtual IEnumerator OnServerAndClientsStartedAndConnected()
         {
             // Wait for 1 more tick before starting tests
@@ -188,12 +194,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Utility to spawn some clients and a server and set them up
+        /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
+        /// returns true.
         /// </summary>
-        /// <param name="nbClients"></param>
-        /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
-        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running.
-        /// Will be reset during <see cref="Teardown"/>.</param>
         protected IEnumerator StartServerAndClients()
         {
             if (CanStartServerAndClients())
@@ -220,7 +223,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Create a dictionary for all instances of players spawned on each client
                 // This provides a simpler way to get a specific player instance relative to a client instance
-                // This also renames all player NetworkObjects relative to what instance belongs to which client NetworkManager
+                // This also renames all player GameObjects relative to what instance belongs to which client NetworkManager
                 // for easier identification purposes when running in the editor.
                 foreach (var networkManager in m_ClientNetworkManagers)
                 {
@@ -236,7 +239,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                 }
 
-                // Only is we are running the server as a host do we do a pass for the host player objects
+                // Only if we are running the server as a host do we do a pass for the host player objects
                 if (m_UseHost)
                 {
                     Assert.NotNull(m_ServerNetworkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that the host does not have an assigned player NetworkObject!");
@@ -258,6 +261,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     playerNetworkClient.Value.PlayerObject.name = $"ServerSide-Player({playerNetworkClient.Value.PlayerObject.OwnerClientId})";
                 }
 
+                // Notification that at this time the server and client(s) are instantiated,
+                // started, and connected on both sides.
                 yield return OnServerAndClientsStartedAndConnected();
             }
         }
@@ -355,8 +360,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Only valid for integration test mode:
+        /// Only really valid for integration test mode:
         /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
+        /// But could be used to clean up between tests in other
+        /// integration test modes.
         /// </summary>
         protected virtual IEnumerator OnPreTearDown()
         {
@@ -364,8 +371,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Only valid for integration test mode:
+        /// Only really valid for integration test mode:
         /// <see cref="NetworkManagerInstatiationMode.PerTest"/>
+        /// But could be used to clean up between tests in other
+        /// integration test modes.
         /// </summary>
         protected virtual IEnumerator OnPostTearDown()
         {
@@ -385,6 +394,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Override this method to do handle cleaning up one the test(s)
+        /// within the child derived class have completed
+        /// </summary>
         protected virtual void OnOneTimeTearDown()
         {
         }
