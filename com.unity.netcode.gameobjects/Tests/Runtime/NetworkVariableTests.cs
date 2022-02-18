@@ -199,12 +199,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator AllNetworkVariableTypes([Values(true, false)] bool useHost)
         {
-            NetworkManager server;
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
             //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
 
             Assert.IsTrue(server.IsHost == useHost, $"{nameof(useHost)} does not match the server.IsHost value!");
 
@@ -381,6 +380,22 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
+        {
+            yield return InitializeServerAndClients(useHost);
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    TestStruct.NetworkSerializeCalledOnWrite = false;
+                    TestStruct.NetworkSerializeCalledOnRead = false;
+                    m_Player1OnServer.TheListOfStructs.Add(new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
+                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
+                },
+                () => TestStruct.NetworkSerializeCalledOnWrite && TestStruct.NetworkSerializeCalledOnRead
+            );
+        }
+
+        [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
@@ -406,11 +421,7 @@ namespace Unity.Netcode.RuntimeTests
             TestStruct.NetworkSerializeCalledOnRead = false;
             m_Player1OnServer.TheStruct.Value = new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
 
-            bool VerifyCallback()
-            {
-                return TestStruct.NetworkSerializeCalledOnWrite &&
-                    TestStruct.NetworkSerializeCalledOnRead;
-            }
+            static bool VerifyCallback() => TestStruct.NetworkSerializeCalledOnWrite && TestStruct.NetworkSerializeCalledOnRead;
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(VerifyCallback);
@@ -606,12 +617,14 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkListTestState = networkListTestState;
             m_Player1OnServer = player1OnServer;
             m_Player1OnClient1 = player1OnClient1;
-            m_StateFunctions = new Dictionary<NetworkListTestStates, Func<bool>>();
-            m_StateFunctions.Add(NetworkListTestStates.Add, OnAdd);
-            m_StateFunctions.Add(NetworkListTestStates.ContainsLarge, OnContainsLarge);
-            m_StateFunctions.Add(NetworkListTestStates.Contains, OnContains);
-            m_StateFunctions.Add(NetworkListTestStates.VerifyData, OnVerifyData);
-            m_StateFunctions.Add(NetworkListTestStates.IndexOf, OnIndexOf);
+            m_StateFunctions = new Dictionary<NetworkListTestStates, Func<bool>>
+            {
+                { NetworkListTestStates.Add, OnAdd },
+                { NetworkListTestStates.ContainsLarge, OnContainsLarge },
+                { NetworkListTestStates.Contains, OnContains },
+                { NetworkListTestStates.VerifyData, OnVerifyData },
+                { NetworkListTestStates.IndexOf, OnIndexOf }
+            };
 
             if (networkListTestState == NetworkListTestStates.ContainsLarge)
             {
@@ -627,28 +640,6 @@ namespace Unity.Netcode.RuntimeTests
                     m_Player1OnServer.TheList.Add(Random.Range(0, k_MaxRandomValue));
                 }
             }
-        }
-		
-        [UnityTest]
-        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
-        {
-            m_TestWithHost = useHost;
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    TestStruct.NetworkSerializeCalledOnWrite = false;
-                    TestStruct.NetworkSerializeCalledOnRead = false;
-                    m_Player1OnServer.TheListOfStructs.Add(
-                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
-                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
-                },
-                () =>
-                {
-                    return
-                        TestStruct.NetworkSerializeCalledOnWrite &&
-                        TestStruct.NetworkSerializeCalledOnRead;
-                }
-            );
         }
     }
 }
