@@ -10,6 +10,9 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
 {
+    /// <summary>
+    /// The default Netcode For GameObjects integration test helper class
+    /// </summary>
     public abstract class NetcodeIntegrationTest
     {
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
@@ -64,10 +67,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Called before creating and starting the server and clients
         /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
-        /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests
-        /// this is invoked prior to creating the server and clients. For those two modes,
-        /// if you want to have access to the server or client <see cref="NetworkManager"/>s
-        /// then look at overrideing the <see cref="OnServerAndClientsCreated"/> method.
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests.
+        /// For those two modes, if you want to have access to the server or client
+        /// <see cref="NetworkManager"/>s then override then:
+        /// <see cref="OnServerAndClientsCreated"/>
+        /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
         /// </summary>
         protected virtual IEnumerator OnSetup()
         {
@@ -88,7 +92,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Override this to add components (or the like) to the default player prefab
+        /// Override this to add components or adjustments to the default player prefab
         /// <see cref="m_PlayerPrefab"/>
         /// </summary>
         protected virtual void OnCreatePlayerPrefab()
@@ -108,9 +112,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This is invoked before the server and clients are started.
+        /// This is invoked before the server and client(s) are started.
         /// Override this method if you want to make any adjustments to their
-        /// NetworkManager instance(s).
+        /// NetworkManager instances.
         /// </summary>
         protected virtual void OnServerAndClientsCreated()
         {
@@ -156,15 +160,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_ClientNetworkManagers[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            // Provides opportunity to allow child derived class to
+            // Provides opportunity to allow child derived classes to
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
         }
 
         /// <summary>
         /// Override this method and return false in order to be able
-        /// to manually control when the server and clients are started
-        /// but still follow the rest of the integration test flow.
+        /// to manually control when the server and clients are started.
+        /// They will still follow the rest of the integration test flow.
         /// </summary>
         protected virtual bool CanStartServerAndClients()
         {
@@ -173,12 +177,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Invoked after the server and clients have started and verified
-        /// their connection on both the server and client(s) sides
+        /// their connections with each other.
         /// </summary>
-        protected virtual IEnumerator OnServerAndClientsStartedAndConnected()
+        protected virtual IEnumerator OnStartedAndConnected()
         {
-            // Wait for 1 more tick before starting tests
-            yield return s_DefaultWaitForTick;
+            yield return null;
         }
 
         /// <summary>
@@ -251,7 +254,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Notification that at this time the server and client(s) are instantiated,
                 // started, and connected on both sides.
-                yield return OnServerAndClientsStartedAndConnected();
+                yield return OnStartedAndConnected();
             }
         }
 
@@ -288,7 +291,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Registers the CanClientsLoad and CanClientsUnload events of the
-        /// ClientSceneHandler (default is IntegrationTestSceneHandler).
+        /// ClientSceneHandler.
+        /// The default is: <see cref="IntegrationTestSceneHandler"/>.
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
@@ -349,7 +353,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> integration tests
-        /// this is Invoked after ShutdownAndCleanUp.
+        /// this is called after ShutdownAndCleanUp.
         /// </summary>
         protected virtual IEnumerator OnTearDown()
         {
@@ -357,7 +361,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         [UnityTearDown]
-        public IEnumerator Teardown()
+        public IEnumerator TearDown()
         {
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
@@ -368,7 +372,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Override this method to do handle cleaning up one the test(s)
+        /// Override this method to do handle cleaning up once the test(s)
         /// within the child derived class have completed
         /// </summary>
         protected virtual void OnOneTimeTearDown()
@@ -388,7 +392,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Override this to filter out the <see cref="NetworkObject"/>s that you
-        /// want to allow to persist between integration tests
+        /// want to allow to persist between integration tests.
+        /// <see cref="DestroySceneNetworkObjects"/>
+        /// <see cref="ShutdownAndCleanUp"/>
         /// </summary>
         /// <param name="networkObject">the network object in question to be destroyed</param>
         protected virtual bool CanDestroyNetworkObject(NetworkObject networkObject)
@@ -402,8 +408,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {
-            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
-            // If we are tearing down, we don't want to leave NetworkObjects hanging around
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
@@ -415,14 +419,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Waits for the function condition to return true or will time out.
+        /// Waits for the function condition to return true or it will time out.
         /// This will operate at the current m_ServerNetworkManager.NetworkConfig.TickRate
         /// and allow for a unique TimeOutHelper handler (if none then it uses the default)
-        /// Notes: This method provides more stability when running integration tests that could
-        /// be impacted by:
+        /// Notes: This provides more stability when running integration tests that could be
+        /// impacted by:
         ///     -how the integration test is being executed (i.e. in editor or in a stand alone build)
         ///     -potential platform performance issues (i.e. VM is throttled or maxed)
-        /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded version of this method
+        /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded
+        /// version of this method
         /// </summary>
         public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
         {
@@ -479,7 +484,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
-        /// are connected.
+        /// have connected or it will time out.
         /// </summary>
         /// <param name="clientsToCheck">An array of clients to be checked</param>
         protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)

@@ -64,7 +64,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(ServerType.Host, ServerType.Server)] ServerType serverType)
         {
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
@@ -403,7 +403,7 @@ namespace TestProject.RuntimeTests
         {
             m_CanStartServerAndClients = true;
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             // Give a little time for handling clean-up and the like
             yield return s_DefaultWaitForTick;
@@ -555,7 +555,7 @@ namespace TestProject.RuntimeTests
             m_UseHost = useHost;
             m_CanStartServerAndClients = true;
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             yield return s_DefaultWaitForTick;
 
@@ -739,7 +739,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator SceneEventCallbackNotifications()
         {
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
