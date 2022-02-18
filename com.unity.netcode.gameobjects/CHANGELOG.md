@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
 - Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1694)
 - Fixed spawn flow to propagate `IsSceneObject` down to children NetworkObjects, decouple implicit relationship between object spawning & `IsSceneObject` flag (#1685)
+- Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
