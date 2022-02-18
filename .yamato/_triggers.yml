@@ -5,9 +5,9 @@ develop_nightly_trigger:
   name: Develop Branch Nightly Trigger
   triggers:
     recurring:
-      - branch: develop
-        frequency: daily
-        rerun: always
+    - branch: develop
+      frequency: daily
+      rerun: always
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
