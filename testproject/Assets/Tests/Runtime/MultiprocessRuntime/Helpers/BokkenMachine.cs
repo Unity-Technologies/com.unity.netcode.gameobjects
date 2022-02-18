@@ -151,22 +151,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        public static void FetchAllLogFiles(string counterPrefixString)
+        public static void FetchAllLogFiles()
         {
-            try
+            DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
+            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.FullName}");
+            MultiprocessLogger.Log($"FetchAllLogFiles: {multiprocessAppDataDir.GetFiles("*.json").Length}");
+            foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
             {
-                MultiprocessLogger.Log($"{counterPrefixString}.1 FetchAllLogFiles");
-                DirectoryInfo multiprocessAppDataDir = MultiprocessOrchestration.MultiprocessDirInfo;
-                MultiprocessLogger.Log($"{counterPrefixString}.2 FetchAllLogFiles: {multiprocessAppDataDir.FullName} {multiprocessAppDataDir.GetFiles("*.json").Length}");
-                foreach (var f in multiprocessAppDataDir.GetFiles("*.json"))
-                {
-                    MultiprocessLogger.Log($"{counterPrefixString}.3 Getting log files from {f.FullName}");
-                    ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
-                }
-            }
-            catch (Exception e)
-            {
-                MultiprocessLogger.Log($"FetchAllLogFiles threw exception {e.Message} {e.StackTrace}");
+                MultiprocessLogger.Log($"Getting log files from {f.FullName}");
+                ExecuteCommand($"--command GetMPLogFiles --input-path {f.FullName}", true);
             }
         }
 
@@ -199,7 +192,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 else
                 {
                     deletionList.Add(process);
-                    MultiprocessLogger.Log($"Deletion list for BokkenMachine process is now {deletionList.Count}");
+                    MultiprocessLogger.Log($" Deletion list for BokkenMachine process is now {deletionList.Count}");
                 }
             }
 
@@ -274,7 +267,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (waitForResult)
             {
                 workerProcess.WaitForExit(timeToWait);
-                MultiprocessLogger.Log($"ExitCode from workerProcess is {workerProcess.ExitCode}");
                 if (logStdOut)
                 {
                     string so = workerProcess.StandardOutput.ReadToEnd();

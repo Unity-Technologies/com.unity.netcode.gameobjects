@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net;
 using System.Net.Sockets;
@@ -48,6 +49,17 @@ public class MultiprocessOrchestration
     {
         initMultiprocessDirinfo();
         MultiprocessLogger.Log($" userprofile: {s_MultiprocessDirInfo.FullName} localipfile: {s_Localip_fileinfo}");
+    }
+
+    /// <summary>
+    /// Test to see if multimachine testing is enabled via command line switch.
+    /// The result of this setting is so that any tests that want to run multimachine tests can
+    /// decide if they are enabled or not.
+    /// </summary>
+    /// <returns></returns>
+    public static bool ShouldRunMultiMachineTests()
+    {
+        return Environment.GetCommandLineArgs().Contains("-enableMultiMachineTesting");
     }
 
     public static BokkenMachine ProvisionWorkerNode(string platformString)
@@ -109,8 +121,33 @@ public class MultiprocessOrchestration
         }
     }
 
+    public static string StartWorkerNode()
+    {
+        if (s_Processes == null)
+        {
+            s_Processes = new List<Process>();
+        }
+
+        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
+        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
+        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
+
+        if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
+        {
+            MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
+            StartWorkersOnRemoteNodes(rootdir_fileinfo);
+            return "";
+        }
+        else
+        {
+            MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
+            return StartWorkerOnLocalNode();
+        }
+    }
+
     public static string StartWorkerOnLocalNode()
     {
+        MultiprocessLogger.Log($"Starting Worker on local node because: ShouldRunMultiMachineTests is {ShouldRunMultiMachineTests()}");
         var workerProcess = new Process();
         s_TotalProcessCounter++;
         if (s_Processes.Count > 0)
@@ -147,7 +184,7 @@ public class MultiprocessOrchestration
                     extraArgs += "-batchmode -nographics";
                     break;
                 default:
-                    throw new NotImplementedException($"Current platform is not supported");
+                    throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
             }
         }
         catch (FileNotFoundException)
@@ -252,7 +289,7 @@ public class MultiprocessOrchestration
 
         MultiprocessLogger.Log($"{logCount + 0.1f} Shutting down all processes... by clearing the process from the stack");
         s_Processes.Clear();
-        if (launchRemotely)
+        if (launchRemotely && ShouldRunMultiMachineTests())
         {
             MultiprocessLogger.Log($"{logCount + 0.2f} Shutting down all Bokken processes... by clearing the process from the stack");
             BokkenMachine.ProcessList.Clear();

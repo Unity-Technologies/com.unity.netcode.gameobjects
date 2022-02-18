@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -72,14 +71,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"Platform: {platformListItem}");
                 }
             }
-            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely}");
+
+            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+            if (m_LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
+            {
+                Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
+            }
+
             if (IsPerformanceTest)
             {
                 Assert.Ignore("Performance tests unable to run at this time, see: https://unity-ci.cds.internal.unity3d.com/job/11651103/results");
             }
 
             // Build the multiprocess test player
-            if (!m_LaunchRemotely && !BuildMultiprocessTestPlayer.DoesBuildInfoExist())
+            if (!BuildMultiprocessTestPlayer.DoesBuildInfoExist())
             {
                 Assert.Ignore($"Ignoring tests that require a multiprocess testplayer build");
             }
@@ -139,17 +144,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             m_HasSceneLoaded = true;
             IsSceneLoading = false;
-            var workerProcess = new Process();
-            workerProcess.StartInfo.FileName = "netstat";
-            workerProcess.StartInfo.UseShellExecute = false;
-            workerProcess.StartInfo.RedirectStandardError = true;
-            workerProcess.StartInfo.RedirectStandardOutput = true;
-            workerProcess.StartInfo.Arguments = $"-a -p UDP";
-            var newProcessStarted = workerProcess.Start();
-            workerProcess.WaitForExit(10000);
-            MultiprocessLogger.Log($"ExitCode from workerProcess is {workerProcess.ExitCode}");
-            string so = workerProcess.StandardOutput.ReadToEnd();
-            MultiprocessLogger.Log(so);
         }
 
         private void Singleton_OnClientDisconnectCallback(ulong obj)
@@ -262,7 +256,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
                         MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since ( connected client count - 1 ) is {NetworkManager.Singleton.ConnectedClients.Count - 1} is less than {WorkerCount} and platformList is null");
-                        MultiprocessOrchestration.StartWorkerOnLocalNode();
+                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
                     }
                 }
                 else
@@ -277,11 +271,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                             var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
                             machines.Add(machine);
                         });
+                        MultiprocessLogger.Log($"Task {provisionTask.Id} is for {platform}");
                         tasks.Add(provisionTask);
                     }
 
                     foreach (var task in tasks)
                     {
+                        MultiprocessLogger.Log($"Task id {task.Id}");
                         task.Wait();
                     }
 
@@ -438,7 +434,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Discovered that even after disconnect the player process doesn't auto-quit so need to force it
             MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 6);
             MultiprocessLogger.Log($" 7/20 - UnityTearDown - Reporting on processes calling bokkenapi");
-            if (m_LaunchRemotely)
+            if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
             {
                 BokkenMachine.LogProcessListStatus();
                 MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
@@ -455,13 +451,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogHandler.Flush();
             try
             {
-                MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {m_LaunchRemotely}");
-                if (m_LaunchRemotely)
+                MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
+                if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
-                    BokkenMachine.FetchAllLogFiles("3");
-                    MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
+                    BokkenMachine.FetchAllLogFiles();
                 }
-                MultiprocessLogger.Log($"4/20 - NetworkManager.Singleton.Shutdown");
+
+                MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {m_LaunchRemotely}");
+                MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
+                MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
                 if (NetworkManager.Singleton != null)
                 {
                     MultiprocessLogger.Log($"7/20 - Shutdown server/host/client " +

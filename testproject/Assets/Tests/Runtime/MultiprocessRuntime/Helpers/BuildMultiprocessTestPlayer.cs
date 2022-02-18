@@ -98,9 +98,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
-            // Make all the builds headless for automated testing as this is safer in bokken
-            // TODO: Figure out if it is worth flipping this setting or if it is better to be always headless
-            buildOptions |= BuildOptions.EnableHeadlessMode;
+            if (buildTarget == BuildTarget.StandaloneLinux64)
+            {
+                buildOptions |= BuildOptions.EnableHeadlessMode;
+            }
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
