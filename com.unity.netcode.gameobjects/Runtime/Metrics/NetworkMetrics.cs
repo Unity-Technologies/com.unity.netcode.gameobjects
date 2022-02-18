@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,6 +14,8 @@ namespace Unity.Netcode
         const ulong k_MaxMetricsPerFrame = 1000L;
 
         static Dictionary<uint, string> s_SceneEventTypeNames;
+
+        static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
 
         static NetworkMetrics()
         {
@@ -63,6 +66,21 @@ namespace Unity.Netcode
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
 
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+        private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        private readonly Counter m_PacketReceivedCounter = new Counter(NetworkMetricTypes.PacketsReceived.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        private readonly Gauge m_RttToServerGauge = new Gauge(NetworkMetricTypes.RttToServer.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+#endif
+
         private ulong m_NumberOfMetricsThisFrame;
 
         public NetworkMetrics()
@@ -79,6 +97,10 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+                .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
+                .WithGauges(m_RttToServerGauge)
+#endif
                 .Build();
 
             Dispatcher.RegisterObserver(NetcodeObserver.Observer);
@@ -404,9 +426,49 @@ namespace Unity.Netcode
             IncrementMetricCount();
         }
 
+        public void TrackPacketSent(uint packetCount)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketSentCounter.Increment(packetCount);
+            IncrementMetricCount();
+#endif
+        }
+
+        public void TrackPacketReceived(uint packetCount)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketReceivedCounter.Increment(packetCount);
+            IncrementMetricCount();
+#endif
+        }
+
+        public void TrackRttToServer(int rtt)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_RttToServerGauge.Set(rtt);
+#endif
+        }
+
         public void DispatchFrame()
         {
+            s_FrameDispatch.Begin();
             Dispatcher.Dispatch();
+            s_FrameDispatch.End();
             m_NumberOfMetricsThisFrame = 0;
         }
 
@@ -421,7 +483,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal class NetcodeObserver
+        internal class NetcodeObserver
     {
         public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }

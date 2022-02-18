@@ -62,11 +62,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
             Assert.AreEqual(2, Object.FindObjectsOfType<NetworkVisibilityComponent>().Length);
         }
     }
 }
-

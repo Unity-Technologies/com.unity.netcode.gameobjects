@@ -15,41 +15,56 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal enum __RpcExecStage
-#pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
             Server = 1,
             Client = 2
         }
 
-#pragma warning disable IDE1006 // disable naming rule violation check
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
-#pragma warning restore IDE1006 // restore naming rule violation check
 
-#pragma warning disable 414 // disable assigned but its value is never used
-#pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
-#pragma warning restore 414 // restore assigned but its value is never used
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#pragma warning disable 414 // disable assigned but its value is never used
+        private const int k_RpcMessageDefaultSize = 1024; // 1k
+        private const int k_RpcMessageMaximumSize = 1024 * 64; // 64k
+
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __sendServerRpc(FastBufferWriter writer, uint rpcMethodId, ServerRpcParams rpcParams, RpcDelivery delivery)
-#pragma warning restore 414 // restore assigned but its value is never used
+        internal FastBufferWriter __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
-            switch (delivery)
+            return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
+        }
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void __endSendServerRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            var serverRpcMessage = new ServerRpcMessage
             {
+                Metadata = new RpcMetadata
+                {
+                    NetworkObjectId = NetworkObjectId,
+                    NetworkBehaviourId = NetworkBehaviourId,
+                    NetworkRpcMethodId = rpcMethodId,
+                },
+                WriteBuffer = bufferWriter
+            };
+
+            NetworkDelivery networkDelivery;
+            switch (rpcDelivery)
+            {
+                default:
                 case RpcDelivery.Reliable:
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
+                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -57,42 +72,33 @@ namespace Unity.Netcode
                     break;
             }
 
-            var message = new RpcMessage
-            {
-                Header = new RpcMessage.HeaderData
-                {
-                    Type = RpcMessage.RpcType.Server,
-                    NetworkObjectId = NetworkObjectId,
-                    NetworkBehaviourId = NetworkBehaviourId,
-                    NetworkMethodId = rpcMethodId
-                },
-                RpcData = writer
-            };
-
-            var rpcMessageSize = 0;
+            var rpcWriteSize = 0;
 
             // If we are a server/host then we just no op and send to ourself
             if (IsHost || IsServer)
             {
-                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                using var tempBuffer = new FastBufferReader(bufferWriter, Allocator.Temp);
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
                     Timestamp = Time.realtimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
-                    // Passing false to canDefer prevents it being accessed.
+                    // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new MessageHeader(),
                     SerializedHeaderSize = 0,
+                    MessageSize = 0
                 };
-                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
-                rpcMessageSize = tempBuffer.Length;
+                serverRpcMessage.ReadBuffer = tempBuffer;
+                serverRpcMessage.Handle(ref context);
+                rpcWriteSize = tempBuffer.Length;
             }
             else
             {
-                rpcMessageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ServerClientId);
+                rpcWriteSize = NetworkManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
             }
 
+            bufferWriter.Dispose();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -102,26 +108,44 @@ namespace Unity.Netcode
                     NetworkObject,
                     rpcMethodName,
                     __getTypeName(),
-                    rpcMessageSize);
+                    rpcWriteSize);
             }
 #endif
         }
 
-#pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal unsafe void __sendClientRpc(FastBufferWriter writer, uint rpcMethodId, ClientRpcParams rpcParams, RpcDelivery delivery)
-#pragma warning disable 414 // disable assigned but its value is never used
-#pragma warning disable IDE1006 // disable naming rule violation check
+        internal FastBufferWriter __beginSendClientRpc(uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            NetworkDelivery networkDelivery = NetworkDelivery.Reliable;
-            switch (delivery)
+            return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
+        }
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void __endSendClientRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            var clientRpcMessage = new ClientRpcMessage
             {
+                Metadata = new RpcMetadata
+                {
+                    NetworkObjectId = NetworkObjectId,
+                    NetworkBehaviourId = NetworkBehaviourId,
+                    NetworkRpcMethodId = rpcMethodId,
+                },
+                WriteBuffer = bufferWriter
+            };
+
+            NetworkDelivery networkDelivery;
+            switch (rpcDelivery)
+            {
+                default:
                 case RpcDelivery.Reliable:
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (writer.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE - sizeof(RpcMessage.RpcType) - sizeof(ulong) - sizeof(uint) - sizeof(ushort))
+                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -129,26 +153,15 @@ namespace Unity.Netcode
                     break;
             }
 
-            var message = new RpcMessage
-            {
-                Header = new RpcMessage.HeaderData
-                {
-                    Type = RpcMessage.RpcType.Client,
-                    NetworkObjectId = NetworkObjectId,
-                    NetworkBehaviourId = NetworkBehaviourId,
-                    NetworkMethodId = rpcMethodId
-                },
-                RpcData = writer
-            };
-            int messageSize;
+            var rpcWriteSize = 0;
 
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
 
-            if (rpcParams.Send.TargetClientIds != null)
+            if (clientRpcParams.Send.TargetClientIds != null)
             {
-                foreach (var clientId in rpcParams.Send.TargetClientIds)
+                foreach (var clientId in clientRpcParams.Send.TargetClientIds)
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {
@@ -157,11 +170,11 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, in rpcParams.Send.TargetClientIds);
+                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
             }
-            else if (rpcParams.Send.TargetClientIdsNativeArray != null)
+            else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
-                foreach (var clientId in rpcParams.Send.TargetClientIdsNativeArray)
+                foreach (var clientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {
@@ -170,31 +183,35 @@ namespace Unity.Netcode
                     }
                 }
 
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, rpcParams.Send.TargetClientIdsNativeArray.Value);
+                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
                 shouldSendToHost = IsHost;
-                messageSize = NetworkManager.SendMessage(message, networkDelivery, NetworkManager.ConnectedClientsIds);
+                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ConnectedClientsIds);
             }
 
             // If we are a server/host then we just no op and send to ourself
             if (shouldSendToHost)
             {
-                using var tempBuffer = new FastBufferReader(writer, Allocator.Temp);
+                using var tempBuffer = new FastBufferReader(bufferWriter, Allocator.Temp);
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
                     Timestamp = Time.realtimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
-                    // Passing false to canDefer prevents it being accessed.
+                    // RpcMessage doesn't access this stuff so it's just left empty.
                     Header = new MessageHeader(),
                     SerializedHeaderSize = 0,
+                    MessageSize = 0
                 };
-                message.Handle(tempBuffer, context, NetworkManager, NetworkManager.ServerClientId, false);
-                messageSize = tempBuffer.Length;
+                clientRpcMessage.ReadBuffer = tempBuffer;
+                clientRpcMessage.Handle(ref context);
+                rpcWriteSize = tempBuffer.Length;
             }
+
+            bufferWriter.Dispose();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -206,7 +223,7 @@ namespace Unity.Netcode
                         NetworkObject,
                         rpcMethodName,
                         __getTypeName(),
-                        messageSize);
+                        rpcWriteSize);
                 }
             }
 #endif
@@ -260,9 +277,9 @@ namespace Unity.Netcode
         {
             // Only server can MODIFY. So allow modification if network is either not running or we are server
             return !m_NetworkObject ||
-                   (m_NetworkObject.NetworkManager == null ||
-                    !m_NetworkObject.NetworkManager.IsListening ||
-                    m_NetworkObject.NetworkManager.IsServer);
+                m_NetworkObject.NetworkManager == null ||
+                m_NetworkObject.NetworkManager.IsListening == false ||
+                m_NetworkObject.NetworkManager.IsServer;
         }
 
         /// <summary>
@@ -554,7 +571,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            NetworkManager.SendMessage(message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
+                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
                         }
                     }
                 }

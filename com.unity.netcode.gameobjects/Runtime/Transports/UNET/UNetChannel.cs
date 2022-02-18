@@ -1,3 +1,4 @@
+#if UNITY_UNET_PRESENT
 using System;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -50,3 +51,4 @@ namespace Unity.Netcode.Transports.UNET
 #endif
     }
 }
+#endif

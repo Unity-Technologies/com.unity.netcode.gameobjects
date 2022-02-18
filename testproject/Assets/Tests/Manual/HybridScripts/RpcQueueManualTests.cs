@@ -423,6 +423,7 @@ namespace TestProject.ManualTests
                                 }
                                 m_GlobalCounter++;
                                 OnSendGlobalCounterClientRpc(m_GlobalCounter);
+                                OnSendGlobalCounterClientRpc((float)m_GlobalCounter);
                                 m_RpcMessagesSent++;
                             }
 
@@ -701,6 +702,21 @@ namespace TestProject.ManualTests
             if (m_GlobalCounterOffset == 0)
             {
                 m_GlobalCounterOffset = Mathf.Max(counter - 1, 0);
+            }
+        }
+
+        /// <summary>
+        /// [Tests] Server to Clients
+        /// [Tests] broadcasting to all clients (similar to unified direct without specifying all client ids)
+        /// </summary>
+        /// <param name="counter">the global counter value</param>
+        [ClientRpc]
+        private void OnSendGlobalCounterClientRpc(float counter)
+        {
+            m_GlobalCounter = (int)counter;
+            if (m_GlobalCounterOffset == 0)
+            {
+                m_GlobalCounterOffset = Mathf.Max(m_GlobalCounter - 1, 0);
             }
         }
 
