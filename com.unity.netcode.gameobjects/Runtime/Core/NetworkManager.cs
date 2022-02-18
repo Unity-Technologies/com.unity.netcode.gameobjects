@@ -1354,7 +1354,20 @@ namespace Unity.Netcode
                     s_TransportConnect.Begin();
 #endif
 
-                    clientId = m_NextClientId++;
+                    // Assumptions:
+                    // - When server receives a connection, it *must be* a client
+                    // - When client receives one, it *must be* the server
+                    // Client's can't connect to or talk to other clients.
+                    // Server is a sentinel so only one exists, if we are server, we can't be
+                    // connecting to it.
+                    if (IsServer)
+                    {
+                        clientId = m_NextClientId++;
+                    }
+                    else
+                    {
+                        clientId = ServerClientId;
+                    }
                     m_ClientIdToTransportIdMap[clientId] = transportId;
                     m_TransportIdToClientIdMap[transportId] = clientId;
 
@@ -1457,6 +1470,12 @@ namespace Unity.Netcode
                 }
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
+            // else
+            if (clientIds.Count != 1 || clientIds[0] != ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(ServerClientId)}");
+            }
+
             return MessagingSystem.SendMessage(ref message, delivery, clientIds);
         }
 
@@ -1485,6 +1504,11 @@ namespace Unity.Netcode
                 }
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
+            // else
+            if (numClientIds != 1 || clientIds[0] != ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(ServerClientId)}");
+            }
 
             return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
         }
@@ -1502,6 +1526,11 @@ namespace Unity.Netcode
             if (IsServer && clientId == ServerClientId)
             {
                 return 0;
+            }
+
+            if (!IsServer && clientId != ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(ServerClientId)}");
             }
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
@@ -1533,7 +1562,7 @@ namespace Unity.Netcode
         {
             if (!IsServer)
             {
-                throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
+                throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
             }
 
             OnClientDisconnectFromServer(clientId);
@@ -1683,7 +1712,6 @@ namespace Unity.Netcode
                     {
                         if (SpawnManager.SpawnedObjectsList.Count != 0)
                         {
-                            message.SceneObjectCount = SpawnManager.SpawnedObjectsList.Count;
                             message.SpawnedObjectsList = SpawnManager.SpawnedObjectsList;
                         }
                     }
