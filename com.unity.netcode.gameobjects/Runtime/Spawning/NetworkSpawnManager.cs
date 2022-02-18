@@ -102,7 +102,7 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, in NetworkContext context)
+        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, ref NetworkContext context)
         {
             if (!m_Triggers.ContainsKey(networkObjectId))
             {
@@ -212,7 +212,7 @@ namespace Unity.Netcode
                     NetworkObjectId = networkObject.NetworkObjectId,
                     OwnerClientId = networkObject.OwnerClientId
                 };
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
@@ -286,7 +286,7 @@ namespace Unity.Netcode
                 NetworkObjectId = networkObject.NetworkObjectId,
                 OwnerClientId = networkObject.OwnerClientId
             };
-            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
@@ -525,6 +525,13 @@ namespace Unity.Netcode
                 triggerInfo.TriggerData.Dispose();
                 m_Triggers.Remove(networkId);
             }
+
+            // propagate the IsSceneObject setting to child NetworkObjects
+            var children = networkObject.GetComponentsInChildren<NetworkObject>();
+            foreach (var childObject in children)
+            {
+                childObject.IsSceneObject = sceneObject;
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -543,7 +550,7 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = networkObject.GetMessageSceneObject(clientId)
                 };
-                var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
 
                 networkObject.MarkVariablesDirty();
@@ -678,6 +685,7 @@ namespace Unity.Netcode
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+            var networkObjectsToSpawn = new List<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -685,9 +693,14 @@ namespace Unity.Netcode
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
+            }
+
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
             }
         }
 
@@ -783,7 +796,7 @@ namespace Unity.Netcode
                             {
                                 NetworkObjectId = networkObject.NetworkObjectId
                             };
-                            var size = NetworkManager.SendMessage(message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
+                            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                             foreach (var targetClientId in m_TargetClientIds)
                             {
                                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
@@ -822,7 +835,7 @@ namespace Unity.Netcode
         {
             foreach (var sobj in SpawnedObjectsList)
             {
-                if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
+                if (sobj.CheckObjectVisibility == null)
                 {
                     if (!sobj.Observers.Contains(clientId))
                     {
