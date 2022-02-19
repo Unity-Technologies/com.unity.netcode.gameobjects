@@ -18,7 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
 - Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
 - Disallowed async keyword in RPCs (#1681)
-- Fixed an issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
+- Fixed an issue where Alpha release versions of Unity (version 2022.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
 - Fixed messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
 - Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1694)
 - Fixed spawn flow to propagate `IsSceneObject` down to children NetworkObjects, decouple implicit relationship between object spawning & `IsSceneObject` flag (#1685)
@@ -43,6 +43,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
 - Fixed NetworkTransport Initialize now can receive the associated NetworkManager instance to avoid using NetworkManager.Singleton in transport layer (#1677)
+- Fixed a bug where NetworkList.Contains value was inverted (#1363)
 
 ## [1.0.0-pre.4] - 2021-01-04
 
