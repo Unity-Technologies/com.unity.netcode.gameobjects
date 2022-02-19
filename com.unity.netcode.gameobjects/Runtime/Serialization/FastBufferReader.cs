@@ -93,7 +93,7 @@ namespace Unity.Netcode
         /// <param name="offset"></param>
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator);
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator);
             }
         }
 
@@ -165,7 +165,7 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
-            Handle = CreateHandle(buffer, Math.Max(1, length), offset, allocator);
+            Handle = CreateHandle(buffer, length, offset, allocator);
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), Math.Max(1, length == -1 ? writer.Length : length), offset, allocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator);
         }
 
         /// <summary>

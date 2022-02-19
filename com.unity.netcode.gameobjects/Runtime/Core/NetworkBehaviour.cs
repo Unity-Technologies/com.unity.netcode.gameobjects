@@ -208,7 +208,6 @@ namespace Unity.Netcode
                 };
                 clientRpcMessage.ReadBuffer = tempBuffer;
                 clientRpcMessage.Handle(ref context);
-                rpcWriteSize = tempBuffer.Length;
             }
 
             bufferWriter.Dispose();
