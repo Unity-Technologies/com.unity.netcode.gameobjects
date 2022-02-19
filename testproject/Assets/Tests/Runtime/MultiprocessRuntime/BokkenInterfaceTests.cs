@@ -43,7 +43,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckPreconditions()
         {
-            MultiprocessLogger.Log($"Are Clients Connected: {WorkerCount}, {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"Are Clients Connected: {GetWorkerCount()}, {m_ConnectedClientsList.Count}");
             MultiprocessLogger.Log($" {MultiprocessOrchestration.MultiprocessDirInfo.FullName}: {MultiprocessOrchestration.MultiprocessDirInfo.Exists}\n" +
                 $" {BokkenMachine.PathToDll}\n" +
                 $" {MultiprocessOrchestration.UserProfile_Home}");

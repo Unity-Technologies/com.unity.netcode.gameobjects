@@ -253,7 +253,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
                     return false;
                 }
 
-                throw new Exception($"timeout for Context Step with action ID {m_CurrentActionId}");
+                throw new Exception($"timeout for Context Step with action ID {m_CurrentActionId} Time.time - m_StartTime > TestCoordinator.MaxWaitTimeoutSec {Time.time} - {m_StartTime}");
             }
 
             if (m_AdditionalIsFinishedWaiter != null)

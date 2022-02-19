@@ -45,13 +45,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Sanity check for TestCoordinator
             // Call the method
             MultiprocessLogger.Log("Before sending message, let's see that we have the right number of connected clients");
-            MultiprocessLogger.Log($"{WorkerCount}, {m_ConnectedClientsList.Count}");
+            MultiprocessLogger.Log($"{GetWorkerCount()}, {m_ConnectedClientsList.Count}");
             MultiprocessLogger.Log("CheckTestCoordinator test in TestCoordinatorTests about to call InvokeFromMethodActionRpc");
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
             var nbResults = 0;
-            MultiprocessLogger.Log($"WorkerCount is {WorkerCount}");
-            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
+            MultiprocessLogger.Log($"WorkerCount is {GetWorkerCount()}");
+            for (int i = 0; i < GetWorkerCount(); i++) // wait and test for the two clients
             {
                 MultiprocessLogger.Log("Waiting for result to be set on TestCoordinator");
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
@@ -61,8 +61,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Greater(result, 0f);
                 nbResults++;
             }
-            MultiprocessLogger.Log($"Check that {nbResults} is equal to {WorkerCount}");
-            Assert.That(nbResults, Is.EqualTo(WorkerCount));
+            MultiprocessLogger.Log($"Check that {nbResults} is equal to {GetWorkerCount()}");
+            Assert.That(nbResults, Is.EqualTo(GetWorkerCount()));
         }
 
         [UnityTest]
@@ -73,9 +73,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
-            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
+            for (int i = 0; i < GetWorkerCount(); i++) // wait and test for the two clients
             {
-                MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - WaitUntil ResultIsSet, or timeout {i} of {WorkerCount}");
+                MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - WaitUntil ResultIsSet, or timeout {i} of {GetWorkerCount()}");
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
                 var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
@@ -84,7 +84,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 nbResults++;
             }
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End for loop");
-            Assert.That(nbResults, Is.EqualTo(WorkerCount));
+            Assert.That(nbResults, Is.EqualTo(GetWorkerCount()));
             MultiprocessLogger.Log($"CheckTestCoordinatorWithArgs - End of test");
             MultiprocessLogHandler.Flush();
         }

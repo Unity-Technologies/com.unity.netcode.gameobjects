@@ -13,6 +13,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     /// </summary>
     public class ExecuteStepInContextTests : BaseMultiprocessTests
     {
+        protected override bool RunUnityTearDown => false;
         protected override bool IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
@@ -100,7 +101,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < WorkerCount; i++)
+                for (int i = 0; i < GetWorkerCount(); i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionMessageToTest}.*"));
                 }
@@ -119,7 +120,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < WorkerCount; i++)
+                for (int i = 0; i < GetWorkerCount(); i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionUpdateMessageToTest}.*"));
                 }
@@ -149,7 +150,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }, additionalIsFinishedWaiter: () =>
             {
                 int nbFinished = 0;
-                for (int i = 0; i < WorkerCount; i++)
+                for (int i = 0; i < GetWorkerCount(); i++)
                 {
                     if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
                     {
@@ -157,11 +158,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                 }
 
-                return nbFinished == WorkerCount;
+                return nbFinished == GetWorkerCount();
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(WorkerCount));
+                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(GetWorkerCount()));
                 foreach (var clientId in TestCoordinator.AllClientIdsExceptMine)
                 {
                     var current = 0;
@@ -208,7 +209,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     Assert.AreEqual(12345, res.result);
                 }
 
-                Assert.That(resultCountFromWorkers, Is.EqualTo(WorkerCount));
+                Assert.That(resultCountFromWorkers, Is.EqualTo(GetWorkerCount()));
             });
 
             const int timeToWait = 4;

@@ -121,30 +121,6 @@ public class MultiprocessOrchestration
         }
     }
 
-    public static string StartWorkerNode()
-    {
-        if (s_Processes == null)
-        {
-            s_Processes = new List<Process>();
-        }
-
-        var jobid_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "jobid"));
-        var resources_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "resources"));
-        var rootdir_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "rootdir"));
-
-        if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
-        {
-            MultiprocessLogger.Log("Run on remote nodes because jobid, resource and rootdir files exist");
-            StartWorkersOnRemoteNodes(rootdir_fileinfo);
-            return "";
-        }
-        else
-        {
-            MultiprocessLogger.Log($"Run on local nodes: current count is {s_Processes.Count}");
-            return StartWorkerOnLocalNode();
-        }
-    }
-
     public static string StartWorkerOnLocalNode()
     {
         MultiprocessLogger.Log($"Starting Worker on local node because: ShouldRunMultiMachineTests is {ShouldRunMultiMachineTests()}");
@@ -184,7 +160,7 @@ public class MultiprocessOrchestration
                     extraArgs += "-batchmode -nographics";
                     break;
                 default:
-                    throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
+                    throw new NotImplementedException($"Current platform is not supported");
             }
         }
         catch (FileNotFoundException)

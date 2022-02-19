@@ -22,7 +22,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-        public int WorkerCount = -1;
+        protected virtual int GetWorkerCount()
+        {
+            platformList = MultiprocessOrchestration.GetRemotePlatformList();
+
+            if (platformList == null)
+            {
+                m_LaunchRemotely = false;
+            }
+            else
+            {
+                m_LaunchRemotely = true;
+            }
+            return platformList == null ? 2 : platformList.Length;
+
+        }
         protected bool m_HasSceneLoaded = false;
         protected bool m_LaunchRemotely;
         protected virtual bool RunUnityTearDown => true;
@@ -56,25 +70,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             m_ConnectedClientsList = new List<ulong>();
-
-            platformList = MultiprocessOrchestration.GetRemotePlatformList();
-            if (platformList == null)
-            {
-                m_LaunchRemotely = false;
-                if (WorkerCount < 1)
-                {
-                    WorkerCount = 2;
-                }
-            }
-            else
-            {
-                WorkerCount = platformList.Length;
-                m_LaunchRemotely = true;
-                foreach (var platformListItem in platformList)
-                {
-                    MultiprocessLogger.Log($"Platform: {platformListItem}");
-                }
-            }
 
             MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
             if (m_LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
@@ -179,12 +174,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
-            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count} {WorkerCount}");
+            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count} {GetWorkerCount()}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
             var t2 = TestContext.CurrentTestExecutionContext;
             MultiprocessLogger.Log($"3/3 {t2.CurrentTest.FullName}");
-            MultiprocessLogHandler.Flush();
         }
 
         public List<ulong> DisconnectClients(int messageCounter = 0)
@@ -238,7 +232,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             int platformCount = platformList == null ? 0 : platformList.Length;
             MultiprocessLogger.Log($"UnitySetup in Base Class - \n" +
                 $" Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count},\n" +
-                $" WorkerCount {WorkerCount},\n" +
+                $" GetWorkerCount() {GetWorkerCount()},\n" +
                 $" platformList is : {platformCount}");
             if (RunUnityTearDown)
             {
@@ -259,15 +253,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (m_ConnectedClientsList.Count < WorkerCount)
+            if (m_ConnectedClientsList.Count < GetWorkerCount() && NetworkManager.Singleton.ConnectedClients.Count < GetWorkerCount() + 1)
             {
-                var numProcessesToCreate = WorkerCount;
+                var numProcessesToCreate = GetWorkerCount();
                 if (!m_LaunchRemotely)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
                     {
-                        MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since ( connected client count - 1 ) is {NetworkManager.Singleton.ConnectedClients.Count - 1} is less than {WorkerCount} and platformList is null");
-                        MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"Locally spawning testplayer {i}/{numProcessesToCreate} since ( connected client count - 1 ) is {NetworkManager.Singleton.ConnectedClients.Count - 1} is less than {GetWorkerCount()} and platformList is null");
+                        MultiprocessOrchestration.StartWorkerOnLocalNode(); // will automatically start built player as clients
                     }
                 }
                 else
@@ -292,7 +286,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         task.Wait();
                     }
 
-                    MultiprocessLogger.Log($"We are trying to get to {WorkerCount} from {m_ConnectedClientsList.Count}"
+                    MultiprocessLogger.Log($"We are trying to get to {GetWorkerCount()} from {m_ConnectedClientsList.Count}"
                         + $" by launching {machines.Count} new instances");
 
                     int initialCount = m_ConnectedClientsList.Count;
@@ -303,7 +297,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                             MultiprocessLogger.Log("Warning: machine is not valid");
                         }
                         MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
-                        MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and platformList is not null");
+                        MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {GetWorkerCount()} and platformList is not null");
                         initialCount = m_ConnectedClientsList.Count;
                         machine.Launch();
                         MultiprocessLogger.Log($"Launching process complete... waiting for {m_ConnectedClientsList.Count} to increase from {initialCount}");
@@ -318,14 +312,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
-            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             int counter = 0;
-            while (m_ConnectedClientsList.Count < WorkerCount)
+            while (m_ConnectedClientsList.Count < GetWorkerCount())
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount)
+                if (NetworkManager.Singleton.ConnectedClients.Count > GetWorkerCount())
                 {
-                    MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count - 1}");
-                    yield return new WaitForSecondsRealtime(0.8f);
+                    MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count} WorkerCount: {GetWorkerCount()}");
                     break;
                 }
                 counter++;
@@ -343,20 +335,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
                     }
                     afterYield = Time.realtimeSinceStartup;
-                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {WorkerCount} OR {NetworkManager.Singleton.ConnectedClients.Count - 1} == {WorkerCount}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
+                    MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {GetWorkerCount()} OR {NetworkManager.Singleton.ConnectedClients.Count - 1} == {GetWorkerCount()}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
                 }
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
-                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
+                    MultiprocessLogger.Log($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
+                    throw new Exception($"FAIL - Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
                 }
             }
             // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveOnServer();
             PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
-            MultiprocessLogger.Log($"SUCCESS - Connected client count: NetworkManager {NetworkManager.Singleton.ConnectedClients.Count} Listener: {m_ConnectedClientsList.Count} while waiting for WorkerCount {WorkerCount}");
+            MultiprocessLogger.Log($"SUCCESS - Connected client count: NetworkManager {NetworkManager.Singleton.ConnectedClients.Count} Listener: {m_ConnectedClientsList.Count} while waiting for WorkerCount {GetWorkerCount()}");
             MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
-            if (NetworkManager.Singleton.ConnectedClients.Count > WorkerCount && m_ConnectedClientsList.Count < WorkerCount)
+            if (NetworkManager.Singleton.ConnectedClients.Count > GetWorkerCount() && m_ConnectedClientsList.Count < GetWorkerCount())
             {
                 MultiprocessLogger.Log("Warning: Client connection listener didn't fire... a KeyNotFoundException at discconnect time might follow " +
                     $"{m_ConnectedClientsList.Count} but connected clients has increased" +
@@ -369,15 +361,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogHandler.Flush();
             MultiprocessLogger.Log($" 1/20 TearDown - BaseMultiProcessTests - start teardown");
-            MultiprocessLogHandler.Flush();
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($" 2/20 TearDown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
             var t2 = TestContext.CurrentTestExecutionContext;
-            TimeSpan duration = DateTime.Now - t2.StartTime;
+            TimeSpan duration = DateTime.UtcNow.Subtract(t2.StartTime);
             MultiprocessLogger.Log($" 3/30 TearDown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
-                $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime} duration: {duration.TotalSeconds}");
+                $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime.ToLongTimeString()} end: {DateTime.UtcNow.ToLongTimeString()} duration: {duration.TotalSeconds}");
             /*
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
@@ -403,8 +393,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.TestRunTeardown();
             */
             MultiprocessLogger.Log(" 4/20 - TearDown - BaseMultiProcessTests - Running TearDown ... Complete");
-            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
-            MultiprocessLogger.Log(MultiprocessLogHandler.Flush());
         }
 
 
@@ -425,7 +413,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 // At this point we have already called disconnect from TearDown so we should yield and wait for that disconnect to happen and report on it
                 for (int i = 0; i < 10; i++)
                 {
-                    MultiprocessLogger.Log($" 6.{i / 10}/20 Need to confirm that {WorkerCount} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
+                    MultiprocessLogger.Log($" 6.{i / 10}/20 Need to confirm that {GetWorkerCount()} worker was shutdown, listener says {m_ConnectedClientsList.Count} and NetworkManager says: {NetworkManager.Singleton.ConnectedClients.Count}");
                     yield return new WaitForSeconds(1.0f);
                     if (NetworkManager.Singleton.ConnectedClients.Count == 1)
                     {
