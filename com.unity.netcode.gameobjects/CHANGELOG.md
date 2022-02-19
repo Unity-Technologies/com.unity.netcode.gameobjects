@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
+- Fixed FastBufferReader being created with a length of 1 if provided an input of length 0 (#1724)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
