@@ -12,7 +12,7 @@ namespace Unity.Netcode.Editor
     {
         internal static NetworkManagerHelper Singleton;
 
-        // This is primarily to handle multiInstance scenarios where more than 1 NetworkManager could exist
+        // This is primarily to handle IntegrationTest scenarios where more than 1 NetworkManager could exist
         private static Dictionary<NetworkManager, Transform> s_LastKnownNetworkManagerParents = new Dictionary<NetworkManager, Transform>();
 
         /// <summary>

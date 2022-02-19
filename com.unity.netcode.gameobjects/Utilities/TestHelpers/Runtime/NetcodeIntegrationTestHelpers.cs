@@ -54,7 +54,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Call this to clean up the IntegrationTestSceneHandler and destroy the s_CoroutineRunner.
         /// Note:
-        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// If deriving from <see cref="NetcodeIntegrationTest"/> or using <see cref="Destroy"/> then you
         /// typically won't need to do this.
         /// </summary>
         public static void CleanUpHandlers()
@@ -69,7 +69,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Call this to register scene validation and the IntegrationTestSceneHandler
         /// Note:
-        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// If deriving from <see cref="NetcodeIntegrationTest"/> or using <see cref="Destroy"/> then you
         /// typically won't need to call this.
         /// </summary>
         public static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
@@ -262,7 +262,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (s_IsStarted)
             {
-                throw new InvalidOperationException("MultiInstanceHelper already started. Did you forget to Destroy?");
+                throw new InvalidOperationException($"{nameof(NetcodeIntegrationTestHelpers)} already thinks it is started. Did you forget to Destroy?");
             }
 
             s_IsStarted = true;

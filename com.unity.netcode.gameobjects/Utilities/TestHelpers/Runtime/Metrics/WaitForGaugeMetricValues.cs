@@ -22,6 +22,11 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
             m_GaugeFilterDelegate = counterFilter;
         }
 
+        public bool MetricFound()
+        {
+            return m_Found;
+        }
+
         public double AssertMetricValueHaveBeenFound()
         {
             AssertHasError();

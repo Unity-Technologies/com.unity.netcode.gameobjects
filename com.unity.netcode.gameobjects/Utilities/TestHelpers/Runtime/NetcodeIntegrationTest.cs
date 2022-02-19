@@ -176,6 +176,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Invoked after the server and clients have started.
+        /// Note: No connection verification has been done at this point
+        /// </summary>
+        protected virtual IEnumerator OnServerAndClientsStarted()
+        {
+            yield return null;
+        }
+
+        /// <summary>
         /// Invoked after the server and clients have started and verified
         /// their connections with each other.
         /// </summary>
@@ -201,6 +210,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
 
                 RegisterSceneManagerHandler();
+
+                // Notification that the server and clients have been started
+                yield return OnServerAndClientsStarted();
 
                 // Wait for all clients to connect
                 yield return WaitForClientsConnectedOrTimeOut();
@@ -363,12 +375,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            yield return OnTearDown();
+
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 ShutdownAndCleanUp();
             }
-
-            yield return OnTearDown();
         }
 
         /// <summary>

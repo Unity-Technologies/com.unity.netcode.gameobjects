@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests the times of two clients connecting to a server using the SIPTransport (returns 50ms RTT but has no latency simulation)
     /// </summary>
-    public class TimeMultiInstanceTest : NetcodeIntegrationTest
+    public class TimeIntegrationTest : NetcodeIntegrationTest
     {
         private const double k_AdditionalTimeTolerance = 0.3d; // magic number and in theory not needed but without this mac os test fail in Yamato because it looks like we get random framerate drops during unit test.
 
@@ -46,7 +46,7 @@ namespace Unity.Netcode.RuntimeTests
         [TestCase(10, 30u, ExpectedResult = null)]
         [TestCase(60, 60u, ExpectedResult = null)]
         [TestCase(60, 10u, ExpectedResult = null)]
-        public IEnumerator TestTimeMultiInstance(int targetFrameRate, uint tickRate)
+        public IEnumerator TestTimeIntegrationTest(int targetFrameRate, uint tickRate)
         {
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, targetFrameRate, tickRate);
 
@@ -113,7 +113,7 @@ namespace Unity.Netcode.RuntimeTests
             /*
              * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
              * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
-             * MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
+             * NetcodeIntegrationTestHelpers has a helper function that lets you mark a runtime created object to be
              * treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */

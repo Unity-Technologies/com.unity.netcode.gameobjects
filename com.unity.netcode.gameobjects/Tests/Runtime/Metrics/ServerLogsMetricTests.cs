@@ -25,6 +25,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Client.LogLevel = LogLevel.Developer;
             Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
+            yield return s_DefaultWaitForTick;
 
             yield return waitForSentMetric.WaitForMetricsReceived();
 
@@ -46,6 +47,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Client.LogLevel = LogLevel.Developer;
             Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
+
+            yield return s_DefaultWaitForTick;
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 

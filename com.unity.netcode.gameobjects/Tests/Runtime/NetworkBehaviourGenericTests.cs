@@ -1,4 +1,4 @@
-using NUnit.Framework;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -12,9 +12,11 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NbClients => 0;
 
+        private bool m_AllowServerToStart;
+
         protected override bool CanStartServerAndClients()
         {
-            return false;
+            return m_AllowServerToStart;
         }
 
         public class SimpleNetworkBehaviour : NetworkBehaviour
@@ -27,14 +29,15 @@ namespace Unity.Netcode.RuntimeTests
         /// Note: This test does not require any clients, but should not impact this
         /// particular test if new tests are added to this class that do require clients
         /// </summary>
-        [Test]
-        public void ValidateNoSpam()
+        [UnityTest]
+        public IEnumerator ValidateNoSpam()
         {
+            m_AllowServerToStart = true;
             var objectToTest = new GameObject();
             var simpleNetworkBehaviour = objectToTest.AddComponent<SimpleNetworkBehaviour>();
 
             // Now just start the Host
-            Assert.True(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }), "Failed to start the host!");
+            yield return StartServerAndClients();
 
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;

@@ -2,6 +2,7 @@
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_4
 
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
@@ -12,64 +13,59 @@ using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
-    internal class RttMetricsTests
+    /// <summary>
+    /// Note: This is one way to easily identify each specific test.
+    /// Since the test only tested 1 and then 2 clients, I made this
+    /// and enum, but you can always remove the enum in the constructor,
+    /// replace it with an int, and then test from 1 to 9 clients.
+    /// Just an example of how you can accomplish the same task using
+    /// the NetcodeIntegrationTest
+    /// </summary>
+    [TestFixture(NumberOfClients.OneClient)]
+    [TestFixture(NumberOfClients.TwoClients)]
+    internal class RttMetricsTests : NetcodeIntegrationTest
     {
-        [UnityTest]
-        public IEnumerator TrackRttMetricServerToSingleClient()
+        protected override int NbClients => m_ClientCount;
+
+        public enum NumberOfClients
         {
-            NetcodeIntegrationTestHelpers.Create(
-                clientCount: 1,
-                out var server,
-                out var clients,
-                targetFrameRate: 60,
+            OneClient,
+            TwoClients
+        }
+
+        private int m_ClientCount;
+
+        public RttMetricsTests(NumberOfClients numberOfClients)
+        {
+            m_ClientCount = numberOfClients == NumberOfClients.OneClient ? 1 : 2;
+        }
+
+        /// <summary>
+        /// Note: We are using the OnOneTimeSetup to select the transport to use for
+        /// this test set.
+        /// </summary>
+        protected override void OnOneTimeSetup()
+        {
 #if UTP_ADAPTER
-                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
+            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
 #else
-                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
+            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
 #endif
-
-            server.StartServer();
-            clients[0].StartClient();
-
-            var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.RttToServer);
-
-            using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
-            {
-                writer.WriteValueSafe(1337);
-                server.CustomMessagingManager.SendUnnamedMessageToAll(writer);
-            }
-
-            yield return waitForMetricValues.WaitForMetricsReceived();
-
-            var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
-            Assert.AreEqual(0f, rttValue);
         }
 
         [UnityTest]
-        public IEnumerator TrackRttMetricServerToMultipleClients()
+        public IEnumerator TrackRttMetricServerToClient()
         {
-            NetcodeIntegrationTestHelpers.Create(
-                clientCount: 2,
-                out var server,
-                out var clients,
-                targetFrameRate: 60,
-                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
-
-            server.StartServer();
-            clients[0].StartClient();
-            clients[1].StartClient();
-
-            var serverMetrics = (NetworkMetrics)server.NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(serverMetrics.Dispatcher, NetworkMetricTypes.RttToServer);
+            var waitForMetricValues = new WaitForGaugeMetricValues((m_ServerNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher, NetworkMetricTypes.RttToServer);
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
                 writer.WriteValueSafe(1337);
-                server.CustomMessagingManager.SendUnnamedMessageToAll(writer);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessageToAll(writer);
             }
 
-            yield return waitForMetricValues.WaitForMetricsReceived();
+            yield return WaitForConditionOrTimeOut(() => waitForMetricValues.MetricFound());
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TrackRttMetricServerToClient)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
             var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
             Assert.AreEqual(0f, rttValue);
@@ -78,33 +74,26 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackRttMetricClientToServer()
         {
-            NetcodeIntegrationTestHelpers.Create(
-                clientCount: 1,
-                out var server,
-                out var clients,
-                targetFrameRate: 60,
-#if UTP_ADAPTER
-                NetcodeIntegrationTestHelpers.InstanceTransport.UTP);
-#else
-                NetcodeIntegrationTestHelpers.InstanceTransport.SIP);
-#endif
-
-            server.StartServer();
-            clients[0].StartClient();
-
-            var clientMetrics = (NetworkMetrics)clients[0].NetworkMetrics;
-            var waitForMetricValues = new WaitForGaugeMetricValues(clientMetrics.Dispatcher, NetworkMetricTypes.RttToServer, metric => metric > 0f) ;
+            var clientGaugeMetricValues = new List<WaitForGaugeMetricValues>();
+            foreach(var client in m_ClientNetworkManagers)
+            {
+                clientGaugeMetricValues.Add(new WaitForGaugeMetricValues((client.NetworkMetrics as NetworkMetrics).Dispatcher, NetworkMetricTypes.RttToServer, metric => metric > 0f));
+            }
 
             using (var writer = new FastBufferWriter(sizeof(uint), Allocator.Temp))
             {
                 writer.WriteValueSafe(1337);
-                server.CustomMessagingManager.SendUnnamedMessageToAll(writer);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessageToAll(writer);
             }
 
-            yield return waitForMetricValues.WaitForMetricsReceived();
+            yield return WaitForConditionOrTimeOut(() => clientGaugeMetricValues.Where((c) => c.MetricFound()).Count() == NbClients);
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TrackRttMetricClientToServer)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
-            var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
-            Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
+            foreach(var clientGaugeMetricValue in clientGaugeMetricValues)
+            {
+                var rttValue = clientGaugeMetricValue.AssertMetricValueHaveBeenFound();
+                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
+            }
         }
     }
 }

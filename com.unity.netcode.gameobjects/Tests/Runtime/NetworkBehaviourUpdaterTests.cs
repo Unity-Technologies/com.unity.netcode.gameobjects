@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// This is a refactor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
+    /// This is a re-factor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
     /// </summary>
     public class NetVarContainer : NetworkBehaviour
     {
@@ -337,16 +337,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Object.DestroyImmediate(prefabToSpawn);
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            // Make sure everything spawned/created is destroyed before starting next test iteration
-            foreach (var spawnedObject in s_ClientSpawnedNetworkObjects)
-            {
-                Object.DestroyImmediate(spawnedObject);
-            }
-            return base.OnTearDown();
         }
     }
 }

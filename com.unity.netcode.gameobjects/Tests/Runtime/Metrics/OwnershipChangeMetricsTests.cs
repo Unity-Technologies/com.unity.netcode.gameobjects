@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
         private const int k_MessageHeaderSize = 2;
 
-        protected override Action<GameObject> UpdatePlayerPrefab => _ =>
+        protected override void OnServerAndClientsCreated()
         {
             var gameObject = new GameObject(k_NewNetworkObjectName);
             m_NewNetworkPrefab = gameObject.AddComponent<NetworkObject>();
@@ -30,7 +30,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
             }
-        };
+            base.OnServerAndClientsCreated();
+        }
 
         private NetworkObject SpawnNetworkObject()
         {

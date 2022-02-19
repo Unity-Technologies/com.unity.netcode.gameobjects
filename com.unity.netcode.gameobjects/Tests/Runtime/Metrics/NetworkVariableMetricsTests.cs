@@ -1,10 +1,8 @@
 #if MULTIPLAYER_TOOLS
-using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
@@ -12,7 +10,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class NetworkVariableMetricsTests : SingleClientMetricTestBase
     {
-        protected override Action<GameObject> UpdatePlayerPrefab => prefab => prefab.AddComponent<NetworkVariableComponent>();
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<NetworkVariableComponent>();
+            base.OnCreatePlayerPrefab();
+        }
 
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaSentMetric()

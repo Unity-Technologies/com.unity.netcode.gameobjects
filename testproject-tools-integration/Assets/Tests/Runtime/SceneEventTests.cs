@@ -21,21 +21,28 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         private NetworkSceneManager m_ServerNetworkSceneManager;
         private Scene m_LoadedScene;
 
-        protected override IEnumerator OnPostSetup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return base.OnPostSetup();
-            m_ClientNetworkSceneManager = Client.SceneManager;
-            m_ServerNetworkSceneManager = Server.SceneManager;
+            // invoke the base first so the Server and client are set
+            base.OnServerAndClientsCreated();
+
             Server.NetworkConfig.EnableSceneManagement = true;
-
-            m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
-
+            Client.NetworkConfig.EnableSceneManagement = true;
         }
 
-        protected override IEnumerator OnPostTearDown()
+        protected override IEnumerator OnServerAndClientsStarted()
+        {
+            m_ClientNetworkSceneManager = Client.SceneManager;
+            m_ServerNetworkSceneManager = Server.SceneManager;
+            m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
+
+            yield return base.OnServerAndClientsStarted();
+        }
+
+        protected override IEnumerator OnTearDown()
         {
             yield return UnloadTestScene(m_LoadedScene);
-            yield return base.OnPreTearDown();
+            yield return base.OnTearDown();
         }
 
 
@@ -44,6 +51,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CLoadSent()
         {
             var serverSceneLoaded = false;
+            var clientSceneLoaded = false;
             // Register a callback so we know when the scene has loaded server side, as this is when
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
@@ -51,6 +59,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 if (sceneEvent.SceneEventType.Equals(SceneEventType.Load) && sceneEvent.ClientId == Client.LocalClientId)
                 {
                     serverSceneLoaded = true;
+                }
+            };
+
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Client.LocalClientId)
+                {
+                    clientSceneLoaded = true;
                 }
             };
 
@@ -62,6 +78,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Wait for the server to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
+
+            yield return WaitForCondition(() => clientSceneLoaded);
+            Assert.IsTrue(clientSceneLoaded);
 
             // Now start the wait for the metric to be emitted when the message is sent.
             yield return waitForSentMetric.WaitForMetricsReceived();
@@ -79,6 +98,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CLoadReceived()
         {
             var serverSceneLoaded = false;
+            var clientSceneLoaded = false;
             // Register a callback so we know when the scene has loaded server side, as this is when
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
@@ -86,6 +106,14 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 if (sceneEvent.SceneEventType.Equals(SceneEventType.Load) && sceneEvent.ClientId == Client.LocalClientId)
                 {
                     serverSceneLoaded = true;
+                }
+            };
+
+            m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
+            {
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Client.LocalClientId)
+                {
+                    clientSceneLoaded = true;
                 }
             };
 
@@ -97,6 +125,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Wait for the server to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
+
+            yield return WaitForCondition(() => clientSceneLoaded);
+            Assert.IsTrue(clientSceneLoaded);
 
             // Now start the wait for the metric to be emitted when the message is received.
             yield return waitForReceivedMetric.WaitForMetricsReceived();
@@ -111,7 +142,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestC2SLoadCompleteSent()
+        public IEnumerator TestClientLoadCompleteSent()
         {
             // Register a callback so we can notify the test when the client has finished loading the scene locally
             // as this is when the message is sent
@@ -617,11 +648,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
         // Loads a scene, then waits for the client to notify the server
         // that it has finished loading the scene, as this is the last thing that happens.
-        private IEnumerator LoadTestScene(string sceneName)
+        private IEnumerator LoadTestScene(string sceneName, bool waitForClient = false)
         {
             var sceneLoadComplete = false;
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
+                var clientIdToWaitFor = waitForClient == true ? m_ClientNetworkManagers[1].LocalClientId : m_ServerNetworkManager.LocalClientId;
                 if (sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
                 {
                     sceneLoadComplete = true;
@@ -639,29 +671,20 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         // Unloads a loaded scene. If the scene is not loaded, this is a no-op
         private IEnumerator UnloadTestScene(Scene scene)
         {
-            if (!scene.isLoaded)
+            if (scene.isLoaded)
             {
-                yield break;
+                // This is called after everything is done and destroyed.
+                // Just use the normal scene manager to unload the scene.
+                var asyncResults = SceneManager.UnloadSceneAsync(scene);
+
+                yield return WaitForCondition(() => asyncResults.isDone);
+
             }
-
-            // This is called after everything is done and destroyed.
-            // Just use the normal scene manager to unload the scene.
-            var asyncResults = SceneManager.UnloadSceneAsync(scene);
-
-            yield return WaitForCondition(() => asyncResults.isDone);
         }
 
-        private static IEnumerator WaitForCondition(Func<bool> condition, int maxFrames = 240)
+        private static IEnumerator WaitForCondition(Func<bool> condition)
         {
-            for (var i = 0; i < maxFrames; i++)
-            {
-                if (condition.Invoke())
-                {
-                    break;
-                }
-
-                yield return null;
-            }
+            yield return WaitForConditionOrTimeOut(condition);
         }
 
         // Registers a callback for the client's NetworkSceneManager which will synchronize the scene handles from
