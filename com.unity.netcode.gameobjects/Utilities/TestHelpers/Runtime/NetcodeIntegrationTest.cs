@@ -179,7 +179,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked after the server and clients have started.
         /// Note: No connection verification has been done at this point
         /// </summary>
-        protected virtual IEnumerator OnServerAndClientsStarted()
+        protected virtual IEnumerator OnStartedServerAndClients()
         {
             yield return null;
         }
@@ -188,7 +188,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked after the server and clients have started and verified
         /// their connections with each other.
         /// </summary>
-        protected virtual IEnumerator OnStartedAndConnected()
+        protected virtual IEnumerator OnServerAndClientsConnected()
         {
             yield return null;
         }
@@ -212,7 +212,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 RegisterSceneManagerHandler();
 
                 // Notification that the server and clients have been started
-                yield return OnServerAndClientsStarted();
+                yield return OnStartedServerAndClients();
 
                 // Wait for all clients to connect
                 yield return WaitForClientsConnectedOrTimeOut();
@@ -266,7 +266,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Notification that at this time the server and client(s) are instantiated,
                 // started, and connected on both sides.
-                yield return OnStartedAndConnected();
+                yield return OnServerAndClientsConnected();
             }
         }
 

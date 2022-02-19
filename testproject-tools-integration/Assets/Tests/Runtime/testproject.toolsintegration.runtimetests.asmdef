@@ -18,10 +18,31 @@
     "precompiledReferences": [
         "nunit.framework.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        },
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "UTP_ADAPTER"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.4",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -66,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
 #endif
         }
 
-        protected override IEnumerator OnStartedAndConnected()
+        protected override IEnumerator OnServerAndClientsConnected()
         {
             // Get the client player representation on both the server and the client side
             m_ServerSideClientPlayer = m_ServerSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
@@ -80,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
 
-            yield return base.OnStartedAndConnected();
+            yield return base.OnServerAndClientsConnected();
         }
 
         // TODO: rewrite after perms & authority changes

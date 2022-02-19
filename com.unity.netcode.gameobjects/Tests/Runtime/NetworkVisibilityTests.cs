@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
             return m_CanStartServerAndClients;
         }
 
-        protected override IEnumerator OnStartedAndConnected()
+        protected override IEnumerator OnServerAndClientsConnected()
         {
             var serverObject = Object.Instantiate(m_TestNetworkPrefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -37,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests
             serverObject.GetComponent<NetworkVisibilityComponent>().Hide();
             serverNetworkObject.Spawn();
 
-            yield return base.OnStartedAndConnected();
+            yield return base.OnServerAndClientsConnected();
         }
 
         [UnityTest]

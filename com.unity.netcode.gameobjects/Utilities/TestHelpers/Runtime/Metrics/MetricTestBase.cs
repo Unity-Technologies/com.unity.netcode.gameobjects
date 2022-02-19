@@ -22,11 +22,11 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
             base.OnServerAndClientsCreated();
         }
 
-        protected override IEnumerator OnServerAndClientsStarted()
+        protected override IEnumerator OnStartedServerAndClients()
         {
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             ClientMetrics = Client.NetworkMetrics as NetworkMetrics;
-            yield return base.OnStartedAndConnected();
+            yield return base.OnStartedServerAndClients();
         }
     }
 
@@ -54,12 +54,12 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
             base.OnServerAndClientsCreated();
         }
 
-        protected override IEnumerator OnServerAndClientsStarted()
+        protected override IEnumerator OnStartedServerAndClients()
         {
             ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             FirstClientMetrics = FirstClient.NetworkMetrics as NetworkMetrics;
             SecondClientMetrics = SecondClient.NetworkMetrics as NetworkMetrics;
-            yield return base.OnServerAndClientsStarted();
+            yield return base.OnStartedServerAndClients();
         }
     }
 }

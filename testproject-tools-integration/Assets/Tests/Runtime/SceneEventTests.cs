@@ -30,13 +30,13 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Client.NetworkConfig.EnableSceneManagement = true;
         }
 
-        protected override IEnumerator OnServerAndClientsStarted()
+        protected override IEnumerator OnServerAndClientsConnected()
         {
             m_ClientNetworkSceneManager = Client.SceneManager;
             m_ServerNetworkSceneManager = Server.SceneManager;
             m_ServerNetworkSceneManager.OnSceneEvent += RegisterLoadedSceneCallback;
 
-            yield return base.OnServerAndClientsStarted();
+            yield return base.OnServerAndClientsConnected();
         }
 
         protected override IEnumerator OnTearDown()
@@ -44,8 +44,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             yield return UnloadTestScene(m_LoadedScene);
             yield return base.OnTearDown();
         }
-
-
 
         [UnityTest]
         public IEnumerator TestS2CLoadSent()
