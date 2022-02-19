@@ -23,7 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         protected override bool IsPerformanceTest => true;
         protected override int GetWorkerCount()
         {
-            return 1;
+            return platformList == null ? 1 : platformList.Length;
         }
 
         private class OneNetVar : NetworkBehaviour
