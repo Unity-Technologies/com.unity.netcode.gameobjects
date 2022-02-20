@@ -303,6 +303,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
 
+        public static uint GetNextGlobalIdHashValue()
+        {
+            return ++s_AutoIncrementGlobalObjectIdHashCounter;
+        }
+
+
+        public static bool IsNetcodeIntegrationTestRunning { get; internal set; }
+        public static void RegisterNetcodeIntegrationTest(bool registered)
+        {
+            IsNetcodeIntegrationTestRunning = registered;
+        }
+
+
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
         /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
@@ -328,6 +341,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
+
+            // To avoid issues with integration tests that forget to clean up,
+            // this feature only works with NetcodeIntegrationTest derived classes
+            if (IsNetcodeIntegrationTestRunning)
+            {
+                // Add the object identifier component
+                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+            }
         }
 
         // We use GameObject instead of SceneObject to be able to keep hierarchy

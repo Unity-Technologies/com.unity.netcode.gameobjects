@@ -17,6 +17,63 @@ namespace Unity.Netcode.TestHelpers.Runtime
     {
         static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
         static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+
+        /// <summary>
+        /// Registered list of all NetworkObjects spawned.
+        /// Format is as follows:
+        /// [ClientId-side where this NetworkObject instance resides][NetworkObjectId][NetworkObject]
+        /// Where finding the NetworkObject with a NetworkObjectId of 10 on ClientId of 2 would be:
+        /// s_GlobalNetworkObjects[2][10]
+        /// To find the client or server player objects please see:
+        /// <see cref="m_ServerSidePlayerNetworkObjects"/>
+        /// <see cref="m_ClientSidePlayerNetworkObjects"/>
+        /// </summary>
+        protected static Dictionary<ulong, Dictionary<ulong, NetworkObject>> s_GlobalNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
+
+        public static void RegisterNetworkObject(NetworkObject networkObject)
+        {
+            if (!s_GlobalNetworkObjects.ContainsKey(networkObject.NetworkManager.LocalClientId))
+            {
+                s_GlobalNetworkObjects.Add(networkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+            }
+            if (s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId].ContainsKey(networkObject.NetworkObjectId))
+            {
+                if (s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId] == null)
+                {
+                    Assert.False(s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId][networkObject.NetworkObjectId] != null,
+                        $"Duplicate NetworkObjectId {networkObject.NetworkObjectId} found in {nameof(s_GlobalNetworkObjects)} for client id {networkObject.NetworkManager.LocalClientId}!");
+                }
+                else
+                {
+                    s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId][networkObject.NetworkObjectId] = networkObject;
+                }
+            }
+            else
+            {
+                s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId].Add(networkObject.NetworkObjectId, networkObject);
+            }
+        }
+
+        public static void DeregisterNetworkObject(NetworkObject networkObject)
+        {
+            if (networkObject.IsSpawned && networkObject.NetworkManager != null)
+            {
+                DeregisterNetworkObject(networkObject.NetworkManager.LocalClientId, networkObject.NetworkObjectId);
+            }
+        }
+
+        public static void DeregisterNetworkObject(ulong localClientId, ulong networkObjectId)
+        {
+            if (s_GlobalNetworkObjects.ContainsKey(localClientId) && s_GlobalNetworkObjects[localClientId].ContainsKey(networkObjectId))
+            {
+                s_GlobalNetworkObjects[localClientId].Remove(networkObjectId);
+                if (s_GlobalNetworkObjects[localClientId].Count == 0)
+                {
+                    s_GlobalNetworkObjects.Remove(localClientId);
+                }
+            }
+        }
+
         protected const uint k_DefaultTickRate = 30;
         protected abstract int NbClients { get; }
 
@@ -29,9 +86,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
+        /// <summary>
+        /// Contains all server-side relative player NetworkObject instances
+        /// [ClientID][The player instance's NetworkObject]
+        /// </summary>
         protected Dictionary<ulong, NetworkObject> m_ServerSidePlayerNetworkObjects = new Dictionary<ulong, NetworkObject>();
 
         protected NetworkManager[] m_ClientNetworkManagers;
+
+        /// <summary>
+        /// Contains each client relative set of player NetworkObject instances
+        /// [Client Relative set of player instances][The player instance ClientId][The player instance's NetworkObject]
+        /// Example:
+        /// To get the player instance with a ClientId of 3 that was instantiated (relative) on the player instance with a ClientId of 2
+        /// m_ClientSidePlayerNetworkObjects[2][3]
+        /// </summary>
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_ClientSidePlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
@@ -61,6 +130,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public void OneTimeSetup()
         {
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
+
+            // Enable NetcodeIntegrationTest auto-label feature
+            NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
             OnOneTimeSetup();
         }
 
@@ -102,7 +174,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private void CreatePlayerPrefab()
         {
             // Create playerPrefab
-            m_PlayerPrefab = new GameObject("PlayerPrefab");
+            m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
@@ -155,9 +227,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
-            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            foreach (var client in m_ClientNetworkManagers)
             {
-                m_ClientNetworkManagers[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
             // Provides opportunity to allow child derived classes to
@@ -224,44 +296,45 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     yield return null;
                 }
 
-                // Create a dictionary for all instances of players spawned on each client
+                if (m_UseHost || m_ServerNetworkManager.IsHost)
+                {
+                    // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                    var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                    foreach (var playerNetworkObject in serverPlayerClones)
+                    {
+                        if (!m_ClientSidePlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                        {
+                            m_ClientSidePlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                        }
+                        m_ClientSidePlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                    }
+                }
+
+                // Creates a dictionary for all player instances client relative
                 // This provides a simpler way to get a specific player instance relative to a client instance
-                // This also renames all player GameObjects relative to what instance belongs to which client NetworkManager
-                // for easier identification purposes when running in the editor.
                 foreach (var networkManager in m_ClientNetworkManagers)
                 {
                     Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
-                    m_ClientSidePlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
 
+                    // Get all player instances for the current client NetworkManager instance
                     var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
+                    // Add this player instance to each client player entry
                     foreach (var playerNetworkObject in clientPlayerClones)
                     {
-                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({networkManager.LocalClientId})-LocalPlayer" : $"Player({networkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
-                        playerNetworkObject.name = isLocalOrClone;
-                        m_ClientSidePlayerNetworkObjects[networkManager.LocalClientId].Add(playerNetworkObject.NetworkManager.LocalClientId, playerNetworkObject);
+                        // When the server is not the host this needs to be done
+                        if (!m_ClientSidePlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                        {
+                            m_ClientSidePlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                        }
+                        m_ClientSidePlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
                     }
                 }
 
-                // Only if we are running the server as a host do we do a pass for the host player objects
-                if (m_UseHost)
-                {
-                    Assert.NotNull(m_ServerNetworkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that the host does not have an assigned player NetworkObject!");
-
-                    // This finds all client-side instances for the host's player object renames it
-                    var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId && c.NetworkManager != m_ServerNetworkManager);
-                    foreach (var playerNetworkObject in serverPlayerClones)
-                    {
-                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({m_ServerNetworkManager.LocalClientId})-LocalPlayer" : $"Player({m_ServerNetworkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
-                        playerNetworkObject.name = isLocalOrClone;
-                    }
-                }
-
-                // This renames all server-side instances for each client player object for identification purposes
+                // Finally, creates a dictionary for all player instances that are server relative
                 foreach (var playerNetworkClient in m_ServerNetworkManager.ConnectedClients)
                 {
                     Assert.False(m_ServerSidePlayerNetworkObjects.ContainsKey(playerNetworkClient.Key), $"{nameof(StartServerAndClients)} detected the same server-side clientid {playerNetworkClient.Key} already exists in the server-side table!");
                     m_ServerSidePlayerNetworkObjects.Add(playerNetworkClient.Key, playerNetworkClient.Value.PlayerObject);
-                    playerNetworkClient.Value.PlayerObject.name = playerNetworkClient.Value.PlayerObject.IsLocalPlayer ? $"Player({m_ServerNetworkManager.LocalClientId})-ServerPlayer" : $"Player({playerNetworkClient.Value.PlayerObject.OwnerClientId})-OnServer({m_ServerNetworkManager.LocalClientId})";
                 }
 
                 // Notification that at this time the server and client(s) are instantiated,
@@ -345,6 +418,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 m_ClientSidePlayerNetworkObjects.Clear();
                 m_ServerSidePlayerNetworkObjects.Clear();
+                s_GlobalNetworkObjects.Clear();
             }
             catch (Exception e) { throw e; }
             finally
@@ -369,7 +443,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual IEnumerator OnTearDown()
         {
-            yield return s_DefaultWaitForTick;
+            yield return null;
         }
 
         [UnityTearDown]
@@ -400,6 +474,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 ShutdownAndCleanUp();
             }
+
+            // Disable NetcodeIntegrationTest auto-label feature
+            NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
         }
 
         /// <summary>

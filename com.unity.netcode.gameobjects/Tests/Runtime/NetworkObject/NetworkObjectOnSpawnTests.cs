@@ -18,7 +18,6 @@ namespace Unity.Netcode.RuntimeTests
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
         /// </summary>
-        /// <returns></returns>
         [UnityTest]
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
@@ -29,6 +28,8 @@ namespace Unity.Netcode.RuntimeTests
             // instantiate
             m_TestNetworkObjectInstance = Object.Instantiate(m_TestNetworkObjectPrefab);
             yield return null;
+            Object.Destroy(m_TestNetworkObjectInstance);
+
         }
 
         private class FailWhenSpawned : NetworkBehaviour
@@ -63,6 +64,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.OnTearDown();
         }
 
+        private List<TrackOnSpawnFunctions> m_ClientTrackOnSpawnInstances = new List<TrackOnSpawnFunctions>();
+
         /// <summary>
         /// Test that callbacks are run for playerobject spawn, despawn, regular spawn, destroy on server.
         /// </summary>
@@ -71,19 +74,13 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
+            var serverInstance = m_ServerSidePlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].GetComponent<TrackOnSpawnFunctions>();
 
-            var serverInstance = serverClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
-
-            var clientInstances = new List<TrackOnSpawnFunctions>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult);
-                var clientRpcTests = clientClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
+                var clientRpcTests = m_ClientSidePlayerNetworkObjects[client.LocalClientId][m_ServerNetworkManager.LocalClientId].gameObject.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
-                clientInstances.Add(clientRpcTests);
+                m_ClientTrackOnSpawnInstances.Add(clientRpcTests);
             }
 
             // -------------- step 1 check player spawn despawn
@@ -102,7 +99,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var clientsCompleted = 0;
                 // check spawned on client
-                foreach (var clientInstance in clientInstances)
+                foreach (var clientInstance in m_ClientTrackOnSpawnInstances)
                 {
                     if (checkSpawnCondition)
                     {
@@ -138,6 +135,7 @@ namespace Unity.Netcode.RuntimeTests
             // we now expect the clients to each have despawned once
             expectedDespawnCount = 1;
 
+            yield return s_DefaultWaitForTick;
             // verify that all client-side instances are despawned
             checkSpawnCondition = false;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
