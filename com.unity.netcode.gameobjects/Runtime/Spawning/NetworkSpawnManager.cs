@@ -280,6 +280,10 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
+            if (TryGetNetworkClient(clientId, out NetworkClient newNetworkClient))
+            {
+                newNetworkClient.OwnedObjects.Add(networkObject);
+            }
 
             var message = new ChangeOwnershipMessage
             {
