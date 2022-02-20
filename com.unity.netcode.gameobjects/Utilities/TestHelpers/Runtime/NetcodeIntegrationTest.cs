@@ -236,7 +236,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
                     foreach (var playerNetworkObject in clientPlayerClones)
                     {
-                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({networkManager.LocalClientId})-Local" : $"Player({networkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
+                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({networkManager.LocalClientId})-LocalPlayer" : $"Player({networkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
                         playerNetworkObject.name = isLocalOrClone;
                         m_ClientSidePlayerNetworkObjects[networkManager.LocalClientId].Add(playerNetworkObject.NetworkManager.LocalClientId, playerNetworkObject);
                     }
@@ -251,7 +251,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId && c.NetworkManager != m_ServerNetworkManager);
                     foreach (var playerNetworkObject in serverPlayerClones)
                     {
-                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({m_ServerNetworkManager.LocalClientId})-Local" : $"Player({m_ServerNetworkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
+                        var isLocalOrClone = playerNetworkObject.IsLocalPlayer ? $"Player({m_ServerNetworkManager.LocalClientId})-LocalPlayer" : $"Player({m_ServerNetworkManager.LocalClientId})-OnClient({playerNetworkObject.NetworkManager.LocalClientId})";
                         playerNetworkObject.name = isLocalOrClone;
                     }
                 }
@@ -261,7 +261,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     Assert.False(m_ServerSidePlayerNetworkObjects.ContainsKey(playerNetworkClient.Key), $"{nameof(StartServerAndClients)} detected the same server-side clientid {playerNetworkClient.Key} already exists in the server-side table!");
                     m_ServerSidePlayerNetworkObjects.Add(playerNetworkClient.Key, playerNetworkClient.Value.PlayerObject);
-                    playerNetworkClient.Value.PlayerObject.name = $"ServerSide-Player({playerNetworkClient.Value.PlayerObject.OwnerClientId})";
+                    playerNetworkClient.Value.PlayerObject.name = playerNetworkClient.Value.PlayerObject.IsLocalPlayer ? $"Player({m_ServerNetworkManager.LocalClientId})-ServerPlayer" : $"Player({playerNetworkClient.Value.PlayerObject.OwnerClientId})-OnServer({m_ServerNetworkManager.LocalClientId})";
                 }
 
                 // Notification that at this time the server and client(s) are instantiated,
