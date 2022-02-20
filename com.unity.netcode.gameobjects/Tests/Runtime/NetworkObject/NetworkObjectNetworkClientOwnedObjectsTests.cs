@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
 
-            foreach(var client in m_ClientNetworkManagers)
+            foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
             }
