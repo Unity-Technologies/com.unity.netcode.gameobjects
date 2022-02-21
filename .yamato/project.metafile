@@ -31,8 +31,27 @@ test_platforms:
 # Projects within the repository that will be tested. Name will be used
 # for job ids, so it should not contain spaces/non-supported characters
 projects:
-  - name: testproject
-    path: testproject
+  #- name: testproject
+  #  path: testproject
+  #  validate: true
+  #  # Packages within a project that will be tested
+  #  packages:
+  #    - name: com.unity.netcode.gameobjects
+  #      path: com.unity.netcode.gameobjects
+  #    - name: com.unity.netcode.adapter.utp
+  #      path: com.unity.netcode.adapter.utp
+  #  test_editors:
+  #    - 2021.1
+  #    - 2021.2
+  #    - 2020.3
+  #    - trunk
+  #  multiprocess_test_editors:
+  #    - 2021.1
+  #    - 2021.2
+  #    - 2020.3
+  #    - 2022.1
+  - name: testproject-tools-integration
+    path: testproject-tools-integration
     validate: true
     # Packages within a project that will be tested
     packages:
@@ -40,19 +59,8 @@ projects:
         path: com.unity.netcode.gameobjects
       - name: com.unity.netcode.adapter.utp
         path: com.unity.netcode.adapter.utp
+      - name: com.unity.multiplayer.tools
+      - path: com.unity.multiplayer.tools
     test_editors:
-      - 2021.1
       - 2021.2
-      - 2020.3
-      - trunk
-    multiprocess_test_editors:
-      - 2021.1
-      - 2021.2
-      - 2020.3
-      - 2022.1
-  #- name: testproject-tools-integration
-  #  path: testproject-tools-integration
-  #  validate: true
-  #  test_editors:
-  #    - 2021.2
   #    - trunk
