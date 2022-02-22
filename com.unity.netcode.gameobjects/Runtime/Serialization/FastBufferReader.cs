@@ -76,7 +76,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -98,7 +98,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Create a FastBufferReader from an ArraySegment.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -117,13 +117,13 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Count : length), offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator);
             }
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte array.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -148,7 +148,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -170,7 +170,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -250,7 +250,7 @@ namespace Unity.Netcode
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
         /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
@@ -284,7 +284,7 @@ namespace Unity.Netcode
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
         /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
