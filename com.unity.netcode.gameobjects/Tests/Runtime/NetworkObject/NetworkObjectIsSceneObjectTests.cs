@@ -23,9 +23,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NbClients => 1;
 
-        public GameObject m_Prefab;
-        public GameObject m_Prefab2;
-        public GameObject m_Prefab3;
+        private GameObject m_Prefab;
+        private GameObject m_Prefab2;
+        private GameObject m_Prefab3;
 
         [UnitySetUp]
         public override IEnumerator Setup()
