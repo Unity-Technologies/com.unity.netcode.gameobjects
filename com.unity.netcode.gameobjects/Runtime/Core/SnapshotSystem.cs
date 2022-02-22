@@ -484,7 +484,7 @@ namespace Unity.Netcode
                 }
 
                 m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId,
-                    true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
+                    spawnCommand.IsSceneObject, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, false);
                 //todo: discuss with tools how to report shared bytes
                 m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(srcClientId, networkObject, 8);
             }

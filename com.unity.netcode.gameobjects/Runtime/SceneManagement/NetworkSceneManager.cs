@@ -1830,7 +1830,7 @@ namespace Unity.Netcode
         /// Using the local scene relative Scene.handle as a sub-key to the root dictionary allows us to
         /// distinguish between duplicate in-scene placed NetworkObjects
         /// </summary>
-        private void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
+        internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
             if (clearScenePlacedObjects)
             {

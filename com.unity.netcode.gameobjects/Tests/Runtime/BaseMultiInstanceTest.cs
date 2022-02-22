@@ -180,6 +180,11 @@ namespace Unity.Netcode.RuntimeTests
             return CanClientsLoad();
         }
 
+        protected virtual void OnBeforeClientStart()
+        {
+
+        }
+
         /// <summary>
         /// Utility to spawn some clients and a server and set them up
         /// </summary>
@@ -237,7 +242,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-                if (!MultiInstanceHelpers.Start(useHost, server, clients))
+                if (!MultiInstanceHelpers.Start(useHost, server, clients, OnBeforeClientStart))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");

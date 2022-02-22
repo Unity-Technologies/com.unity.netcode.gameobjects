@@ -22,6 +22,11 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        // Dependency injection...
+        internal delegate NetworkSceneManager CreateNetworkSceneManagerDelegate(NetworkManager networkManager);
+
+        internal CreateNetworkSceneManagerDelegate CreateNetworkSceneManager = (networkManager) => new NetworkSceneManager(networkManager);
+
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -532,7 +537,7 @@ namespace Unity.Netcode
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
-            SceneManager = new NetworkSceneManager(this);
+            SceneManager = CreateNetworkSceneManager(this);
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
 
