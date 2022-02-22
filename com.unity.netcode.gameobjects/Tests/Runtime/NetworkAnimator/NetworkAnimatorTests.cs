@@ -89,7 +89,7 @@ namespace Unity.Netcode.RuntimeTest
 
             // verify trigger is set for client and server
             yield return WaitForConditionOrTimeOut(() =>
-                asHash ?  m_PlayerOnServerAnimator.GetBool(triggerHash) : m_PlayerOnServerAnimator.GetBool(triggerString));
+                asHash ? m_PlayerOnServerAnimator.GetBool(triggerHash) : m_PlayerOnServerAnimator.GetBool(triggerString));
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server trigger set check");
 
             yield return WaitForConditionOrTimeOut(() =>
