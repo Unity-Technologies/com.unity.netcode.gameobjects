@@ -27,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
+- Fixed an error where the snapshot system was spawning all objects as scene objects, which caused objects that were spawned during a client's session to not despawn when the client disconnected, and thus not respawn properly when they reconnected, leading to NetworkVariable updates for that object being lost. (#1740)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
