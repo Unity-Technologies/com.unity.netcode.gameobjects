@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -7,7 +6,6 @@ using Unity.Netcode.RuntimeTests;
 using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.UI;
 
 namespace Unity.Netcode.RuntimeTest
 {
@@ -28,9 +26,9 @@ namespace Unity.Netcode.RuntimeTest
             yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
-                // ideally, we would build up the AnimatorController entirely in code and not need an asset,
-                //  but after some attempts this doesn't seem readily doable.  Instead, we load a controller
-                    AnimatorController controller = Resources.Load("TestAnimatorController") as AnimatorController;
+                    // ideally, we would build up the AnimatorController entirely in code and not need an asset,
+                    //  but after some attempts this doesn't seem readily doable.  Instead, we load a controller
+                    var controller = Resources.Load("TestAnimatorController") as AnimatorController;
                     var animator = playerPrefab.AddComponent<Animator>();
                     animator.runtimeAnimatorController = controller;
 
@@ -53,7 +51,7 @@ namespace Unity.Netcode.RuntimeTest
 
         private bool HasClip(Animator animator, string clipName)
         {
-            List<AnimatorClipInfo> clips = new List<AnimatorClipInfo>();
+            var clips = new List<AnimatorClipInfo>();
             animator.GetCurrentAnimatorClipInfo(0, clips);
             foreach (var clip in clips)
             {
@@ -113,7 +111,7 @@ namespace Unity.Netcode.RuntimeTest
         public IEnumerator AnimationStateSyncTestWithOverride()
         {
             // set up the animation override controller
-            AnimatorOverrideController overrideController = Resources.Load("TestAnimatorOverrideController") as AnimatorOverrideController;
+            var overrideController = Resources.Load("TestAnimatorOverrideController") as AnimatorOverrideController;
             m_PlayerOnServer.GetComponent<Animator>().runtimeAnimatorController = overrideController;
             m_PlayerOnClient.GetComponent<Animator>().runtimeAnimatorController = overrideController;
 
