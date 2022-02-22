@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
@@ -89,7 +89,7 @@ namespace TestProject.RuntimeTests
 
             for (var i = 0; i < 5; ++i)
             {
-                var obj = GameObject.Instantiate(m_Prefab);
+                var obj = UnityEngine.Object.Instantiate(m_Prefab);
                 m_Objects[i] = obj;
                 obj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
                 obj.GetComponent<NetworkObject>().Spawn();
