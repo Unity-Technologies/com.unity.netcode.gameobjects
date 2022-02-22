@@ -74,6 +74,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        protected int TotalClients => m_UseHost ? NbClients + 1 : NbClients;
+
         protected const uint k_DefaultTickRate = 30;
         protected abstract int NbClients { get; }
 
@@ -592,6 +594,89 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator WaitForClientsConnectedOrTimeOut()
         {
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
+        }
+
+        /// <summary>
+        /// Creates a basic NetworkObject test prefab, assigns it to a new
+        /// NetworkPrefab entry, and then adds it to the server and client(s)
+        /// NetworkManagers' NetworkConfig.NetworkPrefab lists.
+        /// </summary>
+        /// <param name="baseName">the basic name to be used for each instance</param>
+        /// <returns>NetworkObject of the GameObject assigned to the new NetworkPrefab entry</returns>
+        protected GameObject CreateNetworkObjectPrefab(string baseName)
+        {
+            var prefabCreateAssertError = $"You can only invoke this method during {nameof(OnServerAndClientsCreated)} " +
+                $"but before {nameof(OnStartedServerAndClients)}!";
+            Assert.IsNotNull(m_ServerNetworkManager, prefabCreateAssertError);
+            Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
+
+            var gameObject = new GameObject();
+            gameObject.name = baseName;
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            }
+            return gameObject;
+        }
+
+        /// <summary>
+        /// Overloaded method <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
+        /// </summary>
+        protected GameObject SpawnObject(GameObject prefabGameObject, NetworkManager owner, bool destroyWithScene = false)
+        {
+            var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
+            Assert.IsNotNull(prefabNetworkObject, $"{nameof(GameObject)} {prefabGameObject.name} does not have a {nameof(NetworkObject)} component!");
+            return SpawnObject(prefabNetworkObject, owner, destroyWithScene);
+        }
+
+        /// <summary>
+        /// Spawn a NetworkObject prefab instance
+        /// </summary>
+        /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
+        /// <returns>GameObject instance spawned</returns>
+        private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false)
+        {
+            Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
+            var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
+            var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
+            networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectToSpawn.Spawn(destroyWithScene);
+
+            return newInstance;
+        }
+
+        /// <summary>
+        /// Overloaded method <see cref="SpawnObjects(NetworkObject, NetworkManager, int, bool)"/>
+        /// </summary>
+        protected List<GameObject> SpawnObjects(GameObject prefabGameObject, NetworkManager owner, int count, bool destroyWithScene = false)
+        {
+            var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
+            Assert.IsNotNull(prefabNetworkObject, $"{nameof(GameObject)} {prefabGameObject.name} does not have a {nameof(NetworkObject)} component!");
+            return SpawnObjects(prefabNetworkObject, owner, count, destroyWithScene);
+        }
+
+        /// <summary>
+        /// Will spawn (x) number of prefab NetworkObjects
+        /// <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
+        /// </summary>
+        /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="count">number of instances to create and spawn</param>
+        /// <param name="destroyWithScene">default is false</param>
+        private List<GameObject> SpawnObjects(NetworkObject prefabNetworkObject, NetworkManager owner, int count, bool destroyWithScene = false)
+        {
+            var gameObjectsSpawned = new List<GameObject>();
+            for (int i = 0; i < count; i++)
+            {
+                gameObjectsSpawned.Add(SpawnObject(prefabNetworkObject, owner, destroyWithScene));
+            }
+            return gameObjectsSpawned;
         }
     }
 }
