@@ -65,6 +65,34 @@ namespace Unity.Netcode.RuntimeTest
         }
 
         [UnityTest]
+        public IEnumerator AnimationTriggerReset()
+        {
+            // Verify trigger is off
+            Assert.True(m_PlayerOnServerAnimator.GetBool("UnboundTrigger") == false);
+            Assert.True(m_PlayerOnClientAnimator.GetBool("UnboundTrigger") == false);
+
+            // trigger.  We have "UnboundTrigger" purposely not bound to any animations so we can test resetting.
+            //  If we used a trigger that was bound to a transition, then the trigger would reset as soon as the
+            //  transition happens.  This way it will stay stuck on
+            m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger("UnboundTrigger");
+
+            // verify trigger is set for client and server
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetBool("UnboundTrigger"));
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server trigger set check");
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetBool("UnboundTrigger"));
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client trigger set check");
+
+            // reset the trigger
+            m_PlayerOnServer.GetComponent<NetworkAnimator>().ResetTrigger("UnboundTrigger");
+
+            // verify trigger is reset for client and server
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetBool("UnboundTrigger") == false);
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server reset check");
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetBool("UnboundTrigger") == false);
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client reset check");
+        }
+
+        [UnityTest]
         public IEnumerator AnimationStateSyncTest()
         {
             // check that we have started in the default state
@@ -94,7 +122,7 @@ namespace Unity.Netcode.RuntimeTest
             Assert.True(m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
 
             // cause a change to the AlphaState state by setting TestTrigger
-            //  note, the reason we have a special test for triggers is because activating triggers via the
+            //  note, we have a special test for triggers because activating triggers via the
             //  NetworkAnimator is special; for other parameters you set them on the Animator and NetworkAnimator
             //  listens.  But because triggers are super short and transitory, we require users to call
             //  NetworkAnimator.SetTrigger so we don't miss it
