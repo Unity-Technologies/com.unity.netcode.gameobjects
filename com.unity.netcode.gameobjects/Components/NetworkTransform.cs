@@ -260,9 +260,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
+        private bool m_LastInterpolateLocal = false; // was the last frame local
 
         public bool Interpolate = true;
-        private bool m_LastInterpolate = true;
+        private bool m_LastInterpolate = true; // was the last frame interpolated
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
@@ -825,9 +826,10 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!Interpolate && m_LastInterpolate)
+            if ((!Interpolate && m_LastInterpolate) || (m_LastInterpolateLocal != InLocalSpace))
             {
-                // if we just stopped interpolating, let's clear the interpolators
+                // if we just stopped interpolating, or if the interpolation space changed
+                // let's clear the interpolators
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Clear();
@@ -835,6 +837,7 @@ namespace Unity.Netcode.Components
             }
 
             m_LastInterpolate = Interpolate;
+            m_LastInterpolateLocal = InLocalSpace;
 
             if (CanCommitToTransform)
             {
