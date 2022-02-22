@@ -314,10 +314,6 @@ namespace Unity.Netcode.Components
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     var valueInt = m_Animator.GetInteger(hash);
-                    if (autoSend)
-                    {
-                        Debug.Log("SENDING INT " + valueInt);
-                    }
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueInt);
@@ -327,10 +323,6 @@ namespace Unity.Netcode.Components
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
                     var valueBool = m_Animator.GetBool(hash);
-                    if (autoSend)
-                    {
-                        Debug.Log("SENDING BOOL" + valueBool);
-                    }
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueBool);
@@ -340,10 +332,6 @@ namespace Unity.Netcode.Components
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                 {
                     var valueFloat = m_Animator.GetFloat(hash);
-                    if (autoSend)
-                    {
-                        Debug.Log("SENDING FLOAT " + valueFloat);
-                    }
                     fixed (void* value = cacheValue.Value)
                     {
 
