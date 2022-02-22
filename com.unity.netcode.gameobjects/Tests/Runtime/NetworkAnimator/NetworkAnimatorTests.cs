@@ -65,30 +65,54 @@ namespace Unity.Netcode.RuntimeTest
         }
 
         [UnityTest]
-        public IEnumerator AnimationTriggerReset()
+        public IEnumerator AnimationTriggerReset([Values(true, false)] bool asHash)
         {
-            // Verify trigger is off
-            Assert.True(m_PlayerOnServerAnimator.GetBool("UnboundTrigger") == false);
-            Assert.True(m_PlayerOnClientAnimator.GetBool("UnboundTrigger") == false);
-
-            // trigger.  We have "UnboundTrigger" purposely not bound to any animations so we can test resetting.
+            // We have "UnboundTrigger" purposely not bound to any animations so we can test resetting.
             //  If we used a trigger that was bound to a transition, then the trigger would reset as soon as the
             //  transition happens.  This way it will stay stuck on
-            m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger("UnboundTrigger");
+            string triggerString = "UnboundTrigger";
+            int triggerHash = Animator.StringToHash(triggerString);
+
+            // Verify trigger is off
+            Assert.True(m_PlayerOnServerAnimator.GetBool(triggerString) == false);
+            Assert.True(m_PlayerOnClientAnimator.GetBool(triggerString) == false);
+
+            // trigger.
+            if (asHash)
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger(triggerHash);
+            }
+            else
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger(triggerString);
+            }
 
             // verify trigger is set for client and server
-            yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetBool("UnboundTrigger"));
+            yield return WaitForConditionOrTimeOut(() =>
+                asHash ?  m_PlayerOnServerAnimator.GetBool(triggerHash) : m_PlayerOnServerAnimator.GetBool(triggerString));
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server trigger set check");
-            yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetBool("UnboundTrigger"));
+
+            yield return WaitForConditionOrTimeOut(() =>
+                asHash ? m_PlayerOnClientAnimator.GetBool(triggerHash) : m_PlayerOnClientAnimator.GetBool(triggerString));
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client trigger set check");
 
             // reset the trigger
-            m_PlayerOnServer.GetComponent<NetworkAnimator>().ResetTrigger("UnboundTrigger");
+            if (asHash)
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().ResetTrigger(triggerHash);
+            }
+            else
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().ResetTrigger(triggerString);
+            }
 
             // verify trigger is reset for client and server
-            yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetBool("UnboundTrigger") == false);
+            yield return WaitForConditionOrTimeOut(() =>
+                asHash ? m_PlayerOnServerAnimator.GetBool(triggerHash) == false : m_PlayerOnServerAnimator.GetBool(triggerString) == false);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server reset check");
-            yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetBool("UnboundTrigger") == false);
+
+            yield return WaitForConditionOrTimeOut(() =>
+                asHash ? m_PlayerOnClientAnimator.GetBool(triggerHash) == false : m_PlayerOnClientAnimator.GetBool(triggerString) == false);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client reset check");
         }
 
@@ -115,8 +139,11 @@ namespace Unity.Netcode.RuntimeTest
         }
 
         [UnityTest]
-        public IEnumerator AnimationStateSyncTriggerTest()
+        public IEnumerator AnimationStateSyncTriggerTest([Values(true, false)] bool asHash)
         {
+            string triggerString = "TestTrigger";
+            int triggerHash = Animator.StringToHash(triggerString);
+
             // check that we have started in the default state
             Assert.True(m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
             Assert.True(m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
@@ -126,7 +153,14 @@ namespace Unity.Netcode.RuntimeTest
             //  NetworkAnimator is special; for other parameters you set them on the Animator and NetworkAnimator
             //  listens.  But because triggers are super short and transitory, we require users to call
             //  NetworkAnimator.SetTrigger so we don't miss it
-            m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger("TestTrigger");
+            if (asHash)
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger(triggerHash);
+            }
+            else
+            {
+                m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger(triggerString);
+            }
 
             // ...and now we should be in the AlphaState having triggered the AlphaParameter
             yield return WaitForConditionOrTimeOut(() =>
@@ -155,7 +189,7 @@ namespace Unity.Netcode.RuntimeTest
             //  the variable bound to the transition from default to AlphaState (see the TestAnimatorController asset)
             m_PlayerOnServerAnimator.SetBool("AlphaParameter", true);
 
-            // ...and now we should be in the AlphaState having triggered the AlphaParameter
+            // ...and now we should be in the AlphaState having set the AlphaParameter
             yield return WaitForConditionOrTimeOut(() =>
                 HasClip(m_PlayerOnServerAnimator, "OverrideAlphaAnimation"));
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Server failed to reach its overriden animation state");
