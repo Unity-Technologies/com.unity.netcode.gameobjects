@@ -438,11 +438,24 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Sets the trigger for the associated animation
+        ///  Note, triggers are special vs other kinds of parameters.  For all the other parameters we watch for changes
+        ///  in FixedUpdate and users can just set them normally off of Animator. But because triggers are transitory
+        ///  and likely to come and go between FixedUpdate calls, we require users to set them here to guarantee us to
+        ///  catch it...then we forward it to the Animator component
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to activate</param>
         public void SetTrigger(string triggerName)
         {
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// Sets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="hash">The hash for the trigger to activate</param>
+        /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool reset = false)
         {
             var animMsg = new AnimationTriggerMessage();
@@ -455,11 +468,19 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to reset</param>
         public void ResetTrigger(string triggerName)
         {
             ResetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="hash">The hash for the trigger to reset</param>
         public void ResetTrigger(int hash)
         {
             SetTrigger(hash, true);

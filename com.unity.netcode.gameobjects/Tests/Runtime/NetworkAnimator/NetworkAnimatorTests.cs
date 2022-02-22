@@ -32,8 +32,8 @@ namespace Unity.Netcode.RuntimeTest
                     var animator = playerPrefab.AddComponent<Animator>();
                     animator.runtimeAnimatorController = controller;
 
-                    var theAnimator = playerPrefab.AddComponent<NetworkAnimator>();
-                    theAnimator.Animator = animator;
+                    var networkAnimator = playerPrefab.AddComponent<NetworkAnimator>();
+                    networkAnimator.Animator = animator;
                 });
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
@@ -49,6 +49,7 @@ namespace Unity.Netcode.RuntimeTest
             m_PlayerOnClientAnimator = m_PlayerOnClient.GetComponent<Animator>();
         }
 
+        // helper function to scan an animator and verify a given clip is present
         private bool HasClip(Animator animator, string clipName)
         {
             var clips = new List<AnimatorClipInfo>();
@@ -92,8 +93,11 @@ namespace Unity.Netcode.RuntimeTest
             Assert.True(m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
             Assert.True(m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
 
-            // cause a change to the AlphaState state by setting AlphaParameter, which is
-            //  the variable bound to the transition from default to AlphaState (see the TestAnimatorController asset)
+            // cause a change to the AlphaState state by setting TestTrigger
+            //  note, the reason we have a special test for triggers is because activating triggers via the
+            //  NetworkAnimator is special; for other parameters you set them on the Animator and NetworkAnimator
+            //  listens.  But because triggers are super short and transitory, we require users to call
+            //  NetworkAnimator.SetTrigger so we don't miss it
             m_PlayerOnServer.GetComponent<NetworkAnimator>().SetTrigger("TestTrigger");
 
             // ...and now we should be in the AlphaState having triggered the AlphaParameter
