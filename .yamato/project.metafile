@@ -52,7 +52,7 @@ projects:
       - 2022.1
   #- name: testproject-tools-integration
   #  path: testproject-tools-integration
-  #  validate: true
+  #  validate: false
   #  test_editors:
   #    - 2021.2
   #    - trunk
