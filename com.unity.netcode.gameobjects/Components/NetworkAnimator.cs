@@ -67,7 +67,7 @@ namespace Unity.Netcode.Components
          * get replicated on a regular basis regardless of a state change. The thinking
          * behind this is that many of the parameters people use are usually booleans
          * which result in a state change and thus would cause a full sync of state.
-         * Thus if you really care about a parameter syncing then you need to be explict
+         * Thus if you really care about a parameter syncing then you need to be explicit
          * by selecting it in the inspector when an NetworkAnimator is selected.
          */
         public void SetParameterAutoSend(int index, bool value)
@@ -107,7 +107,7 @@ namespace Unity.Netcode.Components
         private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
-        // We cache these values because UnsafeUtility.EnumToInt use direct IL that allows a nonboxing conversion
+        // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
         private struct AnimationParamEnumWrapper
         {
             public static readonly int AnimatorControllerParameterInt;
@@ -133,7 +133,7 @@ namespace Unity.Netcode.Components
             m_ParameterSendBits = 0;
         }
 
-        private bool sendMessagesAllowed
+        private bool SendMessagesAllowed
         {
             get
             {
@@ -201,7 +201,7 @@ namespace Unity.Netcode.Components
 
         private void FixedUpdate()
         {
-            if (!sendMessagesAllowed)
+            if (!SendMessagesAllowed)
             {
                 return;
             }
@@ -233,7 +233,7 @@ namespace Unity.Netcode.Components
         private void CheckAndSend()
         {
             var networkTime = NetworkManager.ServerTime.Time;
-            if (sendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
+            if (SendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + m_SendRate;
 
