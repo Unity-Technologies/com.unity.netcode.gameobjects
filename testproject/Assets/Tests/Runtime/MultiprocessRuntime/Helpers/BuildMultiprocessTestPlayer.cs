@@ -147,6 +147,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
+
+        [MenuItem(MultiprocessBaseMenuName + "/Build Android")]
+        public static void BuildAndroid()
+        {
+            var report = BuildPlayerUtility(BuildTarget.Android, ".apk");
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new Exception($"Build failed! {report.summary.totalErrors} errors");
+            }
+        }
 #endif
 
         [Serializable]
