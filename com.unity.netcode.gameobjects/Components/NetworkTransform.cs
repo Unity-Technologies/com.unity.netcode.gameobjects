@@ -667,6 +667,17 @@ namespace Unity.Netcode.Components
 
             Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
 
+            if (m_LastInterpolateLocal != InLocalSpace)
+            {
+                // if we just stopped interpolating, or if the interpolation space changed
+                // let's clear the interpolators
+                for (int i = 0; i < m_AllFloatInterpolators.Count; i++)
+                {
+                    m_AllFloatInterpolators[i].Clear();
+                }
+            }
+            m_LastInterpolateLocal = InLocalSpace;
+
             if (Interpolate)
             {
                 AddInterpolatedState(newState);
@@ -826,7 +837,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if ((!Interpolate && m_LastInterpolate) || (m_LastInterpolateLocal != InLocalSpace))
+            if (!Interpolate && m_LastInterpolate)
             {
                 // if we just stopped interpolating, or if the interpolation space changed
                 // let's clear the interpolators
@@ -837,7 +848,6 @@ namespace Unity.Netcode.Components
             }
 
             m_LastInterpolate = Interpolate;
-            m_LastInterpolateLocal = InLocalSpace;
 
             if (CanCommitToTransform)
             {
