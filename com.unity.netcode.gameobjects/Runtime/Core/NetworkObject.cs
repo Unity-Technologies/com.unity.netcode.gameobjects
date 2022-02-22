@@ -796,7 +796,14 @@ namespace Unity.Netcode
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
-                ChildNetworkBehaviours[i].OnNetworkSpawn();
+                try
+                {
+                    ChildNetworkBehaviours[i].OnNetworkSpawn();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 
@@ -805,7 +812,14 @@ namespace Unity.Netcode
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
-                ChildNetworkBehaviours[i].OnNetworkDespawn();
+                try
+                {
+                    ChildNetworkBehaviours[i].OnNetworkDespawn();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 
