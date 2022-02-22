@@ -87,6 +87,8 @@ namespace Unity.Netcode.Components
             return (m_ParameterSendBits & (uint)(1 << index)) != 0;
         }
 
+        private bool m_SendMessagesAllowed = false;
+
         // Animators only support up to 32 params
         public static int K_MaxAnimationParams = 32;
 
@@ -133,14 +135,6 @@ namespace Unity.Netcode.Components
             m_ParameterSendBits = 0;
         }
 
-        private bool SendMessagesAllowed
-        {
-            get
-            {
-                return IsServer && NetworkObject.IsSpawned;
-            }
-        }
-
         public override void OnDestroy()
         {
             if (m_CachedAnimatorParameters.IsCreated)
@@ -153,6 +147,10 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            if (IsServer)
+            {
+                m_SendMessagesAllowed = true;
+            }
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
 
@@ -199,9 +197,14 @@ namespace Unity.Netcode.Components
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            m_SendMessagesAllowed = false;
+        }
+
         private void FixedUpdate()
         {
-            if (!SendMessagesAllowed)
+            if (!m_SendMessagesAllowed)
             {
                 return;
             }
@@ -233,7 +236,7 @@ namespace Unity.Netcode.Components
         private void CheckAndSend()
         {
             var networkTime = NetworkManager.ServerTime.Time;
-            if (SendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
+            if (m_SendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + m_SendRate;
 
