@@ -42,8 +42,8 @@ namespace TestProject.RuntimeTests
     }
     public class OnNetworkSpawnExceptionTests : BaseMultiInstanceTest
     {
-        public GameObject m_Prefab;
-        public GameObject[] m_Objects = new GameObject[5];
+        private GameObject m_Prefab;
+        private GameObject[] m_Objects = new GameObject[5];
 
         [UnityTest]
         public IEnumerator WhenOnNetworkSpawnThrowsException_FutureOnNetworkSpawnsAreNotPrevented()
