@@ -370,10 +370,7 @@ namespace Unity.Netcode
             InitializeVariables();
         }
 
-        internal void InternalOnNetworkDespawn()
-        {
-
-        }
+        internal void InternalOnNetworkDespawn() { }
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object
@@ -449,8 +446,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);
