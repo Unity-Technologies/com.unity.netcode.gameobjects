@@ -370,10 +370,7 @@ namespace Unity.Netcode
             InitializeVariables();
         }
 
-        internal void InternalOnNetworkDespawn()
-        {
-
-        }
+        internal void InternalOnNetworkDespawn() { }
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object
