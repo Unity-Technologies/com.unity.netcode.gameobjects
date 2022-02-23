@@ -8,3 +8,7 @@ Metrics/ @Unity-Technologies/multiplayer-tools
 *.asmdef @mfatihmar
 package.json @mfatihmar
 AssemblyInfo.cs @mfatihmar
+.editorconfig @mfatihmar
+.gitignore @mfatihmar
+.github/ @mfatihmar
+.yamato/ @mfatihmar
