@@ -2,17 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Components;
-using Unity.Netcode.RuntimeTests;
 using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTest
+namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkAnimatorTests : BaseMultiInstanceTest
+    public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         protected override int NbClients => 1;
-        private GameObject m_TestPrefab;
 
         private GameObject m_PlayerOnServer;
         private GameObject m_PlayerOnClient;
@@ -20,33 +19,27 @@ namespace Unity.Netcode.RuntimeTest
         private Animator m_PlayerOnServerAnimator;
         private Animator m_PlayerOnClientAnimator;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    // ideally, we would build up the AnimatorController entirely in code and not need an asset,
-                    //  but after some attempts this doesn't seem readily doable.  Instead, we load a controller
-                    var controller = Resources.Load("TestAnimatorController") as AnimatorController;
-                    var animator = playerPrefab.AddComponent<Animator>();
-                    animator.runtimeAnimatorController = controller;
+            // ideally, we would build up the AnimatorController entirely in code and not need an asset,
+            //  but after some attempts this doesn't seem readily doable.  Instead, we load a controller
+            var controller = Resources.Load("TestAnimatorController") as AnimatorController;
+            var animator = m_PlayerPrefab.AddComponent<Animator>();
+            animator.runtimeAnimatorController = controller;
 
-                    var networkAnimator = playerPrefab.AddComponent<NetworkAnimator>();
-                    networkAnimator.Animator = animator;
-                });
+            var networkAnimator = m_PlayerPrefab.AddComponent<NetworkAnimator>();
+            networkAnimator.Animator = animator;
+        }
 
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
-            m_PlayerOnServer = serverClientPlayerResult.Result.gameObject;
-            m_PlayerOnServerAnimator = m_PlayerOnServer.GetComponent<Animator>();
+        protected override IEnumerator OnServerAndClientsConnected()
+        {
+            m_PlayerOnServer = m_ServerSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].gameObject;
+            m_PlayerOnServerAnimator = m_PlayerOnServerAnimator = m_PlayerOnServer.GetComponent<Animator>();
 
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
-            m_PlayerOnClient = clientClientPlayerResult.Result.gameObject;
+            m_PlayerOnClient = m_ClientSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject;
             m_PlayerOnClientAnimator = m_PlayerOnClient.GetComponent<Animator>();
+
+            return base.OnServerAndClientsConnected();
         }
 
         // helper function to scan an animator and verify a given clip is present
