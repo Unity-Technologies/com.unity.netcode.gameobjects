@@ -9,16 +9,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- First set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
 
 ### Changed
 
 ### Fixed
-
 - Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
 - Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
 - Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
 - Disallowed async keyword in RPCs (#1681)
-- Fixed an issue where Alpha release versions of Unity (version 20202.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
+- Fixed an issue where Alpha release versions of Unity (version 2022.2.0a5 and later) will not compile due to the UNet Transport no longer existing (#1678)
 - Fixed messages larger than 64k being written with incorrectly truncated message size in header (#1686) (credit: @kaen)
 - Fixed overloading RPC methods causing collisions and failing on IL2CPP targets. (#1694)
 - Fixed spawn flow to propagate `IsSceneObject` down to children NetworkObjects, decouple implicit relationship between object spawning & `IsSceneObject` flag (#1685)
@@ -26,6 +26,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0 (#1724)
+- Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
+- Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
+- Improved performance in NetworkAnimator (#1735)
+- Fixed display over "always sync" network animator parameters even when an animator controller override is in use (#1735)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
@@ -44,6 +48,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The ClientNetworkTransform sample script to allow for owner changes at runtime. (#1606)
 - Fixed When the LogLevel is set to developer NetworkBehaviour generates warning messages when it should not (#1631)
 - Fixed NetworkTransport Initialize now can receive the associated NetworkManager instance to avoid using NetworkManager.Singleton in transport layer (#1677)
+- Fixed a bug where NetworkList.Contains value was inverted (#1363)
 
 ## [1.0.0-pre.4] - 2021-01-04
 
