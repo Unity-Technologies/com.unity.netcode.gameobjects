@@ -705,9 +705,9 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                AddInterpolatedState(newState, (m_LastInterpolateLocal != InLocalSpace));
+                AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal));
             }
-            m_LastInterpolateLocal = InLocalSpace;
+            m_LastInterpolateLocal = newState.InLocalSpace;
 
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
