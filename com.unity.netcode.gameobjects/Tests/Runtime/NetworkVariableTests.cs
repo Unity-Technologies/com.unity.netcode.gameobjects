@@ -262,7 +262,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [Ignore("TODO: This will not currently work on v1.0.0 as the message system sends delta updates in non-fragmented messages (i.e. < 1300 bytes)")]
         public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
