@@ -69,8 +69,8 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnServerAndClientsConnected()
         {
             // Get the client player representation on both the server and the client side
-            m_ServerSideClientPlayer = m_ServerSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
-            m_ClientSideClientPlayer = m_ClientSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
+            m_ServerSideClientPlayer = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
+            m_ClientSideClientPlayer = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
 
             // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
             var otherSideNetworkTransformComponent = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();

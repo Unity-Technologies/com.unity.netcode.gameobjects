@@ -103,7 +103,7 @@ namespace Unity.Netcode.RuntimeTests
         public void TestClientRelativePlayers()
         {
             // Check that all instances have the ExampleTestComponent
-            foreach (var clientRelativePlayers in m_ClientSidePlayerNetworkObjects)
+            foreach (var clientRelativePlayers in m_PlayerNetworkObjects)
             {
                 foreach (var playerInstance in clientRelativePlayers.Value)
                 {
@@ -112,18 +112,13 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            foreach (var serverRelativePlayer in m_ServerSidePlayerNetworkObjects)
-            {
-                var player = serverRelativePlayer.Value;
-                Assert.NotNull(player.GetComponent<ExampleTestComponent>());
-            }
-
             // Confirm Player ID 1 on Client ID 4 is not the local player
-            Assert.IsFalse(m_ClientSidePlayerNetworkObjects[4][1].IsLocalPlayer);
+            Assert.IsFalse(m_PlayerNetworkObjects[4][1].IsLocalPlayer);
             // Confirm Player ID 4 on Client ID 4 is the local player
-            Assert.IsTrue(m_ClientSidePlayerNetworkObjects[4][4].IsLocalPlayer);
+            Assert.IsTrue(m_PlayerNetworkObjects[4][4].IsLocalPlayer);
+            // Confirm Player ID 0 on Client ID 0 (host) is the server
+            Assert.IsTrue(m_PlayerNetworkObjects[0][0].NetworkManager.IsServer);
         }
-
     }
 
     public class SpawnTest : NetworkBehaviour

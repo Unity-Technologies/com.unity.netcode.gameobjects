@@ -88,11 +88,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
-        /// <summary>
-        /// Contains all server-side relative player NetworkObject instances
-        /// [ClientID][The player instance's NetworkObject]
-        /// </summary>
-        protected Dictionary<ulong, NetworkObject> m_ServerSidePlayerNetworkObjects = new Dictionary<ulong, NetworkObject>();
 
         protected NetworkManager[] m_ClientNetworkManagers;
 
@@ -103,7 +98,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// To get the player instance with a ClientId of 3 that was instantiated (relative) on the player instance with a ClientId of 2
         /// m_ClientSidePlayerNetworkObjects[2][3]
         /// </summary>
-        protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_ClientSidePlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
+        protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
         protected int m_TargetFrameRate = 60;
@@ -304,15 +299,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
                     foreach (var playerNetworkObject in serverPlayerClones)
                     {
-                        if (!m_ClientSidePlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                        if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
                         {
-                            m_ClientSidePlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                         }
-                        m_ClientSidePlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                     }
                 }
 
-                // Creates a dictionary for all player instances client relative
+                // Creates a dictionary for all player instances client and server relative
                 // This provides a simpler way to get a specific player instance relative to a client instance
                 foreach (var networkManager in m_ClientNetworkManagers)
                 {
@@ -324,19 +319,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     foreach (var playerNetworkObject in clientPlayerClones)
                     {
                         // When the server is not the host this needs to be done
-                        if (!m_ClientSidePlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                        if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
                         {
-                            m_ClientSidePlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                         }
-                        m_ClientSidePlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
+                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
                     }
-                }
-
-                // Finally, creates a dictionary for all player instances that are server relative
-                foreach (var playerNetworkClient in m_ServerNetworkManager.ConnectedClients)
-                {
-                    Assert.False(m_ServerSidePlayerNetworkObjects.ContainsKey(playerNetworkClient.Key), $"{nameof(StartServerAndClients)} detected the same server-side clientid {playerNetworkClient.Key} already exists in the server-side table!");
-                    m_ServerSidePlayerNetworkObjects.Add(playerNetworkClient.Key, playerNetworkClient.Value.PlayerObject);
                 }
 
                 // Notification that at this time the server and client(s) are instantiated,
@@ -418,8 +406,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 NetcodeIntegrationTestHelpers.Destroy();
 
-                m_ClientSidePlayerNetworkObjects.Clear();
-                m_ServerSidePlayerNetworkObjects.Clear();
+                m_PlayerNetworkObjects.Clear();
                 s_GlobalNetworkObjects.Clear();
             }
             catch (Exception e) { throw e; }
@@ -648,7 +635,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
             if (owner == m_ServerNetworkManager)
             {
-                if(m_UseHost)
+                if (m_UseHost)
                 {
                     networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
                 }
