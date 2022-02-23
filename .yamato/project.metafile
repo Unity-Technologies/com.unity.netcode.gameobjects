@@ -52,15 +52,7 @@ projects:
   #    - 2022.1
   - name: testproject-tools-integration
     path: testproject-tools-integration
-    validate: true
-    # Packages within a project that will be tested
-    packages:
-      - name: com.unity.netcode.gameobjects
-        path: com.unity.netcode.gameobjects
-      - name: com.unity.netcode.adapter.utp
-        path: com.unity.netcode.adapter.utp
-      - name: com.unity.multiplayer.tools
-      - path: com.unity.multiplayer.tools
+    validate: false
     test_editors:
       - 2021.2
   #   - trunk
