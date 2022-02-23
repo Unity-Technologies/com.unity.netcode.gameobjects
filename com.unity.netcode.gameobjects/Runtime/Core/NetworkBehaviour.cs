@@ -446,8 +446,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);
