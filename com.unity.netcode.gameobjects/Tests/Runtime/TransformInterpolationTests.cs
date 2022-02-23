@@ -113,11 +113,11 @@ namespace Unity.Netcode.RuntimeTests
             m_AsNetworkObject.Spawn();
 
             baseObject.transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
+            spawnedObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
 
             yield return RefreshNetworkObjects();
 
             m_Object1OnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
-
 
             spawnedObject.transform.parent = baseObject.transform;
 
@@ -130,7 +130,7 @@ namespace Unity.Netcode.RuntimeTests
                     m_AsNetworkTransform.InLocalSpace = !m_AsNetworkTransform.InLocalSpace;
                 }
 
-                m_AsNetworkObject.transform.position = new Vector3(0.0f, i, 0.0f);
+                spawnedObject.transform.position = new Vector3(0.0f, i, 0.0f);
             }
         }
     }
