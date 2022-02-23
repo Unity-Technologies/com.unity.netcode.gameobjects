@@ -28,6 +28,7 @@ public class CommandLineProcessor
     {
         Debug.Log("CommandLineProcessorLog");
         Debug.LogWarning("CommandLineProcessorLogWarning");
+        Debug.Log($"args.Length {args.Length}");
         try
         {
             if (s_Singleton != null)
@@ -53,6 +54,7 @@ public class CommandLineProcessor
                 value = (value?.StartsWith("-") ?? false) ? null : value;
 
                 m_CommandLineArguments.Add(arg, value);
+                Debug.Log($"{arg} {value}");
             }
         }
 
