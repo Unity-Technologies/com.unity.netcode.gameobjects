@@ -32,10 +32,10 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            m_PlayerOnServer = m_ServerSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].gameObject;
+            m_PlayerOnServer = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject;
             m_PlayerOnServerAnimator = m_PlayerOnServerAnimator = m_PlayerOnServer.GetComponent<Animator>();
 
-            m_PlayerOnClient = m_ClientSidePlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject;
+            m_PlayerOnClient = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject;
             m_PlayerOnClientAnimator = m_PlayerOnClient.GetComponent<Animator>();
 
             return base.OnServerAndClientsConnected();

@@ -74,11 +74,11 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
-            var serverInstance = m_ServerSidePlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].GetComponent<TrackOnSpawnFunctions>();
+            var serverInstance = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ServerNetworkManager.LocalClientId].GetComponent<TrackOnSpawnFunctions>();
 
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientRpcTests = m_ClientSidePlayerNetworkObjects[client.LocalClientId][m_ServerNetworkManager.LocalClientId].gameObject.GetComponent<TrackOnSpawnFunctions>();
+                var clientRpcTests = m_PlayerNetworkObjects[client.LocalClientId][m_ServerNetworkManager.LocalClientId].gameObject.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 m_ClientTrackOnSpawnInstances.Add(clientRpcTests);
             }
