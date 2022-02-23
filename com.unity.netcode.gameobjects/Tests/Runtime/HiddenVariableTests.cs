@@ -52,36 +52,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-            var networkTransform = m_PlayerPrefab.AddComponent<HiddenVariableTest>();
+            m_PlayerPrefab.AddComponent<HiddenVariableTest>();
         }
 
         protected override void OnServerAndClientsCreated()
         {
-            m_TestNetworkPrefab = PreparePrefab();
-        }
-
-        public GameObject PreparePrefab()
-        {
-            var prefabToSpawn = new GameObject("MyTestObject");
-            var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
-            prefabToSpawn.AddComponent<HiddenVariableObject>();
-
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            }
-            return prefabToSpawn;
-        }
-
-        public IEnumerator WaitForConnectedCount(int targetCount)
-        {
-            var endTime = Time.realtimeSinceStartup + 1.0;
-            while (m_ServerNetworkManager.ConnectedClientsList.Count < targetCount && Time.realtimeSinceStartup < endTime)
-            {
-                yield return new WaitForSeconds(0.01f);
-            }
+            m_TestNetworkPrefab = CreateNetworkObjectPrefab("MyTestObject");
+            m_TestNetworkPrefab.AddComponent<HiddenVariableObject>();
         }
 
         public IEnumerator WaitForSpawnCount(int targetCount)
@@ -150,16 +127,11 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Log("Running test");
 
-            var spawnedObject = Object.Instantiate(m_TestNetworkPrefab);
-            m_NetSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
-            m_NetSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
-            yield return WaitForConnectedCount(NbClients);
-            Debug.Log("Clients connected");
 
             // ==== Spawn object with ownership on one client
             var client = m_ServerNetworkManager.ConnectedClientsList[1];
             var otherClient = m_ServerNetworkManager.ConnectedClientsList[2];
-            m_NetSpawnedObject.SpawnWithOwnership(client.ClientId);
+            m_NetSpawnedObject = SpawnObject(m_TestNetworkPrefab, m_ClientNetworkManagers[1]).GetComponent<NetworkObject>();
 
             yield return RefreshGameObects();
 

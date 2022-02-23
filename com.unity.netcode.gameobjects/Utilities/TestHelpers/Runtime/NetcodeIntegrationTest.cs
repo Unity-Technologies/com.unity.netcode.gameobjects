@@ -645,8 +645,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
-            networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager;
-            networkObjectToSpawn.Spawn(destroyWithScene);
+            networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
+            if (owner == m_ServerNetworkManager)
+            {
+                if(m_UseHost)
+                {
+                    networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                }
+                else
+                {
+                    networkObjectToSpawn.Spawn(destroyWithScene);
+                }
+            }
+            else
+            {
+                networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+            }
 
             return newInstance;
         }
