@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Components;
-using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -23,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // ideally, we would build up the AnimatorController entirely in code and not need an asset,
             //  but after some attempts this doesn't seem readily doable.  Instead, we load a controller
-            var controller = Resources.Load("TestAnimatorController") as AnimatorController;
+            var controller = Resources.Load("TestAnimatorController") as RuntimeAnimatorController;
             var animator = m_PlayerPrefab.AddComponent<Animator>();
             animator.runtimeAnimatorController = controller;
 
