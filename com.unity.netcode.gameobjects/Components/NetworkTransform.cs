@@ -614,10 +614,46 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void AddInterpolatedState(NetworkTransformState newState)
+        private void AddInterpolatedState(NetworkTransformState newState, bool reset = false)
         {
             var sentTime = newState.SentTime;
 
+            if (reset)
+            {
+                if (newState.HasPositionX)
+                {
+                    m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
+                }
+
+                if (newState.HasPositionY)
+                {
+                    m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
+                }
+
+                if (newState.HasPositionZ)
+                {
+                    m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
+                }
+
+                m_RotationInterpolator.ResetTo(Quaternion.Euler(newState.Rotation), sentTime);
+
+                if (newState.HasScaleX)
+                {
+                    m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
+                }
+
+                if (newState.HasScaleY)
+                {
+                    m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
+                }
+
+                if (newState.HasScaleZ)
+                {
+                    m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
+                }
+
+                return;
+            }
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
@@ -667,21 +703,11 @@ namespace Unity.Netcode.Components
 
             Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
 
-            if (m_LastInterpolateLocal != InLocalSpace)
-            {
-                // if we just stopped interpolating, or if the interpolation space changed
-                // let's clear the interpolators
-                for (int i = 0; i < m_AllFloatInterpolators.Count; i++)
-                {
-                    m_AllFloatInterpolators[i].Clear();
-                }
-            }
-            m_LastInterpolateLocal = InLocalSpace;
-
             if (Interpolate)
             {
-                AddInterpolatedState(newState);
+                AddInterpolatedState(newState, (m_LastInterpolateLocal != InLocalSpace));
             }
+            m_LastInterpolateLocal = InLocalSpace;
 
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
