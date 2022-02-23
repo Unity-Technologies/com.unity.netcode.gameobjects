@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForEventMetricValues<RpcEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.RpcSent);
 
-            m_ServerSidePlayerNetworkObjects[Client.LocalClientId].GetComponent<RpcTestComponent>().MyClientRpc();
+            m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyClientRpc();
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForClientMetricsValues = new WaitForEventMetricValues<RpcEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.RpcSent);
 
-            m_ClientSidePlayerNetworkObjects[Client.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyServerRpc();
+            m_PlayerNetworkObjects[Client.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyServerRpc();
 
             yield return waitForClientMetricsValues.WaitForMetricsReceived();
 
@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRpcReceivedMetricOnServer()
         {
             var waitForServerMetricsValues = new WaitForEventMetricValues<RpcEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.RpcReceived);
-            m_ClientSidePlayerNetworkObjects[Client.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyServerRpc();
+            m_PlayerNetworkObjects[Client.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyServerRpc();
 
             yield return waitForServerMetricsValues.WaitForMetricsReceived();
 
@@ -77,7 +77,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForClientMetricsValues = new WaitForEventMetricValues<RpcEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.RpcReceived);
 
-            m_ServerSidePlayerNetworkObjects[Client.LocalClientId].GetComponent<RpcTestComponent>().MyClientRpc();
+            m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][Client.LocalClientId].GetComponent<RpcTestComponent>().MyClientRpc();
 
             yield return waitForClientMetricsValues.WaitForMetricsReceived();
 
