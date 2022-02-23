@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
+- Fixed ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere (#1721)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0 (#1724)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
