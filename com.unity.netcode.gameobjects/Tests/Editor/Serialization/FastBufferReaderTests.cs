@@ -346,6 +346,52 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        [Test]
+        public void WhenCreatingAReaderFromAnEmptyArraySegment_LengthIsZero()
+        {
+            var bytes = new byte[] { };
+            var input = new ArraySegment<byte>(bytes, 0, 0);
+            using var reader = new FastBufferReader(input, Allocator.Temp);
+            Assert.AreEqual(0, reader.Length);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnEmptyArray_LengthIsZero()
+        {
+            var input = new byte[] { };
+            using var reader = new FastBufferReader(input, Allocator.Temp);
+            Assert.AreEqual(0, reader.Length);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnEmptyNativeArray_LengthIsZero()
+        {
+            var input = new NativeArray<byte>(0, Allocator.Temp);
+            using var reader = new FastBufferReader(input, Allocator.Temp);
+            Assert.AreEqual(0, reader.Length);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnEmptyFastBufferWriter_LengthIsZero()
+        {
+            var input = new FastBufferWriter(0, Allocator.Temp);
+            using var reader = new FastBufferReader(input, Allocator.Temp);
+            Assert.AreEqual(0, reader.Length);
+        }
+
+        [Test]
+        public void WhenCreatingAReaderFromAnEmptyBuffer_LengthIsZero()
+        {
+            var input = new byte[] { };
+            unsafe
+            {
+                fixed (byte* ptr = input)
+                {
+                    using var reader = new FastBufferReader(ptr, Allocator.Temp, 0);
+                    Assert.AreEqual(0, reader.Length);
+                }
+            }
+        }
 
         [Test]
         public void WhenCallingReadByteWithoutCallingTryBeingReadFirst_OverflowExceptionIsThrown()
