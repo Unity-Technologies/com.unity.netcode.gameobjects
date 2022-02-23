@@ -17,9 +17,79 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public const int DefaultMinFrames = 1;
         public const int DefaultMaxFrames = 64;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
+        private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
+
+        public delegate bool MessageReceiptCheck(object receivedMessage);
+
+        private class MultiInstanceHooks : INetworkHooks
+        {
+            public bool IsWaiting;
+
+            public MessageReceiptCheck ReceiptCheck;
+
+            public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+            {
+                return receivedMessage is T;
+            }
+
+
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
+            {
+            }
+
+            public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+            }
+
+            public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+            }
+
+            public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
+            {
+                return true;
+            }
+
+            public bool OnVerifyCanReceive(ulong senderId, Type messageType)
+            {
+                return true;
+            }
+
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+                if (IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
+                {
+                    IsWaiting = false;
+                }
+            }
+        }
 
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -167,6 +237,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static void StopOneClient(NetworkManager clientToStop)
         {
             clientToStop.Shutdown();
+            s_Hooks.Remove(clientToStop);
             Object.Destroy(clientToStop.gameObject);
             NetworkManagerInstances.Remove(clientToStop);
         }
@@ -188,6 +259,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             foreach (var networkManager in NetworkManagerInstances)
             {
                 networkManager.Shutdown();
+                s_Hooks.Remove(networkManager);
             }
 
             // Destroy the network manager instances
@@ -277,6 +349,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 server.StartServer();
             }
 
+            var hooks = new MultiInstanceHooks();
+            server.MessagingSystem.Hook(hooks);
+            s_Hooks[server] = hooks;
+
             // if set, then invoke this for the server
             RegisterHandlers(server);
 
@@ -285,6 +361,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
+                hooks = new MultiInstanceHooks();
+                clients[i].MessagingSystem.Hook(hooks);
+                s_Hooks[clients[i]] = hooks;
 
                 // if set, then invoke this for the client
                 RegisterHandlers(clients[i]);
@@ -551,6 +630,108 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 Assert.Fail("NetworkObject could not be found");
             }
+        }
+
+        /// <summary>
+        /// Waits for a predicate condition to be met
+        /// </summary>
+        /// <param name="predicate">The predicate to wait for</param>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="minFrames">The min frames to wait for</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        {
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("Predicate cannot be null");
+            }
+
+            var startFrameNumber = Time.frameCount;
+
+            if (minFrames > 0)
+            {
+                yield return new WaitUntil(() =>
+                {
+                    return Time.frameCount >= minFrames;
+                });
+            }
+
+            while (Time.frameCount - startFrameNumber <= maxFrames &&
+                !predicate())
+            {
+                // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
+                // see a value change (i.e. discovered in the NetworkTransformTests)
+                var nextFrameNumber = Time.frameCount + 2;
+                yield return new WaitUntil(() =>
+                {
+                    return Time.frameCount >= nextFrameNumber;
+                });
+            }
+
+            var res = predicate();
+
+            if (result != null)
+            {
+                result.Result = res;
+            }
+            else
+            {
+                Assert.True(res, "PREDICATE CONDITION");
+            }
+        }
+
+        /// <summary>
+        /// Waits for a message of the given type to be received
+        /// </summary>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">The max time in seconds to wait for</param>
+        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        {
+            var hooks = s_Hooks[toBeReceivedBy];
+            hooks.ReceiptCheck = MultiInstanceHooks.CheckForMessageOfType<T>;
+            if (result == null)
+            {
+                result = new CoroutineResultWrapper<bool>();
+            }
+            yield return ExecuteWaitForHook(hooks, result, timeout);
+
+            Assert.True(result.Result, $"Expected message {typeof(T).Name} was not received within {timeout}s.");
+        }
+
+        /// <summary>
+        /// Waits for a specific message, defined by a user callback, to be received
+        /// </summary>
+        /// <param name="requirement">Called for each received message to check if it's the right one</param>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">The max time in seconds to wait for</param>
+        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageReceiptCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
+        {
+            var hooks = s_Hooks[toBeReceivedBy];
+            hooks.ReceiptCheck = requirement;
+            if (result == null)
+            {
+                result = new CoroutineResultWrapper<bool>();
+            }
+            yield return ExecuteWaitForHook(hooks, result, timeout);
+
+            Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
+        }
+
+        private static IEnumerator ExecuteWaitForHook(MultiInstanceHooks hooks, CoroutineResultWrapper<bool> result, float timeout)
+        {
+            hooks.IsWaiting = true;
+
+            var startTime = Time.realtimeSinceStartup;
+
+            while (hooks.IsWaiting && Time.realtimeSinceStartup - startTime < timeout)
+            {
+                yield return null;
+            }
+
+            var res = !hooks.IsWaiting;
+            hooks.IsWaiting = false;
+            hooks.ReceiptCheck = null;
+            result.Result = res;
         }
     }
 

@@ -85,6 +85,15 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for RPCs to be received
             yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);
+            
+            var clientMessageResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            var serverMessageResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            // Wait for RPCs to be received - client and server should each receive one.
+            yield return MultiInstanceHelpers.RunMultiple(new[]
+            {
+                MultiInstanceHelpers.WaitForMessageOfType<ClientRpcMessage>(m_ClientNetworkManagers[0], clientMessageResult),
+                MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager, serverMessageResult),
+            });
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
             Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");
