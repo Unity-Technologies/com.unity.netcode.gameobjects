@@ -26,6 +26,8 @@ public class CommandLineProcessor
     private ConnectionModeScript m_ConnectionModeScript;
     public CommandLineProcessor(string[] args)
     {
+        Debug.Log("CommandLineProcessorLog");
+        Debug.LogWarning("CommandLineProcessorLogWarning");
         try
         {
             if (s_Singleton != null)
