@@ -57,7 +57,7 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
 
 {% for project in projects -%}
 {% if project.name == "testproject" %}
-{% for editor in project.multiprocess_test_editors -%}
+{% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
   name : multiprocess tests - {{ editor }} on {{ platform.name }}

@@ -11,7 +11,6 @@ jobs:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
           GITHUB_TOKEN: "${{ secrets.NETCODE_BOT_KEY }}"
-          PR_FILTER: "labelled"
-          PR_LABELS: "stat:ready-to-merge"
+          PR_FILTER: "auto_merge"
           PR_READY_STATE: "ready_for_review"
           MERGE_CONFLICT_ACTION: "ignore"
