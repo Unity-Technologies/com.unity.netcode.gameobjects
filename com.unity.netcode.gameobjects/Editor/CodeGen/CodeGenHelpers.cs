@@ -22,6 +22,10 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
+        public static readonly string ClientRpcSendParams_FullName = typeof(ClientRpcSendParams).FullName;
+        public static readonly string ClientRpcReceiveParams_FullName = typeof(ClientRpcReceiveParams).FullName;
+        public static readonly string ServerRpcSendParams_FullName = typeof(ServerRpcSendParams).FullName;
+        public static readonly string ServerRpcReceiveParams_FullName = typeof(ServerRpcReceiveParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
         public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
