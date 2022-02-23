@@ -13,6 +13,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class TransformInterpolationObject : NetworkBehaviour
     {
+        public bool LogPosition = false;
         private void Start()
         {
             Debug.Log($"started {IsServer}");
@@ -21,6 +22,14 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             Debug.Log($"spawned {IsServer}");
+        }
+
+        private void Update()
+        {
+            if (LogPosition)
+            {
+                Debug.Log(transform.position.y);
+            }
         }
     }
 
@@ -101,6 +110,9 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return RefreshNetworkObjects();
 
+            m_Object1OnClient.GetComponent<TransformInterpolationObject>().LogPosition = true;
+
+
             spawnedObject.transform.parent = baseObject.transform;
 
             for (int i = 0; i < 1000; i++)
@@ -113,7 +125,6 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 m_AsNetworkObject.transform.position = new Vector3(0.0f, i / 10.0f, 0.0f);
-                Debug.Log(m_Object1OnClient.transform.position.y);
             }
 
             yield return new WaitForSeconds(10.00f);
