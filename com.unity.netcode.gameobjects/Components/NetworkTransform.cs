@@ -865,8 +865,7 @@ namespace Unity.Netcode.Components
 
             if (!Interpolate && m_LastInterpolate)
             {
-                // if we just stopped interpolating, or if the interpolation space changed
-                // let's clear the interpolators
+                // if we just stopped interpolating, let's clear the interpolators
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Clear();
