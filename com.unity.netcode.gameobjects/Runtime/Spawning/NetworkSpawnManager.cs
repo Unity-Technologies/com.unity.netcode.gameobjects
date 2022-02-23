@@ -426,6 +426,15 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
+            if (!sceneObject)
+            {
+                var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
+                if (networkObjectChildren.Length > 1)
+                {
+                    Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
+                }
+            }
+
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
         }
 

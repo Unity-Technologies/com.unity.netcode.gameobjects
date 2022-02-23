@@ -9,11 +9,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- First set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
 
 ### Changed
 
 ### Fixed
-
 - Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
 - Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
 - Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
@@ -25,7 +25,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
+- Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
+- Improved performance in NetworkAnimator (#1735)
+- Fixed display over "always sync" network animator parameters even when an animator controller override is in use (#1735)
 
 ## [1.0.0-pre.5] - 2022-01-26
 

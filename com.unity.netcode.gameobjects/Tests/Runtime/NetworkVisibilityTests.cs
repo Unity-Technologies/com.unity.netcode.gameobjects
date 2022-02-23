@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using UnityEngine;
@@ -6,66 +7,49 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(SceneManagementState.SceneManagementEnabled)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled)]
     public class NetworkVisibilityTests : NetcodeIntegrationTest
     {
+        public enum SceneManagementState
+        {
+            SceneManagementEnabled,
+            SceneManagementDisabled
+        }
         protected override int NbClients => 1;
         private GameObject m_TestNetworkPrefab;
-        private bool m_CanStartServerAndClients;
+        private bool m_SceneManagementEnabled;
 
-
-        protected override IEnumerator OnSetup()
+        public NetworkVisibilityTests(SceneManagementState sceneManagementState)
         {
-            m_CanStartServerAndClients = false;
-            m_TestNetworkPrefab = new GameObject("Object");
-            var networkObject = m_TestNetworkPrefab.AddComponent<NetworkObject>();
+            m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestNetworkPrefab = CreateNetworkObjectPrefab("Object");
             m_TestNetworkPrefab.AddComponent<NetworkVisibilityComponent>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            return base.OnSetup();
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
+            }
+            base.OnServerAndClientsCreated();
         }
 
-        protected override bool CanStartServerAndClients()
-        {
-            return m_CanStartServerAndClients;
-        }
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            var serverObject = Object.Instantiate(m_TestNetworkPrefab, Vector3.zero, Quaternion.identity);
-            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            serverObject.GetComponent<NetworkVisibilityComponent>().Hide();
-            serverNetworkObject.Spawn();
+            SpawnObject(m_TestNetworkPrefab, m_ServerNetworkManager);
 
             yield return base.OnServerAndClientsConnected();
         }
 
         [UnityTest]
-        public IEnumerator HiddenObjectsTest([Values] bool enableSceneManagement)
+        public IEnumerator HiddenObjectsTest()
         {
-            var validNetworkPrefab = new NetworkPrefab();
-            validNetworkPrefab.Prefab = m_TestNetworkPrefab;
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-                client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-            }
-
-            m_CanStartServerAndClients = true;
-
-            yield return StartServerAndClients();
-
-            Assert.AreEqual(2, Object.FindObjectsOfType<NetworkVisibilityComponent>().Length);
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            Object.Destroy(m_TestNetworkPrefab);
-            m_TestNetworkPrefab = null;
-
-            return base.OnTearDown();
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
+            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
         }
     }
 }

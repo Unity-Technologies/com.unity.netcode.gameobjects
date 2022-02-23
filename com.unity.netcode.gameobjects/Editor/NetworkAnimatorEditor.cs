@@ -66,7 +66,17 @@ namespace Unity.Netcode.Editor
                 return;
             }
 
-            var controller = m_AnimSync.Animator.runtimeAnimatorController as AnimatorController;
+            AnimatorController controller;
+            var overrideController = m_AnimSync.Animator.runtimeAnimatorController as AnimatorOverrideController;
+            if (overrideController != null)
+            {
+                controller = overrideController.runtimeAnimatorController as AnimatorController;
+            }
+            else
+            {
+                controller = m_AnimSync.Animator.runtimeAnimatorController as AnimatorController;
+            }
+
             if (controller != null)
             {
                 var showWarning = false;
