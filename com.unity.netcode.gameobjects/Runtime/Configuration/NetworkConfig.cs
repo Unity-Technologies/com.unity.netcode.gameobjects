@@ -239,6 +239,8 @@ namespace Unity.Netcode
                         writer.WriteValueSafe(sortedEntry.Key);
                     }
                 }
+
+                writer.WriteValueSafe(TickRate);
                 writer.WriteValueSafe(ConnectionApproval);
                 writer.WriteValueSafe(ForceSamePrefabs);
                 writer.WriteValueSafe(EnableSceneManagement);
