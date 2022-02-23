@@ -2,11 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Components;
-using Unity.Netcode.RuntimeTests;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTest
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkAnimatorTests : BaseMultiInstanceTest
     {
