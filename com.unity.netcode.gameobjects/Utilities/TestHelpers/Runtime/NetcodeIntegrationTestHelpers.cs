@@ -639,7 +639,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, ResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
@@ -685,13 +685,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             hooks.ReceiptCheck = MultiInstanceHooks.CheckForMessageOfType<T>;
             if (result == null)
             {
-                result = new CoroutineResultWrapper<bool>();
+                result = new ResultWrapper<bool>();
             }
             yield return ExecuteWaitForHook(hooks, result, timeout);
 
@@ -704,20 +704,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageReceiptCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
+        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageReceiptCheck requirement, ResultWrapper<bool> result = null, float timeout = 0.5f)
         {
             var hooks = s_Hooks[toBeReceivedBy];
             hooks.ReceiptCheck = requirement;
             if (result == null)
             {
-                result = new CoroutineResultWrapper<bool>();
+                result = new ResultWrapper<bool>();
             }
             yield return ExecuteWaitForHook(hooks, result, timeout);
 
             Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
         }
 
-        private static IEnumerator ExecuteWaitForHook(MultiInstanceHooks hooks, CoroutineResultWrapper<bool> result, float timeout)
+        private static IEnumerator ExecuteWaitForHook(MultiInstanceHooks hooks, ResultWrapper<bool> result, float timeout)
         {
             hooks.IsWaiting = true;
 
