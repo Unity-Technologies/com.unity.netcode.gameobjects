@@ -62,12 +62,12 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /* 
-         * AutoSend is the ability to select which parameters linked to this animator 
+        /*
+         * AutoSend is the ability to select which parameters linked to this animator
          * get replicated on a regular basis regardless of a state change. The thinking
-         * behind this is that many of the parameters people use are usually booleans 
-         * which result in a state change and thus would cause a full sync of state. 
-         * Thus if you really care about a parameter syncing then you need to be explict
+         * behind this is that many of the parameters people use are usually booleans
+         * which result in a state change and thus would cause a full sync of state.
+         * Thus if you really care about a parameter syncing then you need to be explicit
          * by selecting it in the inspector when an NetworkAnimator is selected.
          */
         public void SetParameterAutoSend(int index, bool value)
@@ -87,6 +87,8 @@ namespace Unity.Netcode.Components
             return (m_ParameterSendBits & (uint)(1 << index)) != 0;
         }
 
+        private bool m_SendMessagesAllowed = false;
+
         // Animators only support up to 32 params
         public static int K_MaxAnimationParams = 32;
 
@@ -103,11 +105,11 @@ namespace Unity.Netcode.Components
             public fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
-        // 128bytes per Animator 
+        // 128bytes per Animator
         private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
-        // We cache these values because UnsafeUtility.EnumToInt use direct IL that allows a nonboxing conversion
+        // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
         private struct AnimationParamEnumWrapper
         {
             public static readonly int AnimatorControllerParameterInt;
@@ -133,14 +135,6 @@ namespace Unity.Netcode.Components
             m_ParameterSendBits = 0;
         }
 
-        private bool sendMessagesAllowed
-        {
-            get
-            {
-                return IsServer && NetworkObject.IsSpawned;
-            }
-        }
-
         public override void OnDestroy()
         {
             if (m_CachedAnimatorParameters.IsCreated)
@@ -153,6 +147,10 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            if (IsServer)
+            {
+                m_SendMessagesAllowed = true;
+            }
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
 
@@ -199,9 +197,14 @@ namespace Unity.Netcode.Components
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            m_SendMessagesAllowed = false;
+        }
+
         private void FixedUpdate()
         {
-            if (!sendMessagesAllowed)
+            if (!m_SendMessagesAllowed)
             {
                 return;
             }
@@ -233,7 +236,7 @@ namespace Unity.Netcode.Components
         private void CheckAndSend()
         {
             var networkTime = NetworkManager.ServerTime.Time;
-            if (sendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
+            if (m_SendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + m_SendRate;
 
@@ -290,8 +293,8 @@ namespace Unity.Netcode.Components
 
         /* $AS TODO: Right now we are not checking for changed values this is because
         the read side of this function doesn't have similar logic which would cause
-        an overflow read because it doesn't know if the value is there or not. So 
-        there needs to be logic to track which indexes changed in order for there 
+        an overflow read because it doesn't know if the value is there or not. So
+        there needs to be logic to track which indexes changed in order for there
         to be proper value change checking. Will revist in 1.1.0.
         */
         private unsafe bool WriteParameters(FastBufferWriter writer, bool autoSend)
@@ -438,11 +441,24 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Sets the trigger for the associated animation
+        ///  Note, triggers are special vs other kinds of parameters.  For all the other parameters we watch for changes
+        ///  in FixedUpdate and users can just set them normally off of Animator. But because triggers are transitory
+        ///  and likely to come and go between FixedUpdate calls, we require users to set them here to guarantee us to
+        ///  catch it...then we forward it to the Animator component
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to activate</param>
         public void SetTrigger(string triggerName)
         {
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// Sets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="hash">The hash for the trigger to activate</param>
+        /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool reset = false)
         {
             var animMsg = new AnimationTriggerMessage();
@@ -455,11 +471,19 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to reset</param>
         public void ResetTrigger(string triggerName)
         {
             ResetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// </summary>
+        /// <param name="hash">The hash for the trigger to reset</param>
         public void ResetTrigger(int hash)
         {
             SetTrigger(hash, true);
