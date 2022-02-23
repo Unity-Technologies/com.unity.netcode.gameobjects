@@ -941,6 +941,19 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ClientRpcReceiveParams_FullName)
+                    {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ServerRpcReceiveParams_FullName)
+                    {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
+                        continue;
+                    }
                     // ServerRpcParams
                     if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
                     {
