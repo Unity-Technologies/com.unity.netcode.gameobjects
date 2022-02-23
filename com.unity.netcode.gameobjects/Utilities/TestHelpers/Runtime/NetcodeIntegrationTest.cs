@@ -648,7 +648,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
             if (owner == m_ServerNetworkManager)
             {
-                if(m_UseHost)
+                if (m_UseHost)
                 {
                     networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
                 }
