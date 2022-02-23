@@ -196,7 +196,8 @@ public class CommandLineProcessor
         }
         else
         {
-            NetworkManager.Singleton.StartClient();
+            bool success = NetworkManager.Singleton.StartClient();
+            Debug.Log($"Did StartClient run successfully {success}");
         }
     }
 
