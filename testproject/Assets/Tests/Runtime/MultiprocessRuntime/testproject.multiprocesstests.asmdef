@@ -1,21 +1,34 @@
 {
     "name": "TestProject.MultiprocessTests",
+    "rootNamespace": "",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
         "Unity.Netcode.Adapter.UTP",
         "ScriptsForAutomatedTesting",
-        "Unity.PerformanceTesting"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "Unity.PerformanceTesting",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
+        "Android",
         "Editor",
-        "macOSStandalone",
         "LinuxStandalone64",
+        "macOSStandalone",
         "WindowsStandalone32",
         "WindowsStandalone64"
-    ]
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
