@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -82,54 +80,18 @@ namespace Unity.Netcode.RuntimeTests
             // Send ClientRpc
             serverClientRpcTestNB.MyClientRpc();
 
-            // Validate each NetworkManager relative MessagingSystem received the respective RPC message type
-            var conditional = new WaitForRpcMessages(m_ServerNetworkManager, m_ClientNetworkManagers);
-            yield return WaitForConditionOrTimeOut(conditional);
-            Assert.True(conditional.ClientMessagesReceived, "Client messages were not received!");
-            Assert.True(conditional.ServerMessageReceived, "Server messages were not received!");
+            // Validate each NetworkManager relative MessagingSystem received each respective RPC
+            var rpcMessageHooks = new RpcMessageHooks(m_ServerNetworkManager, m_ClientNetworkManagers);
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+            Assert.True(rpcMessageHooks.ClientMessagesReceived, "Client messages were not received!");
+            Assert.True(rpcMessageHooks.ServerMessageReceived, "Server messages were not received!");
 
-            // Make sure RPCs propagated all the way up and were called on the destination class instance
+            // Make sure RPCs propagated all the way up and were called on the relative destination class instance
             yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
             Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");
             Assert.True(hasReceivedClientRpcRemotely, "ClientRpc was not remotely received on the client");
-        }
-
-        public class WaitForRpcMessages : ConditionalPredicateBase
-        {
-            private MessageHooks m_ServerMessageHook;
-            private List<MessageHooks> m_ClientMessageHooks = new List<MessageHooks>();
-
-            public bool ServerMessageReceived { get; internal set; }
-            public bool ClientMessagesReceived { get; internal set; }
-
-            protected override bool OnHasConditionBeenReached()
-            {
-                ServerMessageReceived = !m_ServerMessageHook.IsWaiting;
-                ClientMessagesReceived = m_ClientMessageHooks.Where((c) => !c.IsWaiting).Count() == m_ClientMessageHooks.Count;
-                return ServerMessageReceived & ClientMessagesReceived;
-            }
-
-            protected override void OnFinished()
-            {
-                m_ClientMessageHooks.Clear();
-                m_ServerMessageHook = null;
-                base.OnFinished();
-            }
-
-            public WaitForRpcMessages(NetworkManager server, NetworkManager[] clients)
-            {
-                m_ServerMessageHook = new MessageHooks();
-                m_ServerMessageHook.ReceiptCheck = MessageHooks.CheckForMessageOfType<ServerRpcMessage>;
-                server.MessagingSystem.Hook(m_ServerMessageHook);
-                foreach (var client in clients)
-                {
-                    var clientMessageHook = new MessageHooks();
-                    clientMessageHook.ReceiptCheck = MessageHooks.CheckForMessageOfType<ClientRpcMessage>;
-                    client.MessagingSystem.Hook(clientMessageHook);
-                }
-            }
         }
     }
 }
