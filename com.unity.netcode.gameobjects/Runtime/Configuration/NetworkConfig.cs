@@ -4,6 +4,10 @@ using UnityEngine;
 using System.Linq;
 using Unity.Collections;
 
+#if NETCODE_USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
+#endif
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -30,12 +34,29 @@ namespace Unity.Netcode
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
         public GameObject PlayerPrefab;
 
+#if NETCODE_USE_ADDRESSABLES
+        /// <summary>
+        /// The default player prefab addressable
+        /// </summary>
+        [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
+        public AssetReferenceGameObject PlayerAddressable;
+#endif
+
         /// <summary>
         /// A list of prefabs that can be dynamically spawned.
         /// </summary>
         [SerializeField]
         [Tooltip("The prefabs that can be spawned across the network")]
         internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
+
+#if NETCODE_USE_ADDRESSABLES
+        /// <summary>
+        /// A list of addressables that can be dynamically spawned.
+        /// </summary>
+        [SerializeField]
+        [Tooltip("The addressables that can be spawned across the network")]
+        internal List<NetworkAddressable> NetworkAddressables = new List<NetworkAddressable>();
+#endif
 
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.

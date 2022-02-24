@@ -3,7 +3,10 @@
     "rootNamespace": "Unity.Netcode.Editor",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components"
+        "Unity.Netcode.Components",
+        "Unity.Netcode.Addressables",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -19,6 +22,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "NETCODE_USE_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

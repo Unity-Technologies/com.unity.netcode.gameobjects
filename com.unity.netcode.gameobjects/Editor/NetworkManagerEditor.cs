@@ -23,6 +23,9 @@ namespace Unity.Netcode.Editor
 
         // NetworkConfig fields
         private SerializedProperty m_PlayerPrefabProperty;
+#if NETCODE_USE_ADDRESSABLES
+        private SerializedProperty m_PlayerPrefabAddressableProperty;
+#endif
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
@@ -38,6 +41,9 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_LoadSceneTimeOutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
+#if NETCODE_USE_ADDRESSABLES
+        private ReorderableList m_NetworkAddressablesList;
+#endif
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -90,6 +96,9 @@ namespace Unity.Netcode.Editor
 
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
+#if NETCODE_USE_ADDRESSABLES
+            m_PlayerPrefabAddressableProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerAddressable));
+#endif
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
@@ -116,6 +125,9 @@ namespace Unity.Netcode.Editor
 
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
+#if NETCODE_USE_ADDRESSABLES
+            m_PlayerPrefabAddressableProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerAddressable));
+#endif
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
@@ -132,6 +144,7 @@ namespace Unity.Netcode.Editor
 
         private void OnEnable()
         {
+            // Prefabs
             m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
             m_NetworkPrefabsList.elementHeightCallback = index =>
             {
@@ -194,6 +207,72 @@ namespace Unity.Netcode.Editor
                 }
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
+
+#if NETCODE_USE_ADDRESSABLES
+            // Addressables
+            m_NetworkAddressablesList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkAddressables)), true, true, true, true);
+            m_NetworkAddressablesList.elementHeightCallback = index =>
+            {
+                var networkPrefab = m_NetworkAddressablesList.serializedProperty.GetArrayElementAtIndex(index);
+                var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.Override));
+                var networkOverrideInt = networkOverrideProp.enumValueIndex;
+
+                return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
+            };
+            m_NetworkAddressablesList.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                rect.y += 5;
+
+                var networkPrefab = m_NetworkAddressablesList.serializedProperty.GetArrayElementAtIndex(index);
+                var networkPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.Addressable));
+                var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.SourceHashToOverride));
+                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.SourcePrefabToOverride));
+                var networkTargetPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.OverridingTargetAddressable));
+                var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkAddressable.Override));
+                var networkOverrideInt = networkOverrideProp.enumValueIndex;
+                var networkOverrideEnum = (NetworkPrefabOverride)networkOverrideInt;
+                EditorGUI.LabelField(new Rect(rect.x + rect.width - 70, rect.y, 60, EditorGUIUtility.singleLineHeight), "Override");
+                if (networkOverrideEnum == NetworkPrefabOverride.None)
+                {
+                    if (EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), false))
+                    {
+                        networkOverrideProp.enumValueIndex = (int)NetworkPrefabOverride.Prefab;
+                    }
+                }
+                else
+                {
+                    if (!EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), true))
+                    {
+                        networkOverrideProp.enumValueIndex = 0;
+                        networkOverrideEnum = NetworkPrefabOverride.None;
+                    }
+                }
+
+                if (networkOverrideEnum == NetworkPrefabOverride.None)
+                {
+                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width - 80, EditorGUIUtility.singleLineHeight), networkPrefabProp, GUIContent.none);
+                }
+                else
+                {
+                    networkOverrideProp.enumValueIndex = GUI.Toolbar(new Rect(rect.x, rect.y, 180, EditorGUIUtility.singleLineHeight), networkOverrideInt - 1, new[] { "Addressable", "Hash" }) + 1;
+
+                    if (networkOverrideEnum == NetworkPrefabOverride.Prefab)
+                    {
+                        EditorGUI.PropertyField(new Rect(rect.x + 190, rect.y, rect.width - 270, EditorGUIUtility.singleLineHeight), networkSourcePrefabProp, GUIContent.none);
+                    }
+                    else
+                    {
+                        EditorGUI.PropertyField(new Rect(rect.x + 190, rect.y, rect.width - 270, EditorGUIUtility.singleLineHeight), networkSourceHashProp, GUIContent.none);
+                    }
+
+                    rect.y += EditorGUIUtility.singleLineHeight + 5;
+
+                    EditorGUI.LabelField(new Rect(rect.x, rect.y, 190, EditorGUIUtility.singleLineHeight), "Overriding Addressable");
+                    EditorGUI.PropertyField(new Rect(rect.x + 190, rect.y, rect.width - 190, EditorGUIUtility.singleLineHeight), networkTargetPrefabProp, GUIContent.none);
+                }
+            };
+            m_NetworkAddressablesList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkAddressables");
+#endif
         }
 
         public override void OnInspectorGUI()
@@ -224,11 +303,27 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();
 
-                EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
-                EditorGUILayout.Space();
+                // We have a addressable
+                using (new EditorGUI.DisabledScope(m_NetworkManager.NetworkConfig.PlayerAddressable.RuntimeKeyIsValid()))
+                {
+                    EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
+                    EditorGUILayout.Space();
+                }
+
+                // We have a prefab
+                using (new EditorGUI.DisabledScope(m_NetworkManager.NetworkConfig.PlayerPrefab != null))
+                {
+                    EditorGUILayout.PropertyField(m_PlayerPrefabAddressableProperty);
+                    EditorGUILayout.Space();
+                }
 
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
+
+#if NETCODE_USE_ADDRESSABLES
+                m_NetworkAddressablesList.DoLayoutList();
+                EditorGUILayout.Space();
+#endif
 
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
