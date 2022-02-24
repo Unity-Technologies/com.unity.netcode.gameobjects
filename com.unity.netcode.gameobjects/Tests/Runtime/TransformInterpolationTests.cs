@@ -6,14 +6,12 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class TransformInterpolationTest : NetworkBehaviour
-    {
-
-    }
-
     public class TransformInterpolationObject : NetworkBehaviour
     {
         public bool CheckPosition;
+        public bool IsMoving;
+        public bool IsFixed;
+
         private void Start()
         {
             Debug.Log($"started {IsServer}");
@@ -26,15 +24,36 @@ namespace Unity.Netcode.RuntimeTests
 
         private void Update()
         {
+            // Check the position of the nested object on the client
             if (CheckPosition)
             {
                 if (transform.position.y < 0.0f || transform.position.y > 100.0f)
                 {
-                    Debug.LogWarning($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
+                    Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
+                }
+                //Debug.Log($"client transform.position.y is {transform.position.y}. transform.localPosition.y is {transform.localPosition.y}.");
+            }
+
+            // Move the nested object on the server
+            if (IsMoving)
+            {
+                var y = Time.realtimeSinceStartup;
+                while (y > 10.0f)
+                {
+                    y -= 10.0f;
                 }
 
-                // todo: Why is this printing ridiculous values for transform.localPosition ?
-                Debug.Log($"transform.position.y is {transform.position.y}. transform.localPosition.y is {transform.localPosition.y}.");
+                // change the space between local and global every second
+                GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
+
+                transform.position = new Vector3(0.0f, y * 10, 0.0f);
+                //Debug.Log($"server transform.position.y is {transform.position.y}. transform.localPosition.y is {transform.localPosition.y}.");
+            }
+
+            // On the server, make sure to keep the parent object at a fixed position
+            if (IsFixed)
+            {
+                transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
             }
         }
     }
@@ -47,9 +66,7 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_AsNetworkObject;
-        private NetworkTransform m_AsNetworkTransform;
-
-        private NetworkObject m_Object1OnClient;
+        private NetworkObject m_SpawnedObjectOnClient;
 
         [UnitySetUp]
         public override IEnumerator Setup()
@@ -69,15 +86,10 @@ namespace Unity.Netcode.RuntimeTests
                     x => x.NetworkObjectId == m_AsNetworkObject.NetworkObjectId,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult));
-            m_Object1OnClient = serverClientPlayerResult.Result;
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_AsNetworkObject.NetworkObjectId,
-                    m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+            m_SpawnedObjectOnClient = serverClientPlayerResult.Result;
 
             // make sure the objects are set with the right network manager
-            m_Object1OnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
         }
 
         public GameObject PreparePrefab(Type type)
@@ -107,31 +119,28 @@ namespace Unity.Netcode.RuntimeTests
             baseObject.GetComponent<NetworkObject>().Spawn();
 
             m_AsNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            m_AsNetworkTransform = spawnedObject.GetComponent<NetworkTransform>();
             m_AsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+
+            m_AsNetworkObject.TrySetParent(baseObject);
 
             m_AsNetworkObject.Spawn();
 
-            baseObject.transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
-            spawnedObject.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
-
             yield return RefreshNetworkObjects();
 
-            m_Object1OnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
+            m_AsNetworkObject.TrySetParent(baseObject);
 
-            spawnedObject.transform.parent = baseObject.transform;
+            baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
+            spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
 
-            for (int i = 0; i < 100; i++)
-            {
-                yield return new WaitForSeconds(0.01f);
+            // Give two seconds for the object to settle
+            yield return new WaitForSeconds(2.0f);
 
-                if ((i != 0) && (i % 10 == 0))
-                {
-                    m_AsNetworkTransform.InLocalSpace = !m_AsNetworkTransform.InLocalSpace;
-                }
+            m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 
-                spawnedObject.transform.position = new Vector3(0.0f, i, 0.0f);
-            }
+            // Test that interpolation works correctly for 10 seconds
+            // Increasing this duration gives you the opportunity to go check in the Editor how the objects are setup
+            // and how they move
+            yield return new WaitForSeconds(10.0f);
         }
     }
 }
