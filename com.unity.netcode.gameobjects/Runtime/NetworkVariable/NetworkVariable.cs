@@ -10,7 +10,7 @@ namespace Unity.Netcode
     public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
     {
         // Functions that know how to serialize INetworkSerializable
-        internal static void WriteNetworkSerializable<TForMethod>(FastBufferWriter writer, ref TForMethod value)
+        internal static void WriteNetworkSerializable<TForMethod>(FastBufferWriter writer, in TForMethod value)
             where TForMethod : INetworkSerializable, new()
         {
             writer.WriteNetworkSerializable(value);
@@ -22,7 +22,7 @@ namespace Unity.Netcode
         }
 
         // Functions that serialize other types
-        private static void WriteValue<TForMethod>(FastBufferWriter writer, ref TForMethod value) where TForMethod : unmanaged
+        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value) where TForMethod : unmanaged
         {
             writer.WriteValueSafe(value);
         }
@@ -33,7 +33,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out value);
         }
 
-        internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, ref TForMethod value);
+        internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, in TForMethod value);
 
         internal delegate void ReadDelegate<TForMethod>(FastBufferReader reader, out TForMethod value);
 
@@ -174,7 +174,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            Write(writer, ref m_InternalValue);
+            Write(writer, m_InternalValue);
         }
     }
 }

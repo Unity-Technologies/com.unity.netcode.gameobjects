@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - develop
-      - 'release/**'
 jobs:
   autoupdate:
     name: auto-update
@@ -11,8 +10,7 @@ jobs:
     steps:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
-          GITHUB_TOKEN: "${{ secrets.NETCODE_BOT_KEY }}"
-          PR_FILTER: "labelled"
-          PR_LABELS: "stat:ready-to-merge"
+          GITHUB_TOKEN: "${{ secrets.NETCODE_CI_SERVICE_TOKEN }}"
+          PR_FILTER: "auto_merge"
           PR_READY_STATE: "ready_for_review"
           MERGE_CONFLICT_ACTION: "ignore"

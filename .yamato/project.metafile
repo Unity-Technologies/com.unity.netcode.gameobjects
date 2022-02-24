@@ -45,11 +45,6 @@ projects:
       - 2021.2
       - 2020.3
       - trunk
-    multiprocess_test_editors:
-      - 2021.1
-      - 2021.2
-      - 2020.3
-      - 2022.1
 #  - name: testproject-tools-integration
 #    path: testproject-tools-integration
 #    validate: false

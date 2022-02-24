@@ -118,7 +118,7 @@ namespace Unity.Netcode
             for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(queueIndex);
+                ref var item = ref m_IncomingMessageQueue.ElementAt(queueIndex);
                 item.Reader.Dispose();
             }
 
@@ -279,7 +279,7 @@ namespace Unity.Netcode
             for (var index = 0; index < m_IncomingMessageQueue.Length; ++index)
             {
                 // Avoid copies...
-                ref var item = ref m_IncomingMessageQueue.GetUnsafeList()->ElementAt(index);
+                ref var item = ref m_IncomingMessageQueue.ElementAt(index);
                 HandleMessage(item.Header, item.Reader, item.SenderId, item.Timestamp, item.MessageHeaderSerializedSize);
                 if (m_Disposed)
                 {
@@ -314,7 +314,7 @@ namespace Unity.Netcode
             var queue = m_SendQueues[clientId];
             for (var i = 0; i < queue.Length; ++i)
             {
-                queue.GetUnsafeList()->ElementAt(i).Writer.Dispose();
+                queue.ElementAt(i).Writer.Dispose();
             }
 
             queue.Dispose();
@@ -377,7 +377,7 @@ namespace Unity.Netcode
 
             var header = new MessageHeader
             {
-                MessageSize = (ushort)tmpSerializer.Length,
+                MessageSize = (uint)tmpSerializer.Length,
                 MessageType = m_MessageTypes[typeof(TMessageType)],
             };
             BytePacker.WriteValueBitPacked(headerSerializer, header.MessageType);
@@ -402,22 +402,22 @@ namespace Unity.Netcode
                 {
                     sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                         maxSize));
-                    sendQueueItem.GetUnsafeList()->ElementAt(0).Writer.Seek(sizeof(BatchHeader));
+                    sendQueueItem.ElementAt(0).Writer.Seek(sizeof(BatchHeader));
                 }
                 else
                 {
-                    ref var lastQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
+                    ref var lastQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
                     if (lastQueueItem.NetworkDelivery != delivery ||
                         lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
                         < tmpSerializer.Length + headerSerializer.Length)
                     {
                         sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
                             maxSize));
-                        sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
+                        sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
                     }
                 }
 
-                ref var writeQueueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(sendQueueItem.Length - 1);
+                ref var writeQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
                 writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length);
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
@@ -502,7 +502,7 @@ namespace Unity.Netcode
                 var sendQueueItem = kvp.Value;
                 for (var i = 0; i < sendQueueItem.Length; ++i)
                 {
-                    ref var queueItem = ref sendQueueItem.GetUnsafeList()->ElementAt(i);
+                    ref var queueItem = ref sendQueueItem.ElementAt(i);
                     if (queueItem.BatchHeader.BatchSize == 0)
                     {
                         queueItem.Writer.Dispose();

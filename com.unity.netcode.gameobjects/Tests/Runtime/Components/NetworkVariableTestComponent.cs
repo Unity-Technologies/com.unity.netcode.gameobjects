@@ -11,24 +11,24 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class NetworkVariableTestComponent : NetworkBehaviour
     {
-        private NetworkVariable<bool> m_NetworkVariableBool;
-        private NetworkVariable<byte> m_NetworkVariableByte;
-        private NetworkVariable<Color> m_NetworkVariableColor;
-        private NetworkVariable<Color32> m_NetworkVariableColor32;
-        private NetworkVariable<double> m_NetworkVariableDouble;
-        private NetworkVariable<float> m_NetworkVariableFloat;
-        private NetworkVariable<int> m_NetworkVariableInt;
-        private NetworkVariable<long> m_NetworkVariableLong;
-        private NetworkVariable<sbyte> m_NetworkVariableSByte;
-        private NetworkVariable<Quaternion> m_NetworkVariableQuaternion;
-        private NetworkVariable<short> m_NetworkVariableShort;
-        private NetworkVariable<Vector4> m_NetworkVariableVector4;
-        private NetworkVariable<Vector3> m_NetworkVariableVector3;
-        private NetworkVariable<Vector2> m_NetworkVariableVector2;
-        private NetworkVariable<Ray> m_NetworkVariableRay;
-        private NetworkVariable<ulong> m_NetworkVariableULong;
-        private NetworkVariable<uint> m_NetworkVariableUInt;
-        private NetworkVariable<ushort> m_NetworkVariableUShort;
+        private NetworkVariable<bool> m_NetworkVariableBool = new NetworkVariable<bool>();
+        private NetworkVariable<byte> m_NetworkVariableByte = new NetworkVariable<byte>();
+        private NetworkVariable<Color> m_NetworkVariableColor = new NetworkVariable<Color>();
+        private NetworkVariable<Color32> m_NetworkVariableColor32 = new NetworkVariable<Color32>();
+        private NetworkVariable<double> m_NetworkVariableDouble = new NetworkVariable<double>();
+        private NetworkVariable<float> m_NetworkVariableFloat = new NetworkVariable<float>();
+        private NetworkVariable<int> m_NetworkVariableInt = new NetworkVariable<int>();
+        private NetworkVariable<long> m_NetworkVariableLong = new NetworkVariable<long>();
+        private NetworkVariable<sbyte> m_NetworkVariableSByte = new NetworkVariable<sbyte>();
+        private NetworkVariable<Quaternion> m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>();
+        private NetworkVariable<short> m_NetworkVariableShort = new NetworkVariable<short>();
+        private NetworkVariable<Vector4> m_NetworkVariableVector4 = new NetworkVariable<Vector4>();
+        private NetworkVariable<Vector3> m_NetworkVariableVector3 = new NetworkVariable<Vector3>();
+        private NetworkVariable<Vector2> m_NetworkVariableVector2 = new NetworkVariable<Vector2>();
+        private NetworkVariable<Ray> m_NetworkVariableRay = new NetworkVariable<Ray>();
+        private NetworkVariable<ulong> m_NetworkVariableULong = new NetworkVariable<ulong>();
+        private NetworkVariable<uint> m_NetworkVariableUInt = new NetworkVariable<uint>();
+        private NetworkVariable<ushort> m_NetworkVariableUShort = new NetworkVariable<ushort>();
 
 
         public NetworkVariableHelper<bool> Bool_Var;

@@ -17,9 +17,79 @@ namespace Unity.Netcode.RuntimeTests
         public const int DefaultMinFrames = 1;
         public const int DefaultMaxFrames = 64;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
+        private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
+
+        public delegate bool MessageReceiptCheck(object receivedMessage);
+
+        private class MultiInstanceHooks : INetworkHooks
+        {
+            public bool IsWaiting;
+
+            public MessageReceiptCheck ReceiptCheck;
+
+            public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+            {
+                return receivedMessage is T;
+            }
+
+
+            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
+            {
+            }
+
+            public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+            }
+
+            public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
+            {
+            }
+
+            public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
+            {
+            }
+
+            public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
+            {
+            }
+
+            public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
+            {
+                return true;
+            }
+
+            public bool OnVerifyCanReceive(ulong senderId, Type messageType)
+            {
+                return true;
+            }
+
+            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+            }
+
+            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
+            {
+                if (IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
+                {
+                    IsWaiting = false;
+                }
+            }
+        }
 
         private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
 
@@ -175,6 +245,7 @@ namespace Unity.Netcode.RuntimeTests
         public static void StopOneClient(NetworkManager clientToStop)
         {
             clientToStop.Shutdown();
+            s_Hooks.Remove(clientToStop);
             Object.Destroy(clientToStop.gameObject);
             NetworkManagerInstances.Remove(clientToStop);
         }
@@ -196,6 +267,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var networkManager in NetworkManagerInstances)
             {
                 networkManager.Shutdown();
+                s_Hooks.Remove(networkManager);
             }
 
             // Destroy the network manager instances
@@ -263,15 +335,17 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        public delegate void BeforeClientStartCallback();
+
         /// <summary>
         /// Starts NetworkManager instances created by the Create method.
         /// </summary>
         /// <param name="host">Whether or not to create a Host instead of Server</param>
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
-        /// <param name="startInitializationCallback">called immediately after server and client(s) are started</param>
+        /// <param name="callback">called immediately after server is started and before client(s) are started</param>
         /// <returns></returns>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
         {
             if (s_IsStarted)
             {
@@ -290,12 +364,21 @@ namespace Unity.Netcode.RuntimeTests
                 server.StartServer();
             }
 
+            var hooks = new MultiInstanceHooks();
+            server.MessagingSystem.Hook(hooks);
+            s_Hooks[server] = hooks;
+
             // if set, then invoke this for the server
             RegisterHandlers(server);
+
+            callback?.Invoke();
 
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
+                hooks = new MultiInstanceHooks();
+                clients[i].MessagingSystem.Hook(hooks);
+                s_Hooks[clients[i]] = hooks;
 
                 // if set, then invoke this for the client
                 RegisterHandlers(clients[i]);
@@ -627,6 +710,74 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 Assert.True(res, "PREDICATE CONDITION");
+            }
+        }
+
+        /// <summary>
+        /// Waits for a message of the given type to be received
+        /// </summary>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">The max time in seconds to wait for</param>
+        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        {
+            var hooks = s_Hooks[toBeReceivedBy];
+            hooks.ReceiptCheck = MultiInstanceHooks.CheckForMessageOfType<T>;
+            if (result == null)
+            {
+                result = new CoroutineResultWrapper<bool>();
+            }
+            yield return ExecuteWaitForHook(hooks, result, timeout);
+
+            Assert.True(result.Result, $"Expected message {typeof(T).Name} was not received within {timeout}s.");
+        }
+
+        /// <summary>
+        /// Waits for a specific message, defined by a user callback, to be received
+        /// </summary>
+        /// <param name="requirement">Called for each received message to check if it's the right one</param>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">The max time in seconds to wait for</param>
+        internal static IEnumerator WaitForMessageMeetingRequirement(NetworkManager toBeReceivedBy, MessageReceiptCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f)
+        {
+            var hooks = s_Hooks[toBeReceivedBy];
+            hooks.ReceiptCheck = requirement;
+            if (result == null)
+            {
+                result = new CoroutineResultWrapper<bool>();
+            }
+            yield return ExecuteWaitForHook(hooks, result, timeout);
+
+            Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
+        }
+
+        private static IEnumerator ExecuteWaitForHook(MultiInstanceHooks hooks, CoroutineResultWrapper<bool> result, float timeout)
+        {
+            hooks.IsWaiting = true;
+
+            var startTime = Time.realtimeSinceStartup;
+
+            while (hooks.IsWaiting && Time.realtimeSinceStartup - startTime < timeout)
+            {
+                yield return null;
+            }
+
+            var res = !hooks.IsWaiting;
+            hooks.IsWaiting = false;
+            hooks.ReceiptCheck = null;
+            result.Result = res;
+        }
+
+        public static IEnumerator RunMultiple(IEnumerable<IEnumerator> waitFor)
+        {
+            var runningCoroutines = new List<Coroutine>();
+            foreach (var enumerator in waitFor)
+            {
+                runningCoroutines.Add(Run(enumerator));
+            }
+
+            foreach (var coroutine in runningCoroutines)
+            {
+                yield return coroutine;
             }
         }
     }

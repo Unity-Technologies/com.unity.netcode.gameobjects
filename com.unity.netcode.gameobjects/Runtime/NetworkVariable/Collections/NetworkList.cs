@@ -90,18 +90,18 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            NetworkVariable<T>.Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            NetworkVariable<T>.Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            NetworkVariable<T>.Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
@@ -112,7 +112,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            writer.WriteValueSafe(m_DirtyEvents[i].Value);
+                            NetworkVariable<T>.Write(writer, m_DirtyEvents[i].Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Clear:
@@ -130,7 +130,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
-                writer.WriteValueSafe(m_List[i]);
+                NetworkVariable<T>.Write(writer, m_List[i]);
             }
         }
 
@@ -141,7 +141,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
-                reader.ReadValueSafe(out T value);
+                NetworkVariable<T>.Read(reader, out T value);
                 m_List.Add(value);
             }
         }
@@ -157,7 +157,7 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            reader.ReadValueSafe(out T value);
+                            NetworkVariable<T>.Read(reader, out T value);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -184,7 +184,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             reader.ReadValueSafe(out int index);
-                            reader.ReadValueSafe(out T value);
+                            NetworkVariable<T>.Read(reader, out T value);
                             m_List.InsertRangeWithBeginEnd(index, index + 1);
                             m_List[index] = value;
 
@@ -211,7 +211,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            reader.ReadValueSafe(out T value);
+                            NetworkVariable<T>.Read(reader, out T value);
                             int index = m_List.IndexOf(value);
                             if (index == -1)
                             {
@@ -271,7 +271,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             reader.ReadValueSafe(out int index);
-                            reader.ReadValueSafe(out T value);
+                            NetworkVariable<T>.Read(reader, out T value);
                             if (index >= m_List.Length)
                             {
                                 throw new Exception("Shouldn't be here, index is higher than list length");

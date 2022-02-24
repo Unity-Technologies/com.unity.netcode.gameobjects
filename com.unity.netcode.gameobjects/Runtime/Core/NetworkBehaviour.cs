@@ -208,7 +208,6 @@ namespace Unity.Netcode
                 };
                 clientRpcMessage.ReadBuffer = tempBuffer;
                 clientRpcMessage.Handle(ref context);
-                rpcWriteSize = tempBuffer.Length;
             }
 
             bufferWriter.Dispose();
@@ -370,10 +369,7 @@ namespace Unity.Netcode
             InitializeVariables();
         }
 
-        internal void InternalOnNetworkDespawn()
-        {
-
-        }
+        internal void InternalOnNetworkDespawn() { }
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object
@@ -449,8 +445,7 @@ namespace Unity.Netcode
 
                     if (instance == null)
                     {
-                        instance = (NetworkVariableBase)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     }
 
                     instance.Initialize(this);
@@ -563,7 +558,7 @@ namespace Unity.Netcode
                         // so we don't have to do this serialization work if we're not going to use the result.
                         if (IsServer && clientId == NetworkManager.ServerClientId)
                         {
-                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                             using (tmpWriter)
                             {
                                 message.Serialize(tmpWriter);

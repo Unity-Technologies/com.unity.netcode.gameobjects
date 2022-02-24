@@ -280,6 +280,10 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
+            if (TryGetNetworkClient(clientId, out NetworkClient newNetworkClient))
+            {
+                newNetworkClient.OwnedObjects.Add(networkObject);
+            }
 
             var message = new ChangeOwnershipMessage
             {
@@ -420,6 +424,15 @@ namespace Unity.Netcode
             if (networkObject.IsSpawned)
             {
                 throw new SpawnStateException("Object is already spawned");
+            }
+
+            if (!sceneObject)
+            {
+                var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
+                if (networkObjectChildren.Length > 1)
+                {
+                    Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
+                }
             }
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
@@ -835,7 +848,7 @@ namespace Unity.Netcode
         {
             foreach (var sobj in SpawnedObjectsList)
             {
-                if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
+                if (sobj.CheckObjectVisibility == null)
                 {
                     if (!sobj.Observers.Contains(clientId))
                     {
