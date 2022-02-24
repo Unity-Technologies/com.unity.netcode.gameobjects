@@ -12,16 +12,6 @@ namespace Unity.Netcode.RuntimeTests
         public bool IsMoving;
         public bool IsFixed;
 
-        private void Start()
-        {
-            Debug.Log($"started {IsServer}");
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            Debug.Log($"spawned {IsServer}");
-        }
-
         private void Update()
         {
             // Check the position of the nested object on the client
@@ -31,7 +21,6 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
                 }
-                //Debug.Log($"client transform.position.y is {transform.position.y}. transform.localPosition.y is {transform.localPosition.y}.");
             }
 
             // Move the nested object on the server
@@ -47,7 +36,6 @@ namespace Unity.Netcode.RuntimeTests
                 GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
 
                 transform.position = new Vector3(0.0f, y * 10, 0.0f);
-                //Debug.Log($"server transform.position.y is {transform.position.y}. transform.localPosition.y is {transform.localPosition.y}.");
             }
 
             // On the server, make sure to keep the parent object at a fixed position
