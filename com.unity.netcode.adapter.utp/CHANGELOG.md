@@ -9,6 +9,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Changed
 
 - Updated Unity Transport package to 1.0.0-pre.13. (#1696)
+- Overflowing the reliable send queue of a connection will now result in the connection being closed, rather than spamming the log with errors about not being able to send a payload. It is deemed better to close the connection than to lose reliable traffic (which could cause all sorts of weird synchronization issues).
 
 ### Fixed
 
