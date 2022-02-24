@@ -260,9 +260,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
+        private bool m_LastInterpolateLocal = false; // was the last frame local
 
         public bool Interpolate = true;
-        private bool m_LastInterpolate = true;
+        private bool m_LastInterpolate = true; // was the last frame interpolated
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
@@ -613,10 +614,46 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void AddInterpolatedState(NetworkTransformState newState)
+        private void AddInterpolatedState(NetworkTransformState newState, bool reset = false)
         {
             var sentTime = newState.SentTime;
 
+            if (reset)
+            {
+                if (newState.HasPositionX)
+                {
+                    m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
+                }
+
+                if (newState.HasPositionY)
+                {
+                    m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
+                }
+
+                if (newState.HasPositionZ)
+                {
+                    m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
+                }
+
+                m_RotationInterpolator.ResetTo(Quaternion.Euler(newState.Rotation), sentTime);
+
+                if (newState.HasScaleX)
+                {
+                    m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
+                }
+
+                if (newState.HasScaleY)
+                {
+                    m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
+                }
+
+                if (newState.HasScaleZ)
+                {
+                    m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
+                }
+
+                return;
+            }
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
@@ -668,8 +705,9 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                AddInterpolatedState(newState);
+                AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal));
             }
+            m_LastInterpolateLocal = newState.InLocalSpace;
 
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
