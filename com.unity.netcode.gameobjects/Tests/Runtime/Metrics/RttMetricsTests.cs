@@ -21,13 +21,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     /// Just an example of how you can accomplish the same task using
     /// the NetcodeIntegrationTest
     /// </summary>
-    [TestFixture(NumberOfClients.OneClient)]
-    [TestFixture(NumberOfClients.TwoClients)]
+    [TestFixture(ClientCount.OneClient)]
+    [TestFixture(ClientCount.TwoClients)]
     internal class RttMetricsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => m_ClientCount;
 
-        public enum NumberOfClients
+        public enum ClientCount
         {
             OneClient,
             TwoClients
@@ -35,9 +35,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
         private int m_ClientCount;
 
-        public RttMetricsTests(NumberOfClients numberOfClients)
+        public RttMetricsTests(ClientCount numberOfClients)
         {
-            m_ClientCount = numberOfClients == NumberOfClients.OneClient ? 1 : 2;
+            m_ClientCount = numberOfClients == ClientCount.OneClient ? 1 : 2;
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackRttMetricClientToServer()
         {
             var clientGaugeMetricValues = new List<WaitForGaugeMetricValues>();
-            foreach(var client in m_ClientNetworkManagers)
+            foreach (var client in m_ClientNetworkManagers)
             {
                 clientGaugeMetricValues.Add(new WaitForGaugeMetricValues((client.NetworkMetrics as NetworkMetrics).Dispatcher, NetworkMetricTypes.RttToServer, metric => metric > 0f));
             }
@@ -89,7 +89,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return WaitForConditionOrTimeOut(() => clientGaugeMetricValues.Where((c) => c.MetricFound()).Count() == NumberOfClients);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TrackRttMetricClientToServer)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
-            foreach(var clientGaugeMetricValue in clientGaugeMetricValues)
+            foreach (var clientGaugeMetricValue in clientGaugeMetricValues)
             {
                 var rttValue = clientGaugeMetricValue.AssertMetricValueHaveBeenFound();
                 Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
