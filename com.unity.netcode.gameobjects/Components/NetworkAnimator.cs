@@ -321,6 +321,7 @@ namespace Unity.Netcode.Components
         }
 
         [ClientRpc]
+        // Server wants to forward a trigger for a client to play / reset
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (animSnapshot.Reset)
@@ -359,7 +360,22 @@ namespace Unity.Netcode.Components
 
             if (IsServer)
             {
+                //  trigger the animation locally on the server...
+                if (reset)
+                {
+                    m_Animator.ResetTrigger(hash);
+                }
+                else
+                {
+                    m_Animator.SetTrigger(hash);
+                }
+
+                // ...then tell all the clients to do the same
                 SendAnimTriggerClientRpc(animMsg);
+            }
+            else
+            {
+                Debug.LogWarning("Trying to call NetworkAnimator.SetTrigger on a client...ignoring");
             }
         }
 
