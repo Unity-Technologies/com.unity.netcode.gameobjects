@@ -25,8 +25,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Where finding the NetworkObject with a NetworkObjectId of 10 on ClientId of 2 would be:
         /// s_GlobalNetworkObjects[2][10]
         /// To find the client or server player objects please see:
-        /// <see cref="m_ServerSidePlayerNetworkObjects"/>
-        /// <see cref="m_ClientSidePlayerNetworkObjects"/>
+        /// <see cref="m_PlayerNetworkObjects"/>
         /// </summary>
         protected static Dictionary<ulong, Dictionary<ulong, NetworkObject>> s_GlobalNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
@@ -95,7 +94,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// [Client Relative set of player instances][The player instance ClientId][The player instance's NetworkObject]
         /// Example:
         /// To get the player instance with a ClientId of 3 that was instantiated (relative) on the player instance with a ClientId of 2
-        /// m_ClientSidePlayerNetworkObjects[2][3]
+        /// m_PlayerNetworkObjects[2][3]
         /// </summary>
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
@@ -137,8 +136,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
         /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests.
         /// For those two modes, if you want to have access to the server or client
-        /// <see cref="NetworkManager"/>s then override then:
-        /// <see cref="OnServerAndClientsCreated"/>
+        /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
         /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
         /// </summary>
         protected virtual IEnumerator OnSetup()
@@ -198,7 +196,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Creates the server and clients (NBClients)
+        /// Creates the server and clients
         /// </summary>
         /// <param name="numberOfClients"></param>
         protected void CreateServerAndClients(int numberOfClients)
@@ -236,7 +234,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Override this method and return false in order to be able
         /// to manually control when the server and clients are started.
-        /// They will still follow the rest of the integration test flow.
         /// </summary>
         protected virtual bool CanStartServerAndClients()
         {
@@ -391,6 +388,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This shuts down all NetworkManager instances registered via the
         /// <see cref="NetcodeIntegrationTestHelpers"/> class and cleans up
         /// the test runner scene of any left over NetworkObjects.
+        /// <see cref="DestroySceneNetworkObjects"/>
         /// </summary>
         protected void ShutdownAndCleanUp()
         {
@@ -426,8 +424,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> integration tests
-        /// this is called after ShutdownAndCleanUp.
+        /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> mode
+        /// this is called before ShutdownAndCleanUp.
         /// </summary>
         protected virtual IEnumerator OnTearDown()
         {
@@ -448,6 +446,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Override this method to do handle cleaning up once the test(s)
         /// within the child derived class have completed
+        /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> mode
+        /// this is called before ShutdownAndCleanUp.
         /// </summary>
         protected virtual void OnOneTimeTearDown()
         {
@@ -480,8 +480,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Destroys all NetworkObjects as long as the <see cref="CanDestroyNetworkObject(NetworkObject)"/>
-        /// returns true.
+        /// Destroys all NetworkObjects at the end of a test cycle.
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {

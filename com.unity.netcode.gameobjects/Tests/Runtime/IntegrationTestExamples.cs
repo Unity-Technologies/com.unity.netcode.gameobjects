@@ -116,8 +116,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(m_PlayerNetworkObjects[4][1].IsLocalPlayer);
             // Confirm Player ID 4 on Client ID 4 is the local player
             Assert.IsTrue(m_PlayerNetworkObjects[4][4].IsLocalPlayer);
-            // Confirm Player ID 0 on Client ID 0 (host) is the server
+            // Confirm Player ID 0 on Client ID 0 (host) NetworkManager is the server
             Assert.IsTrue(m_PlayerNetworkObjects[0][0].NetworkManager.IsServer);
+            // Confirm Player ID 0 on Client ID 4 (client) NetworkManager is not the server
+            Assert.IsFalse(m_PlayerNetworkObjects[4][0].NetworkManager.IsServer);
         }
     }
 
