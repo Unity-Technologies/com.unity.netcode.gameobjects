@@ -8,7 +8,6 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.UTP.Utilities;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
 namespace Unity.Netcode.UTP.RuntimeTests
