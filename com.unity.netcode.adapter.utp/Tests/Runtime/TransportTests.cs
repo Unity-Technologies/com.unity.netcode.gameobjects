@@ -310,7 +310,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         // that's easy to check and we only really want to make sure the simulator parameters are
         // configured properly (the simulator pipeline stage is already well-tested in UTP).
         [UnityTest]
-        [UnityPlatform(include = new[] {RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor})]
+        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
         public IEnumerator SimulatorParametersAreEffective()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
