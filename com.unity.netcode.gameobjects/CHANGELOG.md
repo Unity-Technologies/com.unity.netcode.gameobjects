@@ -32,7 +32,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
 - Improved performance in NetworkAnimator (#1735)
-- Fixed display over "always sync" network animator parameters even when an animator controller override is in use (#1735)
+- Removed the "always sync" network animator (aka "autosend") parameters (#1746)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
