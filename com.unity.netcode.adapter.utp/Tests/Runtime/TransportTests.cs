@@ -291,8 +291,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             }
 
             LogAssert.Expect(LogType.Error, "Couldn't add payload of size 1024 to reliable send queue. " +
-                "Closing connection 4294967296 as reliability guarantees can't be maintained. " +
-                "Perhaps 'Max Send Queue Size' (98304) is too small for workload.");
+                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained. " +
+                $"Perhaps 'Max Send Queue Size' ({UnityTransport.InitialMaxSendQueueSize}) is too small for workload.");
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
