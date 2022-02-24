@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class RpcManyClientsTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 10;
+        protected override int NumberOfClients => 10;
 
         private GameObject m_PrefabToSpawn;
 
@@ -71,23 +71,23 @@ namespace Unity.Netcode.RuntimeTests
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.SomeClientRpc(); // RPC with no params
             int maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
+            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
 
-            Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
+            Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.SomeClientRpc(0); // RPC with one param
             maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
+            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
 
-            Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
+            Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.SomeClientRpc(0, 0); // RPC with two params
             maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NbClients + 1) || Time.frameCount > maxFrameNumber);
+            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
 
-            Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
+            Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
 
         }
     }

@@ -15,7 +15,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.

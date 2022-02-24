@@ -93,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkSpawn();
             }
         }
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)

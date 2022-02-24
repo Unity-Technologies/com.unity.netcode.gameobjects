@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_TestNetworkObjectPrefab;
         private GameObject m_TestNetworkObjectInstance;
 
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
@@ -116,7 +116,7 @@ namespace Unity.Netcode.RuntimeTests
                         }
                     }
                 }
-                return clientsCompleted >= NbClients;
+                return clientsCompleted >= NumberOfClients;
             }
 
             // safety check that all clients have not been despawned yet

@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
 
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {

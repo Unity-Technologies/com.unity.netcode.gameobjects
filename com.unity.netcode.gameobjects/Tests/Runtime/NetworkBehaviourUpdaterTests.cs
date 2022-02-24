@@ -154,7 +154,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
         public const int NetVarValueToSet = 1;
         private static List<GameObject> s_ClientSpawnedNetworkObjects = new List<GameObject>();
         private List<NetworkManager> m_ActiveClientsForCurrentTest;

@@ -19,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkTimeState m_Client1State;
         private NetworkTimeState m_Client2State;
 
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
         [TestCase(60, 10u, ExpectedResult = null)]
         public IEnumerator TestTimeIntegrationTest(int targetFrameRate, uint tickRate)
         {
-            yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, targetFrameRate, tickRate);
+            yield return StartSomeClientsAndServerWithPlayersCustom(true, NumberOfClients, targetFrameRate, tickRate);
 
             double frameInterval = 1d / targetFrameRate;
             double tickInterval = 1d / tickRate;

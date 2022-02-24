@@ -44,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class HiddenVariableTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 4;
+        protected override int NumberOfClients => 4;
 
         private NetworkObject m_NetSpawnedObject;
         private List<NetworkObject> m_NetSpawnedObjectOnClient = new List<NetworkObject>();
@@ -136,8 +136,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return RefreshGameObects();
 
             // === Check spawn occured
-            yield return WaitForSpawnCount(NbClients + 1);
-            Debug.Assert(HiddenVariableObject.SpawnCount == NbClients + 1);
+            yield return WaitForSpawnCount(NumberOfClients + 1);
+            Debug.Assert(HiddenVariableObject.SpawnCount == NumberOfClients + 1);
             Debug.Log("Objects spawned");
 
             // ==== Set the NetworkVariable value to 2

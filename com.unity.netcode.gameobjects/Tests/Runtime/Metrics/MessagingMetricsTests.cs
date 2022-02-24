@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private static readonly int k_NamedMessageOverhead = (int)k_MessageNameHashSize + k_MessageHeaderSize;
         private static readonly int k_UnnamedMessageOverhead = k_MessageHeaderSize;
 
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         [UnityTest]
         public IEnumerator TrackNetworkMessageSentMetric()

@@ -32,7 +32,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkShowHideTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;

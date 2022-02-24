@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     [TestFixture(NumberOfClients.TwoClients)]
     internal class RttMetricsTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => m_ClientCount;
+        protected override int NumberOfClients => m_ClientCount;
 
         public enum NumberOfClients
         {
@@ -86,7 +86,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessageToAll(writer);
             }
 
-            yield return WaitForConditionOrTimeOut(() => clientGaugeMetricValues.Where((c) => c.MetricFound()).Count() == NbClients);
+            yield return WaitForConditionOrTimeOut(() => clientGaugeMetricValues.Where((c) => c.MetricFound()).Count() == NumberOfClients);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, $"{nameof(TrackRttMetricClientToServer)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
             foreach(var clientGaugeMetricValue in clientGaugeMetricValues)

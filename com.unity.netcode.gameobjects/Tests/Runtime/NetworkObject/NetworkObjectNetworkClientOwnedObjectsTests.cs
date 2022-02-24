@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectNetworkClientOwnedObjectsTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
         private NetworkPrefab m_NetworkPrefab;
         protected override void OnServerAndClientsCreated()
         {

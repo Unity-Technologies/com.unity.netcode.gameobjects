@@ -20,14 +20,14 @@
 //
 //     public abstract class NetworkRigidbodyCntChangeOwnershipTestBase : NetcodeIntegrationTest
 //     {
-//         protected override int NbClients => 1;
+//         protected override int NumberOfClients => 1;
 //
 //         public abstract bool Kinematic { get; }
 //
 //         [UnitySetUp]
 //         public override IEnumerator Setup()
 //         {
-//             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
+//             yield return StartSomeClientsAndServerWithPlayers(true, NumberOfClients, playerPrefab =>
 //             {
 //                 playerPrefab.AddComponent<ClientNetworkTransform>();
 //                 playerPrefab.AddComponent<Rigidbody>();

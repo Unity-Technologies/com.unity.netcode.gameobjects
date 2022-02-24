@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
         private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         [Test]
         public void TestServerCanAccessItsOwnPlayer()

@@ -10,7 +10,7 @@ namespace Unity.Netcode.RuntimeTests
     public class IntegrationTestUpdated : NetcodeIntegrationTest
     {
         private GameObject m_MyNetworkPrefab;
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         protected override void OnServerAndClientsCreated()
         {
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             Server
         }
         private GameObject m_MyNetworkPrefab;
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         public IntegrationTestExtended(HostOrServer hostOrServer)
         {
@@ -87,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests
 
     public class IntegrationTestPlayers : NetcodeIntegrationTest
     {
-        protected override int NbClients => 5;
+        protected override int NumberOfClients => 5;
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -131,7 +131,7 @@ namespace Unity.Netcode.RuntimeTests
     }
     public class IntegrationTestSpawning : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
         private GameObject m_NetworkPrefabToSpawn;
         private int m_NumberToSpawn = 5;
 

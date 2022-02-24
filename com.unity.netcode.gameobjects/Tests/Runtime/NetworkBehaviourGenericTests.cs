@@ -10,7 +10,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkBehaviourGenericTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 0;
+        protected override int NumberOfClients => 0;
 
         private bool m_AllowServerToStart;
 

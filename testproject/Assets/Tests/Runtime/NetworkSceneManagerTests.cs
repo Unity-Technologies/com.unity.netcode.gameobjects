@@ -14,7 +14,7 @@ namespace TestProject.RuntimeTests
 {
     public class NetworkSceneManagerTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 9;
+        protected override int NumberOfClients => 9;
 
         protected override IEnumerator OnSetup()
         {
@@ -234,7 +234,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 return (m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
-                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && !m_TimedOut && m_ClientsThatFailedVerification != NbClients;
+                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && !m_TimedOut && m_ClientsThatFailedVerification != NumberOfClients;
             }
         }
 
@@ -669,7 +669,7 @@ namespace TestProject.RuntimeTests
 
         private bool ValidateCompletedNotifications()
         {
-            var isValidated = m_ClientCompletedTestInfo.Count == NbClients && m_ServerCompletedTestInfo.Count == 1;
+            var isValidated = m_ClientCompletedTestInfo.Count == NumberOfClients && m_ServerCompletedTestInfo.Count == 1;
             if (isValidated)
             {
                 foreach (var client in m_ClientCompletedTestInfo)
@@ -1114,7 +1114,7 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class NetworkSceneManagerFixValidationTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 0;
+        protected override int NumberOfClients => 0;
 
         protected override bool CanStartServerAndClients()
         {

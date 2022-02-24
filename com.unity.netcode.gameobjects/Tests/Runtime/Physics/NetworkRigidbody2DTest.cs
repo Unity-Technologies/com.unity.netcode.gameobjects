@@ -19,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests.Physics
 
     public abstract class NetworkRigidbody2DTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         public abstract bool Kinematic { get; }
 

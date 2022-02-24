@@ -5,7 +5,7 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal abstract class SingleClientMetricTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         internal NetworkManager Server { get; private set; }
 
@@ -32,7 +32,7 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 
     public abstract class DualClientMetricTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         internal NetworkManager Server { get; private set; }
 

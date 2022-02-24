@@ -73,10 +73,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        protected int TotalClients => m_UseHost ? NbClients + 1 : NbClients;
+        protected int TotalClients => m_UseHost ? NumberOfClients + 1 : NumberOfClients;
 
         protected const uint k_DefaultTickRate = 30;
-        protected abstract int NbClients { get; }
+        protected abstract int NumberOfClients { get; }
 
         public enum NetworkManagerInstatiationMode
         {
@@ -187,12 +187,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Will create <see cref="NbClients"/> number of clients.
+        /// Will create <see cref="NumberOfClients"/> number of clients.
         /// To create a specific number of clients <see cref="CreateServerAndClients(int)"/>
         /// </summary>
         protected void CreateServerAndClients()
         {
-            CreateServerAndClients(NbClients);
+            CreateServerAndClients(NumberOfClients);
         }
 
         /// <summary>

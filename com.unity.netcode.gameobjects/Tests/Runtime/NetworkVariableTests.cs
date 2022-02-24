@@ -87,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
 
@@ -176,7 +176,7 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost ? NbClients * 3 : NbClients * 2;
+            var instanceCount = useHost ? NumberOfClients * 3 : NumberOfClients * 2;
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 

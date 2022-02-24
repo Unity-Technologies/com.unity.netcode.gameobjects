@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
             SceneManagementEnabled,
             SceneManagementDisabled
         }
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
         private GameObject m_TestNetworkPrefab;
         private bool m_SceneManagementEnabled;
 

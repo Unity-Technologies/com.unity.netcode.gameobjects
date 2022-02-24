@@ -10,7 +10,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         private GameObject m_PlayerOnServer;
         private GameObject m_PlayerOnClient;

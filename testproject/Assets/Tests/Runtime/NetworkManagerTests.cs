@@ -6,7 +6,7 @@ namespace TestProject.RuntimeTests
 {
     public class NetworkManagerTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         [Test]
         public void ValidateHostLocalClient()

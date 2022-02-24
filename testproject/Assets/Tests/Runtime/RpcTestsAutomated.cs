@@ -16,7 +16,7 @@ namespace TestProject.RuntimeTests
         private bool m_TimedOut;
         private int m_MaxFrames;
 
-        protected override int NbClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
+        protected override int NumberOfClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {

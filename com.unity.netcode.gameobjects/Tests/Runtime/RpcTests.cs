@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         protected override void OnCreatePlayerPrefab()
         {

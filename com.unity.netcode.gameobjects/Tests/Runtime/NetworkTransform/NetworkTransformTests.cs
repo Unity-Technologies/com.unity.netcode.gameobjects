@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             m_TestWithClientNetworkTransform = testWithClientNetworkTransform;
         }
 
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         protected override void OnCreatePlayerPrefab()
         {

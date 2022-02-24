@@ -8,7 +8,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectSpawnManyObjectsTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
         // "many" in this case means enough to exceed a ushort_max message size written in the header
         // 1500 is not a magic number except that it's big enough to trigger a failure
         private const int k_SpawnedObjects = 1500;
