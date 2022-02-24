@@ -92,7 +92,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             buildPlayerOptions.locationPathName = buildPathToUse;
             buildPlayerOptions.target = buildTarget;
             var buildOptions = BuildOptions.None;
-            if (buildDebug)
+            if (buildDebug || buildTarget == BuildTarget.Android)
             {
                 buildOptions |= BuildOptions.Development;
                 buildOptions |= BuildOptions.AllowDebugging;
