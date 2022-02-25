@@ -1,3 +1,5 @@
+// This integration test has too many issues with it and shouldn't have been merged into develop
+#if DISABLE_UNTIL_FIXED
 using System.Collections;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -97,6 +99,7 @@ namespace Unity.Netcode.RuntimeTests
         //}
 
         [UnityTest]
+
         public IEnumerator TransformInterpolationTest()
         {
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
@@ -142,3 +145,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
