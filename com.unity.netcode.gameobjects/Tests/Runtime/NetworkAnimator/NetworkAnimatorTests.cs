@@ -18,10 +18,21 @@ namespace Unity.Netcode.RuntimeTests
         private Animator m_PlayerOnServerAnimator;
         private Animator m_PlayerOnClientAnimator;
 
+
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
+            // this is treacherous...normally BaseMultiInstance calls StartSomeClientsAndServerWithPlayers for you
+            //  in its version of Setup.  In this case, I want to alternatively test Server and Host mode via parameters
+            //  in each test.  However I cannot inject the host / server mode into the corresponding Setup calls, hence
+            //  I wrote and manually call an Init function.  However, if I don't write this null version of setup
+            //  I will get 2 calls to StartSomeClientsAndServerWithPlayers, which wrecks everything.
+            yield return null;
+        }
+
+        public IEnumerator Init(bool hostMode)
+        {
+            yield return StartSomeClientsAndServerWithPlayers(useHost: hostMode, nbClients: NbClients,
                 updatePlayerPrefab: playerPrefab =>
                 {
                     // ideally, we would build up the AnimatorController entirely in code and not need an asset,
@@ -63,8 +74,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator AnimationTriggerReset([Values(true, false)] bool asHash)
+        public IEnumerator AnimationTriggerReset([Values(true, false)] bool asHash, [Values(true, false)] bool hostMode)
         {
+            yield return Init(hostMode);
+
             // We have "UnboundTrigger" purposely not bound to any animations so we can test resetting.
             //  If we used a trigger that was bound to a transition, then the trigger would reset as soon as the
             //  transition happens.  This way it will stay stuck on
@@ -114,9 +127,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client reset check");
         }
 
+
         [UnityTest]
-        public IEnumerator AnimationStateSyncTest()
+        public IEnumerator AnimationStateSyncTest([Values(true, false)] bool hostMode)
         {
+            yield return Init(hostMode);
+
             // check that we have started in the default state
             Assert.True(m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
             Assert.True(m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("DefaultState"));
@@ -137,8 +153,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator AnimationStateSyncTriggerTest([Values(true, false)] bool asHash)
+        public IEnumerator AnimationStateSyncTriggerTest([Values(true, false)] bool asHash, [Values(true, false)] bool hostMode)
         {
+            yield return Init(hostMode);
+
             string triggerString = "TestTrigger";
             int triggerHash = Animator.StringToHash(triggerString);
 
@@ -172,8 +190,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator AnimationStateSyncTestWithOverride()
+        public IEnumerator AnimationStateSyncTestWithOverride([Values(true, false)] bool hostMode)
         {
+            yield return Init(hostMode);
             // set up the animation override controller
             var overrideController = Resources.Load("TestAnimatorOverrideController") as AnimatorOverrideController;
             m_PlayerOnServer.GetComponent<Animator>().runtimeAnimatorController = overrideController;
