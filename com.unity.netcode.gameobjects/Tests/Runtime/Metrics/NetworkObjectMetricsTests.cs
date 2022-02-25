@@ -90,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var objectDestroyed = objectDestroyedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual($"{objectName}", objectDestroyed.NetworkId.Name);
+            Assert.AreEqual(objectName, objectDestroyed.NetworkId.Name);
             Assert.AreNotEqual(0, objectDestroyed.BytesCount);
         }
 
