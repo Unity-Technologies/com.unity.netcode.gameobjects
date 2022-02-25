@@ -167,6 +167,53 @@ namespace Unity.Netcode
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        [Serializable]
+        public struct SimulatorParameters
+        {
+            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor " +
+                "and in development builds. The value is ignored in production builds.")]
+            [SerializeField] public int PacketDelayMS;
+
+            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only " +
+                "applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField] public int PacketJitterMS;
+
+            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor " +
+                "and in developments builds.")]
+            [SerializeField] public int PacketDropRate;
+        }
+
+        public SimulatorParameters DebugSimulator = new SimulatorParameters
+        {
+            PacketDelayMS = 0,
+            PacketJitterMS = 0,
+            PacketDropRate = 0
+        };
+
+        // Only for backward compatibility with how we used to handle simulator parameters.
+#if DEVELOPMENT_BUILD
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketDelayMs
+        {
+            get => DebugSimulator.PacketDelayMS;
+            set => DebugSimulator.PacketDelayMS = value;
+        }
+
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketJitterMs
+        {
+            get => DebugSimulator.PacketJitterMS;
+            set => DebugSimulator.PacketJitterMS = value;
+        }
+
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketDropRate
+        {
+            get => DebugSimulator.PacketDropRate;
+            set => DebugSimulator.PacketDropRate = value;
+        }
+#endif
+
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
@@ -183,43 +230,6 @@ namespace Unity.Netcode
         private RelayServerData m_RelayServerData;
 
         internal NetworkManager NetworkManager;
-
-#if UNITY_EDITOR
-        private static int ClientPacketDelayMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay");
-        private static int ClientPacketJitterMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter");
-        private static int ClientPacketDropRate => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate");
-#elif DEVELOPMENT_BUILD
-        public static int ClientPacketDelayMs = 0;
-        public static int ClientPacketJitterMs = 0;
-        public static int ClientPacketDropRate = 0;
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        public SimulatorUtility.Parameters ClientSimulatorParameters
-        {
-            get
-            {
-                var packetDelay = ClientPacketDelayMs;
-                var jitter = ClientPacketJitterMs;
-                if (jitter > packetDelay)
-                {
-                    jitter = packetDelay;
-                }
-
-                var packetDrop = ClientPacketDropRate;
-                int networkRate = 60; // TODO: read from some better place
-                // All 3 packet types every frame stored for maximum delay, doubled for safety margin
-                int maxPackets = 2 * (networkRate * 3 * packetDelay + 999) / 1000;
-                return new SimulatorUtility.Parameters
-                {
-                    MaxPacketSize = NetworkParameterConstants.MTU,
-                    MaxPacketCount = maxPackets,
-                    PacketDelayMs = packetDelay,
-                    PacketJitterMs = jitter,
-                    PacketDropPercentage = packetDrop
-                };
-            }
-        }
-#endif
 
         /// <summary>
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
@@ -476,6 +486,26 @@ namespace Unity.Netcode
             }
 
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
+        }
+
+        /// <summary>Set the parameters for the debug simulator.</summary>
+        /// <param name="packetDelay">Packet delay in milliseconds.</param>
+        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
+        /// <param name="dropRate">Packet drop percentage.</param>
+        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
+        {
+            if (m_Driver.IsCreated)
+            {
+                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
+                return;
+            }
+
+            DebugSimulator = new SimulatorParameters
+            {
+                PacketDelayMS = packetDelay,
+                PacketJitterMS = packetJitter,
+                PacketDropRate = dropRate
+            };
         }
 
         private bool StartRelayServer()
@@ -974,6 +1004,28 @@ namespace Unity.Netcode
             m_ServerClientId = 0;
         }
 
+        private void ConfigureSimulator()
+        {
+#if UNITY_EDITOR
+            // Backward-compatibility with how we used to handle simulator parameters.
+            var packetDelay = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay", DebugSimulator.PacketDelayMS);
+            var packetJitter = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter", DebugSimulator.PacketJitterMS);
+            var dropRate = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate", DebugSimulator.PacketDropRate);
+#else
+            var packetDelay = DebugSimulator.PacketDelayMS;
+            var packetJitter = DebugSimulator.PacketJitterMS;
+            var dropRate = DebugSimulator.PacketDropRate;
+#endif
+
+            m_NetworkSettings.WithSimulatorStageParameters(
+                maxPacketCount: 300, // TODO Is there any way to compute a better value?
+                maxPacketSize: NetworkParameterConstants.MTU,
+                packetDelayMs: packetDelay,
+                packetJitterMs: packetJitter,
+                packetDropPercentage: dropRate
+            );
+        }
+
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
@@ -986,11 +1038,9 @@ namespace Unity.Netcode
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             maxFrameTimeMS = 100;
-
-            var simulatorParams = ClientSimulatorParameters;
-
-            m_NetworkSettings.AddRawParameterStruct(ref simulatorParams);
+            ConfigureSimulator();
 #endif
+
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
@@ -999,8 +1049,9 @@ namespace Unity.Netcode
                 maxFrameTimeMS: maxFrameTimeMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
+            if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
