@@ -48,7 +48,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // the message is sent to the client. AsyncOperation is the ScceneManager.LoadSceneAsync operation.
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Server.LocalClientId)
                 {
                     serverSceneLoaded = true;
                 }
@@ -250,9 +250,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && && sceneEvent.ClientId == Server.LocalClientId)
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneLoaded = true;
+                    serverSceneUnloaded = true;
                 }
             };
 
