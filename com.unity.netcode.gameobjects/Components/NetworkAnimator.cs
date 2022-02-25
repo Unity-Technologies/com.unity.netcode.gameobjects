@@ -300,6 +300,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Internally-called RPC client receiving function to update some animation parameters on a client when
+        ///   the server wants to update them
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the parameters to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
@@ -320,8 +326,13 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Internally-called RPC client receiving function to update a trigger when the server wants to forward
+        ///   a trigger for a client to play / reset
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the trigger data to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
-        // Server wants to forward a trigger for a client to play / reset
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (animSnapshot.Reset)
