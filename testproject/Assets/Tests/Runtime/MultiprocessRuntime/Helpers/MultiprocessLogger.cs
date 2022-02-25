@@ -196,6 +196,20 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        public static string TestEndpoint()
+        {
+            using var client = new HttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/");
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/",
+                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+
+            responseTask.Wait();
+            var response = responseTask.Result;
+
+            return response.StatusCode.ToString();
+        }
+
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
         {
             using var client = new HttpClient();

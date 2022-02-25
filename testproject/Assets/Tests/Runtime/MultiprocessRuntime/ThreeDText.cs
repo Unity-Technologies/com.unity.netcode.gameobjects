@@ -34,9 +34,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var t = GetComponent<TextMesh>();
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled)
             {
-                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n{CommandLineArguments}";
+                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n{CommandLineArguments}\n{MultiprocessLogHandler.TestEndpoint()}";
                 Debug.Log(t.text);
+                MultiprocessLogger.Log(t.text);
                 IsTestCoordinatorActiveAndEnabled = testCoordinator.isActiveAndEnabled;
+                Debug.Log(MultiprocessLogHandler.ReportQueue());
+                Debug.Log(MultiprocessLogHandler.Flush());
             }
         }
     }
