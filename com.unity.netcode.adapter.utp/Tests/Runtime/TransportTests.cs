@@ -334,6 +334,33 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return null;
         }
+
+        // Check that simulator parameters are effective. We only check with the drop rate, because
+        // that's easy to check and we only really want to make sure the simulator parameters are
+        // configured properly (the simulator pipeline stage is already well-tested in UTP).
+        [UnityTest]
+        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
+        public IEnumerator SimulatorParametersAreEffective()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.SetDebugSimulatorParameters(0, 0, 100);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[] { 42 });
+            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+
+            yield return new WaitForSeconds(MaxNetworkEventWaitTime);
+
+            Assert.AreEqual(1, m_ServerEvents.Count);
+
+            yield return null;
+        }
     }
 }
 #endif
