@@ -7,8 +7,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private ulong m_CurrentNetworkObjectId;
         private bool m_IsRegistered;
 
-        // Keep a reference to the assigned NetworkObject
-        // <see
+        /// <summary>
+        /// Keep a reference to the assigned NetworkObject
+        /// <see cref="OnDestroy"/>
+        /// </summary>
         private NetworkObject m_NetworkObject;
 
         public override void OnNetworkSpawn()
