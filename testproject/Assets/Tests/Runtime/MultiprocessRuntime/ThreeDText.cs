@@ -17,7 +17,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var t = GetComponent<TextMesh>();
             t.text = "On Start";
             CommandLineArguments = System.Environment.CommandLine;
-            
+
             string[] args = System.Environment.GetCommandLineArgs();
             foreach (var arg in args)
             {
