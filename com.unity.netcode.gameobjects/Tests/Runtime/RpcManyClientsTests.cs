@@ -1,5 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -9,24 +12,34 @@ namespace Unity.Netcode.RuntimeTests
     public class RpcManyClientsObject : NetworkBehaviour
     {
         public int Count = 0;
+        public List<ulong> ReceivedFrom = new List<ulong>();
         [ServerRpc(RequireOwnership = false)]
-        public void ResponseServerRpc()
+        public void ResponseServerRpc(ServerRpcParams rpcParams = default)
         {
+            ReceivedFrom.Add(rpcParams.Receive.SenderClientId);
             Count++;
         }
 
         [ClientRpc]
-        public void SomeClientRpc()
+        public void NoParamsClientRpc()
         {
             ResponseServerRpc();
         }
+
         [ClientRpc]
-        public void SomeClientRpc(int value)
+        public void OneParamClientRpc(int value)
         {
             ResponseServerRpc();
         }
+
         [ClientRpc]
-        public void SomeClientRpc(int value1, int value2)
+        public void TwoParamsClientRpc(int value1, int value2)
+        {
+            ResponseServerRpc();
+        }
+
+        [ClientRpc]
+        public void WithParamsClientRpc(ClientRpcParams param)
         {
             ResponseServerRpc();
         }
@@ -66,29 +79,65 @@ namespace Unity.Netcode.RuntimeTests
 
             netSpawnedObject.Spawn();
 
+
             var rpcManyClientsObject = netSpawnedObject.GetComponent<RpcManyClientsObject>();
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(); // RPC with no params
-            int maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
+            rpcManyClientsObject.NoParamsClientRpc(); // RPC with no params
+            var waiters = new List<IEnumerator>();
 
-            Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
+            }
+
+            yield return MultiInstanceHelpers.RunMultiple(waiters);
+
+            Assert.AreEqual(NbClients + 1, rpcManyClientsObject.Count);
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(0); // RPC with one param
-            maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
+            rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
+            waiters.Clear();
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            {
+                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
+            }
+
+            yield return MultiInstanceHelpers.RunMultiple(waiters);
 
             Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
+
+            var param = new ClientRpcParams();
 
             rpcManyClientsObject.Count = 0;
-            rpcManyClientsObject.SomeClientRpc(0, 0); // RPC with two params
-            maxFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => rpcManyClientsObject.Count == (NumberOfClients + 1) || Time.frameCount > maxFrameNumber);
+            rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
+            waiters.Clear();
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            {
+                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
+            }
 
-            Debug.Assert(rpcManyClientsObject.Count == (NumberOfClients + 1));
+            yield return MultiInstanceHelpers.RunMultiple(waiters);
 
+            Assert.AreEqual(NbClients + 1, rpcManyClientsObject.Count);
+
+            rpcManyClientsObject.ReceivedFrom.Clear();
+            rpcManyClientsObject.Count = 0;
+            var target = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            param.Send.TargetClientIds = target;
+            rpcManyClientsObject.WithParamsClientRpc(param);
+            waiters.Clear();
+            waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
+            waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
+
+            yield return MultiInstanceHelpers.RunMultiple(waiters);
+
+            // either of the 2 selected clients can reply to the server first, due to network timing
+            var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
+
+            Assert.AreEqual(2, rpcManyClientsObject.Count);
+            Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
         }
     }
 }

@@ -8,6 +8,8 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -17,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private Animator m_PlayerOnServerAnimator;
         private Animator m_PlayerOnClientAnimator;
+
+        public NetworkAnimatorTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -107,6 +111,7 @@ namespace Unity.Netcode.RuntimeTests
                 asHash ? m_PlayerOnClientAnimator.GetBool(triggerHash) == false : m_PlayerOnClientAnimator.GetBool(triggerString) == false);
             Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client reset check");
         }
+
 
         [UnityTest]
         public IEnumerator AnimationStateSyncTest()

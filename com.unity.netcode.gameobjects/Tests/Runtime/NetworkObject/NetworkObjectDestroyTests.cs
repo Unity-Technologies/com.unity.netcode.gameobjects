@@ -38,12 +38,9 @@ namespace Unity.Netcode.RuntimeTests
             // destroy the server player
             Object.Destroy(serverClientPlayerResult.Result.gameObject);
 
-            yield return null;
+            yield return MultiInstanceHelpers.WaitForMessageOfType<DestroyObjectMessage>(m_ClientNetworkManagers[0]);
 
             Assert.IsTrue(serverClientPlayerResult.Result == null); // Assert.IsNull doesn't work here
-
-            yield return null; // wait one frame more until we receive on client
-
             Assert.IsTrue(clientClientPlayerResult.Result == null);
 
             // create an unspawned networkobject and destroy it

@@ -886,9 +886,45 @@ namespace Unity.Netcode
 
             if (!queue.PushMessage(payload))
             {
-                Debug.LogError($"Couldn't add payload of size {payload.Count} to batched send queue. " +
-                    $"Perhaps configured 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
-                return;
+                if (pipeline == m_ReliableSequencedPipeline)
+                {
+                    // If the message is sent reliably, then we're over capacity and we can't
+                    // provide any reliability guarantees anymore. Disconnect the client since at
+                    // this point they're bound to become desynchronized.
+
+                    var ngoClientId = NetworkManager?.TransportIdToClientId(clientId) ?? clientId;
+                    Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
+                        $"Closing connection {ngoClientId} as reliability guarantees can't be maintained. " +
+                        $"Perhaps 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
+
+                    if (clientId == m_ServerClientId)
+                    {
+                        DisconnectLocalClient();
+                    }
+                    else
+                    {
+                        DisconnectRemoteClient(clientId);
+
+                        // DisconnectRemoteClient doesn't notify SDK of disconnection.
+                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                            clientId,
+                            default(ArraySegment<byte>),
+                            Time.realtimeSinceStartup);
+                    }
+                }
+                else
+                {
+                    // If the message is sent unreliably, we can always just flush everything out
+                    // to make space in the send queue. This is an expensive operation, but a user
+                    // would need to send A LOT of unreliable traffic in one update to get here.
+
+                    m_Driver.ScheduleFlushSend(default).Complete();
+                    SendBatchedMessages(sendTarget, queue);
+
+                    // Don't check for failure. If it still doesn't work, there's nothing we can do
+                    // at this point and the message is lost (it was sent unreliable anyway).
+                    queue.PushMessage(payload);
+                }
             }
         }
 
