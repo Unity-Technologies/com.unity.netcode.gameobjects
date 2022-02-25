@@ -49,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator HiddenObjectsTest()
         {
             yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
+            Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
         }
     }
 }

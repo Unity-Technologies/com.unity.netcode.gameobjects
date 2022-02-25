@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             // ensure all objects are replicated before spawning more
             yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects < k_SpawnedObjects);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
         }
     }
 }

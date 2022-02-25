@@ -86,11 +86,11 @@ namespace Unity.Netcode.RuntimeTests
             // verify trigger is set for client and server
             yield return WaitForConditionOrTimeOut(() =>
                 asHash ? m_PlayerOnServerAnimator.GetBool(triggerHash) : m_PlayerOnServerAnimator.GetBool(triggerString));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server trigger set check");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out on server trigger set check");
 
             yield return WaitForConditionOrTimeOut(() =>
                 asHash ? m_PlayerOnClientAnimator.GetBool(triggerHash) : m_PlayerOnClientAnimator.GetBool(triggerString));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client trigger set check");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out on client trigger set check");
 
             // reset the trigger
             if (asHash)
@@ -105,11 +105,11 @@ namespace Unity.Netcode.RuntimeTests
             // verify trigger is reset for client and server
             yield return WaitForConditionOrTimeOut(() =>
                 asHash ? m_PlayerOnServerAnimator.GetBool(triggerHash) == false : m_PlayerOnServerAnimator.GetBool(triggerString) == false);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on server reset check");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out on server reset check");
 
             yield return WaitForConditionOrTimeOut(() =>
                 asHash ? m_PlayerOnClientAnimator.GetBool(triggerHash) == false : m_PlayerOnClientAnimator.GetBool(triggerString) == false);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out on client reset check");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out on client reset check");
         }
 
 
@@ -127,12 +127,12 @@ namespace Unity.Netcode.RuntimeTests
             // ...and now we should be in the AlphaState having triggered the AlphaParameter
             yield return WaitForConditionOrTimeOut(() =>
                 m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(0).IsName("AlphaState"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Server failed to reach its animation state");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
 
             // ...and now the client should also have sync'd and arrived at the correct state
             yield return WaitForConditionOrTimeOut(() =>
                 m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("AlphaState"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Client failed to sync its animation state from the server");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server");
         }
 
         [UnityTest]
@@ -162,12 +162,12 @@ namespace Unity.Netcode.RuntimeTests
             // ...and now we should be in the AlphaState having triggered the AlphaParameter
             yield return WaitForConditionOrTimeOut(() =>
                 m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(0).IsName("TriggeredState"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Server failed to reach its animation state via trigger");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state via trigger");
 
             // ...and now the client should also have sync'd and arrived at the correct state
             yield return WaitForConditionOrTimeOut(() =>
                 m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("TriggeredState"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Client failed to sync its animation state from the server via trigger");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server via trigger");
         }
 
         [UnityTest]
@@ -189,12 +189,12 @@ namespace Unity.Netcode.RuntimeTests
             // ...and now we should be in the AlphaState having set the AlphaParameter
             yield return WaitForConditionOrTimeOut(() =>
                 HasClip(m_PlayerOnServerAnimator, "OverrideAlphaAnimation"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Server failed to reach its overriden animation state");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its overriden animation state");
 
             // ...and now the client should also have sync'd and arrived at the correct state
             yield return WaitForConditionOrTimeOut(() =>
                 HasClip(m_PlayerOnServerAnimator, "OverrideAlphaAnimation"));
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Client failed to reach its overriden animation state");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to reach its overriden animation state");
         }
     }
 }

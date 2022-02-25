@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
             Object.FindObjectsOfType<NetworkVisibilityComponent>().Where(
                 (c) => c.IsSpawned).Count() == 2);
 
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for instances " +
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for instances " +
                 "to be detected!");
         }
     }
@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             Object.FindObjectsOfType<NetworkVisibilityComponent>().Where(
                 (c) => c.IsSpawned).Count() == 2);
 
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for instances " +
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for instances " +
                 "to be detected!");
         }
     }
@@ -151,7 +151,7 @@ namespace Unity.Netcode.RuntimeTests
             var expected = m_NumberToSpawn * TotalClients;
             // Wait for all clients to have spawned all instances
             yield return WaitForConditionOrTimeOut(() => SpawnTest.TotalSpawned == expected);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for all to " +
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for all to " +
                 $"spawn! Total Spawned: {SpawnTest.TotalSpawned}");
 
             var client1Relative = s_GlobalNetworkObjects[1].Values.Where((c) =>
@@ -177,7 +177,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             // Wait for all clients to have spawned all instances
             yield return WaitForConditionOrTimeOut(() => SpawnTest.TotalSpawned == 0);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for all to " +
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for all to " +
                 $"despawn! Total Spawned: {SpawnTest.TotalSpawned}");
         }
     }

@@ -15,7 +15,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public abstract class NetcodeIntegrationTest
     {
-        static protected TimeOutHelper s_GloabalTimeOutHelper = new TimeOutHelper(4.0f);
+        static protected TimeoutHelper s_GloabalTimeoutHelper = new TimeoutHelper(4.0f);
         static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
@@ -288,9 +288,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Wait for all clients to connect
                 yield return WaitForClientsConnectedOrTimeOut();
 
-                Assert.False(s_GloabalTimeOutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                Assert.False(s_GloabalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
 
-                if (s_GloabalTimeOutHelper.TimedOut)
+                if (s_GloabalTimeoutHelper.TimedOut)
                 {
                     yield return null;
                 }
@@ -503,7 +503,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Waits for the function condition to return true or it will time out.
         /// This will operate at the current m_ServerNetworkManager.NetworkConfig.TickRate
-        /// and allow for a unique TimeOutHelper handler (if none then it uses the default)
+        /// and allow for a unique TimeoutHelper handler (if none then it uses the default)
         /// Notes: This provides more stability when running integration tests that could be
         /// impacted by:
         ///     -how the integration test is being executed (i.e. in editor or in a stand alone build)
@@ -511,7 +511,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded
         /// version of this method
         /// </summary>
-        public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeOutHelper timeOutHelper = null)
+        public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeoutHelper timeOutHelper = null)
         {
             if (checkForCondition == null)
             {
@@ -521,7 +521,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeOutHelper;
+                timeOutHelper = s_GloabalTimeoutHelper;
             }
 
             // Start checking for a timeout
@@ -545,7 +545,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This version accepts an IConditionalPredicate implementation to provide
         /// more flexibility for checking complex conditional cases.
         /// </summary>
-        public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeOutHelper timeOutHelper = null)
+        public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeoutHelper timeOutHelper = null)
         {
             if (conditionalPredicate == null)
             {
@@ -555,7 +555,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeOutHelper;
+                timeOutHelper = s_GloabalTimeoutHelper;
             }
 
             conditionalPredicate.Started();

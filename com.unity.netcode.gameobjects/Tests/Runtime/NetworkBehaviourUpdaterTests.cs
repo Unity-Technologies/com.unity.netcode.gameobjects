@@ -288,7 +288,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Waits for all clients to spawn the NetworkObjects
                 yield return WaitForConditionOrTimeOut(() => numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count);
-                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
+                Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
                     $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
             }
 
@@ -333,7 +333,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(() =>
                 clientSideNetVarContainers.Where(d =>
                 d.HaveAllValuesChanged(NetVarValueToSet)).Count() == clientSideNetVarContainers.Count);
-                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
+                Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
             }
 
             Object.DestroyImmediate(prefabToSpawn);

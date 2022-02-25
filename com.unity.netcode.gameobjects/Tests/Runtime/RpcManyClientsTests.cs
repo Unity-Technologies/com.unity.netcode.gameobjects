@@ -101,7 +101,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now provide a small window of time to let the server receive and process all messages
             yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.NoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.NoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
@@ -110,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now provide a small window of time to let the server receive and process all messages
             yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             var param = new ClientRpcParams();
 
@@ -121,7 +121,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(rpcMessageHooks);
             // Now provide a small window of time to let the server receive and process all messages
             yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             rpcManyClientsObject.ReceivedFrom.Clear();
             rpcManyClientsObject.Count = 0;
@@ -142,7 +142,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now provide a small window of time to let the server receive and process all messages
             yield return WaitForConditionOrTimeOut(() => 2 == rpcManyClientsObject.Count);
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of 2 was received!");
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of 2 was received!");
 
             // either of the 2 selected clients can reply to the server first, due to network timing
             var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };

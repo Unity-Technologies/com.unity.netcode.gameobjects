@@ -6,7 +6,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// Can be used independently or assigned to <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"></see> in the
     /// event the default timeout period needs to be adjusted
     /// </summary>
-    public class TimeOutHelper
+    public class TimeoutHelper
     {
         private const float k_DefaultTimeOutWaitPeriod = 2.0f;
 
@@ -34,7 +34,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return m_IsStarted ? m_MaximumTimeBeforeTimeOut < Time.realtimeSinceStartup : TimedOut;
         }
 
-        public TimeOutHelper(float timeOutPeriod = k_DefaultTimeOutWaitPeriod)
+        public TimeoutHelper(float timeOutPeriod = k_DefaultTimeOutWaitPeriod)
         {
             m_TimeOutPeriod = timeOutPeriod;
         }
