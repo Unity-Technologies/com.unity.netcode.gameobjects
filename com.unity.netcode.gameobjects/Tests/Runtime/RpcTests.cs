@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -81,10 +82,19 @@ namespace Unity.Netcode.RuntimeTests
             serverClientRpcTestNB.MyClientRpc();
 
             // Validate each NetworkManager relative MessagingSystem received each respective RPC
-            var rpcMessageHooks = new RpcMessageHooks(m_ServerNetworkManager, m_ClientNetworkManagers);
+            var messageHookList = new List<MessageHookEntry>();
+            var serverMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
+            serverMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(serverMessageHookEntry);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var clientMessageHookEntry = new MessageHookEntry(client);
+                clientMessageHookEntry.AssignMessageType<ClientRpcMessage>();
+                messageHookList.Add(clientMessageHookEntry);
+            }
+            var rpcMessageHooks = new MessageHooksConditional(messageHookList);
             yield return WaitForConditionOrTimeOut(rpcMessageHooks);
-            Assert.True(rpcMessageHooks.ClientMessagesReceived, "Client messages were not received!");
-            Assert.True(rpcMessageHooks.ServerMessageReceived, "Server messages were not received!");
+            Assert.False(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");
 
             // Make sure RPCs propagated all the way up and were called on the relative destination class instance
             yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);
