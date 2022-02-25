@@ -300,6 +300,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Internally-called RPC client receiving function to update some animation parameters on a client when
+        ///   the server wants to update them
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the parameters to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
@@ -320,6 +326,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Internally-called RPC client receiving function to update a trigger when the server wants to forward
+        ///   a trigger for a client to play / reset
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the trigger data to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
@@ -359,7 +371,22 @@ namespace Unity.Netcode.Components
 
             if (IsServer)
             {
+                //  trigger the animation locally on the server...
+                if (reset)
+                {
+                    m_Animator.ResetTrigger(hash);
+                }
+                else
+                {
+                    m_Animator.SetTrigger(hash);
+                }
+
+                // ...then tell all the clients to do the same
                 SendAnimTriggerClientRpc(animMsg);
+            }
+            else
+            {
+                Debug.LogWarning("Trying to call NetworkAnimator.SetTrigger on a client...ignoring");
             }
         }
 
