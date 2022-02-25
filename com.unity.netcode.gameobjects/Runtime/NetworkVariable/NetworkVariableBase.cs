@@ -10,7 +10,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The delivery type (QoS) to send data with
         /// </summary>
-        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableFragmentedSequenced;
 
         private protected NetworkBehaviour m_NetworkBehaviour;
 

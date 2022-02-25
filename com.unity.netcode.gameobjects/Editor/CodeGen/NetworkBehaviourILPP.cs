@@ -941,14 +941,43 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
-                    // ServerRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ClientRpcReceiveParams_FullName)
                     {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ServerRpcReceiveParams_FullName)
+                    {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
+                        continue;
+                    }
+                    // ServerRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
+                    {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ServerRpcParams)} must be the last parameter in a ServerRpc.");
+                        }
+                        if (!isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ClientRpcs may not accept {nameof(ServerRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
                     // ClientRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
                     {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ClientRpcParams)} must be the last parameter in a ClientRpc.");
+                        }
+                        if (isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ServerRpcs may not accept {nameof(ClientRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
 

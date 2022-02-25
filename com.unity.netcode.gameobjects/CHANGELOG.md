@@ -9,7 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
-- First set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
+
+- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
 
 ### Changed
 
@@ -25,11 +26,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
+- Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1725)
+- Fixed ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere (#1721)
 - Fixed FastBufferReader being created with a length of 1 if provided an input of length 0 (#1724)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
 - Improved performance in NetworkAnimator (#1735)
-- Fixed display over "always sync" network animator parameters even when an animator controller override is in use (#1735)
+- Removed the "always sync" network animator (aka "autosend") parameters (#1746)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
