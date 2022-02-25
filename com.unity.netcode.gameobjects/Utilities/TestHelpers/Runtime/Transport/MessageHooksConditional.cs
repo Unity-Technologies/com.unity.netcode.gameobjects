@@ -23,7 +23,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var retMessageTypes = string.Empty;
             var waitingMessages = m_MessageHookEntries.Where((c) => c.MessageHooks.IsWaiting);
 
-            foreach(var waitingMessage in waitingMessages)
+            foreach (var waitingMessage in waitingMessages)
             {
                 retMessageTypes += $":{waitingMessage.MessageType}:";
             }
@@ -36,7 +36,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             AllMessagesReceived = NumberOfMessagesReceived == m_MessageHookEntries.Count;
 
-            if(AllMessagesReceived)
+            if (AllMessagesReceived)
             {
                 return AllMessagesReceived;
             }
