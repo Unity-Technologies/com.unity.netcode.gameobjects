@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using Unity.Netcode.Components;
 using NUnit.Framework;
@@ -84,8 +83,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
 
             // create an object
-            var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var baseObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
+            var baseObject = Object.Instantiate(m_PrefabToSpawn);
             baseObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             baseObject.GetComponent<NetworkObject>().Spawn();
 
