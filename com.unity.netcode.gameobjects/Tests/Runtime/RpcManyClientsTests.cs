@@ -53,11 +53,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject));
-                });
+            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients, updatePlayerPrefab: playerPrefab => m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject)));
         }
 
         public GameObject PreparePrefab(Type type)
@@ -90,7 +86,6 @@ namespace Unity.Netcode.RuntimeTests
             rpcManyClientsObject.NoParamsClientRpc(); // RPC with no params
             var waiters = new List<IEnumerator>();
 
-            //
             foreach (var client in m_ClientNetworkManagers)
             {
                 waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
@@ -103,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
             waiters.Clear();
-            foreach (var client in m_ClientNetworkManagers)
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
                 waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
             }
@@ -117,7 +112,7 @@ namespace Unity.Netcode.RuntimeTests
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
             waiters.Clear();
-            foreach (var client in m_ClientNetworkManagers)
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
                 waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
             }
@@ -138,14 +133,11 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunMultiple(waiters);
 
             // either of the 2 selected clients can reply to the server first, due to network timing
-            var possibility1 = new List<ulong>
-                {m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId};
-            var possibility2 = new List<ulong>
-                {m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId};
+            var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
 
             Assert.AreEqual(2, rpcManyClientsObject.Count);
-            Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) ||
-                         Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
+            Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
         }
     }
 }
