@@ -42,24 +42,16 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class IntegrationTestExtended : NetcodeIntegrationTest
     {
-        public enum HostOrServer
-        {
-            Host,
-            Server
-        }
         private GameObject m_MyNetworkPrefab;
         protected override int NumberOfClients => 1;
-
-        public IntegrationTestExtended(HostOrServer hostOrServer)
-        {
-            m_UseHost = hostOrServer == HostOrServer.Host ? true : false;
-        }
 
         protected override void OnServerAndClientsCreated()
         {
             m_MyNetworkPrefab = CreateNetworkObjectPrefab("Object");
             m_MyNetworkPrefab.AddComponent<NetworkVisibilityComponent>();
         }
+
+        public IntegrationTestExtended(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override IEnumerator OnServerAndClientsConnected()
         {

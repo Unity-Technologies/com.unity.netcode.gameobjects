@@ -85,6 +85,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             DoNotCreate     // This will not create any NetworkManagers, it is up to the derived class to manage.
         }
 
+        public enum HostOrServer
+        {
+            Host,
+            Server
+        }
+
         protected GameObject m_PlayerPrefab;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
@@ -676,6 +682,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 gameObjectsSpawned.Add(SpawnObject(prefabNetworkObject, owner, destroyWithScene));
             }
             return gameObjectsSpawned;
+        }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public NetcodeIntegrationTest()
+        {
+
+        }
+
+        /// <summary>
+        /// Optional Host or Server integration tests
+        /// Constructor that allows you To break tests up as a host
+        /// and a server.
+        /// Example: Decorate your child derived class with TestFixture
+        /// and then create a constructor at the child level
+        /// [TestFixture(HostOrServer.Host)]
+        /// [TestFixture(HostOrServer.Server)]
+        /// public class MyChildClass : NetcodeIntegrationTest
+        /// {
+        ///     MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
+        /// }
+        /// </summary>
+        /// <param name="hostOrServer"></param>
+        public NetcodeIntegrationTest(HostOrServer hostOrServer)
+        {
+            m_UseHost = hostOrServer == HostOrServer.Host ? true : false;
         }
     }
 }
