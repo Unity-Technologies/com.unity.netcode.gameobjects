@@ -9,9 +9,10 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "Unity.Multiplayer.Tools.NetStats"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [
         "Editor"
