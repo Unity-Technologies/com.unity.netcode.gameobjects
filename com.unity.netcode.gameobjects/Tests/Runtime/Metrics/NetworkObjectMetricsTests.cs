@@ -66,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
             Assert.AreEqual(Server.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual(networkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
-            Assert.AreEqual($"{clientSideObject.name}", objectSpawned.NetworkId.Name);
+            Assert.AreEqual(clientSideObject.name, objectSpawned.NetworkId.Name);
             Assert.AreNotEqual(0, objectSpawned.BytesCount);
         }
 
