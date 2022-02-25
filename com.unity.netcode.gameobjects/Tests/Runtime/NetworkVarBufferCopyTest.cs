@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
-            public bool Dirty = true;
+            public bool Dirty = false;
 
             public override void ResetDirty()
             {
