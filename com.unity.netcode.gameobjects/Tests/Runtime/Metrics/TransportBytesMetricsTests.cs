@@ -6,7 +6,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             try
             {
                 writer.WriteValueSafe(messageName);
-                
+
                 Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally
@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             try
             {
                 writer.WriteValueSafe(messageName);
-                
+
                 Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
             }
             finally

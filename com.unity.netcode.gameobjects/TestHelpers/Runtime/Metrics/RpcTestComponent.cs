@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     public class RpcTestComponent : NetworkBehaviour
     {

@@ -3,21 +3,13 @@
     "rootNamespace": "TestProject.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
-        "UnityEngine.TestRunner",
         "Unity.Netcode.RuntimeTests",
         "TestProject.ManualTests",
-        "TestProject"
+        "TestProject",
+        "Unity.Netcode.TestHelpers.Runtime"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "versionDefines": [
         {
@@ -25,6 +17,5 @@
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

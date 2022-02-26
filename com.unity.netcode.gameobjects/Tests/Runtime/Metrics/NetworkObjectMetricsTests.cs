@@ -1,13 +1,13 @@
 #if MULTIPLAYER_TOOLS
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
+
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
@@ -15,32 +15,21 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         // Keep less than 23 chars to avoid issues if compared against a 32-byte fixed string
         //     since it will have "(Clone)" appended
-        private const string k_NewNetworkObjectName = "TestObjectToSpawn";
-        private NetworkObject m_NewNetworkPrefab;
+        private const string k_NewNetworkObjectName = "MetricObject";
+        private GameObject m_NewNetworkPrefab;
 
-        protected override Action<GameObject> UpdatePlayerPrefab => _ =>
+        /// <summary>
+        /// Use OnServerAndClientsCreated to create any additional prefabs that you might need
+        /// </summary>
+        protected override void OnServerAndClientsCreated()
         {
-            var gameObject = new GameObject(k_NewNetworkObjectName);
-            m_NewNetworkPrefab = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkPrefab);
-
-            var networkPrefab = new NetworkPrefab { Prefab = gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-            }
-        };
+            base.OnServerAndClientsCreated();
+            m_NewNetworkPrefab = CreateNetworkObjectPrefab(k_NewNetworkObjectName);
+        }
 
         private NetworkObject SpawnNetworkObject()
         {
-            // Spawn another network object so we can hide multiple.
-            var gameObject = UnityEngine.Object.Instantiate(m_NewNetworkPrefab); // new GameObject(NewNetworkObjectName);
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = Server;
-            networkObject.Spawn();
-
-            return networkObject;
+            return SpawnObject(m_NewNetworkPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
         }
 
         [UnityTest]
@@ -48,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
 
-            SpawnNetworkObject();
+            var spawnedObject = SpawnNetworkObject();
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
@@ -57,7 +46,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var objectSpawned = objectSpawnedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectSpawned.Connection.Id);
-            Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectSpawned.NetworkId.Name);
+            Assert.AreEqual(spawnedObject.name, objectSpawned.NetworkId.Name);
             Assert.AreNotEqual(0, objectSpawned.BytesCount);
         }
 
@@ -67,16 +56,17 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectSpawnedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedReceived);
 
             var networkObject = SpawnNetworkObject();
+            yield return s_DefaultWaitForTick;
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectSpawnedReceivedMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, objectSpawnedReceivedMetricValues.Count);
-
+            var clientSideObject = s_GlobalNetworkObjects[1][networkObject.NetworkObjectId];
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
             Assert.AreEqual(Server.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual(networkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
-            Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectSpawned.NetworkId.Name);
+            Assert.AreEqual(clientSideObject.name, objectSpawned.NetworkId.Name);
             Assert.AreNotEqual(0, objectSpawned.BytesCount);
         }
 
@@ -85,12 +75,14 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var networkObject = SpawnNetworkObject();
 
-            yield return new WaitForSeconds(0.2f);
+            yield return s_DefaultWaitForTick;
 
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedSent);
+            var objectName = networkObject.name;
 
             Server.SpawnManager.OnDespawnObject(networkObject, true);
 
+            yield return s_DefaultWaitForTick;
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
@@ -98,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var objectDestroyed = objectDestroyedSentMetricValues.Last();
             Assert.AreEqual(Client.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectDestroyed.NetworkId.Name);
+            Assert.AreEqual(objectName, objectDestroyed.NetworkId.Name);
             Assert.AreNotEqual(0, objectDestroyed.BytesCount);
         }
 
@@ -107,11 +99,14 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var networkObject = SpawnNetworkObject();
 
-            yield return new WaitForSeconds(0.2f);
+            yield return s_DefaultWaitForTick;
 
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectDestroyedEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedReceived);
+            var objectId = networkObject.NetworkObjectId;
+            var objectName = s_GlobalNetworkObjects[1][objectId].name;
 
             Server.SpawnManager.OnDespawnObject(networkObject, true);
+            yield return s_DefaultWaitForTick;
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
@@ -120,8 +115,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var objectDestroyed = objectDestroyedReceivedMetricValues.First();
             Assert.AreEqual(Server.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual(networkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
-            Assert.AreEqual($"{k_NewNetworkObjectName}(Clone)", objectDestroyed.NetworkId.Name);
+            Assert.AreEqual(objectId, objectDestroyed.NetworkId.NetworkId);
+            Assert.AreEqual(objectName, objectDestroyed.NetworkId.Name);
             Assert.AreNotEqual(0, objectDestroyed.BytesCount);
         }
 
@@ -130,16 +125,16 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var networkObject1 = SpawnNetworkObject();
             var networkObject2 = SpawnNetworkObject();
-
-            yield return new WaitForSeconds(0.2f);
+            yield return s_DefaultWaitForTick;
 
             NetworkObject.NetworkHide(new List<NetworkObject> { networkObject1, networkObject2 }, Client.LocalClientId);
 
-            yield return new WaitForSeconds(0.2f);
+            yield return s_DefaultWaitForTick;
 
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectSpawnedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectSpawnedSent);
 
             NetworkObject.NetworkShow(new List<NetworkObject> { networkObject1, networkObject2 }, Client.LocalClientId);
+            yield return s_DefaultWaitForTick;
 
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
@@ -168,12 +163,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var networkObject1 = SpawnNetworkObject();
             var networkObject2 = SpawnNetworkObject();
 
-            yield return new WaitForSeconds(0.2f);
+            yield return s_DefaultWaitForTick;
 
             var waitForMetricEvent = new WaitForEventMetricValues<ObjectDestroyedEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.ObjectDestroyedSent);
 
             NetworkObject.NetworkHide(new List<NetworkObject> { networkObject1, networkObject2 }, Client.LocalClientId);
-
+            yield return s_DefaultWaitForTick;
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();

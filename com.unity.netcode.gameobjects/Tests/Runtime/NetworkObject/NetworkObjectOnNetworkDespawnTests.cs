@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 
 namespace Unity.Netcode.RuntimeTests
@@ -37,14 +38,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            Assert.IsTrue(MultiInstanceHelpers.Create(1, out m_ServerHost, out m_Clients));
+            Assert.IsTrue(NetcodeIntegrationTestHelpers.Create(1, out m_ServerHost, out m_Clients));
 
             m_ObjectToSpawn = new GameObject();
             m_NetworkObject = m_ObjectToSpawn.AddComponent<NetworkObject>();
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NetworkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(m_NetworkObject);
 
             var networkPrefab = new NetworkPrefab();
             networkPrefab.Prefab = m_ObjectToSpawn;
@@ -67,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
                 Object.Destroy(m_ObjectToSpawn);
                 m_ObjectToSpawn = null;
             }
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
             yield return null;
         }
 
@@ -85,22 +86,22 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceType.Server, InstanceType.Host, InstanceType.Client)] InstanceType despawnCheck)
         {
-            var useHost = despawnCheck == InstanceType.Server ? false : true;
+            var useHost = despawnCheck != InstanceType.Server;
             var networkManager = despawnCheck == InstanceType.Host || despawnCheck == InstanceType.Server ? m_ServerHost : m_Clients[0];
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(useHost, m_ServerHost, m_Clients))
+            if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerHost, m_Clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_Clients, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_Clients, null, 512);
 
             // [Host-Server-Side] Check to make sure all clients are connected
             var clientCount = useHost ? m_Clients.Length + 1 : m_Clients.Length;
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerHost, clientCount, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerHost, clientCount, null, 512);
 
             // Spawn the test object
             var spawnedObject = Object.Instantiate(m_NetworkObject);
@@ -109,8 +110,8 @@ namespace Unity.Netcode.RuntimeTests
             spawnedNetworkObject.Spawn(true);
 
             // Get the spawned object relative to which NetworkManager instance we are testing.
-            var relativeSpawnedObject = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.GetComponent<OnNetworkDespawnTestComponent>() != null), networkManager, relativeSpawnedObject));
+            var relativeSpawnedObject = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.GetComponent<OnNetworkDespawnTestComponent>() != null), networkManager, relativeSpawnedObject);
             var onNetworkDespawnTestComponent = relativeSpawnedObject.Result.GetComponent<OnNetworkDespawnTestComponent>();
 
             // Confirm it is not set before shutting down the NetworkManager

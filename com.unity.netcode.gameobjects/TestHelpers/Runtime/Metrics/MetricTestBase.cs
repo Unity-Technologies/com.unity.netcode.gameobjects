@@ -1,20 +1,11 @@
 #if MULTIPLAYER_TOOLS
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
-using Unity.Multiplayer.Tools.MetricTypes;
-using UnityEngine;
-using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
-    internal abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
+    internal abstract class SingleClientMetricTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
-
-        protected virtual Action<GameObject> UpdatePlayerPrefab => _ => { };
+        protected override int NumberOfClients => 1;
 
         internal NetworkManager Server { get; private set; }
 
@@ -24,23 +15,24 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 
         internal NetworkMetrics ClientMetrics { get; private set; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
-
             Server = m_ServerNetworkManager;
-            ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             Client = m_ClientNetworkManagers[0];
+            base.OnServerAndClientsCreated();
+        }
+
+        protected override IEnumerator OnStartedServerAndClients()
+        {
+            ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             ClientMetrics = Client.NetworkMetrics as NetworkMetrics;
+            yield return base.OnStartedServerAndClients();
         }
     }
 
-    public abstract class DualClientMetricTestBase : BaseMultiInstanceTest
+    public abstract class DualClientMetricTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
-
-        protected virtual Action<GameObject> UpdatePlayerPrefab => _ => { };
+        protected override int NumberOfClients => 2;
 
         internal NetworkManager Server { get; private set; }
 
@@ -54,17 +46,20 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
 
         internal NetworkMetrics SecondClientMetrics { get; private set; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, UpdatePlayerPrefab);
-
             Server = m_ServerNetworkManager;
-            ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             FirstClient = m_ClientNetworkManagers[0];
+            SecondClient = m_ClientNetworkManagers[1];
+            base.OnServerAndClientsCreated();
+        }
+
+        protected override IEnumerator OnStartedServerAndClients()
+        {
+            ServerMetrics = Server.NetworkMetrics as NetworkMetrics;
             FirstClientMetrics = FirstClient.NetworkMetrics as NetworkMetrics;
-            SecondClient = m_ClientNetworkManagers[0];
             SecondClientMetrics = SecondClient.NetworkMetrics as NetworkMetrics;
+            yield return base.OnStartedServerAndClients();
         }
     }
 }

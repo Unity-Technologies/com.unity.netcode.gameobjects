@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -13,13 +14,13 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator DontDestroyWithOwnerTest()
         {
             // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
 
             // create prefab
             var gameObject = new GameObject("ClientOwnedObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.DontDestroyWithOwner = true;
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab()
             {
@@ -35,13 +36,13 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // start server and connect clients
-            MultiInstanceHelpers.Start(false, server, clients);
+            NetcodeIntegrationTestHelpers.Start(false, server, clients);
 
             // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
             // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
 
             // network objects
             var networkObjects = new List<NetworkObject>();
@@ -56,13 +57,13 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // wait for object spawn on client
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => clients[0].SpawnManager.SpawnedObjects.Count == 32));
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => clients[0].SpawnManager.SpawnedObjects.Count == 32);
 
             // disconnect the client that owns all the clients
-            MultiInstanceHelpers.StopOneClient(clients[0]);
+            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
 
             // wait for disconnect
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => server.ConnectedClients.Count == 0));
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => server.ConnectedClients.Count == 0);
 
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -71,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // cleanup
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
         }
     }
 }

@@ -4,6 +4,8 @@ using System.Collections;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {

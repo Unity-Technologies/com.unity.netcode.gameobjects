@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -18,14 +19,14 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestClientTimeInitializationOnConnect([Values(0, 1f)] float serverStartDelay, [Values(0, 1f)] float clientStartDelay, [Values(true, false)] bool isHost)
         {
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients, 30))
+            if (!NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients, 30))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
 
             yield return new WaitForSeconds(serverStartDelay);
-            MultiInstanceHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
+            NetcodeIntegrationTestHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
             var serverTick = server.NetworkTickSystem.ServerTime.Tick;
@@ -58,13 +59,13 @@ namespace Unity.Netcode.RuntimeTests
             var clientStartRealTime = Time.time;
 
             m_Client.StartClient();
-            MultiInstanceHelpers.RegisterHandlers(clients[0]);
+            NetcodeIntegrationTestHelpers.RegisterHandlers(clients[0]);
 
             m_Client.NetworkTickSystem.Tick += NetworkTickSystemOnTick;
             m_ClientTickCounter = 0;
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.WaitForClientsConnected(clients);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
             var clientStartRealTimeDuration = Time.time - clientStartRealTime;
             var clientStartRealTickDuration = Mathf.FloorToInt(clientStartRealTimeDuration * 30);
@@ -93,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public virtual IEnumerator Teardown()
         {
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
             yield return null;
         }
     }

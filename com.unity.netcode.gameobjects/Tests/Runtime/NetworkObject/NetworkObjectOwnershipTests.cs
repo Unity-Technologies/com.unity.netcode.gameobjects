@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -52,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(k_ClientInstanceCount, Is.GreaterThan(0));
 
             // create NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
@@ -61,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
             m_DummyPrefab = new GameObject("DummyPrefabPrototype");
             m_DummyPrefab.AddComponent<NetworkObject>();
             m_DummyPrefab.AddComponent<NetworkObjectOwnershipComponent>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_DummyPrefab.GetComponent<NetworkObject>());
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(m_DummyPrefab.GetComponent<NetworkObject>());
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -69,19 +70,19 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // start server and client NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Start(m_IsHost, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Start(m_IsHost, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
         }
 
         [TearDown]
         public void Teardown()
         {
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
 
             if (m_DummyGameObject != null)
             {
@@ -106,7 +107,7 @@ namespace Unity.Netcode.RuntimeTests
             var dummyNetworkObjectId = dummyNetworkObject.NetworkObjectId;
             Assert.That(dummyNetworkObjectId, Is.GreaterThan(0));
 
-            yield return MultiInstanceHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
             Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
@@ -135,14 +136,14 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            yield return MultiInstanceHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
 
             Assert.That(clientComponent.OnGainedOwnershipFired);
             Assert.That(clientComponent.CachedOwnerIdOnGainedOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
             serverObject.ChangeOwnership(m_ServerNetworkManager.ServerClientId);
 
-            yield return MultiInstanceHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
             Assert.That(serverObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);
