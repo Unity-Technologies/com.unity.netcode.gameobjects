@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTests.Serialization
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Unit tests to test:

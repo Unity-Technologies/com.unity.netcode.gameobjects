@@ -6,7 +6,7 @@
 // using UnityEngine.TestTools;
 //
 // // Tests for ClientNetworkTransform (CNT) + NetworkRigidbody2D. This test is in TestProject because it needs access to ClientNetworkTransform
-// namespace Unity.Netcode.RuntimeTests.Physics
+// namespace Unity.Netcode.RuntimeTests
 // {
 //     public class NetworkRigidbody2DDynamicCntTest : NetworkRigidbody2DCntTestBase
 //     {

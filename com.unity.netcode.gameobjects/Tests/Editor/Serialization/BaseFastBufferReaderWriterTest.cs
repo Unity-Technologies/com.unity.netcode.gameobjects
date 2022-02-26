@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Netcode.RuntimeTests.Serialization
+namespace Unity.Netcode.EditorTests
 {
     public abstract class BaseFastBufferReaderWriterTest
     {

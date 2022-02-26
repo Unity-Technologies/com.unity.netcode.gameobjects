@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTests.Physics
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkRigidbodyDynamicTest : NetworkRigidbodyTestBase
     {

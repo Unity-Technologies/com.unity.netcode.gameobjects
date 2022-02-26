@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTests.Transport
+namespace Unity.Netcode.RuntimeTests
 {
     public class SIPTransportTests
     {
