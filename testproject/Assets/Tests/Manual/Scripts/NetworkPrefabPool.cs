@@ -165,7 +165,7 @@ namespace TestProject.ManualTests
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?
-            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+            if (EnableHandler && IsSpawned)
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -238,6 +238,10 @@ namespace TestProject.ManualTests
 
             foreach (var obj in m_ObjectPool)
             {
+                if (obj == null)
+                {
+                    continue;
+                }
                 var networkObject = obj.GetComponent<NetworkObject>();
                 var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
                 if (networkObject.IsSpawned)
@@ -317,7 +321,6 @@ namespace TestProject.ManualTests
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
 
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
@@ -381,7 +384,6 @@ namespace TestProject.ManualTests
                 {
                     if (obj != null && !obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
@@ -483,15 +485,18 @@ namespace TestProject.ManualTests
                             GameObject go = GetObject();
                             if (go != null)
                             {
+                                go.SetActive(true);
                                 go.transform.position = transform.position;
-
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
 
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(true);
+                                    if (no.NetworkManager != null)
+                                    {
+                                        no.Spawn(true);
+                                    }
                                 }
                             }
                         }
@@ -512,6 +517,7 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;

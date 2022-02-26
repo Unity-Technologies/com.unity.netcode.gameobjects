@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -32,9 +33,20 @@ namespace TestProject.RuntimeTests
         public void OneTimeTeardown()
         {
             m_RegisteredSceneReferences.Clear();
+
             if (m_SmokeTestGameObject != null)
             {
                 Object.Destroy(m_SmokeTestGameObject);
+            }
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.name.Contains("InitTestScene"))
+                {
+                    continue;
+                }
+                SceneManager.UnloadSceneAsync(i);
             }
         }
 

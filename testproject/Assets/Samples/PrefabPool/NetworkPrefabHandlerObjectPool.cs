@@ -18,9 +18,16 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
     private List<GameObject> m_ObjectsPool;
 
     private bool m_IsSpawningObjects;
+    private bool m_IsSpawned;
+    private bool m_IsServer;
 
-    public override void OnNetworkSpawn()
+    protected void RegisterPrefabHandler()
     {
+        if (!m_IsSpawned)
+        {
+            return;
+        }
+
         if (NetworkManager && NetworkManager.PrefabHandler != null)
         {
             NetworkManager.PrefabHandler.AddHandler(m_ObjectToPool, this);
@@ -46,6 +53,31 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         {
             StartCoroutine(SpawnObjects());
         }
+    }
+
+    protected void DeRegisterPrefabHandler()
+    {
+        if (!m_IsSpawned)
+        {
+            return;
+        }
+        if (NetworkManager && NetworkManager.PrefabHandler != null)
+        {
+            NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToPool);
+        }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        m_IsSpawned = true;
+        m_IsServer = IsServer;
+        RegisterPrefabHandler();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        DeRegisterPrefabHandler();
+        m_IsSpawned = false;
     }
 
     private GameObject InstantiatePoolObject()
@@ -76,17 +108,19 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         return gameObject.GetComponent<NetworkObject>();
     }
 
+    private void OnEnable()
+    {
+        RegisterPrefabHandler();
+    }
+
     private void OnDisable()
     {
-        if (NetworkManager && NetworkManager.PrefabHandler != null)
-        {
-            NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToPool);
-        }
+        DeRegisterPrefabHandler();
     }
 
     public void Destroy(NetworkObject networkObject)
     {
-        if (m_ObjectsPool.Contains(networkObject.gameObject))
+        if (m_IsSpawned && m_ObjectsPool.Contains(networkObject.gameObject))
         {
             networkObject.gameObject.SetActive(false);
         }

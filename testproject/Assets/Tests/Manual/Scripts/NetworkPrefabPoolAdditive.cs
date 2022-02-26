@@ -21,6 +21,8 @@ namespace TestProject.ManualTests
         public int SpawnsPerSecond = 3;
         public int PoolSize;
         public float ObjectSpeed = 10.0f;
+        protected bool m_IsServer;
+        protected bool m_IsSpawned;
 
 
         [Header("Prefab Instance Handling")]
@@ -67,7 +69,7 @@ namespace TestProject.ManualTests
 
         private void DeregisterCustomPrefabHandler()
         {
-            if (EnableHandler && NetworkObject != null && (IsSpawned || (NetworkManager != null && NetworkManager.PrefabHandler != null)))
+            if (EnableHandler && (m_IsSpawned || (NetworkManager != null && NetworkManager.PrefabHandler != null)))
             {
                 NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
                 if (IsClient && m_ObjectToSpawn != null)
@@ -83,16 +85,16 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnDestroy()
         {
-            InternalStopCoroutine();
-            DeregisterCustomPrefabHandler();
-
-            if (NetworkObject != null && NetworkManager != null && NetworkManager.SceneManager != null)
+            if (m_IsServer)
             {
-                NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+                StopCoroutine(SpawnObjects());
             }
-
+            m_IsServer = false;
             base.OnDestroy();
         }
+
+
+
 
         /// <summary>
         /// For additive scenes, we only clear out our pooled NetworkObjects if we are migrating them from the ActiveScene
@@ -190,7 +192,10 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnUnloadScene()
         {
-            InternalStopCoroutine();
+            if (m_IsServer)
+            {
+                StopCoroutine(SpawnObjects());
+            }
 
             // De-register the custom prefab handler
             DeregisterCustomPrefabHandler();
@@ -200,19 +205,28 @@ namespace TestProject.ManualTests
             NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
         }
 
+        public override void OnNetworkDespawn()
+        {
+            DeregisterCustomPrefabHandler();
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            m_IsSpawned = false;
+            base.OnNetworkDespawn();
+        }
+
         /// <summary>
         /// Override NetworkBehaviour.NetworkStart
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            m_IsSpawned = true;
             NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
             InitializeObjectPool();
             if (IsServer)
             {
+                m_IsServer = true;
                 if (isActiveAndEnabled)
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
-                    StartSpawningBoxes();
 
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
@@ -281,12 +295,10 @@ namespace TestProject.ManualTests
 
                     if (!obj.activeInHierarchy)
                     {
-                        obj.SetActive(true);
                         return obj;
                     }
                 }
                 var newObj = AddNewInstance();
-                newObj.SetActive(true);
                 return newObj;
             }
             return null;
@@ -346,26 +358,14 @@ namespace TestProject.ManualTests
             if (SpawnsPerSecond == 0 && m_IsSpawningObjects)
             {
                 m_IsSpawningObjects = false;
-                InternalStopCoroutine();
+                StopCoroutine(SpawnObjects());
             }
-
         }
 
 
         private void OnDisable()
         {
-            InternalStopCoroutine();
-        }
-
-        private bool m_CoroutineHasStarted = false;
-
-        private void InternalStopCoroutine()
-        {
-            if (m_CoroutineHasStarted)
-            {
-                StopCoroutine(SpawnObjects());
-                m_CoroutineHasStarted = false;
-            }
+            StopCoroutine(SpawnObjects());
         }
 
         /// <summary>
@@ -384,7 +384,6 @@ namespace TestProject.ManualTests
             {
                 yield return new WaitForSeconds(m_DelaySpawning - Time.realtimeSinceStartup);
             }
-            m_CoroutineHasStarted = true;
 
             m_IsSpawningObjects = true;
             while (m_IsSpawningObjects)
@@ -406,14 +405,17 @@ namespace TestProject.ManualTests
                             if (go != null)
                             {
                                 go.transform.position = transform.position;
-
+                                go.SetActive(true);
                                 float ang = Random.Range(0.0f, 2 * Mathf.PI);
                                 go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
 
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(true);
+                                    if (no.NetworkManager != null)
+                                    {
+                                        no.Spawn(true);
+                                    }
                                 }
                             }
                         }
@@ -434,6 +436,7 @@ namespace TestProject.ManualTests
             {
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
+                obj.SetActive(true);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;
@@ -443,7 +446,6 @@ namespace TestProject.ManualTests
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
             {
-                networkObject.transform.position = Vector3.zero;
                 networkObject.gameObject.SetActive(false);
             }
             else
