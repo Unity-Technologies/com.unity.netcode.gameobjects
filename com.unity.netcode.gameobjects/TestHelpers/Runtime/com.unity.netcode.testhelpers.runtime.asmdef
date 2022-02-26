@@ -9,6 +9,9 @@
         "Unity.Multiplayer.Tools.MetricTypes",
         "Unity.Multiplayer.Tools.NetStats"
     ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
