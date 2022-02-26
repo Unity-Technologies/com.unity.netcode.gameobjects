@@ -6,28 +6,20 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Unity.Netcode.RuntimeTests;
 using Unity.Netcode;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-    public class NetworkSceneManagerTests : BaseMultiInstanceTest
+    public class NetworkSceneManagerTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 9;
+        protected override int NumberOfClients => 9;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnSetup()
         {
             m_ShouldWaitList = new List<SceneTestInfo>();
-            return base.Setup();
-        }
-
-        [UnityTearDown]
-        public override IEnumerator Teardown()
-        {
-            m_BypassStartAndWaitForClients = false;
-            return base.Teardown();
+            return base.OnSetup();
         }
 
         private class SceneTestInfo
@@ -48,7 +40,7 @@ namespace TestProject.RuntimeTests
         private const string k_AdditiveScene2 = "AdditiveScene1";
 
         private List<Scene> m_ScenesLoaded = new List<Scene>();
-
+        private bool m_CanStartServerAndClients = false;
 
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
@@ -59,6 +51,11 @@ namespace TestProject.RuntimeTests
             Server
         }
 
+        protected override bool CanStartServerAndClients()
+        {
+            return m_CanStartServerAndClients;
+        }
+
         /// <summary>
         /// Tests the different types of NetworkSceneManager notifications (including exceptions) generated
         /// Also tests invalid loading scenarios (i.e. client trying to load a scene)
@@ -67,34 +64,27 @@ namespace TestProject.RuntimeTests
         public IEnumerator SceneLoadingAndNotifications([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(ServerType.Host, ServerType.Server)] ServerType serverType)
         {
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
 
-            // We set this to true in order to bypass the automatic starting of the host and clients
-            m_BypassStartAndWaitForClients = true;
-
             // Now just create the instances (server and client) without starting anything
-            yield return Setup();
+            yield return SetUp();
 
             // This provides both host and server coverage, when a server we should still get SceneEventType.LoadEventCompleted and SceneEventType.UnloadEventCompleted events
             // but the client count as a server should be 1 less than when a host
             var isHost = serverType == ServerType.Host ? true : false;
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+            if (!NetcodeIntegrationTestHelpers.Start(isHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
-
-            var numberOfClients = isHost ? NbClients + 1 : NbClients;
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, numberOfClients));
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentSceneName = k_AdditiveScene1;
@@ -244,7 +234,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 return (m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
-                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && !m_TimedOut && m_ClientsThatFailedVerification != NbClients;
+                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && !m_TimedOut && m_ClientsThatFailedVerification != NumberOfClients;
             }
         }
 
@@ -411,6 +401,16 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SceneVerifyBeforeLoadTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode)
         {
+            m_CanStartServerAndClients = true;
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return TearDown();
+
+            // Give a little time for handling clean-up and the like
+            yield return s_DefaultWaitForTick;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return SetUp();
+
             m_ClientVerificationAction = ClientVerifySceneBeforeLoading;
             m_ServerVerificationAction = ServerVerifySceneBeforeLoading;
 
@@ -487,7 +487,7 @@ namespace TestProject.RuntimeTests
             yield return new WaitWhile(ShouldWait);
             Assert.IsFalse(m_TimedOut);
 
-            yield break;
+            m_CanStartServerAndClients = false;
         }
 
         private IEnumerator LoadScene(string sceneName)
@@ -550,8 +550,18 @@ namespace TestProject.RuntimeTests
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16, 32)] int numberOfScenesToLoad)
+        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values] bool useHost, [Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16)] int numberOfScenesToLoad)
         {
+            m_UseHost = useHost;
+            m_CanStartServerAndClients = true;
+            // First we disconnect and shutdown because we want to verify the synchronize events
+            yield return TearDown();
+
+            yield return s_DefaultWaitForTick;
+
+            // Now just create the instances (server and client) without starting anything
+            yield return SetUp();
+
             m_MultiSceneTest = true;
             m_ClientVerificationAction = DataPoolVerifySceneClient;
             m_ServerVerificationAction = DataPoolVerifySceneServer;
@@ -570,6 +580,7 @@ namespace TestProject.RuntimeTests
 
             // Now load the base scene
             m_CurrentSceneName = k_BaseUnitTestSceneName;
+
             yield return LoadScene(m_CurrentSceneName);
 
             var firstScene = m_CurrentScene;
@@ -592,7 +603,7 @@ namespace TestProject.RuntimeTests
             }
             SceneManager.SetActiveScene(currentlyActiveScene);
             m_MultiSceneTest = false;
-            yield break;
+            m_CanStartServerAndClients = false;
         }
 
         private class SceneEventNotificationTestInfo
@@ -658,7 +669,7 @@ namespace TestProject.RuntimeTests
 
         private bool ValidateCompletedNotifications()
         {
-            var isValidated = m_ClientCompletedTestInfo.Count == NbClients && m_ServerCompletedTestInfo.Count == 1;
+            var isValidated = m_ClientCompletedTestInfo.Count == NumberOfClients && m_ServerCompletedTestInfo.Count == 1;
             if (isValidated)
             {
                 foreach (var client in m_ClientCompletedTestInfo)
@@ -728,19 +739,16 @@ namespace TestProject.RuntimeTests
         public IEnumerator SceneEventCallbackNotifications()
         {
             // First we disconnect and shutdown because we want to verify the synchronize events
-            yield return Teardown();
+            yield return TearDown();
 
             // Give a little time for handling clean-up and the like
             yield return new WaitForSeconds(0.01f);
 
-            // We set this to true in order to bypass the automatic starting of the host and clients
-            m_BypassStartAndWaitForClients = true;
-
             // Now just create the instances (server and client) without starting anything
-            yield return Setup();
+            yield return SetUp();
 
             // Start the host and  clients
-            if (!MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
+            if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
@@ -770,11 +778,8 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.OnSynchronize += Client_OnSynchronize;
             }
 
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
-
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, NbClients + 1));
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             //////////////////////////////////////////
             // Testing synchronize event notifications
@@ -995,7 +1000,7 @@ namespace TestProject.RuntimeTests
             var networkObject = m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
             m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
 
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
@@ -1107,14 +1112,13 @@ namespace TestProject.RuntimeTests
     /// <summary>
     /// Use this test group for validating NetworkSceneManager fixes.
     /// </summary>
-    public class NetworkSceneManagerFixValidationTests : BaseMultiInstanceTest
+    public class NetworkSceneManagerFixValidationTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 0;
+        protected override int NumberOfClients => 0;
 
-        public override IEnumerator Setup()
+        protected override bool CanStartServerAndClients()
         {
-            m_BypassStartAndWaitForClients = true;
-            return base.Setup();
+            return false;
         }
 
         /// <summary>
@@ -1126,7 +1130,7 @@ namespace TestProject.RuntimeTests
         {
             var gameObject = new GameObject();
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = gameObject });
 
@@ -1136,7 +1140,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the host and clients
-            if (!MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+            if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");

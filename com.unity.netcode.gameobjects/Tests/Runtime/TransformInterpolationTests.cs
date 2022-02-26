@@ -1,8 +1,10 @@
-using System;
 using System.Collections;
 using Unity.Netcode.Components;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -46,9 +48,9 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class TransformInterpolationTests : BaseMultiInstanceTest
+    public class TransformInterpolationTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
@@ -56,43 +58,23 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_AsNetworkObject;
         private NetworkObject m_SpawnedObjectOnClient;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    m_PrefabToSpawn = PreparePrefab(typeof(TransformInterpolationObject));
-                });
+            m_PrefabToSpawn = CreateNetworkObjectPrefab("InterpTestObject");
+            m_PrefabToSpawn.AddComponent<NetworkTransform>();
+            m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
         }
 
         private IEnumerator RefreshNetworkObjects()
         {
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_AsNetworkObject.NetworkObjectId,
-                    m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
-            m_SpawnedObjectOnClient = serverClientPlayerResult.Result;
+            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(clientId) &&
+            s_GlobalNetworkObjects[clientId].ContainsKey(m_AsNetworkObject.NetworkObjectId));
 
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_AsNetworkObject.NetworkObjectId}");
+            m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_AsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
             m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
-        }
-
-        public GameObject PreparePrefab(Type type)
-        {
-            var prefabToSpawn = new GameObject();
-            prefabToSpawn.AddComponent(type);
-            prefabToSpawn.AddComponent<NetworkTransform>();
-            var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            }
-            return prefabToSpawn;
         }
 
         [UnityTest]
@@ -101,8 +83,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
 
             // create an object
-            var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var baseObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
+            var baseObject = Object.Instantiate(m_PrefabToSpawn);
             baseObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             baseObject.GetComponent<NetworkObject>().Spawn();
 

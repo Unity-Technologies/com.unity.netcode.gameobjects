@@ -3,8 +3,9 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTests.Physics
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkRigidbodyDynamicTest : NetworkRigidbodyTestBase
     {
@@ -16,23 +17,19 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public override bool Kinematic => true;
     }
 
-    public abstract class NetworkRigidbodyTestBase : BaseMultiInstanceTest
+    public abstract class NetworkRigidbodyTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         public abstract bool Kinematic { get; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<NetworkTransform>();
-                playerPrefab.AddComponent<Rigidbody>();
-                playerPrefab.AddComponent<NetworkRigidbody>();
-                playerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-                playerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
-            });
+            m_PlayerPrefab.AddComponent<NetworkTransform>();
+            m_PlayerPrefab.AddComponent<Rigidbody>();
+            m_PlayerPrefab.AddComponent<NetworkRigidbody>();
+            m_PlayerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
+            m_PlayerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
         }
 
         /// <summary>
@@ -43,13 +40,13 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public IEnumerator TestRigidbodyKinematicEnableDisable()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
             var serverPlayer = serverClientPlayerResult.Result.gameObject;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientPlayer = clientClientPlayerResult.Result.gameObject;
 
             Assert.IsNotNull(serverPlayer, "serverPlayer is not null");

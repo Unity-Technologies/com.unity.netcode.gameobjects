@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -19,9 +20,11 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         public static GameObject CreatePrefabGameObject(NetVarCombinationTypes netVarsToCheck)
         {
-            var gameObject = new GameObject();
-            // Always a good idea to name the Prefab for easy identification purposes
-            gameObject.name = "NetVarContainerObject";
+            var gameObject = new GameObject
+            {
+                // Always a good idea to name the Prefab for easy identification purposes
+                name = "NetVarContainerObject"
+            };
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             // Create the two instances of the NetVarContainer components and add them to the
@@ -33,7 +36,7 @@ namespace Unity.Netcode.RuntimeTests
             netVarContainer.NumberOfNetVarsToCheck = netVarsToCheck.SecondType;
             netVarContainer.ValueToSetNetVarTo = NetworkBehaviourUpdaterTests.NetVarValueToSet;
 
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             return gameObject;
         }
@@ -58,12 +61,12 @@ namespace Unity.Netcode.RuntimeTests
             {
                 case NetVarsToCheck.Two:
                     {
-                        allValuesChanged = (m_FirstValue.Value == valueToCheck && m_SeconValue.Value == valueToCheck);
+                        allValuesChanged = m_FirstValue.Value == valueToCheck && m_SeconValue.Value == valueToCheck;
                         break;
                     }
                 case NetVarsToCheck.One:
                     {
-                        allValuesChanged = (m_FirstValue.Value == valueToCheck);
+                        allValuesChanged = m_FirstValue.Value == valueToCheck;
                         break;
                     }
             }
@@ -150,10 +153,10 @@ namespace Unity.Netcode.RuntimeTests
         public NetVarContainer.NetVarsToCheck SecondType;
     }
 
-    public class NetworkBehaviourUpdaterTests : BaseMultiInstanceTest
+    public class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
         public const int NetVarValueToSet = 1;
         private static List<GameObject> s_ClientSpawnedNetworkObjects = new List<GameObject>();
         private List<NetworkManager> m_ActiveClientsForCurrentTest;
@@ -170,12 +173,9 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public override IEnumerator Setup()
+        protected override bool CanStartServerAndClients()
         {
-            // This makes sure the server and client are not started during the setup
-            // period of this particular test iteration
-            m_BypassStartAndWaitForClients = true;
-            yield return base.Setup();
+            return false;
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now spin everything up normally
             var clientsAsArry = m_ActiveClientsForCurrentTest.ToArray();
-            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, clientsAsArry), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, clientsAsArry), "Failed to start server and client instances");
 
             // Only if we have clients (not host)
             if (numberOfClients > 0)
@@ -212,12 +212,8 @@ namespace Unity.Netcode.RuntimeTests
                 RegisterSceneManagerHandler();
             }
 
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAsArry));
-
-            // Wait for connection on server side
-            var clientsToWaitFor = useHost ? numberOfClients + 1 : numberOfClients;
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor));
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut(clientsAsArry);
         }
 
         /// <summary>
@@ -294,7 +290,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Waits for all clients to spawn the NetworkObjects
                 yield return WaitForConditionOrTimeOut(() => numberOfObjectsToSpawnOnClients == s_ClientSpawnedNetworkObjects.Count);
-                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
+                Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
                     $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
             }
 
@@ -339,21 +335,10 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(() =>
                 clientSideNetVarContainers.Where(d =>
                 d.HaveAllValuesChanged(NetVarValueToSet)).Count() == clientSideNetVarContainers.Count);
-                Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
+                Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for client side NetVarContainers to report all NetworkVariables have been updated!");
             }
 
             Object.DestroyImmediate(prefabToSpawn);
-        }
-
-        [UnityTearDown]
-        public override IEnumerator Teardown()
-        {
-            // Make sure everything spawned/created is destroyed before starting next test iteration
-            foreach (var spawnedObject in s_ClientSpawnedNetworkObjects)
-            {
-                Object.DestroyImmediate(spawnedObject);
-            }
-            return base.Teardown();
         }
     }
 }

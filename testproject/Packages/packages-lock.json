@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.5.5",
-      "depth": 1,
+      "version": "1.6.4",
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
@@ -17,12 +17,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "1.0.0-pre.5",
+      "version": "1.1.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
-        "com.unity.test-framework": "1.1.22"
+        "com.unity.test-framework": "1.1.29"
       },
       "url": "https://packages.unity.com"
     },
@@ -59,8 +59,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.1",
-      "depth": 0,
+      "version": "1.2.5",
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -70,8 +70,8 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.1",
-        "com.unity.transport": "1.0.0-pre.5"
+        "com.unity.netcode.gameobjects": "1.0.0-pre.5",
+        "com.unity.transport": "1.0.0-pre.13"
       }
     },
     "com.unity.netcode.gameobjects": {
@@ -79,10 +79,11 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.modules.ai": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.0.0-pre.5"
+        "com.unity.collections": "1.1.0"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -145,7 +146,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.1.29",
+      "version": "1.1.31",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -187,13 +188,13 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.5",
+      "version": "1.0.0-pre.13",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.collections": "1.0.0-pre.5",
-        "com.unity.burst": "1.5.5",
-        "com.unity.mathematics": "1.2.1"
+        "com.unity.collections": "1.1.0",
+        "com.unity.burst": "1.6.4",
+        "com.unity.mathematics": "1.2.5"
       },
       "url": "https://packages.unity.com"
     },

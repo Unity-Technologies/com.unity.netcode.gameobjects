@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -10,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenShuttingDownAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
         {            // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
 
             try
             {
@@ -19,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
                 var gameObject = new GameObject("PlayerObject");
                 var networkObject = gameObject.AddComponent<NetworkObject>();
                 networkObject.DontDestroyWithOwner = true;
-                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+                NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
                 server.NetworkConfig.PlayerPrefab = gameObject;
 
@@ -29,13 +30,13 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 // start server and connect clients
-                MultiInstanceHelpers.Start(false, server, clients);
+                NetcodeIntegrationTestHelpers.Start(false, server, clients);
 
                 // wait for connection on client side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
 
                 // wait for connection on server side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
+                yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
 
                 // shutdown the server
                 server.Shutdown();
@@ -66,7 +67,7 @@ namespace Unity.Netcode.RuntimeTests
             finally
             {
                 // cleanup
-                MultiInstanceHelpers.Destroy();
+                NetcodeIntegrationTestHelpers.Destroy();
             }
         }
     }

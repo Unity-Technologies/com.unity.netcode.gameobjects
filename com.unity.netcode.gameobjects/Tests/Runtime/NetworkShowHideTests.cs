@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -29,9 +30,9 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class NetworkShowHideTests : BaseMultiInstanceTest
+    public class NetworkShowHideTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
@@ -43,15 +44,14 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var networkTransform = playerPrefab.AddComponent<NetworkShowHideTest>();
-                    m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
-                });
+            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTest>();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
         }
 
         public GameObject PreparePrefab(Type type)
@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabToSpawn = new GameObject();
             prefabToSpawn.AddComponent(type);
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -138,25 +138,22 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator RefreshNetworkObjects()
         {
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object1OnClient0 = serverClientPlayerResult.Result;
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object2OnClient0 = serverClientPlayerResult.Result;
-            serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                     x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
                     m_ClientNetworkManagers[0],
-                    serverClientPlayerResult));
+                    serverClientPlayerResult);
             m_Object3OnClient0 = serverClientPlayerResult.Result;
 
             // make sure the objects are set with the right network manager

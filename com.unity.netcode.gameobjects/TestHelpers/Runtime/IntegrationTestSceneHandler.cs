@@ -5,11 +5,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
-    /// The default SceneManagerHandler used for all unit/integration tests that
-    /// require MultiInstance tests.
+    /// The default SceneManagerHandler used for all NetcodeIntegrationTest derived children.
     /// </summary>
     internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
     {
@@ -29,12 +28,12 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Used to control when clients should attempt to fake-load a scene
-        /// Note: Unit/Integration tests that only use MutiInstanceHelpers
+        /// Note: Unit/Integration tests that only use <see cref="NetcodeIntegrationTestHelpers"/>
         /// need to subscribe to the CanClientsLoad and CanClientsUnload events
         /// in order to control when clients can fake-load.
-        /// Tests that derive from BaseMultiInstanceTest already have integrated
-        /// support and you can override BaseMultiInstanceTest.CanClientsLoad and
-        /// BaseMultiInstanceTest.CanClientsUnload.
+        /// Tests that derive from <see cref="NetcodeIntegrationTest"/> already have integrated
+        /// support and you can override <see cref="NetcodeIntegrationTest.CanClientsLoad"/> and
+        /// <see cref="NetcodeIntegrationTest.CanClientsUnload"/>.
         /// </summary>
         protected bool OnCanClientsLoad()
         {

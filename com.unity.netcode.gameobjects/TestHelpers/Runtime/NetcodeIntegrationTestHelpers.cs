@@ -7,12 +7,12 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.
     /// </summary>
-    public static class MultiInstanceHelpers
+    public static class NetcodeIntegrationTestHelpers
     {
         public const int DefaultMinFrames = 1;
         public const float DefaultTimeout = 1f;
@@ -135,32 +135,25 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Call this to clean up the IntegrationTestSceneHandler and destroy the s_CoroutineRunner.
         /// Note:
-        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// If deriving from <see cref="NetcodeIntegrationTest"/> or using <see cref="Destroy"/> then you
         /// typically won't need to do this.
         /// </summary>
-        internal static void CleanUpHandlers()
+        public static void CleanUpHandlers()
         {
             if (ClientSceneHandler != null)
             {
                 ClientSceneHandler.Dispose();
                 ClientSceneHandler = null;
             }
-
-            // Destroy the temporary GameObject used to run co-routines
-            if (s_CoroutineRunner != null)
-            {
-                s_CoroutineRunner.StopAllCoroutines();
-                Object.DestroyImmediate(s_CoroutineRunner.gameObject);
-            }
         }
 
         /// <summary>
         /// Call this to register scene validation and the IntegrationTestSceneHandler
         /// Note:
-        /// If deriving from BaseMultiInstanceTest or using MultiInstanceHelpers.Destroy then you
+        /// If deriving from <see cref="NetcodeIntegrationTest"/> or using <see cref="Destroy"/> then you
         /// typically won't need to call this.
         /// </summary>
-        internal static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
+        public static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
         {
             SceneManagerValidationAndTestRunnerInitialization(networkManager);
 
@@ -225,7 +218,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        /// <returns></returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, InstanceTransport instanceTransport = InstanceTransport.SIP)
         {
             clients = new NetworkManager[clientCount];
@@ -288,13 +280,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             NetworkManagerInstances.Clear();
-
-            // Destroy the temporary GameObject used to run co-routines
-            if (s_CoroutineRunner != null)
-            {
-                s_CoroutineRunner.StopAllCoroutines();
-                Object.DestroyImmediate(s_CoroutineRunner);
-            }
 
             CleanUpHandlers();
 
@@ -360,7 +345,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (s_IsStarted)
             {
-                throw new InvalidOperationException("MultiInstanceHelper already started. Did you forget to Destroy?");
+                throw new InvalidOperationException($"{nameof(NetcodeIntegrationTestHelpers)} already thinks it is started. Did you forget to Destroy?");
             }
 
             s_IsStarted = true;
@@ -398,30 +383,28 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-
-
-        private static CoroutineRunner s_CoroutineRunner;
-
         /// <summary>
-        /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
+        /// Used to return a value of type T from a wait condition
         /// </summary>
-        /// <param name="enumerator">The IEnumerator to run</param>
-        public static Coroutine Run(IEnumerator enumerator)
-        {
-            if (s_CoroutineRunner == null)
-            {
-                s_CoroutineRunner = new GameObject(nameof(CoroutineRunner)).AddComponent<CoroutineRunner>();
-            }
-
-            return s_CoroutineRunner.StartCoroutine(enumerator);
-        }
-
-        public class CoroutineResultWrapper<T>
+        public class ResultWrapper<T>
         {
             public T Result;
         }
 
         private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
+
+        public static uint GetNextGlobalIdHashValue()
+        {
+            return ++s_AutoIncrementGlobalObjectIdHashCounter;
+        }
+
+
+        public static bool IsNetcodeIntegrationTestRunning { get; internal set; }
+        public static void RegisterNetcodeIntegrationTest(bool registered)
+        {
+            IsNetcodeIntegrationTestRunning = registered;
+        }
+
 
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
@@ -448,6 +431,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
+
+            // To avoid issues with integration tests that forget to clean up,
+            // this feature only works with NetcodeIntegrationTest derived classes
+            if (IsNetcodeIntegrationTestRunning)
+            {
+                // Add the object identifier component
+                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+            }
         }
 
         // We use GameObject instead of SceneObject to be able to keep hierarchy
@@ -482,7 +473,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        public static IEnumerator WaitForClientConnected(NetworkManager client, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, timeout);
         }
@@ -494,7 +485,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="maxFrames">The max frames to wait for</param>
         /// <returns></returns>
-        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
             foreach (var client in clients)
@@ -549,7 +540,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, timeout);
         }
@@ -560,7 +551,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             if (!server.IsServer)
             {
@@ -595,7 +586,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
+        public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
             {
@@ -626,7 +617,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
+        public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
             {
@@ -655,36 +646,13 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Runs some code, then verifies the condition (combines 'Run' and 'WaitForCondition')
-        /// </summary>
-        /// <param name="workload">Action / code to run</param>
-        /// <param name="predicate">The predicate to wait for</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
-        {
-            var waitResult = new CoroutineResultWrapper<bool>();
-            workload();
-
-            yield return Run(WaitForCondition(
-                predicate,
-                waitResult,
-                timeout: timeout,
-                minFrames: minFrames));
-
-            if (!waitResult.Result)
-            {
-                Assert.Fail("Predicate condition failed");
-            }
-        }
-
-        /// <summary>
         /// Waits for a predicate condition to be met
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, ResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
@@ -723,7 +691,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             if (!hooks.HandleChecks.ContainsKey(typeof(T)))
@@ -734,7 +702,7 @@ namespace Unity.Netcode.RuntimeTests
             hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
-                result = new CoroutineResultWrapper<bool>();
+                result = new ResultWrapper<bool>();
             }
             yield return ExecuteWaitForHook(check, result, timeout);
 
@@ -747,7 +715,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, CoroutineResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        internal static IEnumerator WaitForMessageMeetingRequirement<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];
             if (!hooks.HandleChecks.ContainsKey(typeof(T)))
@@ -758,14 +726,14 @@ namespace Unity.Netcode.RuntimeTests
             hooks.HandleChecks[typeof(T)].Add(check);
             if (result == null)
             {
-                result = new CoroutineResultWrapper<bool>();
+                result = new ResultWrapper<bool>();
             }
             yield return ExecuteWaitForHook(check, result, timeout);
 
             Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
         }
 
-        private static IEnumerator ExecuteWaitForHook(MessageHandleCheckWithResult check, CoroutineResultWrapper<bool> result, float timeout)
+        private static IEnumerator ExecuteWaitForHook(MessageHandleCheckWithResult check, ResultWrapper<bool> result, float timeout)
         {
             var startTime = Time.realtimeSinceStartup;
 
@@ -776,20 +744,6 @@ namespace Unity.Netcode.RuntimeTests
 
             var res = check.Result;
             result.Result = res;
-        }
-
-        public static IEnumerator RunMultiple(IEnumerable<IEnumerator> waitFor)
-        {
-            var runningCoroutines = new List<Coroutine>();
-            foreach (var enumerator in waitFor)
-            {
-                runningCoroutines.Add(Run(enumerator));
-            }
-
-            foreach (var coroutine in runningCoroutines)
-            {
-                yield return coroutine;
-            }
         }
     }
 

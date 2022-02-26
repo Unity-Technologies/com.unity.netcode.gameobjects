@@ -5,6 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -44,16 +45,15 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class RpcManyClientsTests : BaseMultiInstanceTest
+    public class RpcManyClientsTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 10;
+        protected override int NumberOfClients => 10;
 
         private GameObject m_PrefabToSpawn;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients, updatePlayerPrefab: playerPrefab => m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject)));
+            m_PrefabToSpawn = PreparePrefab(typeof(RpcManyClientsObject));
         }
 
         public GameObject PreparePrefab(Type type)
@@ -61,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabToSpawn = new GameObject();
             prefabToSpawn.AddComponent(type);
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
@@ -79,64 +79,74 @@ namespace Unity.Netcode.RuntimeTests
 
             netSpawnedObject.Spawn();
 
+            var messageHookList = new List<MessageHookEntry>();
+            var serverMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
+            serverMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(serverMessageHookEntry);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var clientMessageHookEntry = new MessageHookEntry(client);
+                clientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+                messageHookList.Add(clientMessageHookEntry);
+            }
+            var rpcMessageHooks = new MessageHooksConditional(messageHookList);
 
             var rpcManyClientsObject = netSpawnedObject.GetComponent<RpcManyClientsObject>();
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.NoParamsClientRpc(); // RPC with no params
-            var waiters = new List<IEnumerator>();
 
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
-            }
+            // Check that all ServerRpcMessages were sent
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
 
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
-
-            Assert.AreEqual(NbClients + 1, rpcManyClientsObject.Count);
+            // Now provide a small window of time to let the server receive and process all messages
+            yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.NoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
-            waiters.Clear();
-            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
-            {
-                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
-            }
+            rpcMessageHooks.Reset();
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
 
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
-
-            Debug.Assert(rpcManyClientsObject.Count == (NbClients + 1));
+            // Now provide a small window of time to let the server receive and process all messages
+            yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             var param = new ClientRpcParams();
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
-            waiters.Clear();
-            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
-            {
-                waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
-            }
 
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
-
-            Assert.AreEqual(NbClients + 1, rpcManyClientsObject.Count);
+            rpcMessageHooks.Reset();
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+            // Now provide a small window of time to let the server receive and process all messages
+            yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
             rpcManyClientsObject.ReceivedFrom.Clear();
             rpcManyClientsObject.Count = 0;
             var target = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
             param.Send.TargetClientIds = target;
             rpcManyClientsObject.WithParamsClientRpc(param);
-            waiters.Clear();
-            waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
-            waiters.Add(MultiInstanceHelpers.WaitForMessageOfType<ServerRpcMessage>(m_ServerNetworkManager));
 
-            yield return MultiInstanceHelpers.RunMultiple(waiters);
+            messageHookList.Clear();
+            var targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[1]);
+            targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(targetedClientMessageHookEntry);
+            targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[2]);
+            targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(targetedClientMessageHookEntry);
+            rpcMessageHooks = new MessageHooksConditional(messageHookList);
+
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+
+            // Now provide a small window of time to let the server receive and process all messages
+            yield return WaitForConditionOrTimeOut(() => 2 == rpcManyClientsObject.Count);
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of 2 was received!");
 
             // either of the 2 selected clients can reply to the server first, due to network timing
             var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
             var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
-
-            Assert.AreEqual(2, rpcManyClientsObject.Count);
             Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
         }
     }

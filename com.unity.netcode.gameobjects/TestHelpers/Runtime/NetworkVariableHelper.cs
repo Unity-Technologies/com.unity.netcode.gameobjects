@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Will automatically register for the NetworkVariable OnValueChanged
@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class NetworkVariableHelper<T> : NetworkVariableBaseHelper where T : unmanaged
+    public class NetworkVariableHelper<T> : NetworkVariableBaseHelper where T : unmanaged
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);
@@ -73,7 +73,7 @@ namespace Unity.Netcode.RuntimeTests
     /// The number of times a specific NetworkVariable instance had its value changed (i.e. !Equal)
     /// Note: This could be expanded for future tests focuses around NetworkVariables
     /// </summary>
-    internal class NetworkVariableBaseHelper
+    public class NetworkVariableBaseHelper
     {
         private static Dictionary<NetworkVariableBaseHelper, NetworkVariableBase> s_Instances;
         private static Dictionary<NetworkVariableBase, int> s_InstanceChangedCount;

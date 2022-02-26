@@ -2,7 +2,7 @@
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal class WaitForGaugeMetricValues : WaitForMetricValues<Gauge>
     {
@@ -20,6 +20,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics.Utility
             : this(dispatcher, directionalMetricName)
         {
             m_GaugeFilterDelegate = counterFilter;
+        }
+
+        public bool MetricFound()
+        {
+            return m_Found;
         }
 
         public double AssertMetricValueHaveBeenFound()

@@ -1,12 +1,11 @@
 #if MULTIPLAYER_TOOLS
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
-namespace Unity.Netcode.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal abstract class WaitForMetricValues<TMetric> : IMetricObserver
     {

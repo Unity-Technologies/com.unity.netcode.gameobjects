@@ -1,14 +1,15 @@
-using System.Collections;
 using UnityEngine;
+using NUnit.Framework;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
     public class NestedNetworkManagerTests
     {
-        [UnityTest]
-        public IEnumerator CheckNestedNetworkManager()
+        [Test]
+        public void CheckNestedNetworkManager()
         {
             var parent = new GameObject("ParentObject");
             var networkManagerObject = new GameObject(nameof(CheckNestedNetworkManager));
@@ -30,12 +31,8 @@ namespace Unity.Netcode.RuntimeTests
             LogAssert.Expect(LogType.Exception, $"Exception: {messageToCheck}");
 #endif
 
-            yield return new WaitForSeconds(0.02f);
-
             // Clean up
             Object.Destroy(parent);
-
-            yield return null;
         }
     }
 }
