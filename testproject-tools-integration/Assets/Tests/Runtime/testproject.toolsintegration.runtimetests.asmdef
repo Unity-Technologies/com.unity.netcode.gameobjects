@@ -7,20 +7,11 @@
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
         "Unity.Multiplayer.Tools.NetStats",
-        "UnityEngine.TestRunner",
         "Unity.Collections",
         "Unity.Netcode.TestHelpers.Runtime"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": true,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "versionDefines": [
         {
@@ -43,6 +34,5 @@
             "expression": "1.0.0-pre.4",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }
