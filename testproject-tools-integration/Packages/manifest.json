@@ -40,7 +40,6 @@
         "com.unity.modules.xr": "1.0.0"
     },
     "testables": [
-        "com.unity.netcode.gameobjects",
-        "com.unity.netcode.adapter.utp"
+        "com.unity.netcode.gameobjects"
     ]
 }
