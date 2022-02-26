@@ -4,7 +4,6 @@ using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
-
 namespace Unity.Netcode.RuntimeTests
 {
     public class NestedNetworkManagerTests

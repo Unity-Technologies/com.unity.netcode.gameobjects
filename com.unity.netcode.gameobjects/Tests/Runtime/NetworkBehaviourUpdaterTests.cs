@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// This is a re-factor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
+    /// This is a refactor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
     /// </summary>
     public class NetVarContainer : NetworkBehaviour
     {
@@ -20,9 +20,11 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         public static GameObject CreatePrefabGameObject(NetVarCombinationTypes netVarsToCheck)
         {
-            var gameObject = new GameObject();
-            // Always a good idea to name the Prefab for easy identification purposes
-            gameObject.name = "NetVarContainerObject";
+            var gameObject = new GameObject
+            {
+                // Always a good idea to name the Prefab for easy identification purposes
+                name = "NetVarContainerObject"
+            };
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             // Create the two instances of the NetVarContainer components and add them to the
@@ -59,12 +61,12 @@ namespace Unity.Netcode.RuntimeTests
             {
                 case NetVarsToCheck.Two:
                     {
-                        allValuesChanged = (m_FirstValue.Value == valueToCheck && m_SeconValue.Value == valueToCheck);
+                        allValuesChanged = m_FirstValue.Value == valueToCheck && m_SeconValue.Value == valueToCheck;
                         break;
                     }
                 case NetVarsToCheck.One:
                     {
-                        allValuesChanged = (m_FirstValue.Value == valueToCheck);
+                        allValuesChanged = m_FirstValue.Value == valueToCheck;
                         break;
                     }
             }

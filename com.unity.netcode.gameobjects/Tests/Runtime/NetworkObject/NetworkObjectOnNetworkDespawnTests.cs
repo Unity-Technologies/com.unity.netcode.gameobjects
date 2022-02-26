@@ -86,7 +86,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceType.Server, InstanceType.Host, InstanceType.Client)] InstanceType despawnCheck)
         {
-            var useHost = despawnCheck == InstanceType.Server ? false : true;
+            var useHost = despawnCheck != InstanceType.Server;
             var networkManager = despawnCheck == InstanceType.Host || despawnCheck == InstanceType.Server ? m_ServerHost : m_Clients[0];
 
             // Start the instances
