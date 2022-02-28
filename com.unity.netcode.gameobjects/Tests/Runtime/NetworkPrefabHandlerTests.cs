@@ -75,6 +75,8 @@ namespace Unity.Netcode.RuntimeTests
                 exceptionOccurred = true;
             }
 
+
+
             Assert.False(exceptionOccurred);
 
             // In the end we should only have 3 valid registered network prefabs

@@ -74,6 +74,8 @@ namespace Unity.Netcode
             networkManager.LocalClientId = OwnerClientId;
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
+            networkManager.State = NetworkManagerState.Ready;
+
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
             networkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
             networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
@@ -97,6 +99,9 @@ namespace Unity.Netcode
 
                 // Mark the client being connected
                 networkManager.IsConnectedClient = true;
+
+                networkManager.InvokeOnReadyCallback();
+
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.InvokeOnClientConnectedCallback(context.SenderId);
             }

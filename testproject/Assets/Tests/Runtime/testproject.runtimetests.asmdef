@@ -6,7 +6,9 @@
         "UnityEngine.TestRunner",
         "Unity.Netcode.RuntimeTests",
         "TestProject.ManualTests",
-        "TestProject"
+        "TestProject",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

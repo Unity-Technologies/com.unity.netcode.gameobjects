@@ -10,7 +10,9 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Multiplayer.Tools.NetStatsReporting",
         "Unity.Multiplayer.Tools.NetworkSolutionInterface",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
