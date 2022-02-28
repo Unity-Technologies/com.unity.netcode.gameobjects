@@ -7,6 +7,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Added
 
 - New parameters are available to simulate network conditions (delay, jitter, packet loss) in the editor and in development builds. The parameters are available under the 'Debug Simulator' section of the 'Unity Transport' component, or can be set with the `SetDebugSimulatorParameters` call. (#1745)
+- `GetCurrentRtt` is now properly implemented. (#1755)
 
 ### Changed
 
