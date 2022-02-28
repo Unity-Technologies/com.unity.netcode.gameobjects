@@ -864,7 +864,22 @@ namespace Unity.Netcode
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
-            return 0;
+            // We don't know if this is getting called from inside NGO (which presumably knows to
+            // use the transport client ID) or from a user (which will be using the NGO client ID).
+            // So we just try both cases (ExtractRtt returns 0 for invalid connections).
+
+            if (NetworkManager != null)
+            {
+                var transportId = NetworkManager.ClientIdToTransportId(clientId);
+
+                var rtt = ExtractRtt(ParseClientId(transportId));
+                if (rtt > 0)
+                {
+                    return (ulong)rtt;
+                }
+            }
+
+            return (ulong)ExtractRtt(ParseClientId(clientId));
         }
 
         public override void Initialize(NetworkManager networkManager = null)

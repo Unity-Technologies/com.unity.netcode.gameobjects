@@ -361,6 +361,34 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return null;
         }
+
+        // Check that RTT is reported correctly.
+        [UnityTest]
+        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
+        public IEnumerator CurrentRttReportedCorrectly()
+        {
+            const int SimulatedRtt = 25;
+
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.SetDebugSimulatorParameters(SimulatedRtt, 0, 0);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[] { 42 });
+            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents,
+                timeout: MaxNetworkEventWaitTime + (2 * SimulatedRtt));
+
+            Assert.GreaterOrEqual(m_Client1.GetCurrentRtt(m_Client1.ServerClientId), SimulatedRtt);
+
+            yield return null;
+        }
     }
 }
 #endif
