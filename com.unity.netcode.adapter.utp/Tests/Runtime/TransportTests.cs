@@ -367,12 +367,12 @@ namespace Unity.Netcode.UTP.RuntimeTests
         [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
         public IEnumerator CurrentRttReportedCorrectly()
         {
-            const int SimulatedRtt = 25;
+            const int simulatedRtt = 25;
 
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
 
-            m_Server.SetDebugSimulatorParameters(SimulatedRtt, 0, 0);
+            m_Server.SetDebugSimulatorParameters(simulatedRtt, 0, 0);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -383,9 +383,9 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents,
-                timeout: MaxNetworkEventWaitTime + (2 * SimulatedRtt));
+                timeout: MaxNetworkEventWaitTime + (2 * simulatedRtt));
 
-            Assert.GreaterOrEqual(m_Client1.GetCurrentRtt(m_Client1.ServerClientId), SimulatedRtt);
+            Assert.GreaterOrEqual(m_Client1.GetCurrentRtt(m_Client1.ServerClientId), simulatedRtt);
 
             yield return null;
         }
