@@ -6,11 +6,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public bool IsTestCoordinatorActiveAndEnabled = false;
         public string CommandLineArguments = "";
+        private long m_UpdateCounter;
+        private bool m_HasFired;
         // Start is called before the first frame update
         public void Start()
         {
             Debug.Log("ThreeDText - Start");
-
+            m_HasFired = false;
+            m_UpdateCounter = 0;
             var jsonTextFile = Resources.Load<TextAsset>("Text/multiprocess_tests");
             Debug.Log(jsonTextFile);
 
@@ -32,9 +35,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             var testCoordinator = TestCoordinator.Instance;
             var t = GetComponent<TextMesh>();
-            if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled)
+            if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
+                !m_HasFired ||
+                m_UpdateCounter % 100 == 0)
             {
-                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n{CommandLineArguments}\n{MultiprocessLogHandler.TestEndpoint()}";
+                m_HasFired = true;
+                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n{CommandLineArguments}\n{MultiprocessLogHandler.TestEndpoint()} {m_UpdateCounter}";
                 Debug.Log(t.text);
                 MultiprocessLogger.Log(t.text);
                 IsTestCoordinatorActiveAndEnabled = testCoordinator.isActiveAndEnabled;
