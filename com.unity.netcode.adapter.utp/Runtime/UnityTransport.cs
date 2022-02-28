@@ -744,7 +744,7 @@ namespace Unity.Netcode
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
 
-            var rttValue = ExtractRtt(networkConnection);
+            var rttValue = NetworkManager.IsServer ? 0 : ExtractRtt(networkConnection);
             NetworkMetrics.TrackRttToServer(rttValue);
         }
 
@@ -773,25 +773,23 @@ namespace Unity.Netcode
 
         private int ExtractRtt(NetworkConnection networkConnection)
         {
-            if (NetworkManager.IsServer)
+            if (m_Driver.GetConnectionState(networkConnection) != NetworkConnection.State.Connected)
             {
                 return 0;
             }
-            else
+
+            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
             {
-                m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-                    NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-                    networkConnection,
-                    out _,
-                    out _,
-                    out var sharedBuffer);
+                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
-                unsafe
-                {
-                    var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
-
-                    return sharedContext->RttInfo.LastRtt;
-                }
+                return sharedContext->RttInfo.LastRtt;
             }
         }
 
