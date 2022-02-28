@@ -493,10 +493,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
-                if (CanDestroyNetworkObject(networkObject))
+                if (networkObject != null && CanDestroyNetworkObject(networkObject))
                 {
-                    // Destroy the GameObject that holds the NetworkObject component
-                    Object.DestroyImmediate(networkObject.gameObject);
+                    if (networkObject.gameObject != null)
+                    {
+                        // Destroy the GameObject that holds the NetworkObject component
+                        Object.DestroyImmediate(networkObject.gameObject);
+                    }
+                    else
+                    {
+                        Object.DestroyImmediate(networkObject);
+                    }
                 }
             }
         }
