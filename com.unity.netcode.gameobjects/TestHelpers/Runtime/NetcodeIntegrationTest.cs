@@ -495,6 +495,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (CanDestroyNetworkObject(networkObject))
                 {
+                    // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
             }
