@@ -493,17 +493,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
-                if (networkObject != null && CanDestroyNetworkObject(networkObject))
+                // This can sometimes be null depending upon order of operations
+                // when dealing with parented NetworkObjects.  If NetworkObjectB
+                // is a child of NetworkObjectA and NetworkObjectA comes before
+                // NetworkObjectB in the list of NeworkObjects found, then when
+                // NetworkObjectA's GameObject is destroyed it will also destroy
+                // NetworkObjectB's GameObject which will destroy NetworkObjectB.
+                // If there is a null entry in the list, this is the most likely
+                // scenario and so we just skip over it.
+                if (networkObject == null)
                 {
-                    if (networkObject.gameObject != null)
-                    {
-                        // Destroy the GameObject that holds the NetworkObject component
-                        Object.DestroyImmediate(networkObject.gameObject);
-                    }
-                    else
-                    {
-                        Object.DestroyImmediate(networkObject);
-                    }
+                    continue;
+                }
+                if (CanDestroyNetworkObject(networkObject))
+                {
+                    // Destroy the GameObject that holds the NetworkObject component
+                    Object.DestroyImmediate(networkObject.gameObject);
                 }
             }
         }
