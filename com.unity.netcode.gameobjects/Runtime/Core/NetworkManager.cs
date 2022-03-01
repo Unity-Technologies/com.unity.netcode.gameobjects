@@ -11,7 +11,9 @@ using UnityEditor;
 using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
+#if NETCODE_USE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
+#endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 

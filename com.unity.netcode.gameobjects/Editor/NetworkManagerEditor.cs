@@ -304,11 +304,14 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();
 
+#if NETCODE_USE_ADDRESSABLES
                 // We have a addressable
                 using (new EditorGUI.DisabledScope(m_NetworkManager.NetworkConfig.PlayerAddressable.RuntimeKeyIsValid()))
                 {
+#endif
                     EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
                     EditorGUILayout.Space();
+#if NETCODE_USE_ADDRESSABLES
                 }
 
                 // We have a prefab
@@ -317,7 +320,7 @@ namespace Unity.Netcode.Editor
                     EditorGUILayout.PropertyField(m_PlayerPrefabAddressableProperty);
                     EditorGUILayout.Space();
                 }
-
+#endif
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
 
