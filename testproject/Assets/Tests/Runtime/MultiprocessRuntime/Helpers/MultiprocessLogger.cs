@@ -210,7 +210,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return response.StatusCode.ToString();
         }
 
-        public static List<JobQueueItem> GetRemoteConfig()
+        public static JobQueueItemArray GetRemoteConfig()
         {
             using var client = new HttpClient();
             
@@ -222,7 +222,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var response = responseTask.Result;
             var contentTask = response.Content.ReadAsStringAsync();
             contentTask.Wait();
-            return JsonUtility.FromJson<List<JobQueueItem>>(contentTask.Result);
+            MultiprocessLogger.Log($"Remote config content is {contentTask.Result}");
+            // var l = JsonUtility.FromJson<JobQueueItemArray>(contentTask.Result);
+            var theList = new JobQueueItemArray();
+            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
+            
+            return theList;
         }
 
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
@@ -301,13 +306,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
     }
 
+    [Serializable]
     public class JobQueueItem
     {
-        public int id { get; set; }
-        public int jobid { get; set; }
-        public string githash { get; set; }
-        public string hostip { get; set; }
-        public string platform { get; set; }
-        public int jobstate { get; set; }
+#pragma warning disable IDE1006 // Naming Styles
+        public int id;
+        public int jobid;
+        public string githash;
+        public string hostip;
+        public string platform;
+        public int jobstate;
+#pragma warning restore IDE1006 // Naming Styles
+    }
+
+    [Serializable]
+    public class JobQueueItemArray
+    {
+#pragma warning disable IDE1006 // Naming Styles
+        public List<JobQueueItem> jobQueueItems;
+#pragma warning restore IDE1006 // Naming Styles
     }
 }

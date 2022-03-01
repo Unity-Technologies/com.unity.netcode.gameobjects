@@ -85,15 +85,20 @@ public class TestCoordinator : NetworkBehaviour
             return;
         }
 
-
-        if (string.IsNullOrEmpty(cliargs) || cliargList == null || cliargList.Length < 1)
+        
+        JobQueueItemArray jobQueueItems = MultiprocessLogHandler.GetRemoteConfig();
+        
+        if (jobQueueItems != null && jobQueueItems.jobQueueItems != null)
         {
-            MultiprocessLogger.Log("Fetching remote configuration data");
-            List<JobQueueItem> jobQueueItems = MultiprocessLogHandler.GetRemoteConfig();
-            foreach (var jobItem in jobQueueItems)
+            MultiprocessLogger.Log($"Remote configuration data {jobQueueItems.jobQueueItems.Count}");
+            foreach (var jobItem in jobQueueItems.jobQueueItems)
             {
                 MultiprocessLogger.Log($"JobQueueItem is - {jobItem.platform} {jobItem.githash} {jobItem.jobid}");
             }
+        }
+        else
+        {
+            MultiprocessLogger.Log($"Remote configuration data returned null");
         }
 
         Instance = this;
@@ -251,7 +256,7 @@ public class TestCoordinator : NetworkBehaviour
 
         if (!IsServer)
         {
-            if (m_NumberOfCallsToUpdate % 5 == 0 || m_Stopwatch.ElapsedMilliseconds > 1000)
+            if (m_NumberOfCallsToUpdate % 25 == 0 || m_Stopwatch.ElapsedMilliseconds > 5000)
             {
                 m_Stopwatch.Restart();
                 LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
