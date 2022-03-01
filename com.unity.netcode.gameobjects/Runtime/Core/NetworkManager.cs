@@ -546,16 +546,17 @@ namespace Unity.Netcode
 
         public bool ResolveNetworkPrefabs()
         {
+#if NETCODE_USE_ADDRESSABLES
             var allLoaded = true;
-            foreach (var prefab in NetworkConfig.NetworkPrefabs)
+            foreach (var addressable in NetworkConfig.NetworkAddressables)
             {
-                if (prefab?.AssetReference == null || prefab.AssetReference.AssetGUID == null)
+                if (addressable?.Addressable == null || addressable.Addressable.AssetGUID == null)
                 {
                     continue;
                 }
                 try
                 {
-                    if (!prefab.ResolveAsync())
+                    if (!addressable.ResolveAsync())
                     {
                         allLoaded = false;
                     }
@@ -570,7 +571,16 @@ namespace Unity.Netcode
             }
 
             if (allLoaded)
+#endif
             {
+#if NETCODE_USE_ADDRESSABLES
+                foreach (var addressable in NetworkConfig.NetworkAddressables)
+                {
+                    NetworkPrefab.VerifyValidPrefab(addressable.Prefab);
+                    NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab{Prefab = addressable.Prefab});
+                }
+#endif
+
                 IsListening = true;
 
                 // This is used to remove entries not needed or invalid
@@ -845,6 +855,7 @@ namespace Unity.Netcode
             NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab{Prefab = prefab});
         }
 
+#if NETCODE_USE_ADDRESSABLES
         public void AddNetworkPrefab(AssetReferenceGameObject addressableAsset)
         {
             if (State != NetworkManagerState.Inactive)
@@ -852,8 +863,9 @@ namespace Unity.Netcode
                 throw new Exception($"All prefabs must be registered before starting {nameof(NetworkManager)}");
             }
 
-            NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab{AssetReference = addressableAsset});
+            NetworkConfig.NetworkAddressables.Add(new NetworkAddressable{Addressable = addressableAsset});
         }
+#endif
 
         private void Initialize(bool server)
         {

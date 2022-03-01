@@ -110,8 +110,8 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenLoadingAnInvalidObject_AnExceptionIsThrown()
         {
-            LogAssert.Expect(LogType.Error, new Regex("Addressables assets \\(and all children\\) MUST point to a GameObject with a NetworkObject component."));
-            LogAssert.Expect(LogType.Error, new Regex("Addressables assets \\(and all children\\) MUST point to a GameObject with a NetworkObject component."));
+            LogAssert.Expect(LogType.Error, new Regex("NetworkPrefab assets \\(and all children\\) MUST point to a GameObject with a NetworkObject component."));
+            LogAssert.Expect(LogType.Error, new Regex("NetworkPrefab assets \\(and all children\\) MUST point to a GameObject with a NetworkObject component."));
             var asset = new AssetReferenceGameObject(k_InvalidObject);
             yield return StartWithAddressableAssetAdded(asset);
 
