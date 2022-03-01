@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 #if NETCODE_USE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
-using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
@@ -131,7 +129,7 @@ namespace Unity.Netcode
             {
                 return true;
             }
-            if(m_AsyncOperationHandle.IsValid())
+            if (m_AsyncOperationHandle.IsValid())
             {
                 if (m_AsyncOperationHandle.Status == AsyncOperationStatus.Succeeded)
                 {

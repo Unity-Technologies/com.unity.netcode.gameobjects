@@ -11,6 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
+- The SDK now supports loading assets from addressables (#1758)
+- The SDK now supports modifying the NetworkPrefab list at runtime, so long as it's done before calling `StartServer()`/`StartClient()`/`StartHost()` (#1758)
 
 ### Changed
 

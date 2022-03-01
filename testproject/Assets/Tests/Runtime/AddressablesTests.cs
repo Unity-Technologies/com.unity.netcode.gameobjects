@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Text.RegularExpressions;
 using DefaultNamespace;
-using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using UnityEngine;
@@ -56,7 +55,7 @@ namespace TestProject.RuntimeTests
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
-            foreach(var client in m_ClientNetworkManagers)
+            foreach (var client in m_ClientNetworkManagers)
             {
                 while (client.State != NetworkManagerState.Ready && client.State != NetworkManagerState.Inactive)
                 {
@@ -82,11 +81,11 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(AsyncOperationStatus.Succeeded, assetLoad.Status);
             var prefab = assetLoad.Result;
 
-            var serverObj = GameObject.Instantiate(prefab);
+            var serverObj = Object.Instantiate(prefab);
             serverObj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObj.GetComponent<NetworkObject>().Spawn();
 
-            var objs = GameObject.FindObjectsOfType<AddressableTestScript>();
+            var objs = Object.FindObjectsOfType<AddressableTestScript>();
             // Prefabs loaded by addressables actually don't show up in this search.
             // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
             Assert.AreEqual(1, objs.Length);
@@ -95,7 +94,7 @@ namespace TestProject.RuntimeTests
                 MultiInstanceHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0])
             );
 
-            objs = GameObject.FindObjectsOfType<AddressableTestScript>();
+            objs = Object.FindObjectsOfType<AddressableTestScript>();
             Assert.AreEqual(2, objs.Length);
             foreach (var obj in objs)
             {

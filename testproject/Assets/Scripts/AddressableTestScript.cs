@@ -1,4 +1,4 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 
 namespace DefaultNamespace
 {

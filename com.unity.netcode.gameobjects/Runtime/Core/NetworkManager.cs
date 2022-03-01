@@ -577,7 +577,7 @@ namespace Unity.Netcode
                 foreach (var addressable in NetworkConfig.NetworkAddressables)
                 {
                     NetworkPrefab.VerifyValidPrefab(addressable.Prefab);
-                    NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab{Prefab = addressable.Prefab});
+                    NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = addressable.Prefab });
                 }
 #endif
 
@@ -852,7 +852,7 @@ namespace Unity.Netcode
             }
 
             NetworkPrefab.VerifyValidPrefab(prefab);
-            NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab{Prefab = prefab});
+            NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = prefab });
         }
 
 #if NETCODE_USE_ADDRESSABLES
@@ -863,7 +863,7 @@ namespace Unity.Netcode
                 throw new Exception($"All prefabs must be registered before starting {nameof(NetworkManager)}");
             }
 
-            NetworkConfig.NetworkAddressables.Add(new NetworkAddressable{Addressable = addressableAsset});
+            NetworkConfig.NetworkAddressables.Add(new NetworkAddressable { Addressable = addressableAsset });
         }
 #endif
 
