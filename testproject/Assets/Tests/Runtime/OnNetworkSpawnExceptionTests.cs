@@ -48,6 +48,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenOnNetworkSpawnThrowsException_FutureOnNetworkSpawnsAreNotPrevented()
         {
+            LogAssert.ignoreFailingMessages = true;
             //Spawning was done during setup
             Assert.AreEqual(5, OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns);
             yield return null;
@@ -56,6 +57,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenOnNetworkDespawnThrowsException_FutureOnNetworkDespawnsAreNotPrevented()
         {
+            LogAssert.ignoreFailingMessages = true;
             //Spawning was done during setup. Now we despawn.
             for (var i = 0; i < 5; ++i)
             {
@@ -71,11 +73,15 @@ namespace TestProject.RuntimeTests
 
         public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ =>
+            OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns = 0;
+            OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns = 0;
+            LogAssert.ignoreFailingMessages = true;
+            yield return StartSomeClientsAndServerWithPlayers(false, NbClients, _ =>
             {
                 m_Prefab = new GameObject();
                 var networkObject = m_Prefab.AddComponent<NetworkObject>();
                 m_Prefab.AddComponent<OnNetworkSpawnThrowsExceptionComponent>();
+                m_Prefab.AddComponent<OnNetworkDespawnThrowsExceptionComponent>();
                 MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
                 var validNetworkPrefab = new NetworkPrefab();
@@ -96,7 +102,7 @@ namespace TestProject.RuntimeTests
             }
 
             var result = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-            MultiInstanceHelpers.Run(
+            yield return MultiInstanceHelpers.Run(
                 MultiInstanceHelpers.WaitForCondition(
                     () => OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns == 5, result));
             Assert.IsTrue(result.Result);

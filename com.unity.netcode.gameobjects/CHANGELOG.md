@@ -27,7 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
-- Fixed throwing an exception in OnNetworkUpdate causing other OnNetworkUpdate calls to not be executed. (#1739)
+- Fixed throwing an exception in OnNetworkSpawn/OnNetworkDespawn causing other OnNetworkSpawn/OnNetworkDespawn calls to not be executed. (#1739)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
