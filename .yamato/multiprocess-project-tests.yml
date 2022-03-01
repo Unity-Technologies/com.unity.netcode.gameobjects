@@ -1,6 +1,21 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 
+run_all_singlenode_multiprocess_tests:
+  name: Run All multiprocess tests on a single node
+  dependencies:
+    # Pull in package and validate jobs through the badges job
+{% for platform in test_platforms -%}
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+{% if editor != "trunk" %}
+    - .yamato/multiprocess-project-tests.yml#singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}
+{% endif %}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+
 {% for project in projects -%}
 {% if project.name == "testproject" %}
 {% for editor in project.test_editors -%}
