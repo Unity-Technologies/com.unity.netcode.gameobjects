@@ -63,10 +63,18 @@ public class TestCoordinator : NetworkBehaviour
             cliargs += cliargList[i];
         }
 
-        var rawgithash = Resources.Load<TextAsset>("Text/githash").ToString();
-        if (!string.IsNullOrEmpty(rawgithash))
+        string rawgithash = "x";
+        try
         {
-            rawgithash = rawgithash.Trim();
+            rawgithash = Resources.Load<TextAsset>("Text/githash").ToString();
+            if (!string.IsNullOrEmpty(rawgithash))
+            {
+                rawgithash = rawgithash.Trim();
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
         }
 
         MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {rawgithash}");

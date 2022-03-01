@@ -35,7 +35,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             m_UpdateCounter++;
             var testCoordinator = TestCoordinator.Instance;
+            if (testCoordinator == null)
+            {
+                return;
+            }
             var t = GetComponent<TextMesh>();
+            
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
                 !m_HasFired ||
                 m_UpdateCounter % 100 == 0)
