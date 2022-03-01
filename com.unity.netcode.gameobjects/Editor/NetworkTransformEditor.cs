@@ -120,11 +120,13 @@ namespace Unity.Netcode.Editor
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
             }
 
+#if COM_UNITY_MODULES_PHYSICS_2D
             if (go.TryGetComponent<Rigidbody2D>(out _) && go.TryGetComponent<NetworkRigidbody2D>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
+#endif
 
             serializedObject.ApplyModifiedProperties();
         }

@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_PHYSICS_2D
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -82,3 +83,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
