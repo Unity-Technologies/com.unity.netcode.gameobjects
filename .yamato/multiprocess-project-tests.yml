@@ -21,8 +21,11 @@ singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
     - {{ platform.utr }} --suite=playmode --testproject=testproject --editor-location=.Editor --testfilter=Unity.Netcode.MultiprocessRuntimeTests --extra-editor-arg=-bypassIgnoreUTR
 {% endif %}
   after:
+    - echo "After block"
+{% if editor != "trunk" %}
 {% if platform.name == "win" %}    - copy %USERPROFILE%\.multiprocess\logfile* .{% endif %}
 {% if platform.name != "win" %}    - cp $HOME/.multiprocess/logfile* .{% endif %}
+{% endif %}
   artifacts:
     logs:
       paths:
