@@ -210,6 +210,21 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return response.StatusCode.ToString();
         }
 
+        public static List<JobQueueItem> GetRemoteConfig()
+        {
+            using var client = new HttpClient();
+            
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
+                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+
+            responseTask.Wait();
+            var response = responseTask.Result;
+            var contentTask = response.Content.ReadAsStringAsync();
+            contentTask.Wait();
+            return JsonUtility.FromJson<List<JobQueueItem>>(contentTask.Result);
+        }
+
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
         {
             using var client = new HttpClient();
@@ -284,5 +299,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             Message = "Default message from constructor";
         }
+    }
+
+    public class JobQueueItem
+    {
+        public int id { get; set; }
+        public int jobid { get; set; }
+        public string githash { get; set; }
+        public string hostip { get; set; }
+        public string platform { get; set; }
+        public int jobstate { get; set; }
     }
 }

@@ -62,7 +62,14 @@ public class TestCoordinator : NetworkBehaviour
             cliargs += " ";
             cliargs += cliargList[i];
         }
-        MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs}");
+
+        var rawgithash = Resources.Load<TextAsset>("Text/githash").ToString();
+        if (!string.IsNullOrEmpty(rawgithash))
+        {
+            rawgithash = rawgithash.Trim();
+        }
+
+        MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {rawgithash}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -70,11 +77,23 @@ public class TestCoordinator : NetworkBehaviour
             return;
         }
 
+
+        if (string.IsNullOrEmpty(cliargs) || cliargList == null || cliargList.Length < 1)
+        {
+            MultiprocessLogger.Log("Fetching remote configuration data");
+            List<JobQueueItem> jobQueueItems = MultiprocessLogHandler.GetRemoteConfig();
+            foreach (var jobItem in jobQueueItems)
+            {
+                MultiprocessLogger.Log($"JobQueueItem is - {jobItem.platform} {jobItem.githash} {jobItem.jobid}");
+            }
+        }
+
         Instance = this;
     }
 
     public void Start()
     {
+        MultiprocessLogger.Log($"TestCoordinator - Start {Application.platform}");
         m_Stopwatch = Stopwatch.StartNew();
         m_NumberOfCallsToUpdate = 0;
         m_NumberOfCallsToFixedUpdate = 0;

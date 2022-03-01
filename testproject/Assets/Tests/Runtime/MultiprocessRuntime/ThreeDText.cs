@@ -33,6 +33,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // Update is called once per frame
         public void Update()
         {
+            m_UpdateCounter++;
             var testCoordinator = TestCoordinator.Instance;
             var t = GetComponent<TextMesh>();
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
