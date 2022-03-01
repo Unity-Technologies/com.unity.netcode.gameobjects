@@ -36,6 +36,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "1.0.0-pre.4",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
+        },
+        {
+            "name": "com.unity.modules.physics2d",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_PHYSICS_2D"
         }
     ]
 }
