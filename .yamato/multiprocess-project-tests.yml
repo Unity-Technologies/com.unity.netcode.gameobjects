@@ -2,7 +2,7 @@
 ---
 
 run_all_singlenode_multiprocess_tests:
-  name: Run All multiprocess tests on a single node
+  name: Run All Multiprocess Tests - Single Node
   dependencies:
     # Pull in package and validate jobs through the badges job
 {% for platform in test_platforms -%}
@@ -21,7 +21,7 @@ run_all_singlenode_multiprocess_tests:
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
-  name : multiprocess tests - {{ editor }} on {{ platform.name }}
+  name : Multiprocess Tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
