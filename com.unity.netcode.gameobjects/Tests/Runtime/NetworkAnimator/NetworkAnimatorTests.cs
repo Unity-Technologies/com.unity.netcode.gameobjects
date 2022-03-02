@@ -143,11 +143,11 @@ namespace Unity.Netcode.RuntimeTests
 
             // ...and now we should be in the AlphaState having triggered the AlphaParameter
             yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(layer).IsName("Layer2AlphaState"));
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
 
             // ...and now the client should also have sync'd and arrived at the correct state
             yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(layer).IsName("Layer2AlphaState"));
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server");
         }
 
         [UnityTest]
@@ -166,13 +166,13 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() =>
                 Mathf.Approximately(m_PlayerOnServerAnimator.GetLayerWeight(layer), targetWeight)
             );
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
 
             // ...and now the client should also have sync'd and arrived at the correct state
             yield return WaitForConditionOrTimeOut(() =>
                 Mathf.Approximately(m_PlayerOnClientAnimator.GetLayerWeight(layer), targetWeight)
             );
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
         }
 
 
