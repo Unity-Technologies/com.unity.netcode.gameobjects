@@ -10,6 +10,7 @@ develop_nightly_trigger:
       rerun: always
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
+    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
 {% for project in projects -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
