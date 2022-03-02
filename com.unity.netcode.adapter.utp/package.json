@@ -6,6 +6,6 @@
   "unity": "2020.3",
   "dependencies": {
     "com.unity.netcode.gameobjects": "1.0.0-pre.5",
-    "com.unity.transport": "1.0.0-pre.13"
+    "com.unity.transport": "1.0.0-pre.14"
   }
 }
