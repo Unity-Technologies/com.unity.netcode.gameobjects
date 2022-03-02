@@ -94,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             var rpcMessageHooks = new MessageHooksConditional(messageHookList);
             yield return WaitForConditionOrTimeOut(rpcMessageHooks);
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");
 
             // Make sure RPCs propagated all the way up and were called on the relative destination class instance
             yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely);

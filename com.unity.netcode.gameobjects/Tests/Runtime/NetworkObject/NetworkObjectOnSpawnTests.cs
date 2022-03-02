@@ -125,7 +125,7 @@ namespace Unity.Netcode.RuntimeTests
             // now verify that all clients have been spawned
             checkSpawnCondition = true;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns!");
 
             // despawn on server.  However, since we'll be using this object later in the test, don't delete it
             serverInstance.GetComponent<NetworkObject>().Despawn(false);
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
             checkSpawnCondition = false;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
             //----------- step 2 check spawn and destroy again
             serverInstance.GetComponent<NetworkObject>().Spawn();
@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
             checkSpawnCondition = true;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
             // destroy the server object
             Object.Destroy(serverInstance.gameObject);
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
             checkSpawnCondition = false;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour

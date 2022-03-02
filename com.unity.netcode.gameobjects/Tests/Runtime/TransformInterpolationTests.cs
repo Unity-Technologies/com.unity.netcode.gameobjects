@@ -71,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(clientId) &&
             s_GlobalNetworkObjects[clientId].ContainsKey(m_AsNetworkObject.NetworkObjectId));
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_AsNetworkObject.NetworkObjectId}");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_AsNetworkObject.NetworkObjectId}");
             m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_AsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
             m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
