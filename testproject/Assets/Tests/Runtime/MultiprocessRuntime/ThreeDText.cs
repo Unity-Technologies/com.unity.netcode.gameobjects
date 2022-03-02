@@ -70,9 +70,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 m_HasFired = true;
                 m_TransportString = transportString;
                 IsTestCoordinatorActiveAndEnabled = testCoordinator.isActiveAndEnabled;
-                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n"+
-                    $"Transport: {transportString}\n"+
-                    $"{CommandLineArguments}\n"+
+                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n" +
+                    $"Transport: {transportString}\n" +
+                    $"{CommandLineArguments}\n" +
                     $"{m_UpdateCounter}\n";
             }
         }
