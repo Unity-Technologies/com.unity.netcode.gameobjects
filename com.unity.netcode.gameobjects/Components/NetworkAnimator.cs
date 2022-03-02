@@ -1,6 +1,5 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -14,14 +13,19 @@ namespace Unity.Netcode.Components
     {
         internal struct AnimationMessage : INetworkSerializable
         {
-            public int StateHash;      // if non-zero, then Play() this animation, skipping transitions
+            // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            public int StateHash;
             public float NormalizedTime;
+            public int Layer;
+            public float Weight;
             public byte[] Parameters;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref StateHash);
                 serializer.SerializeValue(ref NormalizedTime);
+                serializer.SerializeValue(ref Layer);
+                serializer.SerializeValue(ref Weight);
                 serializer.SerializeValue(ref Parameters);
             }
         }
@@ -54,10 +58,9 @@ namespace Unity.Netcode.Components
         // Animators only support up to 32 params
         public static int K_MaxAnimationParams = 32;
 
-        private int m_TransitionHash;
-
-        private int m_AnimationHash;
-        public int AnimationHash { get => m_AnimationHash; }
+        private int[] m_TransitionHash;
+        private int[] m_AnimationHash;
+        private float[] m_LayerWeights;
 
         private unsafe struct AnimatorParamCache
         {
@@ -100,11 +103,15 @@ namespace Unity.Netcode.Components
             if (IsServer)
             {
                 m_SendMessagesAllowed = true;
+                int layers = m_Animator.layerCount;
+
+                m_TransitionHash = new int[layers];
+                m_AnimationHash = new int[layers];
+                m_LayerWeights = new float[layers];
             }
+
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
-
-            m_AnimationHash = -1;
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -157,66 +164,81 @@ namespace Unity.Netcode.Components
 
         private void FixedUpdate()
         {
-            if (!m_SendMessagesAllowed)
+            if (!m_SendMessagesAllowed || !m_Animator || !m_Animator.enabled)
             {
                 return;
             }
 
-            int stateHash;
-            float normalizedTime;
-            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
-                return;
+                int stateHash;
+                float normalizedTime;
+                if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
+                {
+                    continue;
+                }
+
+                var animMsg = new AnimationMessage
+                {
+                    StateHash = stateHash,
+                    NormalizedTime = normalizedTime,
+                    Layer = layer,
+                    Weight = m_LayerWeights[layer]
+                };
+
+                m_ParameterWriter.Seek(0);
+                m_ParameterWriter.Truncate();
+
+                WriteParameters(m_ParameterWriter);
+                animMsg.Parameters = m_ParameterWriter.ToArray();
+
+                SendAnimStateClientRpc(animMsg);
             }
-
-            var animMsg = new AnimationMessage
-            {
-                StateHash = stateHash,
-                NormalizedTime = normalizedTime
-            };
-
-            m_ParameterWriter.Seek(0);
-            m_ParameterWriter.Truncate();
-
-            WriteParameters(m_ParameterWriter);
-            animMsg.Parameters = m_ParameterWriter.ToArray();
-
-            SendAnimStateClientRpc(animMsg);
         }
 
-        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
+        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
         {
+            bool shouldUpdate = false;
             stateHash = 0;
             normalizedTime = 0;
 
-            if (m_Animator.IsInTransition(0))
+            float layerWeightNow = m_Animator.GetLayerWeight(layer);
+
+            if (!Mathf.Approximately(layerWeightNow, m_LayerWeights[layer]))
             {
-                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(0);
-                if (tt.fullPathHash != m_TransitionHash)
+                m_LayerWeights[layer] = layerWeightNow;
+                shouldUpdate = true;
+            }
+            if (m_Animator.IsInTransition(layer))
+            {
+                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
+                if (tt.fullPathHash != m_TransitionHash[layer])
                 {
-                    // first time in this transition
-                    m_TransitionHash = tt.fullPathHash;
-                    m_AnimationHash = 0;
-                    return true;
+                    // first time in this transition for this layer
+                    m_TransitionHash[layer] = tt.fullPathHash;
+                    m_AnimationHash[layer] = 0;
+                    shouldUpdate = true;
                 }
-                return false;
+            }
+            else
+            {
+                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
+                if (st.fullPathHash != m_AnimationHash[layer])
+                {
+                    // first time in this animation state
+                    if (m_AnimationHash[layer] != 0)
+                    {
+                        // came from another animation directly - from Play()
+                        stateHash = st.fullPathHash;
+                        normalizedTime = st.normalizedTime;
+                    }
+                    m_TransitionHash[layer] = 0;
+                    m_AnimationHash[layer] = st.fullPathHash;
+                    shouldUpdate = true;
+                }
             }
 
-            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(0);
-            if (st.fullPathHash != m_AnimationHash)
-            {
-                // first time in this animation state
-                if (m_AnimationHash != 0)
-                {
-                    // came from another animation directly - from Play()
-                    stateHash = st.fullPathHash;
-                    normalizedTime = st.normalizedTime;
-                }
-                m_TransitionHash = 0;
-                m_AnimationHash = st.fullPathHash;
-                return true;
-            }
-            return false;
+            return shouldUpdate;
         }
 
         /* $AS TODO: Right now we are not checking for changed values this is because
@@ -311,9 +333,9 @@ namespace Unity.Netcode.Components
         {
             if (animSnapshot.StateHash != 0)
             {
-                m_AnimationHash = animSnapshot.StateHash;
-                m_Animator.Play(animSnapshot.StateHash, 0, animSnapshot.NormalizedTime);
+                m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
+            m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
             {
