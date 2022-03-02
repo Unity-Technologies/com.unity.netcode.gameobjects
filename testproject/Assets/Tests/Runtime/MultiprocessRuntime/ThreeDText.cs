@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Netcode;
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
 #endif
@@ -13,6 +12,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private long m_UpdateCounter;
         private bool m_HasFired;
         private string m_TransportString;
+
+        public void Awake()
+        {
+            if (MultiprocessOrchestration.IsPerformanceTest)
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
         // Start is called before the first frame update
         public void Start()
         {
