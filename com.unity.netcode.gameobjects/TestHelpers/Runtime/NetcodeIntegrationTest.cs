@@ -11,12 +11,12 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
-    /// The default Netcode For GameObjects integration test helper class
+    /// The default Netcode for GameObjects integration test helper class
     /// </summary>
     public abstract class NetcodeIntegrationTest
     {
-        static protected TimeoutHelper s_GloabalTimeoutHelper = new TimeoutHelper(4.0f);
-        static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(4.0f);
+        protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -288,9 +288,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Wait for all clients to connect
                 yield return WaitForClientsConnectedOrTimeOut();
 
-                Assert.False(s_GloabalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                Assert.False(s_GlobalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
 
-                if (s_GloabalTimeoutHelper.TimedOut)
+                if (s_GlobalTimeoutHelper.TimedOut)
                 {
                     yield return null;
                 }
@@ -534,7 +534,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeoutHelper;
+                timeOutHelper = s_GlobalTimeoutHelper;
             }
 
             // Start checking for a timeout
@@ -568,7 +568,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeoutHelper;
+                timeOutHelper = s_GlobalTimeoutHelper;
             }
 
             conditionalPredicate.Started();
