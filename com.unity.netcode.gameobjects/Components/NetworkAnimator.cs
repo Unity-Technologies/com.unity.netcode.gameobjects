@@ -1,6 +1,5 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -191,7 +190,7 @@ namespace Unity.Netcode.Components
                 m_ParameterWriter.Truncate();
 
                 WriteParameters(m_ParameterWriter);
-                animMsg.Parameters = m_ParameterWriter.ToArray();  // not layered
+                animMsg.Parameters = m_ParameterWriter.ToArray();
 
                 SendAnimStateClientRpc(animMsg);
             }
@@ -215,28 +214,28 @@ namespace Unity.Netcode.Components
                 AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
                 if (tt.fullPathHash != m_TransitionHash[layer])
                 {
-                    // first time in one or more of the per-layer transitions
+                    // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
                     m_AnimationHash[layer] = 0;
-                    return true;
+                    shouldUpdate = true;
                 }
-                // if our transition hash hasn't changed, but our weight has, still update
-                return shouldUpdate;
             }
-
-            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
-            if (st.fullPathHash != m_AnimationHash[layer])
+            else
             {
-                // first time in this animation state
-                if (m_AnimationHash[layer] != 0)
+                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
+                if (st.fullPathHash != m_AnimationHash[layer])
                 {
-                    // came from another animation directly - from Play()
-                    stateHash = st.fullPathHash;
-                    normalizedTime = st.normalizedTime;
+                    // first time in this animation state
+                    if (m_AnimationHash[layer] != 0)
+                    {
+                        // came from another animation directly - from Play()
+                        stateHash = st.fullPathHash;
+                        normalizedTime = st.normalizedTime;
+                    }
+                    m_TransitionHash[layer] = 0;
+                    m_AnimationHash[layer] = st.fullPathHash;
+                    shouldUpdate = true;
                 }
-                m_TransitionHash[layer] = 0;
-                m_AnimationHash[layer] = st.fullPathHash;
-                return true;
             }
 
             return shouldUpdate;
