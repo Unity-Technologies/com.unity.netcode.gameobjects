@@ -48,10 +48,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void Update()
         {
             m_UpdateCounter++;
-            if (MultiprocessOrchestration.IsPerformanceTest)
-            {
-                return;
-            }
             var testCoordinator = TestCoordinator.Instance;
             if (testCoordinator == null)
             {
