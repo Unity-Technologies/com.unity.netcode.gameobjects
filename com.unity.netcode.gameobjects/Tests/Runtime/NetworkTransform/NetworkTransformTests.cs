@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransformComponent.ReadyToReceivePositionUpdate == true);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
 
             yield return base.OnServerAndClientsConnected();
         }
@@ -115,7 +115,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.position.x > approximation);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
 
             Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 
@@ -125,7 +125,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "timeout while waiting for rotation change");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "timeout while waiting for rotation change");
 
             // approximation needed here since eulerAngles isn't super precise.
             Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "timeout while waiting for scale change");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "timeout while waiting for scale change");
 
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");

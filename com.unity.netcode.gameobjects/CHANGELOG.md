@@ -9,8 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
-
-- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
+- NetworkAnimator now properly synchrhonizes all animation layers as well as runtime-adjusted weighting between them (#1765)
+- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#1735)
 
 ### Changed
 

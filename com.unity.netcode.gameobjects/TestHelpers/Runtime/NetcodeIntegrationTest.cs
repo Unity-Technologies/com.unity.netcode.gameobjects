@@ -11,12 +11,12 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
-    /// The default Netcode For GameObjects integration test helper class
+    /// The default Netcode for GameObjects integration test helper class
     /// </summary>
     public abstract class NetcodeIntegrationTest
     {
-        static protected TimeoutHelper s_GloabalTimeoutHelper = new TimeoutHelper(4.0f);
-        static protected WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(4.0f);
+        protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -288,9 +288,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Wait for all clients to connect
                 yield return WaitForClientsConnectedOrTimeOut();
 
-                Assert.False(s_GloabalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                Assert.False(s_GlobalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
 
-                if (s_GloabalTimeoutHelper.TimedOut)
+                if (s_GlobalTimeoutHelper.TimedOut)
                 {
                     yield return null;
                 }
@@ -493,9 +493,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
             foreach (var networkObject in networkObjects)
             {
+                // This can sometimes be null depending upon order of operations
+                // when dealing with parented NetworkObjects.  If NetworkObjectB
+                // is a child of NetworkObjectA and NetworkObjectA comes before
+                // NetworkObjectB in the list of NeworkObjects found, then when
+                // NetworkObjectA's GameObject is destroyed it will also destroy
+                // NetworkObjectB's GameObject which will destroy NetworkObjectB.
+                // If there is a null entry in the list, this is the most likely
+                // scenario and so we just skip over it.
+                if (networkObject == null)
+                {
+                    continue;
+                }
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    Object.DestroyImmediate(networkObject);
+                    // Destroy the GameObject that holds the NetworkObject component
+                    Object.DestroyImmediate(networkObject.gameObject);
                 }
             }
         }
@@ -521,7 +534,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeoutHelper;
+                timeOutHelper = s_GlobalTimeoutHelper;
             }
 
             // Start checking for a timeout
@@ -555,7 +568,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If none is provided we use the default global time out helper
             if (timeOutHelper == null)
             {
-                timeOutHelper = s_GloabalTimeoutHelper;
+                timeOutHelper = s_GlobalTimeoutHelper;
             }
 
             conditionalPredicate.Started();

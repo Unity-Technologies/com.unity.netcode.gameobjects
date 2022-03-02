@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             yield return WaitForConditionOrTimeOut(() => waitForMetricValues.MetricFound());
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"{nameof(TrackRttMetricServerToClient)} timed out waiting for metric to be found for {m_ClientCount} clients!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"{nameof(TrackRttMetricServerToClient)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
             var rttValue = waitForMetricValues.AssertMetricValueHaveBeenFound();
             Assert.AreEqual(0f, rttValue);
@@ -87,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             yield return WaitForConditionOrTimeOut(() => clientGaugeMetricValues.Where((c) => c.MetricFound()).Count() == NumberOfClients);
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, $"{nameof(TrackRttMetricClientToServer)} timed out waiting for metric to be found for {m_ClientCount} clients!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"{nameof(TrackRttMetricClientToServer)} timed out waiting for metric to be found for {m_ClientCount} clients!");
 
             foreach (var clientGaugeMetricValue in clientGaugeMetricValues)
             {

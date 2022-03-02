@@ -180,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 
-            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
 
             yield return s_DefaultWaitForTick;
         }
@@ -209,7 +209,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.EnableTesting = true;
 
             yield return WaitForConditionOrTimeOut(() => true == networkVariableTestComponent.IsTestComplete());
-            Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for the test to complete!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the test to complete!");
 
             // Stop Testing
             networkVariableTestComponent.EnableTesting = false;
@@ -242,7 +242,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now wait for the client side version to be updated to k_FixedStringTestValue
             yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue);
-            Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
         }
 
         [UnityTest]
