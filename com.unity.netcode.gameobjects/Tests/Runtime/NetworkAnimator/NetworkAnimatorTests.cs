@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -128,6 +129,53 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(0).IsName("AlphaState"));
             Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server");
         }
+
+        [UnityTest]
+        public IEnumerator AnimationLayerStateSyncTest()
+        {
+            int layer = 1;
+            // check that we have started in the default state
+            Assert.True(m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(layer).IsName("DefaultStateLayer2"));
+            Assert.True(m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(layer).IsName("DefaultStateLayer2"));
+
+            // cause a change to the AlphaState state by setting AlphaParameter, which is
+            //  the variable bound to the transition from default to AlphaState (see the TestAnimatorController asset)
+            m_PlayerOnServerAnimator.SetBool("Layer2AlphaParameter", true);
+
+            // ...and now we should be in the AlphaState having triggered the AlphaParameter
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnServerAnimator.GetCurrentAnimatorStateInfo(layer).IsName("Layer2AlphaState"));
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+
+            // ...and now the client should also have sync'd and arrived at the correct state
+            yield return WaitForConditionOrTimeOut(() => m_PlayerOnClientAnimator.GetCurrentAnimatorStateInfo(layer).IsName("Layer2AlphaState"));
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Client failed to sync its animation state from the server");
+        }
+
+        [UnityTest]
+        public IEnumerator AnimationLayerWeightTest()
+        {
+            int layer = 1;
+            float targetWeight = 0.333f;
+
+            // check that we have started in the default state
+            Assert.True(Mathf.Approximately(m_PlayerOnServerAnimator.GetLayerWeight(layer), 1f));
+            Assert.True(Mathf.Approximately(m_PlayerOnClientAnimator.GetLayerWeight(layer), 1f));
+
+            m_PlayerOnServerAnimator.SetLayerWeight(layer, targetWeight);
+
+            // ...and now we should be in the AlphaState having triggered the AlphaParameter
+            yield return WaitForConditionOrTimeOut(() =>
+                Mathf.Approximately(m_PlayerOnServerAnimator.GetLayerWeight(layer), targetWeight)
+            );
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+
+            // ...and now the client should also have sync'd and arrived at the correct state
+            yield return WaitForConditionOrTimeOut(() =>
+                Mathf.Approximately(m_PlayerOnClientAnimator.GetLayerWeight(layer), targetWeight)
+            );
+            Assert.False(s_GloabalTimeoutHelper.TimedOut, "Server failed to reach its animation state");
+        }
+
 
         [UnityTest]
         public IEnumerator AnimationStateSyncTriggerTest([Values(true, false)] bool asHash)
