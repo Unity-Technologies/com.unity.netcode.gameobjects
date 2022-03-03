@@ -11,7 +11,7 @@ namespace TestProject.RuntimeTests
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";
-        private const string k_InSceneObjetName = "InSceneObject";
+        private const string k_InSceneObjectName = "InSceneObject";
         protected override int NumberOfClients => 0;
         protected Scene m_SceneLoaded;
 
@@ -33,7 +33,7 @@ namespace TestProject.RuntimeTests
             {
                 return;
             }
-            switch(sceneEvent.SceneEventType)
+            switch (sceneEvent.SceneEventType)
             {
                 case SceneEventType.LoadComplete:
                     {
@@ -50,8 +50,8 @@ namespace TestProject.RuntimeTests
         public IEnumerator RespawnInSceneObjectAfterShutdown()
         {
             yield return WaitForConditionOrTimeOut(() => m_SceneLoaded.IsValid() && m_SceneLoaded.isLoaded);
-            var networkObject = s_GlobalNetworkObjects[0].Values.Where((c) => c.name.Contains(k_InSceneObjetName)).FirstOrDefault();
-            Assert.IsNotNull(networkObject, $"Could not find any {nameof(NetworkObject)}s that contained {k_InSceneObjetName} as part of its name!");
+            var networkObject = s_GlobalNetworkObjects[0].Values.Where((c) => c.name.Contains(k_InSceneObjectName)).FirstOrDefault();
+            Assert.IsNotNull(networkObject, $"Could not find any {nameof(NetworkObject)}s that contained {k_InSceneObjectName} as part of its name!");
             Assert.IsTrue(networkObject.IsSpawned, $"{networkObject.name} is not spawned on initial load!");
 
             m_ServerNetworkManager.Shutdown();
@@ -62,9 +62,9 @@ namespace TestProject.RuntimeTests
             yield return s_DefaultWaitForTick;
             Assert.IsTrue(networkObject.IsSpawned, $"{networkObject.name} is not spawned on restarting host!");
 
-           SceneManager.UnloadSceneAsync(m_SceneLoaded);
+            SceneManager.UnloadSceneAsync(m_SceneLoaded);
             yield return WaitForConditionOrTimeOut(() => !m_SceneLoaded.isLoaded);
-            Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for scene {SceneToLoad} to unload!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for scene {SceneToLoad} to unload!");
         }
     }
 }
