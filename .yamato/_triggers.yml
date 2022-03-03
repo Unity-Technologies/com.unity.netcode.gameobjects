@@ -10,24 +10,10 @@ develop_nightly_trigger:
       rerun: always
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
+    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
 {% for project in projects -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
-    
-# Legacy job that matches the name with branch protections as of 8/11
-# Can be removed once branch protections are updated to the new name
-pull_request_trigger_legacy:
-  name: Pull Request Trigger on 2021.1 (master, develop, & release branches)
-  dependencies:
-    - .yamato/_triggers.yml#pull_request_trigger
-  triggers:
-    cancel_old_ci: true
-    pull_requests:
-    - targets:
-        only:
-          - "master"
-          - "develop"
-          - "/release\/.*/"
 
 # Run all relevant tasks when a pull request targeting the develop
 # branch is created or updated. Currently only netcode package tests are
