@@ -188,7 +188,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 return !((m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
-                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) &&  m_ClientsThatFailedVerification != NumberOfClients);
+                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && m_ClientsThatFailedVerification != NumberOfClients);
             }
         }
 
