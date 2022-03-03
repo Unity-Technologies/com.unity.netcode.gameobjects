@@ -33,7 +33,7 @@ namespace TestProject.RuntimeTests
             {
                 return;
             }
-            switch(sceneEvent.SceneEventType)
+            switch (sceneEvent.SceneEventType)
             {
                 case SceneEventType.LoadComplete:
                     {
@@ -62,7 +62,7 @@ namespace TestProject.RuntimeTests
             yield return s_DefaultWaitForTick;
             Assert.IsTrue(networkObject.IsSpawned, $"{networkObject.name} is not spawned on restarting host!");
 
-           SceneManager.UnloadSceneAsync(m_SceneLoaded);
+            SceneManager.UnloadSceneAsync(m_SceneLoaded);
             yield return WaitForConditionOrTimeOut(() => !m_SceneLoaded.isLoaded);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for scene {SceneToLoad} to unload!");
         }
