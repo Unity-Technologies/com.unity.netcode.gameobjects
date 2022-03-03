@@ -21,7 +21,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
 
-        protected virtual bool IsPerformanceTest => true;
+        protected virtual bool IsPerformanceTest => false;
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
@@ -39,6 +39,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+            MultiprocessOrchestration.IsPerformanceTest = IsPerformanceTest;
             if (IgnoreMultiprocessTests)
             {
                 Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");

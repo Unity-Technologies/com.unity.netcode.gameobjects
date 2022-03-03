@@ -2,7 +2,7 @@
 
 All notable changes to this package will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
-## [Unreleased]
+## [1.0.0-pre.6] - 2022-03-02
 
 ### Added
 
@@ -12,6 +12,7 @@ All notable changes to this package will be documented in this file. The format 
 ### Changed
 
 - Updated Unity Transport package to 1.0.0-pre.14. (#1760)
+- Updated Netcode for GameObjects dependency to 1.0.0-pre.6 (#1771)
 - Overflowing the reliable send queue of a connection will now result in the connection being closed, rather than spamming the log with errors about not being able to send a payload. It is deemed better to close the connection than to lose reliable traffic (which could cause all sorts of weird synchronization issues). (#1747)
 
 ### Fixed
