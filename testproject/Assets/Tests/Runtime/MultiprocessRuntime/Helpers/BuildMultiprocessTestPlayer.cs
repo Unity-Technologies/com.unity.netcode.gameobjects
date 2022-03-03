@@ -70,14 +70,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     buildPathExtension += ".exe";
                     buildTarget = BuildTarget.StandaloneWindows64;
                 }
-                else if (Application.platform == RuntimePlatform.OSXPlayer ||
-                    Application.platform == RuntimePlatform.OSXEditor)
+                else if (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor)
                 {
                     buildPathExtension += ".app";
                     buildTarget = BuildTarget.StandaloneOSX;
                 }
-                else if (Application.platform == RuntimePlatform.LinuxEditor ||
-                    Application.platform == RuntimePlatform.LinuxPlayer)
+                else if (Application.platform == RuntimePlatform.LinuxEditor || Application.platform == RuntimePlatform.LinuxPlayer)
                 {
                     buildPathExtension += "";
                     buildTarget = BuildTarget.StandaloneLinux64;
