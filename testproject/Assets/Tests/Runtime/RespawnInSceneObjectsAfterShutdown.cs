@@ -64,7 +64,7 @@ namespace TestProject.RuntimeTests
 
            SceneManager.UnloadSceneAsync(m_SceneLoaded);
             yield return WaitForConditionOrTimeOut(() => !m_SceneLoaded.isLoaded);
-            Assert.IsFalse(s_GloabalTimeoutHelper.TimedOut, $"Timed out waiting for scene {SceneToLoad} to unload!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for scene {SceneToLoad} to unload!");
         }
     }
 }
