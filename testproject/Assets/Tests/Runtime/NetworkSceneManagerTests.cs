@@ -345,7 +345,6 @@ namespace TestProject.RuntimeTests
         }
     }
 
-#if ENABLE_THIS_TEST
     public class NetworkSceneManagerTests2 : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 9;
@@ -1053,7 +1052,6 @@ namespace TestProject.RuntimeTests
         }
 
     }
-#endif
 
     /// <summary>
     /// Use this test group for validating NetworkSceneManager fixes.
