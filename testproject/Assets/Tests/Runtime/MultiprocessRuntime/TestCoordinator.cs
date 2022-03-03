@@ -37,7 +37,7 @@ public class TestCoordinator : NetworkBehaviour
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
-    private void Awake()
+    public void Awake()
     {
         MultiprocessLogger.Log("Awake");
         if (Instance != null)
