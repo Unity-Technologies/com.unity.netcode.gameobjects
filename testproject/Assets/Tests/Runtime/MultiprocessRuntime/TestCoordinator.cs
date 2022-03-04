@@ -46,7 +46,7 @@ public class TestCoordinator : NetworkBehaviour
             Destroy(gameObject);
             return;
         }
-
+        Debug.Log($"Host Ip is : {PlayerPrefs.GetString("HostIp")}");
         Instance = this;
     }
 
