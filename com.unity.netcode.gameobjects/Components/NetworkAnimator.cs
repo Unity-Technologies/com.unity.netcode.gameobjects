@@ -42,6 +42,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [Tooltip("The Animator component to synchronize")]
         [SerializeField] private Animator m_Animator;
 
         public Animator Animator
