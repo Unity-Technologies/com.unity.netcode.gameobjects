@@ -79,8 +79,8 @@ MonoBehaviour:
     m_ClassName: 
   m_ActivePlayerDataBuilderIndex: 3
   m_DataBuilders:
-  - {fileID: 11400000, guid: 9f220b782e4e67d4787c06a5ca9f25cc, type: 2}
   - {fileID: 11400000, guid: 34e64d32387bb4a4db2e4170f8100ace, type: 2}
+  - {fileID: 11400000, guid: 9f220b782e4e67d4787c06a5ca9f25cc, type: 2}
   - {fileID: 11400000, guid: ae43701986fc59a44b2618f3bacabc0a, type: 2}
   - {fileID: 11400000, guid: d6f3a7ab824a4b04a970de0ba5011a93, type: 2}
   m_ActiveProfileId: 690940853b1f82f4eab51ec6b0396fd8
