@@ -166,7 +166,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 #endif
 
-            [Serializable]
+        [Serializable]
         public struct BuildInfo
         {
             public string BuildPath;
