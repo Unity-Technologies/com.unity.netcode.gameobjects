@@ -84,8 +84,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
-
+#if UNITY_2021_2_OR_NEWER
+            var buildPlayerOptions = new BuildPlayerOptions()
+            {
+                subtarget = (int)StandaloneBuildSubtarget.Server
+            }
+#else
             var buildPlayerOptions = new BuildPlayerOptions();
+#endif
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = buildPathToUse;
             buildPlayerOptions.target = buildTarget;
@@ -96,12 +102,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
-#if !UNITY_2021_2_OR_NEWER
             if (buildTarget == BuildTarget.StandaloneLinux64)
             {
+#if !UNITY_2021_2_OR_NEWER
                 buildOptions |= BuildOptions.EnableHeadlessMode;
-            }
 #endif
+            }
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
@@ -163,7 +169,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 #endif
 
-        [Serializable]
+            [Serializable]
         public struct BuildInfo
         {
             public string BuildPath;
