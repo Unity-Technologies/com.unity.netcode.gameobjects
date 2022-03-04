@@ -121,6 +121,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Override this and return true if you need
+        /// to troubleshoot a hard to track bug within an
+        /// integration test.
+        /// </summary>
         protected virtual bool OnSetVerboseDebug()
         {
             return false;
@@ -301,7 +306,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected IEnumerator StartServerAndClients()
         {
-
             if (CanStartServerAndClients())
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
