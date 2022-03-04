@@ -33,6 +33,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
 - Improved performance in NetworkAnimator (#1735)
 - Removed the "always sync" network animator (aka "autosend") parameters (#1746)
+- Fixed in-scene placed NetworkObjects not respawning after shutting down the NetworkManager and then starting it back up again (#1769)
 
 ## [1.0.0-pre.5] - 2022-01-26
 
