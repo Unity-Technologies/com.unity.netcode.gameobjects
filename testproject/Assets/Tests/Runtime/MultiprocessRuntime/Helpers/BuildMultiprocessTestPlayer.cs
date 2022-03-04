@@ -88,7 +88,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var buildPlayerOptions = new BuildPlayerOptions()
             {
                 subtarget = (int)StandaloneBuildSubtarget.Server
-            }
+            };
 #else
             var buildPlayerOptions = new BuildPlayerOptions();
 #endif
