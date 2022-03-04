@@ -100,10 +100,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
 #if UNITY_2021_2_OR_NEWER
                 buildPlayerOptions.subtarget = (int)StandaloneBuildSubtarget.Server;
-#else
-                buildOptions |= BuildOptions.EnableHeadlessMode;
 #endif
-
+                buildOptions |= BuildOptions.EnableHeadlessMode;
             }
 
             buildOptions |= BuildOptions.StrictMode;
