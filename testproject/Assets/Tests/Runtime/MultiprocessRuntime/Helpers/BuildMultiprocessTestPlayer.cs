@@ -96,14 +96,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
-            if (buildTarget != BuildTarget.StandaloneLinux64)
+#if !UNITY_2021_2_OR_NEWER
+            if (buildTarget == BuildTarget.StandaloneLinux64)
             {
-#if UNITY_2021_2_OR_NEWER
-                buildPlayerOptions.subtarget = (int)StandaloneBuildSubtarget.Server;
-#else
                 buildOptions |= BuildOptions.EnableHeadlessMode;
-#endif
             }
+#endif
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
