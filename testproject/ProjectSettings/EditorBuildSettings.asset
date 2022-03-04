@@ -84,9 +84,6 @@ EditorBuildSettings:
     path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoad_DestroyNetworkManagerTest.unity
     guid: 7dc1ab12373402546befc7d54e447258
   - enabled: 1
-    path: Assets/Tests/Manual/UnitTestBaseScene.unity
-    guid: fa0b4956a4a0aee48ae43f9116d28354
-  - enabled: 1
     path: Assets/Tests/Manual/PreserveNetworkObjectsOnShutdown/PreserveNetworkObjects.unity
     guid: 3efb2ada1190a234d801b415fb526ec3
   - enabled: 1
@@ -95,4 +92,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Runtime/ObjectParenting/NetworkObjectParentingTests.unity
     guid: 7522f8723c5674939a3c24acfd83a688
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/UnitTestBaseScene.unity
+    guid: fa0b4956a4a0aee48ae43f9116d28354
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObject.unity
+    guid: 136692aa47cd577499d03a2b0dabbf28
   m_configObjects: {}

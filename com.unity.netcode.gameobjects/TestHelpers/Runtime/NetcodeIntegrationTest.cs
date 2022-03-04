@@ -5,6 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using System.Runtime.CompilerServices;
 
 using Object = UnityEngine.Object;
 
@@ -111,6 +112,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
+        private bool m_EnableVerboseDebug;
+
+        /// <summary>
+        /// Used to display the various integration test
+        /// stages and can be used to log verbose information
+        /// for troubleshooting an integration test.
+        /// </summary>
+        /// <param name="msg"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void VerboseDebug(string msg)
+        {
+            if (m_EnableVerboseDebug)
+            {
+                Debug.Log(msg);
+            }
+        }
+
+        /// <summary>
+        /// Override this and return true if you need
+        /// to troubleshoot a hard to track bug within an
+        /// integration test.
+        /// </summary>
+        protected virtual bool OnSetVerboseDebug()
+        {
+            return false;
+        }
+
         /// <summary>
         /// The very first thing invoked during the <see cref="OneTimeSetup"/> that
         /// determines how this integration test handles NetworkManager instantiation
@@ -130,11 +158,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            m_EnableVerboseDebug = OnSetVerboseDebug();
+
+            VerboseDebug($"Entering {nameof(OneTimeSetup)}");
+
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
 
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
             OnOneTimeSetup();
+
+            VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
         }
 
         /// <summary>
@@ -153,6 +187,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            VerboseDebug($"Entering {nameof(SetUp)}");
+
             yield return OnSetup();
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
                 m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
@@ -161,6 +197,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 yield return StartServerAndClients();
             }
+            VerboseDebug($"Exiting {nameof(SetUp)}");
         }
 
         /// <summary>
@@ -173,6 +210,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void CreatePlayerPrefab()
         {
+            VerboseDebug($"Entering {nameof(CreatePlayerPrefab)}");
             // Create playerPrefab
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
@@ -181,6 +219,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             OnCreatePlayerPrefab();
+
+            VerboseDebug($"Exiting {nameof(CreatePlayerPrefab)}");
         }
 
         /// <summary>
@@ -207,6 +247,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="numberOfClients"></param>
         protected void CreateServerAndClients(int numberOfClients)
         {
+            VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
+
             CreatePlayerPrefab();
 
             // Create multiple NetworkManager instances
@@ -235,6 +277,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Provides opportunity to allow child derived classes to
             // modify the NetworkManager's configuration before starting.
             OnServerAndClientsCreated();
+
+            VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
 
         /// <summary>
@@ -272,6 +316,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (CanStartServerAndClients())
             {
+                VerboseDebug($"Entering {nameof(StartServerAndClients)}");
+
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
@@ -289,11 +335,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 yield return WaitForClientsConnectedOrTimeOut();
 
                 Assert.False(s_GlobalTimeoutHelper.TimedOut, $"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
-
-                if (s_GlobalTimeoutHelper.TimedOut)
-                {
-                    yield return null;
-                }
 
                 if (m_UseHost || m_ServerNetworkManager.IsHost)
                 {
@@ -332,6 +373,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Notification that at this time the server and client(s) are instantiated,
                 // started, and connected on both sides.
                 yield return OnServerAndClientsConnected();
+
+                VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
             }
         }
 
@@ -398,6 +441,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void ShutdownAndCleanUp()
         {
+            VerboseDebug($"Entering {nameof(ShutdownAndCleanUp)}");
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
@@ -427,6 +471,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+            VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
         }
 
         /// <summary>
@@ -441,12 +486,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            VerboseDebug($"Entering {nameof(TearDown)}");
             yield return OnTearDown();
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 ShutdownAndCleanUp();
             }
+
+            VerboseDebug($"Exiting {nameof(TearDown)}");
         }
 
         /// <summary>
@@ -462,6 +510,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            VerboseDebug($"Entering {nameof(OneTimeTearDown)}");
             OnOneTimeTearDown();
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
@@ -471,6 +520,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Disable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(false);
+
+            VerboseDebug($"Exiting {nameof(OneTimeTearDown)}");
         }
 
         /// <summary>
