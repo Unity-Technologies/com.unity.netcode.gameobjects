@@ -5,6 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using System.Runtime.CompilerServices;
 
 using Object = UnityEngine.Object;
 
@@ -119,6 +120,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// for troubleshooting an integration test.
         /// </summary>
         /// <param name="msg"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void VerboseDebug(string msg)
         {
             if (m_EnableVerboseDebug)
