@@ -45,12 +45,40 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        /// <summary>
+        /// Invoked only when the hierarchy changes
+        /// </summary>
         private static void EditorApplication_hierarchyChanged()
         {
             var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
             foreach (var networkManager in allNetworkManagers)
             {
-                networkManager.NetworkManagerCheckForParent();
+                if (!networkManager.NetworkManagerCheckForParent())
+                {
+                    var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
+                    if (networkObject != null)
+                    {
+                        NetworkManager.NetworkManagerHelper.NotifyUserOfNetworkObjectAssignment(networkManager, networkObject);
+                    }
+                }
+            }
+        }
+
+        public void NotifyUserOfNetworkObjectAssignment(NetworkManager networkManager, NetworkObject networkObject)
+        {
+            if (!EditorApplication.isUpdating)
+            {
+                Object.DestroyImmediate(networkObject);
+                var message = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it.";
+
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", message, "OK");
+                }
+                else
+                {
+                    Debug.LogError(message);
+                }
             }
         }
 
