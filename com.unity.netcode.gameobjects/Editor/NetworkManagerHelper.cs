@@ -58,13 +58,20 @@ namespace Unity.Netcode.Editor
                     var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
                     if (networkObject != null)
                     {
-                        NetworkManager.NetworkManagerHelper.NotifyUserOfNetworkObjectAssignment(networkManager, networkObject);
+                        NetworkManager.NetworkManagerHelper.NotifyUserNetworkObjectRemoved(networkManager, networkObject);
                     }
                 }
             }
         }
 
-        public void NotifyUserOfNetworkObjectAssignment(NetworkManager networkManager, NetworkObject networkObject)
+        /// <summary>
+        /// Handles notifying users that they cannot add a NetworkObject component
+        /// to a GameObject that also has a NetworkManager component. The NetworkObject
+        /// will always be removed.
+        /// GameObject + NetworkObject then NetworkManager = NetworkObject removed
+        /// GameObject + NetworkManager then NetworkObject = NetworkObject removed
+        /// </summary>
+        public void NotifyUserNetworkObjectRemoved(NetworkManager networkManager, NetworkObject networkObject)
         {
             if (!EditorApplication.isUpdating)
             {
