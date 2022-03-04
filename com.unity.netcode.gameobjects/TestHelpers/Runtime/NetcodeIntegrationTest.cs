@@ -113,6 +113,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected bool m_EnableVerboseDebug;
 
+        /// <summary>
+        /// Used to display the various integration test
+        /// stages and can be used to log verbose information
+        /// for troubleshooting an integration test.
+        /// </summary>
+        /// <param name="msg"></param>
         protected void VerboseDebug(string msg)
         {
             if (m_EnableVerboseDebug)
