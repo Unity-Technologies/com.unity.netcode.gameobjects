@@ -605,14 +605,12 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-            foreach (var sobj in SpawnedObjectsList)
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+            foreach (var sobj in networkObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
-                {
-                    sobj.IsSpawned = false;
-                    sobj.DestroyWithScene = false;
-                    sobj.IsSceneObject = null;
-                }
+                sobj.IsSpawned = false;
+                sobj.DestroyWithScene = false;
+                sobj.IsSceneObject = null;
             }
         }
 
