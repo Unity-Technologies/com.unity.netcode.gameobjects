@@ -102,12 +102,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
-            if (buildTarget == BuildTarget.StandaloneLinux64)
-            {
-#if !UNITY_2021_2_OR_NEWER
-                buildOptions |= BuildOptions.EnableHeadlessMode;
-#endif
-            }
+#pragma warning disable CS0618 // Type or member is obsolete
+            buildOptions |= BuildOptions.EnableHeadlessMode;
+#pragma warning restore CS0618 // Type or member is obsolete
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
