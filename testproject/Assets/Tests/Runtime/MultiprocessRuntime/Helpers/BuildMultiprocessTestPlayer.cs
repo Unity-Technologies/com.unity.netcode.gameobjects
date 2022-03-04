@@ -84,14 +84,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
-#if UNITY_2021_2_OR_NEWER
-            var buildPlayerOptions = new BuildPlayerOptions()
-            {
-                subtarget = (int)StandaloneBuildSubtarget.Server
-            };
-#else
             var buildPlayerOptions = new BuildPlayerOptions();
-#endif
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = buildPathToUse;
             buildPlayerOptions.target = buildTarget;
@@ -101,10 +94,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.Development;
                 buildOptions |= BuildOptions.AllowDebugging;
             }
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            buildOptions |= BuildOptions.EnableHeadlessMode;
-#pragma warning restore CS0618 // Type or member is obsolete
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;

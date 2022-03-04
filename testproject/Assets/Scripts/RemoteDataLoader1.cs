@@ -94,8 +94,8 @@ public class RemoteConfigUtils
         responseTask.Wait();
         var response = responseTask.Result;
         var contentTask = response.Content.ReadAsStringAsync();
-        contentTask.Wait();        
-        
+        contentTask.Wait();
+
         return contentTask.Result;
     }
 }
