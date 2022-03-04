@@ -111,7 +111,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
-        protected bool m_EnableVerboseDebug;
+        private bool m_EnableVerboseDebug;
 
         /// <summary>
         /// Used to display the various integration test
