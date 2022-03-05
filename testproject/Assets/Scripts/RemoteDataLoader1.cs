@@ -23,20 +23,40 @@ public class RemoteDataLoader1 : MonoBehaviour
         Application.targetFrameRate = 5;
         QualitySettings.vSyncCount = 0;
 
+        // There are three categories of platform: desktop, mobile, console
+        // Each category has certain constraints so it is important to know
+        // which one we are
+        var platform = Application.platform;
+        switch (platform)
+        {
+            case RuntimePlatform.OSXPlayer:
+            case RuntimePlatform.WindowsPlayer:
+            case RuntimePlatform.LinuxPlayer:
+                // Files allowed
+                break;
+            case RuntimePlatform.Android:
+            case RuntimePlatform.IPhonePlayer:
+                // No command line and no local files
+                break;
+            default:
+                break;
+        }
     }
-
     // Start is called before the first frame update
     public void Start()
     {
         Debug.Log("in Start - calling get remote config");
 
-        m_TaskToReadConfig = Task.Factory.StartNew(() => {
+        m_TaskToReadConfig = Task.Factory.StartNew(() =>
+        {
             m_RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1);
             var textObject = GetComponent<UnityEngine.UI.Text>();
             textObject.text += "\n" + m_RemoteConfig;
 
             PlayerPrefs.SetInt("JobId", m_RemoteConfig.JobId);
             PlayerPrefs.SetString("HostIp", m_RemoteConfig.HostIp);
+            PlayerPrefs.SetString("GitHash", m_RemoteConfig.GitHash);
+            
         });
 
 
@@ -77,21 +97,21 @@ public class RemoteConfigUtils
         }
         else
         {
-            
+
             // Try to get config from web resource
             configData = GetWebConfig();
             var remoteConfigList = new RemoteConfigList();
             JsonUtility.FromJsonOverwrite(configData, remoteConfigList);
-            
+
             foreach (var config in remoteConfigList.JobQueueItems)
             {
-                
+
                 if (config.AdditionalJsonConfig != null)
                 {
                     var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(config.AdditionalJsonConfig);
                     if (mpConfig != null && mpConfig.SceneName != null)
                     {
-                        
+
                         return config;
                     }
                 }

@@ -198,6 +198,7 @@ public class CommandLineProcessor
 
     private void SetTransportAddress(string address)
     {
+        PlayerPrefs.SetString("HostIp", address);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
