@@ -45,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
             // Make sure the client-side changes are the same
             yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].LocalClient.PlayerObject != playerLocalClient && !playerLocalClient.IsPlayerObject
             && m_ClientNetworkManagers[0].LocalClient.PlayerObject.IsPlayerObject);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client0side player object to change!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side player object to change!");
         }
     }
 }
