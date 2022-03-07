@@ -29,11 +29,6 @@ namespace Unity.Netcode.RuntimeTests
             return m_CanStartServerAndClients;
         }
 
-        protected override void OnServerAndClientsCreated()
-        {
-
-        }
-
         /// <summary>
         /// Validate that if the NetworkTransport fails to start the NetworkManager
         /// will not continue the startup process and will shut itself down.
