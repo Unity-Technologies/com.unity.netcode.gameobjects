@@ -65,6 +65,16 @@ namespace Unity.Netcode.EditorTests
             // Since this is an in-editor test, we must force this invocation
             NetworkManagerHelper.Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager, true);
 
+            // Validate that the NetworkObject has been removed
+            if(networkObjectPlacement == NetworkObjectPlacement.Root)
+            {
+                Assert.IsNull(networkManager.gameObject.GetComponent<NetworkObject>(),$"There is still a {nameof(NetworkObject)} on {nameof(NetworkManager)}'s GameObject!");
+            }
+            else
+            {
+                Assert.IsNull(networkManager.gameObject.GetComponentInChildren<NetworkObject>(), $"There is still a {nameof(NetworkObject)} on {nameof(NetworkManager)}'s child GameObject!");
+            }
+
             // Clean up
             Object.DestroyImmediate(gameObject);
         }
