@@ -34,6 +34,11 @@ namespace Unity.Netcode.RuntimeTests
 
         }
 
+        /// <summary>
+        /// Validate that if the NetworkTransport fails to start the NetworkManager
+        /// will not continue the startup process and will shut itself down.
+        /// </summary>
+        /// <param name="testClient">if true it will test the client side</param>
         [UnityTest]
         public IEnumerator DoesNotStartWhenTransportFails([Values] bool testClient)
         {
@@ -62,18 +67,26 @@ namespace Unity.Netcode.RuntimeTests
             // Trap for the nested NetworkManager exception
             LogAssert.Expect(LogType.Error, messageToCheck);
             m_CanStartServerAndClients = true;
+            // Due to other errors, we must not send clients if testing the server-host side
+            // We can test both server and client(s) when testing client-side only
             if (testClient)
             {
                 NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers);
+                yield return s_DefaultWaitForTick;
+                foreach(var client in m_ClientNetworkManagers)
+                {
+                    Assert.False(client.IsListening);
+                    Assert.False(client.IsConnectedClient);
+                }
             }
             else
             {
                 NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, new NetworkManager[] { });
+                yield return s_DefaultWaitForTick;
+                Assert.False(m_ServerNetworkManager.IsListening);
             }
-            yield return s_DefaultWaitForTick;
         }
     }
-
 
     /// <summary>
     /// Does nothing but simulate a transport that failed to start
@@ -93,21 +106,16 @@ namespace Unity.Netcode.RuntimeTests
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
-
         public override bool StartClient()
         {
             // Simulate failure, always return false
             return false;
         }
-
         public override bool StartServer()
         {
             // Simulate failure, always return false
             return false;
         }
-
-
-
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
         }
