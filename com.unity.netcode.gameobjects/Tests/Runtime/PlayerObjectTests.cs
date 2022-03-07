@@ -37,11 +37,12 @@ namespace Unity.Netcode.RuntimeTests
             // Spawn this instance as a new player object for the client who already has an assigned player object
             newPlayerNetworkObject.SpawnAsPlayerObject(m_ClientNetworkManagers[0].LocalClientId);
 
-            // Make sure server-side changes are detected
+            // Make sure server-side changes are detected, the original player object should no longer be marked as a player
+            // and the local new player object should.
             yield return WaitForConditionOrTimeOut(() => !originalPlayer.IsPlayerObject && newPlayerNetworkObject.IsPlayerObject);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for server-side player object to change!");
 
-            // Make sure client-side changes are detected
+            // Make sure the client-side changes are the same
             yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].LocalClient.PlayerObject != playerLocalClient && !playerLocalClient.IsPlayerObject
             && m_ClientNetworkManagers[0].LocalClient.PlayerObject.IsPlayerObject);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client0side player object to change!");
