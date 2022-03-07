@@ -46,17 +46,25 @@ public class RemoteDataLoader1 : MonoBehaviour
     public void Start()
     {
         Debug.Log("in Start - calling get remote config");
+        var githash = Resources.Load<TextAsset>("Text/githash");
+        if (githash == null)
+        {
+            // If the githash file has not been generated try to compute it
+            ComputeLocalGitHash();
+        }
 
         m_TaskToReadConfig = Task.Factory.StartNew(() =>
         {
             m_RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1);
             var textObject = GetComponent<UnityEngine.UI.Text>();
             textObject.text += "\n" + m_RemoteConfig;
-
             PlayerPrefs.SetInt("JobId", m_RemoteConfig.JobId);
             PlayerPrefs.SetString("HostIp", m_RemoteConfig.HostIp);
-            PlayerPrefs.SetString("GitHash", m_RemoteConfig.GitHash);
-            
+            if (m_RemoteConfig.GitHash.Equals(PlayerPrefs.GetString("GitHash")))
+            {
+                // If the githash and platform are a match then we can pick up this job
+                // TODO: 
+            }
         });
 
 
@@ -75,6 +83,27 @@ public class RemoteDataLoader1 : MonoBehaviour
             Debug.Log($"Checking SceneName - found {mpConfig.SceneName}, loading scene with LoadSceneMode.Single");
             UnityEngine.SceneManagement.SceneManager.LoadScene(mpConfig.SceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
+    }
+
+    private Task ComputeLocalGitHash()
+    {
+        Task t= Task.Factory.StartNew(() =>
+        {
+            var workerProcess = new System.Diagnostics.Process();
+            workerProcess.StartInfo.UseShellExecute = false;
+            workerProcess.StartInfo.RedirectStandardError = true;
+            workerProcess.StartInfo.RedirectStandardOutput = true;
+            workerProcess.StartInfo.FileName = "git";
+            workerProcess.StartInfo.Arguments = "rev-parse HEAD";
+            workerProcess.Start();
+            workerProcess.WaitForExit();
+            Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
+            outputTask.Wait();
+            Debug.Log(outputTask.Result.Trim());
+            PlayerPrefs.SetString("GitHash", outputTask.Result.Trim());
+
+        });
+        return t;
     }
 }
 
@@ -166,4 +195,31 @@ public class RemoteConfigList
 public class MultiprocessConfig
 {
     public string SceneName;
+}
+
+public class CommandLineDataLoader
+{
+    private Dictionary<string, string> m_CommandLineArguments = new Dictionary<string, string>();
+
+    public CommandLineDataLoader()
+    {
+        LoadCommandLineData();
+    }
+
+    private void LoadCommandLineData()
+    {
+        string[] args = Environment.GetCommandLineArgs();
+        m_CommandLineArguments = new Dictionary<string, string>();
+        for (int i = 0; i < args.Length; ++i)
+        {
+            var arg = args[i].ToLower();
+            if (arg.StartsWith("-"))
+            {
+                var value = i < args.Length - 1 ? args[i + 1].ToLower() : null;
+                value = (value?.StartsWith("-") ?? false) ? null : value;
+
+                m_CommandLineArguments.Add(arg, value);
+            }
+        }
+    }
 }
