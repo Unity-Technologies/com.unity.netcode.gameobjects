@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers);
                 yield return s_DefaultWaitForTick;
-                foreach(var client in m_ClientNetworkManagers)
+                foreach (var client in m_ClientNetworkManagers)
                 {
                     Assert.False(client.IsListening);
                     Assert.False(client.IsConnectedClient);
