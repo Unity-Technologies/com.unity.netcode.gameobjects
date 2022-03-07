@@ -56,12 +56,10 @@ namespace Unity.Netcode.EditorTests
 
             var networkManager = gameObject.AddComponent<NetworkManager>();
 
-            // The error message we should expect
-            var messageToCheck = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it.";
+            // Trap for the error message generated when a NetworkObject is discovered on the same GameObject or any children under it
+            LogAssert.Expect(LogType.Error, NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage());
 
-            // Trap for the nested NetworkManager exception
-            LogAssert.Expect(LogType.Error, messageToCheck);
-
+            // Add the NetworkObject
             var networkObject = targetforNetworkObject.AddComponent<NetworkObject>();
 
             // Since this is an in-editor test, we must force this invocation

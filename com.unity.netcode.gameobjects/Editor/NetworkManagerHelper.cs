@@ -73,9 +73,10 @@ namespace Unity.Netcode.Editor
         {
             // Check for any NetworkObject at the same gameObject relative layer
             var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
+
             if (networkObject == null)
             {
-                // if none is found, check to see if any children have a GameObject
+                // if none is found, check to see if any children have a NetworkObject
                 networkObject = networkManager.gameObject.GetComponentInChildren<NetworkObject>();
                 if (networkObject == null)
                 {
@@ -86,17 +87,21 @@ namespace Unity.Netcode.Editor
             if (!EditorApplication.isUpdating)
             {
                 Object.DestroyImmediate(networkObject);
-                var message = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it.";
 
                 if (!EditorApplication.isPlaying && !editorTest)
                 {
-                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", message, "OK");
+                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", NetworkManagerAndNetworkObjectNotAllowedMessage(), "OK");
                 }
                 else
                 {
-                    Debug.LogError(message);
+                    Debug.LogError(NetworkManagerAndNetworkObjectNotAllowedMessage());
                 }
             }
+        }
+
+        public string NetworkManagerAndNetworkObjectNotAllowedMessage()
+        {
+            return $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it or any children under it.";
         }
 
         /// <summary>
