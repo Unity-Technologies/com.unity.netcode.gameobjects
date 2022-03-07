@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+### Added
+### Changed
+### Fixed
+- Fixed issue where NetworkManager would continue starting if the NetworkTransport selected failed. (#1780)
+
 ## [1.0.0-pre.6] - 2022-03-02
 
 ### Added
