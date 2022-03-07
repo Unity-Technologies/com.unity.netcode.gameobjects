@@ -19,13 +19,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/RemoteConfigScene.unity", "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = BuildPath + ".exe";
             buildPlayerOptions.target = BuildTarget.StandaloneWindows64;
-            
             var buildOptions = BuildOptions.None;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
             buildOptions |= BuildOptions.StrictMode;
-            
             buildPlayerOptions.options = buildOptions;
-            
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
         }
 #endif
