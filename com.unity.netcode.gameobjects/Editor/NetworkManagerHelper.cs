@@ -55,11 +55,7 @@ namespace Unity.Netcode.Editor
             {
                 if (!networkManager.NetworkManagerCheckForParent())
                 {
-                    var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
-                    if (networkObject != null)
-                    {
-                        NetworkManager.NetworkManagerHelper.NotifyUserNetworkObjectRemoved(networkManager, networkObject);
-                    }
+                    Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager);
                 }
             }
         }
@@ -70,15 +66,29 @@ namespace Unity.Netcode.Editor
         /// will always be removed.
         /// GameObject + NetworkObject then NetworkManager = NetworkObject removed
         /// GameObject + NetworkManager then NetworkObject = NetworkObject removed
+        /// Note: Since this is always invoked after <see cref="NetworkManagerCheckForParent"/>
+        /// we do not need to check for parent when searching for a NetworkObject component
         /// </summary>
-        public void NotifyUserNetworkObjectRemoved(NetworkManager networkManager, NetworkObject networkObject)
+        public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false)
         {
+            // Check for any NetworkObject at the same gameObject relative layer
+            var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                // if none is found, check to see if any children have a GameObject
+                networkObject = networkManager.gameObject.GetComponentInChildren<NetworkObject>();
+                if (networkObject == null)
+                {
+                    return;
+                }
+            }
+
             if (!EditorApplication.isUpdating)
             {
                 Object.DestroyImmediate(networkObject);
                 var message = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it.";
 
-                if (!EditorApplication.isPlaying)
+                if (!EditorApplication.isPlaying && !editorTest)
                 {
                     EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", message, "OK");
                 }

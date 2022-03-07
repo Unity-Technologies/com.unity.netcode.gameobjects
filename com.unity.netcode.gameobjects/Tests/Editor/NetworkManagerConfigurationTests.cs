@@ -34,5 +34,41 @@ namespace Unity.Netcode.EditorTests
             // Clean up
             Object.DestroyImmediate(parent);
         }
+
+        public enum NetworkObjectPlacement
+        {
+            Root,   // Added to the same root GameObject
+            Child   // Added to a child GameObject
+        }
+
+        [Test]
+        public void NetworkObjectNotAllowed([Values] NetworkObjectPlacement networkObjectPlacement)
+        {
+            var gameObject = new GameObject(nameof(NetworkManager));
+            var targetforNetworkObject = gameObject;
+
+            if (networkObjectPlacement == NetworkObjectPlacement.Child)
+            {
+                var childGameObject = new GameObject($"{nameof(NetworkManager)}-Child");
+                childGameObject.transform.parent = targetforNetworkObject.transform;
+                targetforNetworkObject = childGameObject;
+            }
+
+            var networkManager = gameObject.AddComponent<NetworkManager>();
+
+            // The error message we should expect
+            var messageToCheck = $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it.";
+
+            // Trap for the nested NetworkManager exception
+            LogAssert.Expect(LogType.Error, messageToCheck);
+
+            var networkObject = targetforNetworkObject.AddComponent<NetworkObject>();
+
+            // Since this is an in-editor test, we must force this invocation
+            NetworkManagerHelper.Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager, true);
+
+            // Clean up
+            Object.DestroyImmediate(gameObject);
+        }
     }
 }
