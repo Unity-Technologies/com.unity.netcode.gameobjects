@@ -488,8 +488,15 @@ namespace Unity.Netcode
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                 var hash = XXHash.Hash32(scenePath);
                 var buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
-                HashToBuildIndex.Add(hash, buildIndex);
-                BuildIndexToHash.Add(buildIndex, hash);
+                if (!HashToBuildIndex.ContainsKey(hash))
+                {
+                    HashToBuildIndex.Add(hash, buildIndex);
+                    BuildIndexToHash.Add(buildIndex, hash);
+                }
+                else
+                {
+                    Debug.LogError($"{nameof(NetworkSceneManager)} is skipping duplicate scene path entry {scenePath}. Make sure your scenes in build list does not contain duplicates!");
+                }
             }
         }
 
