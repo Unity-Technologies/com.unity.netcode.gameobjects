@@ -361,8 +361,8 @@ namespace Unity.Netcode
             {
                 NetworkObjectId = NetworkObject.NetworkObjectId;
                 // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
-                // NetworkObject.ChildNetworkBehaviours which is set once when the first
-                // attempt to access it happens.
+                // NetworkObject.ChildNetworkBehaviours which is set once when first
+                // accessed.
                 NetworkBehaviourId = NetworkObject.GetNetworkBehaviourOrderIndex(this);
 
                 if (NetworkManager != null && NetworkManager.IsListening)
