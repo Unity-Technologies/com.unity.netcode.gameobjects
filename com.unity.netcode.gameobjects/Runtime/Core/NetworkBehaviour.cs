@@ -321,7 +321,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkObject => m_NetworkObject != null;
+        public bool HasNetworkObject => NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
