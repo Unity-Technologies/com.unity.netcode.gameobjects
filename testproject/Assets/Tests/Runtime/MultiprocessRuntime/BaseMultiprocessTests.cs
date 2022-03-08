@@ -67,6 +67,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+            m_ConnectedClientsList = new List<ulong>();
             MultiprocessOrchestration.IsPerformanceTest = IsPerformanceTest;
             
             if (IsPerformanceTest)
