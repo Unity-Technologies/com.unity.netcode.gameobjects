@@ -109,7 +109,7 @@ public class RemoteDataLoader1 : MonoBehaviour
             }
             var textObject = GetComponent<UnityEngine.UI.Text>();
             textObject.text = $"{m_UpdateCounter}\n" +
-                $"Async tasks {m_ListOfAsyncTasks.Count} {status}\n" + 
+                $"Async tasks {m_ListOfAsyncTasks.Count} {status}\n" +
                 $"Local githash: {m_LocalGitHash} remote githash: {PlayerPrefs.GetString("GitHash")}\n" +
                 $"{PlayerPrefs.GetString("HostIp")}\n" +
                 $"{PlayerPrefs.GetString("JobId")}";
