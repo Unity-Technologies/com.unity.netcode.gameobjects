@@ -78,7 +78,6 @@ public class RemoteDataLoader1 : MonoBehaviour
                 Debug.Log($"What condition is this? githash.text: {githash.text == null}");
             }
         }
-        
     }
 
     // Update is called once per frame
@@ -109,7 +108,7 @@ public class RemoteDataLoader1 : MonoBehaviour
                 status += " " + task.IsCompleted;
             }
             var textObject = GetComponent<UnityEngine.UI.Text>();
-            textObject.text = $"{m_UpdateCounter}\n"+
+            textObject.text = $"{m_UpdateCounter}\n" +
                 $"Async tasks {m_ListOfAsyncTasks.Count} {status}\n" + 
                 $"Local githash: {m_LocalGitHash} remote githash: {PlayerPrefs.GetString("GitHash")}\n" +
                 $"{PlayerPrefs.GetString("HostIp")}\n" +
@@ -132,6 +131,7 @@ public class RemoteDataLoader1 : MonoBehaviour
             Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
             outputTask.Wait();
             m_LocalGitHash = outputTask.Result.Trim();
+            Debug.Log(m_LocalGitHash);
         });
         m_ListOfAsyncTasks.Add(t);
         return t;
@@ -211,7 +211,7 @@ public class RemoteConfigUtils
         using var client = new HttpClient();
 
         var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-        var responseTask = client.GetAsync("http://localhost:5050/api/JobWithFile",
+        var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
             HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
 
         responseTask.Wait();

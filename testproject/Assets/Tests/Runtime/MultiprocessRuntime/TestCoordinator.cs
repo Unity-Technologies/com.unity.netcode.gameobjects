@@ -40,6 +40,7 @@ public class TestCoordinator : NetworkBehaviour
     public void Awake()
     {
         MultiprocessLogger.Log("Awake");
+        m_TimeSinceLastConnected = Time.time;
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
