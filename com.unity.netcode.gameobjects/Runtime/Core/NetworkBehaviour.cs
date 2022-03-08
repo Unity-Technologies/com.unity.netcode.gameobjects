@@ -237,40 +237,41 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkObject.IsLocalPlayer;
+        public bool IsLocalPlayer => m_NetworkObject != null ? m_NetworkObject.IsLocalPlayer : false;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkObject.IsOwner;
+        public bool IsOwner { get; internal set; }
 
+        private bool m_IsServer;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer => IsRunning && NetworkManager.IsServer;
+        protected bool IsServer { get { return m_IsServer; } }
 
+        private bool m_IsClient;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient => IsRunning && NetworkManager.IsClient;
+        protected bool IsClient { get { return m_IsClient; } }
 
+        private bool m_IsHost;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost => IsRunning && NetworkManager.IsHost;
-
-        private bool IsRunning => NetworkManager && NetworkManager.IsListening;
+        protected bool IsHost { get { return m_IsHost; } }
 
         /// <summary>
         /// Gets Whether or not the object has a owner
         /// </summary>
-        public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
+        public bool IsOwnedByServer { get; internal set; }
 
         /// <summary>
         /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
         /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
         /// </summary>
-        public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
+        public bool IsSpawned { get; internal set; }
 
         internal bool IsBehaviourEditable()
         {
@@ -320,19 +321,19 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkObject => NetworkObject != null;
+        public bool HasNetworkObject => m_NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
         /// <summary>
         /// Gets the NetworkId of the NetworkObject that owns this NetworkBehaviour
         /// </summary>
-        public ulong NetworkObjectId => NetworkObject.NetworkObjectId;
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
         /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
         /// </summary>
-        public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
+        public ushort NetworkBehaviourId { get; internal set; }
 
         /// <summary>
         /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
@@ -352,7 +353,26 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the ClientId that owns the NetworkObject
         /// </summary>
-        public ulong OwnerClientId => NetworkObject.OwnerClientId;
+        public ulong OwnerClientId { get; internal set; }
+
+        internal void UpdatePropertyStates()
+        {
+            if (NetworkObject != null)
+            {
+                NetworkObjectId = NetworkObject.NetworkObjectId;
+                // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
+                // NetworkObject.ChildNetworkBehaviours which is set once when the first
+                // attempt to access it happens.
+                NetworkBehaviourId = NetworkObject.GetNetworkBehaviourOrderIndex(this);
+
+                if (NetworkManager != null && NetworkManager.IsListening)
+                {
+                    m_IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
+                    m_IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
+                    m_IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
@@ -366,20 +386,50 @@ namespace Unity.Netcode
 
         internal void InternalOnNetworkSpawn()
         {
+            IsSpawned = true;
             InitializeVariables();
+            UpdatePropertyStates();
+            UpdateOwnership();
         }
 
-        internal void InternalOnNetworkDespawn() { }
+        internal void InternalOnNetworkDespawn()
+        {
+            IsSpawned = false;
+            UpdatePropertyStates();
+            UpdateOwnership();
+        }
+
+        internal void UpdateOwnership()
+        {
+            if (NetworkObject != null)
+            {
+                IsOwnedByServer = NetworkObject.IsOwnedByServer;
+                IsOwner = NetworkObject.IsOwner;
+                OwnerClientId = NetworkObject.OwnerClientId;
+            }
+        }
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
+        internal void GainedOwnership()
+        {
+            UpdateOwnership();
+            OnGainedOwnership();
+        }
+
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
+
+        internal void LostOwnership()
+        {
+            UpdateOwnership();
+            OnLostOwnership();
+        }
 
         /// <summary>
         /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed

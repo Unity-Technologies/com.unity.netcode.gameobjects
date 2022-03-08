@@ -549,7 +549,7 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnLostOwnership();
+                ChildNetworkBehaviours[i].LostOwnership();
             }
         }
 
@@ -557,7 +557,7 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnGainedOwnership();
+                ChildNetworkBehaviours[i].GainedOwnership();
             }
         }
 
