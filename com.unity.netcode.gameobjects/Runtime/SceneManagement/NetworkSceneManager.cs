@@ -488,6 +488,9 @@ namespace Unity.Netcode
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                 var hash = XXHash.Hash32(scenePath);
                 var buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
+
+                // In the rare-case scenario where a programmatically generated build has duplicate
+                // scene entries, we will log an error and skip the entry
                 if (!HashToBuildIndex.ContainsKey(hash))
                 {
                     HashToBuildIndex.Add(hash, buildIndex);
