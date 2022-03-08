@@ -146,12 +146,14 @@ namespace TestProject.RuntimeTests
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.Spawn();
+
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
             srdComponent.Activate();
 
             // Wait until all objects have spawned.
             int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
-            const int maxFrames = 240;
+            int maxFrames = 240 + Time.frameCount;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
             while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount && !handler.WasSpawned)
             {
@@ -171,8 +173,22 @@ namespace TestProject.RuntimeTests
 
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            var lastFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
+            doubleCheckTime = Time.realtimeSinceStartup + 2.0f;
+            while (!handler.WasDestroyed)
+            {
+                if (Time.frameCount > maxFrames)
+                {
+                    // This is here in the event a platform is running at a higher
+                    // frame rate than expected
+                    if (doubleCheckTime < Time.realtimeSinceStartup)
+                    {
+                        Assert.Fail("Timed out waiting for handler to be destroyed");
+                        break;
+                    }
+                }
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            }
             Assert.True(handler.WasDestroyed);
         }
 
