@@ -1014,6 +1014,7 @@ namespace Unity.Netcode
         internal interface INetworkManagerHelper
         {
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
         }
 #endif
 
