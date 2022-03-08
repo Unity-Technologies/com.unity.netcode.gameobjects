@@ -1,0 +1,32 @@
+{
+    "name": "Unity.Netcode.TestHelpers.Runtime",
+    "rootNamespace": "Unity.Netcode.TestHelpers.Runtime",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Adapter.UTP",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "UTP_ADAPTER"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.4",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
+        }
+    ]
+}

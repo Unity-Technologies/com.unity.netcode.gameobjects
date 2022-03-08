@@ -41,13 +41,12 @@ projects:
       - name: com.unity.netcode.adapter.utp
         path: com.unity.netcode.adapter.utp
     test_editors:
-      - 2021.1
       - 2021.2
       - 2020.3
       - trunk
-#  - name: testproject-tools-integration
-#    path: testproject-tools-integration
-#    validate: false
-#    test_editors:
-#      - 2021.2
-#      - trunk
+  - name: testproject-tools-integration
+    path: testproject-tools-integration
+    validate: false
+    test_editors:
+      - 2021.2
+      - trunk

@@ -494,6 +494,12 @@ namespace Unity.Netcode
                 {
                     if (playerObject)
                     {
+                        // If there was an already existing player object for this player, then mark it as no longer
+                        // a player object.
+                        if (NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject != null)
+                        {
+                            NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject.IsPlayerObject = false;
+                        }
                         NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
                     }
                     else
@@ -503,6 +509,12 @@ namespace Unity.Netcode
                 }
                 else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
                 {
+                    // If there was an already existing player object for this player, then mark it as no longer
+                    // a player object.
+                    if (NetworkManager.LocalClient.PlayerObject != null)
+                    {
+                        NetworkManager.LocalClient.PlayerObject.IsPlayerObject = false;
+                    }
                     NetworkManager.LocalClient.PlayerObject = networkObject;
                 }
             }
@@ -605,14 +617,12 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-            foreach (var sobj in SpawnedObjectsList)
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+            foreach (var sobj in networkObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
-                {
-                    sobj.IsSpawned = false;
-                    sobj.DestroyWithScene = false;
-                    sobj.IsSceneObject = null;
-                }
+                sobj.IsSpawned = false;
+                sobj.DestroyWithScene = false;
+                sobj.IsSceneObject = null;
             }
         }
 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -41,47 +42,23 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HiddenVariableTests : BaseMultiInstanceTest
+    public class HiddenVariableTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 4;
+        protected override int NumberOfClients => 4;
 
         private NetworkObject m_NetSpawnedObject;
         private List<NetworkObject> m_NetSpawnedObjectOnClient = new List<NetworkObject>();
         private GameObject m_TestNetworkPrefab;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var networkTransform = playerPrefab.AddComponent<HiddenVariableTest>();
-                    m_TestNetworkPrefab = PreparePrefab();
-                });
+            m_PlayerPrefab.AddComponent<HiddenVariableTest>();
         }
 
-        public GameObject PreparePrefab()
+        protected override void OnServerAndClientsCreated()
         {
-            var prefabToSpawn = new GameObject("MyTestObject");
-            var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
-            prefabToSpawn.AddComponent<HiddenVariableObject>();
-
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            }
-            return prefabToSpawn;
-        }
-
-        public IEnumerator WaitForConnectedCount(int targetCount)
-        {
-            var endTime = Time.realtimeSinceStartup + 1.0;
-            while (m_ServerNetworkManager.ConnectedClientsList.Count < targetCount && Time.realtimeSinceStartup < endTime)
-            {
-                yield return new WaitForSeconds(0.01f);
-            }
+            m_TestNetworkPrefab = CreateNetworkObjectPrefab("MyTestObject");
+            m_TestNetworkPrefab.AddComponent<HiddenVariableObject>();
         }
 
         public IEnumerator WaitForSpawnCount(int targetCount)
@@ -131,12 +108,11 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var netMan in m_ClientNetworkManagers)
             {
-                var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(
-                    MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+                var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                         x => x.NetworkObjectId == m_NetSpawnedObject.NetworkObjectId,
                         netMan,
-                        serverClientPlayerResult));
+                        serverClientPlayerResult);
                 m_NetSpawnedObjectOnClient.Add(serverClientPlayerResult.Result);
             }
         }
@@ -151,22 +127,17 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Log("Running test");
 
-            var spawnedObject = Object.Instantiate(m_TestNetworkPrefab);
-            m_NetSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
-            m_NetSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
-            yield return WaitForConnectedCount(NbClients);
-            Debug.Log("Clients connected");
 
             // ==== Spawn object with ownership on one client
             var client = m_ServerNetworkManager.ConnectedClientsList[1];
             var otherClient = m_ServerNetworkManager.ConnectedClientsList[2];
-            m_NetSpawnedObject.SpawnWithOwnership(client.ClientId);
+            m_NetSpawnedObject = SpawnObject(m_TestNetworkPrefab, m_ClientNetworkManagers[1]).GetComponent<NetworkObject>();
 
             yield return RefreshGameObects();
 
             // === Check spawn occured
-            yield return WaitForSpawnCount(NbClients + 1);
-            Debug.Assert(HiddenVariableObject.SpawnCount == NbClients + 1);
+            yield return WaitForSpawnCount(NumberOfClients + 1);
+            Debug.Assert(HiddenVariableObject.SpawnCount == NumberOfClients + 1);
             Debug.Log("Objects spawned");
 
             // ==== Set the NetworkVariable value to 2

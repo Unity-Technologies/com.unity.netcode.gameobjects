@@ -1,6 +1,6 @@
 {
     "name": "Unity.Netcode.Adapter.UTP",
-    "rootNamespace": "Unity.Netcode.UTP",
+    "rootNamespace": "Unity.Netcode.Adapter.UTP",
     "references": [
         "Unity.Collections",
         "Unity.Jobs",
@@ -8,13 +8,7 @@
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -26,6 +20,5 @@
             "expression": "1.0.0-pre.4",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

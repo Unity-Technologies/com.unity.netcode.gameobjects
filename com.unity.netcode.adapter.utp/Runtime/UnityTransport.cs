@@ -167,6 +167,53 @@ namespace Unity.Netcode
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        [Serializable]
+        public struct SimulatorParameters
+        {
+            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor " +
+                "and in development builds. The value is ignored in production builds.")]
+            [SerializeField] public int PacketDelayMS;
+
+            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only " +
+                "applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField] public int PacketJitterMS;
+
+            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor " +
+                "and in developments builds.")]
+            [SerializeField] public int PacketDropRate;
+        }
+
+        public SimulatorParameters DebugSimulator = new SimulatorParameters
+        {
+            PacketDelayMS = 0,
+            PacketJitterMS = 0,
+            PacketDropRate = 0
+        };
+
+        // Only for backward compatibility with how we used to handle simulator parameters.
+#if DEVELOPMENT_BUILD
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketDelayMs
+        {
+            get => DebugSimulator.PacketDelayMS;
+            set => DebugSimulator.PacketDelayMS = value;
+        }
+
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketJitterMs
+        {
+            get => DebugSimulator.PacketJitterMS;
+            set => DebugSimulator.PacketJitterMS = value;
+        }
+
+        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
+        public int ClientPacketDropRate
+        {
+            get => DebugSimulator.PacketDropRate;
+            set => DebugSimulator.PacketDropRate = value;
+        }
+#endif
+
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
@@ -183,43 +230,6 @@ namespace Unity.Netcode
         private RelayServerData m_RelayServerData;
 
         internal NetworkManager NetworkManager;
-
-#if UNITY_EDITOR
-        private static int ClientPacketDelayMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay");
-        private static int ClientPacketJitterMs => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter");
-        private static int ClientPacketDropRate => UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate");
-#elif DEVELOPMENT_BUILD
-        public static int ClientPacketDelayMs = 0;
-        public static int ClientPacketJitterMs = 0;
-        public static int ClientPacketDropRate = 0;
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        public SimulatorUtility.Parameters ClientSimulatorParameters
-        {
-            get
-            {
-                var packetDelay = ClientPacketDelayMs;
-                var jitter = ClientPacketJitterMs;
-                if (jitter > packetDelay)
-                {
-                    jitter = packetDelay;
-                }
-
-                var packetDrop = ClientPacketDropRate;
-                int networkRate = 60; // TODO: read from some better place
-                // All 3 packet types every frame stored for maximum delay, doubled for safety margin
-                int maxPackets = 2 * (networkRate * 3 * packetDelay + 999) / 1000;
-                return new SimulatorUtility.Parameters
-                {
-                    MaxPacketSize = NetworkParameterConstants.MTU,
-                    MaxPacketCount = maxPackets,
-                    PacketDelayMs = packetDelay,
-                    PacketJitterMs = jitter,
-                    PacketDropPercentage = packetDrop
-                };
-            }
-        }
-#endif
 
         /// <summary>
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
@@ -478,6 +488,26 @@ namespace Unity.Netcode
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
         }
 
+        /// <summary>Set the parameters for the debug simulator.</summary>
+        /// <param name="packetDelay">Packet delay in milliseconds.</param>
+        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
+        /// <param name="dropRate">Packet drop percentage.</param>
+        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
+        {
+            if (m_Driver.IsCreated)
+            {
+                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
+                return;
+            }
+
+            DebugSimulator = new SimulatorParameters
+            {
+                PacketDelayMS = packetDelay,
+                PacketJitterMS = packetJitter,
+                PacketDropRate = dropRate
+            };
+        }
+
         private bool StartRelayServer()
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
@@ -714,7 +744,7 @@ namespace Unity.Netcode
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
 
-            var rttValue = ExtractRtt(networkConnection);
+            var rttValue = NetworkManager.IsServer ? 0 : ExtractRtt(networkConnection);
             NetworkMetrics.TrackRttToServer(rttValue);
         }
 
@@ -743,25 +773,23 @@ namespace Unity.Netcode
 
         private int ExtractRtt(NetworkConnection networkConnection)
         {
-            if (NetworkManager.IsServer)
+            if (m_Driver.GetConnectionState(networkConnection) != NetworkConnection.State.Connected)
             {
                 return 0;
             }
-            else
+
+            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
             {
-                m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-                    NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-                    networkConnection,
-                    out _,
-                    out _,
-                    out var sharedBuffer);
+                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
-                unsafe
-                {
-                    var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
-
-                    return sharedContext->RttInfo.LastRtt;
-                }
+                return sharedContext->RttInfo.LastRtt;
             }
         }
 
@@ -836,7 +864,22 @@ namespace Unity.Netcode
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
-            return 0;
+            // We don't know if this is getting called from inside NGO (which presumably knows to
+            // use the transport client ID) or from a user (which will be using the NGO client ID).
+            // So we just try both cases (ExtractRtt returns 0 for invalid connections).
+
+            if (NetworkManager != null)
+            {
+                var transportId = NetworkManager.ClientIdToTransportId(clientId);
+
+                var rtt = ExtractRtt(ParseClientId(transportId));
+                if (rtt > 0)
+                {
+                    return (ulong)rtt;
+                }
+            }
+
+            return (ulong)ExtractRtt(ParseClientId(clientId));
         }
 
         public override void Initialize(NetworkManager networkManager = null)
@@ -886,9 +929,45 @@ namespace Unity.Netcode
 
             if (!queue.PushMessage(payload))
             {
-                Debug.LogError($"Couldn't add payload of size {payload.Count} to batched send queue. " +
-                    $"Perhaps configured 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
-                return;
+                if (pipeline == m_ReliableSequencedPipeline)
+                {
+                    // If the message is sent reliably, then we're over capacity and we can't
+                    // provide any reliability guarantees anymore. Disconnect the client since at
+                    // this point they're bound to become desynchronized.
+
+                    var ngoClientId = NetworkManager?.TransportIdToClientId(clientId) ?? clientId;
+                    Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
+                        $"Closing connection {ngoClientId} as reliability guarantees can't be maintained. " +
+                        $"Perhaps 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
+
+                    if (clientId == m_ServerClientId)
+                    {
+                        DisconnectLocalClient();
+                    }
+                    else
+                    {
+                        DisconnectRemoteClient(clientId);
+
+                        // DisconnectRemoteClient doesn't notify SDK of disconnection.
+                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                            clientId,
+                            default(ArraySegment<byte>),
+                            Time.realtimeSinceStartup);
+                    }
+                }
+                else
+                {
+                    // If the message is sent unreliably, we can always just flush everything out
+                    // to make space in the send queue. This is an expensive operation, but a user
+                    // would need to send A LOT of unreliable traffic in one update to get here.
+
+                    m_Driver.ScheduleFlushSend(default).Complete();
+                    SendBatchedMessages(sendTarget, queue);
+
+                    // Don't check for failure. If it still doesn't work, there's nothing we can do
+                    // at this point and the message is lost (it was sent unreliable anyway).
+                    queue.PushMessage(payload);
+                }
             }
         }
 
@@ -938,6 +1017,28 @@ namespace Unity.Netcode
             m_ServerClientId = 0;
         }
 
+        private void ConfigureSimulator()
+        {
+#if UNITY_EDITOR
+            // Backward-compatibility with how we used to handle simulator parameters.
+            var packetDelay = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay", DebugSimulator.PacketDelayMS);
+            var packetJitter = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter", DebugSimulator.PacketJitterMS);
+            var dropRate = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate", DebugSimulator.PacketDropRate);
+#else
+            var packetDelay = DebugSimulator.PacketDelayMS;
+            var packetJitter = DebugSimulator.PacketJitterMS;
+            var dropRate = DebugSimulator.PacketDropRate;
+#endif
+
+            m_NetworkSettings.WithSimulatorStageParameters(
+                maxPacketCount: 300, // TODO Is there any way to compute a better value?
+                maxPacketSize: NetworkParameterConstants.MTU,
+                packetDelayMs: packetDelay,
+                packetJitterMs: packetJitter,
+                packetDropPercentage: dropRate
+            );
+        }
+
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
@@ -950,11 +1051,9 @@ namespace Unity.Netcode
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             maxFrameTimeMS = 100;
-
-            var simulatorParams = ClientSimulatorParameters;
-
-            m_NetworkSettings.AddRawParameterStruct(ref simulatorParams);
+            ConfigureSimulator();
 #endif
+
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
@@ -963,8 +1062,9 @@ namespace Unity.Netcode
                 maxFrameTimeMS: maxFrameTimeMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (simulatorParams.PacketDelayMs > 0 || simulatorParams.PacketDropInterval > 0)
+            if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),

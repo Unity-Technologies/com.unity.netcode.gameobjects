@@ -1014,6 +1014,7 @@ namespace Unity.Netcode
         internal interface INetworkManagerHelper
         {
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
         }
 #endif
 
@@ -1335,7 +1336,7 @@ namespace Unity.Netcode
             }
         }
 
-        private ulong TransportIdToClientId(ulong transportId)
+        internal ulong TransportIdToClientId(ulong transportId)
         {
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }

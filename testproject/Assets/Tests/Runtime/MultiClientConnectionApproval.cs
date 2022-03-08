@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode;
 using Debug = UnityEngine.Debug;
 
@@ -60,14 +60,14 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(numClients >= failureTestCount);
 
             // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
             m_PlayerPrefab = new GameObject("Player");
             var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             // Create the player prefab override if set
             if (prefabOverride)
@@ -75,7 +75,7 @@ namespace TestProject.RuntimeTests
                 // Create a default player GameObject to use
                 m_PlayerPrefabOverride = new GameObject("PlayerPrefabOverride");
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
-                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
+                NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
 
                 server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
@@ -119,16 +119,16 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1, null, 512);
 
             // Validate the number of failed connections is the same as expected
             Assert.IsTrue(m_FailedConnections == failureTestCount);
@@ -204,7 +204,7 @@ namespace TestProject.RuntimeTests
             m_ClientConnectedInvocations = 0;
 
             // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
             server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
@@ -216,16 +216,16 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             Assert.AreEqual(3, m_ClientConnectedInvocations);
             Assert.AreEqual(4, m_ServerClientConnectedInvocations);
@@ -255,7 +255,7 @@ namespace TestProject.RuntimeTests
             m_ServerClientDisconnectedInvocations = 0;
 
             // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
             server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
@@ -268,7 +268,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
@@ -301,7 +301,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
         }
     }
 }

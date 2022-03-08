@@ -155,7 +155,6 @@ public class TestCoordinator : NetworkBehaviour
         switch (transport)
         {
             case UNetTransport unetTransport:
-                MultiprocessLogger.LogError("UNetTransport is no longer supported");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (m_IsClient)

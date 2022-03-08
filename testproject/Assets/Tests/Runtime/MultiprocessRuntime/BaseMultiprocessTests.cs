@@ -41,11 +41,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         protected bool m_LaunchRemotely;
         protected virtual bool RunUnityTearDown => true;
 
-        protected virtual bool IsPerformanceTest => true;
-        private string m_Port = "3076"; // TODO This port will need to be reconfigurable
-        private const string k_GlobalEmptySceneName = "EmptyScene";
-
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || !BuildMultiprocessTestPlayer.IsMultiprocessTestPlayerAvailable();
+        protected virtual bool IsPerformanceTest => false;
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
@@ -58,6 +54,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // Since we want to additively load our BuildMultiprocessTestPlayer.MainSceneName
         // We want to keep a reference to the
         private Scene m_OriginalActiveScene;
+        private string m_Port = "3076";
 
         // As an alternative to polling ConnectedClients Count we can store a
         // collection of connected clients as reported by the client connect
@@ -69,14 +66,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            m_ConnectedClientsList = new List<ulong>();
-
-            MultiprocessLogger.Log($"BaseMultiprocessTests - Running SetupTestSuite - LaunchRemotely {m_LaunchRemotely} MultiprocessOrchestration.ShouldRunMultiMachineTests() {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-            if (m_LaunchRemotely && !MultiprocessOrchestration.ShouldRunMultiMachineTests())
-            {
-                Assert.Ignore($"Ignoring tests that require bokken for multimachine testing since as enableMultiMachineTesting Editor command line option not specified");
-            }
-
+            MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+            MultiprocessOrchestration.IsPerformanceTest = IsPerformanceTest;
+            
             if (IsPerformanceTest)
             {
                 // Assert.Ignore("Performance tests unable to run at this time, see: https://unity-ci.cds.internal.unity3d.com/job/11651103/results");
@@ -134,7 +126,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"OnSceneLoaded: setting active scene to {scene.name}");
                 SceneManager.SetActiveScene(scene);
             }
-            MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
+            // MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
             bool didStart = NetworkManager.Singleton.StartHost();
             MultiprocessLogger.Log($"OnSceneLoaded: Host Start Complete with status {didStart}");
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
@@ -230,10 +222,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
             MultiprocessLogHandler.Flush();
             int platformCount = platformList == null ? 0 : platformList.Length;
+            /*
             MultiprocessLogger.Log($"UnitySetup in Base Class - \n" +
                 $" Connected Clients (expected 0): m_ConnectedClientsList:{m_ConnectedClientsList.Count},\n" +
                 $" GetWorkerCount() {GetWorkerCount()},\n" +
                 $" platformList is : {platformCount}");
+            */
             if (RunUnityTearDown)
             {
                 m_ConnectedClientsList.Clear();

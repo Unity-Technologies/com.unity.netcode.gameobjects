@@ -6,7 +6,7 @@
 // using UnityEngine.TestTools;
 //
 // // Tests for ClientNetworkTransform (CNT) + NetworkRigidbody. This test is in TestProject because it needs access to ClientNetworkTransform
-// namespace Unity.Netcode.RuntimeTests.Physics
+// namespace Unity.Netcode.RuntimeTests
 // {
 //     public class NetworkRigidbody2DDynamicCntChangeOwnershipTest : NetworkRigidbody2DCntChangeOwnershipTestBase
 //     {
@@ -18,16 +18,16 @@
 //         public override bool Kinematic => true;
 //     }
 //
-//     public abstract class NetworkRigidbody2DCntChangeOwnershipTestBase : BaseMultiInstanceTest
+//     public abstract class NetworkRigidbody2DCntChangeOwnershipTestBase : NetcodeIntegrationTest
 //     {
-//         protected override int NbClients => 1;
+//         protected override int NumberOfClients => 1;
 //
 //         public abstract bool Kinematic { get; }
 //
 //         [UnitySetUp]
 //         public override IEnumerator Setup()
 //         {
-//             yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
+//             yield return StartSomeClientsAndServerWithPlayers(true, NumberOfClients, playerPrefab =>
 //             {
 //                 playerPrefab.AddComponent<ClientNetworkTransform>();
 //                 playerPrefab.AddComponent<Rigidbody2D>();
@@ -43,13 +43,13 @@
 //         public IEnumerator TestRigidbodyKinematicEnableDisable()
 //         {
 //             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-//             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+//             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+//             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
 //             var serverPlayer = serverClientPlayerResult.Result.gameObject;
 //
 //             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-//             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+//             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+//             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
 //             var clientPlayer = clientClientPlayerResult.Result.gameObject;
 //
 //             Assert.IsNotNull(serverPlayer);

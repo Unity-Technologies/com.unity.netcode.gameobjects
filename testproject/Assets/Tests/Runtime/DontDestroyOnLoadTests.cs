@@ -3,7 +3,7 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using TestProject.ManualTests;
 
 namespace TestProject.RuntimeTests
@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator Setup()
         {
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(4, out NetworkManager server, out NetworkManager[] clients, 60))
+            if (!NetcodeIntegrationTestHelpers.Create(4, out NetworkManager server, out NetworkManager[] clients, 60))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -30,13 +30,13 @@ namespace TestProject.RuntimeTests
             var playerNetworkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(playerNetworkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(playerNetworkObject);
 
             m_DontDestroyOnLoadObject = new GameObject("DontDestroyOnLoadObject");
             var dontDestroyOnLoadNetworkObject = m_DontDestroyOnLoadObject.AddComponent<NetworkObject>();
             m_DontDestroyOnLoadObject.AddComponent<ObjectToNotDestroyBehaviour>();
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(dontDestroyOnLoadNetworkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(dontDestroyOnLoadNetworkObject);
 
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
@@ -59,7 +59,7 @@ namespace TestProject.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            MultiInstanceHelpers.CleanUpHandlers();
+            NetcodeIntegrationTestHelpers.CleanUpHandlers();
 
             m_ServerNetworkManager.Shutdown();
             foreach (var networkManager in m_ClientNetworkManagers)
@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ValidateNetworkObjectSynchronization()
         {
             m_ServerNetworkManager.StartHost();
-            MultiInstanceHelpers.RegisterHandlers(m_ServerNetworkManager);
+            NetcodeIntegrationTestHelpers.RegisterHandlers(m_ServerNetworkManager);
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
             instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
@@ -106,10 +106,10 @@ namespace TestProject.RuntimeTests
             foreach (var networkManager in m_ClientNetworkManagers)
             {
                 networkManager.StartClient();
-                MultiInstanceHelpers.RegisterHandlers(networkManager);
+                NetcodeIntegrationTestHelpers.RegisterHandlers(networkManager);
             }
 
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             yield return waitForTick;
             var timeOut = Time.realtimeSinceStartup + 2.0f;
