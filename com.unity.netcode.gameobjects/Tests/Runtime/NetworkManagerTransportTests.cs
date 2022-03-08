@@ -97,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = 0;
-            payload = null;
+            payload = new ArraySegment<byte>();
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
