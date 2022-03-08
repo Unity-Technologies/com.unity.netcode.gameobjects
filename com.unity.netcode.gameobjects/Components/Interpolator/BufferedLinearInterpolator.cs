@@ -188,6 +188,11 @@ namespace Unity.Netcode
                     {
                         // There is no mechanism to guarantee renderTime to not be before m_StartTimeConsumed
                         // This clamps t to a minimum of 0 and fixes issues with longer frames and pauses
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"renderTime was before m_StartTimeConsumed. This should never happen. {nameof(renderTime)} is {renderTime}, {nameof(m_StartTimeConsumed)} is {m_StartTimeConsumed}");
+                        }
                         t = 0.0f;
                     }
 
@@ -220,6 +225,8 @@ namespace Unity.Netcode
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                     ResetTo(newMeasurement, sentTime);
+                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
+                    m_Buffer.Add(m_LastBufferedItemReceived);
                 }
 
                 return;
