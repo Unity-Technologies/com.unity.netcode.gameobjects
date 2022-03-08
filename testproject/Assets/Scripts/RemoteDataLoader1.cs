@@ -10,11 +10,17 @@ public class RemoteDataLoader1 : MonoBehaviour
 {
 
     private RemoteConfig m_RemoteConfig;
-    private Task m_TaskToReadConfig;
     private int m_UpdateCounter;
+    private bool m_PlatformSupportsLocalFiles;
+    private List<Task> m_ListOfAsyncTasks;
+    private bool m_MatchingConfigFound;
+    private string m_LocalGitHash;
+    private Task m_RemoteConfigTask;
 
     public void Awake()
     {
+        m_MatchingConfigFound = false;
+        m_ListOfAsyncTasks = new List<Task>();
         var panelObject = GetComponentInParent<Canvas>();
         Debug.Log(panelObject);
         var textObject = GetComponent<UnityEngine.UI.Text>();
@@ -32,11 +38,14 @@ public class RemoteDataLoader1 : MonoBehaviour
             case RuntimePlatform.OSXPlayer:
             case RuntimePlatform.WindowsPlayer:
             case RuntimePlatform.LinuxPlayer:
+            case RuntimePlatform.WindowsEditor:
                 // Files allowed
+                m_PlatformSupportsLocalFiles = true;
                 break;
             case RuntimePlatform.Android:
             case RuntimePlatform.IPhonePlayer:
                 // No command line and no local files
+                m_PlatformSupportsLocalFiles = false;
                 break;
             default:
                 break;
@@ -47,47 +56,70 @@ public class RemoteDataLoader1 : MonoBehaviour
     {
         Debug.Log("in Start - calling get remote config");
         var githash = Resources.Load<TextAsset>("Text/githash");
-        if (githash == null)
+        if (githash == null && m_PlatformSupportsLocalFiles)
         {
+            Debug.Log("Resource file didn't have githash");
             // If the githash file has not been generated try to compute it
             ComputeLocalGitHash();
         }
-
-        m_TaskToReadConfig = Task.Factory.StartNew(() =>
+        else if (githash != null && githash.text != null)
         {
-            m_RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1);
-            var textObject = GetComponent<UnityEngine.UI.Text>();
-            textObject.text += "\n" + m_RemoteConfig;
-            PlayerPrefs.SetInt("JobId", m_RemoteConfig.JobId);
-            PlayerPrefs.SetString("HostIp", m_RemoteConfig.HostIp);
-            if (m_RemoteConfig.GitHash.Equals(PlayerPrefs.GetString("GitHash")))
+            Debug.Log($"Resource file githash >{githash.text}<");
+            m_LocalGitHash = githash.text;
+        }
+        else
+        {
+            if (githash == null)
             {
-                // If the githash and platform are a match then we can pick up this job
-                // TODO: 
+                Debug.Log($"What condition is this? githash: {githash == null}");
             }
-        });
-
-
+            else
+            {
+                Debug.Log($"What condition is this? githash.text: {githash.text == null}");
+            }
+        }
+        
     }
 
     // Update is called once per frame
     public void Update()
     {
         m_UpdateCounter++;
-        Debug.Log($" in Update {m_UpdateCounter} - checking if remote config task is done");
 
-        if (m_RemoteConfig != null && m_RemoteConfig.AdditionalJsonConfig != null)
+        if (m_LocalGitHash != null)
         {
-            Debug.Log("Checking SceneName");
+            if (m_RemoteConfigTask == null || m_RemoteConfigTask.IsCompleted)
+            {
+                m_RemoteConfigTask = CheckForMatchingRemoteConfig();
+            }
+        }
+
+        if (m_MatchingConfigFound)
+        {
+            Debug.Log($"{m_UpdateCounter} Checking SceneName from remote config");
             var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(m_RemoteConfig.AdditionalJsonConfig);
             Debug.Log($"Checking SceneName - found {mpConfig.SceneName}, loading scene with LoadSceneMode.Single");
             UnityEngine.SceneManagement.SceneManager.LoadScene(mpConfig.SceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+        else
+        {
+            string status = "";
+            foreach (var task in m_ListOfAsyncTasks)
+            {
+                status += " " + task.IsCompleted;
+            }
+            var textObject = GetComponent<UnityEngine.UI.Text>();
+            textObject.text = $"{m_UpdateCounter}\n"+
+                $"Async tasks {m_ListOfAsyncTasks.Count} {status}\n" + 
+                $"Local githash: {m_LocalGitHash} remote githash: {PlayerPrefs.GetString("GitHash")}\n" +
+                $"{PlayerPrefs.GetString("HostIp")}\n" +
+                $"{PlayerPrefs.GetString("JobId")}";
         }
     }
 
     private Task ComputeLocalGitHash()
     {
-        Task t= Task.Factory.StartNew(() =>
+        Task t = Task.Factory.StartNew(() =>
         {
             var workerProcess = new System.Diagnostics.Process();
             workerProcess.StartInfo.UseShellExecute = false;
@@ -99,17 +131,41 @@ public class RemoteDataLoader1 : MonoBehaviour
             workerProcess.WaitForExit();
             Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
             outputTask.Wait();
-            Debug.Log(outputTask.Result.Trim());
-            PlayerPrefs.SetString("GitHash", outputTask.Result.Trim());
-
+            m_LocalGitHash = outputTask.Result.Trim();
         });
+        m_ListOfAsyncTasks.Add(t);
+        return t;
+    }
+
+    private Task CheckForMatchingRemoteConfig()
+    {
+        if (m_LocalGitHash == null)
+        {
+            Debug.LogWarning("local githash was null so there's nothing to match to, hence returning");
+            return null;
+        }
+
+        var t = Task.Factory.StartNew(() =>
+        {
+            m_RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1, m_LocalGitHash);
+            Debug.Log($"Remote GitHash was {m_RemoteConfig.GitHash} and local {m_LocalGitHash}");
+            m_MatchingConfigFound = true;
+            if (m_RemoteConfig.GitHash.Equals(PlayerPrefs.GetString("GitHash")))
+            {
+                // If the githash and platform are a match then we can pick up this job
+                // TODO:
+                PlayerPrefs.SetInt("JobId", m_RemoteConfig.JobId);
+                PlayerPrefs.SetString("HostIp", m_RemoteConfig.HostIp);
+            }
+        });
+        m_ListOfAsyncTasks.Add(t);
         return t;
     }
 }
 
 public class RemoteConfigUtils
 {
-    public static RemoteConfig GetRemoteConfig(Version version)
+    public static RemoteConfig GetRemoteConfig(Version version, string localGitHash)
     {
         // There are three sources of information
         // 1. Command Line
@@ -134,14 +190,15 @@ public class RemoteConfigUtils
 
             foreach (var config in remoteConfigList.JobQueueItems)
             {
-
-                if (config.AdditionalJsonConfig != null)
+                if (config.GitHash != null && config.GitHash.Equals(localGitHash))
                 {
-                    var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(config.AdditionalJsonConfig);
-                    if (mpConfig != null && mpConfig.SceneName != null)
+                    if (config.AdditionalJsonConfig != null)
                     {
-
-                        return config;
+                        var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(config.AdditionalJsonConfig);
+                        if (mpConfig != null && mpConfig.SceneName != null)
+                        {
+                            return config;
+                        }
                     }
                 }
             }
