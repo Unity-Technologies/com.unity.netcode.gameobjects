@@ -365,7 +365,7 @@ namespace Unity.Netcode
                 // accessed.
                 NetworkBehaviourId = NetworkObject.GetNetworkBehaviourOrderIndex(this);
 
-                if (NetworkManager != null && NetworkManager.IsListening)
+                if (NetworkManager != null)
                 {
                     m_IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
                     m_IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
