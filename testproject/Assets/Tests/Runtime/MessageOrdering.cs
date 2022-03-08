@@ -173,22 +173,10 @@ namespace TestProject.RuntimeTests
 
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            doubleCheckTime = Time.realtimeSinceStartup + 2.0f;
-            while (!handler.WasDestroyed)
-            {
-                if (Time.frameCount > maxFrames)
-                {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Timed out waiting for handler to be destroyed");
-                        break;
-                    }
-                }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
+
+            // Wait 1 tic for the GameObjet and associated components to be destroyed
+            yield return new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
+
             Assert.True(handler.WasDestroyed);
         }
 
