@@ -1,8 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-# `develop` trigger
-develop_nightly_trigger:
-  name: Develop Branch Nightly Trigger
+develop_nightly:
+  name: "[Nightly] Run All Tests"
   triggers:
     recurring:
     - branch: develop
@@ -10,10 +9,19 @@ develop_nightly_trigger:
       rerun: always
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
-    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
 {% for project in projects -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
+
+multiprocess_nightly:
+  name: "[Nightly] Run Multiprocess Tests"
+  triggers:
+    recurring:
+    - branch: develop
+      frequency: daily
+      rerun: always
+  dependencies:
+    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
 
 # Run all relevant tasks when a pull request targeting the develop
 # branch is created or updated. Currently only netcode package tests are
