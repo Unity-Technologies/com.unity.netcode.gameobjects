@@ -372,6 +372,12 @@ namespace Unity.Netcode
                     m_IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
                 }
             }
+            else // Shouldn't happen, but if it does then just clear out everything
+            {
+                NetworkObjectId = 0;
+                m_IsHost = m_IsClient = m_IsServer = false;
+                NetworkBehaviourId = 0;
+            }
         }
 
         /// <summary>
@@ -406,6 +412,11 @@ namespace Unity.Netcode
                 IsOwnedByServer = NetworkObject.IsOwnedByServer;
                 IsOwner = NetworkObject.IsOwner;
                 OwnerClientId = NetworkObject.OwnerClientId;
+            }
+            else // Shouldn't happen, but if it does then just clear out everything
+            {
+                IsOwnedByServer = IsOwner = false;
+                OwnerClientId = 0;
             }
         }
 
