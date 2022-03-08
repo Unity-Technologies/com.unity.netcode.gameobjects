@@ -186,7 +186,9 @@ namespace Unity.Netcode
 
                     if (t < 0.0f)
                     {
-                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {renderTime}, Start time {m_StartTimeConsumed}, end time {m_EndTimeConsumed}");
+                        // There is no mechanism to guarantee renderTime to not be before m_StartTimeConsumed
+                        // This clamps t to a minimum of 0 and fixes issues with longer frames and pauses
+                        t = 0.0f;
                     }
 
                     if (t > 3.0f) // max extrapolation
