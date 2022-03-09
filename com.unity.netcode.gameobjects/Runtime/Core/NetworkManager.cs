@@ -827,10 +827,8 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-
-            var result = NetworkConfig.NetworkTransport.StartServer();
             // If we failed to start then shutdown and notify user that the transport failed to start
-            if (result)
+            if (NetworkConfig.NetworkTransport.StartServer())
             {
                 IsServer = true;
                 IsClient = false;
@@ -839,6 +837,7 @@ namespace Unity.Netcode
                 SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
                 OnServerStarted?.Invoke();
+                return true;
             }
             else
             {
@@ -846,7 +845,7 @@ namespace Unity.Netcode
                 Shutdown();
             }
 
-            return result;
+            return false;
         }
 
         /// <summary>
@@ -872,19 +871,18 @@ namespace Unity.Netcode
             Initialize(false);
             MessagingSystem.ClientConnected(ServerClientId);
 
-            var result = NetworkConfig.NetworkTransport.StartClient();
-            if (!result)
+            if (!NetworkConfig.NetworkTransport.StartClient())
             {
                 Debug.LogError($"Client is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
                 Shutdown();
-                return result;
+                return false;
             }
 
             IsServer = false;
             IsClient = true;
             IsListening = true;
 
-            return result;
+            return true;
         }
 
         /// <summary>
@@ -921,13 +919,12 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var result = NetworkConfig.NetworkTransport.StartServer();
             // If we failed to start then shutdown and notify user that the transport failed to start
-            if (!result)
+            if (!NetworkConfig.NetworkTransport.StartServer())
             {
                 Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
                 Shutdown();
-                return result;
+                return false;
             }
 
             MessagingSystem.ClientConnected(ServerClientId);
@@ -965,7 +962,7 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return result;
+            return true;
         }
 
         public void SetSingleton()
