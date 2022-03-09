@@ -235,7 +235,8 @@ namespace Unity.Netcode
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
         /// <summary>
-        /// Gets if the object is the the personal clients player object
+        /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
+        /// is the local player object.  If no NetworkObject is assigned it will always return false.
         /// </summary>
         public bool IsLocalPlayer => m_NetworkObject != null ? m_NetworkObject.IsLocalPlayer : false;
 
@@ -244,23 +245,21 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsOwner { get; internal set; }
 
-        private bool m_IsServer;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer { get { return m_IsServer; } }
+        protected bool IsServer { get; private set; }
 
-        private bool m_IsClient;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient { get { return m_IsClient; } }
+        protected bool IsClient { get; private set; }
 
-        private bool m_IsHost;
+
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost { get { return m_IsHost; } }
+        protected bool IsHost { get; private set; }
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -355,28 +354,41 @@ namespace Unity.Netcode
         /// </summary>
         public ulong OwnerClientId { get; internal set; }
 
-        internal void UpdatePropertyStates()
+        /// <summary>
+        /// Updates properties with network session related
+        /// dependencies such as a NetworkObject's spawned
+        /// state or NetworkManager's session state.
+        /// </summary>
+        internal void UpdateNetworkProperties()
         {
+            // Set NetworkObject dependent properties
             if (NetworkObject != null)
             {
+                // Set identification related properties
                 NetworkObjectId = NetworkObject.NetworkObjectId;
                 // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
                 // NetworkObject.ChildNetworkBehaviours which is set once when first
                 // accessed.
                 NetworkBehaviourId = NetworkObject.GetNetworkBehaviourOrderIndex(this);
 
+                // Set ownership related properties
+                IsOwnedByServer = NetworkObject.IsOwnedByServer;
+                IsOwner = NetworkObject.IsOwner;
+                OwnerClientId = NetworkObject.OwnerClientId;
+
+                // Set NetworkManager dependent properties
                 if (NetworkManager != null)
                 {
-                    m_IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
-                    m_IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
-                    m_IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
+                    IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
+                    IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
+                    IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
                 }
             }
-            else // Shouldn't happen, but if it does then just clear out everything
+            else // Shouldn't happen, but if so then set the default value to properties;
             {
-                NetworkObjectId = 0;
-                m_IsHost = m_IsClient = m_IsServer = false;
-                NetworkBehaviourId = 0;
+                OwnerClientId = NetworkObjectId = default;
+                IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = default;
+                NetworkBehaviourId = default;
             }
         }
 
@@ -394,30 +406,15 @@ namespace Unity.Netcode
         {
             IsSpawned = true;
             InitializeVariables();
-            UpdatePropertyStates();
-            UpdateOwnership();
+            UpdateNetworkProperties();
+            OnNetworkSpawn();
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
-            UpdatePropertyStates();
-            UpdateOwnership();
-        }
-
-        internal void UpdateOwnership()
-        {
-            if (NetworkObject != null)
-            {
-                IsOwnedByServer = NetworkObject.IsOwnedByServer;
-                IsOwner = NetworkObject.IsOwner;
-                OwnerClientId = NetworkObject.OwnerClientId;
-            }
-            else // Shouldn't happen, but if it does then just clear out everything
-            {
-                IsOwnedByServer = IsOwner = false;
-                OwnerClientId = 0;
-            }
+            UpdateNetworkProperties();
+            OnNetworkDespawn();
         }
 
         /// <summary>
@@ -425,9 +422,9 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
-        internal void GainedOwnership()
+        internal void InternalOnGainedOwnership()
         {
-            UpdateOwnership();
+            UpdateNetworkProperties();
             OnGainedOwnership();
         }
 
@@ -436,9 +433,9 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnLostOwnership() { }
 
-        internal void LostOwnership()
+        internal void InternalOnLostOwnership()
         {
-            UpdateOwnership();
+            UpdateNetworkProperties();
             OnLostOwnership();
         }
 
