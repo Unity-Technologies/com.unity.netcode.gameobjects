@@ -185,4 +185,9 @@ public class MultiprocessOrchestration
 
         s_Processes.Clear();
     }
+
+    public static void StartLocalMultiNodeClient()
+    {
+
+    }
 }
