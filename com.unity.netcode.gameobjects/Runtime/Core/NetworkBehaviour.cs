@@ -238,7 +238,7 @@ namespace Unity.Netcode
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
         /// is the local player object.  If no NetworkObject is assigned it will always return false.
         /// </summary>
-        public bool IsLocalPlayer => m_NetworkObject != null ? m_NetworkObject.IsLocalPlayer : false;
+        public bool IsLocalPlayer { get; private set; }
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
@@ -366,6 +366,8 @@ namespace Unity.Netcode
             {
                 // Set identification related properties
                 NetworkObjectId = NetworkObject.NetworkObjectId;
+                IsLocalPlayer = NetworkObject.IsLocalPlayer;
+
                 // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
                 // NetworkObject.ChildNetworkBehaviours which is set once when first
                 // accessed.
@@ -384,7 +386,7 @@ namespace Unity.Netcode
                     IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
                 }
             }
-            else // Shouldn't happen, but if so then set the default value to properties;
+            else // Shouldn't happen, but if so then set the properties to their default value;
             {
                 OwnerClientId = NetworkObjectId = default;
                 IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = default;
