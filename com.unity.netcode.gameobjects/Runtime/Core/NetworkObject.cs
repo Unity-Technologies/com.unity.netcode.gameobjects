@@ -918,7 +918,6 @@ namespace Unity.Netcode
                 public bool IsSceneObject;
                 public bool HasTransform;
                 public bool IsReparented;
-                public bool HasNetworkVariables;
             }
 
             public HeaderData Header;
@@ -979,10 +978,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (Header.HasNetworkVariables)
-                {
-                    OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
-                }
+                OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
             public unsafe void Deserialize(FastBufferReader reader)
@@ -1022,7 +1018,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal SceneObject GetMessageSceneObject(ulong targetClientId, bool includeNetworkVariableData = true)
+        internal SceneObject GetMessageSceneObject(ulong targetClientId)
         {
             var obj = new SceneObject
             {
@@ -1033,7 +1029,6 @@ namespace Unity.Netcode
                     OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
                     Hash = HostCheckForGlobalObjectIdHashOverride(),
-                    HasNetworkVariables = includeNetworkVariableData
                 },
                 OwnerObject = this,
                 TargetClientId = targetClientId
