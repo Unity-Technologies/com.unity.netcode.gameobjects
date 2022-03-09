@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using static Unity.Netcode.UTP.RuntimeTests.RuntimeTestsHelpers;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class ConnectionTests
     {
