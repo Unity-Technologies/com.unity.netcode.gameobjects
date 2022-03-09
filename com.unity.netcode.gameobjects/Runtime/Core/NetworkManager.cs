@@ -1765,7 +1765,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key, false)
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
                 message.ObjectInfo.Header.Hash = playerPrefabHash;
                 message.ObjectInfo.Header.IsSceneObject = false;
