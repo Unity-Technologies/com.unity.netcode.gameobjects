@@ -2,6 +2,12 @@
 
 All notable changes to this package will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased]
+
+### Fixed
+
+- The 'Heartbeat Timeout MS' setting now also applies to the keep-alive messages sent to the Relay server when no connections have otherwise been made (e.g. for a host that's still waiting for clients to connect). Before this fix, these keep-alive messages would be sent every 9 seconds, no matter the actual timeout of the Relay allocation.
+
 ## [1.0.0-pre.6] - 2022-03-02
 
 ### Added
