@@ -59,10 +59,6 @@ namespace Unity.Netcode
                 VerifyValidPrefab(prefab.transform.GetChild(i).gameObject);
             }
         }
-
-#if NETCODE_USE_ADDRESSABLES
-#endif
-
     }
 
 #if NETCODE_USE_ADDRESSABLES
