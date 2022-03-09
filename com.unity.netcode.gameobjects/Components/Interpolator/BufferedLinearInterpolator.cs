@@ -186,7 +186,14 @@ namespace Unity.Netcode
 
                     if (t < 0.0f)
                     {
-                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {renderTime}, Start time {m_StartTimeConsumed}, end time {m_EndTimeConsumed}");
+                        // There is no mechanism to guarantee renderTime to not be before m_StartTimeConsumed
+                        // This clamps t to a minimum of 0 and fixes issues with longer frames and pauses
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"renderTime was before m_StartTimeConsumed. This should never happen. {nameof(renderTime)} is {renderTime}, {nameof(m_StartTimeConsumed)} is {m_StartTimeConsumed}");
+                        }
+                        t = 0.0f;
                     }
 
                     if (t > 3.0f) // max extrapolation
@@ -218,6 +225,8 @@ namespace Unity.Netcode
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                     ResetTo(newMeasurement, sentTime);
+                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
+                    m_Buffer.Add(m_LastBufferedItemReceived);
                 }
 
                 return;
