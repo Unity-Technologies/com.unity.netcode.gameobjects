@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
+- Remove unnecessary Physics / Physics2D package dependencies (#1786)
 
 ## [1.0.0-pre.6] - 2022-03-02
 
