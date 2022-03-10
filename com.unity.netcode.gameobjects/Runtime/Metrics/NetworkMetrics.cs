@@ -81,6 +81,13 @@ namespace Unity.Netcode
         };
 #endif
 
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+        private readonly Gauge m_NetworkObjectsGauge = new Gauge(NetworkMetricTypes.NetworkObjects.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+#endif
+
         private ulong m_NumberOfMetricsThisFrame;
 
         public NetworkMetrics()
@@ -100,6 +107,9 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_4
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
                 .WithGauges(m_RttToServerGauge)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                .WithGauges(m_NetworkObjectsGauge)
 #endif
                 .Build();
 
@@ -461,6 +471,18 @@ namespace Unity.Netcode
             }
 
             m_RttToServerGauge.Set(rtt);
+#endif
+        }
+
+        public void TrackNetworkObjects(int count)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_NetworkObjectsGauge.Set(count);
 #endif
         }
 

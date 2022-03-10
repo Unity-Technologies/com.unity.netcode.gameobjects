@@ -149,6 +149,10 @@ namespace Unity.Netcode
         {
         }
 
+        public void TrackNetworkObjects(int count)
+        {
+        }
+
         public void DispatchFrame()
         {
         }
