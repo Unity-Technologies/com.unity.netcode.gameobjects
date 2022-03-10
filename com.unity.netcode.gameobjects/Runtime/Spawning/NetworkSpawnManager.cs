@@ -452,10 +452,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            if (sceneObject.Header.HasNetworkVariables)
-            {
-                networkObject.SetNetworkVariableData(variableData);
-            }
+            networkObject.SetNetworkVariableData(variableData);
 
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
@@ -494,6 +491,12 @@ namespace Unity.Netcode
                 {
                     if (playerObject)
                     {
+                        // If there was an already existing player object for this player, then mark it as no longer
+                        // a player object.
+                        if (NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject != null)
+                        {
+                            NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject.IsPlayerObject = false;
+                        }
                         NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
                     }
                     else
@@ -503,6 +506,12 @@ namespace Unity.Netcode
                 }
                 else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
                 {
+                    // If there was an already existing player object for this player, then mark it as no longer
+                    // a player object.
+                    if (NetworkManager.LocalClient.PlayerObject != null)
+                    {
+                        NetworkManager.LocalClient.PlayerObject.IsPlayerObject = false;
+                    }
                     NetworkManager.LocalClient.PlayerObject = networkObject;
                 }
             }
