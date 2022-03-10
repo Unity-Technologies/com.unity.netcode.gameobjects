@@ -24,7 +24,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public const float MaxWaitTimeoutSec = 20;
     private const char k_MethodFullNameSplitChar = '@';
-
+    private bool m_IsClient;
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
     private float m_TimeSinceLastKeepAlive;
@@ -37,32 +37,33 @@ public class TestCoordinator : NetworkBehaviour
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
-    private void Awake()
+    public void Awake()
     {
-        MultiprocessLogger.Log("Awake");
+        MultiprocessLogger.Log("Awake - All Configuration data should be set");
+        m_TimeSinceLastConnected = Time.time;
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
             Destroy(gameObject);
             return;
         }
+        
+        var transports = NetworkManager.Singleton.gameObject.GetComponentsInChildren<NetworkTransport>();
 
         Instance = this;
+        Debug.Log($"Setting transport to {NetworkManager.Singleton.NetworkConfig.NetworkTransport}");
     }
 
     public void Start()
     {
         MultiprocessLogger.Log("Start");
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
-        if (isClient)
+        m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        if (m_IsClient)
         {
-            MultiprocessLogger.Log("starting netcode client");
             NetworkManager.Singleton.StartClient();
             MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
         }
-        MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
         MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");

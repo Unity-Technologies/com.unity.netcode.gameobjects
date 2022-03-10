@@ -103,13 +103,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiprocessLogger.Log("NetworkManager.Singleton != null");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiprocessLogger.Log("m_HasSceneLoaded");
+            
             var startTime = Time.time;
 
             MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
@@ -173,8 +170,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
                 NetworkManager.Singleton.Shutdown();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
                 if (m_OriginalActiveScene.IsValid())
                 {
                     SceneManager.SetActiveScene(m_OriginalActiveScene);
