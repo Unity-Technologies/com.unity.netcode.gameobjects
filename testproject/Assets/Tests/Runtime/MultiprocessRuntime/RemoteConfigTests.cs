@@ -36,7 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             Debug.Log($"Remote config - default constructor");
         }
-		
+
         public RemoteConfigTests(ConfigType configType)
         {
             Debug.Log($"config Type: {configType}");

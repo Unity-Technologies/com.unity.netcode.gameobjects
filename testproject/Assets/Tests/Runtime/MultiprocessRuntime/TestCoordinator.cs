@@ -47,9 +47,6 @@ public class TestCoordinator : NetworkBehaviour
             Destroy(gameObject);
             return;
         }
-        
-        var transports = NetworkManager.Singleton.gameObject.GetComponentsInChildren<NetworkTransport>();
-
         Instance = this;
         Debug.Log($"Setting transport to {NetworkManager.Singleton.NetworkConfig.NetworkTransport}");
     }
