@@ -43,9 +43,9 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.multiplayer.tools": {
-      "version": "1.0.0-pre.5",
+      "version": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
         "com.unity.profiling.core": "1.0.0-pre.1",
         "com.unity.nuget.newtonsoft-json": "2.0.0",
