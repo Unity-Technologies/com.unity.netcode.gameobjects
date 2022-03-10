@@ -149,7 +149,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackNetworkObjects(int count)
+        public void UpdateNetworkObjectsCount(int count)
         {
         }
 

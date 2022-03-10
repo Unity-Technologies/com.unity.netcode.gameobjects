@@ -210,7 +210,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             SpawnNetworkObject();
 
-            //Required a condition on client due to small delay between spawning on server and client
+            //By default, we have 2 network objects
+            //There's a slight delay between the spawn on the server and the spawn on the client
+            //We want to have metrics when the value is different than the 2 default one to confirm the client has the new value
             var waitForGaugeValues = new WaitForGaugeMetricValues(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects, metric => (int)metric != 2);
 
             yield return waitForGaugeValues.WaitForMetricsReceived();
@@ -246,7 +248,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 objectList.ElementAt(i).Despawn();
             }
 
-            //Required a condition on client due to small delay between despawning on server and client
+            //By default, we have 2 network objects
+            //There's a slight delay between the spawn on the server and the spawn on the client
+            //We want to have metrics when the value is different than the 2 default one to confirm the client has the new value
             var waitForGaugeValues = new WaitForGaugeMetricValues(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects, metric => (int)metric != 2);
 
             yield return waitForGaugeValues.WaitForMetricsReceived();

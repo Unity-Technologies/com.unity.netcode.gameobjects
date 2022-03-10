@@ -474,7 +474,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackNetworkObjects(int count)
+        public void UpdateNetworkObjectsCount(int count)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
