@@ -1,5 +1,3 @@
-// todo @simon-lemay-unity: un-guard/re-enable after validating UTP on consoles
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -391,4 +389,3 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
     }
 }
-#endif
