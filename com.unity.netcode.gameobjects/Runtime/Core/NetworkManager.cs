@@ -1274,18 +1274,21 @@ namespace Unity.Netcode
             }
 
 #if NETCODE_USE_ADDRESSABLES
-            for (var i = NetworkConfig.NetworkPrefabs.Count - 1; i >= 0; --i)
+            if (NetworkConfig != null && NetworkConfig.NetworkPrefabs != null)
             {
-                var prefab = NetworkConfig.NetworkPrefabs[i];
-                if (prefab.IsFromAddressable)
+                for (var i = NetworkConfig.NetworkPrefabs.Count - 1; i >= 0; --i)
                 {
-                    NetworkConfig.NetworkPrefabs.RemoveAt(i);
+                    var prefab = NetworkConfig.NetworkPrefabs[i];
+                    if (prefab.IsFromAddressable)
+                    {
+                        NetworkConfig.NetworkPrefabs.RemoveAt(i);
+                    }
                 }
-            }
 
-            foreach (var addressable in NetworkConfig.NetworkAddressables)
-            {
-                addressable.Release();
+                foreach (var addressable in NetworkConfig.NetworkAddressables)
+                {
+                    addressable.Release();
+                }
             }
 #endif
 
