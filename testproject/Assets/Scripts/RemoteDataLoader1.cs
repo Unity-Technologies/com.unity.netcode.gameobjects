@@ -34,7 +34,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
                 NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
-                
             }
             GameObject[] objs = GameObject.FindGameObjectsWithTag("RemoteDataLoader");
 
@@ -47,7 +46,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             m_MatchingConfigFound = false;
             m_ListOfAsyncTasks = new List<Task>();
-            
+
             Application.targetFrameRate = 5;
             QualitySettings.vSyncCount = 0;
 
@@ -123,11 +122,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     var transport = NetworkManagerGameObject.AddComponent<UNetTransport>();
                     var networkConfig = new NetworkConfig();
-                    
+
                     NetworkManagerObject.NetworkConfig = networkConfig;
                     NetworkManagerObject.NetworkConfig.NetworkTransport = transport;
                 }
-                
 
                 UnityEngine.SceneManagement.SceneManager.LoadScene(MultiprocessConfig.SceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
@@ -192,8 +190,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 m_MatchingConfigFound = true;
                 if (RemoteConfig.GitHash.Equals(PlayerPrefs.GetString("GitHash")))
                 {
-                // If the githash and platform are a match then we can pick up this job
-                // TODO:
                     PlayerPrefs.SetInt("JobId", RemoteConfig.JobId);
                     PlayerPrefs.SetString("HostIp", RemoteConfig.HostIp);
                 }
@@ -220,7 +216,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // -m(?) | Start network in one of 3 modes: client, host, server
             bool isCommandLine = Environment.GetCommandLineArgs().Any(value => value == "-m");
 
-            
             Debug.Log($"isCommandLine {isCommandLine}");
 
             if (isCommandLine)
