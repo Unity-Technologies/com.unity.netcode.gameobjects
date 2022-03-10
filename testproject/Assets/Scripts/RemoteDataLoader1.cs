@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -13,6 +15,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public RemoteConfig RemoteConfig;
         public MultiprocessConfig MultiprocessConfig;
+        public static GameObject NetworkManagerGameObject { get; internal set; }
+        public static NetworkManager NetworkManagerObject { get; internal set; }
 
         private int m_UpdateCounter;
         private bool m_PlatformSupportsLocalFiles;
@@ -26,7 +30,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void Awake()
         {
             Debug.Log($"Awake {Application.streamingAssetsPath}");
-            Debug.Log($"Awake {NetworkManager.Singleton.NetworkConfig.ConnectionData}");
+            if (NetworkManagerGameObject == null)
+            {
+                NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
+                NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+                
+            }
             GameObject[] objs = GameObject.FindGameObjectsWithTag("RemoteDataLoader");
 
             if (objs.Length > 1)
@@ -110,7 +119,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessConfig = JsonUtility.FromJson<MultiprocessConfig>(RemoteConfig.AdditionalJsonConfig);
                 PlayerPrefs.SetString("Transport", RemoteConfig.TransportName);
-                PlayerPrefs.SetString("IsClient", MultiprocessConfig.IsClient.ToString());
+                if (RemoteConfig.TransportName.Equals("UNET"))
+                {
+                    var transport = NetworkManagerGameObject.AddComponent<UNetTransport>();
+                    var networkConfig = new NetworkConfig();
+                    
+                    NetworkManagerObject.NetworkConfig = networkConfig;
+                    NetworkManagerObject.NetworkConfig.NetworkTransport = transport;
+                }
+                
+
                 UnityEngine.SceneManagement.SceneManager.LoadScene(MultiprocessConfig.SceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             else
@@ -131,16 +149,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        public static System.Diagnostics.Process CallGitToGetHash()
+        {
+            var workerProcess = new System.Diagnostics.Process();
+            workerProcess.StartInfo.UseShellExecute = false;
+            workerProcess.StartInfo.RedirectStandardError = true;
+            workerProcess.StartInfo.RedirectStandardOutput = true;
+            workerProcess.StartInfo.FileName = "git";
+            workerProcess.StartInfo.Arguments = "rev-parse HEAD";
+            return workerProcess;
+        }
+
         private Task ComputeLocalGitHash()
         {
             Task t = Task.Factory.StartNew(() =>
             {
-                var workerProcess = new System.Diagnostics.Process();
-                workerProcess.StartInfo.UseShellExecute = false;
-                workerProcess.StartInfo.RedirectStandardError = true;
-                workerProcess.StartInfo.RedirectStandardOutput = true;
-                workerProcess.StartInfo.FileName = "git";
-                workerProcess.StartInfo.Arguments = "rev-parse HEAD";
+                var workerProcess = CallGitToGetHash();
                 workerProcess.Start();
                 workerProcess.WaitForExit();
                 Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
@@ -256,6 +280,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             return contentTask.Result;
         }
+
+        public static Task<HttpResponseMessage> PostBasicAsync(string content)
+        {
+            using var client = new HttpClient();
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile");
+            using var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
+            request.Content = stringContent;
+            Task<HttpResponseMessage> t = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+            return t;
+        }
     }
 
     public enum Version
@@ -287,9 +322,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class MultiprocessConfig
     {
         public string SceneName;
-        public bool IsHost;
-        public bool IsClient;
-        public bool IsServer;
+        public MultiplayerMode MultiplayerMode;
+    }
+
+    [Serializable]
+    public enum MultiplayerMode
+    {
+        Host,
+        Server,
+        Client
     }
 
     public class CommandLineDataLoader
@@ -317,5 +358,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
         }
+    }
+
+    public class RemoteHttpUtils
+    {
+
     }
 }
