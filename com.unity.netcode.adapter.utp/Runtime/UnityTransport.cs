@@ -1019,23 +1019,12 @@ namespace Unity.Netcode
 
         private void ConfigureSimulator()
         {
-#if UNITY_EDITOR
-            // Backward-compatibility with how we used to handle simulator parameters.
-            var packetDelay = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay", DebugSimulator.PacketDelayMS);
-            var packetJitter = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter", DebugSimulator.PacketJitterMS);
-            var dropRate = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate", DebugSimulator.PacketDropRate);
-#else
-            var packetDelay = DebugSimulator.PacketDelayMS;
-            var packetJitter = DebugSimulator.PacketJitterMS;
-            var dropRate = DebugSimulator.PacketDropRate;
-#endif
-
             m_NetworkSettings.WithSimulatorStageParameters(
                 maxPacketCount: 300, // TODO Is there any way to compute a better value?
                 maxPacketSize: NetworkParameterConstants.MTU,
-                packetDelayMs: packetDelay,
-                packetJitterMs: packetJitter,
-                packetDropPercentage: dropRate
+                packetDelayMs: DebugSimulator.PacketDelayMS,
+                packetJitterMs: DebugSimulator.PacketJitterMS,
+                packetDropPercentage: DebugSimulator.PacketDropRate
             );
         }
 
