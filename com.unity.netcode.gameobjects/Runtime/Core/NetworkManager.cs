@@ -392,6 +392,7 @@ namespace Unity.Netcode
 
         public enum StartupFailureReason
         {
+            None,
             AssetLoadFailed,
             BindFailed,
             ConnectFailed,
@@ -563,12 +564,11 @@ namespace Unity.Netcode
                         allLoaded = false;
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    NetworkLog.LogError(e.Message);
-                    ShutdownInternal();
                     InvokeOnStartupFailedCallback(StartupFailureReason.AssetLoadFailed);
-                    return false;
+                    ShutdownInternal();
+                    throw;
                 }
             }
 
@@ -578,8 +578,17 @@ namespace Unity.Netcode
 #if NETCODE_USE_ADDRESSABLES
                 foreach (var addressable in NetworkConfig.NetworkAddressables)
                 {
-                    NetworkPrefab.VerifyValidPrefab(addressable.Prefab);
-                    NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = addressable.Prefab });
+                    try
+                    {
+                        NetworkPrefab.VerifyValidPrefab(addressable.Prefab);
+                    }
+                    catch (Exception)
+                    {
+                        InvokeOnStartupFailedCallback(StartupFailureReason.AssetLoadFailed);
+                        ShutdownInternal();
+                        throw;
+                    }
+                    NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = addressable.Prefab, IsFromAddressable = true, Addressable = addressable.Addressable });
                 }
 #endif
 
@@ -790,8 +799,8 @@ namespace Unity.Netcode
                     State = NetworkManagerState.AwaitingApproval;
                     if (!NetworkConfig.NetworkTransport.StartClient())
                     {
-                        ShutdownInternal();
                         InvokeOnStartupFailedCallback(StartupFailureReason.ConnectFailed);
+                        ShutdownInternal();
                         return false;
                     }
                 }
@@ -804,8 +813,8 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        ShutdownInternal();
                         InvokeOnStartupFailedCallback(StartupFailureReason.BindFailed);
+                        ShutdownInternal();
                         return false;
                     }
                 }
@@ -866,6 +875,36 @@ namespace Unity.Netcode
             }
 
             NetworkConfig.NetworkAddressables.Add(new NetworkAddressable { Addressable = addressableAsset });
+        }
+        public void AddNetworkPrefab(string address)
+        {
+            AddNetworkPrefab(new AssetReferenceGameObject(address));
+        }
+
+        public GameObject GetGameObjectForAddressable(AssetReferenceGameObject addressableAsset)
+        {
+            foreach (var prefab in NetworkConfig.NetworkPrefabs)
+            {
+                if (prefab.IsFromAddressable && prefab.Addressable == addressableAsset)
+                {
+                    return prefab.Prefab;
+                }
+            }
+
+            return null;
+        }
+
+        public GameObject GetGameObjectForAddress(string address)
+        {
+            foreach (var prefab in NetworkConfig.NetworkPrefabs)
+            {
+                if (prefab.IsFromAddressable && prefab.Addressable.AssetGUID == address)
+                {
+                    return prefab.Prefab;
+                }
+            }
+
+            return null;
         }
 #endif
 
@@ -1233,6 +1272,22 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
+
+#if NETCODE_USE_ADDRESSABLES
+            for (var i = NetworkConfig.NetworkPrefabs.Count - 1; i >= 0; --i)
+            {
+                var prefab = NetworkConfig.NetworkPrefabs[i];
+                if (prefab.IsFromAddressable)
+                {
+                    NetworkConfig.NetworkPrefabs.RemoveAt(i);
+                }
+            }
+
+            foreach(var addressable in NetworkConfig.NetworkAddressables)
+            {
+                addressable.Release();
+            }
+#endif
 
             if (IsServer)
             {

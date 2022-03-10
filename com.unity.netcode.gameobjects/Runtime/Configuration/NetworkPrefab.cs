@@ -31,6 +31,10 @@ namespace Unity.Netcode
         /// </summary>
         public GameObject Prefab;
 
+        public bool IsFromAddressable;
+
+        public AssetReferenceGameObject Addressable;
+
         /// <summary>
         /// Used when prefab is selected for the source prefab to override value (i.e. direct reference, the prefab is within the same project)
         /// We keep a separate value as the user might want to have something different than the default Prefab for the SourcePrefabToOverride
@@ -93,7 +97,7 @@ namespace Unity.Netcode
         /// </summary>
         public AssetReferenceGameObject Addressable;
 
-        ~NetworkAddressable()
+        public void Release()
         {
             if (m_AsyncOperationHandle.IsValid())
             {
@@ -146,6 +150,7 @@ namespace Unity.Netcode
             if (Addressable.OperationHandle.IsValid())
             {
                 m_AsyncOperationHandle = Addressable.OperationHandle.Convert<GameObject>();
+                Addressables.ResourceManager.Acquire(m_AsyncOperationHandle);
                 return false;
             }
             m_AsyncOperationHandle = Addressable.LoadAssetAsync();
