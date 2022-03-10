@@ -175,7 +175,7 @@ namespace TestProject.RuntimeTests
                     Assert.AreEqual(NetworkManagerState.Ready, client.State);
                 }
 
-                switch(m_LookupType)
+                switch (m_LookupType)
                 {
                     case LookupType.NetworkManagerByAsset:
                         prefab = m_ServerNetworkManager.GetGameObjectForAddressable(asset);

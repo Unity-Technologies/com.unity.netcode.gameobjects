@@ -1283,7 +1283,7 @@ namespace Unity.Netcode
                 }
             }
 
-            foreach(var addressable in NetworkConfig.NetworkAddressables)
+            foreach (var addressable in NetworkConfig.NetworkAddressables)
             {
                 addressable.Release();
             }
