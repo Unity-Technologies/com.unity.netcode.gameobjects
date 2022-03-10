@@ -8,6 +8,10 @@ All notable changes to this package will be documented in this file. The format 
 
 - Flush internal send queues to the network during `Shutdown`. Prior to this fix, calling `NetworkManager.Shutdown` with `discardMessageQueue` set to false would not actually get messages from the outgoing queue to the network. (#1800)
 
+### Changed
+
+- Removed the 'NetCode > Simulator Tools' menu to reduce confusion. The only way to set debug simulator parameters is now through the 'Debug Simulator' section of the 'Unity Transport' component. (#1793)
+
 ## [1.0.0-pre.6] - 2022-03-02
 
 ### Added
