@@ -79,9 +79,6 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
-#endif
-
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private readonly Gauge m_NetworkObjectsGauge = new Gauge(NetworkMetricTypes.NetworkObjects.Id)
         {
             ShouldResetOnDispatch = true,
@@ -107,8 +104,6 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
                 .WithGauges(m_RttToServerGauge)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 .WithGauges(m_NetworkObjectsGauge)
 #endif
                 .Build();
