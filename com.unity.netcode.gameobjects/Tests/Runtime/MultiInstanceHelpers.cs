@@ -648,7 +648,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="workload">Action / code to run</param>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, float timeout = 0.5f, int minFrames = DefaultMinFrames)
         {
             var waitResult = new CoroutineResultWrapper<bool>();
             workload();
@@ -656,7 +656,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return Run(WaitForCondition(
                 predicate,
                 waitResult,
-                maxFrames: maxFrames,
+                timeout: timeout,
                 minFrames: minFrames));
 
             if (!waitResult.Result)
@@ -672,7 +672,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = DefaultMaxFrames, int minFrames = DefaultMinFrames)
+        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, float timeout = 0.5f, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
             {
@@ -680,6 +680,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             var startFrameNumber = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
 
             if (minFrames > 0)
             {
@@ -689,7 +690,7 @@ namespace Unity.Netcode.RuntimeTests
                 });
             }
 
-            while (Time.frameCount - startFrameNumber <= maxFrames &&
+            while (Time.realtimeSinceStartup - startTime <= timeout &&
                 !predicate())
             {
                 // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
