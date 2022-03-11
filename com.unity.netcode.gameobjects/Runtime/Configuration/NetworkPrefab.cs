@@ -31,9 +31,11 @@ namespace Unity.Netcode
         /// </summary>
         public GameObject Prefab;
 
+#if NETCODE_USE_ADDRESSABLES
         public bool IsFromAddressable;
 
         public AssetReferenceGameObject Addressable;
+#endif
 
         /// <summary>
         /// Used when prefab is selected for the source prefab to override value (i.e. direct reference, the prefab is within the same project)
