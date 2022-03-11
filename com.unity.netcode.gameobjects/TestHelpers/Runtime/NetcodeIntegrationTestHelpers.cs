@@ -360,24 +360,30 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 server.StartServer();
             }
 
-            var hooks = new MultiInstanceHooks();
-            server.MessagingSystem.Hook(hooks);
-            s_Hooks[server] = hooks;
+            if (server.State != NetworkManagerState.Inactive)
+            {
+                var hooks = new MultiInstanceHooks();
+                server.MessagingSystem.Hook(hooks);
+                s_Hooks[server] = hooks;
 
-            // if set, then invoke this for the server
-            RegisterHandlers(server);
+                // if set, then invoke this for the server
+                RegisterHandlers(server);
+            }
 
             callback?.Invoke();
 
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].StartClient();
-                hooks = new MultiInstanceHooks();
-                clients[i].MessagingSystem.Hook(hooks);
-                s_Hooks[clients[i]] = hooks;
+                if (clients[i].State != NetworkManagerState.Inactive)
+                {
+                    var hooks = new MultiInstanceHooks();
+                    clients[i].MessagingSystem.Hook(hooks);
+                    s_Hooks[clients[i]] = hooks;
 
-                // if set, then invoke this for the client
-                RegisterHandlers(clients[i]);
+                    // if set, then invoke this for the client
+                    RegisterHandlers(clients[i]);
+                }
             }
 
             return true;
