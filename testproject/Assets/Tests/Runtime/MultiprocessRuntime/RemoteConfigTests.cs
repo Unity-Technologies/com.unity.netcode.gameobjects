@@ -14,15 +14,35 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [TestFixture(ConfigType.Resourcefile, "UTP")]
     public class RemoteConfigTests
     {
-        private string m_FullpathToApp;
         private bool m_HasSceneLoaded;
         private string m_Transport;
         private Scene m_OriginalScene;
+        private static Scene s_InitScene;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            var x = SceneManager.CreateScene("FakeName");
+            Debug.Log($"{x.name} isValid:{x.IsValid()} isLoaded:{x.isLoaded} {x.isSubScene}");
+        }
 
         [UnitySetUp]
         public IEnumerator UnitySetup()
         {
+            var startupScene = SceneManager.GetActiveScene();
             Debug.Log("UnitySetup - ");
+            if (startupScene == null)
+            {
+                Debug.Log("Start up - Scene is null");
+            }
+            else
+            {
+                Debug.Log($"UnitySetup - Startup scene is {startupScene.name} {startupScene.IsValid()} {startupScene}");
+                if (startupScene.name.Contains("Init"))
+                {
+                    s_InitScene = startupScene;
+                }
+            }
 
             if (m_OriginalScene != null)
             {
@@ -31,7 +51,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             
             SceneManager.sceneLoaded += RemoteConfigTestsOnSceneLoaded;
-            SceneManager.LoadScene("RemoteConfigScene");
+            SceneManager.LoadScene("RemoteConfigScene", LoadSceneMode.Single);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
         }
 
@@ -68,7 +88,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (configType == ConfigType.Remoteconfig)
             {
                 // Path to build
-                m_FullpathToApp = BuildMultiNodePlayer.BuildPath + ".exe";
                 var server_config_file = new FileInfo(Path.Combine(Application.streamingAssetsPath, "server_config"));
                 var server_config_metafile = new FileInfo(Path.Combine(Application.streamingAssetsPath, "server_config.eta"));
                 if (server_config_file.Exists)
@@ -182,6 +201,42 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             m_HasSceneLoaded = false;
             yield return new WaitForSeconds(1);
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            Debug.Log($"OneTimeTearDown - {s_InitScene}");
+            if (s_InitScene != null)
+            {
+                Debug.Log($"OneTimeTearDown - {s_InitScene.name} valid: {s_InitScene.IsValid()} loaded: {s_InitScene.isLoaded}");
+            }
+
+            var x = SceneManager.CreateScene("OneTimeTearDownScene");
+            Debug.Log($"{x.name} isValid:{x.IsValid()} isLoaded:{x.isLoaded}");
+            SceneManager.SetActiveScene(x);
+
+            var activeScene = SceneManager.GetActiveScene();
+            Debug.Log($"activeScene: {activeScene.name} {activeScene.IsValid()} {activeScene.isLoaded}");
+
+            var sceneCount = SceneManager.sceneCount;
+            Debug.Log($"There are {sceneCount} scenes");
+
+            for (int i = 0; i < sceneCount; i++)
+            {
+                var iterScene = SceneManager.GetSceneAt(i);
+            }
+
+            // SceneManager.sceneLoaded -= RemoteConfigTestsOnSceneLoaded;
+            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
+            var unloadOperation = SceneManager.UnloadSceneAsync(m_OriginalScene);
+            // var unloadOperation = SceneManager.UnloadSceneAsync(m_OriginalScene);
+            Debug.Log($"End of OneTimeTearDown with unloadOperation isnull? {unloadOperation}");
+        }
+
+        private void SceneManager_sceneUnloaded(Scene arg0)
+        {
+            Debug.Log("Scene Unloaded: " + arg0.name);
         }
     }
 
