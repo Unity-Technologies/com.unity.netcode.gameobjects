@@ -91,6 +91,8 @@ namespace Unity.Netcode
 
         void UpdateNetworkObjectsCount(int count);
 
+        void UpdateConnectionsCount(int count);
+
         void DispatchFrame();
     }
 }

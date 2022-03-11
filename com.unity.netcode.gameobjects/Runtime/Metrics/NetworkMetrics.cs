@@ -83,6 +83,10 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
+        private readonly Gauge m_ConnectionsGauge = new Gauge(NetworkMetricTypes.ConnectedClients.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
 #endif
 
         private ulong m_NumberOfMetricsThisFrame;
@@ -105,6 +109,7 @@ namespace Unity.Netcode
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
                 .WithGauges(m_RttToServerGauge)
                 .WithGauges(m_NetworkObjectsGauge)
+                .WithGauges(m_ConnectionsGauge)
 #endif
                 .Build();
 
@@ -478,6 +483,18 @@ namespace Unity.Netcode
             }
 
             m_NetworkObjectsGauge.Set(count);
+#endif
+        }
+
+        public void UpdateConnectionsCount(int count)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_ConnectionsGauge.Set(count);
 #endif
         }
 
