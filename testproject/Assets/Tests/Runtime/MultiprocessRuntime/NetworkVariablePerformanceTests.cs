@@ -71,7 +71,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
-        public IEnumerator TestSpawningManyObjects([Values(7, 80, 900, 1000)] int nbObjects)
+        public IEnumerator TestSpawningManyObjects([Values(7, 80, 300, 500)] int nbObjects)
         {
             InitializeContextSteps();
 
