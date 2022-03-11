@@ -2,10 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkVarBufferCopyTest : BaseMultiInstanceTest
+    public class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
         public class DummyNetVar : NetworkVariableBase
         {
@@ -14,7 +15,7 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
-            public bool Dirty = true;
+            public bool Dirty = false;
 
             public override void ResetDirty()
             {
@@ -92,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkSpawn();
             }
         }
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
@@ -100,24 +101,23 @@ namespace Unity.Netcode.RuntimeTests
             s_ClientDummyNetBehavioursSpawned.Add(dummyNetBehaviour);
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnSetup()
         {
             s_ClientDummyNetBehavioursSpawned.Clear();
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, nbClients: NbClients,
-                updatePlayerPrefab: playerPrefab =>
-                {
-                    var dummyNetBehaviour = playerPrefab.AddComponent<DummyNetBehaviour>();
-                });
+            return base.OnSetup();
         }
 
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
+        }
 
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, serverClientPlayerResult);
 
@@ -125,8 +125,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], clientClientPlayerResult);
 
@@ -135,23 +135,23 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for the DummyNetBehaviours on the client side to notify they have been initialized and spawned
             yield return WaitForConditionOrTimeOut(() => s_ClientDummyNetBehavioursSpawned.Count >= 1);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Check that FieldWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.FieldWritten);
 
             // Check that DeltaWritten is written when dirty
             serverComponent.NetVar.Dirty = true;
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 
             // Check that both FieldRead and DeltaRead were invoked on the client side
             yield return WaitForConditionOrTimeOut(() => clientComponent.NetVar.FieldRead == true && clientComponent.NetVar.DeltaRead == true);
 
             var timedOutMessage = "Timed out waiting for client reads: ";
-            if (s_GloabalTimeOutHelper.TimedOut)
+            if (s_GlobalTimeoutHelper.TimedOut)
             {
                 if (!clientComponent.NetVar.FieldRead)
                 {
@@ -163,7 +163,7 @@ namespace Unity.Netcode.RuntimeTests
                     timedOutMessage += "[DeltaRead]";
                 }
             }
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, timedOutMessage);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, timedOutMessage);
         }
     }
 }

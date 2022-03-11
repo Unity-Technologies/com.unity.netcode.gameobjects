@@ -6,7 +6,7 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private static readonly int k_NamedMessageOverhead = (int)k_MessageNameHashSize + k_MessageHeaderSize;
         private static readonly int k_UnnamedMessageOverhead = k_MessageHeaderSize;
 
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         [UnityTest]
         public IEnumerator TrackNetworkMessageSentMetric()

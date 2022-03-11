@@ -799,6 +799,7 @@ namespace Unity.Netcode
                     State = NetworkManagerState.AwaitingApproval;
                     if (!NetworkConfig.NetworkTransport.StartClient())
                     {
+                        Debug.LogError($"Client is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
                         InvokeOnStartupFailedCallback(StartupFailureReason.ConnectFailed);
                         ShutdownInternal();
                         return false;
@@ -813,6 +814,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
                         InvokeOnStartupFailedCallback(StartupFailureReason.BindFailed);
                         ShutdownInternal();
                         return false;
@@ -1015,10 +1017,25 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Starts a server
+        /// Returns true if the Server *has not yet failed* to start
+        /// There are several steps to connecting - a return value of "true" here does not indicate
+        /// the connection is completed.
+        ///
+        /// When the connection has successfully been established the onReady callback (or any callback
+        /// registered with OnReadyCallback) will be invoked.
+        ///
+        /// If any step of the connection process fails, the onFailure callback (or any callback
+        /// registered with OnStartupFailedCallback) will be invoked with a value indicating the
+        /// reason that startup failed.
+        ///
+        /// These are the most reliable ways to check for startup success and failure - the
+        /// boolean return value exists for legacy reasons but is not a reliable indicator
+        /// of startup success.
         /// </summary>
-        public bool StartServer(Action onReady = null)
+        public bool StartServer(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
             OnReadyCallback += onReady;
+            OnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo("StartServer()");
@@ -1058,10 +1075,26 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Starts a client
+        /// Returns true if the client *has not yet failed* to start
+        /// There are several steps to connecting - a return value of "true" here does not indicate
+        /// the connection is completed.
+        ///
+        /// When the connection has successfully been established and the server has accepted the client's
+        /// connection request, the onReady callback (or any callback registered with OnReadyCallback)
+        /// will be invoked.
+        ///
+        /// If any step of the connection process fails, the onFailure callback (or any callback
+        /// registered with OnStartupFailedCallback) will be invoked with a value indicating the
+        /// reason that startup failed.
+        ///
+        /// These are the most reliable ways to check for startup success and failure - the
+        /// boolean return value exists for legacy reasons but is not a reliable indicator
+        /// of startup success.
         /// </summary>
-        public bool StartClient(Action onReady = null)
+        public bool StartClient(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
             OnReadyCallback += onReady;
+            OnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(StartClient));
@@ -1090,10 +1123,25 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Starts a Host
+        /// Returns true if the Host *has not yet failed* to start
+        /// There are several steps to connecting - a return value of "true" here does not indicate
+        /// the connection is completed.
+        ///
+        /// When the connection has successfully been established the onReady callback (or any callback
+        /// registered with OnReadyCallback) will be invoked.
+        ///
+        /// If any step of the connection process fails, the onFailure callback (or any callback
+        /// registered with OnStartupFailedCallback) will be invoked with a value indicating the
+        /// reason that startup failed.
+        ///
+        /// These are the most reliable ways to check for startup success and failure - the
+        /// boolean return value exists for legacy reasons but is not a reliable indicator
+        /// of startup success.
         /// </summary>
-        public bool StartHost(Action onReady = null)
+        public bool StartHost(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
             OnReadyCallback += onReady;
+            OnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(StartHost));
@@ -1204,6 +1252,7 @@ namespace Unity.Netcode
         internal interface INetworkManagerHelper
         {
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
         }
 #endif
 
@@ -1495,6 +1544,7 @@ namespace Unity.Netcode
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
                 MessagingSystem.ProcessSendQueues();
+                NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
                 NetworkMetrics.DispatchFrame();
             }
             SpawnManager.CleanupStaleTriggers();
@@ -1556,7 +1606,7 @@ namespace Unity.Netcode
             }
         }
 
-        private ulong TransportIdToClientId(ulong transportId)
+        internal ulong TransportIdToClientId(ulong transportId)
         {
             return transportId == m_ServerTransportId ? ServerClientId : m_TransportIdToClientIdMap[transportId];
         }
@@ -1994,7 +2044,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key, false)
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
                 message.ObjectInfo.Header.Hash = playerPrefabHash;
                 message.ObjectInfo.Header.IsSceneObject = false;

@@ -4,6 +4,7 @@ using DefaultNamespace;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -42,9 +43,9 @@ namespace TestProject.RuntimeTests
     [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference)]
     [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference)]
     [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.String)]
-    public class AddressablesTests : BaseMultiInstanceTest
+    public class AddressablesTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         private const string k_ValidObject = "AddressableTestObject.prefab";
         private const string k_InvalidObject = "InvalidAddressableTestObject.prefab";
@@ -61,15 +62,26 @@ namespace TestProject.RuntimeTests
             m_LoadMode = loadMode;
             m_AddMode = addMode;
         }
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
+        {
+            return NetworkManagerInstatiationMode.DoNotCreate;
+        }
 
+        protected override bool StartupFailureIsTestFailure()
+        {
+            return false;
+        }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override IEnumerator OnSetup()
         {
             m_ServerFailureReason = NetworkManager.StartupFailureReason.None;
             m_ClientFailureReasons = new[] { NetworkManager.StartupFailureReason.None };
+            yield return null;
+        }
 
-            m_BypassStartAndWaitForClients = true;
+        protected override IEnumerator OnTearDown()
+        {
+            ShutdownAndCleanUp();
             yield return null;
         }
 
@@ -90,74 +102,41 @@ namespace TestProject.RuntimeTests
 
                     break;
             }
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ =>
-            {
-                m_ServerNetworkManager.OnStartupFailedCallback += (reason) => { m_ServerFailureReason = reason; };
-                for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
-                {
-                    var setIndex = i;
-                    m_ClientNetworkManagers[i].OnStartupFailedCallback += (reason) => { m_ClientFailureReasons[setIndex] = reason; };
-                }
+            CreateServerAndClients();
 
-                m_ServerNetworkManager.AddNetworkPrefab(asset);
-                foreach (var client in m_ClientNetworkManagers)
-                {
-                    client.AddNetworkPrefab(asset);
-                }
-            });
-            if (m_ServerNetworkManager != null)
+            m_ServerNetworkManager.OnStartupFailedCallback += (reason) => { m_ServerFailureReason = reason; };
+            for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
             {
-                m_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+                var setIndex = i;
+                m_ClientNetworkManagers[i].OnStartupFailedCallback += (reason) => { m_ClientFailureReasons[setIndex] = reason; };
             }
-            MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers);
 
-            RegisterSceneManagerHandler();
+            m_ServerNetworkManager.AddNetworkPrefab(asset);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.AddNetworkPrefab(asset);
+            }
 
-            yield return WaitForAllAssetsLoadedOrFailed();
+            yield return StartServerAndClients();
         }
 
         protected IEnumerator StartWithAddressableAssetAdded(string address)
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ =>
+            CreateServerAndClients();
+
+            m_ServerNetworkManager.OnStartupFailedCallback += (reason) => { m_ServerFailureReason = reason; };
+            for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
             {
-                m_ServerNetworkManager.OnStartupFailedCallback += (reason) => { m_ServerFailureReason = reason; };
-                for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
-                {
-                    var setIndex = i;
-                    m_ClientNetworkManagers[i].OnStartupFailedCallback += (reason) => { m_ClientFailureReasons[setIndex] = reason; };
-                }
-                m_ServerNetworkManager.AddNetworkPrefab(address);
-                foreach (var client in m_ClientNetworkManagers)
-                {
-                    client.AddNetworkPrefab(address);
-                }
-            });
-            if (m_ServerNetworkManager != null)
-            {
-                m_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+                var setIndex = i;
+                m_ClientNetworkManagers[i].OnStartupFailedCallback += (reason) => { m_ClientFailureReasons[setIndex] = reason; };
             }
-            MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers);
-
-            RegisterSceneManagerHandler();
-
-            yield return WaitForAllAssetsLoadedOrFailed();
-        }
-
-        protected IEnumerator WaitForAllAssetsLoadedOrFailed()
-        {
-            while (m_ServerNetworkManager.State != NetworkManagerState.Ready && m_ServerNetworkManager.State != NetworkManagerState.Inactive)
-            {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
+            m_ServerNetworkManager.AddNetworkPrefab(address);
             foreach (var client in m_ClientNetworkManagers)
             {
-                while (client.State != NetworkManagerState.Ready && client.State != NetworkManagerState.Inactive)
-                {
-                    var nextFrameNumber = Time.frameCount + 1;
-                    yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-                }
+                client.AddNetworkPrefab(address);
             }
+
+            yield return StartServerAndClients();
         }
 
         [UnityTest]
@@ -212,9 +191,7 @@ namespace TestProject.RuntimeTests
             // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
             Assert.AreEqual(1, objs.Length);
 
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0])
-            );
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
             objs = Object.FindObjectsOfType<AddressableTestScript>();
             Assert.AreEqual(2, objs.Length);

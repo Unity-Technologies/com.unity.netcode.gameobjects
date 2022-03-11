@@ -12,7 +12,7 @@ namespace Unity.Netcode.Editor
     {
         internal static NetworkManagerHelper Singleton;
 
-        // This is primarily to handle multiInstance scenarios where more than 1 NetworkManager could exist
+        // This is primarily to handle IntegrationTest scenarios where more than 1 NetworkManager could exist
         private static Dictionary<NetworkManager, Transform> s_LastKnownNetworkManagerParents = new Dictionary<NetworkManager, Transform>();
 
         /// <summary>
@@ -45,13 +45,63 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        /// <summary>
+        /// Invoked only when the hierarchy changes
+        /// </summary>
         private static void EditorApplication_hierarchyChanged()
         {
             var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
             foreach (var networkManager in allNetworkManagers)
             {
-                networkManager.NetworkManagerCheckForParent();
+                if (!networkManager.NetworkManagerCheckForParent())
+                {
+                    Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager);
+                }
             }
+        }
+
+        /// <summary>
+        /// Handles notifying users that they cannot add a NetworkObject component
+        /// to a GameObject that also has a NetworkManager component. The NetworkObject
+        /// will always be removed.
+        /// GameObject + NetworkObject then NetworkManager = NetworkObject removed
+        /// GameObject + NetworkManager then NetworkObject = NetworkObject removed
+        /// Note: Since this is always invoked after <see cref="NetworkManagerCheckForParent"/>
+        /// we do not need to check for parent when searching for a NetworkObject component
+        /// </summary>
+        public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false)
+        {
+            // Check for any NetworkObject at the same gameObject relative layer
+            var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
+
+            if (networkObject == null)
+            {
+                // if none is found, check to see if any children have a NetworkObject
+                networkObject = networkManager.gameObject.GetComponentInChildren<NetworkObject>();
+                if (networkObject == null)
+                {
+                    return;
+                }
+            }
+
+            if (!EditorApplication.isUpdating)
+            {
+                Object.DestroyImmediate(networkObject);
+
+                if (!EditorApplication.isPlaying && !editorTest)
+                {
+                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", NetworkManagerAndNetworkObjectNotAllowedMessage(), "OK");
+                }
+                else
+                {
+                    Debug.LogError(NetworkManagerAndNetworkObjectNotAllowedMessage());
+                }
+            }
+        }
+
+        public string NetworkManagerAndNetworkObjectNotAllowedMessage()
+        {
+            return $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it or any children under it.";
         }
 
         /// <summary>

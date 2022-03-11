@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -22,7 +23,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_ObjectId.ToString());
             NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(validPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(validPrefab);
             m_ObjectId++;
             return validPrefab.gameObject;
         }

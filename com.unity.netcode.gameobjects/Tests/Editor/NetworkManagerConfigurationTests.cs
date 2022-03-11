@@ -34,5 +34,49 @@ namespace Unity.Netcode.EditorTests
             // Clean up
             Object.DestroyImmediate(parent);
         }
+
+        public enum NetworkObjectPlacement
+        {
+            Root,   // Added to the same root GameObject
+            Child   // Added to a child GameObject
+        }
+
+        [Test]
+        public void NetworkObjectNotAllowed([Values] NetworkObjectPlacement networkObjectPlacement)
+        {
+            var gameObject = new GameObject(nameof(NetworkManager));
+            var targetforNetworkObject = gameObject;
+
+            if (networkObjectPlacement == NetworkObjectPlacement.Child)
+            {
+                var childGameObject = new GameObject($"{nameof(NetworkManager)}-Child");
+                childGameObject.transform.parent = targetforNetworkObject.transform;
+                targetforNetworkObject = childGameObject;
+            }
+
+            var networkManager = gameObject.AddComponent<NetworkManager>();
+
+            // Trap for the error message generated when a NetworkObject is discovered on the same GameObject or any children under it
+            LogAssert.Expect(LogType.Error, NetworkManagerHelper.Singleton.NetworkManagerAndNetworkObjectNotAllowedMessage());
+
+            // Add the NetworkObject
+            var networkObject = targetforNetworkObject.AddComponent<NetworkObject>();
+
+            // Since this is an in-editor test, we must force this invocation
+            NetworkManagerHelper.Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager, true);
+
+            // Validate that the NetworkObject has been removed
+            if (networkObjectPlacement == NetworkObjectPlacement.Root)
+            {
+                Assert.IsNull(networkManager.gameObject.GetComponent<NetworkObject>(), $"There is still a {nameof(NetworkObject)} on {nameof(NetworkManager)}'s GameObject!");
+            }
+            else
+            {
+                Assert.IsNull(networkManager.gameObject.GetComponentInChildren<NetworkObject>(), $"There is still a {nameof(NetworkObject)} on {nameof(NetworkManager)}'s child GameObject!");
+            }
+
+            // Clean up
+            Object.DestroyImmediate(gameObject);
+        }
     }
 }

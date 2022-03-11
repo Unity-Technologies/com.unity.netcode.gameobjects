@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Netcode.TestHelpers.Runtime;
 using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
@@ -83,10 +84,10 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(true)]
     [TestFixture(false)]
-    public class NetworkVariableTests : BaseMultiInstanceTest
+    public class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
 
@@ -117,12 +118,9 @@ namespace Unity.Netcode.RuntimeTests
             m_EnsureLengthSafety = ensureLengthSafety;
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override bool CanStartServerAndClients()
         {
-            m_BypassStartAndWaitForClients = true;
-
-            yield return base.Setup();
+            return false;
         }
 
         /// <summary>
@@ -142,23 +140,17 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            yield return m_DefaultWaitForTick;
-
-            // Wait for connection on server side
-            var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
-            var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            var result = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
 
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, result);
 
@@ -166,7 +158,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], result);
 
@@ -184,13 +176,13 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost ? NbClients * 3 : NbClients * 2;
+            var instanceCount = useHost ? NumberOfClients * 3 : NumberOfClients * 2;
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
@@ -201,7 +193,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
-            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
 
@@ -217,7 +209,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.EnableTesting = true;
 
             yield return WaitForConditionOrTimeOut(() => true == networkVariableTestComponent.IsTestComplete());
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for the test to complete!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the test to complete!");
 
             // Stop Testing
             networkVariableTestComponent.EnableTesting = false;
@@ -228,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.gameObject.SetActive(false);
 
             // This would normally go in Teardown, but since every other test but this one
-            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
             NetworkManagerHelper.ShutdownNetworkManager();
         }
@@ -250,7 +242,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now wait for the client side version to be updated to k_FixedStringTestValue
             yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
         }
 
         [UnityTest]
@@ -379,22 +371,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
-        {
-            yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    TestStruct.NetworkSerializeCalledOnWrite = false;
-                    TestStruct.NetworkSerializeCalledOnRead = false;
-                    m_Player1OnServer.TheListOfStructs.Add(new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
-                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
-                },
-                () => TestStruct.NetworkSerializeCalledOnWrite && TestStruct.NetworkSerializeCalledOnRead
-            );
-        }
-
-        [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
@@ -463,17 +439,17 @@ namespace Unity.Netcode.RuntimeTests
         }
         #endregion
 
-        [UnityTearDown]
-        public override IEnumerator Teardown()
+
+        protected override IEnumerator OnTearDown()
         {
             m_NetworkListPredicateHandler = null;
-            yield return base.Teardown();
+            yield return base.OnTearDown();
         }
     }
 
     /// <summary>
     /// Handles the more generic conditional logic for NetworkList tests
-    /// which can be used with the <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"/>
+    /// which can be used with the <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"/>
     /// that accepts anything derived from the <see cref="ConditionalPredicateBase"/> class
     /// as a parameter.
     /// </summary>

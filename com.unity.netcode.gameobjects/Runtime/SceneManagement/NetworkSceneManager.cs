@@ -488,8 +488,18 @@ namespace Unity.Netcode
                 var scenePath = SceneUtility.GetScenePathByBuildIndex(i);
                 var hash = XXHash.Hash32(scenePath);
                 var buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
-                HashToBuildIndex.Add(hash, buildIndex);
-                BuildIndexToHash.Add(buildIndex, hash);
+
+                // In the rare-case scenario where a programmatically generated build has duplicate
+                // scene entries, we will log an error and skip the entry
+                if (!HashToBuildIndex.ContainsKey(hash))
+                {
+                    HashToBuildIndex.Add(hash, buildIndex);
+                    BuildIndexToHash.Add(buildIndex, hash);
+                }
+                else
+                {
+                    Debug.LogError($"{nameof(NetworkSceneManager)} is skipping duplicate scene path entry {scenePath}. Make sure your scenes in build list does not contain duplicates!");
+                }
             }
         }
 
@@ -1845,7 +1855,7 @@ namespace Unity.Netcode
             // at the end of scene loading we use this list to soft synchronize all in-scene placed NetworkObjects
             foreach (var networkObjectInstance in networkObjects)
             {
-                // We check to make sure the NetworkManager instance is the same one to be "MultiInstanceHelpers" compatible and filter the list on a per scene basis (additive scenes)
+                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (additive scenes)
                 if (networkObjectInstance.IsSceneObject == null && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
                     networkObjectInstance.gameObject.scene.handle == sceneToFilterBy.handle)
                 {

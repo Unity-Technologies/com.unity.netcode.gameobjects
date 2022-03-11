@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
@@ -43,7 +43,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
             const string sceneName = nameof(NetworkObjectParentingTests);
 
@@ -82,13 +82,13 @@ namespace TestProject.RuntimeTests
             }
 
             // Start server and client NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
         }
 
         public void SetupSet(Transform rootTransform, int setIndex, NetworkManager networkManager)
@@ -188,7 +188,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
 
             if (m_TestScene.isLoaded)
             {

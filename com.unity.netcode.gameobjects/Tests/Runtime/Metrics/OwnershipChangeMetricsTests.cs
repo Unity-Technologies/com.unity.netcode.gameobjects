@@ -4,9 +4,10 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
@@ -17,11 +18,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
         private const int k_MessageHeaderSize = 2;
 
-        protected override Action<GameObject> UpdatePlayerPrefab => _ =>
+        protected override void OnServerAndClientsCreated()
         {
             var gameObject = new GameObject(k_NewNetworkObjectName);
             m_NewNetworkPrefab = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkPrefab);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(m_NewNetworkPrefab);
 
             var networkPrefab = new NetworkPrefab { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
@@ -29,7 +30,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
             }
-        };
+            base.OnServerAndClientsCreated();
+        }
 
         private NetworkObject SpawnNetworkObject()
         {

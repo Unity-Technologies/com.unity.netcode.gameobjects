@@ -11,13 +11,6 @@
         "Unity.Services.Relay",
         "Unity.Addressables.Editor"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.services.relay",
@@ -29,6 +22,5 @@
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

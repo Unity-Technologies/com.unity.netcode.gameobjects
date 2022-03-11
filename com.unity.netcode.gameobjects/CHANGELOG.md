@@ -10,7 +10,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#7135)
+### Changed
+
+### Fixed
+- Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
+- Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
+- Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
+
+## [1.0.0-pre.6] - 2022-03-02
+
+### Added
+- NetworkAnimator now properly synchrhonizes all animation layers as well as runtime-adjusted weighting between them (#1765)
+- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#1735)
 - The SDK now supports loading assets from addressables (#1758)
 - The SDK now supports modifying the NetworkPrefab list at runtime, so long as it's done before calling `StartServer()`/`StartClient()`/`StartHost()` (#1758)
 
@@ -35,6 +46,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
 - Improved performance in NetworkAnimator (#1735)
 - Removed the "always sync" network animator (aka "autosend") parameters (#1746)
+- Fixed in-scene placed NetworkObjects not respawning after shutting down the NetworkManager and then starting it back up again (#1769)
 
 ## [1.0.0-pre.5] - 2022-01-26
 

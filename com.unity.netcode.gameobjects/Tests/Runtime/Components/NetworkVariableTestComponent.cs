@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {

@@ -5,15 +5,23 @@ using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NamedMessageTests : BaseMultiInstanceTest
+    public class NamedMessageTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
+
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
+        {
+            // Don't spin up and shutdown NetworkManager instances for each test
+            // within this set of integration tests.
+            return NetworkManagerInstatiationMode.AllTests;
+        }
 
         [UnityTest]
         public IEnumerator NamedMessageIsReceivedOnClientWithContent()

@@ -3,58 +3,56 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkObjectNetworkClientOwnedObjectsTests
+    public class NetworkObjectNetworkClientOwnedObjectsTests : NetcodeIntegrationTest
     {
-        [UnityTest]
-        public IEnumerator ChangeOwnershipOwnedObjectsAddTest()
+        protected override int NumberOfClients => 1;
+        private NetworkPrefab m_NetworkPrefab;
+        protected override void OnServerAndClientsCreated()
         {
-            // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
-
             // create prefab
             var gameObject = new GameObject("ClientOwnedObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab()
+            m_NetworkPrefab = (new NetworkPrefab()
             {
                 Prefab = gameObject
             });
 
-            for (int i = 0; i < clients.Length; i++)
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
+
+            foreach (var client in m_ClientNetworkManagers)
             {
-                clients[i].NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab()
-                {
-                    Prefab = gameObject
-                });
+                client.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
             }
+        }
 
-            // start server and connect clients
-            MultiInstanceHelpers.Start(false, server, clients);
-
-            // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-
-            // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
-
-            NetworkObject serverObject = Object.Instantiate(gameObject).GetComponent<NetworkObject>();
-            serverObject.NetworkManagerOwner = server;
+        [UnityTest]
+        public IEnumerator ChangeOwnershipOwnedObjectsAddTest()
+        {
+            NetworkObject serverObject = Object.Instantiate(m_NetworkPrefab.Prefab).GetComponent<NetworkObject>();
+            serverObject.NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.Spawn();
 
+            // Provide enough time for the client to receive and process the spawned message.
+            yield return s_DefaultWaitForTick;
+
             // The object is owned by server
-            Assert.False(server.ConnectedClients[clients[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
+            Assert.False(m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
 
             // Change the ownership
-            serverObject.ChangeOwnership(clients[0].LocalClientId);
+            serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Provide enough time for the client to receive and process the change in ownership message.
+            yield return s_DefaultWaitForTick;
 
             // Ensure it's now added to the list
-            Assert.True(server.ConnectedClients[clients[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
+            Assert.True(m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
 
-            MultiInstanceHelpers.Destroy();
         }
     }
 }

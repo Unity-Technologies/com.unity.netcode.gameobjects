@@ -4,11 +4,11 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
-    public class RpcUserSerializableTypesTest : BaseMultiInstanceTest
+    public class RpcUserSerializableTypesTest : NetcodeIntegrationTest
     {
         private UserSerializableClass m_UserSerializableClass;
         private UserSerializableStruct m_UserSerializableStruct;
@@ -22,12 +22,11 @@ namespace TestProject.RuntimeTests
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
 
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            yield break; // ignore
+            return NetworkManagerInstatiationMode.DoNotCreate;
         }
 
         /// <summary>
@@ -42,14 +41,14 @@ namespace TestProject.RuntimeTests
             m_FinishedClassTest = false;
             var startTime = Time.realtimeSinceStartup;
 
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestSerializationComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
+
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassUpdated = OnClientReceivedUserSerializableClassUpdated;
             clientSideNetworkBehaviourClass.OnSerializableStructUpdated = OnClientReceivedUserSerializableStructUpdated;
@@ -103,8 +102,7 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(m_UserSerializableStruct.MyulongValue, userSerializableStruct.MyulongValue + 1);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -116,19 +114,17 @@ namespace TestProject.RuntimeTests
         {
             m_FinishedTest = false;
             var startTime = Time.realtimeSinceStartup;
-
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestSerializationComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
 
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
 
             var obj = new MyObject(256);
@@ -209,8 +205,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -223,18 +218,17 @@ namespace TestProject.RuntimeTests
             m_FinishedTest = false;
             var startTime = Time.realtimeSinceStartup;
 
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            yield return StartServerAndClients();
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
 
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
 
             var objs = new[] { new MyObject(256), new MyObject(512) };
@@ -339,8 +333,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
+            ShutdownAndCleanUp();
         }
 
         /// <summary>
@@ -417,22 +410,20 @@ namespace TestProject.RuntimeTests
             }
 
             var startTime = Time.realtimeSinceStartup;
-
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
-            });
+            CreateServerAndClients();
+            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            yield return StartServerAndClients();
 
             // [Host-Side] Get the host-server side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             serverSideNetworkBehaviourClass.OnSerializableClassesUpdatedServerRpc = OnServerReceivedUserSerializableClassesUpdated;
             serverSideNetworkBehaviourClass.OnSerializableStructsUpdatedServerRpc = OnServerReceivedUserSerializableStructsUpdated;
 
             // [Client-Side] Get the client side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassesUpdatedClientRpc = OnClientReceivedUserSerializableClassesUpdated;
             clientSideNetworkBehaviourClass.OnSerializableStructsUpdatedClientRpc = OnClientReceivedUserSerializableStructsUpdated;
@@ -483,9 +474,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            m_ClientNetworkManagers[0].Shutdown();
-            m_ServerNetworkManager.Shutdown();
-
+            ShutdownAndCleanUp();
         }
 
         /// <summary>

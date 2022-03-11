@@ -14,13 +14,7 @@
         "Unity.Addressables",
         "Unity.ResourceManager"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -34,14 +28,13 @@
         },
         {
             "name": "com.unity.multiplayer.tools",
-            "expression": "1.0.0-pre.4",
-            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
+            "expression": "1.0.0-pre.7",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
         },
         {
             "name": "com.unity.addressables",
             "expression": "",
             "define": "NETCODE_USE_ADDRESSABLES"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

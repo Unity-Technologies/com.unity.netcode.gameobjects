@@ -1,23 +1,22 @@
 using System.Collections;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// This class is for testing general fixes or functionality of NetworkBehaviours
     /// </summary>
-    public class NetworkBehaviourGenericTests : BaseMultiInstanceTest
+    public class NetworkBehaviourGenericTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 0;
-        public override IEnumerator Setup()
-        {
-            // Make sure we don't automatically start
-            m_BypassStartAndWaitForClients = true;
+        protected override int NumberOfClients => 0;
 
-            // Create the Host and add the SimpleNetworkBehaviour component
-            yield return base.Setup();
+        private bool m_AllowServerToStart;
+
+        protected override bool CanStartServerAndClients()
+        {
+            return m_AllowServerToStart;
         }
 
         public class SimpleNetworkBehaviour : NetworkBehaviour
@@ -30,14 +29,15 @@ namespace Unity.Netcode.RuntimeTests
         /// Note: This test does not require any clients, but should not impact this
         /// particular test if new tests are added to this class that do require clients
         /// </summary>
-        [Test]
-        public void ValidateNoSpam()
+        [UnityTest]
+        public IEnumerator ValidateNoSpam()
         {
+            m_AllowServerToStart = true;
             var objectToTest = new GameObject();
             var simpleNetworkBehaviour = objectToTest.AddComponent<SimpleNetworkBehaviour>();
 
             // Now just start the Host
-            Assert.True(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, new NetworkManager[] { }), "Failed to start the host!");
+            yield return StartServerAndClients();
 
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
