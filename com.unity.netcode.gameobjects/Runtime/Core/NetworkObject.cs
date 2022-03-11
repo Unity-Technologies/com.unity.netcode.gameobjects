@@ -549,7 +549,7 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnLostOwnership();
+                ChildNetworkBehaviours[i].InternalOnLostOwnership();
             }
         }
 
@@ -557,7 +557,7 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnGainedOwnership();
+                ChildNetworkBehaviours[i].InternalOnGainedOwnership();
             }
         }
 
@@ -796,7 +796,6 @@ namespace Unity.Netcode
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
-                ChildNetworkBehaviours[i].OnNetworkSpawn();
             }
         }
 
@@ -805,7 +804,6 @@ namespace Unity.Netcode
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
-                ChildNetworkBehaviours[i].OnNetworkDespawn();
             }
         }
 

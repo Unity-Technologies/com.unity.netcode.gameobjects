@@ -235,42 +235,42 @@ namespace Unity.Netcode
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
         /// <summary>
-        /// Gets if the object is the the personal clients player object
+        /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
+        /// is the local player object.  If no NetworkObject is assigned it will always return false.
         /// </summary>
-        public bool IsLocalPlayer => NetworkObject.IsLocalPlayer;
+        public bool IsLocalPlayer { get; private set; }
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkObject.IsOwner;
+        public bool IsOwner { get; internal set; }
 
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer => IsRunning && NetworkManager.IsServer;
+        protected bool IsServer { get; private set; }
 
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient => IsRunning && NetworkManager.IsClient;
+        protected bool IsClient { get; private set; }
+
 
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost => IsRunning && NetworkManager.IsHost;
-
-        private bool IsRunning => NetworkManager && NetworkManager.IsListening;
+        protected bool IsHost { get; private set; }
 
         /// <summary>
         /// Gets Whether or not the object has a owner
         /// </summary>
-        public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
+        public bool IsOwnedByServer { get; internal set; }
 
         /// <summary>
         /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
         /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
         /// </summary>
-        public bool IsSpawned => HasNetworkObject ? NetworkObject.IsSpawned : false;
+        public bool IsSpawned { get; internal set; }
 
         internal bool IsBehaviourEditable()
         {
@@ -327,12 +327,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the NetworkId of the NetworkObject that owns this NetworkBehaviour
         /// </summary>
-        public ulong NetworkObjectId => NetworkObject.NetworkObjectId;
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
         /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
         /// </summary>
-        public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
+        public ushort NetworkBehaviourId { get; internal set; }
 
         /// <summary>
         /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
@@ -352,7 +352,47 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the ClientId that owns the NetworkObject
         /// </summary>
-        public ulong OwnerClientId => NetworkObject.OwnerClientId;
+        public ulong OwnerClientId { get; internal set; }
+
+        /// <summary>
+        /// Updates properties with network session related
+        /// dependencies such as a NetworkObject's spawned
+        /// state or NetworkManager's session state.
+        /// </summary>
+        internal void UpdateNetworkProperties()
+        {
+            // Set NetworkObject dependent properties
+            if (NetworkObject != null)
+            {
+                // Set identification related properties
+                NetworkObjectId = NetworkObject.NetworkObjectId;
+                IsLocalPlayer = NetworkObject.IsLocalPlayer;
+
+                // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
+                // NetworkObject.ChildNetworkBehaviours which is set once when first
+                // accessed.
+                NetworkBehaviourId = NetworkObject.GetNetworkBehaviourOrderIndex(this);
+
+                // Set ownership related properties
+                IsOwnedByServer = NetworkObject.IsOwnedByServer;
+                IsOwner = NetworkObject.IsOwner;
+                OwnerClientId = NetworkObject.OwnerClientId;
+
+                // Set NetworkManager dependent properties
+                if (NetworkManager != null)
+                {
+                    IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
+                    IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
+                    IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
+                }
+            }
+            else // Shouldn't happen, but if so then set the properties to their default value;
+            {
+                OwnerClientId = NetworkObjectId = default;
+                IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = default;
+                NetworkBehaviourId = default;
+            }
+        }
 
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
@@ -366,20 +406,40 @@ namespace Unity.Netcode
 
         internal void InternalOnNetworkSpawn()
         {
+            IsSpawned = true;
             InitializeVariables();
+            UpdateNetworkProperties();
+            OnNetworkSpawn();
         }
 
-        internal void InternalOnNetworkDespawn() { }
+        internal void InternalOnNetworkDespawn()
+        {
+            IsSpawned = false;
+            UpdateNetworkProperties();
+            OnNetworkDespawn();
+        }
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
+        internal void InternalOnGainedOwnership()
+        {
+            UpdateNetworkProperties();
+            OnGainedOwnership();
+        }
+
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
+
+        internal void InternalOnLostOwnership()
+        {
+            UpdateNetworkProperties();
+            OnLostOwnership();
+        }
 
         /// <summary>
         /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
