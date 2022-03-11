@@ -153,6 +153,10 @@ namespace Unity.Netcode
         {
         }
 
+        public void UpdateConnectionsCount(int count)
+        {
+        }
+
         public void DispatchFrame()
         {
         }
