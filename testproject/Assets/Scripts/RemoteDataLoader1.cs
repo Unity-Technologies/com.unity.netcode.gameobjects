@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Netcode.Transports.UNET;
+using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -13,6 +16,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public RemoteConfig RemoteConfig;
         public MultiprocessConfig MultiprocessConfig;
+        public static GameObject NetworkManagerGameObject { get; set; }
+        public static NetworkManager NetworkManagerObject { get; set; }
 
         private int m_UpdateCounter;
         private bool m_PlatformSupportsLocalFiles;
@@ -21,24 +26,30 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private string m_LocalGitHash;
         private Task m_RemoteConfigTask;
         private TextAsset m_TextConfig;
+        public Scene NewScene;
         public static RemoteDataLoader1 Instance;
 
         public void Awake()
         {
             Debug.Log($"Awake {Application.streamingAssetsPath}");
-            Debug.Log($"Awake {NetworkManager.Singleton.NetworkConfig.ConnectionData}");
+            if (NetworkManagerGameObject == null)
+            {
+                NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
+                NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+            }
             GameObject[] objs = GameObject.FindGameObjectsWithTag("RemoteDataLoader");
 
             if (objs.Length > 1)
             {
-                Destroy(gameObject);
+                Debug.Log($"Destroying previously loaded gameobject {objs.Length}");
+                Destroy(objs[0]);
             }
 
             DontDestroyOnLoad(gameObject);
 
             m_MatchingConfigFound = false;
             m_ListOfAsyncTasks = new List<Task>();
-            
+
             Application.targetFrameRate = 5;
             QualitySettings.vSyncCount = 0;
 
@@ -64,6 +75,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     break;
             }
             Instance = this;
+            Debug.Log($"IsActiveAndEnabled: {isActiveAndEnabled}");
         }
         // Start is called before the first frame update
         public void Start()
@@ -108,10 +120,39 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (m_MatchingConfigFound)
             {
+                var networkConfig = new NetworkConfig();
+                NetworkManagerObject.NetworkConfig = networkConfig;
+
                 MultiprocessConfig = JsonUtility.FromJson<MultiprocessConfig>(RemoteConfig.AdditionalJsonConfig);
-                PlayerPrefs.SetString("Transport", RemoteConfig.TransportName);
-                PlayerPrefs.SetString("IsClient", MultiprocessConfig.IsClient.ToString());
-                UnityEngine.SceneManagement.SceneManager.LoadScene(MultiprocessConfig.SceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+                if (RemoteConfig.TransportName.Equals("UNET"))
+                {
+                    var transport = NetworkManagerGameObject.AddComponent<UNetTransport>();                    
+                    NetworkManagerObject.NetworkConfig.NetworkTransport = transport;
+                    transport.ConnectAddress = RemoteConfig.HostIp;
+                }
+                else if (RemoteConfig.TransportName.Equals("UTP"))
+                {
+                    var transport = NetworkManagerGameObject.AddComponent<UnityTransport>();
+                    NetworkManagerObject.NetworkConfig.NetworkTransport = transport;
+                    transport.ConnectionData.Address = RemoteConfig.HostIp;
+                    transport.ConnectionData.ServerListenAddress = RemoteConfig.HostIp;
+                }
+
+                if (MultiprocessConfig.MultiplayerMode == MultiplayerMode.Host)
+                {
+                    NetworkManagerObject.StartHost();
+                }
+                else if (MultiprocessConfig.MultiplayerMode == MultiplayerMode.Server)
+                {
+                    NetworkManagerObject.StartServer();
+                }
+                else if (MultiprocessConfig.MultiplayerMode == MultiplayerMode.Client)
+                {
+                    NetworkManagerObject.StartClient();
+                }
+                SceneManager.sceneLoaded += OnSceneLoaded;               
+                SceneManager.LoadScene(MultiprocessConfig.SceneName, LoadSceneMode.Single);
+                enabled = false;
             }
             else
             {
@@ -131,16 +172,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
+        public static System.Diagnostics.Process CallGitToGetHash()
+        {
+            var workerProcess = new System.Diagnostics.Process();
+            workerProcess.StartInfo.UseShellExecute = false;
+            workerProcess.StartInfo.RedirectStandardError = true;
+            workerProcess.StartInfo.RedirectStandardOutput = true;
+            workerProcess.StartInfo.FileName = "git";
+            workerProcess.StartInfo.Arguments = "rev-parse HEAD";
+            return workerProcess;
+        }
+
         private Task ComputeLocalGitHash()
         {
             Task t = Task.Factory.StartNew(() =>
             {
-                var workerProcess = new System.Diagnostics.Process();
-                workerProcess.StartInfo.UseShellExecute = false;
-                workerProcess.StartInfo.RedirectStandardError = true;
-                workerProcess.StartInfo.RedirectStandardOutput = true;
-                workerProcess.StartInfo.FileName = "git";
-                workerProcess.StartInfo.Arguments = "rev-parse HEAD";
+                var workerProcess = CallGitToGetHash();
                 workerProcess.Start();
                 workerProcess.WaitForExit();
                 Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
@@ -165,17 +212,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Debug.Log("Task to Get Remote Config");
                 RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1, m_LocalGitHash, m_TextConfig);
                 Debug.Log($"Remote GitHash was {RemoteConfig.GitHash} and local {m_LocalGitHash}");
-                m_MatchingConfigFound = true;
-                if (RemoteConfig.GitHash.Equals(PlayerPrefs.GetString("GitHash")))
+                if (RemoteConfig.GitHash.Equals(m_LocalGitHash))
                 {
-                // If the githash and platform are a match then we can pick up this job
-                // TODO:
+                    m_MatchingConfigFound = true;
                     PlayerPrefs.SetInt("JobId", RemoteConfig.JobId);
                     PlayerPrefs.SetString("HostIp", RemoteConfig.HostIp);
+                }
+                else
+                {
+                    Debug.Log("Non matching config");
                 }
             });
             m_ListOfAsyncTasks.Add(t);
             return t;
+        }
+
+        public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            NewScene = scene;
         }
     }
 
@@ -196,7 +250,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // -m(?) | Start network in one of 3 modes: client, host, server
             bool isCommandLine = Environment.GetCommandLineArgs().Any(value => value == "-m");
 
-            
             Debug.Log($"isCommandLine {isCommandLine}");
 
             if (isCommandLine)
@@ -225,7 +278,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 foreach (var config in remoteConfigList.JobQueueItems)
                 {
-                    if (config.GitHash != null && config.GitHash.Equals(localGitHash))
+                    if (config.GitHash != null && config.GitHash.Equals(localGitHash)
+                        && (RuntimePlatform)config.PlatformId == Application.platform)
                     {
                         if (config.AdditionalJsonConfig != null)
                         {
@@ -235,6 +289,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                                 return config;
                             }
                         }
+                    }
+                    else
+                    {
+                        Debug.Log($"config.PlatformId = {config.PlatformId}, Application.platform = {Application.platform}");
+                        Debug.Log($"config.GitHash {config.GitHash} localGitHash {localGitHash}");
                     }
                 }
             }
@@ -255,6 +314,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             contentTask.Wait();
 
             return contentTask.Result;
+        }
+
+        public static Task<HttpResponseMessage> PostBasicAsync(string content)
+        {
+            using var client = new HttpClient();
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile");
+            using var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
+            request.Content = stringContent;
+            Task<HttpResponseMessage> t = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+            return t;
         }
     }
 
@@ -287,9 +357,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class MultiprocessConfig
     {
         public string SceneName;
-        public bool IsHost;
-        public bool IsClient;
-        public bool IsServer;
+        public MultiplayerMode MultiplayerMode;
+    }
+
+    [Serializable]
+    public enum MultiplayerMode
+    {
+        Host,
+        Server,
+        Client
     }
 
     public class CommandLineDataLoader
@@ -317,5 +393,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
         }
+    }
+
+    public class RemoteHttpUtils
+    {
+
     }
 }

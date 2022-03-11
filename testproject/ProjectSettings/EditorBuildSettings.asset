@@ -98,4 +98,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObject.unity
     guid: 136692aa47cd577499d03a2b0dabbf28
+  - enabled: 1
+    path: Assets/Scenes/RemoteConfigScene.unity
+    guid: 73881ecf17c50b04589fc3af20cfeb9b
   m_configObjects: {}
