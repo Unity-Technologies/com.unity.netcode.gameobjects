@@ -1545,6 +1545,7 @@ namespace Unity.Netcode
             {
                 MessagingSystem.ProcessSendQueues();
                 NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
+                NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
                 NetworkMetrics.DispatchFrame();
             }
             SpawnManager.CleanupStaleTriggers();
