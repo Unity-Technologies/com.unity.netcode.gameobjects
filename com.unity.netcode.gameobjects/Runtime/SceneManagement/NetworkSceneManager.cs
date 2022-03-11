@@ -1615,6 +1615,10 @@ namespace Unity.Netcode
                             // All scenes are synchronized, let the server know we are done synchronizing
                             m_NetworkManager.IsConnectedClient = true;
 
+                            m_NetworkManager.State = NetworkManagerState.Ready;
+
+                            m_NetworkManager.InvokeOnReadyCallback();
+
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
                             m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
