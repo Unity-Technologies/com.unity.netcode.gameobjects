@@ -13,6 +13,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Owner-ownly
         /// </summary>
-        OwnerOnly,
+        Owner,
+    }
+
+    public enum NetworkVariableWritePermission
+    {
+        Server,
+        Owner
     }
 }
