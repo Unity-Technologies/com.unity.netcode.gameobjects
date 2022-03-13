@@ -832,13 +832,13 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
                 behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(writer, clientId);
+                behavior.WriteNetworkVariableData(writer, targetClientId);
             }
         }
 

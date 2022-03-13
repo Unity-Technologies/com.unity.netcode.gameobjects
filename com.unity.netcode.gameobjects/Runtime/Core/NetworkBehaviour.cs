@@ -161,9 +161,9 @@ namespace Unity.Netcode
 
             if (clientRpcParams.Send.TargetClientIds != null)
             {
-                foreach (var clientId in clientRpcParams.Send.TargetClientIds)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                 {
-                    if (clientId == NetworkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldSendToHost = true;
                         break;
@@ -174,9 +174,9 @@ namespace Unity.Netcode
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
-                foreach (var clientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
-                    if (clientId == NetworkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldSendToHost = true;
                         break;
@@ -559,7 +559,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void VariableUpdate(ulong clientId)
+        internal void VariableUpdate(ulong targetClientId)
         {
             if (!m_VarInit)
             {
@@ -567,13 +567,13 @@ namespace Unity.Netcode
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, NetworkBehaviourId);
+            NetworkVariableUpdate(targetClientId, NetworkBehaviourId);
         }
 
         internal readonly List<int> NetworkVariableIndexesToReset = new List<int>();
         internal readonly HashSet<int> NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
+        private void NetworkVariableUpdate(ulong targetClientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
@@ -595,7 +595,7 @@ namespace Unity.Netcode
                     var shouldSend = false;
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
-                        if (NetworkVariableFields[k].ShouldWrite(clientId, IsServer))
+                        if (NetworkVariableFields[k].ShouldWrite(targetClientId, IsServer))
                         {
                             shouldSend = true;
                         }
@@ -608,7 +608,7 @@ namespace Unity.Netcode
                             NetworkObjectId = NetworkObjectId,
                             NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
                             NetworkBehaviour = this,
-                            ClientId = clientId,
+                            ClientId = targetClientId,
                             DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
                         };
                         // TODO: Serialization is where the IsDirty flag gets changed.
@@ -616,7 +616,7 @@ namespace Unity.Netcode
                         // we still have to actually serialize the message even though we're not sending it, otherwise
                         // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
                         // so we don't have to do this serialization work if we're not going to use the result.
-                        if (IsServer && clientId == NetworkManager.ServerClientId)
+                        if (IsServer && targetClientId == NetworkManager.ServerClientId)
                         {
                             var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                             using (tmpWriter)
@@ -626,7 +626,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
+                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
                         }
                     }
                 }
@@ -655,7 +655,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -664,7 +664,7 @@ namespace Unity.Netcode
 
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                bool canClientRead = NetworkVariableFields[j].CanClientRead(clientId);
+                bool canClientRead = NetworkVariableFields[j].CanClientRead(targetClientId);
 
                 if (canClientRead)
                 {
