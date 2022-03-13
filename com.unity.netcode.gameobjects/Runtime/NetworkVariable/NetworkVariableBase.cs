@@ -78,7 +78,7 @@ namespace Unity.Netcode
             {
                 case NetworkVariableReadPermission.Everyone:
                     return true;
-                case NetworkVariableReadPermission.OwnerOnly:
+                case NetworkVariableReadPermission.Owner:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
