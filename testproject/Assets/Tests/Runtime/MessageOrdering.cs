@@ -146,12 +146,14 @@ namespace TestProject.RuntimeTests
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.Spawn();
+
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
             srdComponent.Activate();
 
             // Wait until all objects have spawned.
             int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
-            const int maxFrames = 240;
+            int maxFrames = 240 + Time.frameCount;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
             while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount && !handler.WasSpawned)
             {
@@ -171,8 +173,10 @@ namespace TestProject.RuntimeTests
 
             Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            var lastFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
+
+            // Wait 1 tic for the GameObjet and associated components to be destroyed
+            yield return new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
+
             Assert.True(handler.WasDestroyed);
         }
 

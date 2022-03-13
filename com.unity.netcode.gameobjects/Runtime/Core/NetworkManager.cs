@@ -827,17 +827,25 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var result = NetworkConfig.NetworkTransport.StartServer();
+            // If we failed to start then shutdown and notify user that the transport failed to start
+            if (NetworkConfig.NetworkTransport.StartServer())
+            {
+                IsServer = true;
+                IsClient = false;
+                IsListening = true;
 
-            IsServer = true;
-            IsClient = false;
-            IsListening = true;
+                SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+                OnServerStarted?.Invoke();
+                return true;
+            }
+            else
+            {
+                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                Shutdown();
+            }
 
-            OnServerStarted?.Invoke();
-
-            return result;
+            return false;
         }
 
         /// <summary>
@@ -863,13 +871,18 @@ namespace Unity.Netcode
             Initialize(false);
             MessagingSystem.ClientConnected(ServerClientId);
 
-            var result = NetworkConfig.NetworkTransport.StartClient();
+            if (!NetworkConfig.NetworkTransport.StartClient())
+            {
+                Debug.LogError($"Client is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                Shutdown();
+                return false;
+            }
 
             IsServer = false;
             IsClient = true;
             IsListening = true;
 
-            return result;
+            return true;
         }
 
         /// <summary>
@@ -906,7 +919,14 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            var result = NetworkConfig.NetworkTransport.StartServer();
+            // If we failed to start then shutdown and notify user that the transport failed to start
+            if (!NetworkConfig.NetworkTransport.StartServer())
+            {
+                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                Shutdown();
+                return false;
+            }
+
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
@@ -942,7 +962,7 @@ namespace Unity.Netcode
 
             OnServerStarted?.Invoke();
 
-            return result;
+            return true;
         }
 
         public void SetSingleton()
@@ -1014,6 +1034,7 @@ namespace Unity.Netcode
         internal interface INetworkManagerHelper
         {
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
         }
 #endif
 
@@ -1274,6 +1295,8 @@ namespace Unity.Netcode
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
                 MessagingSystem.ProcessSendQueues();
+                NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
+                NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
                 NetworkMetrics.DispatchFrame();
             }
             SpawnManager.CleanupStaleTriggers();
@@ -1764,7 +1787,7 @@ namespace Unity.Netcode
 
                 var message = new CreateObjectMessage
                 {
-                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key, false)
+                    ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
                 message.ObjectInfo.Header.Hash = playerPrefabHash;
                 message.ObjectInfo.Header.IsSceneObject = false;
