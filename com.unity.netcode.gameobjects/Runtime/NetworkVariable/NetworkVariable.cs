@@ -87,7 +87,7 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                if (m_NetworkBehaviour && !CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException("Client is not allowed to write to this NetworkVariable");
                 }
@@ -112,7 +112,6 @@ namespace Unity.Netcode
         {
             WriteField(writer);
         }
-
 
         /// <summary>
         /// Reads value from the reader and applies it

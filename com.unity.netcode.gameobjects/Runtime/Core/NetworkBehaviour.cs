@@ -493,12 +493,10 @@ namespace Unity.Netcode
 
             m_VarInit = true;
 
-            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
-
+            var sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
-                Type fieldType = sortedFields[i].FieldType;
-
+                var fieldType = sortedFields[i].FieldType;
                 if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
                 {
                     var instance = (NetworkVariableBase)sortedFields[i].GetValue(this);

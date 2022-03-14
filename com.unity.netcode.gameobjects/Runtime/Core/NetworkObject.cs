@@ -54,8 +54,6 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkManager NetworkManagerOwner;
 
-        private ulong m_NetworkObjectId;
-
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
         /// </summary>
@@ -314,7 +312,6 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-
             Observers.Remove(clientId);
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
@@ -345,7 +342,7 @@ namespace Unity.Netcode
                 throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
             }
 
-            NetworkManager networkManager = networkObjects[0].NetworkManager;
+            var networkManager = networkObjects[0].NetworkManager;
 
             if (!networkManager.IsServer)
             {
@@ -384,13 +381,14 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
-                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
+            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
+                (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
 
-            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (NetworkManager != null && NetworkManager.SpawnManager != null &&
+                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
             }
@@ -398,19 +396,18 @@ namespace Unity.Netcode
 
         private SnapshotDespawnCommand GetDespawnCommand()
         {
-            var command = new SnapshotDespawnCommand();
-            command.NetworkObjectId = NetworkObjectId;
-
-            return command;
+            return new SnapshotDespawnCommand { NetworkObjectId = NetworkObjectId };
         }
 
         private SnapshotSpawnCommand GetSpawnCommand()
         {
-            var command = new SnapshotSpawnCommand();
-            command.NetworkObjectId = NetworkObjectId;
-            command.OwnerClientId = OwnerClientId;
-            command.IsPlayerObject = IsPlayerObject;
-            command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+            var command = new SnapshotSpawnCommand
+            {
+                NetworkObjectId = NetworkObjectId,
+                OwnerClientId = OwnerClientId,
+                IsPlayerObject = IsPlayerObject,
+                IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value
+            };
 
             ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
             if (parent != null)
@@ -441,8 +438,7 @@ namespace Unity.Netcode
         private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
+            command.TargetClientIds = new List<ulong> { clientId };
             NetworkManager.SnapshotSystem.Spawn(command);
         }
 
@@ -455,8 +451,7 @@ namespace Unity.Netcode
         internal void SnapshotDespawn(ulong clientId)
         {
             var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
+            command.TargetClientIds = new List<ulong> { clientId };
             NetworkManager.SnapshotSystem.Despawn(command);
         }
 

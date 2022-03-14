@@ -69,16 +69,16 @@ namespace Unity.Netcode
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
-                        networkVariable.WriteDelta(tmpWriter);
+                        var tempWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
+                        networkVariable.WriteDelta(tempWriter);
 
-                        if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
+                        if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tempWriter.Length))
                         {
                             throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
                         }
 
-                        writer.WriteValue((ushort)tmpWriter.Length);
-                        tmpWriter.CopyTo(writer);
+                        writer.WriteValue((ushort)tempWriter.Length);
+                        tempWriter.CopyTo(writer);
                     }
                     else
                     {

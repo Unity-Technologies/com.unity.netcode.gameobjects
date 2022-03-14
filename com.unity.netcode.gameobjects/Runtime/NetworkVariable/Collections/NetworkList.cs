@@ -24,6 +24,8 @@ namespace Unity.Netcode
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
 
+        public NetworkList() { }
+
         public NetworkList(IEnumerable<T> values = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
