@@ -16,10 +16,15 @@ namespace Unity.Netcode.RuntimeTests
 
         private void Update()
         {
+            // Since the local position is transformed from local to global and vice-versa on the server and client
+            // it may accumulate some error. We allow an error of 0.01 over the range of 1000 used in this test.
+            // This requires precision to 5 digits, so it doesn't weaken the test, while preventing spurious failures
+            const float maxRoundingError = 0.01f;
+
             // Check the position of the nested object on the client
             if (CheckPosition)
             {
-                if (transform.position.y < 0.0f || transform.position.y > 100.0f)
+                if (transform.position.y < -maxRoundingError || transform.position.y > 100.0f + maxRoundingError)
                 {
                     Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
                 }
