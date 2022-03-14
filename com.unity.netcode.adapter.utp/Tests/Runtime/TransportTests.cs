@@ -1,5 +1,3 @@
-// todo @simon-lemay-unity: un-guard/re-enable after validating UTP on consoles
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -123,7 +121,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
             yield return null;
         }
 
+        // Test is ignored on Switch, PS4, and PS5 because on these platforms the OS buffers for
+        // loopback traffic are too small for the amount of data sent in a single update here.
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Switch, RuntimePlatform.PS4, RuntimePlatform.PS5 })]
         public IEnumerator SendMaximumPayloadSize([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {
             // We want something that's over the old limit of ~44KB for reliable payloads.
@@ -300,7 +301,10 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
 
         // Check that it's fine to overflow the unreliable send queue (traffic is flushed on overflow).
+        // Test is ignored on Switch, PS4, and PS5 because on these platforms the OS buffers for
+        // loopback traffic are too small for the amount of data sent in a single update here.
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Switch, RuntimePlatform.PS4, RuntimePlatform.PS5 })]
         public IEnumerator SendCompletesOnUnreliableSendQueueOverflow()
         {
             InitializeTransport(out m_Server, out m_ServerEvents);
@@ -412,4 +416,3 @@ namespace Unity.Netcode.UTP.RuntimeTests
         }
     }
 }
-#endif
