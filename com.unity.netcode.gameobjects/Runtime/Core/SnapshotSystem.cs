@@ -195,13 +195,13 @@ namespace Unity.Netcode
 
             if (!IsServer)
             {
-                clientList.Add(m_NetworkManager.ServerClientId);
+                clientList.Add(NetworkManager.ServerClientId);
             }
             else
             {
                 foreach (var clientId in ConnectedClientsId)
                 {
-                    if (clientId != m_NetworkManager.ServerClientId)
+                    if (clientId != NetworkManager.ServerClientId)
                     {
                         clientList.Add(clientId);
                     }
@@ -694,7 +694,7 @@ namespace Unity.Netcode
             {
                 IsServer = m_NetworkManager.IsServer;
                 IsConnectedClient = m_NetworkManager.IsConnectedClient;
-                ServerClientId = m_NetworkManager.ServerClientId;
+                ServerClientId = NetworkManager.ServerClientId;
 
                 // todo: This is extremely inefficient. What is the efficient and idiomatic way ?
                 ConnectedClientsId.Clear();
