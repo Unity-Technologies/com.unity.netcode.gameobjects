@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var networkObject = networkObjects[i].GetComponent<NetworkObject>();
                 // ensure ownership was transferred back
-                Assert.That(networkObject.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                Assert.That(networkObject.OwnerClientId == NetworkManager.ServerClientId);
             }
         }
     }
