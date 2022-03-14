@@ -11,6 +11,7 @@ All notable changes to this package will be documented in this file. The format 
 
 ### Fixed
 
+- Fixed compilation on WebGL. Note that the platform is still unsupported, but at least including the package in a WebGL project will not create compilation errors anymore. (#1802)
 - Flush internal send queues to the network during `Shutdown`. Prior to this fix, calling `NetworkManager.Shutdown` with `discardMessageQueue` set to false would not actually get messages from the outgoing queue to the network. (#1800)
 
 
