@@ -787,7 +787,12 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
+                // We can gain ownership before we are spawned
+                // Only invoke ApplyInterpolatedNetworkStateToTransform if we have assigned it.
+                if (m_Transform != null)
+                {
+                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
+                }
             }
         }
 
