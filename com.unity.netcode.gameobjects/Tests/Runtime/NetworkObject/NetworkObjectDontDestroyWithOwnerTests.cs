@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             for (int i = 0; i < networkObjects.Count; i++)
             {
                 // ensure ownership was transferred back
-                Assert.That(networkObjects[i].OwnerClientId == server.ServerClientId);
+                Assert.That(networkObjects[i].OwnerClientId == NetworkManager.ServerClientId);
             }
 
             // cleanup
