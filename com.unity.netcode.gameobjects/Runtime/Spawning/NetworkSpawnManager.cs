@@ -45,6 +45,8 @@ namespace Unity.Netcode
             // Use internal lookup table to see if the NetworkObject has a previous owner
             if (m_ObjectToOwnershipTable.ContainsKey(networkObject.NetworkObjectId))
             {
+                // Set the previous owner's ClientId
+                previousOwner = m_ObjectToOwnershipTable[networkObject.NetworkObjectId];
                 if (isRemoving)
                 {
                     // If despawning, we remove this entry
@@ -52,8 +54,6 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Set the previous owner's ClientId
-                    previousOwner = m_ObjectToOwnershipTable[networkObject.NetworkObjectId];
                     m_ObjectToOwnershipTable[networkObject.NetworkObjectId] = newOwner;
                 }
             }
