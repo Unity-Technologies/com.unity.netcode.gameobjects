@@ -31,9 +31,9 @@ namespace Unity.Netcode
             writer.WriteValue(NetworkObjectId);
             writer.WriteValue(NetworkBehaviourIndex);
 
-            for (int k = 0; k < NetworkBehaviour.NetworkVariableFields.Count; k++)
+            for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
-                if (!DeliveryMappedNetworkVariableIndex.Contains(k))
+                if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
                     // This var does not belong to the currently iterating delivery group.
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -48,14 +48,10 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                //   if I'm dirty AND a client, write (server always has all permissions)
-                //   if I'm dirty AND the server AND the client can read me, send.
-                // bool shouldWrite = NetworkBehaviour.NetworkVariableFields[k].ShouldWrite(TargetClientId, NetworkBehaviour.NetworkManager.IsServer);
-                var networkVariable = NetworkBehaviour.NetworkVariableFields[k];
+                var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
-                        ((NetworkBehaviour.NetworkManager.IsServer && TargetClientId != NetworkBehaviour.NetworkObject.OwnerClientId) ||
-                        networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
+                    (NetworkBehaviour.NetworkManager.IsServer || networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
 
                 if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
@@ -74,7 +70,7 @@ namespace Unity.Netcode
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
-                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
+                        networkVariable.WriteDelta(tmpWriter);
 
                         if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
                         {
@@ -86,19 +82,19 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        NetworkBehaviour.NetworkVariableFields[k].WriteDelta(writer);
+                        networkVariable.WriteDelta(writer);
                     }
 
-                    if (!NetworkBehaviour.NetworkVariableIndexesToResetSet.Contains(k))
+                    if (!NetworkBehaviour.NetworkVariableIndexesToResetSet.Contains(i))
                     {
-                        NetworkBehaviour.NetworkVariableIndexesToResetSet.Add(k);
-                        NetworkBehaviour.NetworkVariableIndexesToReset.Add(k);
+                        NetworkBehaviour.NetworkVariableIndexesToResetSet.Add(i);
+                        NetworkBehaviour.NetworkVariableIndexesToReset.Add(i);
                     }
 
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
                         NetworkBehaviour.NetworkObject,
-                        NetworkBehaviour.NetworkVariableFields[k].Name,
+                        networkVariable.Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length);
                 }
@@ -140,7 +136,6 @@ namespace Unity.Netcode
                     for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
                     {
                         ushort varSize = 0;
-
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             m_ReceivedNetworkVariableData.ReadValueSafe(out varSize);
@@ -159,15 +154,17 @@ namespace Unity.Netcode
                             }
                         }
 
-                        if (networkManager.IsServer && !networkBehaviour.NetworkVariableFields[i].CanClientWrite(context.SenderId))
+                        var networkVariable = networkBehaviour.NetworkVariableFields[i];
+
+                        if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
                         {
                             // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                             if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                             {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                                 {
                                     NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                    NetworkLog.LogError($"[{networkBehaviour.NetworkVariableFields[i].GetType().Name}]");
+                                    NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
                                 }
 
                                 m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + varSize);
@@ -184,19 +181,19 @@ namespace Unity.Netcode
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                             {
                                 NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                NetworkLog.LogError($"[{networkBehaviour.NetworkVariableFields[i].GetType().Name}]");
+                                NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
                             }
 
                             return;
                         }
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
-                        networkBehaviour.NetworkVariableFields[i].ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
+                        networkVariable.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             context.SenderId,
                             networkObject,
-                            networkBehaviour.NetworkVariableFields[i].Name,
+                            networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
 
@@ -216,7 +213,7 @@ namespace Unity.Netcode
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
-                                    NetworkLog.LogWarning($"Var delta read too little. {(readStartPos + varSize) - m_ReceivedNetworkVariableData.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
+                                    NetworkLog.LogWarning($"Var delta read too little. {readStartPos + varSize - m_ReceivedNetworkVariableData.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
                                 }
 
                                 m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);

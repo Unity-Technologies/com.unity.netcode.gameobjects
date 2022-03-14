@@ -117,7 +117,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-
         public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
         public virtual void Dispose()

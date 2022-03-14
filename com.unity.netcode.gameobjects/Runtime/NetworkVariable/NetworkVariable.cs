@@ -22,7 +22,8 @@ namespace Unity.Netcode
         }
 
         // Functions that serialize other types
-        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value) where TForMethod : unmanaged
+        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged
         {
             writer.WriteValueSafe(value);
         }
@@ -37,16 +38,13 @@ namespace Unity.Netcode
 
         internal delegate void ReadDelegate<TForMethod>(FastBufferReader reader, out TForMethod value);
 
-        // These static delegates provide the right implementation for writing and reading a particular network variable
-        // type.
-        //
+        // These static delegates provide the right implementation for writing and reading a particular network variable type.
         // For most types, these default to WriteValue() and ReadValue(), which perform simple memcpy operations.
         //
         // INetworkSerializableILPP will generate startup code that will set it to WriteNetworkSerializable()
         // and ReadNetworkSerializable() for INetworkSerializable types, which will call NetworkSerialize().
         //
-        // In the future we may be able to use this to provide packing implementations for floats and integers to
-        // optimize bandwidth usage.
+        // In the future we may be able to use this to provide packing implementations for floats and integers to optimize bandwidth usage.
         //
         // The reason this is done is to avoid runtime reflection and boxing in NetworkVariable - without this,
         // NetworkVariable would need to do a `var is INetworkSerializable` check, and then cast to INetworkSerializable,
@@ -89,16 +87,11 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                // this could be improved. The Networking Manager is not always initialized here
-                //  Good place to decouple network manager from the network variable
-
-                // Also, note this is not really very water-tight, if you are running as a host
-                //  we cannot tell if a NetworkVariable write is happening inside client-ish code
                 if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
-                // if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
                 {
-                    throw new InvalidOperationException("Client can't write to NetworkVariables");
+                    throw new InvalidOperationException("Client is not allowed to write to this NetworkVariable");
                 }
+
                 Set(value);
             }
         }
