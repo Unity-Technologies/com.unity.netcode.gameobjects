@@ -8,7 +8,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
-        private ulong serverSideClientId => m_ServerNetworkManager.ServerClientId;
+        private ulong serverSideClientId => NetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
         private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
