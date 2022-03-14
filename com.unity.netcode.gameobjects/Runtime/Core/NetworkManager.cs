@@ -229,14 +229,12 @@ namespace Unity.Netcode
 
         public NetworkSceneManager SceneManager { get; private set; }
 
-        public readonly ulong ServerClientId = 0;
+        public const ulong ServerClientId = 0;
 
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ??
-                                       throw new NullReferenceException(
-                                           $"The transport in the active {nameof(NetworkConfig)} is null");
+        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
         /// Returns ServerClientId if IsServer or LocalClientId if not
@@ -1295,6 +1293,8 @@ namespace Unity.Netcode
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
                 MessagingSystem.ProcessSendQueues();
+                NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
+                NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
                 NetworkMetrics.DispatchFrame();
             }
             SpawnManager.CleanupStaleTriggers();

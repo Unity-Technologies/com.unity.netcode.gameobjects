@@ -130,8 +130,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(clientComponent, Is.Not.Null);
 
 
-            Assert.That(serverObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.ServerClientId));
-            Assert.That(clientObject.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].ServerClientId));
+            Assert.That(serverObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
+            Assert.That(clientObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
 
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
@@ -141,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(clientComponent.OnGainedOwnershipFired);
             Assert.That(clientComponent.CachedOwnerIdOnGainedOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
-            serverObject.ChangeOwnership(m_ServerNetworkManager.ServerClientId);
+            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 

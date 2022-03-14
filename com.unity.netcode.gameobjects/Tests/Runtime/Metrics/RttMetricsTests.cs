@@ -1,5 +1,5 @@
 #if MULTIPLAYER_TOOLS
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 
 using System.Collections;
 using System.Collections.Generic;

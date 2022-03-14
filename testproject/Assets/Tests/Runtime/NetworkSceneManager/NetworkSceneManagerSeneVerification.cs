@@ -100,7 +100,7 @@ namespace TestProject.RuntimeTests
                     }
                 case SceneEventType.LoadComplete:
                     {
-                        if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId)
+                        if (sceneEvent.ClientId == NetworkManager.ServerClientId)
                         {
                             var scene = sceneEvent.Scene;
                             m_CurrentScene = scene;
@@ -162,7 +162,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         private void InitializeSceneTestInfo(LoadSceneMode clientSynchronizationMode, bool enableSceneVerification = false)
         {
-            m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = m_ServerNetworkManager.ServerClientId, ShouldWait = false });
+            m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = NetworkManager.ServerClientId, ShouldWait = false });
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = m_ServerVerificationAction;
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             m_ScenesLoaded.Clear();
@@ -188,7 +188,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 return !((m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
-                c.ClientId == m_ServerNetworkManager.ServerClientId).Count() > 0) && m_ClientsThatFailedVerification != NumberOfClients);
+                c.ClientId == NetworkManager.ServerClientId).Count() > 0) && m_ClientsThatFailedVerification != NumberOfClients);
             }
         }
 
