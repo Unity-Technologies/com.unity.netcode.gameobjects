@@ -70,6 +70,12 @@ namespace Unity.Netcode
                 if (OwnershipToObjectsTable[previousOwner].ContainsKey(networkObject.NetworkObjectId))
                 {
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
+
+                    if (NetworkManager.IsServer && previousOwner == NetworkManager.ServerClientId)
+                    {
+                        networkObject.InvokeBehaviourOnLostOwnership();
+                    }
+
                     // If we are removing the entry (i.e. despawning or client lost ownership)
                     if (isRemoving)
                     {
@@ -93,6 +99,10 @@ namespace Unity.Netcode
             if (!OwnershipToObjectsTable[newOwner].ContainsKey(networkObject.NetworkObjectId))
             {
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
+                if (NetworkManager.IsServer && previousOwner == NetworkManager.ServerClientId)
+                {
+                    networkObject.InvokeBehaviourOnGainedOwnership();
+                }
                 return true;
             }
             else if(NetworkManager.LogLevel == LogLevel.Developer)
