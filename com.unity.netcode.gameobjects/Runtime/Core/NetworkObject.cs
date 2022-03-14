@@ -806,6 +806,9 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkSpawn()
         {
+            // Clients only update things that belong to them
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();

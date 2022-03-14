@@ -71,7 +71,7 @@ namespace Unity.Netcode
                 {
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
 
-                    if (NetworkManager.IsServer && previousOwner == NetworkManager.ServerClientId)
+                    if (NetworkManager.IsServer)
                     {
                         networkObject.InvokeBehaviourOnLostOwnership();
                     }
@@ -99,7 +99,7 @@ namespace Unity.Netcode
             if (!OwnershipToObjectsTable[newOwner].ContainsKey(networkObject.NetworkObjectId))
             {
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
-                if (NetworkManager.IsServer && previousOwner == NetworkManager.ServerClientId)
+                if (NetworkManager.IsServer)
                 {
                     networkObject.InvokeBehaviourOnGainedOwnership();
                 }
@@ -362,7 +362,7 @@ namespace Unity.Netcode
             networkObject.OwnerClientId = clientId;
 
             // Server adds entries for all client ownership
-            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId, true);
+            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
 
             var message = new ChangeOwnershipMessage
             {
@@ -567,9 +567,6 @@ namespace Unity.Netcode
 
             if (NetworkManager.IsServer)
             {
-                // Server updates ownership for all clients
-                UpdateOwnershipTable(networkObject, ownerClientId);
-
                 if (playerObject)
                 {
                     // If there was an already existing player object for this player, then mark it as no longer
@@ -583,9 +580,6 @@ namespace Unity.Netcode
             }
             else if (ownerClientId == NetworkManager.LocalClientId)
             {
-                // Clients only update things that belong to them
-                UpdateOwnershipTable(networkObject, ownerClientId);
-
                 if (playerObject)
                 {
                     // If there was an already existing player object for this player, then mark it as no longer
