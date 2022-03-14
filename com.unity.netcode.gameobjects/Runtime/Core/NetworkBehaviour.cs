@@ -595,9 +595,12 @@ namespace Unity.Netcode
                     var shouldSend = false;
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
-                        if (NetworkVariableFields[k].ShouldWrite(targetClientId, IsServer))
+                        var networkVariable = NetworkVariableFields[k];
+                        // if (NetworkVariableFields[k].ShouldWrite(targetClientId, IsServer))
+                        if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                         {
                             shouldSend = true;
+                            break;
                         }
                     }
 
@@ -608,7 +611,7 @@ namespace Unity.Netcode
                             NetworkObjectId = NetworkObjectId,
                             NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
                             NetworkBehaviour = this,
-                            ClientId = targetClientId,
+                            TargetClientId = targetClientId,
                             DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
                         };
                         // TODO: Serialization is where the IsDirty flag gets changed.

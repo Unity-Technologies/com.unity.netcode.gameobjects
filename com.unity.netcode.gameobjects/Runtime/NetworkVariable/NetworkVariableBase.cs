@@ -19,9 +19,15 @@ namespace Unity.Netcode
             m_NetworkBehaviour = networkBehaviour;
         }
 
-        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
+        public const NetworkVariableReadPermission DefaultReadPerm = NetworkVariableReadPermission.Everyone;
+        public const NetworkVariableWritePermission DefaultWritePerm = NetworkVariableWritePermission.Server;
+
+        protected NetworkVariableBase(
+            NetworkVariableReadPermission readPerm = DefaultReadPerm,
+            NetworkVariableWritePermission writePerm = DefaultWritePerm)
         {
-            ReadPerm = readPermIn;
+            ReadPerm = readPerm;
+            WritePerm = writePerm;
         }
 
         private protected bool m_IsDirty;
@@ -36,6 +42,8 @@ namespace Unity.Netcode
         /// The read permission for this var
         /// </summary>
         public readonly NetworkVariableReadPermission ReadPerm;
+
+        public readonly NetworkVariableWritePermission WritePerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -62,26 +70,28 @@ namespace Unity.Netcode
             return m_IsDirty;
         }
 
-        public virtual bool ShouldWrite(ulong clientId, bool isServer)
-        {
-            return IsDirty() && isServer && CanClientRead(clientId);
-        }
-
-        /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
         public bool CanClientRead(ulong clientId)
         {
             switch (ReadPerm)
             {
+                default:
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.Owner:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.NetworkObject.OwnerClientId == clientId;
             }
-            return true;
+        }
+
+        public bool CanClientWrite(ulong clientId)
+        {
+            switch (WritePerm)
+            {
+                default:
+                case NetworkVariableWritePermission.Server:
+                    return m_NetworkBehaviour.NetworkManager.ServerClientId == clientId;
+                case NetworkVariableWritePermission.Owner:
+                    return m_NetworkBehaviour.NetworkObject.OwnerClientId == clientId;
+            }
         }
 
         /// <summary>

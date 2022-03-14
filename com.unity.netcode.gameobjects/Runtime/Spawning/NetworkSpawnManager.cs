@@ -468,12 +468,11 @@ namespace Unity.Netcode
             // this initialization really should be at the bottom of the function
             networkObject.IsSpawned = true;
 
-            // this initialization really should be at the top of this function.  If and when we break the
+            // this initialization really should be at the top of this function. If and when we break the
             //  NetworkVariable dependency on NetworkBehaviour, this otherwise creates problems because
             //  SetNetworkVariableData above calls InitializeVariables, and the 'baked out' data isn't ready there;
-            //  the current design banks on getting the network behaviour set and then only reading from it
-            //  after the below initialization code.  However cowardice compels me to hold off on moving this until
-            //  that commit
+            //  the current design banks on getting the network behaviour set and then only reading from it after the
+            //  below initialization code. However cowardice compels me to hold off on moving this until that commit
             networkObject.IsSceneObject = sceneObject;
             networkObject.NetworkObjectId = networkId;
 
@@ -491,8 +490,7 @@ namespace Unity.Netcode
                 {
                     if (playerObject)
                     {
-                        // If there was an already existing player object for this player, then mark it as no longer
-                        // a player object.
+                        // If there was an already existing player object for this player, then mark it as no longer a player object.
                         if (NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject != null)
                         {
                             NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject.IsPlayerObject = false;
@@ -506,8 +504,7 @@ namespace Unity.Netcode
                 }
                 else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
                 {
-                    // If there was an already existing player object for this player, then mark it as no longer
-                    // a player object.
+                    // If there was an already existing player object for this player, then mark it as no longer a player object.
                     if (NetworkManager.LocalClient.PlayerObject != null)
                     {
                         NetworkManager.LocalClient.PlayerObject.IsPlayerObject = false;
@@ -560,9 +557,8 @@ namespace Unity.Netcode
         {
             if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-                //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
-                //placing this check here. [NSS]
+                //Currently, if this is called and the clientId (destination) is the server's client Id, this case will be checked
+                // within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer placing this check here. [NSS]
                 if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
                 {
                     return;
@@ -660,10 +656,8 @@ namespace Unity.Netcode
                     else if (networkObjects[i].IsSpawned)
                     {
                         // If it is an in-scene placed NetworkObject then just despawn
-                        // and let it be destroyed when the scene is unloaded.  Otherwise,
-                        // despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null
-                                    && networkObjects[i].IsSceneObject.Value);
+                        // and let it be destroyed when the scene is unloaded. Otherwise, despawn and destroy it.
+                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value);
 
                         OnDespawnObject(networkObjects[i], shouldDestroy);
                     }

@@ -69,38 +69,11 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
-        /// <summary>
-        /// Creates a NetworkVariable with the default value and custom read permission
-        /// </summary>
-        /// <param name="readPerm">The read permission for the NetworkVariable</param>
 
-        public NetworkVariable()
-        {
-        }
-
-        /// <summary>
-        /// Creates a NetworkVariable with the default value and custom read permission
-        /// </summary>
-        /// <param name="readPerm">The read permission for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableReadPermission readPerm) : base(readPerm)
-        {
-        }
-
-        /// <summary>
-        /// Creates a NetworkVariable with a custom value and custom settings
-        /// </summary>
-        /// <param name="readPerm">The read permission for the NetworkVariable</param>
-        /// <param name="value">The initial value to use for the NetworkVariable</param>
-        public NetworkVariable(NetworkVariableReadPermission readPerm, T value) : base(readPerm)
-        {
-            m_InternalValue = value;
-        }
-
-        /// <summary>
-        /// Creates a NetworkVariable with a custom value and the default read permission
-        /// </summary>
-        /// <param name="value">The initial value to use for the NetworkVariable</param>
-        public NetworkVariable(T value)
+        public NetworkVariable(T value = default,
+            NetworkVariableReadPermission readPerm = DefaultReadPerm,
+            NetworkVariableWritePermission writePerm = DefaultWritePerm)
+            : base(readPerm, writePerm)
         {
             m_InternalValue = value;
         }
@@ -121,7 +94,8 @@ namespace Unity.Netcode
 
                 // Also, note this is not really very water-tight, if you are running as a host
                 //  we cannot tell if a NetworkVariable write is happening inside client-ish code
-                if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
+                if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                // if (m_NetworkBehaviour && (m_NetworkBehaviour.NetworkManager.IsClient && !m_NetworkBehaviour.NetworkManager.IsHost))
                 {
                     throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }

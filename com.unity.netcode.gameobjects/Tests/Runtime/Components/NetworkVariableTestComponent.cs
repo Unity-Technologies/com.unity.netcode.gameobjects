@@ -103,7 +103,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableUInt = new NetworkVariable<uint>(1);
             m_NetworkVariableUShort = new NetworkVariable<ushort>(1);
 
-            m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone);
+            /* m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone);
             m_NetworkVariableByte = new NetworkVariable<byte>(NetworkVariableReadPermission.Everyone);
             m_NetworkVariableColor = new NetworkVariable<Color>(NetworkVariableReadPermission.Everyone);
             m_NetworkVariableColor32 = new NetworkVariable<Color32>(NetworkVariableReadPermission.Everyone);
@@ -141,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableRay = new NetworkVariable<Ray>(NetworkVariableReadPermission.Everyone, new Ray());
             m_NetworkVariableULong = new NetworkVariable<ulong>(NetworkVariableReadPermission.Everyone, 1);
             m_NetworkVariableUInt = new NetworkVariable<uint>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone, 1);
+            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone, 1); */
 
             // Use this nifty class: NetworkVariableHelper
             // Tracks if NetworkVariable changed invokes the OnValueChanged callback for the given instance type
