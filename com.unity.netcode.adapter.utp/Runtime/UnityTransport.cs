@@ -701,7 +701,7 @@ namespace Unity.Netcode
                     ;
                 }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 ExtractNetworkMetrics();
 #endif
             }
@@ -712,7 +712,7 @@ namespace Unity.Netcode
             DisposeInternals();
         }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private void ExtractNetworkMetrics()
         {
             if (NetworkManager.IsServer)
@@ -1006,9 +1006,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Flush the driver's internal send queue. If we're shutting down because the
-            // NetworkManager is shutting down, it probably has disconnected some peer(s)
-            // in the process and we want to get these disconnect messages on the wire.
+            // Flush all send queues to the network. NGO can be configured to flush its message
+            // queue on shutdown. But this only calls the Send() method, which doesn't actually
+            // get anything to the network.
+            foreach (var kvp in m_SendQueue)
+            {
+                SendBatchedMessages(kvp.Key, kvp.Value);
+            }
+
+            // The above flush only puts the message in UTP internal buffers, need the flush send
+            // job to execute to actually get things out on the wire. This will also ensure any
+            // disconnect messages are sent out.
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeInternals();
@@ -1033,7 +1041,7 @@ namespace Unity.Netcode
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
             var maxFrameTimeMS = 0;
@@ -1059,7 +1067,7 @@ namespace Unity.Netcode
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1068,7 +1076,7 @@ namespace Unity.Netcode
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1076,7 +1084,7 @@ namespace Unity.Netcode
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1086,20 +1094,20 @@ namespace Unity.Netcode
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
