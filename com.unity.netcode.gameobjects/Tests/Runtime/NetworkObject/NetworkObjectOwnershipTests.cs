@@ -97,9 +97,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
             Assert.That(serverComponent.OnLostOwnershipFired);
-            Assert.That(serverComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
             Assert.That(clientComponent.OnGainedOwnershipFired);
-            Assert.That(clientComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
 
             serverComponent.ResetFlags();
             clientComponent.ResetFlags();
@@ -108,9 +108,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
-            Assert.That(serverComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);
-            Assert.That(clientComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
         }
     }
 }

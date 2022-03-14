@@ -69,15 +69,18 @@ namespace Unity.Netcode
             get => OwnerClientIdInternal;
             internal set
             {
-                if (OwnerClientId == NetworkManager.LocalClientId)
+                var oldOwnerId = OwnerClientIdInternal;
+                var newOwnedId = value;
+
+                OwnerClientIdInternal = newOwnedId;
+
+                if (oldOwnerId == NetworkManager.LocalClientId)
                 {
                     //We are current owner.
                     InvokeBehaviourOnLostOwnership();
                 }
 
-                OwnerClientIdInternal = value;
-
-                if (OwnerClientId == NetworkManager.LocalClientId)
+                if (newOwnedId == NetworkManager.LocalClientId)
                 {
                     //We are new owner.
                     InvokeBehaviourOnGainedOwnership();
