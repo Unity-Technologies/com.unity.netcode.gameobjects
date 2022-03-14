@@ -4,9 +4,15 @@ All notable changes to this package will be documented in this file. The format 
 
 ## [Unreleased]
 
+
 ### Changed
 
 - Updated Unity Transport package to 1.0.0-pre.15. (#1797)
+
+### Fixed
+
+- Flush internal send queues to the network during `Shutdown`. Prior to this fix, calling `NetworkManager.Shutdown` with `discardMessageQueue` set to false would not actually get messages from the outgoing queue to the network. (#1800)
+
 
 ## [1.0.0-pre.6] - 2022-03-02
 
