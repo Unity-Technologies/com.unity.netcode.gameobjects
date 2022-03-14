@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -1612,17 +1613,18 @@ namespace Unity.Netcode
                         }
                     }
 
-                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
+                    foreach (var ownedObject in SpawnManager.SpawnedObjectsList.Where(x => x.OwnerClientId == clientId))
                     {
-                        var ownedObject = networkClient.OwnedObjects[i];
+                    // for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
+                    // {
+                    //     var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)
                         {
                             if (!ownedObject.DontDestroyWithOwner)
                             {
-                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i]
-                                    .GlobalObjectIdHash))
+                                if (PrefabHandler.ContainsHandler(ownedObject.GlobalObjectIdHash))
                                 {
-                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
+                                    PrefabHandler.HandleNetworkPrefabDestroy(ownedObject);
                                 }
                                 else
                                 {

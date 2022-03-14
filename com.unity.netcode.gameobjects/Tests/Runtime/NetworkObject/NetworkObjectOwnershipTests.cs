@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -9,115 +10,73 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkObjectOwnershipComponent : NetworkBehaviour
     {
         public bool OnLostOwnershipFired = false;
-        public ulong CachedOwnerIdOnLostOwnership = 0;
+        public bool OnGainedOwnershipFired = false;
 
         public override void OnLostOwnership()
         {
             OnLostOwnershipFired = true;
-            CachedOwnerIdOnLostOwnership = OwnerClientId;
         }
-
-        public bool OnGainedOwnershipFired = false;
-        public ulong CachedOwnerIdOnGainedOwnership = 0;
 
         public override void OnGainedOwnership()
         {
             OnGainedOwnershipFired = true;
-            CachedOwnerIdOnGainedOwnership = OwnerClientId;
+        }
+        
+        public void ResetFlags()
+        {
+            OnLostOwnershipFired = false;
+            OnGainedOwnershipFired = false;
         }
     }
 
-    [TestFixture(true)]
-    [TestFixture(false)]
-    public class NetworkObjectOwnershipTests
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    public class NetworkObjectOwnershipTests : NetcodeIntegrationTest
     {
-        private const int k_ClientInstanceCount = 1;
+        protected override int NumberOfClients => 1;
 
-        private NetworkManager m_ServerNetworkManager;
-        private NetworkManager[] m_ClientNetworkManagers;
+        private GameObject m_OwnershipPrefab;
+        private GameObject m_OwnershipObject;
+        private NetworkObject m_OwnershipNetworkObject;
 
-        private GameObject m_DummyPrefab;
-        private GameObject m_DummyGameObject;
+        public NetworkObjectOwnershipTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
-        private readonly bool m_IsHost;
-
-        public NetworkObjectOwnershipTests(bool isHost)
+        protected override void OnServerAndClientsCreated()
         {
-            m_IsHost = isHost;
+            m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
+            m_OwnershipPrefab.AddComponent<NetworkObjectOwnershipComponent>();
+            base.OnServerAndClientsCreated();
         }
 
-        [UnitySetUp]
-        public IEnumerator Setup()
+        protected override IEnumerator OnServerAndClientsConnected()
         {
-            // we need at least 1 client for tests
-            Assert.That(k_ClientInstanceCount, Is.GreaterThan(0));
-
-            // create NetworkManager instances
-            Assert.That(NetcodeIntegrationTestHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
-            Assert.That(m_ServerNetworkManager, Is.Not.Null);
-            Assert.That(m_ClientNetworkManagers, Is.Not.Null);
-            Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
-
-            // create and register our ad-hoc DummyPrefab (we'll spawn it later during tests)
-            m_DummyPrefab = new GameObject("DummyPrefabPrototype");
-            m_DummyPrefab.AddComponent<NetworkObject>();
-            m_DummyPrefab.AddComponent<NetworkObjectOwnershipComponent>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(m_DummyPrefab.GetComponent<NetworkObject>());
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
-            }
-
-            // start server and client NetworkManager instances
-            Assert.That(NetcodeIntegrationTestHelpers.Start(m_IsHost, m_ServerNetworkManager, m_ClientNetworkManagers));
-
-            // wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            // wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
+            m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
         }
 
-        [TearDown]
-        public void Teardown()
+        [Test]
+        public void TestPlayerIsOwned()
         {
-            NetcodeIntegrationTestHelpers.Destroy();
+            var clientOwnedObjects = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjectsList.Where(x => x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
 
-            if (m_DummyGameObject != null)
-            {
-                Object.DestroyImmediate(m_DummyGameObject);
-            }
-
-            if (m_DummyPrefab != null)
-            {
-                Object.DestroyImmediate(m_DummyPrefab);
-            }
+            var clientPlayerObject = clientOwnedObjects.Where((c) => c.IsLocalPlayer).FirstOrDefault();
+            Assert.NotNull(clientPlayerObject, $"Client Id {m_ClientNetworkManagers[0].LocalClientId} does not have its local player marked as an owned object!");
         }
 
         [UnityTest]
         public IEnumerator TestOwnershipCallbacks()
         {
-            m_DummyGameObject = Object.Instantiate(m_DummyPrefab);
-            var dummyNetworkObject = m_DummyGameObject.GetComponent<NetworkObject>();
-            Assert.That(dummyNetworkObject, Is.Not.Null);
-
-            dummyNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            dummyNetworkObject.Spawn();
-            var dummyNetworkObjectId = dummyNetworkObject.NetworkObjectId;
+            var dummyNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
             Assert.That(dummyNetworkObjectId, Is.GreaterThan(0));
-
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
-
             Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
             }
 
-            // Verifies that removing the ownership when the default (server) is already set does not cause
-            // a Key Not Found Exception
-            m_ServerNetworkManager.SpawnManager.RemoveOwnership(dummyNetworkObject);
+            // Verifies that removing the ownership when the default (server) is already set does not cause a Key Not Found Exception
+            m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
 
             var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[dummyNetworkObjectId];
             var clientObject = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[dummyNetworkObjectId];
@@ -129,25 +88,29 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(serverComponent, Is.Not.Null);
             Assert.That(clientComponent, Is.Not.Null);
 
-
             Assert.That(serverObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
             Assert.That(clientObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
 
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
-
-
+            Assert.That(serverComponent.OnLostOwnershipFired);
+            Assert.That(serverComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
             Assert.That(clientComponent.OnGainedOwnershipFired);
-            Assert.That(clientComponent.CachedOwnerIdOnGainedOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.That(clientComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+
+            serverComponent.ResetFlags();
+            clientComponent.ResetFlags();
+
             serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
-
-            Assert.That(serverObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            Assert.That(serverComponent.OnGainedOwnershipFired);
+            Assert.That(serverComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);
-            Assert.That(clientComponent.CachedOwnerIdOnLostOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.That(clientComponent.NetworkObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
         }
     }
 }
