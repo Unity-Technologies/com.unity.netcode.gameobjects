@@ -1633,8 +1633,7 @@ namespace Unity.Netcode
                             {
                                 if (!ownedObject.DontDestroyWithOwner)
                                 {
-                                    if (PrefabHandler.ContainsHandler(clientOwnedObjects[i]
-                                        .GlobalObjectIdHash))
+                                    if (PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
                                     {
                                         PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
                                     }
