@@ -205,7 +205,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                networkObject.OwnerClientIdInternal = null;
+                networkObject.OwnerClientIdInternal = NetworkManager.ServerClientId;
 
                 var message = new ChangeOwnershipMessage
                 {
@@ -414,7 +414,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -457,7 +457,7 @@ namespace Unity.Netcode
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
 
-        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
+        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (SpawnedObjects.ContainsKey(networkId))
             {
@@ -485,35 +485,32 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            if (ownerClientId != null)
+            if (NetworkManager.IsServer)
             {
-                if (NetworkManager.IsServer)
-                {
-                    if (playerObject)
-                    {
-                        // If there was an already existing player object for this player, then mark it as no longer
-                        // a player object.
-                        if (NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject != null)
-                        {
-                            NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject.IsPlayerObject = false;
-                        }
-                        NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
-                    }
-                    else
-                    {
-                        NetworkManager.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(networkObject);
-                    }
-                }
-                else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
+                if (playerObject)
                 {
                     // If there was an already existing player object for this player, then mark it as no longer
                     // a player object.
-                    if (NetworkManager.LocalClient.PlayerObject != null)
+                    if (NetworkManager.ConnectedClients[ownerClientId].PlayerObject != null)
                     {
-                        NetworkManager.LocalClient.PlayerObject.IsPlayerObject = false;
+                        NetworkManager.ConnectedClients[ownerClientId].PlayerObject.IsPlayerObject = false;
                     }
-                    NetworkManager.LocalClient.PlayerObject = networkObject;
+                    NetworkManager.ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
+                else
+                {
+                    NetworkManager.ConnectedClients[ownerClientId].OwnedObjects.Add(networkObject);
+                }
+            }
+            else if (playerObject && ownerClientId == NetworkManager.LocalClientId)
+            {
+                // If there was an already existing player object for this player, then mark it as no longer
+                // a player object.
+                if (NetworkManager.LocalClient.PlayerObject != null)
+                {
+                    NetworkManager.LocalClient.PlayerObject.IsPlayerObject = false;
+                }
+                NetworkManager.LocalClient.PlayerObject = networkObject;
             }
 
             if (NetworkManager.IsServer)
@@ -720,7 +717,7 @@ namespace Unity.Netcode
 
             foreach (var networkObject in networkObjectsToSpawn)
             {
-                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
+                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, NetworkManager.ServerClientId, true);
             }
         }
 

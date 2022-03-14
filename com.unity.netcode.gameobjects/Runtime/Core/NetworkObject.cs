@@ -66,31 +66,14 @@ namespace Unity.Netcode
         /// </summary>
         public ulong OwnerClientId
         {
-            get
-            {
-                if (OwnerClientIdInternal == null)
-                {
-                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
-                }
-                else
-                {
-                    return OwnerClientIdInternal.Value;
-                }
-            }
+            get => OwnerClientIdInternal;
             internal set
             {
-                if (NetworkManager != null && value == NetworkManager.ServerClientId)
-                {
-                    OwnerClientIdInternal = null;
-                }
-                else
-                {
-                    OwnerClientIdInternal = value;
-                }
+                OwnerClientIdInternal = value;
             }
         }
 
-        internal ulong? OwnerClientIdInternal = null;
+        internal ulong OwnerClientIdInternal = NetworkManager.ServerClientId;
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
@@ -461,7 +444,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(bool destroyWithScene, ulong? ownerClientId, bool playerObject)
+        private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (!NetworkManager.IsListening)
             {
@@ -480,7 +463,6 @@ namespace Unity.Netcode
                 SnapshotSpawn();
             }
 
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
@@ -496,7 +478,7 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
-            SpawnInternal(destroyWithScene, null, false);
+            SpawnInternal(destroyWithScene, NetworkManager.ServerClientId, false);
         }
 
         /// <summary>

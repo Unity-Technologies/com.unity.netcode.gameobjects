@@ -234,7 +234,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ??throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
+        private ulong m_ServerTransportId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
         /// Returns ServerClientId if IsServer or LocalClientId if not
