@@ -21,6 +21,97 @@ namespace Unity.Netcode
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
+        /// <summary>
+        /// Ownership to Objects Table:
+        /// [ClientId][NetworkObjectId][NetworkObject]
+        /// Use to get all NetworkObjects owned by a client
+        /// Server: Has full list for all clients
+        /// Client: Has a list only for itself
+        /// </summary>
+        public readonly Dictionary<ulong, Dictionary<ulong, NetworkObject>> OwnershipToObjectsTable = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
+
+        /// <summary>
+        /// Object to Ownership Table:
+        /// [NetworkObjectId][ClientId]
+        /// Used internally to find the client Id that currently owns
+        /// the NetworkObject
+        /// </summary>
+        private Dictionary<ulong, ulong> m_ObjectToOwnershipTable = new Dictionary<ulong, ulong>();
+
+        internal bool UpdateOwnershipTable(NetworkObject networkObject, ulong newOwner, bool isRemoving = false)
+        {
+            var previousOwner = newOwner;
+
+            // Use internal lookup table to see if the NetworkObject has a previous owner
+            if (m_ObjectToOwnershipTable.ContainsKey(networkObject.NetworkObjectId))
+            {
+                if (isRemoving)
+                {
+                    // If despawning, we remove this entry
+                    m_ObjectToOwnershipTable.Remove(networkObject.NetworkObjectId);
+                }
+                else
+                {
+                    // Set the previous owner's ClientId
+                    previousOwner = m_ObjectToOwnershipTable[networkObject.NetworkObjectId];
+                    m_ObjectToOwnershipTable[networkObject.NetworkObjectId] = newOwner;
+                }
+            }
+            else
+            {
+                // Add the new entry for this NetworkObject to owner lookup table
+                m_ObjectToOwnershipTable.Add(networkObject.NetworkObjectId, newOwner);
+            }
+
+            // Check to see if we have a previous owner
+            if (previousOwner != newOwner && OwnershipToObjectsTable.ContainsKey(previousOwner))
+            {
+                // Make sure we have this entry
+                if (OwnershipToObjectsTable[previousOwner].ContainsKey(networkObject.NetworkObjectId))
+                {
+                    OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
+                    // If we are removing the entry (i.e. despawning or client lost ownership)
+                    if (isRemoving)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    //throw exception or debug error log here
+                    return false;
+                }
+            }
+
+            // Make sure the owner has an entry, if not add it
+            if (!OwnershipToObjectsTable.ContainsKey(newOwner))
+            {
+                OwnershipToObjectsTable.Add(newOwner, new Dictionary<ulong, NetworkObject>());
+            }
+
+            // Check to make sure we don't already have this entry
+            if (!OwnershipToObjectsTable[newOwner].ContainsKey(networkObject.NetworkObjectId))
+            {
+                OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
+                return true;
+            }
+            else
+            {
+                //throw exception or debug error log here
+                return false;
+            }
+        }
+
+        public List<NetworkObject> GetClientOwnedObjects(ulong clientId)
+        {
+            if (!OwnershipToObjectsTable.ContainsKey(clientId))
+            {
+                OwnershipToObjectsTable.Add(clientId, new Dictionary<ulong, NetworkObject>());
+            }
+            return OwnershipToObjectsTable[clientId].Values.ToList();
+        }
+
+
         private struct TriggerData
         {
             public FastBufferReader Reader;
@@ -45,6 +136,7 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
+
         }
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
@@ -194,17 +286,9 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Make sure the connected client entry exists before trying to remove ownership.
-            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
+            // Server removes the entry and takes over ownership before notifying
+            if (UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true))
             {
-                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
-                {
-                    if (networkClient.OwnedObjects[i] == networkObject)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
-                    }
-                }
-
                 networkObject.OwnerClientIdInternal = null;
 
                 var message = new ChangeOwnershipMessage
@@ -265,25 +349,10 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
-            {
-                for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
-                {
-                    if (networkClient.OwnedObjects[i] == networkObject)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
-                    }
-                }
-
-                networkClient.OwnedObjects.Add(networkObject);
-            }
-
             networkObject.OwnerClientId = clientId;
 
-            if (TryGetNetworkClient(clientId, out NetworkClient newNetworkClient))
-            {
-                newNetworkClient.OwnedObjects.Add(networkObject);
-            }
+            // Server adds entries for all client ownership
+            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId, true);
 
             var message = new ChangeOwnershipMessage
             {
@@ -414,7 +483,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -457,7 +526,7 @@ namespace Unity.Netcode
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
         }
 
-        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, bool destroyWithScene)
+        private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (SpawnedObjects.ContainsKey(networkId))
             {
@@ -480,31 +549,34 @@ namespace Unity.Netcode
             networkObject.DestroyWithScene = sceneObject || destroyWithScene;
 
             networkObject.OwnerClientIdInternal = ownerClientId;
+
             networkObject.IsPlayerObject = playerObject;
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            if (ownerClientId != null)
+            if (NetworkManager.IsServer)
             {
-                if (NetworkManager.IsServer)
+                // Server updates ownership for all clients
+                UpdateOwnershipTable(networkObject, ownerClientId);
+
+                if (playerObject)
                 {
-                    if (playerObject)
+                    // If there was an already existing player object for this player, then mark it as no longer
+                    // a player object.
+                    if (NetworkManager.ConnectedClients[ownerClientId].PlayerObject != null)
                     {
-                        // If there was an already existing player object for this player, then mark it as no longer
-                        // a player object.
-                        if (NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject != null)
-                        {
-                            NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject.IsPlayerObject = false;
-                        }
-                        NetworkManager.ConnectedClients[ownerClientId.Value].PlayerObject = networkObject;
+                        NetworkManager.ConnectedClients[ownerClientId].PlayerObject.IsPlayerObject = false;
                     }
-                    else
-                    {
-                        NetworkManager.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(networkObject);
-                    }
+                    NetworkManager.ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
-                else if (playerObject && ownerClientId.Value == NetworkManager.LocalClientId)
+            }
+            else if (ownerClientId == NetworkManager.LocalClientId)
+            {
+                // Clients only update things that belong to them
+                UpdateOwnershipTable(networkObject, ownerClientId);
+
+                if (playerObject)
                 {
                     // If there was an already existing player object for this player, then mark it as no longer
                     // a player object.
@@ -718,9 +790,10 @@ namespace Unity.Netcode
                 }
             }
 
+
             foreach (var networkObject in networkObjectsToSpawn)
             {
-                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, null, true);
+                SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, networkObject.OwnerClientId, true);
             }
         }
 
@@ -764,17 +837,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
-            {
-                //Someone owns it.
-                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
-                {
-                    if (networkClient.OwnedObjects[i].NetworkObjectId == networkObject.NetworkObjectId)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
-                    }
-                }
-            }
+            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId, true);
 
             networkObject.InvokeBehaviourNetworkDespawn();
 

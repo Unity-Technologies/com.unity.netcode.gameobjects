@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -18,8 +19,18 @@ namespace Unity.Netcode
         public NetworkObject PlayerObject;
 
         /// <summary>
-        /// The NetworkObject's owned by this Client
+        /// Returns the objects that are owned by this player
+        /// You can also check owned objects by using <see cref="NetworkSpawnManager.GetClientOwnedObjects(ulong)"/>
+        /// on both the client and server side.
         /// </summary>
-        public readonly List<NetworkObject> OwnedObjects = new List<NetworkObject>();
+        /// <returns>List of <see cref="NetworkObject"/>s owned by the client</returns>
+        public List<NetworkObject> GetOwnedObjects()
+        {
+            if (PlayerObject != null && PlayerObject.NetworkManager != null && PlayerObject.NetworkManager.IsListening)
+            {
+                return PlayerObject.NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
+            }
+            return null;
+        }
     }
 }

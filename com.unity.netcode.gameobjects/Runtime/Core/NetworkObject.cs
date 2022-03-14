@@ -473,14 +473,15 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
+            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
+
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerId, destroyWithScene);
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 SnapshotSpawn();
             }
 
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
@@ -547,6 +548,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnLostOwnership()
         {
+            // Server already handles this earlier, hosts should ignore
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnLostOwnership();
@@ -555,6 +562,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
+            // Server already handles this earlier, hosts should ignore
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnGainedOwnership();
