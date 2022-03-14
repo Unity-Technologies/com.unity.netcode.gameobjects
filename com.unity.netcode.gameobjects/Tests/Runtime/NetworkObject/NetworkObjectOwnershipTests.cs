@@ -10,21 +10,22 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkObjectOwnershipComponent : NetworkBehaviour
     {
         public bool OnLostOwnershipFired = false;
-        public ulong CachedOwnerIdOnLostOwnership = 0;
+        public bool OnGainedOwnershipFired = false;
 
         public override void OnLostOwnership()
         {
             OnLostOwnershipFired = true;
-            CachedOwnerIdOnLostOwnership = OwnerClientId;
         }
-
-        public bool OnGainedOwnershipFired = false;
-        public ulong CachedOwnerIdOnGainedOwnership = 0;
 
         public override void OnGainedOwnership()
         {
             OnGainedOwnershipFired = true;
-            CachedOwnerIdOnGainedOwnership = OwnerClientId;
+        }
+        
+        public void ResetFlags()
+        {
+            OnLostOwnershipFired = false;
+            OnGainedOwnershipFired = false;
         }
     }
 
@@ -75,8 +76,7 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
             }
 
-            // Verifies that removing the ownership when the default (server) is already set does not cause
-            // a Key Not Found Exception
+            // Verifies that removing the ownership when the default (server) is already set does not cause a Key Not Found Exception
             m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
 
             var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[dummyNetworkObjectId];
@@ -94,19 +94,24 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(clientObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
 
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
+            Assert.That(serverComponent.OnLostOwnershipFired);
+            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            serverComponent.ResetFlags();
             Assert.That(clientComponent.OnGainedOwnershipFired);
-            Assert.That(clientComponent.CachedOwnerIdOnGainedOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
-            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            clientComponent.ResetFlags();
 
+            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
 
-            Assert.That(serverObject.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            Assert.That(serverComponent.OnGainedOwnershipFired);
+            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);
-            Assert.That(clientComponent.CachedOwnerIdOnLostOwnership, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
         }
     }
 }
