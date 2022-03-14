@@ -352,7 +352,7 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (clientId == networkManager.ServerClientId)
+            if (clientId == NetworkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }

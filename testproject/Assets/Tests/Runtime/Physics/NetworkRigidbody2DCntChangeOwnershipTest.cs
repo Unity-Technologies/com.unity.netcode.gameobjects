@@ -63,7 +63,7 @@
 //
 //             // give server ownership over the player
 //
-//             serverPlayer.GetComponent<NetworkObject>().ChangeOwnership(m_ServerNetworkManager.ServerClientId);
+//             serverPlayer.GetComponent<NetworkObject>().ChangeOwnership(NetworkManager.ServerClientId);
 //
 //             yield return null;
 //             yield return null;
