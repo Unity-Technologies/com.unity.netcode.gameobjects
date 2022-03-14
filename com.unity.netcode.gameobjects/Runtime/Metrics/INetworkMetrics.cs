@@ -89,6 +89,10 @@ namespace Unity.Netcode
 
         void TrackRttToServer(int rtt);
 
+        void UpdateNetworkObjectsCount(int count);
+
+        void UpdateConnectionsCount(int count);
+
         void DispatchFrame();
     }
 }
