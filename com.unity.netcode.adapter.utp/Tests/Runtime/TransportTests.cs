@@ -389,6 +389,27 @@ namespace Unity.Netcode.UTP.RuntimeTests
 
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator SendQueuesFlushedOnShutdown([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[] { 42 });
+            m_Client1.Send(m_Client1.ServerClientId, data, delivery);
+
+            m_Client1.Shutdown();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            yield return null;
+        }
     }
 }
 #endif

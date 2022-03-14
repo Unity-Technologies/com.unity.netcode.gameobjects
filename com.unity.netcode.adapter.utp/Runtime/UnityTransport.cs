@@ -1006,9 +1006,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Flush the driver's internal send queue. If we're shutting down because the
-            // NetworkManager is shutting down, it probably has disconnected some peer(s)
-            // in the process and we want to get these disconnect messages on the wire.
+            // Flush all send queues to the network. NGO can be configured to flush its message
+            // queue on shutdown. But this only calls the Send() method, which doesn't actually
+            // get anything to the network.
+            foreach (var kvp in m_SendQueue)
+            {
+                SendBatchedMessages(kvp.Key, kvp.Value);
+            }
+
+            // The above flush only puts the message in UTP internal buffers, need the flush send
+            // job to execute to actually get things out on the wire. This will also ensure any
+            // disconnect messages are sent out.
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeInternals();
