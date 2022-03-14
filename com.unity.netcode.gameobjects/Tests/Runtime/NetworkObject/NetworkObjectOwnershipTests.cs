@@ -62,7 +62,6 @@ namespace Unity.Netcode.RuntimeTests
 
             var clientPlayerObject = clientOwnedObjects.Where((c) => c.IsLocalPlayer).FirstOrDefault();
             Assert.NotNull(clientPlayerObject, $"Client Id {m_ClientNetworkManagers[0].LocalClientId} does not have its local player marked as an owned object!");
-
         }
 
         [UnityTest]
@@ -89,24 +88,24 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(serverComponent, Is.Not.Null);
             Assert.That(clientComponent, Is.Not.Null);
 
-
             Assert.That(serverObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
             Assert.That(clientObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
 
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
 
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
             Assert.That(serverComponent.OnLostOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
-            serverComponent.ResetFlags();
             Assert.That(clientComponent.OnGainedOwnershipFired);
             Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+
+            serverComponent.ResetFlags();
             clientComponent.ResetFlags();
 
             serverObject.ChangeOwnership(NetworkManager.ServerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<ChangeOwnershipMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));

@@ -29,7 +29,6 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
             var originalOwner = networkObject.OwnerClientId;
