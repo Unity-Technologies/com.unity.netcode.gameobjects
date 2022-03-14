@@ -1619,7 +1619,7 @@ namespace Unity.Netcode
                     {
                         // This could happen if a client is never assigned a player object and is disconnected
                         // Only log this in verbose/developer mode
-                        if(LogLevel == LogLevel.Developer)
+                        if (LogLevel == LogLevel.Developer)
                         {
                             NetworkLog.LogWarning($"ClientID {clientId} disconnected with (0) zero owned objects!  Was a player prefab not assigned?");
                         }

@@ -78,8 +78,8 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    //throw exception or debug error log here
-                    return false;
+                    // Really, as long as UpdateOwnershipTable is invoked when ownership is gained or lost this should never happen
+                    throw new Exception($"Client-ID {previousOwner} had a partial {nameof(m_ObjectToOwnershipTable)} entry! Potentially corrupted }{nameof(OwnershipToObjectsTable)}?");
                 }
             }
 
@@ -95,11 +95,11 @@ namespace Unity.Netcode
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
                 return true;
             }
-            else
+            else if(NetworkManager.LogLevel == LogLevel.Developer)
             {
-                //throw exception or debug error log here
-                return false;
+                NetworkLog.LogWarning($"Setting ownership twice? Client-ID {previousOwner} already owns NetworkObject ID {networkObject.NetworkObjectId}!");
             }
+            return false;
         }
 
         public List<NetworkObject> GetClientOwnedObjects(ulong clientId)
