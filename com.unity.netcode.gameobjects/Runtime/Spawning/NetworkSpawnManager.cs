@@ -105,7 +105,7 @@ namespace Unity.Netcode
                 }
                 return true;
             }
-            else if(NetworkManager.LogLevel == LogLevel.Developer)
+            else if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogWarning($"Setting ownership twice? Client-ID {previousOwner} already owns NetworkObject ID {networkObject.NetworkObjectId}!");
             }
