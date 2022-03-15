@@ -1,7 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 develop_nightly:
-  name: "[Nightly] Run All Tests"
+  name: "\U0001F319 [Nightly] Run All Tests"
   triggers:
     recurring:
     - branch: develop
@@ -14,7 +14,7 @@ develop_nightly:
 {% endfor -%}
 
 multiprocess_nightly:
-  name: "[Nightly] Run Multiprocess Tests"
+  name: "\U0001F319 [Nightly] Run Multiprocess Tests"
   triggers:
     recurring:
     - branch: develop
@@ -27,7 +27,7 @@ multiprocess_nightly:
 # branch is created or updated. Currently only netcode package tests are
 # enabled, since the others are missing test coverage and will fail CI.
 pull_request_trigger:
-  name: Pull Request Trigger (master, develop, & release branches)
+  name: ⚡ Pull Request Trigger (master, develop, & release branches)
   dependencies:
     - .yamato/project-standards.yml#standards_{{ projects.first.name }}
 {% for project in projects -%}
@@ -55,7 +55,7 @@ pull_request_trigger:
 # Currently, we need to have a trigger to updated badges
 # Only package badges currently exist
 badges_test_trigger:
-  name: Badges Tests Trigger
+  name: ⚡ Badges Tests Trigger
   agent:
     type: Unity::VM
     image: package-ci/ubuntu:stable
