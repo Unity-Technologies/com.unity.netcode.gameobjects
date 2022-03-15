@@ -2,6 +2,7 @@
 ---
 {% for project in projects -%}
 {% for package in project.packages -%}
+{% for validation_editor in validation_editors -%}
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
 promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}:
@@ -22,6 +23,8 @@ promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first
         - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+
+{% endfor -%}
 
 promote_{{ project.name }}_{{ package.name }}:
   name: Promote Project {{ project.name }} - Package {{ package.name }} to Production

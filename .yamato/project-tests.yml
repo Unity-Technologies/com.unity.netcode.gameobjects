@@ -8,6 +8,7 @@
 {% for project in projects -%}
 {% if project.validate == "true" %}
 {% for package in project.packages -%}
+{% for validation_editor in validation_editors -%}
 validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}:
   name : Validate Package {{ package.name }} - {{ validation_editor }} on {{ test_platforms.first.name }}
   agent:
@@ -24,6 +25,7 @@ validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor
         - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endfor -%}
 {% endfor -%}
 {% endif -%}
 {% endfor -%}

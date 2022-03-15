@@ -1,4 +1,7 @@
-validation_editor: 2020.3
+validation_editors:
+  - 2021.2
+  - 2020.3
+  - trunk
 
 # Platforms that will be tested. The first entry in this array will also
 # be used for validation
