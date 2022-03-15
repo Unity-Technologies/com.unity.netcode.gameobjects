@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -33,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class NetworkObjectOwnershipTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 9;
 
         private GameObject m_OwnershipPrefab;
         private GameObject m_OwnershipObject;
@@ -46,13 +47,6 @@ namespace Unity.Netcode.RuntimeTests
             m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
             m_OwnershipPrefab.AddComponent<NetworkObjectOwnershipComponent>();
             base.OnServerAndClientsCreated();
-        }
-
-        protected override IEnumerator OnServerAndClientsConnected()
-        {
-            m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
-            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
         }
 
         [Test]
@@ -70,19 +64,24 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestOwnershipCallbacks()
         {
-            var dummyNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
-            Assert.That(dummyNetworkObjectId, Is.GreaterThan(0));
-            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
+            m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+
+            var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
+            Assert.That(ownershipNetworkObjectId, Is.GreaterThan(0));
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(dummyNetworkObjectId));
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
             }
 
             // Verifies that removing the ownership when the default (server) is already set does not cause a Key Not Found Exception
             m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
 
-            var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[dummyNetworkObjectId];
-            var clientObject = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[dummyNetworkObjectId];
+            var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
+            var clientObject = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
             Assert.That(serverObject, Is.Not.Null);
             Assert.That(clientObject, Is.Not.Null);
 
@@ -114,6 +113,138 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
             Assert.That(clientComponent.OnLostOwnershipFired);
             Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+        }
+
+        /// <summary>
+        /// Verifies that switching ownership between several clients works properly
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestOwnershipCallbacksSeveralClients()
+        {
+            // Build our message hook entries tables so we can determine if all clients received
+            // spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            var messageHookEntriesForOwnership = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var messageHook = new MessageHookEntry(clientNetworkManager);
+                messageHook.AssignMessageType<CreateObjectMessage>();
+                messageHookEntriesForSpawn.Add(messageHook);
+                messageHook = new MessageHookEntry(clientNetworkManager);
+                messageHook.AssignMessageType<ChangeOwnershipMessage>();
+                messageHookEntriesForOwnership.Add(messageHook);
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var spawnMessageHooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+
+            // Used to determine if all clients received the ChangeOwnershipMessage
+            var ownershipMessageHooks = new MessageHooksConditional(messageHookEntriesForOwnership);
+
+            // Spawn our test object from server with server ownership
+            m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+
+            // Wait for all clients to receive the CreateObjectMessage
+            yield return WaitForConditionOrTimeOut(spawnMessageHooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive the {nameof(CreateObjectMessage)} message.");
+
+            // Validate the NetworkObjectId and that the server and all clients have this NetworkObject
+            var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
+            Assert.That(ownershipNetworkObjectId, Is.GreaterThan(0));
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
+            }
+
+            // Verifies that removing the ownership when the default (server) is already set does not cause a Key Not Found Exception
+            m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
+            var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
+            Assert.That(serverObject, Is.Not.Null);
+
+            var clientObjects = new List<NetworkObject>();
+            for (int i = 0; i < NumberOfClients; i++)
+            {
+                var clientObject = m_ClientNetworkManagers[i].SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
+                Assert.That(clientObject, Is.Not.Null);
+                clientObjects.Add(clientObject);
+
+            }
+
+            // Verify the server side component
+            var serverComponent = serverObject.GetComponent<NetworkObjectOwnershipComponent>();
+            Assert.That(serverComponent, Is.Not.Null);
+            Assert.That(serverObject.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
+
+            // Verify the clients components
+            for (int i = 0; i < NumberOfClients; i++)
+            {
+                var clientComponent = clientObjects[i].GetComponent<NetworkObjectOwnershipComponent>();
+                Assert.That(clientComponent.OwnerClientId, Is.EqualTo(NetworkManager.ServerClientId));
+                clientComponent.ResetFlags();
+            }
+
+            // After the 1st client has been given ownership to the object, this will be used
+            // to make sure each previous owner properly received the remove ownership message
+            var previousClientComponent = (NetworkObjectOwnershipComponent)null;
+            for (int clientIndex = 0; clientIndex < NumberOfClients; clientIndex++)
+            {
+                var clientObject = clientObjects[clientIndex];
+                var clientId = m_ClientNetworkManagers[clientIndex].LocalClientId;
+
+                Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(clientId));
+                serverObject.ChangeOwnership(clientId);
+                yield return s_DefaultWaitForTick;
+
+                Assert.That(serverComponent.OnLostOwnershipFired);
+                Assert.That(serverComponent.OwnerClientId, Is.EqualTo(clientId));
+                // Wait for all clients to receive the CreateObjectMessage
+                yield return WaitForConditionOrTimeOut(ownershipMessageHooks);
+                Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive the {nameof(ChangeOwnershipMessage)} message.");
+
+                if (previousClientComponent != null)
+                {
+                    Assert.That(previousClientComponent.OnLostOwnershipFired);
+                    Assert.That(previousClientComponent.OwnerClientId, Is.EqualTo(clientId));
+                }
+                var currentClientComponent = clientObjects[clientIndex].GetComponent<NetworkObjectOwnershipComponent>();
+                Assert.That(currentClientComponent.OnGainedOwnershipFired);
+
+                // Possibly the more important part of this test:
+                // Check to make sure all other non-former or current ownership clients are synchronized
+                // to each ownership change
+                for (int i = 0; i < NumberOfClients; i++)
+                {
+                    var clientComponent = clientObjects[i].GetComponent<NetworkObjectOwnershipComponent>();
+                    Assert.That(clientComponent, Is.Not.Null);
+                    Assert.That(clientComponent.OwnerClientId, Is.EqualTo(clientId));
+                    clientComponent.ResetFlags();
+                }
+                // We must reset this for each client we pass our ownership to
+                ownershipMessageHooks.Reset();
+
+                // Set the current owner client to the previous one
+                previousClientComponent = currentClientComponent;
+            }
+
+            // Now change ownership back to the server
+            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            yield return WaitForConditionOrTimeOut(ownershipMessageHooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive the {nameof(ChangeOwnershipMessage)} message (back to server).");
+
+            Assert.That(serverComponent.OnGainedOwnershipFired);
+            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            Assert.That(previousClientComponent.OnLostOwnershipFired);
+
+            // Make sure all client-side versions of the object is once again owned by the server
+            for (int i = 0; i < NumberOfClients; i++)
+            {
+                var clientComponent = clientObjects[i].GetComponent<NetworkObjectOwnershipComponent>();
+                Assert.That(clientComponent, Is.Not.Null);
+                Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+                clientComponent.ResetFlags();
+            }
+            serverComponent.ResetFlags();
         }
     }
 }
