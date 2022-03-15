@@ -2,12 +2,12 @@
 ---
 {% for project in projects -%}
 {% for package in project.packages -%}
-{% for validation_editor in validation_editors -%}
+{% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
-promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ validation_editor }}:
-  name : Validate Project {{ project.name }} - Package {{ package.name }} - {{ validation_editor }} on {{ platform.name }}
+promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
+  name : Validate Project {{ project.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -16,8 +16,8 @@ promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ 
     UPMCI_PROMOTION: 1
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project test -u {{ validation_editor }} --project-path {{ project.path }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ package.name }}
-    - upm-ci project test -u {{ validation_editor }} --project-path {{ project.path }} --type isolation-tests --project-path {{ project.path }} --package-filter {{ package.name }}
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ package.name }}
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type isolation-tests --project-path {{ project.path }} --package-filter {{ package.name }}
   artifacts:
     logs:
       paths:
@@ -44,7 +44,11 @@ promote_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
 
 promote_{{ project.name }}_{{ package.name }}_dry_run:
   name: Promote Project {{ project.name }} - Package {{ package.name }} to Production (dry-run)
@@ -63,7 +67,11 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
 
 {% endfor -%}
 {% endfor -%}

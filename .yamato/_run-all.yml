@@ -62,7 +62,7 @@ all_singlenode_multiprocess_tests:
 {% endfor -%}
 
 all_project_tests_standalone:
-  name: Run All Project Tests - Standlone
+  name: Run All Project Tests - Standalone
   dependencies:
     # Pull in package and validate jobs through the badges job
     - .yamato/_triggers.yml#badges_test_trigger
