@@ -189,6 +189,76 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Assert.AreEqual(1, objectDestroyedSentMetricValues.Select(x => x.BytesCount).Distinct().Count());
             Assert.That(objectDestroyedSentMetricValues.Select(x => x.BytesCount), Has.All.Not.EqualTo(0));
         }
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectCountAfterSpawnOnServer()
+        {
+            SpawnNetworkObject();
+
+            var waitForGaugeValues = new WaitForGaugeMetricValues(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects);
+
+            yield return s_DefaultWaitForTick;
+            yield return waitForGaugeValues.WaitForMetricsReceived();
+
+            var value = waitForGaugeValues.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(3, value);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectCountAfterSpawnOnClient()
+        {
+            SpawnNetworkObject();
+
+            //By default, we have 2 network objects
+            //There's a slight delay between the spawn on the server and the spawn on the client
+            //We want to have metrics when the value is different than the 2 default one to confirm the client has the new value
+            var waitForGaugeValues = new WaitForGaugeMetricValues(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects, metric => (int)metric != 2);
+
+            yield return waitForGaugeValues.WaitForMetricsReceived();
+
+            var value = waitForGaugeValues.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(3, value);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectCountAfterDespawnOnServer()
+        {
+            var objectList = Server.SpawnManager.SpawnedObjectsList;
+            for (int i = objectList.Count - 1; i >= 0; --i)
+            {
+                objectList.ElementAt(i).Despawn();
+            }
+
+            var waitForGaugeValues = new WaitForGaugeMetricValues(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects);
+
+            yield return s_DefaultWaitForTick;
+            yield return waitForGaugeValues.WaitForMetricsReceived();
+
+            var value = waitForGaugeValues.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(0, value);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectCountAfterDespawnOnClient()
+        {
+            var objectList = Server.SpawnManager.SpawnedObjectsList;
+            for (int i = objectList.Count - 1; i >= 0; --i)
+            {
+                objectList.ElementAt(i).Despawn();
+            }
+
+            //By default, we have 2 network objects
+            //There's a slight delay between the spawn on the server and the spawn on the client
+            //We want to have metrics when the value is different than the 2 default one to confirm the client has the new value
+            var waitForGaugeValues = new WaitForGaugeMetricValues(ClientMetrics.Dispatcher, NetworkMetricTypes.NetworkObjects, metric => (int)metric != 2);
+
+            yield return waitForGaugeValues.WaitForMetricsReceived();
+
+            var value = waitForGaugeValues.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(0, value);
+        }
+#endif
     }
 }
 #endif

@@ -100,9 +100,11 @@ namespace Unity.Netcode
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
         [SerializeField] private ProtocolType m_ProtocolType;
 
+#pragma warning disable CS0414 // Assigned-but-not-used (only an issue in WebGL builds)
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. " +
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
+#pragma warning restore CS0414
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
         [FormerlySerializedAs("m_SendQueueBatchSize")]
@@ -701,7 +703,7 @@ namespace Unity.Netcode
                     ;
                 }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 ExtractNetworkMetrics();
 #endif
             }
@@ -712,7 +714,7 @@ namespace Unity.Netcode
             DisposeInternals();
         }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private void ExtractNetworkMetrics()
         {
             if (NetworkManager.IsServer)
@@ -891,6 +893,7 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
+#if !UNITY_WEBGL
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
@@ -900,6 +903,7 @@ namespace Unity.Netcode
                 .WithBaselibNetworkInterfaceParameters(
                     receiveQueueCapacity: m_MaxPacketQueueSize,
                     sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
         }
 
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -1006,9 +1010,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Flush the driver's internal send queue. If we're shutting down because the
-            // NetworkManager is shutting down, it probably has disconnected some peer(s)
-            // in the process and we want to get these disconnect messages on the wire.
+            // Flush all send queues to the network. NGO can be configured to flush its message
+            // queue on shutdown. But this only calls the Send() method, which doesn't actually
+            // get anything to the network.
+            foreach (var kvp in m_SendQueue)
+            {
+                SendBatchedMessages(kvp.Key, kvp.Value);
+            }
+
+            // The above flush only puts the message in UTP internal buffers, need the flush send
+            // job to execute to actually get things out on the wire. This will also ensure any
+            // disconnect messages are sent out.
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeInternals();
@@ -1044,7 +1056,7 @@ namespace Unity.Netcode
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
             var maxFrameTimeMS = 0;
@@ -1070,7 +1082,7 @@ namespace Unity.Netcode
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1079,7 +1091,7 @@ namespace Unity.Netcode
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1087,7 +1099,7 @@ namespace Unity.Netcode
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
                     typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
@@ -1097,20 +1109,20 @@ namespace Unity.Netcode
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );

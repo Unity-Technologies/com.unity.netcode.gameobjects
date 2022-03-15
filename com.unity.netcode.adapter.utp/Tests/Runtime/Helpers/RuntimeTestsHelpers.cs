@@ -11,11 +11,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
         // many of the machines are underpowered (e.g. old Android devices or Macs) and there are
         // sometimes very high lag spikes. PS4 and Switch are particularly sensitive in this regard
         // so we allow even more time for these platforms.
-#if UNITY_PS4 || UNITY_SWITCH
-        public const float MaxNetworkEventWaitTime = 2.0f;
-#else
         public const float MaxNetworkEventWaitTime = 0.5f;
-#endif
 
         // Wait for an event to appear in the given event list (must be the very next event).
         public static IEnumerator WaitForNetworkEvent(NetworkEvent type, List<TransportEvent> events,

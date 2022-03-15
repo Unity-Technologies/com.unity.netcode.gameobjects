@@ -32,7 +32,7 @@ namespace TestProject.RuntimeTests
                 (sender, reader) =>
                 {
                     firstReceived = true;
-                    Assert.AreEqual(sender, FirstClient.ServerClientId);
+                    Assert.AreEqual(sender, NetworkManager.ServerClientId);
                     Assert.AreNotEqual(sender, FirstClient.LocalClientId);
                 };
 
@@ -41,7 +41,7 @@ namespace TestProject.RuntimeTests
                 (sender, reader) =>
                 {
                     secondReceived = true;
-                    Assert.AreEqual(sender, FirstClient.ServerClientId);
+                    Assert.AreEqual(sender, NetworkManager.ServerClientId);
                     Assert.AreNotEqual(sender, FirstClient.LocalClientId);
                 };
 
@@ -57,8 +57,8 @@ namespace TestProject.RuntimeTests
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                FirstClient.CustomMessagingManager.SendNamedMessage("FirstClient", FirstClient.ServerClientId, writer);
-                SecondClient.CustomMessagingManager.SendNamedMessage("SecondClient", SecondClient.ServerClientId, writer);
+                FirstClient.CustomMessagingManager.SendNamedMessage("FirstClient", NetworkManager.ServerClientId, writer);
+                SecondClient.CustomMessagingManager.SendNamedMessage("SecondClient", NetworkManager.ServerClientId, writer);
 
             }
 

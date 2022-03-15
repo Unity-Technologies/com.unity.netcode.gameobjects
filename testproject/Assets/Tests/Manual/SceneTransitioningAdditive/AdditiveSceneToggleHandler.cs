@@ -95,7 +95,7 @@ namespace TestProject.ManualTests
             {
                 if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
                 {
-                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.IsValid()
+                    if (sceneEvent.ClientId == NetworkManager.ServerClientId && !m_SceneLoaded.IsValid()
                         && sceneEvent.Scene.IsValid() && sceneEvent.Scene.name == m_SceneToLoad)
                     {
                         m_SceneLoaded = sceneEvent.Scene;
@@ -104,7 +104,7 @@ namespace TestProject.ManualTests
                 }
                 else if (sceneEvent.SceneEventType == SceneEventType.UnloadComplete)
                 {
-                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.isLoaded)
+                    if (sceneEvent.ClientId == NetworkManager.ServerClientId && !m_SceneLoaded.isLoaded)
                     {
                         m_SceneLoaded = new Scene();
                         m_WaitForSceneLoadOrUnload = false;
