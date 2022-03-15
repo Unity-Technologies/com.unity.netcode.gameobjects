@@ -1,8 +1,5 @@
 # Unity versions on which Package validation tests are run before Publish/Promotion
-validation_editors:
-  - 2021.2
-  - 2020.3
-  - trunk
+validation_editor: 2020.3
 
 # Platforms that will be tested. The first entry in this array will also
 # be used for validation
