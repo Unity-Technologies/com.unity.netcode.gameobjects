@@ -194,37 +194,18 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Make sure the connected client entry exists before trying to remove ownership.
-            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
+            networkObject.OwnerClientId = NetworkManager.ServerClientId;
+
+            var message = new ChangeOwnershipMessage
             {
-                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
-                {
-                    if (networkClient.OwnedObjects[i] == networkObject)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
-                    }
-                }
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-                networkObject.OwnerClientIdInternal = NetworkManager.ServerClientId;
-
-                var message = new ChangeOwnershipMessage
-                {
-                    NetworkObjectId = networkObject.NetworkObjectId,
-                    OwnerClientId = networkObject.OwnerClientId
-                };
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
-
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-                }
-            }
-            else
+            foreach (var client in NetworkManager.ConnectedClients)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"No connected clients prior to removing ownership for {networkObject.name}.  Make sure you are not initializing or shutting down when removing ownership.");
-                }
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -265,25 +246,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
-            {
-                for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
-                {
-                    if (networkClient.OwnedObjects[i] == networkObject)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
-                    }
-                }
-
-                networkClient.OwnedObjects.Add(networkObject);
-            }
-
             networkObject.OwnerClientId = clientId;
-
-            if (TryGetNetworkClient(clientId, out NetworkClient newNetworkClient))
-            {
-                newNetworkClient.OwnedObjects.Add(networkObject);
-            }
 
             var message = new ChangeOwnershipMessage
             {
@@ -500,7 +463,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        NetworkManager.ConnectedClients[ownerClientId].OwnedObjects.Add(networkObject);
+                        networkObject.AddToClientOwnedObjects();
                     }
                 }
                 else if (playerObject && ownerClientId == NetworkManager.LocalClientId)
@@ -758,18 +721,6 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
                         }
-                    }
-                }
-            }
-
-            if (!networkObject.IsOwnedByServer && !networkObject.IsPlayerObject && TryGetNetworkClient(networkObject.OwnerClientId, out NetworkClient networkClient))
-            {
-                //Someone owns it.
-                for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
-                {
-                    if (networkClient.OwnedObjects[i].NetworkObjectId == networkObject.NetworkObjectId)
-                    {
-                        networkClient.OwnedObjects.RemoveAt(i);
                     }
                 }
             }

@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             OnGainedOwnershipFired = true;
         }
-        
+
         public void ResetFlags()
         {
             OnLostOwnershipFired = false;

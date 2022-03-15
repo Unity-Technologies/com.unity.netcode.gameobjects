@@ -52,7 +52,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Ensure it's now added to the list
             Assert.True(m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
-
         }
     }
 }

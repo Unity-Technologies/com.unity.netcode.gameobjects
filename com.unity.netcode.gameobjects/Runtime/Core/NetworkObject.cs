@@ -70,9 +70,9 @@ namespace Unity.Netcode
             internal set
             {
                 var oldOwnerId = OwnerClientIdInternal;
-                var newOwnedId = value;
+                var newOwnerId = value;
 
-                OwnerClientIdInternal = newOwnedId;
+                OwnerClientIdInternal = newOwnerId;
 
                 if (oldOwnerId == NetworkManager.LocalClientId)
                 {
@@ -80,10 +80,52 @@ namespace Unity.Netcode
                     InvokeBehaviourOnLostOwnership();
                 }
 
-                if (newOwnedId == NetworkManager.LocalClientId)
+                if (newOwnerId == NetworkManager.LocalClientId)
                 {
                     //We are new owner.
                     InvokeBehaviourOnGainedOwnership();
+                }
+
+                if (NetworkManager.IsServer)
+                {
+                    if (NetworkManager.ConnectedClients.TryGetValue(oldOwnerId, out var oldOwnerClient))
+                    {
+                        if (oldOwnerClient.OwnedObjects.Contains(this))
+                        {
+                            oldOwnerClient.OwnedObjects.Remove(this);
+                        }
+                    }
+
+                    if (NetworkManager.ConnectedClients.TryGetValue(newOwnerId, out var newOwnerClient))
+                    {
+                        if (!newOwnerClient.OwnedObjects.Contains(this))
+                        {
+                            newOwnerClient.OwnedObjects.Add(this);
+                        }
+                    }
+                }
+
+                if (NetworkManager.IsClient)
+                {
+                    var ownerClient = NetworkManager.LocalClient;
+                    if (ownerClient != null)
+                    {
+                        if (newOwnerId == ownerClient.ClientId)
+                        {
+                            if (!ownerClient.OwnedObjects.Contains(this))
+                            {
+                                ownerClient.OwnedObjects.Add(this);
+                            }
+                        }
+
+                        if (oldOwnerId == ownerClient.ClientId)
+                        {
+                            if (ownerClient.OwnedObjects.Contains(this))
+                            {
+                                ownerClient.OwnedObjects.Remove(this);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -785,6 +827,40 @@ namespace Unity.Netcode
             foreach (var networkObject in objectsToRemove)
             {
                 OrphanChildren.Remove(networkObject);
+            }
+        }
+
+        internal void AddToClientOwnedObjects()
+        {
+            var networkClient = NetworkManager.LocalClient;
+            if (networkClient == null)
+            {
+                if (NetworkManager.IsServer)
+                {
+                    NetworkManager.ConnectedClients.TryGetValue(OwnerClientId, out networkClient);
+                }
+            }
+
+            if (networkClient != null && !networkClient.OwnedObjects.Contains(this))
+            {
+                networkClient.OwnedObjects.Add(this);
+            }
+        }
+
+        internal void RemoveFromClientOwnedObjects()
+        {
+            var networkClient = NetworkManager.LocalClient;
+            if (networkClient == null)
+            {
+                if (NetworkManager.IsServer)
+                {
+                    NetworkManager.ConnectedClients.TryGetValue(OwnerClientId, out networkClient);
+                }
+            }
+
+            if (networkClient != null && networkClient.OwnedObjects.Contains(this))
+            {
+                networkClient.OwnedObjects.Remove(this);
             }
         }
 

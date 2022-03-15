@@ -767,8 +767,7 @@ namespace Unity.Netcode
                         var playerNetworkPrefab = new NetworkPrefab();
                         playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
                         NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
-                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash,
-                            playerNetworkPrefab);
+                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
                     }
                 }
                 else
@@ -1615,9 +1614,9 @@ namespace Unity.Netcode
 
                     foreach (var ownedObject in SpawnManager.SpawnedObjectsList.Where(x => x.OwnerClientId == clientId))
                     {
-                    // for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
-                    // {
-                    //     var ownedObject = networkClient.OwnedObjects[i];
+                        // for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
+                        // {
+                        //     var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)
                         {
                             if (!ownedObject.DontDestroyWithOwner)
