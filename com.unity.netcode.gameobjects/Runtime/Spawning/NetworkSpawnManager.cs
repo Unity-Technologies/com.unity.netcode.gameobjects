@@ -22,11 +22,11 @@ namespace Unity.Netcode
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
         /// <summary>
-        /// Ownership to Objects Table:
-        /// [ClientId][NetworkObjectId][NetworkObject]
         /// Use to get all NetworkObjects owned by a client
-        /// Server: Has full list for all clients
-        /// Client: Has a list only for itself
+        /// Ownership to Objects Table Format:
+        /// [ClientId][NetworkObjectId][NetworkObject]
+        /// Server: Keeps track of all clients' ownership
+        /// Client: Keeps track of only its ownership
         /// </summary>
         public readonly Dictionary<ulong, Dictionary<ulong, NetworkObject>> OwnershipToObjectsTable = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
@@ -38,6 +38,9 @@ namespace Unity.Netcode
         /// </summary>
         private Dictionary<ulong, ulong> m_ObjectToOwnershipTable = new Dictionary<ulong, ulong>();
 
+        /// <summary>
+        /// Used to update a NetworkObject's ownership
+        /// </summary>
         internal bool UpdateOwnershipTable(NetworkObject networkObject, ulong newOwner, bool isRemoving = false)
         {
             var previousOwner = newOwner;
@@ -45,11 +48,12 @@ namespace Unity.Netcode
             // Use internal lookup table to see if the NetworkObject has a previous owner
             if (m_ObjectToOwnershipTable.ContainsKey(networkObject.NetworkObjectId))
             {
-                // Set the previous owner's ClientId
+                // Keep track of the previous owner's ClientId
                 previousOwner = m_ObjectToOwnershipTable[networkObject.NetworkObjectId];
+
+                // We are either despawning (remove) or changing ownership (assign)
                 if (isRemoving)
                 {
-                    // If despawning, we remove this entry
                     m_ObjectToOwnershipTable.Remove(networkObject.NetworkObjectId);
                 }
                 else
@@ -59,18 +63,20 @@ namespace Unity.Netcode
             }
             else
             {
-                // Add the new entry for this NetworkObject to owner lookup table
+                // Otherwise, just add a new lookup entry
                 m_ObjectToOwnershipTable.Add(networkObject.NetworkObjectId, newOwner);
             }
 
-            // Check to see if we have a previous owner
+            // Check to see if we had a previous owner
             if (previousOwner != newOwner && OwnershipToObjectsTable.ContainsKey(previousOwner))
             {
-                // Make sure we have this entry
+                // Before updating the previous owner, assure this entry exists
                 if (OwnershipToObjectsTable[previousOwner].ContainsKey(networkObject.NetworkObjectId))
                 {
+                    // Remove the previous owner's entry
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
 
+                    // Server or Host alway invokes the lost ownership notification locally
                     if (NetworkManager.IsServer)
                     {
                         networkObject.InvokeBehaviourOnLostOwnership();
@@ -89,16 +95,19 @@ namespace Unity.Netcode
                 }
             }
 
-            // Make sure the owner has an entry, if not add it
+            // If the owner doesn't have an entry then create one
             if (!OwnershipToObjectsTable.ContainsKey(newOwner))
             {
                 OwnershipToObjectsTable.Add(newOwner, new Dictionary<ulong, NetworkObject>());
             }
 
-            // Check to make sure we don't already have this entry
+            // Sanity check to make sure we don't already have this entry (we shouldn't)
             if (!OwnershipToObjectsTable[newOwner].ContainsKey(networkObject.NetworkObjectId))
             {
+                // Add the new ownership entry
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
+
+                // Server or Host always invokes the gained ownership notification locally
                 if (NetworkManager.IsServer)
                 {
                     networkObject.InvokeBehaviourOnGainedOwnership();
@@ -112,6 +121,10 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Returns a list of all NetworkObjects that belong to a client.
+        /// </summary>
+        /// <param name="clientId">the client's id  <see cref="NetworkManager.LocalClientId"/></param>
         public List<NetworkObject> GetClientOwnedObjects(ulong clientId)
         {
             if (!OwnershipToObjectsTable.ContainsKey(clientId))
