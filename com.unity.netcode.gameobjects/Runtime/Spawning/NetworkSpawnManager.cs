@@ -41,7 +41,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Used to update a NetworkObject's ownership
         /// </summary>
-        internal bool UpdateOwnershipTable(NetworkObject networkObject, ulong newOwner, bool isRemoving = false)
+        internal void UpdateOwnershipTable(NetworkObject networkObject, ulong newOwner, bool isRemoving = false)
         {
             var previousOwner = newOwner;
 
@@ -85,7 +85,7 @@ namespace Unity.Netcode
                     // If we are removing the entry (i.e. despawning or client lost ownership)
                     if (isRemoving)
                     {
-                        return true;
+                        return;
                     }
                 }
                 else
@@ -112,13 +112,11 @@ namespace Unity.Netcode
                 {
                     networkObject.InvokeBehaviourOnGainedOwnership();
                 }
-                return true;
             }
             else if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogWarning($"Setting ownership twice? Client-ID {previousOwner} already owns NetworkObject ID {networkObject.NetworkObjectId}!");
             }
-            return false;
         }
 
         /// <summary>
@@ -309,28 +307,20 @@ namespace Unity.Netcode
             }
 
             // Server removes the entry and takes over ownership before notifying
-            if (UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true))
-            {
-                networkObject.OwnerClientId = NetworkManager.ServerClientId;
+            UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
 
-                var message = new ChangeOwnershipMessage
-                {
-                    NetworkObjectId = networkObject.NetworkObjectId,
-                    OwnerClientId = networkObject.OwnerClientId
-                };
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+            networkObject.OwnerClientId = NetworkManager.ServerClientId;
 
-                foreach (var client in NetworkManager.ConnectedClients)
-                {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-                }
-            }
-            else
+            var message = new ChangeOwnershipMessage
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"No connected clients prior to removing ownership for {networkObject.name}.  Make sure you are not initializing or shutting down when removing ownership.");
-                }
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = networkObject.OwnerClientId
+            };
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+
+            foreach (var client in NetworkManager.ConnectedClients)
+            {
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
         }
 
@@ -852,8 +842,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-
-            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId, true);
 
             networkObject.InvokeBehaviourNetworkDespawn();
 

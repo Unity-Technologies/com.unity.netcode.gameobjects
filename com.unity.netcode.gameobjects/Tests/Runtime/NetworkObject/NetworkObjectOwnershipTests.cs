@@ -121,8 +121,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestOwnershipCallbacksSeveralClients()
         {
-            // Build our message hook entries tables so we can determine if all clients received
-            // spawn or ownership messages
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
             var messageHookEntriesForSpawn = new List<MessageHookEntry>();
             var messageHookEntriesForOwnership = new List<MessageHookEntry>();
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
@@ -168,7 +167,6 @@ namespace Unity.Netcode.RuntimeTests
                 var clientObject = m_ClientNetworkManagers[i].SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
                 Assert.That(clientObject, Is.Not.Null);
                 clientObjects.Add(clientObject);
-
             }
 
             // Verify the server side component
@@ -184,8 +182,7 @@ namespace Unity.Netcode.RuntimeTests
                 clientComponent.ResetFlags();
             }
 
-            // After the 1st client has been given ownership to the object, this will be used
-            // to make sure each previous owner properly received the remove ownership message
+            // After the 1st client has been given ownership to the object, this will be used to make sure each previous owner properly received the remove ownership message
             var previousClientComponent = (NetworkObjectOwnershipComponent)null;
             for (int clientIndex = 0; clientIndex < NumberOfClients; clientIndex++)
             {
@@ -211,8 +208,7 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.That(currentClientComponent.OnGainedOwnershipFired);
 
                 // Possibly the more important part of this test:
-                // Check to make sure all other non-former or current ownership clients are synchronized
-                // to each ownership change
+                // Check to make sure all other non-former or current ownership clients are synchronized to each ownership change
                 for (int i = 0; i < NumberOfClients; i++)
                 {
                     var clientComponent = clientObjects[i].GetComponent<NetworkObjectOwnershipComponent>();
@@ -220,8 +216,7 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(clientComponent.OwnerClientId, Is.EqualTo(clientId));
                     clientComponent.ResetFlags();
                 }
-                // We must reset this for each iteration in order to make sure all clients receive the
-                // ChangeOwnershipMessage
+                // We must reset this for each iteration in order to make sure all clients receive the ChangeOwnershipMessage
                 ownershipMessageHooks.Reset();
 
                 // Set the current owner client to the previous one

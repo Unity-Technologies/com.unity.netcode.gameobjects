@@ -28,7 +28,8 @@ namespace Unity.Netcode
                 {
                     return PlayerObject.NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
                 }
-                return default;
+
+                return new List<NetworkObject>();
             }
         }
     }
