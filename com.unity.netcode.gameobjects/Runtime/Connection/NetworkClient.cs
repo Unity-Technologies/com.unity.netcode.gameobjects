@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 
-
 namespace Unity.Netcode
 {
     /// <summary>

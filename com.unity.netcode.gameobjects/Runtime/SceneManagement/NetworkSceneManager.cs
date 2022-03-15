@@ -1281,7 +1281,6 @@ namespace Unity.Netcode
         private void OnServerLoadedScene(uint sceneEventId, Scene scene)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            var serverClientId = m_NetworkManager.LocalClientId;
             // Register in-scene placed NetworkObjects with spawn manager
             foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
             {
@@ -1290,7 +1289,8 @@ namespace Unity.Netcode
                     if (!keyValuePairBySceneHandle.Value.IsPlayerObject)
                     {
                         // All in-scene placed NetworkObjects default to being owned by the server
-                        m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePairBySceneHandle.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, serverClientId, true);
+                        m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePairBySceneHandle.Value,
+                            m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, NetworkManager.ServerClientId, true);
                     }
                 }
             }

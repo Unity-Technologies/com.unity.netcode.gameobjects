@@ -146,7 +146,6 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
-
         }
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
