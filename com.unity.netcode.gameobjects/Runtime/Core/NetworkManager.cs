@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -1612,11 +1611,9 @@ namespace Unity.Netcode
                         }
                     }
 
-                    foreach (var ownedObject in SpawnManager.SpawnedObjectsList.Where(x => x.OwnerClientId == clientId))
+                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
                     {
-                        // for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
-                        // {
-                        //     var ownedObject = networkClient.OwnedObjects[i];
+                        var ownedObject = networkClient.OwnedObjects[i];
                         if (ownedObject != null)
                         {
                             if (!ownedObject.DontDestroyWithOwner)
