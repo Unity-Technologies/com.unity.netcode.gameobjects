@@ -299,7 +299,7 @@ namespace Unity.Netcode
             // Server removes the entry and takes over ownership before notifying
             if (UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true))
             {
-                networkObject.OwnerClientIdInternal = null;
+                networkObject.OwnerClientId = NetworkManager.ServerClientId;
 
                 var message = new ChangeOwnershipMessage
                 {
@@ -558,7 +558,7 @@ namespace Unity.Netcode
 
             networkObject.DestroyWithScene = sceneObject || destroyWithScene;
 
-            networkObject.OwnerClientIdInternal = ownerClientId;
+            networkObject.OwnerClientId = ownerClientId;
 
             networkObject.IsPlayerObject = playerObject;
 

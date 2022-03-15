@@ -64,33 +64,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
         /// </summary>
-        public ulong OwnerClientId
-        {
-            get
-            {
-                if (OwnerClientIdInternal == null)
-                {
-                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
-                }
-                else
-                {
-                    return OwnerClientIdInternal.Value;
-                }
-            }
-            internal set
-            {
-                if (NetworkManager != null && value == NetworkManager.ServerClientId)
-                {
-                    OwnerClientIdInternal = null;
-                }
-                else
-                {
-                    OwnerClientIdInternal = value;
-                }
-            }
-        }
-
-        internal ulong? OwnerClientIdInternal = null;
+        public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
