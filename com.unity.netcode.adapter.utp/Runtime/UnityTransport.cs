@@ -100,9 +100,11 @@ namespace Unity.Netcode
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
         [SerializeField] private ProtocolType m_ProtocolType;
 
+#pragma warning disable CS0414 // Assigned-but-not-used (only an issue in WebGL builds)
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. " +
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
+#pragma warning restore CS0414
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
         [FormerlySerializedAs("m_SendQueueBatchSize")]
@@ -890,6 +892,7 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
+#if !UNITY_WEBGL
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
@@ -899,6 +902,7 @@ namespace Unity.Netcode
                 .WithBaselibNetworkInterfaceParameters(
                     receiveQueueCapacity: m_MaxPacketQueueSize,
                     sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
         }
 
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
