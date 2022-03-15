@@ -305,7 +305,7 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
             }
             else
             {
@@ -424,7 +424,6 @@ namespace Unity.Netcode
                 ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
 
-
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
@@ -438,7 +437,7 @@ namespace Unity.Netcode
         public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
             byte[] connectionData, bool isSecure = false)
         {
-            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, isSecure: isSecure);
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, null, isSecure);
         }
 
         /// <summary>Set the relay server data for the host.</summary>
@@ -521,7 +520,7 @@ namespace Unity.Netcode
             }
             else
             {
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
                 return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
             }
         }

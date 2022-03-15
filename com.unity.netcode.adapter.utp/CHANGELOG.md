@@ -4,8 +4,14 @@ All notable changes to this package will be documented in this file. The format 
 
 ## [Unreleased]
 
+
+### Changed
+
+- Updated Unity Transport package to 1.0.0-pre.15. (#1797)
+
 ### Fixed
 
+- The 'Heartbeat Timeout MS' setting now also applies to the keep-alive messages sent to the Relay server when no connections have otherwise been made (e.g. for a host that's still waiting for clients to connect). Before this fix, these keep-alive messages would be sent every 9 seconds, no matter the actual timeout of the Relay allocation. (#1787)
 - Fixed compilation on WebGL. Note that the platform is still unsupported, but at least including the package in a WebGL project will not create compilation errors anymore. (#1802)
 - Flush internal send queues to the network during `Shutdown`. Prior to this fix, calling `NetworkManager.Shutdown` with `discardMessageQueue` set to false would not actually get messages from the outgoing queue to the network. (#1800)
 
