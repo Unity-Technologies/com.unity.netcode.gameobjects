@@ -1,3 +1,4 @@
+# Unity versions on which Package validation tests are run before Publish/Promotion
 validation_editors:
   - 2021.2
   - 2020.3
