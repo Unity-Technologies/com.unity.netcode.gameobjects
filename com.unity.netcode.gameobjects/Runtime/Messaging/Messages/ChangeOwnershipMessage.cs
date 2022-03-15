@@ -47,6 +47,15 @@ namespace Unity.Netcode
                 networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
+            // For all other clients that are neither the former or current owner, update the behaviours' properties
+            if (OwnerClientId != networkManager.LocalClientId && originalOwner != networkManager.LocalClientId)
+            {
+                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                {
+                    networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
+                }
+            }
+
             networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);
         }
     }
