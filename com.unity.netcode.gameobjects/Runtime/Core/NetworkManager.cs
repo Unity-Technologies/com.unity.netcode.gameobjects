@@ -125,13 +125,11 @@ namespace Unity.Netcode
             public bool OnVerifyCanReceive(ulong senderId, Type messageType)
             {
                 if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
-                       (client.ConnectionState == PendingClient.State.PendingApproval ||
-                        (client.ConnectionState == PendingClient.State.PendingConnection &&
-                         messageType != typeof(ConnectionRequestMessage))))
+                    (client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != typeof(ConnectionRequestMessage))))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId.ToString()} before it has been accepted");
+                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted");
                     }
 
                     return false;
@@ -365,16 +363,14 @@ namespace Unity.Netcode
         /// <param name="approved">Whether or not the client was approved</param>
         /// <param name="position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, uint? playerPrefabHash, bool approved,
-            Vector3? position, Quaternion? rotation);
+        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
 
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
         public event Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
 
-        internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action) =>
-            ConnectionApprovalCallback?.Invoke(payload, clientId, action);
+        internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action) => ConnectionApprovalCallback?.Invoke(payload, clientId, action);
 
         /// <summary>
         /// The current NetworkConfig
@@ -1612,32 +1608,45 @@ namespace Unity.Netcode
                         }
                     }
 
-                    for (int i = networkClient.OwnedObjects.Count - 1; i >= 0; i--)
+                    // Get the NetworkObjects owned by the disconnected client
+                    var clientOwnedObjects = SpawnManager.GetClientOwnedObjects(clientId);
+                    if (clientOwnedObjects == null)
                     {
-                        var ownedObject = networkClient.OwnedObjects[i];
-                        if (ownedObject != null)
+                        // This could happen if a client is never assigned a player object and is disconnected
+                        // Only log this in verbose/developer mode
+                        if (LogLevel == LogLevel.Developer)
                         {
-                            if (!ownedObject.DontDestroyWithOwner)
+                            NetworkLog.LogWarning($"ClientID {clientId} disconnected with (0) zero owned objects!  Was a player prefab not assigned?");
+                        }
+                    }
+                    else
+                    {
+                        // Handle changing ownership and prefab handlers
+                        for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
+                        {
+                            var ownedObject = clientOwnedObjects[i];
+                            if (ownedObject != null)
                             {
-                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i]
-                                    .GlobalObjectIdHash))
+                                if (!ownedObject.DontDestroyWithOwner)
                                 {
-                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
+                                    if (PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
+                                    {
+                                        PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
+                                    }
+                                    else
+                                    {
+                                        Destroy(ownedObject.gameObject);
+                                    }
                                 }
                                 else
                                 {
-                                    Destroy(ownedObject.gameObject);
+                                    ownedObject.RemoveOwnership();
                                 }
-                            }
-                            else
-                            {
-                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
-
                     foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
                         sobj.Observers.Remove(clientId);
