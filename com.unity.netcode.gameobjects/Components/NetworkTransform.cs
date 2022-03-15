@@ -785,7 +785,7 @@ namespace Unity.Netcode.Components
             {
                 m_ReplicatedNetworkState.SetDirty(true);
             }
-            else
+            else if (m_Transform != null)
             {
                 ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
