@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 ### Fixed
+- Fixed Player objects and dynamically spawned NetworkObjects not being added to the client's owned objects list. (#1801)
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
