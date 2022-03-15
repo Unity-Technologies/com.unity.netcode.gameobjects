@@ -220,7 +220,8 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(clientComponent.OwnerClientId, Is.EqualTo(clientId));
                     clientComponent.ResetFlags();
                 }
-                // We must reset this for each client we pass our ownership to
+                // We must reset this for each iteration in order to make sure all clients receive the
+                // ChangeOwnershipMessage
                 ownershipMessageHooks.Reset();
 
                 // Set the current owner client to the previous one
