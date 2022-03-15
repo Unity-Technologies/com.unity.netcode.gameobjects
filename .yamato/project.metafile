@@ -53,4 +53,5 @@ projects:
     validate: false
     test_editors:
       - 2021.2
+      - 2020.3
       - trunk
