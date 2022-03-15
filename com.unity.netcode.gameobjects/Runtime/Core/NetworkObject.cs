@@ -72,18 +72,21 @@ namespace Unity.Netcode
                 var oldOwnerId = OwnerClientIdInternal;
                 var newOwnerId = value;
 
-                OwnerClientIdInternal = newOwnerId;
-
-                if (oldOwnerId == NetworkManager.LocalClientId)
+                if (newOwnerId != oldOwnerId)
                 {
-                    //We are current owner.
-                    InvokeBehaviourOnLostOwnership();
-                }
+                    OwnerClientIdInternal = newOwnerId;
 
-                if (newOwnerId == NetworkManager.LocalClientId)
-                {
-                    //We are new owner.
-                    InvokeBehaviourOnGainedOwnership();
+                    if (oldOwnerId == NetworkManager.LocalClientId)
+                    {
+                        //We are current owner.
+                        InvokeBehaviourOnLostOwnership();
+                    }
+
+                    if (newOwnerId == NetworkManager.LocalClientId)
+                    {
+                        //We are new owner.
+                        InvokeBehaviourOnGainedOwnership();
+                    }
                 }
 
                 if (NetworkManager.IsServer)
@@ -827,40 +830,6 @@ namespace Unity.Netcode
             foreach (var networkObject in objectsToRemove)
             {
                 OrphanChildren.Remove(networkObject);
-            }
-        }
-
-        internal void AddToClientOwnedObjects()
-        {
-            var networkClient = NetworkManager.LocalClient;
-            if (networkClient == null)
-            {
-                if (NetworkManager.IsServer)
-                {
-                    NetworkManager.ConnectedClients.TryGetValue(OwnerClientId, out networkClient);
-                }
-            }
-
-            if (networkClient != null && !networkClient.OwnedObjects.Contains(this))
-            {
-                networkClient.OwnedObjects.Add(this);
-            }
-        }
-
-        internal void RemoveFromClientOwnedObjects()
-        {
-            var networkClient = NetworkManager.LocalClient;
-            if (networkClient == null)
-            {
-                if (NetworkManager.IsServer)
-                {
-                    NetworkManager.ConnectedClients.TryGetValue(OwnerClientId, out networkClient);
-                }
-            }
-
-            if (networkClient != null && networkClient.OwnedObjects.Contains(this))
-            {
-                networkClient.OwnedObjects.Remove(this);
             }
         }
 

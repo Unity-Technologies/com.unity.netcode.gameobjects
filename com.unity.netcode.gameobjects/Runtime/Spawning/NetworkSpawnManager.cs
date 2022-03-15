@@ -441,27 +441,20 @@ namespace Unity.Netcode
 
             networkObject.DestroyWithScene = sceneObject || destroyWithScene;
 
-            networkObject.OwnerClientIdInternal = ownerClientId;
+            networkObject.OwnerClientId = ownerClientId;
             networkObject.IsPlayerObject = playerObject;
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
-            if (NetworkManager.IsServer)
+            if (NetworkManager.IsServer && playerObject)
             {
-                if (playerObject)
+                // If there was an already existing player object for this player, then mark it as no longer a player object.
+                if (NetworkManager.ConnectedClients[ownerClientId].PlayerObject != null)
                 {
-                    // If there was an already existing player object for this player, then mark it as no longer a player object.
-                    if (NetworkManager.ConnectedClients[ownerClientId].PlayerObject != null)
-                    {
-                        NetworkManager.ConnectedClients[ownerClientId].PlayerObject.IsPlayerObject = false;
-                    }
-                    NetworkManager.ConnectedClients[ownerClientId].PlayerObject = networkObject;
+                    NetworkManager.ConnectedClients[ownerClientId].PlayerObject.IsPlayerObject = false;
                 }
-                else
-                {
-                    networkObject.AddToClientOwnedObjects();
-                }
+                NetworkManager.ConnectedClients[ownerClientId].PlayerObject = networkObject;
             }
             else if (playerObject && ownerClientId == NetworkManager.LocalClientId)
             {
