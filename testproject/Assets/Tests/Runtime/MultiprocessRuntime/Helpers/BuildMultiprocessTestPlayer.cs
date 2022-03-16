@@ -23,6 +23,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public const string BuildInfoFileName = "BuildInfo.json";
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Build the standalone player on the current platform
+        /// This method is both a menu item as well as a public method that can be called from CI
+        /// in order to build the standalone player
+        /// </summary>
         [MenuItem(BuildAndExecuteMenuName)]
         public static void BuildRelease()
         {
@@ -94,16 +99,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 buildOptions |= BuildOptions.Development;
                 buildOptions |= BuildOptions.AllowDebugging;
-            }
-
-            if (buildTarget == BuildTarget.StandaloneLinux64)
-            {
-#if UNITY_2021_2_OR_NEWER
-                buildPlayerOptions.subtarget = (int)StandaloneBuildSubtarget.Server;
-#else
-                buildOptions |= BuildOptions.EnableHeadlessMode;
-#endif
-
             }
 
             buildOptions |= BuildOptions.StrictMode;

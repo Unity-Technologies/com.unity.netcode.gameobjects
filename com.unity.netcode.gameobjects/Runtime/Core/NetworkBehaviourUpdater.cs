@@ -57,7 +57,7 @@ namespace Unity.Netcode
                         {
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.ServerClientId);
                             }
                         }
                     }

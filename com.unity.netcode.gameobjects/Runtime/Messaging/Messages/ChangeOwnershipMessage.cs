@@ -31,19 +31,29 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-
-            if (networkObject.OwnerClientId == networkManager.LocalClientId)
-            {
-                //We are current owner.
-                networkObject.InvokeBehaviourOnLostOwnership();
-            }
+            var originalOwner = networkObject.OwnerClientId;
 
             networkObject.OwnerClientId = OwnerClientId;
 
+            // We are current owner.
+            if (originalOwner == networkManager.LocalClientId)
+            {
+                networkObject.InvokeBehaviourOnLostOwnership();
+            }
+
+            // We are new owner.
             if (OwnerClientId == networkManager.LocalClientId)
             {
-                //We are new owner.
                 networkObject.InvokeBehaviourOnGainedOwnership();
+            }
+
+            // For all other clients that are neither the former or current owner, update the behaviours' properties
+            if (OwnerClientId != networkManager.LocalClientId && originalOwner != networkManager.LocalClientId)
+            {
+                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                {
+                    networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
+                }
             }
 
             networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);

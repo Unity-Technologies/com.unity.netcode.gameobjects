@@ -62,33 +62,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
         /// </summary>
-        public ulong OwnerClientId
-        {
-            get
-            {
-                if (OwnerClientIdInternal == null)
-                {
-                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
-                }
-                else
-                {
-                    return OwnerClientIdInternal.Value;
-                }
-            }
-            internal set
-            {
-                if (NetworkManager != null && value == NetworkManager.ServerClientId)
-                {
-                    OwnerClientIdInternal = null;
-                }
-                else
-                {
-                    OwnerClientIdInternal = value;
-                }
-            }
-        }
-
-        internal ulong? OwnerClientIdInternal = null;
+        public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
@@ -349,7 +323,7 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (clientId == networkManager.ServerClientId)
+            if (clientId == NetworkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
@@ -456,7 +430,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(bool destroyWithScene, ulong? ownerClientId, bool playerObject)
+        private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (!NetworkManager.IsListening)
             {
@@ -475,7 +449,6 @@ namespace Unity.Netcode
                 SnapshotSpawn();
             }
 
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
@@ -491,7 +464,7 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
-            SpawnInternal(destroyWithScene, null, false);
+            SpawnInternal(destroyWithScene, NetworkManager.ServerClientId, false);
         }
 
         /// <summary>
@@ -542,6 +515,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnLostOwnership()
         {
+            // Server already handles this earlier, hosts should ignore
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnLostOwnership();
@@ -550,6 +529,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
+            // Server already handles this earlier, hosts should ignore
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnGainedOwnership();
@@ -788,6 +773,8 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkSpawn()
         {
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
@@ -796,6 +783,8 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
