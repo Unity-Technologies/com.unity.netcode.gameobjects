@@ -78,7 +78,7 @@ namespace Unity.Netcode
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.Owner:
-                    return m_NetworkBehaviour.NetworkObject.OwnerClientId == clientId;
+                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
             }
         }
 
@@ -88,9 +88,9 @@ namespace Unity.Netcode
             {
                 default:
                 case NetworkVariableWritePermission.Server:
-                    return m_NetworkBehaviour.NetworkManager.ServerClientId == clientId;
+                    return clientId == NetworkManager.ServerClientId;
                 case NetworkVariableWritePermission.Owner:
-                    return m_NetworkBehaviour.NetworkObject.OwnerClientId == clientId;
+                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
             }
         }
 
