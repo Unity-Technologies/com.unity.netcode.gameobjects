@@ -5,8 +5,6 @@ run_all_tests:
   dependencies:
     # Pull in package and validate jobs through the badges job
     - .yamato/_triggers.yml#badges_test_trigger
-    - .yamato/mobile-project_tests.yml#2021.2_Run_iOS_Player_With_Tests
-    - .yamato/mobile-project_tests.yml#2021.2_Run_Android_Player_With_Tests
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
@@ -17,6 +15,10 @@ run_all_tests:
     - .yamato/standalone-project-tests.yml#standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
+{% endfor -%}
+{% for editor in project.test_editors -%}
+    - .yamato/mobile-project-tests.yml#run_tests_{{editor}}_android
+    - .yamato/mobile-project-tests.yml#run_tests_{{editor}}_iOS
 {% endfor -%}
 
 all_project_tests:
