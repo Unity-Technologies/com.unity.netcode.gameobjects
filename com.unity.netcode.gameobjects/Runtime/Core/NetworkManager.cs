@@ -112,7 +112,6 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
         private class NetworkManagerHooks : INetworkHooks
@@ -379,7 +378,7 @@ namespace Unity.Netcode
         public bool IsConnectedClient { get; internal set; }
 
 
-        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
+        public bool ShutdownInProgress { get { return State == NetworkManagerState.ShuttingDown; } }
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
@@ -1386,7 +1385,6 @@ namespace Unity.Netcode
 
             State = NetworkManagerState.ShuttingDown;
 
-            m_ShuttingDown = true;
             m_StopProcessingMessages = discardMessageQueue;
         }
 
@@ -1536,7 +1534,6 @@ namespace Unity.Netcode
             m_TransportIdToClientIdMap.Clear();
 
             IsListening = false;
-            m_ShuttingDown = false;
             m_StopProcessingMessages = false;
             State = NetworkManagerState.Inactive;
         }
@@ -1599,7 +1596,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (m_ShuttingDown && m_StopProcessingMessages)
+            if (State == NetworkManagerState.ShuttingDown && m_StopProcessingMessages)
             {
                 return;
             }
@@ -1621,7 +1618,7 @@ namespace Unity.Netcode
         private void OnNetworkPostLateUpdate()
         {
 
-            if (!m_ShuttingDown || !m_StopProcessingMessages)
+            if (State != NetworkManagerState.ShuttingDown || !m_StopProcessingMessages)
             {
                 MessagingSystem.ProcessSendQueues();
                 NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
@@ -1630,7 +1627,7 @@ namespace Unity.Netcode
             }
             SpawnManager.CleanupStaleTriggers();
 
-            if (m_ShuttingDown)
+            if (State == NetworkManagerState.ShuttingDown)
             {
                 ShutdownInternal();
             }
