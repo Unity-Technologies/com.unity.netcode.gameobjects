@@ -100,5 +100,28 @@ namespace Unity.Netcode.Editor
                 GUI.enabled = guiEnabled;
             }
         }
+
+        private GameObject m_GameObject;
+
+        /// <summary>
+        /// Invoked once when a NetworkObject component is
+        /// displayed in the inspector view.
+        /// </summary>
+        private void OnEnable()
+        {
+            // We set the GameObject upon being enabled because when the
+            // NetworkObject component is removed (i.e. when OnDestroy is invoked)
+            // it is no longer valid/available.
+            m_GameObject = (target as NetworkObject).gameObject;
+        }
+
+        /// <summary>
+        /// Invoked when a NetworkObject component is removed from
+        /// a GameObject.
+        /// </summary>
+        private void OnDestroy()
+        {
+            NetworkBehaviourEditor.CheckForNetworkObject(m_GameObject, true);
+        }
     }
 }

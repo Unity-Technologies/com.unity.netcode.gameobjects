@@ -211,5 +211,64 @@ namespace Unity.Netcode.Editor
             serializedObject.ApplyModifiedProperties();
             EditorGUI.EndChangeCheck();
         }
+
+        /// <summary>
+        /// Invoked once when a NetworkBehaviour component is
+        /// displayed in the inspector view.
+        /// </summary>
+        private void OnEnable()
+        {
+            // When we first add a NetworkBehaviour this editor will be enabled
+            // so we go ahead and check for an already existing NetworkObject here
+            CheckForNetworkObject((target as NetworkBehaviour).gameObject);
+        }
+
+        internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
+
+        public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
+        {
+            // If there are no NetworkBehaviours or no gameObject, then exit early
+            if (gameObject == null || gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null)
+            {
+                return;
+            }
+
+            // Otherwise, check to see if there is a NetworkObject and if not notify the user that NetworkBehaviours
+            // require that the relative GameObject has a NetworkObject component.
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                networkObject = gameObject.GetComponentInChildren<NetworkObject>();
+
+                if (networkObject == null)
+                {
+                    if (networkObjectRemoved && EditorPrefs.HasKey(AutoAddNetworkObjectIfNoneExists) && EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists))
+                    {
+                        Debug.LogWarning($"{gameObject.name} still has {nameof(NetworkBehaviour)}s and Auto-Add NetworkObjects is enabled. A NetworkObject is being added back to {gameObject.name}.");
+                        Debug.Log($"To reset Auto-Add NetworkObjects: Select the Netcode->General->Reset Auto-Add NetworkObject menu item.");
+                    }
+
+                    // Notify and provide the option to add it one time, always add a NetworkObject, or do nothing and let the user manually add it
+                    if (EditorUtility.DisplayDialog($"{nameof(NetworkBehaviour)}s require a {nameof(NetworkObject)}",
+                    $"{gameObject.name} does not have a {nameof(NetworkObject)} component.  Would you like to add one now?", "Yes", "No (manually add it)",
+                    DialogOptOutDecisionType.ForThisMachine, AutoAddNetworkObjectIfNoneExists))
+                    {
+                        gameObject.AddComponent<NetworkObject>();
+                        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                        UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
+                    }
+                }
+            }
+        }
+
+        [MenuItem("Netcode/General/Reset Auto-Add NetworkObject", false, 1)]
+        private static void ResetMultiplayerToolsTipStatus()
+        {
+            if (EditorPrefs.HasKey(AutoAddNetworkObjectIfNoneExists))
+            {
+                EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, false);
+            }
+        }
     }
 }
