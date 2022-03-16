@@ -100,9 +100,11 @@ namespace Unity.Netcode
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
         [SerializeField] private ProtocolType m_ProtocolType;
 
+#pragma warning disable CS0414 // Assigned-but-not-used (only an issue in WebGL builds)
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. " +
             "Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
+#pragma warning restore CS0414
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
         [FormerlySerializedAs("m_SendQueueBatchSize")]
@@ -303,7 +305,7 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
             }
             else
             {
@@ -422,7 +424,6 @@ namespace Unity.Netcode
                 ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
 
-
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
@@ -436,7 +437,7 @@ namespace Unity.Netcode
         public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
             byte[] connectionData, bool isSecure = false)
         {
-            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, isSecure: isSecure);
+            SetRelayServerData(ipAddress, port, allocationId, key, connectionData, null, isSecure);
         }
 
         /// <summary>Set the relay server data for the host.</summary>
@@ -519,7 +520,7 @@ namespace Unity.Netcode
             }
             else
             {
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData);
+                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
                 return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
             }
         }
@@ -891,6 +892,7 @@ namespace Unity.Netcode
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
+#if !UNITY_WEBGL
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
@@ -900,6 +902,7 @@ namespace Unity.Netcode
                 .WithBaselibNetworkInterfaceParameters(
                     receiveQueueCapacity: m_MaxPacketQueueSize,
                     sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
         }
 
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -1006,9 +1009,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Flush the driver's internal send queue. If we're shutting down because the
-            // NetworkManager is shutting down, it probably has disconnected some peer(s)
-            // in the process and we want to get these disconnect messages on the wire.
+            // Flush all send queues to the network. NGO can be configured to flush its message
+            // queue on shutdown. But this only calls the Send() method, which doesn't actually
+            // get anything to the network.
+            foreach (var kvp in m_SendQueue)
+            {
+                SendBatchedMessages(kvp.Key, kvp.Value);
+            }
+
+            // The above flush only puts the message in UTP internal buffers, need the flush send
+            // job to execute to actually get things out on the wire. This will also ensure any
+            // disconnect messages are sent out.
             m_Driver.ScheduleFlushSend(default).Complete();
 
             DisposeInternals();
@@ -1019,23 +1030,12 @@ namespace Unity.Netcode
 
         private void ConfigureSimulator()
         {
-#if UNITY_EDITOR
-            // Backward-compatibility with how we used to handle simulator parameters.
-            var packetDelay = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDelay", DebugSimulator.PacketDelayMS);
-            var packetJitter = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientJitter", DebugSimulator.PacketJitterMS);
-            var dropRate = UnityEditor.EditorPrefs.GetInt($"NetcodeGameObjects_{Application.productName}_ClientDropRate", DebugSimulator.PacketDropRate);
-#else
-            var packetDelay = DebugSimulator.PacketDelayMS;
-            var packetJitter = DebugSimulator.PacketJitterMS;
-            var dropRate = DebugSimulator.PacketDropRate;
-#endif
-
             m_NetworkSettings.WithSimulatorStageParameters(
                 maxPacketCount: 300, // TODO Is there any way to compute a better value?
                 maxPacketSize: NetworkParameterConstants.MTU,
-                packetDelayMs: packetDelay,
-                packetJitterMs: packetJitter,
-                packetDropPercentage: dropRate
+                packetDelayMs: DebugSimulator.PacketDelayMS,
+                packetJitterMs: DebugSimulator.PacketJitterMS,
+                packetDropPercentage: DebugSimulator.PacketDropRate
             );
         }
 
