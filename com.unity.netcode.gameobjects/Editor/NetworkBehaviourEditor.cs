@@ -271,6 +271,12 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        /// <summary>
+        /// This allows users to reset the Auto-Add NetworkObject preference
+        /// so the next time they add a NetworkBehaviour to a GameObject without
+        /// a NetworkObject it will display the dialog box again and not
+        /// automatically add a NetworkObject.
+        /// </summary>
         [MenuItem("Netcode/General/Reset Auto-Add NetworkObject", false, 1)]
         private static void ResetMultiplayerToolsTipStatus()
         {

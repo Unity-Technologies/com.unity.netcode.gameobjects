@@ -117,10 +117,14 @@ namespace Unity.Netcode.Editor
         }
 
         /// <summary>
-        /// Invoked when a NetworkObject component is removed from a GameObject.
+        /// Invoked once when a NetworkObject component is
+        /// no longer displayed in the inspector view.
         /// </summary>
         private void OnDestroy()
         {
+            // Since this is also invoked when a NetworkObject component is removed
+            // from a GameObject, we go ahead and check for a NetworkObject when
+            // this custom editor is destroyed.
             NetworkBehaviourEditor.CheckForNetworkObject(m_GameObject, true);
         }
     }
