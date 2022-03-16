@@ -1,3 +1,4 @@
+#if TESTPROJECT_USE_ADDRESSABLES
 using Unity.Netcode;
 
 namespace DefaultNamespace
@@ -13,3 +14,4 @@ namespace DefaultNamespace
         }
     }
 }
+#endif

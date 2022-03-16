@@ -388,20 +388,66 @@ namespace Unity.Netcode
 
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
+        /// <summary>
+        /// This callback is executed when the SDK is ready for use. Before this is executed, the SDK
+        /// goes through the following steps:
+        /// - Transport bind (server/host) or connect (client)
+        /// - Asset loading (server and client, when addressables are in use)
+        /// - Connection request and authorization (client only)
+        /// This callback coincides with NetworkManager.State transitioning to NetworkManagerState.Ready
+        /// Before this occurs, the SDK generally can't be used (nothing can be spawned, etc)
+        /// </summary>
         public event Action OnReadyCallback = null;
+        private event Action TmpOnReadyCallback = null;
 
         public enum StartupFailureReason
         {
+            /// <summary>
+            /// Startup did not fail
+            /// </summary>
             None,
+
+            /// <summary>
+            /// One or more Addressables assets could not be loaded
+            /// Either because the address was invalid, or because it did not point
+            /// to a GameObject with a NetworkObject component.
+            /// </summary>
             AssetLoadFailed,
+
+            /// <summary>
+            /// The server was unable to bind to the requested IP and port
+            /// </summary>
             BindFailed,
+
+            /// <summary>
+            /// The client was unable to connect to the requested IP and port
+            /// </summary>
             ConnectFailed,
+
+            /// <summary>
+            /// The server rejected the client's connection request
+            /// </summary>
             AuthFailed,
         }
+        /// <summary>
+        /// This callback is executed if the SDK is unable to successfully start for any reason.
+        /// The parameter passed to it indicates the reason the startup failed.
+        /// When startup fails, the SDK will shut back down and return to an Inactive state.
+        /// </summary>
         public event Action<StartupFailureReason> OnStartupFailedCallback = null;
+        private event Action<StartupFailureReason> TmpOnStartupFailedCallback = null;
 
-        internal void InvokeOnReadyCallback() => OnReadyCallback?.Invoke();
-        internal void InvokeOnStartupFailedCallback(StartupFailureReason reason) => OnStartupFailedCallback?.Invoke(reason);
+        internal void InvokeOnReadyCallback()
+        {
+            OnReadyCallback?.Invoke();
+            TmpOnReadyCallback?.Invoke();
+        }
+
+        internal void InvokeOnStartupFailedCallback(StartupFailureReason reason)
+        {
+            OnStartupFailedCallback?.Invoke(reason);
+            TmpOnStartupFailedCallback?.Invoke(reason);
+        }
 
         public NetworkManagerState State = NetworkManagerState.Inactive;
 
@@ -547,19 +593,40 @@ namespace Unity.Netcode
         }
 #endif
 
-        public bool ResolveNetworkPrefabs()
+        private bool ResolveNetworkPrefabs()
         {
 #if NETCODE_USE_ADDRESSABLES
             var allLoaded = true;
             foreach (var addressable in NetworkConfig.NetworkAddressables)
             {
-                if (addressable?.Addressable == null || addressable.Addressable.AssetGUID == null)
+                if (string.IsNullOrEmpty(addressable?.Addressable?.AssetGUID))
                 {
                     continue;
                 }
                 try
                 {
                     if (!addressable.ResolveAsync())
+                    {
+                        allLoaded = false;
+                    }
+                }
+                catch (Exception)
+                {
+                    InvokeOnStartupFailedCallback(StartupFailureReason.AssetLoadFailed);
+                    ShutdownInternal();
+                    throw;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(NetworkConfig.PlayerAddressable?.AssetGUID))
+            {
+                if (string.IsNullOrEmpty(NetworkConfig.PlayerAddressableLoader?.Addressable?.AssetGUID))
+                {
+                    NetworkConfig.PlayerAddressableLoader = new NetworkAddressable { Addressable = NetworkConfig.PlayerAddressable };
+                }
+                try
+                {
+                    if (!NetworkConfig.PlayerAddressableLoader.ResolveAsync())
                     {
                         allLoaded = false;
                     }
@@ -589,6 +656,11 @@ namespace Unity.Netcode
                         throw;
                     }
                     NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = addressable.Prefab, IsFromAddressable = true, Addressable = addressable.Addressable });
+                }
+
+                if (!string.IsNullOrEmpty(NetworkConfig.PlayerAddressable?.AssetGUID))
+                {
+                    NetworkConfig.PlayerPrefab = NetworkConfig.PlayerAddressableLoader.Prefab;
                 }
 #endif
 
@@ -910,6 +982,10 @@ namespace Unity.Netcode
         }
 #endif
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        internal INetworkHooks DebugMessageHooks;
+#endif
+
         private void Initialize(bool server)
         {
             // Don't allow the user to start a network session if the NetworkManager is
@@ -932,10 +1008,11 @@ namespace Unity.Netcode
             MessagingSystem.Hook(new NetworkManagerHooks(this));
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             MessagingSystem.Hook(new ProfilingHooks());
+            if (DebugMessageHooks != null)
+            {
+                MessagingSystem.Hook(DebugMessageHooks);
+            }
 #endif
-
-            // Uncomment to log every message that's sent and received
-            //MessagingSystem.Hook(new DebugLogHooks());
 
 #if MULTIPLAYER_TOOLS
             MessagingSystem.Hook(new MetricHooks(this));
@@ -1034,8 +1111,8 @@ namespace Unity.Netcode
         /// </summary>
         public bool StartServer(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
-            OnReadyCallback += onReady;
-            OnStartupFailedCallback += onFailure;
+            TmpOnReadyCallback += onReady;
+            TmpOnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo("StartServer()");
@@ -1093,8 +1170,8 @@ namespace Unity.Netcode
         /// </summary>
         public bool StartClient(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
-            OnReadyCallback += onReady;
-            OnStartupFailedCallback += onFailure;
+            TmpOnReadyCallback += onReady;
+            TmpOnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(StartClient));
@@ -1140,8 +1217,8 @@ namespace Unity.Netcode
         /// </summary>
         public bool StartHost(Action onReady = null, Action<StartupFailureReason> onFailure = null)
         {
-            OnReadyCallback += onReady;
-            OnStartupFailedCallback += onFailure;
+            TmpOnReadyCallback += onReady;
+            TmpOnStartupFailedCallback += onFailure;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(StartHost));
@@ -1316,6 +1393,9 @@ namespace Unity.Netcode
         internal void ShutdownInternal()
         {
             StopAllCoroutines();
+
+            TmpOnReadyCallback = null;
+            TmpOnStartupFailedCallback = null;
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {

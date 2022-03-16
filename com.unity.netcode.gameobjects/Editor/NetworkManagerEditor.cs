@@ -159,8 +159,7 @@ namespace Unity.Netcode.Editor
                 rect.y += 5;
 
                 var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-                // Can't use nameof() because this field is private and should stay private.
-                var networkPrefabProp = networkPrefab.FindPropertyRelative("m_Prefab");
+                var networkPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Prefab));
                 var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride));
                 var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride));
                 var networkTargetPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab));

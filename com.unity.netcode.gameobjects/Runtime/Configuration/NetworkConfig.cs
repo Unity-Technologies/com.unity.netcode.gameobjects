@@ -40,6 +40,8 @@ namespace Unity.Netcode
         /// </summary>
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
         public AssetReferenceGameObject PlayerAddressable;
+
+        internal NetworkAddressable PlayerAddressableLoader;
 #endif
 
         /// <summary>

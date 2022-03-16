@@ -1,3 +1,4 @@
+#if TESTPROJECT_USE_ADDRESSABLES
 using System.Collections;
 using System.Text.RegularExpressions;
 using DefaultNamespace;
@@ -32,16 +33,60 @@ namespace TestProject.RuntimeTests
         AssetReference
     }
 
-    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.StartAsync, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.WaitForFinish, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.None, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.StartAsync, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.WaitForFinish, AddMode.AssetReference)]
-    [TestFixture(LookupType.AssetByOperation, LoadMode.None, AddMode.AssetReference)]
-    [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference)]
-    [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference)]
-    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.String)]
+    public enum AddressableType
+    {
+        NetworkAddressable,
+        PlayerAddressable
+    }
+
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Host)]
+
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Host)]
+
+    // Strings can't be loaded in any way other than WaitForFinish, can't be looked up in any way other than
+    // NetworkManagerByAddress, and can't be used for the player prefab.
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.String, AddressableType.NetworkAddressable, HostOrServer.Host)]
+
+
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.None, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.NetworkAddressable, HostOrServer.Server)]
+
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.NetworkManagerByAsset, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.None, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.StartAsync, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+    [TestFixture(LookupType.AssetByOperation, LoadMode.WaitForFinish, AddMode.AssetReference, AddressableType.PlayerAddressable, HostOrServer.Server)]
+
+    // Strings can't be loaded in any way other than WaitForFinish, can't be looked up in any way other than
+    // NetworkManagerByAddress, and can't be used for the player prefab.
+    [TestFixture(LookupType.NetworkManagerByAddress, LoadMode.None, AddMode.String, AddressableType.NetworkAddressable, HostOrServer.Server)]
     public class AddressablesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -52,14 +97,17 @@ namespace TestProject.RuntimeTests
         private LookupType m_LookupType;
         private LoadMode m_LoadMode;
         private AddMode m_AddMode;
+        private AddressableType m_AddressableType;
         private NetworkManager.StartupFailureReason m_ServerFailureReason = NetworkManager.StartupFailureReason.None;
         private NetworkManager.StartupFailureReason[] m_ClientFailureReasons = new[] { NetworkManager.StartupFailureReason.None };
 
-        public AddressablesTests(LookupType lookupType, LoadMode loadMode, AddMode addMode)
+        public AddressablesTests(LookupType lookupType, LoadMode loadMode, AddMode addMode, AddressableType addressableType, HostOrServer hostOrServer)
         {
             m_LookupType = lookupType;
             m_LoadMode = loadMode;
             m_AddMode = addMode;
+            m_AddressableType = addressableType;
+            m_UseHost = hostOrServer == HostOrServer.Host;
         }
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
@@ -110,10 +158,21 @@ namespace TestProject.RuntimeTests
                 m_ClientNetworkManagers[i].OnStartupFailedCallback += (reason) => { m_ClientFailureReasons[setIndex] = reason; };
             }
 
-            m_ServerNetworkManager.AddNetworkPrefab(asset);
-            foreach (var client in m_ClientNetworkManagers)
+            if (m_AddressableType == AddressableType.NetworkAddressable)
             {
-                client.AddNetworkPrefab(asset);
+                m_ServerNetworkManager.AddNetworkPrefab(asset);
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    client.AddNetworkPrefab(asset);
+                }
+            }
+            else
+            {
+                m_ServerNetworkManager.NetworkConfig.PlayerAddressable = asset;
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    client.NetworkConfig.PlayerAddressable = asset;
+                }
             }
 
             yield return StartServerAndClients();
@@ -181,24 +240,35 @@ namespace TestProject.RuntimeTests
                 prefab = m_ServerNetworkManager.GetGameObjectForAddress(k_ValidObject);
             }
 
-            var serverObj = Object.Instantiate(prefab);
-            serverObj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
-            serverObj.GetComponent<NetworkObject>().Spawn();
-
-            var objs = Object.FindObjectsOfType<AddressableTestScript>();
-            // Prefabs loaded by addressables actually don't show up in this search.
-            // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
-            Assert.AreEqual(1, objs.Length);
-
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
-
-            objs = Object.FindObjectsOfType<AddressableTestScript>();
-            Assert.AreEqual(2, objs.Length);
-            foreach (var obj in objs)
+            if (m_AddressableType == AddressableType.NetworkAddressable)
             {
-                Assert.AreEqual(1234567, obj.AnIntVal);
-                Assert.AreEqual("1234567", obj.AStringVal);
-                Assert.AreEqual("12345671234567", obj.GetValue());
+                // Have to spawn it ourselves.
+                var serverObj = Object.Instantiate(prefab);
+                serverObj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+                serverObj.GetComponent<NetworkObject>().Spawn();
+
+                var objs = Object.FindObjectsOfType<AddressableTestScript>();
+                // Prefabs loaded by addressables actually don't show up in this search.
+                // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
+                Assert.AreEqual(1, objs.Length);
+
+                yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+
+                objs = Object.FindObjectsOfType<AddressableTestScript>();
+                Assert.AreEqual(2, objs.Length);
+                foreach (var obj in objs)
+                {
+                    Assert.AreEqual(1234567, obj.AnIntVal);
+                    Assert.AreEqual("1234567", obj.AStringVal);
+                    Assert.AreEqual("12345671234567", obj.GetValue());
+                }
+            }
+            else
+            {
+                // Should already have been spawned since it's the player prefab.
+                var objs = Object.FindObjectsOfType<AddressableTestScript>();
+
+                Assert.AreEqual(m_UseHost ? 4 : 2, objs.Length);
             }
         }
 
@@ -308,3 +378,4 @@ namespace TestProject.RuntimeTests
         }
     }
 }
+#endif

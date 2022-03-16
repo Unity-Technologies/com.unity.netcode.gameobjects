@@ -1,3 +1,4 @@
+#if TESTPROJECT_USE_ADDRESSABLES
 #if UNITY_EDITOR
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -16,4 +17,5 @@ public class AddressablesBuilder
         }
     }
 }
+#endif
 #endif
