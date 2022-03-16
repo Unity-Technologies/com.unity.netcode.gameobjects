@@ -59,9 +59,7 @@ build_tests_{{editor}}_iOS:
       - build/test-results/**
       - artifacts/**
       - build/players/**
-{% endfor -%}
 
-{% for editor in project.test_editors -%}
 run_tests_{{editor}}_android:
   name: Run Tests - {{editor}} - Android
   agent:
@@ -72,9 +70,7 @@ run_tests_{{editor}}_android:
   skip_checkout: true
   # Set a dependency on the build job
   dependencies:
-{% for editor in project.test_editors -%}
     - .yamato/mobile-project-tests.yml#build_tests_{{editor}}_android
-{% endfor -%}
   commands:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - |
@@ -107,9 +103,7 @@ run_tests_{{editor}}_iOS:
       flavor: b1.medium
   # Set a dependency on the build job
   dependencies:
-{% for editor in project.test_editors -%}
     - .yamato/mobile-project-tests.yml#build_tests_{{editor}}_iOS
-{% endfor -%}
   commands:
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
