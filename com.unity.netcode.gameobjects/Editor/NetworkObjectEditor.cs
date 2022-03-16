@@ -101,6 +101,7 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        // Saved for use in OnDestroy
         private GameObject m_GameObject;
 
         /// <summary>
@@ -116,8 +117,7 @@ namespace Unity.Netcode.Editor
         }
 
         /// <summary>
-        /// Invoked when a NetworkObject component is removed from
-        /// a GameObject.
+        /// Invoked when a NetworkObject component is removed from a GameObject.
         /// </summary>
         private void OnDestroy()
         {

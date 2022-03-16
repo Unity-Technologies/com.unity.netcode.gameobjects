@@ -225,6 +225,11 @@ namespace Unity.Netcode.Editor
 
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
 
+        /// <summary>
+        /// Used to determine if a GameObject has one or more NetworkBehaviours but
+        /// does not already have a NetworkObject component.  If not it will notify
+        /// the user that NetworkBehaviours require a NetworkObject.
+        /// </summary>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
             // If there are no NetworkBehaviours or no gameObject, then exit early
@@ -242,6 +247,10 @@ namespace Unity.Netcode.Editor
 
                 if (networkObject == null)
                 {
+                    // If we are removing a NetworkObject but there is still one or more NetworkBehaviour components
+                    // and the user has already turned "Auto-Add NetworkObject" on when first notified about the requirement
+                    // then just send a reminder to the user why the NetworkObject they just deleted seemingly "re-appeared"
+                    // again.
                     if (networkObjectRemoved && EditorPrefs.HasKey(AutoAddNetworkObjectIfNoneExists) && EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists))
                     {
                         Debug.LogWarning($"{gameObject.name} still has {nameof(NetworkBehaviour)}s and Auto-Add NetworkObjects is enabled. A NetworkObject is being added back to {gameObject.name}.");
