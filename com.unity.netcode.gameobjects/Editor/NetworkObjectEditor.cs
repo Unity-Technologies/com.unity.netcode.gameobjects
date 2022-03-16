@@ -100,5 +100,32 @@ namespace Unity.Netcode.Editor
                 GUI.enabled = guiEnabled;
             }
         }
+
+        // Saved for use in OnDestroy
+        private GameObject m_GameObject;
+
+        /// <summary>
+        /// Invoked once when a NetworkObject component is
+        /// displayed in the inspector view.
+        /// </summary>
+        private void OnEnable()
+        {
+            // We set the GameObject upon being enabled because when the
+            // NetworkObject component is removed (i.e. when OnDestroy is invoked)
+            // it is no longer valid/available.
+            m_GameObject = (target as NetworkObject).gameObject;
+        }
+
+        /// <summary>
+        /// Invoked once when a NetworkObject component is
+        /// no longer displayed in the inspector view.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Since this is also invoked when a NetworkObject component is removed
+            // from a GameObject, we go ahead and check for a NetworkObject when
+            // this custom editor is destroyed.
+            NetworkBehaviourEditor.CheckForNetworkObject(m_GameObject, true);
+        }
     }
 }
