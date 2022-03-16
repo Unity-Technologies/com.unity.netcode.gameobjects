@@ -7,8 +7,8 @@
 {% for package in projects.first.packages -%}
 {% for editor in projects.first.test_editors -%}
 {% for platform in test_platforms -%}
-dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : Dependency Test of Project {{ projects.first.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
+dependency_tests_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
+  name : Dependency Tests - {{ projects.first.name }} - {{ package.name }} - [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -32,8 +32,8 @@ dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ e
 {% endfor -%}
 {% endfor -%}
 
-dependency_test_trigger_{{ projects.first.name }}:
-  name: Project {{ projects.first.name }} Dependency Tests Trigger
+dependency_tests_trigger_{{ projects.first.name }}:
+  name: Dependency Tests Trigger - {{ projects.first.name }}
   agent:
     type: Unity::VM
     image: package-ci/ubuntu:stable
@@ -53,7 +53,7 @@ dependency_test_trigger_{{ projects.first.name }}:
 {% for package in projects.first.packages -%}
 {% for editor in projects.first.test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/project-updated-dependencies-test.yml#dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-updated-dependencies-test.yml#dependency_tests_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -2,8 +2,8 @@
 ---
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-build_{{ project.name }}_tests_{{ editor }}_android:
-  name: Build {{ project.name }} Tests - {{ editor }} on Android
+build_tests_{{ project.name }}_android_{{ editor }}:
+  name: Build Tests - {{ project.name }} - [android, {{ editor }}]
   agent:
       type: Unity::VM
       image: desktop/android-execution-r19:v0.1.1-860408
@@ -37,8 +37,8 @@ build_{{ project.name }}_tests_{{ editor }}_android:
 
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-run_{{ project.name }}_tests_{{ editor }}_android:
-  name: Run {{ project.name }} Tests - {{ editor }} on Android
+run_tests_{{ project.name }}_android_{{ editor }}:
+  name: Run Tests {{ project.name }} - [android, {{ editor }}]
   agent:
       type: Unity::mobile::shield
       image: mobile/android-execution-r19:stable
@@ -49,7 +49,7 @@ run_{{ project.name }}_tests_{{ editor }}_android:
   dependencies:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-    - .yamato/mobile-project-tests.yml#build_{{ project.name }}_tests_{{ editor }}_android
+    - .yamato/mobile-project-tests.yml#build_tests_{{ project.name }}_android_{{ editor }}
 {% endfor -%}
 {% endfor -%}
   commands:
@@ -80,8 +80,8 @@ run_{{ project.name }}_tests_{{ editor }}_android:
 
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-build_{{ project.name }}_tests_{{ editor }}_iOS:
-  name: Build {{ project.name }} Tests - {{ editor }} on iOS
+build_tests_{{ project.name }}_iOS_{{ editor }}:
+  name: Build Tests - {{ project.name }} - [iOS, {{ editor }}]
   agent:
     type: Unity::VM::osx
     image: mobile/macos-10.15-testing:stable
@@ -112,8 +112,8 @@ build_{{ project.name }}_tests_{{ editor }}_iOS:
 
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-run_{{ project.name }}_tests_{{ editor }}_iOS:
-  name: Run {{ project.name }} Tests - {{ editor }} on iOS
+run_tests_{{ project.name }}_iOS_{{ editor }}:
+  name: Run Tests {{ project.name }} - [iOS, {{ editor }}]
   agent:
       type: Unity::mobile::iPhone
       model: SE
@@ -123,7 +123,7 @@ run_{{ project.name }}_tests_{{ editor }}_iOS:
   dependencies:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-    - .yamato/mobile-project-tests.yml#build_{{ project.name }}_tests_{{ editor }}_iOS
+    - .yamato/mobile-project-tests.yml#build_tests_{{ project.name }}_iOS_{{ editor }}
 {% endfor -%}
 {% endfor -%}
   commands:

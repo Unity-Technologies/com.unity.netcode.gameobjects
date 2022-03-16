@@ -3,7 +3,7 @@
 {% for project in projects -%}
 {% for package in project.packages -%}
 publish_{{ project.name }}_{{ package.name }}:
-  name: Publish Project {{project.name }} - Package {{ package.name }} to Internal Registry
+  name: Publish - {{ package.name }} to Internal Registry
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
@@ -24,7 +24,7 @@ publish_{{ project.name }}_{{ package.name }}:
 {% endfor -%}
 
 publish_{{ project.name }}_{{ package.name }}_dry_run:
-  name: Publish Project {{project.name }} - Package {{ package.name }} to Internal Registry (dry-run)
+  name: Publish - {{ package.name }} to Internal Registry (dry-run)
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
@@ -46,3 +46,4 @@ publish_{{ project.name }}_{{ package.name }}_dry_run:
 
 {% endfor -%}
 {% endfor -%}
+

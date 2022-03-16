@@ -38,9 +38,9 @@ pull_request_trigger:
 {% endfor -%}
 {% for platform in test_platforms -%}
 {% for package in project.packages -%}
-    - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ project.test_editors.first }}_{{ platform.name }}
+    - .yamato/package-tests.yml#package_tests_{{ package.name }}_{{ project.name }}_{{ platform.name }}_{{ project.test_editors.first }}
 {% endfor -%}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ project.test_editors.first }}_{{ platform.name }}
+    - .yamato/project-tests.yml#project_tests_{{ project.name }}_{{ platform.name }}_{{ project.test_editors.first }}
 {% endfor -%}
 {% endfor -%}
   triggers:
@@ -78,7 +78,7 @@ badges_test_trigger:
 {% endif -%}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ editor }}_{{ platform.name }}
+    - .yamato/package-tests.yml#package_tests_{{ package.name }}_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

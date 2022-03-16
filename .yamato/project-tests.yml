@@ -11,7 +11,7 @@
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 validate_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : Validate - {{ package.name }} - {{ editor }} on {{ platform.name }}
+  name : Validate - {{ package.name }} - [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -38,8 +38,8 @@ validate_{{ package.name }}_{{ platform.name }}_{{ editor }}:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
-  name : Project {{ project.name }} Tests - {{ editor }} on {{ platform.name }}
+project_tests_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name : Project Tests - {{ project.name }} [{{ platform.name }}, {{ editor }}] 
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}

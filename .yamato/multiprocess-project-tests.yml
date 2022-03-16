@@ -5,8 +5,8 @@
 {% if project.name == "testproject" %}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
-  name : Multiprocess Tests - {{ editor }} on {{ platform.name }}
+singlenode_multiprocess_tests_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name : Multiprocess Tests - {{ project.name }} - [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
