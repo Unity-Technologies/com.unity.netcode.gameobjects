@@ -70,7 +70,9 @@ all_project_tests_standalone:
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
-    - .yamato/standalone-project-tests.yml#standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}
+{% for backend in scripting_backends -%}
+    - .yamato/standalone-project-tests.yml#standalone_tests_{{ project.name }}_{{ backend }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
