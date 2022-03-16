@@ -1,6 +1,5 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-
 {% for editor in project.test_editors -%}
 build_tests_{{editor}}_android:
   name: Build Tests - {{editor}} - Android
