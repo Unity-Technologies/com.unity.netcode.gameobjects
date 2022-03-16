@@ -5,8 +5,6 @@ run_all_tests:
   dependencies:
     # Pull in package and validate jobs through the badges job
     - .yamato/_triggers.yml#badges_test_trigger
-    - .yamato/mobile-build-and-test.yml#2021.2_Run_iOS_Player_With_Tests
-    - .yamato/mobile-build-and-test.yml#2021.2_Run_Android_Player_With_Tests
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
@@ -16,6 +14,12 @@ run_all_tests:
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
     - .yamato/standalone-project-tests.yml#standalone_test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+    - .yamato/mobile-project-tests.yml#run_{{ project.name }}_tests_{{ editor }}_android
+    - .yamato/mobile-project-tests.yml#run_{{ project.name }}_tests_{{ editor }}_iOS
 {% endfor -%}
 {% endfor -%}
 
@@ -50,7 +54,6 @@ all_package_tests:
 all_singlenode_multiprocess_tests:
   name: Run All Multiprocess Tests - Single Node
   dependencies:
-    # Pull in package and validate jobs through the badges job
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
@@ -64,8 +67,6 @@ all_singlenode_multiprocess_tests:
 all_project_tests_standalone:
   name: Run All Project Tests - Standalone
   dependencies:
-    # Pull in package and validate jobs through the badges job
-    - .yamato/_triggers.yml#badges_test_trigger
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
@@ -73,3 +74,14 @@ all_project_tests_standalone:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
+
+all_project_tests_mobile:
+  name: Run All Project Tests - Mobile
+  dependencies:
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+    - .yamato/mobile-project-tests.yml#run_{{ project.name }}_tests_{{ editor }}_android
+    - .yamato/mobile-project-tests.yml#run_{{ project.name }}_tests_{{ editor }}_iOS
+{% endfor -%}
+{% endfor -%}
+
