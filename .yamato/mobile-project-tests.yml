@@ -3,7 +3,7 @@
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 build_{{ project.name }}_tests_{{ editor }}_android:
-  name: Build {{ project.name }} Tests - {{ editor }} - Android
+  name: Build {{ project.name }} Tests - {{ editor }} on Android
   agent:
       type: Unity::VM
       image: desktop/android-execution-r19:v0.1.1-860408
@@ -38,7 +38,7 @@ build_{{ project.name }}_tests_{{ editor }}_android:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 run_{{ project.name }}_tests_{{ editor }}_android:
-  name: Run {{ project.name }} Tests - {{ editor }} - Android
+  name: Run {{ project.name }} Tests - {{ editor }} on Android
   agent:
       type: Unity::mobile::shield
       image: mobile/android-execution-r19:stable
@@ -81,7 +81,7 @@ run_{{ project.name }}_tests_{{ editor }}_android:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 build_{{ project.name }}_tests_{{ editor }}_iOS:
-  name: Build {{ project.name }} Tests - {{ editor }} - iOS
+  name: Build {{ project.name }} Tests - {{ editor }} on iOS
   agent:
     type: Unity::VM::osx
     image: mobile/macos-10.15-testing:stable
@@ -113,7 +113,7 @@ build_{{ project.name }}_tests_{{ editor }}_iOS:
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
 run_{{ project.name }}_tests_{{ editor }}_iOS:
-  name: Run {{ project.name }} Tests - {{ editor }} - iOS
+  name: Run {{ project.name }} Tests - {{ editor }} on iOS
   agent:
       type: Unity::mobile::iPhone
       model: SE

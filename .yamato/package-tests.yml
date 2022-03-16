@@ -10,7 +10,7 @@
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 test_{{project.name}}_{{  package.name }}_{{ editor }}_{{ platform.name }}:
-  name : {{ project.name }} - {{ package.name }} package tests - {{ editor }} on {{ platform.name }}
+  name : Package {{ package.name }} Tests for {{ project.name }} - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}

@@ -6,8 +6,8 @@
 {% for platform in test_platforms -%}
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
-promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : Validate Project {{ project.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
+promotion_test_{{ package.name }}_{{ platform.name }}_{{ editor }}:
+  name : Promotion Test - {{ package.name }} - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -46,7 +46,7 @@ promote_{{ project.name }}_{{ package.name }}:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-promotion.yml#promotion_test_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 
@@ -69,7 +69,7 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-promotion.yml#promotion_test_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 
