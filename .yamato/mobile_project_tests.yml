@@ -1,5 +1,9 @@
-2021.2_Build_Android_player:
-  name: 2021.2 Build Android player
+{% metadata_file .yamato/project.metafile %}
+---
+
+{% for editor in project.test_editors -%}
+build_tests_{{editor}}_android:
+  name: Build Tests - {{editor}} - Android
   agent:
       type: Unity::VM
       image: desktop/android-execution-r19:v0.1.1-860408
@@ -29,8 +33,8 @@
     CI: true
     ENABLE_BURST_COMPILATION: False
 
-2021.2_Build_iOS_player:
-  name: 2021.2 Build iOS player
+build_tests_{{editor}}_iOS:
+  name: Build Tests - {{editor}} - iOS
   agent:
     type: Unity::VM::osx
     image: mobile/macos-10.15-testing:stable
@@ -55,42 +59,11 @@
       - build/test-results/**
       - artifacts/**
       - build/players/**
+{% endfor -%}
 
-
-2021.2_Run_iOS_Player_With_Tests:
-  name: 2021.2 Run iOS player with tests
-  agent:
-      type: Unity::mobile::iPhone
-      model: SE
-      image: mobile/macos-10.15-testing:stable
-      flavor: b1.medium
-  # Set a dependency on the build job
-  dependencies:
-    - .yamato/mobile-build-and-test.yml#2021.2_Build_iOS_player
-  commands:
-    # Download standalone UnityTestRunner
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
-    # Give UTR execution permissions
-    - chmod +x ./utr
-    # Run the test build on the device
-    - export UTR_VERSION=0.12.0
-    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
-  artifacts:
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - artifacts/**/*
-      - testproject/Logs/**
-      - testproject/Library/*.log
-      - testproject/*.log
-      - testproject/Builds/*.log
-      - build/test-results/**
-      - artifacts/**
-      - build/players/**
-    
-2021.2_Run_Android_Player_With_Tests:
-  name: 2021.2 Run Android player with tests
+{% for editor in project.test_editors -%}
+run_tests_{{editor}}_android:
+  name: Run Tests - {{editor}} - Android
   agent:
       type: Unity::mobile::shield
       image: mobile/android-execution-r19:stable
@@ -99,7 +72,9 @@
   skip_checkout: true
   # Set a dependency on the build job
   dependencies:
-    - .yamato/mobile-build-and-test.yml#2021.2_Build_Android_player
+{% for editor in project.test_editors -%}
+    - .yamato/mobile-project-tests.yml#build_tests_{{editor}}_android
+{% endfor -%}
   commands:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - |
@@ -122,3 +97,38 @@
       - build/test-results/**
       - artifacts/**
       - build/players/**
+
+run_tests_{{editor}}_iOS:
+  name: Run Tests - {{editor}} - iOS
+  agent:
+      type: Unity::mobile::iPhone
+      model: SE
+      image: mobile/macos-10.15-testing:stable
+      flavor: b1.medium
+  # Set a dependency on the build job
+  dependencies:
+{% for editor in project.test_editors -%}
+    - .yamato/mobile-project-tests.yml#build_tests_{{editor}}_iOS
+{% endfor -%}
+  commands:
+    # Download standalone UnityTestRunner
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    # Give UTR execution permissions
+    - chmod +x ./utr
+    # Run the test build on the device
+    - export UTR_VERSION=0.12.0
+    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
+  artifacts:
+    logs:
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
+      - build/test-results/**
+      - artifacts/**
+      - build/players/**
+{% endfor -%}
