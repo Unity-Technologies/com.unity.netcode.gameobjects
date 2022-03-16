@@ -594,9 +594,7 @@ namespace Unity.Netcode
                     for (int k = 0; k < NetworkVariableFields.Count; k++)
                     {
                         var networkVariable = NetworkVariableFields[k];
-                        if (networkVariable.IsDirty() &&
-                            targetClientId != NetworkObject.OwnerClientId &&
-                            networkVariable.CanClientRead(targetClientId))
+                        if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                         {
                             shouldSend = true;
                             break;
