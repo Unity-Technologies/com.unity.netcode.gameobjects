@@ -747,6 +747,14 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        // If we are an in-scene placed NetworkObject, let the scene destroy its GameObject
+                        // when the scene is unloaded (if it is unloaded).
+                        if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value)
+                        {
+                            continue;
+                        }
+
+                        // Otherwise destroy it
                         UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
