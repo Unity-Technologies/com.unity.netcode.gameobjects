@@ -47,11 +47,7 @@ run_tests_{{ project.name }}_android_{{ editor }}:
   skip_checkout: true
   # Set a dependency on the build job
   dependencies:
-{% for project in projects -%}
-{% for editor in project.test_editors -%}
     - .yamato/mobile-project-tests.yml#build_tests_{{ project.name }}_android_{{ editor }}
-{% endfor -%}
-{% endfor -%}
   commands:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - |
@@ -121,11 +117,7 @@ run_tests_{{ project.name }}_iOS_{{ editor }}:
       flavor: b1.medium
   # Set a dependency on the build job
   dependencies:
-{% for project in projects -%}
-{% for editor in project.test_editors -%}
     - .yamato/mobile-project-tests.yml#build_tests_{{ project.name }}_iOS_{{ editor }}
-{% endfor -%}
-{% endfor -%}
   commands:
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
