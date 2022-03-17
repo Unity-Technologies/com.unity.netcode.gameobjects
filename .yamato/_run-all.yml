@@ -4,25 +4,12 @@ run_all_tests:
   name: Run All Package and Project Tests
   dependencies:
     - .yamato/_triggers.yml#badges_test_trigger
-{% for platform in test_platforms -%}
-{% for project in projects -%}
-{% for editor in project.test_editors -%}
-{% for package in project.packages -%}
-    - .yamato/package-tests.yml#package_tests_{{ package.name }}_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endfor -%}
-    - .yamato/project-tests.yml#project_tests_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% for backend in scripting_backends -%}
-    - .yamato/standalone-project-tests.yml#standalone_tests_{{ project.name }}_{{ backend }}_{{ editor }}_{{ platform.name }}
-{% endfor -%}
-{% endfor -%}
-{% endfor -%}
-{% endfor -%}
-{% for project in projects -%}
-{% for editor in project.test_editors -%}
-    - .yamato/mobile-project-tests.yml#run_tests_{{ project.name }}_android_{{ editor }}
-    - .yamato/mobile-project-tests.yml#run_tests_{{ project.name }}_iOS_{{ editor }}
-{% endfor -%}
-{% endfor -%}
+    - .yamato/_run-all.yml#all_project_tests
+    - .yamato/_run-all.yml#all_package_tests
+    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
+    - .yamato/_run-all.yml#all_project_tests_standalone
+    - .yamato/_run-all.yml#all_project_tests_mobile
+    - .yamato/_triggers.yml#dependency_tests_trigger_{{ projects.first.name }}
 
 all_project_tests:
   name: Run All Project Tests
