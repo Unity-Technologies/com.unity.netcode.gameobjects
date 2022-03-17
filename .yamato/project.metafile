@@ -31,6 +31,13 @@ test_platforms:
 # Projects within the repository that will be tested. Name will be used
 # for job ids, so it should not contain spaces/non-supported characters
 projects:
+  - name: minimalproject
+    path: minimalproject
+    packages:
+      - name: com.unity.netcode.gameobjects
+        path: com.unity.netcode.gameobjects
+    test_editors:
+      - 2020.3
   - name: testproject
     path: testproject
     validate: true
