@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 ### Fixed
+- Fixed in-scene NetworkObjects get destroyed if a client fails to connect and shuts down the NetworkManager. (#1809)
 - Fixed user never being notified in the editor that a NetworkBehaviour requires a NetworkObject to function properly. (#1808)
 - Fixed PlayerObjects and dynamically spawned NetworkObjects not being added to the NetworkClient's OwnedObjects (#1801)
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
