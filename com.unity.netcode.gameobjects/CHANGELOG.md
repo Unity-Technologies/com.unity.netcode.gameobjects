@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` writable netvars. (#1762)
+- Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 
 ### Changed
 

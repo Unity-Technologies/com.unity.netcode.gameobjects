@@ -91,6 +91,7 @@ namespace Unity.Netcode.RuntimeTests
 
             testCompServer.OwnerWritable_Position.Value = newValue;
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, newValue);
 
             AssertOwnerWritableAreEqualOnAll();
         }
@@ -108,6 +109,7 @@ namespace Unity.Netcode.RuntimeTests
 
             testCompServer.ServerWritable_Position.Value = newValue;
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, newValue);
 
             AssertServerWritableAreEqualOnAll();
         }
@@ -134,6 +136,7 @@ namespace Unity.Netcode.RuntimeTests
 
             testCompClient.OwnerWritable_Position.Value = newValue;
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
+            Assert.AreEqual(testCompClient.OwnerWritable_Position.Value, newValue);
 
             AssertOwnerWritableAreEqualOnAll();
         }
