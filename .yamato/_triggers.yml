@@ -83,3 +83,30 @@ badges_test_trigger:
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
+
+dependency_tests_trigger_{{ projects.first.name }}:
+  name: ⚡ Dependency Tests Trigger - {{ projects.first.name }}
+  agent:
+    type: Unity::VM
+    image: package-ci/ubuntu:stable
+    flavor: b1.small
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci project izon -d --project-path {{ projects.first.path }}
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  triggers:
+    recurring:
+    - branch: develop
+      frequency: daily
+      rerun: always
+  dependencies:
+{% for package in projects.first.packages -%}
+{% for editor in projects.first.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-updated-dependencies-test.yml#dependency_tests_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
